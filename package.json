@@ -1,6 +1,6 @@
 {
   "name": "coontabilidad",
-  "version": "0.8.0",
+  "version": "1.0.0",
   "description": "Sistema de Coontabilidad Local-First especializado para negocios en Florida, USA",
   "private": false,
   "type": "module",
