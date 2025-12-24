@@ -29,7 +29,7 @@ import { SupplierDetailView } from './components/SupplierDetailView';
 import { BillForm } from './components/BillForm';
 import { BillList } from './components/BillList';
 import { BillDetailView } from './components/BillDetailView';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Brain } from 'lucide-react';
 import { logger } from './core/logging/SystemLogger';
 import { SystemLogs } from './components/SystemLogs';
 import { ChartOfAccounts } from './components/ChartOfAccounts';
@@ -43,6 +43,7 @@ import { ProductList } from './components/ProductList';
 import { ProductDetailView } from './components/ProductDetailView';
 import { ProductCategoryForm } from './components/ProductCategoryForm';
 import { ProductCategoryList } from './components/ProductCategoryList';
+import { IAPanel } from './components/IAPanel';
 
 interface AppState {
   isLoading: boolean;
@@ -80,6 +81,7 @@ interface AppState {
   showingInvoiceForm: boolean;
   showingProductForm: boolean;
   showingProductCategoryForm: boolean;
+  showingIAPanel: boolean;
   initializationStep: string;
   currentSection: string;
 }
@@ -114,6 +116,7 @@ function App() {
     showingInvoiceForm: false,
     showingProductForm: false,
     showingProductCategoryForm: false,
+    showingIAPanel: false,
     initializationStep: 'Iniciando...',
     currentSection: 'dashboard'
   });
@@ -1719,37 +1722,44 @@ function App() {
         );
 
       case 'ai-assistant':
+        // Activar el panel de IA y mostrar información
+        if (!state.showingIAPanel) {
+          setState(prev => ({ ...prev, showingIAPanel: true }));
+        }
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
             <h2 className="text-2xl font-semibold text-white mb-4">Asistente IA</h2>
             <p className="text-gray-400 mb-6">Asistente inteligente para consultas contables</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
+            <div className="bg-purple-900/20 border border-purple-700 rounded-lg p-4 mb-6">
+              <p className="text-purple-300 text-sm">🤖 IA No Intrusiva Activada</p>
+              <p className="text-purple-200 text-xs mt-1">Panel flotante disponible en la esquina inferior derecha</p>
+            </div>
+            <div className="space-y-4 text-left max-w-2xl mx-auto">
+              <div className="bg-gray-700 rounded-lg p-4">
+                <h3 className="text-white font-medium mb-2">Características:</h3>
+                <ul className="text-gray-300 text-sm space-y-1">
+                  <li>• Solo acceso de lectura a datos</li>
+                  <li>• Análisis financiero inteligente</li>
+                  <li>• Recomendaciones de negocio</li>
+                  <li>• Alertas de cumplimiento</li>
+                  <li>• Insights de tendencias</li>
+                </ul>
+              </div>
+              <div className="bg-gray-700 rounded-lg p-4">
+                <h3 className="text-white font-medium mb-2">Cumplimiento:</h3>
+                <ul className="text-gray-300 text-sm space-y-1">
+                  <li>• Documento Técnico Sección 7: "IA No Intrusiva"</li>
+                  <li>• Acceso solo a vistas _summary</li>
+                  <li>• No modifica datos del sistema</li>
+                  <li>• Procesamiento 100% local</li>
+                </ul>
+              </div>
             </div>
             <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+              onClick={() => setState(prev => ({ ...prev, showingIAPanel: true }))}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors mt-4"
             >
-              Volver al Dashboard
-            </button>
-          </div>
-        );
-
-      case 'ai-assistant':
-        return (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Asistente IA</h2>
-            <p className="text-gray-400 mb-6">Asistente inteligente para consultas contables</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
-            </div>
-            <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Volver al Dashboard
+              Abrir Panel de IA
             </button>
           </div>
         );
@@ -1843,6 +1853,23 @@ function App() {
           </div>
         </footer>
       </div>
+
+      {/* Botón flotante de IA */}
+      {!state.showingIAPanel && (
+        <button
+          onClick={() => setState(prev => ({ ...prev, showingIAPanel: true }))}
+          className="fixed bottom-20 right-4 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40"
+          title="Abrir Asistente IA"
+        >
+          <Brain className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Panel de IA */}
+      <IAPanel
+        isVisible={state.showingIAPanel}
+        onClose={() => setState(prev => ({ ...prev, showingIAPanel: false }))}
+      />
     </div>
   );
 }

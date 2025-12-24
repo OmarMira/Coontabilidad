@@ -139,7 +139,7 @@ const menuItems: MenuItem[] = [
     id: 'ai-assistant',
     label: 'ASISTENTE IA',
     icon: Bot,
-    badge: 'Próximo',
+    badge: 'NEW',
     isNew: true
   }
 ];
