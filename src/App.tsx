@@ -44,6 +44,7 @@ import { ProductDetailView } from './components/ProductDetailView';
 import { ProductCategoryForm } from './components/ProductCategoryForm';
 import { ProductCategoryList } from './components/ProductCategoryList';
 import { IAPanel } from './components/IAPanel';
+import { FloridaTaxReport } from './components/FloridaTaxReport';
 
 interface AppState {
   isLoading: boolean;
@@ -1000,22 +1001,7 @@ function App() {
         );
 
       case 'florida-dr15':
-        return (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Reporte DR-15 Florida</h2>
-            <p className="text-gray-400 mb-6">Reporte de impuestos sobre ventas para el estado de Florida</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
-            </div>
-            <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Volver al Dashboard
-            </button>
-          </div>
-        );
+        return <FloridaTaxReport />;
 
       case 'tax-reports':
         return (

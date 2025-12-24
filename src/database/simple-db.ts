@@ -5427,3 +5427,418 @@ export function getProductsLowStock(): Product[] {
     return [];
   }
 }
+
+// ==========================================
+// FUNCIONES PARA REPORTES FLORIDA DR-15
+// ==========================================
+
+/**
+ * Calcula el reporte DR-15 para un período específico
+ * Cumple con requisitos legales de Florida
+ */
+export function calculateFloridaDR15Report(period: string): FloridaDR15Report | null {
+  if (!db) {
+    logger.error('DR15', 'calculate_no_db', 'Base de datos no disponible');
+    return null;
+  }
+
+  try {
+    logger.info('DR15', 'calculate_start', 'Calculando reporte DR-15', { period });
+
+    // Determinar rango de fechas según el período
+    const { startDate, endDate } = parsePeriod(period);
+    
+    // Obtener todas las facturas del período
+    const invoicesResult = db.exec(`
+      SELECT 
+        i.id,
+        i.subtotal,
+        i.tax_amount,
+        i.total_amount,
+        c.florida_county,
+        c.tax_exempt
+      FROM invoices i
+      JOIN customers c ON i.customer_id = c.id
+      WHERE i.issue_date >= ? AND i.issue_date <= ?
+      AND i.status IN ('sent', 'paid')
+    `, [startDate, endDate]);
+
+    if (invoicesResult.length === 0 || invoicesResult[0].values.length === 0) {
+      logger.warn('DR15', 'calculate_no_data', 'No hay facturas para el período', { period });
+      return createEmptyDR15Report(period);
+    }
+
+    let totalTaxableSales = 0;
+    let totalTaxCollected = 0;
+    let exemptSales = 0;
+    const countyBreakdown: { [county: string]: { rate: number; taxableAmount: number; taxAmount: number } } = {};
+
+    // Procesar cada factura
+    invoicesResult[0].values.forEach(row => {
+      const subtotal = Number(row[1]) || 0;
+      const taxAmount = Number(row[2]) || 0;
+      const county = row[4] as string || 'Miami-Dade';
+      const isExempt = Boolean(row[5]);
+
+      if (isExempt) {
+        exemptSales += subtotal;
+      } else {
+        totalTaxableSales += subtotal;
+        totalTaxCollected += taxAmount;
+
+        // Agrupar por condado
+        if (!countyBreakdown[county]) {
+          const taxRate = getFloridaTaxRate(county);
+          countyBreakdown[county] = {
+            rate: taxRate,
+            taxableAmount: 0,
+            taxAmount: 0
+          };
+        }
+        
+        countyBreakdown[county].taxableAmount += subtotal;
+        countyBreakdown[county].taxAmount += taxAmount;
+      }
+    });
+
+    // Crear el reporte
+    const report: FloridaDR15Report = {
+      period,
+      totalTaxableSales,
+      totalTaxCollected,
+      countyBreakdown: Object.entries(countyBreakdown).map(([county, data]) => ({
+        county,
+        rate: data.rate,
+        taxableAmount: data.taxableAmount,
+        taxAmount: data.taxAmount
+      })),
+      exemptSales,
+      adjustments: [], // Se pueden agregar manualmente después
+      netTaxDue: totalTaxCollected,
+      dueDate: calculateDueDate(period),
+      status: 'pending'
+    };
+
+    logger.info('DR15', 'calculate_success', 'Reporte DR-15 calculado', {
+      period,
+      totalTaxableSales,
+      totalTaxCollected,
+      counties: Object.keys(countyBreakdown).length
+    });
+
+    return report;
+
+  } catch (error) {
+    logger.error('DR15', 'calculate_failed', 'Error al calcular reporte DR-15', { period }, error as Error);
+    return null;
+  }
+}
+
+/**
+ * Guarda un reporte DR-15 en la base de datos
+ */
+export function saveDR15Report(report: FloridaDR15Report): { success: boolean; message: string; id?: number } {
+  if (!db) {
+    return { success: false, message: 'Base de datos no disponible' };
+  }
+
+  try {
+    logger.info('DR15', 'save_start', 'Guardando reporte DR-15', { period: report.period });
+
+    // Verificar si ya existe un reporte para este período
+    const existingResult = db.exec(`
+      SELECT id FROM florida_tax_reports WHERE period = ?
+    `, [report.period]);
+
+    if (existingResult.length > 0 && existingResult[0].values.length > 0) {
+      return { success: false, message: `Ya existe un reporte para el período ${report.period}` };
+    }
+
+    // Insertar reporte principal
+    const insertResult = db.exec(`
+      INSERT INTO florida_tax_reports (
+        period, total_taxable_sales, total_tax_collected, exempt_sales, 
+        net_tax_due, due_date, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [
+      report.period,
+      report.totalTaxableSales,
+      report.totalTaxCollected,
+      report.exemptSales,
+      report.netTaxDue,
+      report.dueDate.toISOString().split('T')[0],
+      report.status
+    ]);
+
+    // Obtener el ID del reporte insertado
+    const reportId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+
+    // Insertar desglose por condado
+    report.countyBreakdown.forEach(county => {
+      db!.exec(`
+        INSERT INTO florida_tax_report_counties (
+          report_id, county_name, tax_rate, taxable_amount, tax_amount
+        ) VALUES (?, ?, ?, ?, ?)
+      `, [reportId, county.county, county.rate, county.taxableAmount, county.taxAmount]);
+    });
+
+    // Insertar ajustes si existen
+    report.adjustments.forEach(adjustment => {
+      db!.exec(`
+        INSERT INTO florida_tax_report_adjustments (
+          report_id, description, amount, type
+        ) VALUES (?, ?, ?, ?)
+      `, [reportId, adjustment.description, adjustment.amount, adjustment.type]);
+    });
+
+    // Registrar en auditoría
+    const auditData = {
+      period: report.period,
+      total_tax: report.totalTaxCollected,
+      counties: report.countyBreakdown.length
+    };
+    
+    db.exec(`
+      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      'florida_tax_reports',
+      reportId,
+      'INSERT',
+      JSON.stringify(auditData),
+      1,
+      generateAuditHash(auditData)
+    ]);
+
+    logger.info('DR15', 'save_success', 'Reporte DR-15 guardado correctamente', { 
+      period: report.period, 
+      reportId 
+    });
+
+    return { 
+      success: true, 
+      message: `Reporte DR-15 para ${report.period} guardado correctamente`,
+      id: reportId
+    };
+
+  } catch (error) {
+    logger.error('DR15', 'save_failed', 'Error al guardar reporte DR-15', { period: report.period }, error as Error);
+    return { 
+      success: false, 
+      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+    };
+  }
+}
+
+/**
+ * Obtiene todos los reportes DR-15 guardados
+ */
+export function getDR15Reports(): FloridaDR15Report[] {
+  if (!db) {
+    logger.error('DR15', 'get_reports_no_db', 'Base de datos no disponible');
+    return [];
+  }
+
+  try {
+    logger.info('DR15', 'get_reports_start', 'Obteniendo reportes DR-15');
+
+    const reportsResult = db.exec(`
+      SELECT 
+        id, period, total_taxable_sales, total_tax_collected, exempt_sales,
+        net_tax_due, due_date, status, filed_by, filed_at
+      FROM florida_tax_reports
+      ORDER BY period DESC
+    `);
+
+    if (reportsResult.length === 0 || reportsResult[0].values.length === 0) {
+      logger.info('DR15', 'get_reports_empty', 'No hay reportes DR-15 guardados');
+      return [];
+    }
+
+    const reports: FloridaDR15Report[] = [];
+
+    for (const row of reportsResult[0].values) {
+      const reportId = row[0] as number;
+      const period = row[1] as string;
+
+      // Obtener desglose por condado
+      const countiesResult = db.exec(`
+        SELECT county_name, tax_rate, taxable_amount, tax_amount
+        FROM florida_tax_report_counties
+        WHERE report_id = ?
+      `, [reportId]);
+
+      const countyBreakdown = countiesResult.length > 0 ? 
+        countiesResult[0].values.map(countyRow => ({
+          county: countyRow[0] as string,
+          rate: Number(countyRow[1]),
+          taxableAmount: Number(countyRow[2]),
+          taxAmount: Number(countyRow[3])
+        })) : [];
+
+      // Obtener ajustes
+      const adjustmentsResult = db.exec(`
+        SELECT description, amount, type
+        FROM florida_tax_report_adjustments
+        WHERE report_id = ?
+      `, [reportId]);
+
+      const adjustments = adjustmentsResult.length > 0 ?
+        adjustmentsResult[0].values.map(adjRow => ({
+          description: adjRow[0] as string,
+          amount: Number(adjRow[1]),
+          type: adjRow[2] as 'credit' | 'debit'
+        })) : [];
+
+      const report: FloridaDR15Report = {
+        period,
+        totalTaxableSales: Number(row[2]) || 0,
+        totalTaxCollected: Number(row[3]) || 0,
+        countyBreakdown,
+        exemptSales: Number(row[4]) || 0,
+        adjustments,
+        netTaxDue: Number(row[5]) || 0,
+        dueDate: new Date(row[6] as string),
+        filedBy: row[7] as number || undefined,
+        filedAt: row[8] ? new Date(row[8] as string) : undefined,
+        status: row[9] as 'pending' | 'filed' | 'paid' | 'late'
+      };
+
+      reports.push(report);
+    }
+
+    logger.info('DR15', 'get_reports_success', 'Reportes DR-15 obtenidos', { count: reports.length });
+    return reports;
+
+  } catch (error) {
+    logger.error('DR15', 'get_reports_failed', 'Error al obtener reportes DR-15', null, error as Error);
+    return [];
+  }
+}
+
+/**
+ * Marca un reporte DR-15 como presentado
+ */
+export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { success: boolean; message: string } {
+  if (!db) {
+    return { success: false, message: 'Base de datos no disponible' };
+  }
+
+  try {
+    logger.info('DR15', 'mark_filed_start', 'Marcando reporte como presentado', { period, filedBy });
+
+    const result = db.exec(`
+      UPDATE florida_tax_reports 
+      SET status = 'filed', filed_by = ?, filed_at = CURRENT_TIMESTAMP
+      WHERE period = ?
+    `, [filedBy, period]);
+
+    logger.info('DR15', 'mark_filed_success', 'Reporte marcado como presentado', { period });
+    
+    return { 
+      success: true, 
+      message: `Reporte DR-15 para ${period} marcado como presentado` 
+    };
+
+  } catch (error) {
+    logger.error('DR15', 'mark_filed_failed', 'Error al marcar reporte como presentado', { period }, error as Error);
+    return { 
+      success: false, 
+      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+    };
+  }
+}
+
+// ==========================================
+// FUNCIONES AUXILIARES PARA DR-15
+// ==========================================
+
+/**
+ * Parsea un período (ej: "2024-Q1") y devuelve fechas de inicio y fin
+ */
+function parsePeriod(period: string): { startDate: string; endDate: string } {
+  const [year, quarter] = period.split('-');
+  const yearNum = parseInt(year);
+  
+  if (quarter.startsWith('Q')) {
+    const quarterNum = parseInt(quarter.substring(1));
+    const startMonth = (quarterNum - 1) * 3 + 1;
+    const endMonth = quarterNum * 3;
+    
+    return {
+      startDate: `${yearNum}-${startMonth.toString().padStart(2, '0')}-01`,
+      endDate: `${yearNum}-${endMonth.toString().padStart(2, '0')}-${getLastDayOfMonth(yearNum, endMonth)}`
+    };
+  } else {
+    // Período mensual (ej: "2024-01")
+    const month = parseInt(quarter);
+    return {
+      startDate: `${yearNum}-${month.toString().padStart(2, '0')}-01`,
+      endDate: `${yearNum}-${month.toString().padStart(2, '0')}-${getLastDayOfMonth(yearNum, month)}`
+    };
+  }
+}
+
+/**
+ * Obtiene el último día del mes
+ */
+function getLastDayOfMonth(year: number, month: number): string {
+  const lastDay = new Date(year, month, 0).getDate();
+  return lastDay.toString().padStart(2, '0');
+}
+
+/**
+ * Calcula la fecha de vencimiento para un período
+ */
+function calculateDueDate(period: string): Date {
+  const { endDate } = parsePeriod(period);
+  const periodEnd = new Date(endDate);
+  
+  // DR-15 vence el día 20 del mes siguiente al período
+  const dueDate = new Date(periodEnd);
+  dueDate.setMonth(dueDate.getMonth() + 1);
+  dueDate.setDate(20);
+  
+  return dueDate;
+}
+
+/**
+ * Crea un reporte DR-15 vacío para períodos sin datos
+ */
+function createEmptyDR15Report(period: string): FloridaDR15Report {
+  return {
+    period,
+    totalTaxableSales: 0,
+    totalTaxCollected: 0,
+    countyBreakdown: [],
+    exemptSales: 0,
+    adjustments: [],
+    netTaxDue: 0,
+    dueDate: calculateDueDate(period),
+    status: 'pending'
+  };
+}
+
+/**
+ * Genera períodos disponibles para reportes
+ */
+export function getAvailableDR15Periods(): string[] {
+  const periods: string[] = [];
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  
+  // Generar últimos 8 trimestres
+  for (let year = currentYear - 1; year <= currentYear; year++) {
+    for (let quarter = 1; quarter <= 4; quarter++) {
+      const period = `${year}-Q${quarter}`;
+      const { endDate } = parsePeriod(period);
+      
+      // Solo incluir períodos que ya han terminado
+      if (new Date(endDate) < currentDate) {
+        periods.push(period);
+      }
+    }
+  }
+  
+  return periods.reverse(); // Más recientes primero
+}

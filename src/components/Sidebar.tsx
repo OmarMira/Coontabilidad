@@ -117,7 +117,7 @@ const menuItems: MenuItem[] = [
     icon: Receipt,
     children: [
       { id: 'tax-config', label: 'Configuración Fiscal', icon: Settings, badge: 'Activo' },
-      { id: 'florida-dr15', label: 'Reporte DR-15', icon: FileText, badge: 'Próximo' },
+      { id: 'florida-dr15', label: 'Reporte DR-15', icon: FileText, badge: 'NEW' },
       { id: 'tax-rates', label: 'Tasas por Condado', icon: MapPin, badge: 'Activo' },
       { id: 'tax-reports', label: 'Reportes Fiscales', icon: BarChart3, badge: 'Próximo' },
       { id: 'tax-calendar', label: 'Calendario Fiscal', icon: FileText, badge: 'Próximo' }
