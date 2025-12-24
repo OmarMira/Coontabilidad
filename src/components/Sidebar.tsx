@@ -54,7 +54,7 @@ const menuItems: MenuItem[] = [
       { id: 'system-config', label: 'Configuración del Sistema', icon: Settings, badge: 'Próximo' },
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2, badge: 'Activo' },
       { id: 'users', label: 'Usuarios y Roles', icon: UserCheck, badge: 'Próximo' },
-      { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive, badge: 'Próximo' },
+      { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive, badge: 'NEW' },
       { id: 'system-logs', label: 'Logs del Sistema', icon: Activity, badge: 'Activo' },
       { id: 'auditoria', label: 'Auditoría de Transacciones', icon: Search, badge: 'Activo' },
       { id: 'security', label: 'Seguridad y Cifrado', icon: Lock, badge: 'Próximo' }
