@@ -8,27 +8,14 @@
 - ✅ CHANGELOG.md con historial de versiones
 - ✅ LICENSE MIT incluida
 - ✅ GitHub Actions CI/CD configurado
+- ✅ **Repositorio GitHub creado**: https://github.com/OmarMira/Coontabilidad
 
-## 📋 Pasos para Crear el Repositorio en GitHub
+## 📋 Comandos para Conectar y Subir
 
-### 1. Crear Repositorio en GitHub
-1. Ve a [GitHub.com](https://github.com)
-2. Haz clic en el botón **"New"** (verde) o **"+"** → **"New repository"**
-3. Configura el repositorio:
-   - **Repository name**: `Coontabilidad`
-   - **Description**: `Sistema de Coontabilidad Local-First especializado para negocios en Florida, USA`
-   - **Visibility**: ✅ **Public** (como solicitaste)
-   - **NO** marques "Add a README file" (ya tenemos uno)
-   - **NO** marques "Add .gitignore" (ya tenemos uno)
-   - **NO** marques "Choose a license" (ya tenemos MIT)
-4. Haz clic en **"Create repository"**
-
-### 2. Conectar Repositorio Local con GitHub
-Después de crear el repositorio, GitHub te mostrará instrucciones. Usa estas:
-
+### 1. Conectar Repositorio Local con GitHub
 ```bash
-# Agregar el remote origin (reemplaza TU-USUARIO con tu nombre de usuario de GitHub)
-git remote add origin https://github.com/TU-USUARIO/Coontabilidad.git
+# Agregar el remote origin
+git remote add origin https://github.com/OmarMira/Coontabilidad.git
 
 # Cambiar nombre de rama principal a main (estándar actual)
 git branch -M main
@@ -37,8 +24,18 @@ git branch -M main
 git push -u origin main
 ```
 
+### 2. Verificar Conexión (Opcional)
+```bash
+# Verificar que el remote esté configurado correctamente
+git remote -v
+
+# Debería mostrar:
+# origin  https://github.com/OmarMira/Coontabilidad.git (fetch)
+# origin  https://github.com/OmarMira/Coontabilidad.git (push)
+```
+
 ### 3. Verificar Subida
-Una vez completado, deberías ver:
+Una vez completado, deberías ver en https://github.com/OmarMira/Coontabilidad:
 - ✅ 83 archivos subidos
 - ✅ README.md mostrándose automáticamente
 - ✅ Badges de tecnologías visibles
