@@ -937,16 +937,15 @@ const createSchema = async (): Promise<void> => {
   // VISTAS PARA IA (SOLO LECTURA) - ESPECIFICACIÓN COMPLETA
   // ==========================================
 
-  // Vista de resumen financiero para IA
+  // Vista de resumen financiero para IA - ORDEN N°1 CORREGIDA
   db.run(`
     CREATE VIEW IF NOT EXISTS financial_summary AS
     SELECT 
-      account_type, 
-      COUNT(*) as cantidad_cuentas,
-      'activo' as estado
-    FROM chart_of_accounts
+      'balance_general' as reporte,
+      COUNT(CASE WHEN account_type = 'asset' THEN 1 END) as total_activos,
+      COUNT(CASE WHEN account_type IN ('liability', 'equity') THEN 1 END) as total_pasivos_patrimonio
+    FROM chart_of_accounts 
     WHERE is_active = 1
-    GROUP BY account_type
   `);
 
   // Vista de resumen de inventario para IA
@@ -961,18 +960,19 @@ const createSchema = async (): Promise<void> => {
     WHERE active = 1
   `);
 
-  // Vista de resumen de impuestos Florida para IA
+  // Vista de resumen de impuestos Florida para IA - ORDEN N°1
   db.run(`
-    CREATE VIEW IF NOT EXISTS tax_summary AS
+    CREATE VIEW IF NOT EXISTS tax_summary_florida AS
     SELECT 
-      c.florida_county as county,
+      t.county_name as county,
       COUNT(i.id) as facturas,
-      SUM(i.subtotal) as base_imponible,
+      SUM(i.total_amount) as base_imponible,
       SUM(i.tax_amount) as impuesto_calculado
     FROM invoices i
     JOIN customers c ON i.customer_id = c.id
+    JOIN florida_tax_rates t ON c.florida_county = t.county_name
     WHERE i.status = 'paid'
-    GROUP BY c.florida_county
+    GROUP BY t.county_name
   `);
 
   // Vista de resumen de auditoría para IA
@@ -1041,7 +1041,7 @@ const createSchema = async (): Promise<void> => {
   `);
 
   console.log('Database schema created successfully');
-  console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida');
+  console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN N°1 IMPLEMENTADA');
 };
 
 // Insertar datos de ejemplo
