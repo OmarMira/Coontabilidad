@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, TrendingUp, FileText, Shield } from 'lucide-react';
 import { 
   initDB, addCustomer, getCustomers, updateCustomer, deleteCustomer, canDeleteCustomer, getStatsWithSuppliers, isDatabaseReady, Customer,
   getInvoices, getInvoiceById, createInvoice, updateInvoice, deleteInvoice, getActiveProducts, Invoice, Product, InvoiceItem,
@@ -84,7 +84,6 @@ interface AppState {
   showingInvoiceForm: boolean;
   showingProductForm: boolean;
   showingProductCategoryForm: boolean;
-  showingIAPanel: boolean;
   initializationStep: string;
   currentSection: string;
 }
@@ -119,7 +118,6 @@ function App() {
     showingInvoiceForm: false,
     showingProductForm: false,
     showingProductCategoryForm: false,
-    showingIAPanel: false,
     initializationStep: 'Iniciando...',
     currentSection: 'dashboard'
   });
@@ -1622,6 +1620,81 @@ function App() {
           </div>
         );
 
+      case 'reports':
+        return (
+          <div className="space-y-6">
+            {/* Cabecera de Reportes Fiscales */}
+            <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-lg p-6 border border-purple-700/50">
+              <div className="flex items-center space-x-4">
+                <TrendingUp className="w-8 h-8 text-purple-400" />
+                <div>
+                  <h1 className="text-2xl font-bold text-white mb-2">
+                    Reportes Fiscales de Florida
+                  </h1>
+                  <p className="text-purple-200">
+                    Análisis financiero completo y reportes de cumplimiento fiscal
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Reportes adicionales */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-green-400" />
+                  Reporte DR-15 Florida
+                </h3>
+                <p className="text-gray-400 mb-4">
+                  Generar reporte oficial de impuestos sobre ventas para el estado de Florida
+                </p>
+                <button 
+                  onClick={() => handleNavigate('florida-dr15')}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Generar DR-15
+                </button>
+              </div>
+
+              <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-blue-400" />
+                  Backup y Restauración
+                </h3>
+                <p className="text-gray-400 mb-4">
+                  Crear respaldos cifrados de tus datos financieros
+                </p>
+                <button 
+                  onClick={() => handleNavigate('backups')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Gestionar Backups
+                </button>
+              </div>
+            </div>
+
+            {/* Panel de IA integrado - Aparece como una sección más */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+              <div className="flex items-center space-x-3 mb-6">
+                <Brain className="w-6 h-6 text-blue-400" />
+                <div>
+                  <h2 className="text-xl font-semibold text-white">Análisis Financiero Inteligente</h2>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Shield className="w-3 h-3 text-green-400" />
+                    <span className="text-sm text-green-400 font-medium">Solo-Lectura</span>
+                    <span className="text-sm text-gray-400">• Acceso exclusivo a vistas _summary</span>
+                  </div>
+                </div>
+              </div>
+              
+              <IAPanel
+                isVisible={true}
+                onClose={() => {}}
+              />
+            </div>
+          </div>
+        );
+
       case 'financial-reports':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1695,17 +1768,14 @@ function App() {
         );
 
       case 'ai-assistant':
-        // Activar el panel de IA y mostrar información
-        if (!state.showingIAPanel) {
-          setState(prev => ({ ...prev, showingIAPanel: true }));
-        }
+        // Redirigir al usuario a la sección de reportes donde está integrado el IA Panel
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
             <h2 className="text-2xl font-semibold text-white mb-4">Asistente IA</h2>
             <p className="text-gray-400 mb-6">Asistente inteligente para consultas contables</p>
             <div className="bg-purple-900/20 border border-purple-700 rounded-lg p-4 mb-6">
-              <p className="text-purple-300 text-sm">🤖 IA No Intrusiva Activada</p>
-              <p className="text-purple-200 text-xs mt-1">Panel flotante disponible en la esquina inferior derecha</p>
+              <p className="text-purple-300 text-sm">🤖 IA No Intrusiva Integrada</p>
+              <p className="text-purple-200 text-xs mt-1">Ahora disponible en la sección de Reportes Fiscales</p>
             </div>
             <div className="space-y-4 text-left max-w-2xl mx-auto">
               <div className="bg-gray-700 rounded-lg p-4">
@@ -1729,10 +1799,10 @@ function App() {
               </div>
             </div>
             <button 
-              onClick={() => setState(prev => ({ ...prev, showingIAPanel: true }))}
+              onClick={() => handleNavigate('reports')}
               className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors mt-4"
             >
-              Abrir Panel de IA
+              Ir a Reportes Fiscales
             </button>
           </div>
         );
@@ -1826,23 +1896,6 @@ function App() {
           </div>
         </footer>
       </div>
-
-      {/* Botón flotante de IA */}
-      {!state.showingIAPanel && (
-        <button
-          onClick={() => setState(prev => ({ ...prev, showingIAPanel: true }))}
-          className="fixed bottom-20 right-4 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40"
-          title="Abrir Asistente IA"
-        >
-          <Brain className="w-6 h-6" />
-        </button>
-      )}
-
-      {/* Panel de IA */}
-      <IAPanel
-        isVisible={state.showingIAPanel}
-        onClose={() => setState(prev => ({ ...prev, showingIAPanel: false }))}
-      />
 
       {/* Asistente Conversacional */}
       <FinancialAssistantChat />

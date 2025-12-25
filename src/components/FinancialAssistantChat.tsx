@@ -22,7 +22,7 @@ import {
   TrendingUp,
   RefreshCw
 } from 'lucide-react';
-import ConversationalIAService, { ConversationResponse } from '../services/ConversationalIAService';
+import { ConversationalIAService, ConversationResponse } from '../services/ConversationalIAService';
 import { logger } from '../core/logging/SystemLogger';
 
 interface Message {
@@ -100,7 +100,7 @@ export const FinancialAssistantChat: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim() || isProcessing) return;
 
-    // Add user message
+    // Agregar mensaje del usuario
     const userMessage: Message = {
       id: messages.length + 1,
       role: 'user',
@@ -118,10 +118,11 @@ export const FinancialAssistantChat: React.FC = () => {
     try {
       logger.info('FinancialAssistant', 'user_query', 'Usuario realizó consulta', { query: userQuery });
 
-      // Process with conversational AI
-      const response: ConversationResponse = await ConversationalIAService.processQuery(userQuery);
+      // 🔥 PROCESAR CON EL MOTOR REAL
+      const service = ConversationalIAService.getInstance();
+      const response = await service.processQuery(userQuery);
 
-      // Add assistant response
+      // Formatear respuesta
       const assistantMessage: Message = {
         id: messages.length + 2,
         role: 'assistant',
@@ -133,7 +134,7 @@ export const FinancialAssistantChat: React.FC = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Add suggestions if available
+      // Agregar sugerencias si están disponibles
       if (response.suggestions && response.suggestions.length > 0) {
         const suggestionsMessage: Message = {
           id: messages.length + 3,
@@ -147,6 +148,7 @@ export const FinancialAssistantChat: React.FC = () => {
 
       logger.info('FinancialAssistant', 'response_success', 'Respuesta generada exitosamente', { 
         query: userQuery,
+        intent: response.metadata.intent,
         hasData: !!response.data,
         requiresAttention: response.requiresAttention
       });
@@ -156,6 +158,8 @@ export const FinancialAssistantChat: React.FC = () => {
         id: messages.length + 2,
         role: 'assistant',
         content: `❌ **No pude procesar tu consulta**
+
+**Error:** ${error instanceof Error ? error.message : 'Error desconocido'}
 
 **Posibles causas:**
 • La pregunta requiere acceso a datos no disponibles para IA
@@ -259,17 +263,17 @@ export const FinancialAssistantChat: React.FC = () => {
                     <Bot className="h-5 w-5 mr-2 text-purple-600" />
                   )}
                   <div className="flex-1">
-                    <div className="font-medium">
+                    <div className="font-semibold text-gray-800">
                       {msg.role === 'user' ? 'Tú' : 'Asistente Financiero'}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-700 font-medium">
                       {msg.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
                 </div>
-                <div className="prose prose-sm max-w-none">
+                <div className="prose prose-sm max-w-none text-gray-800">
                   {msg.content.split('\n').map((line, i) => (
-                    <p key={i} className="mb-2 last:mb-0">{line}</p>
+                    <p key={i} className="mb-2 last:mb-0 text-gray-800">{line}</p>
                   ))}
                 </div>
               </div>
@@ -283,7 +287,7 @@ export const FinancialAssistantChat: React.FC = () => {
                   <Bot className="h-5 w-5 mr-2 text-purple-600" />
                   <div className="flex space-x-1">
                     <RefreshCw className="h-4 w-4 animate-spin text-purple-600" />
-                    <span className="text-sm text-gray-600">Analizando...</span>
+                    <span className="text-sm text-gray-800 font-medium">Analizando...</span>
                   </div>
                 </div>
               </div>
@@ -295,12 +299,12 @@ export const FinancialAssistantChat: React.FC = () => {
 
         {/* Quick Questions */}
         <div className="border-t p-3 bg-gray-50">
-          <div className="text-sm font-medium text-gray-600 mb-2">Preguntas rápidas:</div>
+          <div className="text-sm font-semibold text-gray-800 mb-2">Preguntas rápidas:</div>
           <div className="flex flex-wrap gap-2">
             {quickQuestions.map((q, idx) => (
               <button
                 key={idx}
-                className="text-xs px-3 py-1 bg-white border border-gray-200 rounded-full hover:bg-blue-50 hover:border-blue-200 transition-colors flex items-center"
+                className="text-xs px-3 py-1 bg-white border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-200 transition-colors flex items-center text-gray-800 font-medium"
                 onClick={() => handleQuickQuestion(q)}
                 disabled={isProcessing}
               >
@@ -320,7 +324,7 @@ export const FinancialAssistantChat: React.FC = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
               disabled={isProcessing}
-              className="flex-1 min-h-[60px] resize-none border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 min-h-[60px] resize-none border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
             />
             <button
               onClick={handleSend}
@@ -334,7 +338,7 @@ export const FinancialAssistantChat: React.FC = () => {
               )}
             </button>
           </div>
-          <div className="text-xs text-gray-500 mt-2 text-center">
+          <div className="text-sm text-gray-800 font-medium mt-2 text-center">
             💡 Tip: Sé específico en tus preguntas para obtener mejores respuestas
           </div>
         </div>
