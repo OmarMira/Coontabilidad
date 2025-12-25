@@ -44,6 +44,7 @@ import { ProductDetailView } from './components/ProductDetailView';
 import { ProductCategoryForm } from './components/ProductCategoryForm';
 import { ProductCategoryList } from './components/ProductCategoryList';
 import { IAPanel } from './components/IAPanel';
+import FinancialAssistantChat from './components/FinancialAssistantChat';
 import { FloridaTaxReport } from './components/FloridaTaxReport';
 import { BackupRestore } from './components/BackupRestore';
 
@@ -1842,6 +1843,9 @@ function App() {
         isVisible={state.showingIAPanel}
         onClose={() => setState(prev => ({ ...prev, showingIAPanel: false }))}
       />
+
+      {/* Asistente Conversacional */}
+      <FinancialAssistantChat />
     </div>
   );
 }
