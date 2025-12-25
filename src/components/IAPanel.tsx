@@ -33,7 +33,7 @@ export const IAPanel: React.FC<IAPanelProps> = ({ isVisible, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  // Función para obtener resumen financiero - CRITERIO DE ÉXITO
+  // Función para obtener resumen financiero - CRITERIO DE ÉXITO CORREGIDO
   const obtenerResumenFinanciero = async () => {
     setIsLoading(true);
     setError(null);
@@ -41,25 +41,26 @@ export const IAPanel: React.FC<IAPanelProps> = ({ isVisible, onClose }) => {
     try {
       logger.info('IAPanel', 'get_financial_summary', 'Usuario solicitó resumen financiero');
       
-      // Llamar al servicio IA con vista _summary - SOLO LECTURA
-      const data = iaService.querySummary('financial_summary');
+      // Llamar al servicio IA con vista _summary - CONEXIÓN REAL
+      const data = await iaService.querySummary('financial_summary');
       setFinancialData(data);
       setLastUpdate(new Date());
       
-      logger.info('IAPanel', 'financial_summary_success', 'Resumen financiero obtenido exitosamente', { 
-        recordsCount: data.length 
+      logger.info('IAPanel', 'financial_summary_success', 'Resumen financiero REAL obtenido exitosamente', { 
+        recordsCount: data.length,
+        sampleData: data.length > 0 ? data[0] : null
       });
       
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMsg);
-      logger.error('IAPanel', 'financial_summary_failed', 'Error al obtener resumen financiero', { error: errorMsg });
+      logger.error('IAPanel', 'financial_summary_failed', 'Error al obtener resumen financiero REAL', { error: errorMsg });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Función para obtener resumen de impuestos Florida
+  // Función para obtener resumen de impuestos Florida - CONEXIÓN REAL
   const obtenerResumenImpuestos = async () => {
     setIsLoading(true);
     setError(null);
@@ -67,19 +68,20 @@ export const IAPanel: React.FC<IAPanelProps> = ({ isVisible, onClose }) => {
     try {
       logger.info('IAPanel', 'get_tax_summary', 'Usuario solicitó resumen de impuestos');
       
-      // Llamar al servicio IA con vista _summary - SOLO LECTURA
-      const data = iaService.querySummary('tax_summary_florida');
+      // Llamar al servicio IA con vista _summary - CONEXIÓN REAL
+      const data = await iaService.querySummary('tax_summary_florida');
       setTaxData(data);
       setLastUpdate(new Date());
       
-      logger.info('IAPanel', 'tax_summary_success', 'Resumen de impuestos obtenido exitosamente', { 
-        recordsCount: data.length 
+      logger.info('IAPanel', 'tax_summary_success', 'Resumen de impuestos REAL obtenido exitosamente', { 
+        recordsCount: data.length,
+        sampleData: data.length > 0 ? data[0] : null
       });
       
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMsg);
-      logger.error('IAPanel', 'tax_summary_failed', 'Error al obtener resumen de impuestos', { error: errorMsg });
+      logger.error('IAPanel', 'tax_summary_failed', 'Error al obtener resumen de impuestos REAL', { error: errorMsg });
     } finally {
       setIsLoading(false);
     }
@@ -145,28 +147,24 @@ export const IAPanel: React.FC<IAPanelProps> = ({ isVisible, onClose }) => {
               </div>
             )}
 
-            {/* Datos Financieros */}
+            {/* Datos Financieros - ESTRUCTURA CORREGIDA */}
             {financialData.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium text-gray-900">Resumen Financiero:</h4>
+                <h4 className="font-medium text-gray-900">Resumen Financiero (Datos Reales):</h4>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left">Tipo de Cuenta</th>
+                        <th className="text-right">Cantidad</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {financialData.map((row, index) => (
-                        <React.Fragment key={index}>
-                          <tr>
-                            <td className="font-medium">Reporte:</td>
-                            <td>{row.reporte}</td>
-                          </tr>
-                          <tr>
-                            <td className="font-medium">Total Activos:</td>
-                            <td>${(row.total_activos || 0).toLocaleString()}</td>
-                          </tr>
-                          <tr>
-                            <td className="font-medium">Pasivos + Patrimonio:</td>
-                            <td>${(row.total_pasivos_patrimonio || 0).toLocaleString()}</td>
-                          </tr>
-                        </React.Fragment>
+                        <tr key={index}>
+                          <td className="font-medium">{row.account_type}</td>
+                          <td className="text-right">{row.cantidad_cuentas}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>

@@ -4,6 +4,9 @@ import { BasicEncryption } from '../core/security/BasicEncryption';
 import { logger } from '../core/logging/SystemLogger';
 
 let db: initSqlJs.Database | null = null;
+
+// Exportar la instancia de db para acceso externo
+export { db };
 let isInitialized = false;
 let opfsRoot: FileSystemDirectoryHandle | null = null;
 let dbFile: FileSystemFileHandle | null = null;
@@ -934,16 +937,15 @@ const createSchema = async (): Promise<void> => {
   // VISTAS PARA IA (SOLO LECTURA) - ORDEN N°1
   // ==========================================
 
-  // Vista de resumen financiero para IA (EXACTA según orden)
+  // Vista de resumen financiero para IA (CORREGIDA - usa esquema real)
   db.run(`
     CREATE VIEW IF NOT EXISTS financial_summary AS
     SELECT 
-      'balance_general' as reporte,
-      (SELECT COUNT(*) FROM chart_of_accounts WHERE account_type = 'asset' AND is_active = 1) as total_activos,
-      (SELECT COUNT(*) FROM chart_of_accounts WHERE account_type IN ('liability', 'equity') AND is_active = 1) as total_pasivos_patrimonio
-    FROM chart_of_accounts 
+      account_type, 
+      COUNT(*) as cantidad_cuentas
+    FROM chart_of_accounts
     WHERE is_active = 1
-    LIMIT 1
+    GROUP BY account_type
   `);
 
   // Vista de resumen de impuestos Florida para IA (EXACTA según orden)
@@ -1876,6 +1878,18 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
   }
 };
 
+// Función auxiliar para hash síncrono (para funciones no async)
+const generateSimpleHash = (auditData: any): string => {
+  const dataString = JSON.stringify(auditData);
+  let hash = 0;
+  for (let i = 0; i < dataString.length; i++) {
+    const char = dataString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16);
+};
+
 const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any): Promise<void> => {
   if (!db) return;
   
@@ -1924,19 +1938,6 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
   } catch (error) {
     logger.error('AuditSystem', 'log_event_failed', 'Error logging audit event', { tableName, recordId, action }, error as Error);
   }
-};
-
-// Generar hash para auditoría
-const generateAuditHash = (auditData: any): string => {
-  const dataString = JSON.stringify(auditData);
-  // Simple hash function (en producción usar crypto.subtle.digest)
-  let hash = 0;
-  for (let i = 0; i < dataString.length; i++) {
-    const char = dataString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash).toString(16);
 };
 
 // Obtener log de auditoría
@@ -5752,7 +5753,7 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
       'INSERT',
       JSON.stringify(auditData),
       1,
-      generateAuditHash(auditData)
+      generateSimpleHash(auditData)
     ]);
 
     logger.info('DR15', 'save_success', 'Reporte DR-15 guardado correctamente', { 
