@@ -934,23 +934,36 @@ const createSchema = async (): Promise<void> => {
   `);
 
   // ==========================================
-  // VISTAS PARA IA (SOLO LECTURA) - ORDEN N°1
+  // VISTAS PARA IA (SOLO LECTURA) - ESPECIFICACIÓN COMPLETA
   // ==========================================
 
-  // Vista de resumen financiero para IA (CORREGIDA - usa esquema real)
+  // Vista de resumen financiero para IA
   db.run(`
     CREATE VIEW IF NOT EXISTS financial_summary AS
     SELECT 
       account_type, 
-      COUNT(*) as cantidad_cuentas
+      COUNT(*) as cantidad_cuentas,
+      'activo' as estado
     FROM chart_of_accounts
     WHERE is_active = 1
     GROUP BY account_type
   `);
 
-  // Vista de resumen de impuestos Florida para IA (EXACTA según orden)
+  // Vista de resumen de inventario para IA
   db.run(`
-    CREATE VIEW IF NOT EXISTS tax_summary_florida AS
+    CREATE VIEW IF NOT EXISTS inventory_summary AS
+    SELECT 
+      'productos' as tipo,
+      COUNT(*) as total_productos,
+      SUM(CASE WHEN stock_quantity <= min_stock_level THEN 1 ELSE 0 END) as productos_bajo_stock,
+      SUM(stock_quantity) as stock_total
+    FROM products
+    WHERE active = 1
+  `);
+
+  // Vista de resumen de impuestos Florida para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS tax_summary AS
     SELECT 
       c.florida_county as county,
       COUNT(i.id) as facturas,
@@ -960,6 +973,71 @@ const createSchema = async (): Promise<void> => {
     JOIN customers c ON i.customer_id = c.id
     WHERE i.status = 'paid'
     GROUP BY c.florida_county
+  `);
+
+  // Vista de resumen de auditoría para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS audit_summary AS
+    SELECT 
+      table_name,
+      COUNT(*) as total_operaciones,
+      MAX(timestamp) as ultima_operacion,
+      COUNT(DISTINCT user_id) as usuarios_activos
+    FROM audit_log
+    WHERE timestamp >= date('now', '-30 days')
+    GROUP BY table_name
+    ORDER BY total_operaciones DESC
+  `);
+
+  // Vista de resumen de clientes para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS customers_summary AS
+    SELECT 
+      status,
+      COUNT(*) as cantidad_clientes,
+      AVG(credit_limit) as limite_credito_promedio,
+      florida_county
+    FROM customers
+    GROUP BY status, florida_county
+  `);
+
+  // Vista de resumen de facturas para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS invoices_summary AS
+    SELECT 
+      status,
+      COUNT(*) as cantidad_facturas,
+      SUM(total_amount) as monto_total,
+      AVG(total_amount) as monto_promedio,
+      strftime('%Y-%m', issue_date) as periodo
+    FROM invoices
+    GROUP BY status, strftime('%Y-%m', issue_date)
+    ORDER BY periodo DESC
+  `);
+
+  // Vista de alertas para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS alerts_summary AS
+    SELECT 
+      'facturas_vencidas' as tipo_alerta,
+      COUNT(*) as cantidad,
+      'high' as prioridad
+    FROM invoices 
+    WHERE status = 'overdue'
+    UNION ALL
+    SELECT 
+      'stock_bajo' as tipo_alerta,
+      COUNT(*) as cantidad,
+      'medium' as prioridad
+    FROM products 
+    WHERE stock_quantity <= min_stock_level AND active = 1
+    UNION ALL
+    SELECT 
+      'clientes_inactivos' as tipo_alerta,
+      COUNT(*) as cantidad,
+      'low' as prioridad
+    FROM customers 
+    WHERE status = 'inactive'
   `);
 
   console.log('Database schema created successfully');
