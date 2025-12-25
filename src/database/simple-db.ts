@@ -1516,7 +1516,7 @@ export const isDatabaseReady = (): boolean => {
   return ready;
 };
 
-export const addCustomer = (customerData: Partial<Customer>): number => {
+export const addCustomer = async (customerData: Partial<Customer>): Promise<number> => {
   logger.debug('CustomerModule', 'add_customer_start', 'Iniciando proceso de agregar cliente', { customerName: customerData.name });
   
   if (!db) {
@@ -1572,7 +1572,7 @@ export const addCustomer = (customerData: Partial<Customer>): number => {
     stmt.free();
     
     // Registrar en auditoría
-    logAuditEvent('customers', insertId, 'INSERT', null, customerData);
+    await logAuditEvent('customers', insertId, 'INSERT', null, customerData);
     
     // Confirmar transacción
     db.run('COMMIT');
@@ -1874,11 +1874,64 @@ export const deleteCustomer = (id: number): { success: boolean; message: string 
 };
 
 // Función de auditoría mejorada
-const logAuditEvent = (tableName: string, recordId: number, action: string, oldValues: any, newValues: any): void => {
+// Función para generar hash de auditoría con chaining
+const generateAuditHash = async (auditData: any): Promise<string> => {
+  try {
+    let previousHash = '0';
+    
+    // Si no se proporciona previousHash, obtenerlo de la base de datos
+    if (!auditData.previousHash) {
+      const lastHashResult = db?.exec(`
+        SELECT audit_hash FROM audit_log 
+        ORDER BY id DESC 
+        LIMIT 1
+      `);
+      
+      previousHash = lastHashResult?.[0]?.values?.[0]?.[0] as string || '0';
+    } else {
+      previousHash = auditData.previousHash;
+    }
+    
+    // Crear string para hash que incluye el hash anterior (chaining)
+    const dataToHash = JSON.stringify({
+      previousHash,
+      tableName: auditData.tableName,
+      recordId: auditData.recordId,
+      action: auditData.action,
+      oldValues: auditData.oldValues,
+      newValues: auditData.newValues,
+      timestamp: auditData.timestamp,
+      userId: auditData.userId
+    });
+    
+    // Generar hash SHA-256
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(dataToHash);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } else {
+      // Fallback simple hash para entornos sin Web Crypto API
+      let hash = 0;
+      for (let i = 0; i < dataToHash.length; i++) {
+        const char = dataToHash.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+      }
+      return Math.abs(hash).toString(16);
+    }
+  } catch (error) {
+    console.error('Error generating audit hash:', error);
+    return Date.now().toString(16); // Fallback timestamp-based hash
+  }
+};
+
+const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any): Promise<void> => {
   if (!db) return;
   
   try {
-    // Generar hash para integridad
+    // Generar datos de auditoría
     const auditData = {
       tableName,
       recordId,
@@ -1889,7 +1942,8 @@ const logAuditEvent = (tableName: string, recordId: number, action: string, oldV
       userId: 1 // TODO: Implementar sistema de usuarios
     };
     
-    const auditHash = generateAuditHash(auditData);
+    // Generar hash con chaining
+    const auditHash = await generateAuditHash(auditData);
     
     const stmt = db.prepare(`
       INSERT INTO audit_log (
@@ -1912,9 +1966,14 @@ const logAuditEvent = (tableName: string, recordId: number, action: string, oldV
     
     stmt.free();
     
-    console.log(`Audit event logged: ${action} on ${tableName} ID ${recordId}`);
+    logger.info('AuditSystem', 'log_event', `Audit event logged: ${action} on ${tableName} ID ${recordId}`, {
+      tableName,
+      recordId,
+      action,
+      auditHash: auditHash.substring(0, 8) + '...' // Log only first 8 chars for security
+    });
   } catch (error) {
-    console.error('Error logging audit event:', error);
+    logger.error('AuditSystem', 'log_event_failed', 'Error logging audit event', { tableName, recordId, action }, error as Error);
   }
 };
 
@@ -3730,6 +3789,143 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
 
 // Función auxiliar para auditoría (alias para compatibilidad)
 const logAuditAction = logAuditEvent;
+
+// Función para verificar integridad de la cadena de auditoría
+export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors: string[]; totalRecords: number }> => {
+  if (!db) {
+    return { isValid: false, errors: ['Database not initialized'], totalRecords: 0 };
+  }
+
+  try {
+    logger.info('AuditSystem', 'verify_integrity_start', 'Iniciando verificación de integridad de auditoría');
+
+    const result = db.exec(`
+      SELECT id, table_name, record_id, action, old_values, new_values, 
+             user_id, timestamp, audit_hash
+      FROM audit_log 
+      ORDER BY id ASC
+    `);
+
+    if (!result[0] || result[0].values.length === 0) {
+      return { isValid: true, errors: [], totalRecords: 0 };
+    }
+
+    const records = result[0].values;
+    const errors: string[] = [];
+    let previousHash = '0';
+
+    for (let i = 0; i < records.length; i++) {
+      const record = records[i];
+      const [id, tableName, recordId, action, oldValues, newValues, userId, timestamp, storedHash] = record;
+
+      // Recrear el hash esperado
+      const auditData = {
+        tableName,
+        recordId,
+        action,
+        oldValues,
+        newValues,
+        timestamp,
+        userId
+      };
+
+      const expectedHash = await generateAuditHash({
+        ...auditData,
+        previousHash
+      });
+
+      if (expectedHash !== storedHash) {
+        errors.push(`Record ID ${id}: Hash mismatch. Expected: ${expectedHash.substring(0, 8)}..., Found: ${storedHash?.toString().substring(0, 8)}...`);
+      }
+
+      previousHash = storedHash as string;
+    }
+
+    const isValid = errors.length === 0;
+    
+    logger.info('AuditSystem', 'verify_integrity_complete', 'Verificación de integridad completada', {
+      totalRecords: records.length,
+      isValid,
+      errorsFound: errors.length
+    });
+
+    return {
+      isValid,
+      errors,
+      totalRecords: records.length
+    };
+
+  } catch (error) {
+    logger.error('AuditSystem', 'verify_integrity_failed', 'Error al verificar integridad de auditoría', null, error as Error);
+    return {
+      isValid: false,
+      errors: [`Verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
+      totalRecords: 0
+    };
+  }
+};
+
+// Función para obtener estadísticas de auditoría
+export const getAuditStats = (): { totalRecords: number; byTable: Record<string, number>; byAction: Record<string, number>; lastRecord: string } => {
+  if (!db) {
+    return { totalRecords: 0, byTable: {}, byAction: {}, lastRecord: 'N/A' };
+  }
+
+  try {
+    // Total de registros
+    const totalResult = db.exec('SELECT COUNT(*) as count FROM audit_log');
+    const totalRecords = totalResult[0]?.values[0]?.[0] as number || 0;
+
+    // Por tabla
+    const tableResult = db.exec(`
+      SELECT table_name, COUNT(*) as count 
+      FROM audit_log 
+      GROUP BY table_name 
+      ORDER BY count DESC
+    `);
+    
+    const byTable: Record<string, number> = {};
+    if (tableResult[0]) {
+      tableResult[0].values.forEach(row => {
+        byTable[row[0] as string] = row[1] as number;
+      });
+    }
+
+    // Por acción
+    const actionResult = db.exec(`
+      SELECT action, COUNT(*) as count 
+      FROM audit_log 
+      GROUP BY action 
+      ORDER BY count DESC
+    `);
+    
+    const byAction: Record<string, number> = {};
+    if (actionResult[0]) {
+      actionResult[0].values.forEach(row => {
+        byAction[row[0] as string] = row[1] as number;
+      });
+    }
+
+    // Último registro
+    const lastResult = db.exec(`
+      SELECT timestamp FROM audit_log 
+      ORDER BY id DESC 
+      LIMIT 1
+    `);
+    const lastRecord = lastResult[0]?.values[0]?.[0] as string || 'N/A';
+
+    return {
+      totalRecords,
+      byTable,
+      byAction,
+      lastRecord
+    };
+
+  } catch (error) {
+    logger.error('AuditSystem', 'get_stats_failed', 'Error al obtener estadísticas de auditoría', null, error as Error);
+    return { totalRecords: 0, byTable: {}, byAction: {}, lastRecord: 'N/A' };
+  }
+};
 
 // ==========================================
 // FUNCIONES CRUD PARA PLAN DE CUENTAS
