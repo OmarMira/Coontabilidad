@@ -931,88 +931,37 @@ const createSchema = async (): Promise<void> => {
   `);
 
   // ==========================================
-  // VISTAS PARA IA (SOLO LECTURA)
+  // VISTAS PARA IA (SOLO LECTURA) - ORDEN N°1
   // ==========================================
 
-  // Vista de resumen financiero para IA
+  // Vista de resumen financiero para IA (EXACTA según orden)
   db.run(`
     CREATE VIEW IF NOT EXISTS financial_summary AS
     SELECT 
-      'balance_sheet' as report_type,
-      COALESCE(SUM(CASE 
-        WHEN coa.account_type = 'asset' THEN 
-          COALESCE(asset_balances.balance, 0)
-        ELSE 0 
-      END), 0) as total_assets,
-      COALESCE(SUM(CASE 
-        WHEN coa.account_type IN ('liability', 'equity') THEN 
-          COALESCE(liability_equity_balances.balance, 0)
-        ELSE 0 
-      END), 0) as total_liabilities_equity,
-      ABS(COALESCE(SUM(CASE 
-        WHEN coa.account_type = 'asset' THEN 
-          COALESCE(asset_balances.balance, 0)
-        ELSE 0 
-      END), 0) - COALESCE(SUM(CASE 
-        WHEN coa.account_type IN ('liability', 'equity') THEN 
-          COALESCE(liability_equity_balances.balance, 0)
-        ELSE 0 
-      END), 0)) as imbalance,
-      date('now') as period
-    FROM chart_of_accounts coa
-    LEFT JOIN (
-      SELECT 
-        jd.account_code,
-        SUM(jd.debit_amount - jd.credit_amount) as balance
-      FROM journal_details jd
-      JOIN chart_of_accounts coa ON jd.account_code = coa.account_code
-      WHERE coa.account_type = 'asset'
-      GROUP BY jd.account_code
-    ) asset_balances ON coa.account_code = asset_balances.account_code
-    LEFT JOIN (
-      SELECT 
-        jd.account_code,
-        SUM(jd.credit_amount - jd.debit_amount) as balance
-      FROM journal_details jd
-      JOIN chart_of_accounts coa ON jd.account_code = coa.account_code
-      WHERE coa.account_type IN ('liability', 'equity')
-      GROUP BY jd.account_code
-    ) liability_equity_balances ON coa.account_code = liability_equity_balances.account_code
-    WHERE coa.is_active = 1
+      'balance_general' as reporte,
+      (SELECT COUNT(*) FROM chart_of_accounts WHERE account_type = 'asset' AND is_active = 1) as total_activos,
+      (SELECT COUNT(*) FROM chart_of_accounts WHERE account_type IN ('liability', 'equity') AND is_active = 1) as total_pasivos_patrimonio
+    FROM chart_of_accounts 
+    WHERE is_active = 1
+    LIMIT 1
   `);
 
-  // Vista de resumen de impuestos para IA
+  // Vista de resumen de impuestos Florida para IA (EXACTA según orden)
   db.run(`
-    CREATE VIEW IF NOT EXISTS tax_summary AS
+    CREATE VIEW IF NOT EXISTS tax_summary_florida AS
     SELECT 
-      strftime('%Y-%m', i.issue_date) as period,
-      SUM(i.total_amount) as total_sales,
-      SUM(i.subtotal) as taxable_sales,
-      SUM(CASE WHEN c.tax_exempt = 1 THEN i.subtotal ELSE 0 END) as exempt_sales,
-      SUM(i.tax_amount) as total_tax_collected
+      c.florida_county as county,
+      COUNT(i.id) as facturas,
+      SUM(i.subtotal) as base_imponible,
+      SUM(i.tax_amount) as impuesto_calculado
     FROM invoices i
-    LEFT JOIN customers c ON i.customer_id = c.id
+    JOIN customers c ON i.customer_id = c.id
     WHERE i.status = 'paid'
-    GROUP BY strftime('%Y-%m', i.issue_date)
-    ORDER BY period DESC
-  `);
-
-  // Vista de resumen de auditoría para IA
-  db.run(`
-    CREATE VIEW IF NOT EXISTS audit_summary AS
-    SELECT 
-      table_name,
-      action,
-      COUNT(*) as operation_count,
-      date(timestamp) as operation_date,
-      COUNT(DISTINCT user_id) as unique_users
-    FROM audit_log
-    WHERE timestamp >= date('now', '-30 days')
-    GROUP BY table_name, action, date(timestamp)
-    ORDER BY operation_date DESC, operation_count DESC
+    GROUP BY c.florida_county
   `);
 
   console.log('Database schema created successfully');
+  console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida');
 };
 
 // Insertar datos de ejemplo
