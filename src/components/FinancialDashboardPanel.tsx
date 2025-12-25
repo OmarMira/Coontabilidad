@@ -25,7 +25,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { iaService } from '../services/IAService';
+import { iaService, IAResponse } from '../services/IAService';
 import { logger } from '../core/logging/SystemLogger';
 
 interface DashboardData {
@@ -77,23 +77,8 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     try {
       logger.info('FinancialDashboard', 'load_data', 'Cargando datos del dashboard financiero');
       
-      // Obtener datos de vistas _summary directamente
-      const [financialData, taxData] = await Promise.all([
-        iaService.querySummary('financial_summary'),
-        iaService.querySummary('tax_summary_florida')
-      ]);
-      
-      // Crear estructura de análisis compatible
-      const analysis = {
-        data: {
-          financial: financialData,
-          invoices: [], // Simular datos de facturas
-          taxes: taxData
-        },
-        alerts: ['✅ ESTADO: Sistema funcionando correctamente'],
-        actions: ['👉 ACCIÓN: Continuar monitoreando métricas del negocio'],
-        analysis: '🔍 ANÁLISIS: Dashboard cargado desde vistas _summary'
-      };
+      // Obtener análisis completo del sistema restaurado
+      const analysis = await iaService.analyzeFinancialHealth();
       
       // Convertir a formato de dashboard
       const dashboardData: DashboardData = {
