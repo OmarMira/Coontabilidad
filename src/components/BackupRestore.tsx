@@ -129,7 +129,9 @@ export const BackupRestore: React.FC = () => {
 
   const showMessage = (type: 'success' | 'error' | 'warning', text: string) => {
     setMessage({ type, text });
-    setTimeout(() => setMessage(null), 5000);
+    // Mensajes de éxito más largos necesitan más tiempo para leer
+    const timeout = type === 'success' && text.length > 100 ? 8000 : 5000;
+    setTimeout(() => setMessage(null), timeout);
   };
 
   const validateExportForm = (): string | null => {
@@ -168,7 +170,15 @@ export const BackupRestore: React.FC = () => {
         // Recargar información del sistema
         loadSystemInfo();
         
-        showMessage('success', result.message);
+        // Mensaje de éxito más detallado
+        const successMessage = `✅ Backup creado exitosamente!\n\n` +
+          `📁 Archivo: ${result.filename}\n` +
+          `📊 Tamaño: ${result.size ? formatFileSize(result.size) : 'N/A'}\n` +
+          `🕒 Fecha: ${new Date().toLocaleString()}\n` +
+          `🔒 Cifrado: AES-256-GCM\n\n` +
+          `El archivo se ha descargado automáticamente a su carpeta de Descargas.`;
+        
+        showMessage('success', successMessage);
         
         // Limpiar formulario
         setExportPassword('');
@@ -225,7 +235,16 @@ export const BackupRestore: React.FC = () => {
       const result = await backupService.restoreFromAex(selectedFile, importPassword);
 
       if (result.success) {
-        showMessage('success', result.message);
+        // Mensaje de éxito más detallado para restauración
+        const successMessage = `✅ Restauración completada exitosamente!\n\n` +
+          `📁 Archivo: ${selectedFile.name}\n` +
+          `📊 Tablas restauradas: ${result.restored_tables || 'N/A'}\n` +
+          `📋 Registros restaurados: ${result.restored_records || 'N/A'}\n` +
+          `🕒 Fecha: ${new Date().toLocaleString()}\n\n` +
+          `Todos sus datos han sido restaurados correctamente.\n` +
+          `Se recomienda recargar la página para ver los cambios.`;
+        
+        showMessage('success', successMessage);
         
         // Limpiar formulario
         setSelectedFile(null);
@@ -234,12 +253,14 @@ export const BackupRestore: React.FC = () => {
           fileInputRef.current.value = '';
         }
 
-        // Sugerir recargar la página
+        // Sugerir recargar la página con mensaje más claro
         setTimeout(() => {
-          if (window.confirm('Backup restaurado exitosamente. ¿Desea recargar la página para ver los cambios?')) {
+          if (window.confirm('🔄 Restauración completada exitosamente!\n\n' +
+            'Para ver todos los cambios correctamente, se recomienda recargar la página.\n\n' +
+            '¿Desea recargar la página ahora?')) {
             window.location.reload();
           }
-        }, 2000);
+        }, 3000);
 
         logger.info('BackupRestore', 'restore_success', 'Backup restaurado por usuario', {
           tables: result.restored_tables,
@@ -304,22 +325,33 @@ export const BackupRestore: React.FC = () => {
 
       {/* Mensajes */}
       {message && (
-        <div className={`rounded-lg p-4 ${
+        <div className={`rounded-lg p-6 ${
           message.type === 'success' ? 'bg-green-900/20 border border-green-700' :
           message.type === 'error' ? 'bg-red-900/20 border border-red-700' :
           'bg-yellow-900/20 border border-yellow-700'
         }`}>
-          <div className="flex items-center space-x-2">
-            {message.type === 'success' && <CheckCircle className="w-5 h-5 text-green-400" />}
-            {message.type === 'error' && <AlertTriangle className="w-5 h-5 text-red-400" />}
-            {message.type === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-400" />}
-            <span className={`${
+          <div className="flex items-start space-x-3">
+            {message.type === 'success' && <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" />}
+            {message.type === 'error' && <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />}
+            {message.type === 'warning' && <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />}
+            <div className={`flex-1 ${
               message.type === 'success' ? 'text-green-300' :
               message.type === 'error' ? 'text-red-300' :
               'text-yellow-300'
             }`}>
-              {message.text}
-            </span>
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                {message.text}
+              </pre>
+            </div>
+            <button
+              onClick={() => setMessage(null)}
+              className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
+              title="Cerrar mensaje"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
