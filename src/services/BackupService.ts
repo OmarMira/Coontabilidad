@@ -409,7 +409,17 @@ class BackupService {
       this.db.exec('PRAGMA foreign_keys=OFF');
 
       try {
-        // 8. Recrear esquema de tablas
+        // 8. Limpiar tablas problemáticas antes de recrear esquema
+        try {
+          // Limpiar system_logs para evitar conflictos de ID
+          this.db.exec('DELETE FROM system_logs WHERE 1=1');
+          logger.info('BackupService', 'table_cleared', 'Tabla system_logs limpiada para evitar conflictos');
+        } catch (error) {
+          // Si no existe la tabla, no es problema
+          logger.info('BackupService', 'table_clear_skip', 'Tabla system_logs no existe, continuando');
+        }
+
+        // 9. Recrear esquema de tablas
         for (const [tableName, createSQL] of Object.entries(backupData.schema)) {
           try {
             // Eliminar tabla si existe
@@ -425,22 +435,38 @@ class BackupService {
           }
         }
 
-        // 9. Restaurar datos
+        // 10. Restaurar datos
         for (const [tableName, records] of Object.entries(backupData.tables)) {
           if (records.length === 0) continue;
 
           try {
-            // Obtener columnas de la primera fila
-            const columns = Object.keys(records[0]);
-            const placeholders = columns.map(() => '?').join(', ');
-            const columnNames = columns.join(', ');
+            // Manejo especial para tablas con auto-incremento como system_logs
+            if (tableName === 'system_logs') {
+              // Para system_logs, insertar sin el campo ID para evitar conflictos
+              const columns = Object.keys(records[0]).filter(col => col !== 'id');
+              const placeholders = columns.map(() => '?').join(', ');
+              const columnNames = columns.join(', ');
 
-            const insertSQL = `INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`;
+              const insertSQL = `INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`;
 
-            // Insertar cada registro
-            for (const record of records) {
-              const values = columns.map(col => record[col]);
-              this.db.exec(insertSQL, values);
+              // Insertar cada registro sin el ID
+              for (const record of records) {
+                const values = columns.map(col => record[col]);
+                this.db.exec(insertSQL, values);
+              }
+            } else {
+              // Para otras tablas, usar el método normal
+              const columns = Object.keys(records[0]);
+              const placeholders = columns.map(() => '?').join(', ');
+              const columnNames = columns.join(', ');
+
+              const insertSQL = `INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`;
+
+              // Insertar cada registro
+              for (const record of records) {
+                const values = columns.map(col => record[col]);
+                this.db.exec(insertSQL, values);
+              }
             }
 
             restoredTables++;
@@ -449,10 +475,23 @@ class BackupService {
             logger.info('BackupService', 'table_restored', `Tabla ${tableName} restaurada`, { 
               records: records.length 
             });
+            });
 
           } catch (error) {
-            logger.error('BackupService', 'table_restore_error', `Error restaurando datos de ${tableName}`, null, error as Error);
-            throw new Error(`Error restaurando datos de ${tableName}: ${error}`);
+            // Manejo especial de errores para diferentes tipos de tablas
+            const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+            
+            if (tableName === 'system_logs' && errorMsg.includes('UNIQUE constraint')) {
+              // Para system_logs, si hay conflicto UNIQUE, omitir y continuar
+              logger.warn('BackupService', 'table_restore_warning', `Tabla ${tableName} omitida por conflicto UNIQUE`, { 
+                error: errorMsg 
+              });
+              continue; // Continuar con la siguiente tabla
+            } else {
+              // Para otras tablas, el error es crítico
+              logger.error('BackupService', 'table_restore_error', `Error restaurando datos de ${tableName}`, null, error as Error);
+              throw new Error(`Error restaurando datos de ${tableName}: ${errorMsg}`);
+            }
           }
         }
 
