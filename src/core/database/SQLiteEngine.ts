@@ -5,7 +5,7 @@ export class SQLiteEngine {
 
     async initialize(databaseName: string = 'accountexpress.db'): Promise<void> {
         // 1. Verificar compatibilidad OPFS
-        if (!('storage' in navigator && 'getDirectory' in navigator.storage)) {
+        if (!('storage' in navigator && navigator.storage && 'getDirectory' in navigator.storage)) {
             throw new Error('OPFS no disponible - navegador incompatible');
         }
 

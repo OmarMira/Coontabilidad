@@ -38,10 +38,19 @@ async function initializeKey(payload: { password: string, salt: Uint8Array, conf
         ['deriveKey']
     );
 
+    // Ensure salt is ArrayBuffer, not SharedArrayBuffer
+    let saltBuffer: ArrayBuffer;
+    if (salt.buffer instanceof SharedArrayBuffer) {
+        saltBuffer = new ArrayBuffer(salt.byteLength);
+        new Uint8Array(saltBuffer).set(salt);
+    } else {
+        saltBuffer = salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength);
+    }
+
     key = await crypto.subtle.deriveKey(
         {
             name: 'PBKDF2',
-            salt,
+            salt: saltBuffer,
             iterations: config.iterations,
             hash: config.hash
         },

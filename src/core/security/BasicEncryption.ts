@@ -16,7 +16,15 @@ export class BasicEncryption {
     );
     
     // Ensure salt is proper ArrayBuffer type
-    const saltBuffer = salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength);
+    const saltBuffer: ArrayBuffer = salt.buffer instanceof SharedArrayBuffer ? 
+      new ArrayBuffer(salt.byteLength).slice(0) : 
+      salt.buffer.slice(salt.byteOffset, salt.byteOffset + salt.byteLength);
+    
+    // Copy data if SharedArrayBuffer
+    if (salt.buffer instanceof SharedArrayBuffer) {
+      const tempArray = new Uint8Array(saltBuffer);
+      tempArray.set(new Uint8Array(salt.buffer, salt.byteOffset, salt.byteLength));
+    }
     
     return await crypto.subtle.deriveKey(
       {
@@ -50,13 +58,25 @@ export class BasicEncryption {
       const key = await this.deriveKey(password, salt);
       
       // Ensure data is proper ArrayBuffer type
-      const dataBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const dataBuffer: ArrayBuffer = data.buffer instanceof SharedArrayBuffer ?
+        (() => {
+          const newBuffer = new ArrayBuffer(data.byteLength);
+          new Uint8Array(newBuffer).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+          return newBuffer;
+        })() : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
       
       // Cifrar
+      const ivBuffer: ArrayBuffer = iv.buffer instanceof SharedArrayBuffer ?
+        (() => {
+          const newBuffer = new ArrayBuffer(iv.byteLength);
+          new Uint8Array(newBuffer).set(new Uint8Array(iv.buffer, iv.byteOffset, iv.byteLength));
+          return newBuffer;
+        })() : iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength);
+        
       const encrypted = await crypto.subtle.encrypt(
         {
           name: this.ALGORITHM,
-          iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength)
+          iv: ivBuffer
         },
         key,
         dataBuffer
@@ -85,8 +105,19 @@ export class BasicEncryption {
       const key = await this.deriveKey(password, salt);
       
       // Ensure proper ArrayBuffer types
-      const encryptedBuffer = encryptedData.buffer.slice(encryptedData.byteOffset, encryptedData.byteOffset + encryptedData.byteLength);
-      const ivBuffer = iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength);
+      const encryptedBuffer: ArrayBuffer = encryptedData.buffer instanceof SharedArrayBuffer ?
+        (() => {
+          const newBuffer = new ArrayBuffer(encryptedData.byteLength);
+          new Uint8Array(newBuffer).set(new Uint8Array(encryptedData.buffer, encryptedData.byteOffset, encryptedData.byteLength));
+          return newBuffer;
+        })() : encryptedData.buffer.slice(encryptedData.byteOffset, encryptedData.byteOffset + encryptedData.byteLength);
+        
+      const ivBuffer: ArrayBuffer = iv.buffer instanceof SharedArrayBuffer ?
+        (() => {
+          const newBuffer = new ArrayBuffer(iv.byteLength);
+          new Uint8Array(newBuffer).set(new Uint8Array(iv.buffer, iv.byteOffset, iv.byteLength));
+          return newBuffer;
+        })() : iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength);
       
       // Descifrar
       const decrypted = await crypto.subtle.decrypt(
@@ -122,7 +153,12 @@ export class BasicEncryption {
     }
     
     // Ensure proper ArrayBuffer type
-    const dataBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    const dataBuffer: ArrayBuffer = data.buffer instanceof SharedArrayBuffer ?
+      (() => {
+        const newBuffer = new ArrayBuffer(data.byteLength);
+        new Uint8Array(newBuffer).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+        return newBuffer;
+      })() : data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
     const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -138,7 +174,14 @@ export class BasicEncryption {
         const reader = stream.readable.getReader();
         
         // Escribir datos
-        await writer.write(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
+        const buffer: ArrayBuffer = data.buffer instanceof SharedArrayBuffer ?
+          (() => {
+            const newBuffer = new ArrayBuffer(data.byteLength);
+            new Uint8Array(newBuffer).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+            return newBuffer;
+          })() : data.buffer;
+        const bufferSlice = buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+        await writer.write(bufferSlice);
         await writer.close();
         
         // Leer datos comprimidos

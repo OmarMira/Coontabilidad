@@ -475,7 +475,6 @@ class BackupService {
             logger.info('BackupService', 'table_restored', `Tabla ${tableName} restaurada`, { 
               records: records.length 
             });
-            });
 
           } catch (error) {
             // Manejo especial de errores para diferentes tipos de tablas
