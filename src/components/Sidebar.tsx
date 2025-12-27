@@ -53,6 +53,7 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'system-config', label: 'Configuración del Sistema', icon: Settings, badge: 'Próximo' },
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2, badge: 'Activo' },
+      { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard, badge: 'NEW' },
       { id: 'users', label: 'Usuarios y Roles', icon: UserCheck, badge: 'Próximo' },
       { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive, badge: 'NEW' },
       { id: 'system-logs', label: 'Logs del Sistema', icon: Activity, badge: 'Activo' },
@@ -67,7 +68,7 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'suppliers', label: 'Proveedores', icon: Building2, badge: 'Activo' },
       { id: 'bills-payable', label: 'Facturas de Compra', icon: FileText, badge: 'Activo' },
-      { id: 'supplier-payments', label: 'Pagos a Proveedores', icon: CreditCard, badge: 'Próximo' },
+      { id: 'supplier-payments', label: 'Pagos a Proveedores', icon: CreditCard, badge: 'Activo' },
       { id: 'purchase-orders', label: 'Órdenes de Compra', icon: ShoppingCart, badge: 'Próximo' },
       { id: 'payable-reports', label: 'Reportes de Proveedores', icon: BarChart3, badge: 'Próximo' }
     ]
@@ -79,7 +80,7 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'customers', label: 'Clientes', icon: Users, badge: 'Activo' },
       { id: 'invoices', label: 'Facturas de Venta', icon: FileText, badge: 'Activo' },
-      { id: 'customer-payments', label: 'Pagos de Clientes', icon: CreditCard, badge: 'Próximo' },
+      { id: 'customer-payments', label: 'Pagos de Clientes', icon: CreditCard, badge: 'Activo' },
       { id: 'quotes', label: 'Cotizaciones', icon: FileText, badge: 'Próximo' },
       { id: 'receivable-reports', label: 'Reportes de Clientes', icon: BarChart3, badge: 'Próximo' }
     ]
@@ -90,8 +91,8 @@ const menuItems: MenuItem[] = [
     icon: Calculator,
     children: [
       { id: 'chart-accounts', label: 'Plan de Cuentas', icon: FileText, badge: 'Activo' },
-      { id: 'journal-entries', label: 'Asientos Contables', icon: FileText, badge: 'Próximo' },
-      { id: 'general-ledger', label: 'Libro Mayor', icon: Database, badge: 'Próximo' },
+      { id: 'journal-entries', label: 'Asientos Contables', icon: FileText, badge: 'Activo' },
+      { id: 'general-ledger', label: 'Libro Mayor', icon: Database, badge: 'Activo' },
       { id: 'balance-sheet', label: 'Balance General', icon: BarChart3, badge: 'Activo' },
       { id: 'income-statement', label: 'Estado de Resultados', icon: BarChart3, badge: 'Activo' },
       { id: 'trial-balance', label: 'Balance de Comprobación', icon: BarChart3, badge: 'Próximo' },

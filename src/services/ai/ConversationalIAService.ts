@@ -1,7 +1,7 @@
-import { QueryProcessor, AIResponse as LegacyAIResponse } from './AIEngine/QueryProcessor';
-import { SYSTEM_GUIDES, ACCOUNTING_KNOWLEDGE } from '../knowledge/SystemKnowledge';
-import { DeepSeekService } from './ai/DeepSeekService';
-import { DeepSeekAIResponse } from './ai/types';
+import { QueryProcessor, AIResponse as LegacyAIResponse } from '../AIEngine/QueryProcessor';
+import { SYSTEM_GUIDES, ACCOUNTING_KNOWLEDGE } from '../../knowledge/SystemKnowledge';
+import { DeepSeekService } from './DeepSeekService';
+import { DeepSeekAIResponse } from './types';
 
 export interface ConversationResponse {
   content: string;

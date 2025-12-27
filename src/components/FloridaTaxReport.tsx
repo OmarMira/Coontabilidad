@@ -32,15 +32,19 @@ import {
   getAvailableDR15Periods,
   FloridaDR15Report 
 } from '../database/simple-db';
+import { getFloridaCountyNames } from '../data/floridaCounties';
 import { logger } from '../core/logging/SystemLogger';
 
 export const FloridaTaxReport: React.FC = () => {
   const [reports, setReports] = useState<FloridaDR15Report[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>('');
+  const [selectedCounty, setSelectedCounty] = useState<string>('');
   const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
+  const [floridaCounties, setFloridaCounties] = useState<string[]>([]);
   const [currentReport, setCurrentReport] = useState<FloridaDR15Report | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calculate' | 'view'>('list');
@@ -48,7 +52,23 @@ export const FloridaTaxReport: React.FC = () => {
   useEffect(() => {
     loadReports();
     loadAvailablePeriods();
+    loadFloridaCounties();
   }, []);
+
+  const loadFloridaCounties = () => {
+    try {
+      const counties = getFloridaCountyNames();
+      setFloridaCounties(counties);
+      // Seleccionar Miami-Dade por defecto
+      if (!selectedCounty && counties.length > 0) {
+        setSelectedCounty('Miami-Dade');
+      }
+      logger.info('FloridaTaxReport', 'load_counties_success', 'Condados de Florida cargados', { count: counties.length });
+    } catch (error) {
+      setError('Error al cargar condados de Florida');
+      logger.error('FloridaTaxReport', 'load_counties_error', 'Error al cargar condados', null, error as Error);
+    }
+  };
 
   const loadReports = () => {
     try {
@@ -80,11 +100,19 @@ export const FloridaTaxReport: React.FC = () => {
       return;
     }
 
+    if (!selectedCounty) {
+      setError('Seleccione un condado para calcular');
+      return;
+    }
+
     setIsCalculating(true);
     setError(null);
 
     try {
-      logger.info('FloridaTaxReport', 'calculate_start', 'Calculando reporte DR-15', { period: selectedPeriod });
+      logger.info('FloridaTaxReport', 'calculate_start', 'Calculando reporte DR-15', { 
+        period: selectedPeriod,
+        county: selectedCounty 
+      });
       
       const report = calculateFloridaDR15Report(selectedPeriod);
       
@@ -93,15 +121,38 @@ export const FloridaTaxReport: React.FC = () => {
         return;
       }
 
+      // Filtrar por condado si se especifica
+      if (selectedCounty && selectedCounty !== 'Todos') {
+        report.countyBreakdown = report.countyBreakdown.filter(
+          county => county.county === selectedCounty
+        );
+        
+        // Recalcular totales para el condado específico
+        report.totalTaxableSales = report.countyBreakdown.reduce(
+          (sum, county) => sum + county.taxableAmount, 0
+        );
+        report.totalTaxCollected = report.countyBreakdown.reduce(
+          (sum, county) => sum + county.taxAmount, 0
+        );
+        report.netTaxDue = report.totalTaxCollected;
+      }
+
       setCurrentReport(report);
       setViewMode('view');
       
-      logger.info('FloridaTaxReport', 'calculate_success', 'Reporte calculado correctamente');
+      logger.info('FloridaTaxReport', 'calculate_success', 'Reporte calculado correctamente', {
+        county: selectedCounty,
+        totalSales: report.totalTaxableSales,
+        totalTax: report.totalTaxCollected
+      });
       
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
       setError(`Error al calcular reporte: ${errorMsg}`);
-      logger.error('FloridaTaxReport', 'calculate_error', 'Error en cálculo', { period: selectedPeriod }, error as Error);
+      logger.error('FloridaTaxReport', 'calculate_error', 'Error en cálculo', { 
+        period: selectedPeriod,
+        county: selectedCounty 
+      }, error as Error);
     } finally {
       setIsCalculating(false);
     }
@@ -188,12 +239,89 @@ export const FloridaTaxReport: React.FC = () => {
     }).format(date);
   };
 
-  const exportToPDF = () => {
-    if (!currentReport) return;
-    
-    // Aquí se implementaría la exportación a PDF
-    // Por ahora, mostrar información para implementación futura
-    setSuccess('Función de exportación PDF será implementada próximamente');
+  const exportToCSV = async () => {
+    if (!currentReport) {
+      setError('No hay reporte para exportar');
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      logger.info('FloridaTaxReport', 'csv_export_start', 'Iniciando exportación CSV', {
+        period: currentReport.period,
+        counties: currentReport.countyBreakdown.length
+      });
+
+      // Crear encabezados CSV
+      const headers = [
+        'Período',
+        'Condado',
+        'Tasa de Impuesto (%)',
+        'Base Imponible ($)',
+        'Impuesto Calculado ($)',
+        'Ventas Exentas ($)',
+        'Impuesto Neto a Pagar ($)'
+      ];
+
+      // Crear filas de datos
+      const rows = currentReport.countyBreakdown.map(county => [
+        currentReport.period,
+        county.county,
+        (county.rate * 100).toFixed(2),
+        county.taxableAmount.toFixed(2),
+        county.taxAmount.toFixed(2),
+        currentReport.exemptSales.toFixed(2),
+        currentReport.netTaxDue.toFixed(2)
+      ]);
+
+      // Agregar fila de totales
+      rows.push([
+        'TOTAL',
+        `${currentReport.countyBreakdown.length} condados`,
+        '',
+        currentReport.totalTaxableSales.toFixed(2),
+        currentReport.totalTaxCollected.toFixed(2),
+        currentReport.exemptSales.toFixed(2),
+        currentReport.netTaxDue.toFixed(2)
+      ]);
+
+      // Convertir a formato CSV
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      // Crear y descargar archivo
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `reporte_dr15_${currentReport.period}_${timestamp}.csv`;
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setSuccess(`Reporte exportado como ${filename}`);
+      
+      logger.info('FloridaTaxReport', 'csv_export_success', 'CSV exportado exitosamente', {
+        filename,
+        rows: rows.length,
+        size: blob.size
+      });
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+      setError(`Error al exportar CSV: ${errorMsg}`);
+      logger.error('FloridaTaxReport', 'csv_export_error', 'Error en exportación CSV', null, error as Error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Limpiar mensajes después de 5 segundos
@@ -222,16 +350,21 @@ export const FloridaTaxReport: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={exportToPDF}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              onClick={exportToCSV}
+              disabled={isExporting}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
             >
-              <Download className="h-4 w-4" />
-              <span>Exportar PDF</span>
+              {isExporting ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span>{isExporting ? 'Exportando...' : 'Exportar CSV'}</span>
             </button>
             <button
               onClick={saveReport}
               disabled={isSaving}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
             >
               {isSaving ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -392,9 +525,9 @@ export const FloridaTaxReport: React.FC = () => {
 
         {/* Formulario de Cálculo */}
         <div className="bg-gray-800 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Período</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Período y Condado</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
                 Período Fiscal
@@ -416,10 +549,32 @@ export const FloridaTaxReport: React.FC = () => {
               </p>
             </div>
 
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">
+                Condado de Florida
+              </label>
+              <select
+                value={selectedCounty}
+                onChange={(e) => setSelectedCounty(e.target.value)}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Seleccionar condado...</option>
+                <option value="Todos">Todos los condados</option>
+                {floridaCounties.map(county => (
+                  <option key={county} value={county}>
+                    {county}
+                  </option>
+                ))}
+              </select>
+              <p className="text-gray-400 text-xs mt-1">
+                {floridaCounties.length} condados disponibles
+              </p>
+            </div>
+
             <div className="flex items-end">
               <button
                 onClick={calculateReport}
-                disabled={!selectedPeriod || isCalculating}
+                disabled={!selectedPeriod || !selectedCounty || isCalculating}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
               >
                 {isCalculating ? (
@@ -427,7 +582,7 @@ export const FloridaTaxReport: React.FC = () => {
                 ) : (
                   <Calculator className="h-4 w-4" />
                 )}
-                <span>{isCalculating ? 'Calculando...' : 'Calcular Reporte'}</span>
+                <span>{isCalculating ? 'Calculando...' : 'Generar Reporte'}</span>
               </button>
             </div>
           </div>
@@ -551,11 +706,14 @@ export const FloridaTaxReport: React.FC = () => {
                         )}
                         
                         <button
-                          onClick={exportToPDF}
+                          onClick={() => {
+                            setCurrentReport(report);
+                            exportToCSV();
+                          }}
                           className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-                          title="Exportar PDF"
+                          title="Exportar CSV"
                         >
-                          <Download className="w-4 h-4 text-blue-400" />
+                          <Download className="w-4 h-4 text-green-400" />
                         </button>
                       </div>
                     </td>

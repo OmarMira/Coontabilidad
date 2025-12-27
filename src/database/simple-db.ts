@@ -25,13 +25,13 @@ export interface Customer {
   document_type: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
   document_number: string;
   business_type?: string;
-  
+
   // Datos de contacto
   email: string;
   email_secondary?: string;
   phone: string;
   phone_secondary?: string;
-  
+
   // Dirección
   address_line1: string;
   address_line2?: string;
@@ -39,14 +39,14 @@ export interface Customer {
   state: string;
   zip_code: string;
   florida_county: string;
-  
+
   // Datos comerciales
   credit_limit: number;
   payment_terms: number; // días
   tax_exempt: boolean;
   tax_id?: string;
   assigned_salesperson?: string;
-  
+
   // Metadatos
   created_at: string;
   updated_at: string;
@@ -62,13 +62,13 @@ export interface Supplier {
   document_type: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
   document_number: string;
   business_type?: string;
-  
+
   // Datos de contacto
   email: string;
   email_secondary?: string;
   phone: string;
   phone_secondary?: string;
-  
+
   // Dirección
   address_line1: string;
   address_line2?: string;
@@ -76,14 +76,14 @@ export interface Supplier {
   state: string;
   zip_code: string;
   florida_county: string;
-  
+
   // Datos comerciales
   credit_limit: number;
   payment_terms: number; // días
   tax_exempt: boolean;
   tax_id?: string;
   assigned_buyer?: string;
-  
+
   // Metadatos
   created_at: string;
   updated_at: string;
@@ -341,7 +341,7 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
 
   try {
     logger.info('Database', 'init_start', 'Iniciando inicialización de base de datos SQLite con OPFS');
-    
+
     // Configurar cifrado si se proporciona contraseña
     if (password && BasicEncryption.isSupported()) {
       encryptionEnabled = true;
@@ -350,30 +350,30 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
     } else if (password) {
       logger.warn('Database', 'encryption_fallback', 'Web Crypto API no soportado, cifrado deshabilitado');
     }
-    
+
     // Inicializar sql.js usando dynamic import
     const initSqlJs = (await import('sql.js')).default;
     const SQL = await initSqlJs({
       locateFile: (file: string) => `/${file}`
     });
-    
+
     logger.info('Database', 'sqljs_loaded', 'SQL.js cargado correctamente');
-    
+
     // Intentar usar OPFS para persistencia real
     let dbData: Uint8Array | null = null;
-    
+
     try {
       // Verificar soporte OPFS
       if (typeof navigator !== 'undefined' && navigator.storage && 'getDirectory' in navigator.storage) {
         logger.info('Database', 'opfs_supported', 'OPFS soportado, usando almacenamiento persistente');
         opfsRoot = await navigator.storage.getDirectory();
-        
+
         try {
           // Intentar cargar base de datos existente
           dbFile = await opfsRoot.getFileHandle(DB_NAME);
           const file = await dbFile.getFile();
           let fileData = new Uint8Array(await file.arrayBuffer());
-          
+
           // Descifrar si está habilitado el cifrado
           if (encryptionEnabled && currentPassword && fileData.length > 28) {
             try {
@@ -400,11 +400,11 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
     } catch (error) {
       logger.error('Database', 'opfs_init_failed', 'Error en inicialización OPFS, usando almacenamiento en memoria', { error: error instanceof Error ? error.message : 'Unknown error' }, error as Error);
     }
-    
+
     // Crear instancia de base de datos
     db = new SQL.Database(dbData) as any;
     logger.info('Database', 'instance_created', 'Instancia de base de datos creada');
-    
+
     // Configurar SQLite para mejor rendimiento
     if (db) {
       db.run('PRAGMA journal_mode=WAL');
@@ -413,63 +413,63 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
       db.run('PRAGMA foreign_keys=ON');
       logger.info('Database', 'pragma_configured', 'Configuración PRAGMA aplicada para optimización');
     }
-    
+
     // Inicializar logger con la base de datos
     if (db) {
       logger.initialize(db);
     }
-    
+
     // Crear esquema de base de datos
     await createSchema();
-    
+
     // Insertar datos de ejemplo si es nueva
     if (db) {
       const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
       const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-      
+
       if (customerCount === 0) {
         logger.info('Database', 'insert_sample_data', 'Insertando datos de ejemplo');
         await insertSampleData();
       }
-      
+
       // Insertar plan de cuentas inicial si no existe
       const accountResult = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
       const accountCount = accountResult[0]?.values[0]?.[0] as number || 0;
-      
+
       if (accountCount === 0) {
         logger.info('Database', 'insert_chart_accounts', 'Insertando plan de cuentas inicial');
         await insertInitialChartOfAccounts();
       }
-      
+
       // Insertar categorías de productos iniciales si no existen
       const categoryResult = db.exec("SELECT COUNT(*) as count FROM product_categories");
       const categoryCount = categoryResult[0]?.values[0]?.[0] as number || 0;
-      
+
       if (categoryCount === 0) {
         logger.info('Database', 'insert_product_categories', 'Insertando categorías de productos iniciales');
         await insertInitialProductCategories();
       }
-      
+
       // Insertar productos iniciales si no existen
       const productResult = db.exec("SELECT COUNT(*) as count FROM products");
       const productCount = productResult[0]?.values[0]?.[0] as number || 0;
-      
+
       if (productCount === 0) {
         logger.info('Database', 'insert_products', 'Insertando productos iniciales');
         await insertInitialProducts();
       }
-      
+
       // Inicializar datos de empresa si no existen
       initializeCompanyData();
     }
-    
+
     // Configurar auto-save
     setupAutoSave();
-    
+
     isInitialized = true;
     logger.info('Database', 'init_complete', 'Base de datos inicializada correctamente con persistencia');
     return db!;
-    
+
   } catch (error) {
     logger.critical('Database', 'init_failed', `Error crítico en inicialización de base de datos: ${error instanceof Error ? error.message : 'Unknown error'}`, null, error as Error);
     throw new Error(`Database initialization failed: ${error}`);
@@ -479,7 +479,7 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
 // Crear esquema de base de datos
 const createSchema = async (): Promise<void> => {
   if (!db) return;
-  
+
   // Tabla de clientes con campos completos para Florida
   db.run(`
     CREATE TABLE IF NOT EXISTS customers (
@@ -568,7 +568,7 @@ const createSchema = async (): Promise<void> => {
       FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
     )
   `);
-  
+
   // Tabla de facturas
   db.run(`
     CREATE TABLE IF NOT EXISTS invoices (
@@ -586,7 +586,7 @@ const createSchema = async (): Promise<void> => {
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
   `);
-  
+
   // Tabla de líneas de factura
   db.run(`
     CREATE TABLE IF NOT EXISTS invoice_lines (
@@ -603,7 +603,7 @@ const createSchema = async (): Promise<void> => {
       FOREIGN KEY (product_id) REFERENCES products (id)
     )
   `);
-  
+
   // Tabla de pagos
   db.run(`
     CREATE TABLE IF NOT EXISTS payments (
@@ -621,7 +621,7 @@ const createSchema = async (): Promise<void> => {
       FOREIGN KEY (invoice_id) REFERENCES invoices (id)
     )
   `);
-  
+
   // Tabla de configuración de impuestos Florida
   db.run(`
     CREATE TABLE IF NOT EXISTS florida_tax_rates (
@@ -634,7 +634,7 @@ const createSchema = async (): Promise<void> => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  
+
   // Tabla de proveedores (suppliers)
   db.run(`
     CREATE TABLE IF NOT EXISTS suppliers (
@@ -692,7 +692,7 @@ const createSchema = async (): Promise<void> => {
       FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
     )
   `);
-  
+
   // Tabla de líneas de factura de compra (bill_lines)
   db.run(`
     CREATE TABLE IF NOT EXISTS bill_lines (
@@ -709,7 +709,7 @@ const createSchema = async (): Promise<void> => {
       FOREIGN KEY (product_id) REFERENCES products (id)
     )
   `);
-  
+
   // Tabla de pagos a proveedores (supplier_payments)
   db.run(`
     CREATE TABLE IF NOT EXISTS supplier_payments (
@@ -743,7 +743,7 @@ const createSchema = async (): Promise<void> => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-  
+
   // Tabla de datos de la empresa
   db.run(`
     CREATE TABLE IF NOT EXISTS company_data (
@@ -784,7 +784,7 @@ const createSchema = async (): Promise<void> => {
       is_active BOOLEAN DEFAULT 1
     )
   `);
-  
+
   // Tabla de cuentas bancarias
   db.run(`
     CREATE TABLE IF NOT EXISTS bank_accounts (
@@ -1042,12 +1042,43 @@ const createSchema = async (): Promise<void> => {
 
   console.log('Database schema created successfully');
   console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN N°1 IMPLEMENTADA');
+
+  // Tabla de historial de conversaciones IA
+  db.run(`
+    CREATE TABLE IF NOT EXISTS ai_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      query TEXT NOT NULL,
+      response TEXT NOT NULL,
+      intent TEXT,
+      data_points_used INTEGER DEFAULT 0,
+      tokens_used INTEGER DEFAULT 0,
+      processing_time INTEGER,
+      model_used TEXT,
+      was_fallback BOOLEAN DEFAULT 0,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabla de auditoría específica para IA
+  db.run(`
+    CREATE TABLE IF NOT EXISTS ai_audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      query TEXT,
+      security_validation TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  logger.info('Database', 'schema_updated', 'Tablas de IA creadas correctamente');
 };
 
 // Insertar datos de ejemplo
 const insertSampleData = async (): Promise<void> => {
   if (!db) return;
-  
+
   // Clientes de ejemplo con datos completos
   db.run(`
     INSERT INTO customers (
@@ -1095,7 +1126,7 @@ const insertSampleData = async (): Promise<void> => {
     ('PROD-002', 'Hardware Setup', 'Configuración de hardware contable', 199.99, 100.00, 3, 'unidad', 1, 25, 5, 50, 10, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('PROD-003', 'Papel Bond A4', 'Resma de papel bond tamaño carta', 12.99, 8.50, 4, 'resma', 1, 100, 20, 200, 30, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `);
-  
+
   // Facturas de ejemplo
   db.run(`
     INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES 
@@ -1103,7 +1134,7 @@ const insertSampleData = async (): Promise<void> => {
     ('INV-2024-002', 2, '2024-01-20', '2024-02-04', 299.99, 19.50, 319.49, 'sent'),
     ('INV-2024-003', 3, '2024-01-25', '2024-03-10', 2500.00, 175.00, 2675.00, 'draft')
   `);
-  
+
   // Líneas de factura de ejemplo
   db.run(`
     INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, line_total) VALUES 
@@ -1111,14 +1142,14 @@ const insertSampleData = async (): Promise<void> => {
     (2, 2, 'Software License - Anual', 1.000, 299.99, 299.99),
     (3, 3, 'Auditoría Fiscal Completa', 5.000, 500.00, 2500.00)
   `);
-  
+
   // Pagos de ejemplo
   db.run(`
     INSERT INTO payments (customer_id, invoice_id, payment_number, payment_date, amount, payment_method, reference_number) VALUES 
     (1, 1, 'PAY-2024-001', '2024-02-10', 1605.00, 'bank_transfer', 'TXN-789456123'),
     (2, NULL, 'PAY-2024-002', '2024-01-25', 500.00, 'check', 'CHK-001234')
   `);
-  
+
   // Tasas de impuestos para condados principales
   db.run(`
     INSERT INTO florida_tax_rates (county_name, county_rate, total_rate) VALUES 
@@ -1160,7 +1191,7 @@ const insertSampleData = async (): Promise<void> => {
     ('BILL-2024-002', 2, '2024-01-15', '2024-01-30', 850.00, 55.25, 905.25, 'received'),
     ('BILL-2024-003', 3, '2024-01-20', '2024-03-05', 1500.00, 105.00, 1605.00, 'paid')
   `);
-  
+
   // Líneas de factura de compra de ejemplo
   db.run(`
     INSERT INTO bill_lines (bill_id, product_id, description, quantity, unit_price, line_total) VALUES 
@@ -1168,7 +1199,7 @@ const insertSampleData = async (): Promise<void> => {
     (2, 4, 'Office Equipment Setup', 5.000, 170.00, 850.00),
     (3, 1, 'Professional Consulting Services', 10.000, 150.00, 1500.00)
   `);
-  
+
   // Pagos a proveedores de ejemplo
   db.run(`
     INSERT INTO supplier_payments (supplier_id, bill_id, payment_number, payment_date, amount, payment_method, reference_number) VALUES 
@@ -1305,14 +1336,14 @@ const insertSampleData = async (): Promise<void> => {
     ('5520', 'Impuestos Locales', 'expense', 'debit', '5500'),
     ('5530', 'Licencias y Permisos', 'expense', 'debit', '5500')
   `);
-  
+
   console.log('Sample data inserted successfully');
 };
 
 // Insertar categorías de productos iniciales
 const insertInitialProductCategories = async (): Promise<void> => {
   if (!db) return;
-  
+
   db.run(`
     INSERT INTO product_categories (name, description, tax_rate, active, created_at, updated_at) VALUES 
     ('Servicios Profesionales', 'Servicios de consultoría, asesoría y profesionales', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1321,14 +1352,14 @@ const insertInitialProductCategories = async (): Promise<void> => {
     ('Suministros de Oficina', 'Materiales, suministros y artículos de oficina', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('Servicios de Mantenimiento', 'Servicios de mantenimiento y soporte técnico', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `);
-  
+
   console.log('Initial product categories inserted successfully');
 };
 
 // Insertar productos iniciales
 const insertInitialProducts = async (): Promise<void> => {
   if (!db) return;
-  
+
   db.run(`
     INSERT INTO products (
       sku, name, description, price, cost, category_id, unit_of_measure,
@@ -1344,14 +1375,14 @@ const insertInitialProducts = async (): Promise<void> => {
     ('PROD-004', 'Tóner Impresora HP', 'Cartucho de tóner para impresoras HP LaserJet', 89.99, 55.00, 4, 'unidad', 1, 25, 5, 50, 10, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('SERV-004', 'Soporte Técnico', 'Servicios de soporte técnico y mantenimiento de sistemas', 120.00, 60.00, 5, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
   `);
-  
+
   console.log('Initial products inserted successfully');
 };
 
 // Configurar auto-save
 const setupAutoSave = (): void => {
   if (!db) return;
-  
+
   setInterval(async () => {
     try {
       await saveDatabase();
@@ -1359,24 +1390,24 @@ const setupAutoSave = (): void => {
       console.error('Auto-save failed:', error);
     }
   }, BACKUP_INTERVAL);
-  
+
   // Guardar al cerrar la ventana
   if (typeof window !== 'undefined') {
     window.addEventListener('beforeunload', () => {
       saveDatabase().catch(console.error);
     });
   }
-  
+
   console.log('Auto-save configured');
 };
 
 // Guardar base de datos
 export const saveDatabase = async (): Promise<void> => {
   if (!db) return;
-  
+
   try {
     let data = db.export();
-    
+
     // Cifrar si está habilitado
     if (encryptionEnabled && currentPassword) {
       try {
@@ -1387,7 +1418,7 @@ export const saveDatabase = async (): Promise<void> => {
         console.error('Encryption failed, saving unencrypted:', error);
       }
     }
-    
+
     if (opfsRoot && dbFile) {
       // Guardar en OPFS - ensure proper ArrayBuffer type
       const writable = await dbFile.createWritable();
@@ -1436,12 +1467,12 @@ const loadFromLocalStorage = async (): Promise<Uint8Array | null> => {
   try {
     const stored = localStorage.getItem('accountexpress-db');
     const isEncrypted = localStorage.getItem('accountexpress-encrypted') === 'true';
-    
+
     if (!stored) return null;
-    
+
     let decoded = atob(stored);
     let data = new Uint8Array(decoded.split('').map(char => char.charCodeAt(0)));
-    
+
     // Descifrar si es necesario
     if (isEncrypted && encryptionEnabled && currentPassword) {
       try {
@@ -1457,7 +1488,7 @@ const loadFromLocalStorage = async (): Promise<Uint8Array | null> => {
         return null;
       }
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error loading from localStorage:', error);
@@ -1473,19 +1504,19 @@ export const isEncryptionEnabled = (): boolean => {
 // Cambiar contraseña de cifrado
 export const changeEncryptionPassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
   if (!db || !encryptionEnabled) return false;
-  
+
   try {
     // Verificar contraseña actual
     if (currentPassword !== oldPassword) {
       throw new Error('Invalid current password');
     }
-    
+
     // Cambiar contraseña
     currentPassword = newPassword;
-    
+
     // Guardar con nueva contraseña
     await saveDatabase();
-    
+
     console.log('Encryption password changed successfully');
     return true;
   } catch (error) {
@@ -1499,14 +1530,14 @@ export const enableEncryption = async (password: string): Promise<boolean> => {
   if (!db || encryptionEnabled || !BasicEncryption.isSupported()) {
     return false;
   }
-  
+
   try {
     encryptionEnabled = true;
     currentPassword = password;
-    
+
     // Guardar base de datos cifrada
     await saveDatabase();
-    
+
     console.log('Encryption enabled successfully');
     return true;
   } catch (error) {
@@ -1522,14 +1553,14 @@ export const disableEncryption = async (password: string): Promise<boolean> => {
   if (!db || !encryptionEnabled || currentPassword !== password) {
     return false;
   }
-  
+
   try {
     encryptionEnabled = false;
     currentPassword = null;
-    
+
     // Guardar base de datos sin cifrar
     await saveDatabase();
-    
+
     console.log('Encryption disabled successfully');
     return true;
   } catch (error) {
@@ -1547,17 +1578,17 @@ export const isDatabaseReady = (): boolean => {
 
 export const addCustomer = async (customerData: Partial<Customer>): Promise<number> => {
   logger.debug('CustomerModule', 'add_customer_start', 'Iniciando proceso de agregar cliente', { customerName: customerData.name });
-  
+
   if (!db) {
     logger.error('CustomerModule', 'add_customer_failed', 'Base de datos no inicializada al intentar agregar cliente');
     throw new Error('Database not initialized. Please wait for the system to load completely.');
   }
-  
+
   try {
     logger.debug('CustomerModule', 'add_customer_transaction', 'Iniciando transacción para agregar cliente');
     // Iniciar transacción
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       INSERT INTO customers (
         name, business_name, document_type, document_number, business_type,
@@ -1567,7 +1598,7 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
         status, notes, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `);
-    
+
     const values = [
       customerData.name || '',
       customerData.business_name || null,
@@ -1592,31 +1623,31 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
       customerData.status || 'active',
       customerData.notes || null
     ];
-    
+
     stmt.run(values);
-    
+
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
     const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
-    
+
     stmt.free();
-    
+
     // Registrar en auditoría
     await logAuditEvent('customers', insertId, 'INSERT', null, customerData);
-    
+
     // Confirmar transacción
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     logger.info('CustomerModule', 'add_customer_success', `Cliente agregado exitosamente con ID: ${insertId}`, {
       customerId: insertId,
       customerName: customerData.name,
       customerEmail: customerData.email
     });
-    
+
     return insertId;
-    
+
   } catch (error) {
     logger.error('CustomerModule', 'add_customer_failed', `Error al agregar cliente: ${error instanceof Error ? error.message : 'Unknown error'}`, {
       customerData: { name: customerData.name, email: customerData.email }
@@ -1629,12 +1660,12 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
 export const getCustomers = (): Customer[] => {
   console.log('=== GETTING CUSTOMERS ===');
   console.log('Database initialized:', !!db);
-  
+
   if (!db) {
     console.log('Database not initialized, returning empty array');
     return [];
   }
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -1646,16 +1677,16 @@ export const getCustomers = (): Customer[] => {
       FROM customers 
       ORDER BY created_at DESC
     `);
-    
+
     console.log('Raw query result:', result);
-    
+
     // Convertir el resultado a array de objetos
     const customers: Customer[] = [];
-    
+
     if (result && result.length > 0 && result[0].values) {
       const columns = result[0].columns;
       const values = result[0].values;
-      
+
       values.forEach((row: any[]) => {
         const customerObj: any = {};
         columns.forEach((col: string, index: number) => {
@@ -1664,11 +1695,11 @@ export const getCustomers = (): Customer[] => {
         customers.push(processCustomerRow(customerObj));
       });
     }
-    
+
     console.log('Processed customers:', customers);
     console.log('Customer count:', customers.length);
     return customers;
-    
+
   } catch (error) {
     console.error('Error getting customers:', error);
     return [];
@@ -1708,7 +1739,7 @@ const processCustomerRow = (row: any): Customer => {
 
 export const getCustomerById = (id: number): Customer | null => {
   if (!db) return null;
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -1720,21 +1751,21 @@ export const getCustomerById = (id: number): Customer | null => {
       FROM customers 
       WHERE id = ${id}
     `);
-    
+
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
       const columns = result[0].columns;
       const row = result[0].values[0];
-      
+
       const customerObj: any = {};
       columns.forEach((col: string, index: number) => {
         customerObj[col] = row[index];
       });
-      
+
       return processCustomerRow(customerObj);
     }
-    
+
     return null;
-    
+
   } catch (error) {
     console.error('Error getting customer by ID:', error);
     return null;
@@ -1743,16 +1774,16 @@ export const getCustomerById = (id: number): Customer | null => {
 
 export const updateCustomer = (id: number, customerData: Partial<Customer>): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Obtener valores anteriores para auditoría
     const oldCustomer = getCustomerById(id);
     if (!oldCustomer) {
       return { success: false, message: 'Cliente no encontrado' };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       UPDATE customers 
       SET name = ?, business_name = ?, document_type = ?, document_number = ?, business_type = ?,
@@ -1762,7 +1793,7 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>): { s
           status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
-    
+
     const values = [
       customerData.name || oldCustomer.name,
       customerData.business_name || oldCustomer.business_name || null,
@@ -1788,27 +1819,27 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>): { s
       customerData.notes || oldCustomer.notes || null,
       id
     ];
-    
+
     stmt.run(values);
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se realizaron cambios' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('customers', id, 'UPDATE', oldCustomer, customerData);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     console.log(`Customer ${id} updated successfully`);
     return { success: true, message: `Cliente "${customerData.name || oldCustomer.name}" actualizado correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error updating customer:', error);
@@ -1819,36 +1850,36 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>): { s
 // Verificar si un cliente puede ser eliminado
 export const canDeleteCustomer = (customerId: number): { canDelete: boolean; reason?: string } => {
   if (!db) return { canDelete: false, reason: 'Database not initialized' };
-  
+
   try {
     // Verificar si tiene facturas
     const invoiceCheck = db.exec(`
       SELECT COUNT(*) as count FROM invoices WHERE customer_id = ${customerId}
     `);
     const invoiceCount = invoiceCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (invoiceCount > 0) {
-      return { 
-        canDelete: false, 
-        reason: `El cliente tiene ${invoiceCount} factura(s) asociada(s). No se puede eliminar.` 
+      return {
+        canDelete: false,
+        reason: `El cliente tiene ${invoiceCount} factura(s) asociada(s). No se puede eliminar.`
       };
     }
-    
+
     // Verificar si tiene pagos
     const paymentCheck = db.exec(`
       SELECT COUNT(*) as count FROM payments WHERE customer_id = ${customerId}
     `);
     const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (paymentCount > 0) {
-      return { 
-        canDelete: false, 
-        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s). No se puede eliminar.` 
+      return {
+        canDelete: false,
+        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s). No se puede eliminar.`
       };
     }
-    
+
     return { canDelete: true };
-    
+
   } catch (error) {
     console.error('Error checking if customer can be deleted:', error);
     return { canDelete: false, reason: 'Error al verificar las dependencias del cliente' };
@@ -1857,44 +1888,44 @@ export const canDeleteCustomer = (customerId: number): { canDelete: boolean; rea
 
 export const deleteCustomer = (id: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Verificar si se puede eliminar
     const deleteCheck = canDeleteCustomer(id);
     if (!deleteCheck.canDelete) {
       return { success: false, message: deleteCheck.reason || 'No se puede eliminar el cliente' };
     }
-    
+
     // Obtener datos del cliente para auditoría antes de eliminar
     const customer = getCustomerById(id);
     if (!customer) {
       return { success: false, message: 'Cliente no encontrado' };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     // Eliminar cliente
     const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
     stmt.run([id]);
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se pudo eliminar el cliente' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('customers', id, 'DELETE', customer, null);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     console.log(`Customer ${id} deleted successfully`);
     return { success: true, message: `Cliente "${customer.name}" eliminado correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error deleting customer:', error);
@@ -1907,7 +1938,7 @@ export const deleteCustomer = (id: number): { success: boolean; message: string 
 const generateAuditHash = async (auditData: any): Promise<string> => {
   try {
     let previousHash = '0';
-    
+
     // Si no se proporciona previousHash, obtenerlo de la base de datos
     if (!auditData.previousHash) {
       const lastHashResult = db?.exec(`
@@ -1915,12 +1946,12 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
         ORDER BY id DESC 
         LIMIT 1
       `);
-      
+
       previousHash = lastHashResult?.[0]?.values?.[0]?.[0] as string || '0';
     } else {
       previousHash = auditData.previousHash;
     }
-    
+
     // Crear string para hash que incluye el hash anterior (chaining)
     const dataToHash = JSON.stringify({
       previousHash,
@@ -1932,7 +1963,7 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
       timestamp: auditData.timestamp,
       userId: auditData.userId
     });
-    
+
     // Generar hash SHA-256
     if (typeof crypto !== 'undefined' && crypto.subtle) {
       const encoder = new TextEncoder();
@@ -1970,7 +2001,7 @@ const generateSimpleHash = (auditData: any): string => {
 
 const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any): Promise<void> => {
   if (!db) return;
-  
+
   try {
     // Generar datos de auditoría
     const auditData = {
@@ -1982,10 +2013,10 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
       timestamp: new Date().toISOString(),
       userId: 1 // TODO: Implementar sistema de usuarios
     };
-    
+
     // Generar hash con chaining
     const auditHash = await generateAuditHash(auditData);
-    
+
     const stmt = db.prepare(`
       INSERT INTO audit_log (
         table_name, record_id, action, old_values, new_values, 
@@ -1993,7 +2024,7 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     stmt.run([
       tableName,
       recordId,
@@ -2004,9 +2035,9 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
       auditData.timestamp,
       auditHash
     ]);
-    
+
     stmt.free();
-    
+
     logger.info('AuditSystem', 'log_event', `Audit event logged: ${action} on ${tableName} ID ${recordId}`, {
       tableName,
       recordId,
@@ -2021,17 +2052,17 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
 // Obtener log de auditoría
 export const getAuditLog = (limit: number = 100): Array<Record<string, any>> => {
   if (!db) return [];
-  
+
   try {
     const stmt = db.prepare(`
       SELECT * FROM audit_log 
       ORDER BY timestamp DESC 
       LIMIT ?
     `);
-    
+
     const result = stmt.getAsObject([limit]);
     stmt.free();
-    
+
     return Array.isArray(result) ? result as Array<Record<string, any>> : [];
   } catch (error) {
     console.error('Error getting audit log:', error);
@@ -2042,7 +2073,7 @@ export const getAuditLog = (limit: number = 100): Array<Record<string, any>> => 
 // Obtener estadísticas de la base de datos
 export const getDatabaseInfo = () => {
   if (!db) return null;
-  
+
   try {
     const info = {
       size: db.export().length,
@@ -2051,10 +2082,10 @@ export const getDatabaseInfo = () => {
       opfsSupported: !!opfsRoot,
       autoSaveEnabled: true
     };
-    
+
     // Contar registros por tabla
     const tables = ['customers', 'products', 'florida_tax_rates', 'audit_log'];
-    
+
     for (const table of tables) {
       try {
         const result = db.exec(`SELECT COUNT(*) as count FROM ${table}`);
@@ -2063,7 +2094,7 @@ export const getDatabaseInfo = () => {
         info.tables[table] = 0;
       }
     }
-    
+
     return info;
   } catch (error) {
     console.error('Error getting database info:', error);
@@ -2074,12 +2105,12 @@ export const getDatabaseInfo = () => {
 // Crear backup manual
 export const createBackup = async (): Promise<string> => {
   if (!db) throw new Error('Database not initialized');
-  
+
   try {
     await saveDatabase();
     const timestamp = new Date().toISOString();
     localStorage.setItem('accountexpress-last-backup', timestamp);
-    
+
     console.log('Manual backup created at:', timestamp);
     return timestamp;
   } catch (error) {
@@ -2090,16 +2121,16 @@ export const createBackup = async (): Promise<string> => {
 
 export const getStats = () => {
   if (!db) return { customers: 0 };
-  
+
   try {
     const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
-    
+
     const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-    
+
     return {
       customers: customerCount
     };
-    
+
   } catch (error) {
     console.error('Error getting stats:', error);
     return { customers: 0 };
@@ -2127,7 +2158,7 @@ export const FLORIDA_COUNTIES = [
 // Generar número de factura automático
 export const generateInvoiceNumber = (): string => {
   if (!db) throw new Error('Database not initialized');
-  
+
   try {
     const result = db.exec("SELECT COUNT(*) as count FROM invoices");
     const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
@@ -2143,7 +2174,7 @@ export const generateInvoiceNumber = (): string => {
 // Obtener todas las facturas con información del cliente
 export const getInvoices = (): Invoice[] => {
   if (!db) return [];
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -2155,28 +2186,28 @@ export const getInvoices = (): Invoice[] => {
       LEFT JOIN customers c ON i.customer_id = c.id
       ORDER BY i.created_at DESC
     `);
-    
+
     if (!result[0]) return [];
-    
+
     const invoices: Invoice[] = [];
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const invoice: any = {};
       columns.forEach((col, index) => {
         invoice[col] = row[index];
       });
-      
+
       // Agregar información del cliente
       invoice.customer = {
         name: invoice.customer_name,
         business_name: invoice.customer_business_name,
         email: invoice.customer_email
       };
-      
+
       invoices.push(invoice as Invoice);
     });
-    
+
     return invoices;
   } catch (error) {
     console.error('Error getting invoices:', error);
@@ -2187,7 +2218,7 @@ export const getInvoices = (): Invoice[] => {
 // Obtener factura por ID con líneas de factura
 export const getInvoiceById = (id: number): Invoice | null => {
   if (!db) return null;
-  
+
   try {
     // Obtener factura principal
     const invoiceResult = db.exec(`
@@ -2205,17 +2236,17 @@ export const getInvoiceById = (id: number): Invoice | null => {
       LEFT JOIN customers c ON i.customer_id = c.id
       WHERE i.id = ?
     `, [id]);
-    
+
     if (!invoiceResult[0] || invoiceResult[0].values.length === 0) return null;
-    
+
     const invoiceRow = invoiceResult[0].values[0];
     const columns = invoiceResult[0].columns;
-    
+
     const invoice: any = {};
     columns.forEach((col, index) => {
       invoice[col] = invoiceRow[index];
     });
-    
+
     // Agregar información del cliente
     invoice.customer = {
       name: invoice.customer_name,
@@ -2227,7 +2258,7 @@ export const getInvoiceById = (id: number): Invoice | null => {
       state: invoice.customer_state,
       zip_code: invoice.customer_zip
     };
-    
+
     // Obtener líneas de factura
     const itemsResult = db.exec(`
       SELECT 
@@ -2239,7 +2270,7 @@ export const getInvoiceById = (id: number): Invoice | null => {
       WHERE il.invoice_id = ?
       ORDER BY il.id
     `, [id]);
-    
+
     invoice.items = [];
     if (itemsResult[0]) {
       const itemColumns = itemsResult[0].columns;
@@ -2248,18 +2279,18 @@ export const getInvoiceById = (id: number): Invoice | null => {
         itemColumns.forEach((col, index) => {
           item[col] = itemRow[index];
         });
-        
+
         if (item.product_id) {
           item.product = {
             name: item.product_name,
             sku: item.product_sku
           };
         }
-        
+
         invoice.items.push(item);
       });
     }
-    
+
     return invoice as Invoice;
   } catch (error) {
     console.error('Error getting invoice by ID:', error);
@@ -2270,28 +2301,28 @@ export const getInvoiceById = (id: number): Invoice | null => {
 // Crear nueva factura
 export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[]): { success: boolean; message: string; invoiceId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Validaciones básicas
     if (!invoiceData.customer_id) {
       return { success: false, message: 'Customer ID is required' };
     }
-    
+
     if (!items || items.length === 0) {
       return { success: false, message: 'At least one item is required' };
     }
-    
+
     // Generar número de factura si no se proporciona
     const invoiceNumber = invoiceData.invoice_number || generateInvoiceNumber();
-    
+
     // Obtener condado del cliente para cálculo de impuestos
     const customer = getCustomerById(invoiceData.customer_id);
     const county = customer?.florida_county || 'Miami-Dade';
-    
+
     // Calcular totales usando tasa dinámica
     let subtotal = 0;
     let taxAmount = 0;
-    
+
     items.forEach(item => {
       const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
       subtotal += lineTotal;
@@ -2299,9 +2330,9 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
         taxAmount += lineTotal * getFloridaTaxRate(county); // Usar tasa dinámica por condado
       }
     });
-    
+
     const total = subtotal + taxAmount;
-    
+
     // Insertar factura principal
     const stmt = db.prepare(`
       INSERT INTO invoices (
@@ -2309,10 +2340,10 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
         subtotal, tax_amount, total_amount, status, notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     const issueDate = invoiceData.issue_date || new Date().toISOString().split('T')[0];
     const dueDate = invoiceData.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
+
     stmt.run([
       invoiceNumber,
       invoiceData.customer_id,
@@ -2324,16 +2355,16 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
       invoiceData.status || 'draft',
       invoiceData.notes || ''
     ]);
-    
+
     const invoiceId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    
+
     // Insertar líneas de factura
     const itemStmt = db.prepare(`
       INSERT INTO invoice_lines (
         invoice_id, product_id, description, quantity, unit_price, line_total, taxable
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     items.forEach(item => {
       const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
       itemStmt.run([
@@ -2346,7 +2377,7 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
         item.taxable ? 1 : 0
       ]);
     });
-    
+
     // Registrar en auditoría
     logAuditAction('invoices', invoiceId, 'INSERT', null, {
       invoice_number: invoiceNumber,
@@ -2367,18 +2398,18 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
         }
       }
     }
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: `Invoice ${invoiceNumber} created successfully`,
-      invoiceId 
+      invoiceId
     };
-    
+
   } catch (error) {
     console.error('Error creating invoice:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error creating invoice' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error creating invoice'
     };
   }
 };
@@ -2386,68 +2417,68 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
 // Actualizar factura
 export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?: Partial<InvoiceItem>[]): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Obtener factura actual para auditoría
     const currentInvoice = getInvoiceById(id);
     if (!currentInvoice) {
       return { success: false, message: 'Invoice not found' };
     }
-    
+
     // Actualizar factura principal
     const updateFields = [];
     const updateValues = [];
-    
+
     if (invoiceData.issue_date !== undefined) {
       updateFields.push('issue_date = ?');
       updateValues.push(invoiceData.issue_date);
     }
-    
+
     if (invoiceData.due_date !== undefined) {
       updateFields.push('due_date = ?');
       updateValues.push(invoiceData.due_date);
     }
-    
+
     if (invoiceData.status !== undefined) {
       updateFields.push('status = ?');
       updateValues.push(invoiceData.status);
     }
-    
+
     if (invoiceData.notes !== undefined) {
       updateFields.push('notes = ?');
       updateValues.push(invoiceData.notes);
     }
-    
+
     if (updateFields.length > 0) {
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
       updateValues.push(id);
-      
+
       const updateQuery = `UPDATE invoices SET ${updateFields.join(', ')} WHERE id = ?`;
       db.exec(updateQuery, updateValues);
     }
-    
+
     // Si se proporcionan items, actualizar líneas de factura
     if (items) {
       // Eliminar líneas existentes
       db.exec('DELETE FROM invoice_lines WHERE invoice_id = ?', [id]);
-      
+
       // Insertar nuevas líneas
       let subtotal = 0;
       let taxAmount = 0;
-      
+
       const itemStmt = db.prepare(`
         INSERT INTO invoice_lines (
           invoice_id, product_id, description, quantity, unit_price, line_total, taxable
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      
+
       items.forEach(item => {
         const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
         subtotal += lineTotal;
         if (item.taxable) {
           taxAmount += lineTotal * 0.075;
         }
-        
+
         itemStmt.run([
           id,
           item.product_id || null,
@@ -2458,7 +2489,7 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
           item.taxable ? 1 : 0
         ]);
       });
-      
+
       // Actualizar totales
       const total = subtotal + taxAmount;
       db.exec(`
@@ -2467,17 +2498,17 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
         WHERE id = ?
       `, [subtotal, taxAmount, total, id]);
     }
-    
+
     // Registrar en auditoría
     logAuditAction('invoices', id, 'UPDATE', currentInvoice, invoiceData);
-    
+
     return { success: true, message: 'Invoice updated successfully' };
-    
+
   } catch (error) {
     console.error('Error updating invoice:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error updating invoice' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error updating invoice'
     };
   }
 };
@@ -2485,35 +2516,35 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
 // Eliminar factura
 export const deleteInvoice = (id: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Verificar si la factura existe
     const invoice = getInvoiceById(id);
     if (!invoice) {
       return { success: false, message: 'Invoice not found' };
     }
-    
+
     // Verificar si la factura está pagada (no se puede eliminar)
     if (invoice.status === 'paid') {
       return { success: false, message: 'Cannot delete paid invoices' };
     }
-    
+
     // Eliminar líneas de factura primero (por foreign key)
     db.exec('DELETE FROM invoice_lines WHERE invoice_id = ?', [id]);
-    
+
     // Eliminar factura
     db.exec('DELETE FROM invoices WHERE id = ?', [id]);
-    
+
     // Registrar en auditoría
     logAuditAction('invoices', id, 'DELETE', invoice, null);
-    
+
     return { success: true, message: 'Invoice deleted successfully' };
-    
+
   } catch (error) {
     console.error('Error deleting invoice:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error deleting invoice' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error deleting invoice'
     };
   }
 };
@@ -2521,19 +2552,19 @@ export const deleteInvoice = (id: number): { success: boolean; message: string }
 // Obtener productos activos para el formulario de factura
 export const getActiveProducts = (): Product[] => {
   if (!db) return [];
-  
+
   try {
     const result = db.exec(`
       SELECT * FROM products 
       WHERE active = 1 
       ORDER BY name
     `);
-    
+
     if (!result[0]) return [];
-    
+
     const products: Product[] = [];
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const product: any = {};
       columns.forEach((col, index) => {
@@ -2541,7 +2572,7 @@ export const getActiveProducts = (): Product[] => {
       });
       products.push(product as Product);
     });
-    
+
     return products;
   } catch (error) {
     console.error('Error getting active products:', error);
@@ -2552,7 +2583,7 @@ export const getActiveProducts = (): Product[] => {
 // Calcular tasa de impuesto por condado de Florida dinámicamente
 export const getFloridaTaxRate = (county: string): number => {
   if (!db) return 0.06; // Tasa base por defecto
-  
+
   try {
     const result = db.exec(`
       SELECT total_rate FROM florida_tax_rates 
@@ -2560,14 +2591,14 @@ export const getFloridaTaxRate = (county: string): number => {
       ORDER BY effective_date DESC 
       LIMIT 1
     `, [county]);
-    
+
     if (result && result.length > 0 && result[0].values.length > 0) {
       return Number(result[0].values[0][0]) || 0.06;
     }
   } catch (error) {
     console.error('Error getting tax rate for county:', county, error);
   }
-  
+
   // Tasas de respaldo por condado de Florida
   const fallbackRates: Record<string, number> = {
     'Miami-Dade': 0.075,
@@ -2581,7 +2612,7 @@ export const getFloridaTaxRate = (county: string): number => {
     'Polk': 0.07,
     'Brevard': 0.065
   };
-  
+
   return fallbackRates[county] || 0.06; // 6% tasa base de Florida
 };
 
@@ -2590,13 +2621,13 @@ export const calculateTaxAmount = (subtotal: number, county: string = 'Miami-Dad
   if (!taxableItems || subtotal <= 0) {
     return { taxAmount: 0, taxRate: 0 };
   }
-  
+
   const taxRate = getFloridaTaxRate(county);
   const taxAmount = subtotal * taxRate;
-  
-  return { 
+
+  return {
     taxAmount: Math.round(taxAmount * 100) / 100, // Redondear a 2 decimales
-    taxRate 
+    taxRate
   };
 };
 
@@ -2604,33 +2635,33 @@ export const calculateTaxAmount = (subtotal: number, county: string = 'Miami-Dad
 export const validateFinancialCalculation = (subtotal: number, taxAmount: number, total: number, county: string): boolean => {
   const calculated = calculateTaxAmount(subtotal, county);
   const expectedTotal = subtotal + calculated.taxAmount;
-  
+
   // Tolerancia de 1 centavo para errores de redondeo
   const tolerance = 0.01;
-  
-  return Math.abs(total - expectedTotal) <= tolerance && 
-         Math.abs(taxAmount - calculated.taxAmount) <= tolerance;
+
+  return Math.abs(total - expectedTotal) <= tolerance &&
+    Math.abs(taxAmount - calculated.taxAmount) <= tolerance;
 };
 
 // Actualizar estadísticas para incluir facturas
 export const getStatsWithInvoices = () => {
   if (!db) return { customers: 0, invoices: 0, revenue: 0 };
-  
+
   try {
     const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
     const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
     const revenueResult = db.exec("SELECT SUM(total_amount) as total FROM invoices WHERE status = 'paid'");
-    
+
     const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
     const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
     const revenue = revenueResult[0]?.values[0]?.[0] as number || 0;
-    
+
     return {
       customers: customerCount,
       invoices: invoiceCount,
       revenue: revenue
     };
-    
+
   } catch (error) {
     console.error('Error getting stats with invoices:', error);
     return { customers: 0, invoices: 0, revenue: 0 };
@@ -2647,17 +2678,17 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
   console.log('Database object:', db);
   console.log('Is initialized:', isInitialized);
   console.log('Supplier data:', supplierData);
-  
+
   if (!db) {
     console.error('Database not initialized when trying to add supplier');
     throw new Error('Database not initialized. Please wait for the system to load completely.');
   }
-  
+
   try {
     console.log('Starting transaction...');
     // Iniciar transacción
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       INSERT INTO suppliers (
         name, business_name, document_type, document_number, business_type,
@@ -2667,7 +2698,7 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
         status, notes, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `);
-    
+
     const values = [
       supplierData.name || '',
       supplierData.business_name || null,
@@ -2692,29 +2723,29 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
       supplierData.status || 'active',
       supplierData.notes || null
     ];
-    
+
     console.log('Executing insert with values:', values);
     stmt.run(values);
-    
+
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
     const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
     console.log('Insert ID:', insertId);
-    
+
     stmt.free();
-    
+
     // Registrar en auditoría
     logAuditEvent('suppliers', insertId, 'INSERT', null, supplierData);
-    
+
     // Confirmar transacción
     db.run('COMMIT');
     console.log('Transaction committed');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     console.log(`Supplier added with ID: ${insertId}`);
     return insertId;
-    
+
   } catch (error) {
     console.error('Error in addSupplier:', error);
     db?.run('ROLLBACK');
@@ -2726,12 +2757,12 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
 export const getSuppliers = (): Supplier[] => {
   console.log('=== GETTING SUPPLIERS ===');
   console.log('Database initialized:', !!db);
-  
+
   if (!db) {
     console.log('Database not initialized, returning empty array');
     return [];
   }
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -2743,16 +2774,16 @@ export const getSuppliers = (): Supplier[] => {
       FROM suppliers 
       ORDER BY created_at DESC
     `);
-    
+
     console.log('Raw query result:', result);
-    
+
     // Convertir el resultado a array de objetos
     const suppliers: Supplier[] = [];
-    
+
     if (result && result.length > 0 && result[0].values) {
       const columns = result[0].columns;
       const values = result[0].values;
-      
+
       values.forEach((row: any[]) => {
         const supplierObj: any = {};
         columns.forEach((col: string, index: number) => {
@@ -2761,11 +2792,11 @@ export const getSuppliers = (): Supplier[] => {
         suppliers.push(processSupplierRow(supplierObj));
       });
     }
-    
+
     console.log('Processed suppliers:', suppliers);
     console.log('Supplier count:', suppliers.length);
     return suppliers;
-    
+
   } catch (error) {
     console.error('Error getting suppliers:', error);
     return [];
@@ -2806,7 +2837,7 @@ const processSupplierRow = (row: any): Supplier => {
 // Obtener proveedor por ID
 export const getSupplierById = (id: number): Supplier | null => {
   if (!db) return null;
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -2818,21 +2849,21 @@ export const getSupplierById = (id: number): Supplier | null => {
       FROM suppliers 
       WHERE id = ${id}
     `);
-    
+
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
       const columns = result[0].columns;
       const row = result[0].values[0];
-      
+
       const supplierObj: any = {};
       columns.forEach((col: string, index: number) => {
         supplierObj[col] = row[index];
       });
-      
+
       return processSupplierRow(supplierObj);
     }
-    
+
     return null;
-    
+
   } catch (error) {
     console.error('Error getting supplier by ID:', error);
     return null;
@@ -2842,16 +2873,16 @@ export const getSupplierById = (id: number): Supplier | null => {
 // Actualizar proveedor
 export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Obtener valores anteriores para auditoría
     const oldSupplier = getSupplierById(id);
     if (!oldSupplier) {
       return { success: false, message: 'Proveedor no encontrado' };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       UPDATE suppliers 
       SET name = ?, business_name = ?, document_type = ?, document_number = ?, business_type = ?,
@@ -2861,7 +2892,7 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { s
           status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
-    
+
     const values = [
       supplierData.name || oldSupplier.name,
       supplierData.business_name || oldSupplier.business_name || null,
@@ -2887,27 +2918,27 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { s
       supplierData.notes || oldSupplier.notes || null,
       id
     ];
-    
+
     stmt.run(values);
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se realizaron cambios' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('suppliers', id, 'UPDATE', oldSupplier, supplierData);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     console.log(`Supplier ${id} updated successfully`);
     return { success: true, message: `Proveedor "${supplierData.name || oldSupplier.name}" actualizado correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error updating supplier:', error);
@@ -2918,36 +2949,36 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { s
 // Verificar si un proveedor puede ser eliminado
 export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; reason?: string } => {
   if (!db) return { canDelete: false, reason: 'Database not initialized' };
-  
+
   try {
     // Verificar si tiene facturas de compra
     const billCheck = db.exec(`
       SELECT COUNT(*) as count FROM bills WHERE supplier_id = ${supplierId}
     `);
     const billCount = billCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (billCount > 0) {
-      return { 
-        canDelete: false, 
-        reason: `El proveedor tiene ${billCount} factura(s) de compra asociada(s). No se puede eliminar.` 
+      return {
+        canDelete: false,
+        reason: `El proveedor tiene ${billCount} factura(s) de compra asociada(s). No se puede eliminar.`
       };
     }
-    
+
     // Verificar si tiene pagos
     const paymentCheck = db.exec(`
       SELECT COUNT(*) as count FROM supplier_payments WHERE supplier_id = ${supplierId}
     `);
     const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (paymentCount > 0) {
-      return { 
-        canDelete: false, 
-        reason: `El proveedor tiene ${paymentCount} pago(s) registrado(s). No se puede eliminar.` 
+      return {
+        canDelete: false,
+        reason: `El proveedor tiene ${paymentCount} pago(s) registrado(s). No se puede eliminar.`
       };
     }
-    
+
     return { canDelete: true };
-    
+
   } catch (error) {
     console.error('Error checking if supplier can be deleted:', error);
     return { canDelete: false, reason: 'Error al verificar las dependencias del proveedor' };
@@ -2957,44 +2988,44 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; rea
 // Eliminar proveedor
 export const deleteSupplier = (id: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Verificar si se puede eliminar
     const deleteCheck = canDeleteSupplier(id);
     if (!deleteCheck.canDelete) {
       return { success: false, message: deleteCheck.reason || 'No se puede eliminar el proveedor' };
     }
-    
+
     // Obtener datos del proveedor para auditoría antes de eliminar
     const supplier = getSupplierById(id);
     if (!supplier) {
       return { success: false, message: 'Proveedor no encontrado' };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     // Eliminar proveedor
     const stmt = db.prepare('DELETE FROM suppliers WHERE id = ?');
     stmt.run([id]);
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se pudo eliminar el proveedor' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('suppliers', id, 'DELETE', supplier, null);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     console.log(`Supplier ${id} deleted successfully`);
     return { success: true, message: `Proveedor "${supplier.name}" eliminado correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error deleting supplier:', error);
@@ -3009,7 +3040,7 @@ export const deleteSupplier = (id: number): { success: boolean; message: string 
 // Generar número de factura de compra automático
 export const generateBillNumber = (): string => {
   if (!db) throw new Error('Database not initialized');
-  
+
   try {
     const result = db.exec("SELECT COUNT(*) as count FROM bills");
     const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
@@ -3025,7 +3056,7 @@ export const generateBillNumber = (): string => {
 // Obtener todas las facturas de compra con información del proveedor
 export const getBills = (): Bill[] => {
   if (!db) return [];
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -3037,28 +3068,28 @@ export const getBills = (): Bill[] => {
       LEFT JOIN suppliers s ON b.supplier_id = s.id
       ORDER BY b.created_at DESC
     `);
-    
+
     if (!result[0]) return [];
-    
+
     const bills: Bill[] = [];
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const bill: any = {};
       columns.forEach((col, index) => {
         bill[col] = row[index];
       });
-      
+
       // Agregar información del proveedor
       bill.supplier = {
         name: bill.supplier_name,
         business_name: bill.supplier_business_name,
         email: bill.supplier_email
       };
-      
+
       bills.push(bill as Bill);
     });
-    
+
     return bills;
   } catch (error) {
     console.error('Error getting bills:', error);
@@ -3069,7 +3100,7 @@ export const getBills = (): Bill[] => {
 // Obtener factura de compra por ID con líneas
 export const getBillById = (id: number): Bill | null => {
   if (!db) return null;
-  
+
   try {
     // Obtener factura principal
     const billResult = db.exec(`
@@ -3087,17 +3118,17 @@ export const getBillById = (id: number): Bill | null => {
       LEFT JOIN suppliers s ON b.supplier_id = s.id
       WHERE b.id = ?
     `, [id]);
-    
+
     if (!billResult[0] || billResult[0].values.length === 0) return null;
-    
+
     const billRow = billResult[0].values[0];
     const columns = billResult[0].columns;
-    
+
     const bill: any = {};
     columns.forEach((col, index) => {
       bill[col] = billRow[index];
     });
-    
+
     // Agregar información del proveedor
     bill.supplier = {
       name: bill.supplier_name,
@@ -3109,7 +3140,7 @@ export const getBillById = (id: number): Bill | null => {
       state: bill.supplier_state,
       zip_code: bill.supplier_zip
     };
-    
+
     // Obtener líneas de factura
     const itemsResult = db.exec(`
       SELECT 
@@ -3121,7 +3152,7 @@ export const getBillById = (id: number): Bill | null => {
       WHERE bl.bill_id = ?
       ORDER BY bl.id
     `, [id]);
-    
+
     bill.items = [];
     if (itemsResult[0]) {
       const itemColumns = itemsResult[0].columns;
@@ -3130,18 +3161,18 @@ export const getBillById = (id: number): Bill | null => {
         itemColumns.forEach((col, index) => {
           item[col] = itemRow[index];
         });
-        
+
         if (item.product_id) {
           item.product = {
             name: item.product_name,
             sku: item.product_sku
           };
         }
-        
+
         bill.items.push(item);
       });
     }
-    
+
     return bill as Bill;
   } catch (error) {
     console.error('Error getting bill by ID:', error);
@@ -3152,28 +3183,28 @@ export const getBillById = (id: number): Bill | null => {
 // Crear nueva factura de compra
 export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]): { success: boolean; message: string; billId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Validaciones básicas
     if (!billData.supplier_id) {
       return { success: false, message: 'Supplier ID is required' };
     }
-    
+
     if (!items || items.length === 0) {
       return { success: false, message: 'At least one item is required' };
     }
-    
+
     // Generar número de factura si no se proporciona
     const billNumber = billData.bill_number || generateBillNumber();
-    
+
     // Obtener condado del proveedor para cálculo de impuestos
     const supplier = getSupplierById(billData.supplier_id);
     const county = supplier?.florida_county || 'Miami-Dade';
-    
+
     // Calcular totales usando tasa dinámica
     let subtotal = 0;
     let taxAmount = 0;
-    
+
     items.forEach(item => {
       const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
       subtotal += lineTotal;
@@ -3181,9 +3212,9 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
         taxAmount += lineTotal * getFloridaTaxRate(county); // Usar tasa dinámica por condado
       }
     });
-    
+
     const total = subtotal + taxAmount;
-    
+
     // Insertar factura principal
     const stmt = db.prepare(`
       INSERT INTO bills (
@@ -3191,10 +3222,10 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
         subtotal, tax_amount, total_amount, status, notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     const issueDate = billData.issue_date || new Date().toISOString().split('T')[0];
     const dueDate = billData.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
+
     stmt.run([
       billNumber,
       billData.supplier_id,
@@ -3206,16 +3237,16 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
       billData.status || 'draft',
       billData.notes || ''
     ]);
-    
+
     const billId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    
+
     // Insertar líneas de factura
     const itemStmt = db.prepare(`
       INSERT INTO bill_lines (
         bill_id, product_id, description, quantity, unit_price, line_total, taxable
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     items.forEach(item => {
       const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
       itemStmt.run([
@@ -3228,7 +3259,7 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
         item.taxable ? 1 : 0
       ]);
     });
-    
+
     // Registrar en auditoría
     logAuditEvent('bills', billId, 'INSERT', null, {
       bill_number: billNumber,
@@ -3249,18 +3280,18 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
         }
       }
     }
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: `Factura de compra ${billNumber} creada correctamente`,
-      billId 
+      billId
     };
-    
+
   } catch (error) {
     console.error('Error creating bill:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error creating bill' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error creating bill'
     };
   }
 };
@@ -3268,7 +3299,7 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
 // Actualizar estadísticas para incluir proveedores
 export const getStatsWithSuppliers = () => {
   if (!db) return { customers: 0, invoices: 0, revenue: 0, suppliers: 0, bills: 0, expenses: 0 };
-  
+
   try {
     const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
     const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
@@ -3276,14 +3307,14 @@ export const getStatsWithSuppliers = () => {
     const supplierResult = db.exec("SELECT COUNT(*) as count FROM suppliers");
     const billResult = db.exec("SELECT COUNT(*) as count FROM bills");
     const expenseResult = db.exec("SELECT SUM(total_amount) as total FROM bills WHERE status = 'paid'");
-    
+
     const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
     const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
     const revenue = revenueResult[0]?.values[0]?.[0] as number || 0;
     const supplierCount = supplierResult[0]?.values[0]?.[0] as number || 0;
     const billCount = billResult[0]?.values[0]?.[0] as number || 0;
     const expenses = expenseResult[0]?.values[0]?.[0] as number || 0;
-    
+
     return {
       customers: customerCount,
       invoices: invoiceCount,
@@ -3292,7 +3323,7 @@ export const getStatsWithSuppliers = () => {
       bills: billCount,
       expenses: expenses
     };
-    
+
   } catch (error) {
     console.error('Error getting stats with suppliers:', error);
     return { customers: 0, invoices: 0, revenue: 0, suppliers: 0, bills: 0, expenses: 0 };
@@ -3302,74 +3333,74 @@ export const getStatsWithSuppliers = () => {
 // Actualizar factura de compra
 export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[]): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Obtener factura actual para auditoría
     const currentBill = getBillById(id);
     if (!currentBill) {
       return { success: false, message: 'Factura de compra no encontrada' };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     // Actualizar factura principal
     const updateFields = [];
     const updateValues = [];
-    
+
     if (billData.issue_date !== undefined) {
       updateFields.push('issue_date = ?');
       updateValues.push(billData.issue_date);
     }
-    
+
     if (billData.due_date !== undefined) {
       updateFields.push('due_date = ?');
       updateValues.push(billData.due_date);
     }
-    
+
     if (billData.status !== undefined) {
       updateFields.push('status = ?');
       updateValues.push(billData.status);
     }
-    
+
     if (billData.notes !== undefined) {
       updateFields.push('notes = ?');
       updateValues.push(billData.notes);
     }
-    
+
     if (updateFields.length > 0) {
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
       updateValues.push(id);
-      
+
       const updateQuery = `UPDATE bills SET ${updateFields.join(', ')} WHERE id = ?`;
       db.exec(updateQuery, updateValues);
     }
-    
+
     // Si se proporcionan items, actualizar líneas de factura
     if (items) {
       // Eliminar líneas existentes
       db.exec('DELETE FROM bill_lines WHERE bill_id = ?', [id]);
-      
+
       // Obtener condado del proveedor para cálculo de impuestos
       const supplier = getSupplierById(currentBill.supplier_id);
       const county = supplier?.florida_county || 'Miami-Dade';
-      
+
       // Insertar nuevas líneas y recalcular totales
       let subtotal = 0;
       let taxAmount = 0;
-      
+
       const itemStmt = db.prepare(`
         INSERT INTO bill_lines (
           bill_id, product_id, description, quantity, unit_price, line_total, taxable
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      
+
       items.forEach(item => {
         const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
         subtotal += lineTotal;
         if (item.taxable) {
           taxAmount += lineTotal * getFloridaTaxRate(county); // Usar tasa dinámica por condado
         }
-        
+
         itemStmt.run([
           id,
           item.product_id || null,
@@ -3380,9 +3411,9 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
           item.taxable ? 1 : 0
         ]);
       });
-      
+
       itemStmt.free();
-      
+
       // Actualizar totales
       const total = subtotal + taxAmount;
       db.exec(`
@@ -3391,23 +3422,23 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
         WHERE id = ?
       `, [subtotal, taxAmount, total, id]);
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('bills', id, 'UPDATE', currentBill, billData);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     return { success: true, message: 'Factura de compra actualizada correctamente' };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error updating bill:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al actualizar la factura de compra' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al actualizar la factura de compra'
     };
   }
 };
@@ -3415,64 +3446,64 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
 // Eliminar factura de compra
 export const deleteBill = (id: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Verificar si la factura existe
     const bill = getBillById(id);
     if (!bill) {
       return { success: false, message: 'Factura de compra no encontrada' };
     }
-    
+
     // Verificar si la factura está pagada (no se puede eliminar)
     if (bill.status === 'paid') {
       return { success: false, message: 'No se pueden eliminar facturas de compra pagadas' };
     }
-    
+
     // Verificar si tiene pagos asociados
     const paymentCheck = db.exec(`
       SELECT COUNT(*) as count FROM supplier_payments WHERE bill_id = ${id}
     `);
     const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (paymentCount > 0) {
-      return { 
-        success: false, 
-        message: `La factura tiene ${paymentCount} pago(s) asociado(s). No se puede eliminar.` 
+      return {
+        success: false,
+        message: `La factura tiene ${paymentCount} pago(s) asociado(s). No se puede eliminar.`
       };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     // Eliminar líneas de factura primero (por foreign key)
     db.exec('DELETE FROM bill_lines WHERE bill_id = ?', [id]);
-    
+
     // Eliminar factura
     const stmt = db.prepare('DELETE FROM bills WHERE id = ?');
     stmt.run([id]);
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se pudo eliminar la factura de compra' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('bills', id, 'DELETE', bill, null);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     return { success: true, message: `Factura de compra ${bill.bill_number} eliminada correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error deleting bill:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al eliminar la factura de compra' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al eliminar la factura de compra'
     };
   }
 };
@@ -3484,21 +3515,21 @@ export const deleteBill = (id: number): { success: boolean; message: string } =>
 // Crear nueva cuenta contable
 export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { success: boolean; message: string; accountId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     logger.info('ChartOfAccounts', 'create_start', `Creando cuenta: ${accountData.account_code} - ${accountData.account_name}`);
-    
+
     // Validaciones básicas
     if (!accountData.account_code || !accountData.account_name || !accountData.account_type) {
       return { success: false, message: 'Código, nombre y tipo de cuenta son requeridos' };
     }
-    
+
     // Verificar que el código no exista
     const existingAccount = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ?`, [accountData.account_code]);
     if (existingAccount[0] && existingAccount[0].values.length > 0) {
       return { success: false, message: `El código de cuenta ${accountData.account_code} ya existe` };
     }
-    
+
     // Verificar que la cuenta padre exista si se especifica
     if (accountData.parent_account) {
       const parentExists = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ?`, [accountData.parent_account]);
@@ -3506,16 +3537,16 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
         return { success: false, message: `La cuenta padre ${accountData.parent_account} no existe` };
       }
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       INSERT INTO chart_of_accounts (
         account_code, account_name, account_type, normal_balance, parent_account,
         is_active, created_by, updated_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     stmt.run([
       accountData.account_code || '',
       accountData.account_name || '',
@@ -3526,39 +3557,39 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
       1, // TODO: Implementar sistema de usuarios
       1
     ]);
-    
+
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
     const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
-    
+
     stmt.free();
-    
+
     // Registrar en auditoría
     logAuditEvent('chart_of_accounts', insertId, 'INSERT', null, accountData);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     logger.info('ChartOfAccounts', 'create_success', `Cuenta ${accountData.account_code} creada exitosamente`, {
       accountCode: accountData.account_code,
       accountId: insertId
     });
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: `Cuenta ${accountData.account_code} - ${accountData.account_name} creada correctamente`,
       accountId: insertId
     };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     logger.error('ChartOfAccounts', 'create_failed', `Error al crear cuenta: ${error instanceof Error ? error.message : 'Unknown error'}`, {
       accountData: { code: accountData.account_code, name: accountData.account_name }
     }, error as Error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al crear la cuenta' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al crear la cuenta'
     };
   }
 };
@@ -3566,7 +3597,7 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
 // Obtener cuenta por código
 export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | null => {
   if (!db) return null;
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -3575,21 +3606,21 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
       FROM chart_of_accounts 
       WHERE account_code = ?
     `, [accountCode]);
-    
+
     if (!result[0] || result[0].values.length === 0) return null;
-    
+
     const columns = result[0].columns;
     const row = result[0].values[0];
-    
+
     const account: any = {};
     columns.forEach((col, index) => {
       account[col] = row[index];
     });
-    
+
     account.is_active = Boolean(account.is_active);
-    
+
     return account as ChartOfAccount;
-    
+
   } catch (error) {
     logger.error('ChartOfAccounts', 'get_by_code_failed', `Error al obtener cuenta ${accountCode}`, { accountCode }, error as Error);
     return null;
@@ -3599,25 +3630,25 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
 // Actualizar cuenta contable
 export const updateChartOfAccount = (accountCode: string, accountData: Partial<ChartOfAccount>): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Obtener cuenta actual para auditoría
     const currentAccount = getChartOfAccountByCode(accountCode);
     if (!currentAccount) {
       return { success: false, message: 'Cuenta no encontrada' };
     }
-    
+
     logger.info('ChartOfAccounts', 'update_start', `Actualizando cuenta: ${accountCode}`);
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       UPDATE chart_of_accounts 
       SET account_name = ?, account_type = ?, normal_balance = ?, 
           parent_account = ?, is_active = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
       WHERE account_code = ?
     `);
-    
+
     stmt.run([
       accountData.account_name || currentAccount.account_name,
       accountData.account_type || currentAccount.account_type,
@@ -3627,32 +3658,32 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
       1, // TODO: Implementar sistema de usuarios
       accountCode
     ]);
-    
+
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se realizaron cambios' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('chart_of_accounts', currentAccount.id || 0, 'UPDATE', currentAccount, accountData);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     logger.info('ChartOfAccounts', 'update_success', `Cuenta ${accountCode} actualizada exitosamente`);
     return { success: true, message: `Cuenta ${accountCode} actualizada correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     logger.error('ChartOfAccounts', 'update_failed', `Error al actualizar cuenta ${accountCode}`, { accountCode }, error as Error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al actualizar la cuenta' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al actualizar la cuenta'
     };
   }
 };
@@ -3660,67 +3691,67 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 // Eliminar cuenta contable (solo si no tiene movimientos)
 export const deleteChartOfAccount = (accountCode: string): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Verificar que la cuenta exista
     const account = getChartOfAccountByCode(accountCode);
     if (!account) {
       return { success: false, message: 'Cuenta no encontrada' };
     }
-    
+
     logger.info('ChartOfAccounts', 'delete_start', `Eliminando cuenta: ${accountCode}`);
-    
+
     // Verificar que no tenga cuentas hijas
     const childrenCheck = db.exec(`SELECT COUNT(*) as count FROM chart_of_accounts WHERE parent_account = ?`, [accountCode]);
     const childrenCount = childrenCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (childrenCount > 0) {
-      return { 
-        success: false, 
-        message: `La cuenta tiene ${childrenCount} cuenta(s) hija(s). No se puede eliminar.` 
+      return {
+        success: false,
+        message: `La cuenta tiene ${childrenCount} cuenta(s) hija(s). No se puede eliminar.`
       };
     }
-    
+
     // Verificar que no tenga movimientos en journal_details
     const movementsCheck = db.exec(`SELECT COUNT(*) as count FROM journal_details WHERE account_code = ?`, [accountCode]);
     const movementsCount = movementsCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (movementsCount > 0) {
-      return { 
-        success: false, 
-        message: `La cuenta tiene ${movementsCount} movimiento(s) contable(s). No se puede eliminar.` 
+      return {
+        success: false,
+        message: `La cuenta tiene ${movementsCount} movimiento(s) contable(s). No se puede eliminar.`
       };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare('DELETE FROM chart_of_accounts WHERE account_code = ?');
     stmt.run([accountCode]);
     const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
     stmt.free();
-    
+
     if (changes === 0) {
       db.run('ROLLBACK');
       return { success: false, message: 'No se pudo eliminar la cuenta' };
     }
-    
+
     // Registrar en auditoría
     logAuditEvent('chart_of_accounts', account.id || 0, 'DELETE', account, null);
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     logger.info('ChartOfAccounts', 'delete_success', `Cuenta ${accountCode} eliminada exitosamente`);
     return { success: true, message: `Cuenta ${accountCode} eliminada correctamente` };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     logger.error('ChartOfAccounts', 'delete_failed', `Error al eliminar cuenta ${accountCode}`, { accountCode }, error as Error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al eliminar la cuenta' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al eliminar la cuenta'
     };
   }
 };
@@ -3728,28 +3759,28 @@ export const deleteChartOfAccount = (accountCode: string): { success: boolean; m
 // Insertar plan de cuentas inicial
 export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean; message: string }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     logger.info('ChartOfAccounts', 'init_start', 'Insertando plan de cuentas inicial');
-    
+
     // Verificar si ya existen cuentas
     const existingAccounts = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
     const accountCount = existingAccounts[0]?.values[0]?.[0] as number || 0;
-    
+
     if (accountCount > 0) {
       logger.info('ChartOfAccounts', 'init_skip', `Plan de cuentas ya existe: ${accountCount} cuentas`);
       return { success: true, message: 'Plan de cuentas ya existe' };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     const stmt = db.prepare(`
       INSERT INTO chart_of_accounts (
         account_code, account_name, account_type, normal_balance, parent_account,
         is_active, created_by, updated_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     // Insertar cuentas iniciales (definidas en ChartOfAccounts.tsx)
     const initialAccounts = [
       // ACTIVOS
@@ -3758,27 +3789,27 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
       { account_code: '1110', account_name: 'Efectivo y Equivalentes', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
       { account_code: '1111', account_name: 'Caja Chica', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
       { account_code: '1112', account_name: 'Cuenta Corriente - Bank of America', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      
+
       // PASIVOS
       { account_code: '2000', account_name: 'PASIVOS', account_type: 'liability', normal_balance: 'credit', parent_account: null, is_active: true },
       { account_code: '2100', account_name: 'Pasivos Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
       { account_code: '2110', account_name: 'Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      
+
       // PATRIMONIO
       { account_code: '3000', account_name: 'PATRIMONIO', account_type: 'equity', normal_balance: 'credit', parent_account: null, is_active: true },
       { account_code: '3100', account_name: 'Capital Social', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
-      
+
       // INGRESOS
       { account_code: '4000', account_name: 'INGRESOS', account_type: 'revenue', normal_balance: 'credit', parent_account: null, is_active: true },
       { account_code: '4100', account_name: 'Ingresos Operacionales', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
       { account_code: '4110', account_name: 'Ventas', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
-      
+
       // GASTOS
       { account_code: '5000', account_name: 'GASTOS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
       { account_code: '5100', account_name: 'Costo de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
       { account_code: '5200', account_name: 'Gastos Operacionales', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true }
     ];
-    
+
     initialAccounts.forEach(account => {
       stmt.run([
         account.account_code,
@@ -3791,26 +3822,26 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
         1  // updated_by
       ]);
     });
-    
+
     stmt.free();
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
+
     logger.info('ChartOfAccounts', 'init_success', `Plan de cuentas inicial insertado: ${initialAccounts.length} cuentas`);
-    return { 
-      success: true, 
-      message: `Plan de cuentas inicial creado con ${initialAccounts.length} cuentas` 
+    return {
+      success: true,
+      message: `Plan de cuentas inicial creado con ${initialAccounts.length} cuentas`
     };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     logger.error('ChartOfAccounts', 'init_failed', 'Error al insertar plan de cuentas inicial', null, error as Error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al crear plan de cuentas inicial' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al crear plan de cuentas inicial'
     };
   }
 };
@@ -3870,7 +3901,7 @@ export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors
     }
 
     const isValid = errors.length === 0;
-    
+
     logger.info('AuditSystem', 'verify_integrity_complete', 'Verificación de integridad completada', {
       totalRecords: records.length,
       isValid,
@@ -3911,7 +3942,7 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
       GROUP BY table_name 
       ORDER BY count DESC
     `);
-    
+
     const byTable: Record<string, number> = {};
     if (tableResult[0]) {
       tableResult[0].values.forEach(row => {
@@ -3926,7 +3957,7 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
       GROUP BY action 
       ORDER BY count DESC
     `);
-    
+
     const byAction: Record<string, number> = {};
     if (actionResult[0]) {
       actionResult[0].values.forEach(row => {
@@ -3962,7 +3993,7 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
 // Obtener todas las cuentas del plan de cuentas
 export const getChartOfAccounts = (): ChartOfAccount[] => {
   if (!db) return [];
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -3972,24 +4003,24 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
       WHERE is_active = 1
       ORDER BY account_code
     `);
-    
+
     if (!result[0]) return [];
-    
+
     const accounts: ChartOfAccount[] = [];
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const account: any = {};
       columns.forEach((col, index) => {
         account[col] = row[index];
       });
-      
+
       // Calcular balance actual
       account.balance = getAccountBalance(account.account_code);
-      
+
       accounts.push(account as ChartOfAccount);
     });
-    
+
     return accounts;
   } catch (error) {
     console.error('Error getting chart of accounts:', error);
@@ -4000,7 +4031,7 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
 // Obtener balance de una cuenta específica
 export const getAccountBalance = (accountCode: string): number => {
   if (!db) return 0;
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -4012,13 +4043,13 @@ export const getAccountBalance = (accountCode: string): number => {
       WHERE coa.account_code = ?
       GROUP BY coa.account_code, coa.normal_balance
     `, [accountCode]);
-    
+
     if (!result[0] || result[0].values.length === 0) return 0;
-    
+
     const [normalBalance, totalDebits, totalCredits] = result[0].values[0];
     const debits = Number(totalDebits) || 0;
     const credits = Number(totalCredits) || 0;
-    
+
     // Calcular balance según el tipo normal de la cuenta
     if (normalBalance === 'debit') {
       return debits - credits;
@@ -4036,9 +4067,9 @@ export const getAccountBalance = (accountCode: string): number => {
 // Función de diagnóstico para verificar el estado del sistema contable
 export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; message: string; details: any }> => {
   if (!db) {
-    return { 
-      success: false, 
-      message: 'Database not initialized', 
+    return {
+      success: false,
+      message: 'Database not initialized',
       details: { error: 'Database connection not available' }
     };
   }
@@ -4087,14 +4118,14 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
     };
 
     if (existingTables.length < 3) {
-      logger.error('AccountingDiagnosis', 'missing_tables', 'Faltan tablas de contabilidad', { 
+      logger.error('AccountingDiagnosis', 'missing_tables', 'Faltan tablas de contabilidad', {
         expected: ['chart_of_accounts', 'journal_entries', 'journal_details'],
-        found: existingTables 
+        found: existingTables
       });
-      return { 
-        success: false, 
-        message: 'Faltan tablas de contabilidad', 
-        details: diagnosis 
+      return {
+        success: false,
+        message: 'Faltan tablas de contabilidad',
+        details: diagnosis
       };
     }
 
@@ -4105,9 +4136,9 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
         const insertResult = await insertInitialChartOfAccounts();
         if (!insertResult.success) {
           logger.error('AccountingDiagnosis', 'insert_failed', 'Error al insertar plan de cuentas inicial', { error: insertResult.message });
-          return { 
-            success: false, 
-            message: 'Error al inicializar plan de cuentas', 
+          return {
+            success: false,
+            message: 'Error al inicializar plan de cuentas',
             details: { ...diagnosis, insertError: insertResult.message }
           };
         }
@@ -4117,17 +4148,17 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
     }
 
     logger.info('AccountingDiagnosis', 'diagnosis_complete', 'Diagnóstico completado exitosamente', diagnosis);
-    return { 
-      success: true, 
-      message: 'Sistema contable funcionando correctamente', 
-      details: diagnosis 
+    return {
+      success: true,
+      message: 'Sistema contable funcionando correctamente',
+      details: diagnosis
     };
 
   } catch (error) {
     logger.critical('AccountingDiagnosis', 'diagnosis_failed', 'Error crítico en diagnóstico', null, error as Error);
-    return { 
-      success: false, 
-      message: `Error en diagnóstico: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+    return {
+      success: false,
+      message: `Error en diagnóstico: ${error instanceof Error ? error.message : 'Unknown error'}`,
       details: { error: error instanceof Error ? error.stack : 'Unknown error' }
     };
   }
@@ -4135,45 +4166,45 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
 
 // Crear asiento contable automático
 export const createJournalEntry = (
-  entryData: Partial<JournalEntry>, 
+  entryData: Partial<JournalEntry>,
   details: Partial<JournalDetail>[]
 ): { success: boolean; message: string; entryId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
-  
+
   try {
     // Validaciones críticas para integridad contable
     if (!details || details.length < 2) {
       return { success: false, message: 'Un asiento contable debe tener al menos 2 líneas' };
     }
-    
+
     // Calcular totales
     let totalDebits = 0;
     let totalCredits = 0;
-    
+
     details.forEach(detail => {
       totalDebits += Number(detail.debit_amount) || 0;
       totalCredits += Number(detail.credit_amount) || 0;
     });
-    
+
     // VALIDACIÓN CRÍTICA: El asiento debe estar balanceado
     if (Math.abs(totalDebits - totalCredits) > 0.01) {
-      return { 
-        success: false, 
-        message: `Asiento desbalanceado: Débitos $${totalDebits.toFixed(2)} ≠ Créditos $${totalCredits.toFixed(2)}` 
+      return {
+        success: false,
+        message: `Asiento desbalanceado: Débitos $${totalDebits.toFixed(2)} ≠ Créditos $${totalCredits.toFixed(2)}`
       };
     }
-    
+
     db.run('BEGIN TRANSACTION');
-    
+
     // Insertar asiento principal
     const stmt = db.prepare(`
       INSERT INTO journal_entries (
         entry_date, reference, description, total_debit, total_credit, created_by
       ) VALUES (?, ?, ?, ?, ?, ?)
     `);
-    
+
     const entryDate = entryData.entry_date || new Date().toISOString().split('T')[0];
-    
+
     stmt.run([
       entryDate,
       entryData.reference_number || entryData.reference || null,
@@ -4182,26 +4213,26 @@ export const createJournalEntry = (
       totalCredits,
       1 // TODO: Implementar sistema de usuarios
     ]);
-    
+
     const entryId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
     stmt.free();
-    
+
     // Insertar detalles del asiento
     const detailStmt = db.prepare(`
       INSERT INTO journal_details (
         journal_entry_id, account_code, debit_amount, credit_amount, description
       ) VALUES (?, ?, ?, ?, ?)
     `);
-    
+
     details.forEach(detail => {
       // Validar que la cuenta exista
       if (!db) throw new Error('Database not initialized');
-      
+
       const accountExists = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ?`, [detail.account_code || '']);
       if (!accountExists[0] || accountExists[0].values.length === 0) {
         throw new Error(`La cuenta ${detail.account_code || 'undefined'} no existe en el plan de cuentas`);
       }
-      
+
       detailStmt.run([
         entryId,
         detail.account_code || '',
@@ -4210,9 +4241,9 @@ export const createJournalEntry = (
         detail.description || ''
       ]);
     });
-    
+
     detailStmt.free();
-    
+
     // Registrar en auditoría
     logAuditEvent('journal_entries', entryId, 'INSERT', null, {
       entry_date: entryDate,
@@ -4221,24 +4252,24 @@ export const createJournalEntry = (
       total_credit: totalCredits,
       details_count: details.length
     });
-    
+
     db.run('COMMIT');
-    
+
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: `Asiento contable creado correctamente (ID: ${entryId})`,
-      entryId 
+      entryId
     };
-    
+
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error creating journal entry:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Error al crear el asiento contable' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al crear el asiento contable'
     };
   }
 };
@@ -4246,7 +4277,7 @@ export const createJournalEntry = (
 // Obtener asientos contables con detalles
 export const getJournalEntries = (limit: number = 50): JournalEntry[] => {
   if (!db) return [];
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -4256,24 +4287,24 @@ export const getJournalEntries = (limit: number = 50): JournalEntry[] => {
       ORDER BY entry_date DESC, id DESC
       LIMIT ?
     `, [limit]);
-    
+
     if (!result[0]) return [];
-    
+
     const entries: JournalEntry[] = [];
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const entry: any = {};
       columns.forEach((col, index) => {
         entry[col] = row[index];
       });
-      
+
       // Obtener detalles del asiento
       entry.details = getJournalEntryDetails(entry.id);
-      
+
       entries.push(entry as JournalEntry);
     });
-    
+
     return entries;
   } catch (error) {
     console.error('Error getting journal entries:', error);
@@ -4284,7 +4315,7 @@ export const getJournalEntries = (limit: number = 50): JournalEntry[] => {
 // Obtener detalles de un asiento específico
 export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
   if (!db) return [];
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -4296,18 +4327,18 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
       WHERE jd.journal_entry_id = ?
       ORDER BY jd.id
     `, [entryId]);
-    
+
     if (!result[0]) return [];
-    
+
     const details: JournalDetail[] = [];
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const detail: any = {};
       columns.forEach((col, index) => {
         detail[col] = row[index];
       });
-      
+
       // Agregar información de la cuenta
       detail.account = {
         account_code: detail.account_code,
@@ -4315,10 +4346,10 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
         account_type: detail.account_type,
         normal_balance: detail.normal_balance
       };
-      
+
       details.push(detail as JournalDetail);
     });
-    
+
     return details;
   } catch (error) {
     console.error('Error getting journal entry details:', error);
@@ -4335,7 +4366,7 @@ export const generateSalesJournalEntry = (invoice: Invoice): { success: boolean;
   if (!invoice.customer) {
     return { success: false, message: 'Información del cliente requerida' };
   }
-  
+
   const details: Partial<JournalDetail>[] = [
     // Débito: Cuentas por Cobrar
     {
@@ -4352,7 +4383,7 @@ export const generateSalesJournalEntry = (invoice: Invoice): { success: boolean;
       description: `Venta - Factura ${invoice.invoice_number}`
     }
   ];
-  
+
   // Si hay impuestos, agregar línea de impuestos por pagar
   if (invoice.tax_amount > 0) {
     details.push({
@@ -4362,7 +4393,7 @@ export const generateSalesJournalEntry = (invoice: Invoice): { success: boolean;
       description: `Impuesto Florida - Factura ${invoice.invoice_number}`
     });
   }
-  
+
   return createJournalEntry({
     entry_date: invoice.issue_date,
     reference_number: `INV-${invoice.invoice_number}`,
@@ -4375,7 +4406,7 @@ export const generatePurchaseJournalEntry = (bill: Bill): { success: boolean; me
   if (!bill.supplier) {
     return { success: false, message: 'Información del proveedor requerida' };
   }
-  
+
   const details: Partial<JournalDetail>[] = [
     // Débito: Gastos o Inventario (simplificado como gastos operativos)
     {
@@ -4392,7 +4423,7 @@ export const generatePurchaseJournalEntry = (bill: Bill): { success: boolean; me
       description: `Factura ${bill.bill_number} - ${bill.supplier.name}`
     }
   ];
-  
+
   // Si hay impuestos, agregar línea de impuestos
   if (bill.tax_amount > 0) {
     details.push({
@@ -4402,7 +4433,7 @@ export const generatePurchaseJournalEntry = (bill: Bill): { success: boolean; me
       description: `Impuesto Florida - Factura ${bill.bill_number}`
     });
   }
-  
+
   return createJournalEntry({
     entry_date: bill.issue_date,
     reference_number: `BILL-${bill.bill_number}`,
@@ -4428,7 +4459,7 @@ export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: 
       description: `Pago ${payment.payment_number} - ${customer.name}`
     }
   ];
-  
+
   return createJournalEntry({
     entry_date: payment.payment_date,
     reference_number: `PAY-${payment.payment_number}`,
@@ -4443,10 +4474,10 @@ export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: 
 // Generar Balance General
 export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccount[], liabilities: ChartOfAccount[], equity: ChartOfAccount[], totalAssets: number, totalLiabilitiesEquity: number, isBalanced: boolean } => {
   if (!db) return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesEquity: 0, isBalanced: false };
-  
+
   try {
     const dateFilter = asOfDate ? `AND je.entry_date <= '${asOfDate}'` : '';
-    
+
     const result = db.exec(`
       SELECT 
         coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
@@ -4461,33 +4492,33 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
       GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
     `);
-    
+
     if (!result[0]) return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesEquity: 0, isBalanced: false };
-    
+
     const assets: ChartOfAccount[] = [];
     const liabilities: ChartOfAccount[] = [];
     const equity: ChartOfAccount[] = [];
     let totalAssets = 0;
     let totalLiabilitiesEquity = 0;
-    
+
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const account: any = {};
       columns.forEach((col, index) => {
         account[col] = row[index];
       });
-      
+
       const debits = Number(account.total_debits) || 0;
       const credits = Number(account.total_credits) || 0;
-      
+
       // Calcular balance según tipo normal
       if (account.normal_balance === 'debit') {
         account.balance = debits - credits;
       } else {
         account.balance = credits - debits;
       }
-      
+
       // Clasificar por tipo de cuenta
       if (account.account_type === 'asset') {
         assets.push(account);
@@ -4500,9 +4531,9 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
         totalLiabilitiesEquity += account.balance;
       }
     });
-    
+
     const isBalanced = Math.abs(totalAssets - totalLiabilitiesEquity) < 0.01;
-    
+
     return {
       assets,
       liabilities,
@@ -4511,7 +4542,7 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
       totalLiabilitiesEquity,
       isBalanced
     };
-    
+
   } catch (error) {
     console.error('Error generating balance sheet:', error);
     return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesEquity: 0, isBalanced: false };
@@ -4521,7 +4552,7 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
 // Generar Estado de Resultados
 export const generateIncomeStatement = (fromDate: string, toDate: string): { revenue: ChartOfAccount[], expenses: ChartOfAccount[], totalRevenue: number, totalExpenses: number, netIncome: number } => {
   if (!db) return { revenue: [], expenses: [], totalRevenue: 0, totalExpenses: 0, netIncome: 0 };
-  
+
   try {
     const result = db.exec(`
       SELECT 
@@ -4537,32 +4568,32 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
       GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
     `, [fromDate, toDate]);
-    
+
     if (!result[0]) return { revenue: [], expenses: [], totalRevenue: 0, totalExpenses: 0, netIncome: 0 };
-    
+
     const revenue: ChartOfAccount[] = [];
     const expenses: ChartOfAccount[] = [];
     let totalRevenue = 0;
     let totalExpenses = 0;
-    
+
     const columns = result[0].columns;
-    
+
     result[0].values.forEach(row => {
       const account: any = {};
       columns.forEach((col, index) => {
         account[col] = row[index];
       });
-      
+
       const debits = Number(account.total_debits) || 0;
       const credits = Number(account.total_credits) || 0;
-      
+
       // Calcular balance según tipo normal
       if (account.normal_balance === 'debit') {
         account.balance = debits - credits;
       } else {
         account.balance = credits - debits;
       }
-      
+
       // Clasificar por tipo de cuenta
       if (account.account_type === 'revenue') {
         revenue.push(account);
@@ -4572,9 +4603,9 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
         totalExpenses += account.balance;
       }
     });
-    
+
     const netIncome = totalRevenue - totalExpenses;
-    
+
     return {
       revenue,
       expenses,
@@ -4582,7 +4613,7 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
       totalExpenses,
       netIncome
     };
-    
+
   } catch (error) {
     console.error('Error generating income statement:', error);
     return { revenue: [], expenses: [], totalRevenue: 0, totalExpenses: 0, netIncome: 0 };
@@ -4634,7 +4665,7 @@ export interface CompanyData {
 export function getCompanyData(): CompanyData | null {
   try {
     logger.info('CompanyData', 'get_start', 'Obteniendo datos de la empresa');
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -4688,7 +4719,7 @@ export function getCompanyData(): CompanyData | null {
 
     logger.info('CompanyData', 'get_success', 'Datos de empresa obtenidos', { company_name: company.company_name });
     return company;
-    
+
   } catch (error) {
     logger.error('CompanyData', 'get_failed', 'Error al obtener datos de empresa', null, error as Error);
     throw error;
@@ -4698,7 +4729,7 @@ export function getCompanyData(): CompanyData | null {
 export function updateCompanyData(companyData: Partial<CompanyData>): { success: boolean; message: string; warnings?: string[] } {
   try {
     logger.info('CompanyData', 'update_start', 'Actualizando datos de empresa', companyData);
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -4706,11 +4737,11 @@ export function updateCompanyData(companyData: Partial<CompanyData>): { success:
     // Verificar si hay datos contables asociados
     const warnings: string[] = [];
     const accountingDataCheck = checkAccountingDataAssociation();
-    
+
     if (accountingDataCheck.hasData) {
       warnings.push('⚠️ ADVERTENCIA: Esta empresa tiene datos contables asociados');
       warnings.push(`📊 ${accountingDataCheck.invoices} facturas, ${accountingDataCheck.customers} clientes, ${accountingDataCheck.suppliers} proveedores`);
-      
+
       // Si se está cambiando el nombre de la empresa y hay datos contables
       if (companyData.company_name || companyData.legal_name) {
         warnings.push('🔄 Cambiar el nombre puede afectar reportes y documentos existentes');
@@ -4864,7 +4895,7 @@ export function checkAccountingDataAssociation(): { hasData: boolean; customers:
 export function initializeCompanyData(): void {
   try {
     logger.info('CompanyData', 'init_start', 'Inicializando datos de empresa por defecto');
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -4977,7 +5008,7 @@ export function initializeCompanyData(): void {
 export function getProductCategories(): ProductCategory[] {
   try {
     logger.info('ProductCategories', 'get_start', 'Obteniendo categorías de productos');
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5002,17 +5033,17 @@ export function getProductCategories(): ProductCategory[] {
 
     result[0].values.forEach(row => {
       const category: any = {};
-      
+
       columns.forEach((col, index) => {
         category[col] = row[index];
       });
-      
+
       categories.push(category as ProductCategory);
     });
 
     logger.info('ProductCategories', 'get_success', 'Categorías obtenidas', { count: categories.length });
     return categories;
-    
+
   } catch (error) {
     logger.error('ProductCategories', 'get_failed', 'Error al obtener categorías', null, error as Error);
     return [];
@@ -5022,7 +5053,7 @@ export function getProductCategories(): ProductCategory[] {
 export function createProductCategory(categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>): { success: boolean; message: string; id?: number } {
   try {
     logger.info('ProductCategories', 'create_start', 'Creando categoría de producto', categoryData);
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5087,7 +5118,7 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
 export function updateProductCategory(id: number, categoryData: Partial<ProductCategory>): { success: boolean; message: string } {
   try {
     logger.info('ProductCategories', 'update_start', 'Actualizando categoría', { id, ...categoryData });
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5141,7 +5172,7 @@ export function updateProductCategory(id: number, categoryData: Partial<ProductC
 export function deleteProductCategory(id: number): { success: boolean; message: string } {
   try {
     logger.info('ProductCategories', 'delete_start', 'Eliminando categoría', { id });
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5170,7 +5201,7 @@ export function deleteProductCategory(id: number): { success: boolean; message: 
 
     // Obtener datos actuales para auditoría
     const currentResult = db.exec('SELECT * FROM product_categories WHERE id = ?', [id]);
-    
+
     // Marcar como inactiva en lugar de eliminar físicamente
     const stmt = db.prepare('UPDATE product_categories SET active = 0, updated_at = ? WHERE id = ?');
     stmt.run([new Date().toISOString(), id]);
@@ -5201,7 +5232,7 @@ export function deleteProductCategory(id: number): { success: boolean; message: 
 export function getProducts(): Product[] {
   try {
     logger.info('Products', 'get_start', 'Obteniendo productos');
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5228,7 +5259,7 @@ export function getProducts(): Product[] {
 
     result[0].values.forEach(row => {
       const product: any = {};
-      
+
       columns.forEach((col, index) => {
         if (col === 'category_name' && row[index]) {
           product.category = { name: row[index] as string } as ProductCategory;
@@ -5238,13 +5269,13 @@ export function getProducts(): Product[] {
           product[col] = row[index];
         }
       });
-      
+
       products.push(product as Product);
     });
 
     logger.info('Products', 'get_success', 'Productos obtenidos', { count: products.length });
     return products;
-    
+
   } catch (error) {
     logger.error('Products', 'get_failed', 'Error al obtener productos', null, error as Error);
     return [];
@@ -5254,7 +5285,7 @@ export function getProducts(): Product[] {
 export function createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>): { success: boolean; message: string; id?: number } {
   try {
     logger.info('Products', 'create_start', 'Creando producto', productData);
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5349,7 +5380,7 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
 export function updateProduct(id: number, productData: Partial<Product>): { success: boolean; message: string } {
   try {
     logger.info('Products', 'update_start', 'Actualizando producto', { id, ...productData });
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5451,7 +5482,7 @@ export function updateProduct(id: number, productData: Partial<Product>): { succ
 export function deleteProduct(id: number): { success: boolean; message: string } {
   try {
     logger.info('Products', 'delete_start', 'Eliminando producto', { id });
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5480,7 +5511,7 @@ export function deleteProduct(id: number): { success: boolean; message: string }
 
     // Obtener datos actuales para auditoría
     const currentResult = db.exec('SELECT * FROM products WHERE id = ?', [id]);
-    
+
     // Marcar como inactivo en lugar de eliminar físicamente
     const stmt = db.prepare('UPDATE products SET active = 0, updated_at = ? WHERE id = ?');
     stmt.run([new Date().toISOString(), id]);
@@ -5547,7 +5578,7 @@ export function getProductById(id: number): Product | null {
 export function updateProductStock(productId: number, quantity: number, operation: 'add' | 'subtract'): { success: boolean; message: string } {
   try {
     logger.info('Products', 'update_stock_start', 'Actualizando stock de producto', { productId, quantity, operation });
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5571,17 +5602,17 @@ export function updateProductStock(productId: number, quantity: number, operatio
     stmt.run([newStock, new Date().toISOString(), productId]);
 
     // Registrar en auditoría
-    logAuditEvent('products', productId, 'UPDATE', 
-      JSON.stringify({ stock_quantity: product.stock_quantity }), 
+    logAuditEvent('products', productId, 'UPDATE',
+      JSON.stringify({ stock_quantity: product.stock_quantity }),
       JSON.stringify({ stock_quantity: newStock, operation, quantity })
     );
 
-    logger.info('Products', 'update_stock_success', 'Stock actualizado', { 
-      productId, 
-      oldStock: product.stock_quantity, 
-      newStock, 
-      operation, 
-      quantity 
+    logger.info('Products', 'update_stock_success', 'Stock actualizado', {
+      productId,
+      oldStock: product.stock_quantity,
+      newStock,
+      operation,
+      quantity
     });
 
     return {
@@ -5601,7 +5632,7 @@ export function updateProductStock(productId: number, quantity: number, operatio
 export function getProductsLowStock(): Product[] {
   try {
     logger.info('Products', 'get_low_stock_start', 'Obteniendo productos con stock bajo');
-    
+
     if (!db) {
       throw new Error('Base de datos no inicializada');
     }
@@ -5629,7 +5660,7 @@ export function getProductsLowStock(): Product[] {
 
     result[0].values.forEach(row => {
       const product: any = {};
-      
+
       columns.forEach((col, index) => {
         if (col === 'category_name' && row[index]) {
           product.category = { name: row[index] as string } as ProductCategory;
@@ -5639,13 +5670,13 @@ export function getProductsLowStock(): Product[] {
           product[col] = row[index];
         }
       });
-      
+
       products.push(product as Product);
     });
 
     logger.info('Products', 'get_low_stock_success', 'Productos con stock bajo obtenidos', { count: products.length });
     return products;
-    
+
   } catch (error) {
     logger.error('Products', 'get_low_stock_failed', 'Error al obtener productos con stock bajo', null, error as Error);
     return [];
@@ -5671,7 +5702,7 @@ export function calculateFloridaDR15Report(period: string): FloridaDR15Report | 
 
     // Determinar rango de fechas según el período
     const { startDate, endDate } = parsePeriod(period);
-    
+
     // Obtener todas las facturas del período
     const invoicesResult = db.exec(`
       SELECT 
@@ -5719,7 +5750,7 @@ export function calculateFloridaDR15Report(period: string): FloridaDR15Report | 
             taxAmount: 0
           };
         }
-        
+
         countyBreakdown[county].taxableAmount += subtotal;
         countyBreakdown[county].taxAmount += taxAmount;
       }
@@ -5821,7 +5852,7 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
       total_tax: report.totalTaxCollected,
       counties: report.countyBreakdown.length
     };
-    
+
     db.exec(`
       INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
       VALUES (?, ?, ?, ?, ?, ?)
@@ -5834,22 +5865,22 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
       generateSimpleHash(auditData)
     ]);
 
-    logger.info('DR15', 'save_success', 'Reporte DR-15 guardado correctamente', { 
-      period: report.period, 
-      reportId 
+    logger.info('DR15', 'save_success', 'Reporte DR-15 guardado correctamente', {
+      period: report.period,
+      reportId
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: `Reporte DR-15 para ${report.period} guardado correctamente`,
       id: reportId
     };
 
   } catch (error) {
     logger.error('DR15', 'save_failed', 'Error al guardar reporte DR-15', { period: report.period }, error as Error);
-    return { 
-      success: false, 
-      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+    return {
+      success: false,
+      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}`
     };
   }
 }
@@ -5892,7 +5923,7 @@ export function getDR15Reports(): FloridaDR15Report[] {
         WHERE report_id = ?
       `, [reportId]);
 
-      const countyBreakdown = countiesResult.length > 0 ? 
+      const countyBreakdown = countiesResult.length > 0 ?
         countiesResult[0].values.map(countyRow => ({
           county: countyRow[0] as string,
           rate: Number(countyRow[1]),
@@ -5958,17 +5989,17 @@ export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { su
     `, [filedBy, period]);
 
     logger.info('DR15', 'mark_filed_success', 'Reporte marcado como presentado', { period });
-    
-    return { 
-      success: true, 
-      message: `Reporte DR-15 para ${period} marcado como presentado` 
+
+    return {
+      success: true,
+      message: `Reporte DR-15 para ${period} marcado como presentado`
     };
 
   } catch (error) {
     logger.error('DR15', 'mark_filed_failed', 'Error al marcar reporte como presentado', { period }, error as Error);
-    return { 
-      success: false, 
-      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+    return {
+      success: false,
+      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}`
     };
   }
 }
@@ -5983,12 +6014,12 @@ export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { su
 function parsePeriod(period: string): { startDate: string; endDate: string } {
   const [year, quarter] = period.split('-');
   const yearNum = parseInt(year);
-  
+
   if (quarter.startsWith('Q')) {
     const quarterNum = parseInt(quarter.substring(1));
     const startMonth = (quarterNum - 1) * 3 + 1;
     const endMonth = quarterNum * 3;
-    
+
     return {
       startDate: `${yearNum}-${startMonth.toString().padStart(2, '0')}-01`,
       endDate: `${yearNum}-${endMonth.toString().padStart(2, '0')}-${getLastDayOfMonth(yearNum, endMonth)}`
@@ -6017,12 +6048,12 @@ function getLastDayOfMonth(year: number, month: number): string {
 function calculateDueDate(period: string): Date {
   const { endDate } = parsePeriod(period);
   const periodEnd = new Date(endDate);
-  
+
   // DR-15 vence el día 20 del mes siguiente al período
   const dueDate = new Date(periodEnd);
   dueDate.setMonth(dueDate.getMonth() + 1);
   dueDate.setDate(20);
-  
+
   return dueDate;
 }
 
@@ -6050,19 +6081,451 @@ export function getAvailableDR15Periods(): string[] {
   const periods: string[] = [];
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
-  
+
   // Generar últimos 8 trimestres
   for (let year = currentYear - 1; year <= currentYear; year++) {
     for (let quarter = 1; quarter <= 4; quarter++) {
       const period = `${year}-Q${quarter}`;
       const { endDate } = parsePeriod(period);
-      
+
       // Solo incluir períodos que ya han terminado
       if (new Date(endDate) < currentDate) {
         periods.push(period);
       }
     }
   }
-  
+
   return periods.reverse(); // Más recientes primero
+}
+
+// ==========================================
+// FUNCIONES PARA MÉTODOS DE PAGO
+// ==========================================
+
+/**
+ * Obtiene todos los métodos de pago activos
+ */
+export function getPaymentMethods(): PaymentMethod[] {
+  if (!db) {
+    logger.error('PaymentMethods', 'get_no_db', 'Base de datos no disponible');
+    return [];
+  }
+
+  try {
+    logger.info('PaymentMethods', 'get_start', 'Obteniendo métodos de pago');
+
+    const result = db.exec(`
+      SELECT id, method_name, method_type, is_active, requires_reference, created_at
+      FROM payment_methods
+      WHERE is_active = 1
+      ORDER BY method_name ASC
+    `);
+
+    if (result.length === 0) {
+      logger.info('PaymentMethods', 'get_empty', 'No hay métodos de pago');
+      return [];
+    }
+
+    const paymentMethods: PaymentMethod[] = [];
+    const columns = result[0].columns;
+
+    result[0].values.forEach(row => {
+      const paymentMethod: any = {};
+      columns.forEach((col, index) => {
+        paymentMethod[col] = row[index];
+      });
+      paymentMethods.push(paymentMethod as PaymentMethod);
+    });
+
+    logger.info('PaymentMethods', 'get_success', 'Métodos de pago obtenidos', { count: paymentMethods.length });
+    return paymentMethods;
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'get_failed', 'Error al obtener métodos de pago', null, error as Error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene todos los métodos de pago (incluyendo inactivos)
+ */
+export function getAllPaymentMethods(): PaymentMethod[] {
+  if (!db) {
+    logger.error('PaymentMethods', 'get_all_no_db', 'Base de datos no disponible');
+    return [];
+  }
+
+  try {
+    logger.info('PaymentMethods', 'get_all_start', 'Obteniendo todos los métodos de pago');
+
+    const result = db.exec(`
+      SELECT id, method_name, method_type, is_active, requires_reference, created_at
+      FROM payment_methods
+      ORDER BY method_name ASC
+    `);
+
+    if (result.length === 0) {
+      logger.info('PaymentMethods', 'get_all_empty', 'No hay métodos de pago');
+      return [];
+    }
+
+    const paymentMethods: PaymentMethod[] = [];
+    const columns = result[0].columns;
+
+    result[0].values.forEach(row => {
+      const paymentMethod: any = {};
+      columns.forEach((col, index) => {
+        paymentMethod[col] = row[index];
+      });
+      paymentMethods.push(paymentMethod as PaymentMethod);
+    });
+
+    logger.info('PaymentMethods', 'get_all_success', 'Todos los métodos de pago obtenidos', { count: paymentMethods.length });
+    return paymentMethods;
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'get_all_failed', 'Error al obtener todos los métodos de pago', null, error as Error);
+    return [];
+  }
+}
+
+/**
+ * Crea un nuevo método de pago
+ */
+export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'created_at'>): { success: boolean; message: string; id?: number } {
+  if (!db) {
+    return { success: false, message: 'Base de datos no disponible' };
+  }
+
+  try {
+    logger.info('PaymentMethods', 'create_start', 'Creando método de pago', methodData);
+
+    // Verificar que no exista un método con el mismo nombre
+    const existingResult = db.exec(`
+      SELECT id FROM payment_methods WHERE method_name = ?
+    `, [methodData.method_name]);
+
+    if (existingResult.length > 0 && existingResult[0].values.length > 0) {
+      return { success: false, message: `Ya existe un método de pago con el nombre "${methodData.method_name}"` };
+    }
+
+    // Insertar nuevo método de pago
+    db.exec(`
+      INSERT INTO payment_methods (method_name, method_type, is_active, requires_reference)
+      VALUES (?, ?, ?, ?)
+    `, [
+      methodData.method_name,
+      methodData.method_type,
+      methodData.is_active ? 1 : 0,
+      methodData.requires_reference ? 1 : 0
+    ]);
+
+    // Obtener el ID del método insertado
+    const newId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+
+    // Registrar en auditoría
+    const auditData = {
+      method_name: methodData.method_name,
+      method_type: methodData.method_type,
+      is_active: methodData.is_active
+    };
+
+    db.exec(`
+      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      'payment_methods',
+      newId,
+      'INSERT',
+      JSON.stringify(auditData),
+      1,
+      generateSimpleHash(auditData)
+    ]);
+
+    logger.info('PaymentMethods', 'create_success', 'Método de pago creado correctamente', {
+      id: newId,
+      method_name: methodData.method_name
+    });
+
+    return {
+      success: true,
+      message: `Método de pago "${methodData.method_name}" creado correctamente`,
+      id: newId
+    };
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'create_failed', 'Error al crear método de pago', methodData, error as Error);
+    return {
+      success: false,
+      message: `Error al crear método de pago: ${error instanceof Error ? error.message : 'Error desconocido'}`
+    };
+  }
+}
+
+/**
+ * Actualiza un método de pago existente
+ */
+export function updatePaymentMethod(id: number, methodData: Partial<PaymentMethod>): { success: boolean; message: string } {
+  if (!db) {
+    return { success: false, message: 'Base de datos no disponible' };
+  }
+
+  try {
+    logger.info('PaymentMethods', 'update_start', 'Actualizando método de pago', { id, ...methodData });
+
+    // Verificar que el método existe
+    const existingResult = db.exec(`
+      SELECT id, method_name FROM payment_methods WHERE id = ?
+    `, [id]);
+
+    if (existingResult.length === 0 || existingResult[0].values.length === 0) {
+      return { success: false, message: 'Método de pago no encontrado' };
+    }
+
+    const currentName = existingResult[0].values[0][1] as string;
+
+    // Si se está cambiando el nombre, verificar que no exista otro con el mismo nombre
+    if (methodData.method_name && methodData.method_name !== currentName) {
+      const duplicateResult = db.exec(`
+        SELECT id FROM payment_methods WHERE method_name = ? AND id != ?
+      `, [methodData.method_name, id]);
+
+      if (duplicateResult.length > 0 && duplicateResult[0].values.length > 0) {
+        return { success: false, message: `Ya existe un método de pago con el nombre "${methodData.method_name}"` };
+      }
+    }
+
+    // Construir la consulta de actualización dinámicamente
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+
+    if (methodData.method_name !== undefined) {
+      updateFields.push('method_name = ?');
+      updateValues.push(methodData.method_name);
+    }
+
+    if (methodData.method_type !== undefined) {
+      updateFields.push('method_type = ?');
+      updateValues.push(methodData.method_type);
+    }
+
+    if (methodData.is_active !== undefined) {
+      updateFields.push('is_active = ?');
+      updateValues.push(methodData.is_active ? 1 : 0);
+    }
+
+    if (methodData.requires_reference !== undefined) {
+      updateFields.push('requires_reference = ?');
+      updateValues.push(methodData.requires_reference ? 1 : 0);
+    }
+
+    if (updateFields.length === 0) {
+      return { success: false, message: 'No hay campos para actualizar' };
+    }
+
+    updateValues.push(id);
+
+    // Ejecutar actualización
+    db.exec(`
+      UPDATE payment_methods 
+      SET ${updateFields.join(', ')}
+      WHERE id = ?
+    `, updateValues);
+
+    // Registrar en auditoría
+    db.exec(`
+      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      'payment_methods',
+      id,
+      'UPDATE',
+      JSON.stringify(methodData),
+      1,
+      generateSimpleHash(methodData)
+    ]);
+
+    logger.info('PaymentMethods', 'update_success', 'Método de pago actualizado correctamente', { id });
+
+    return {
+      success: true,
+      message: 'Método de pago actualizado correctamente'
+    };
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'update_failed', 'Error al actualizar método de pago', { id, ...methodData }, error as Error);
+    return {
+      success: false,
+      message: `Error al actualizar método de pago: ${error instanceof Error ? error.message : 'Error desconocido'}`
+    };
+  }
+}
+
+/**
+ * Elimina un método de pago (soft delete - marca como inactivo)
+ */
+export function deletePaymentMethod(id: number): { success: boolean; message: string } {
+  if (!db) {
+    return { success: false, message: 'Base de datos no disponible' };
+  }
+
+  try {
+    logger.info('PaymentMethods', 'delete_start', 'Eliminando método de pago', { id });
+
+    // Verificar que el método existe
+    const existingResult = db.exec(`
+      SELECT id, method_name FROM payment_methods WHERE id = ?
+    `, [id]);
+
+    if (existingResult.length === 0 || existingResult[0].values.length === 0) {
+      return { success: false, message: 'Método de pago no encontrado' };
+    }
+
+    const methodName = existingResult[0].values[0][1] as string;
+
+    // Verificar si el método está siendo usado en pagos
+    const usageResult = db.exec(`
+      SELECT COUNT(*) as count FROM (
+        SELECT 1 FROM payments WHERE payment_method = ?
+        UNION ALL
+        SELECT 1 FROM supplier_payments WHERE payment_method = ?
+      )
+    `, [methodName.toLowerCase().replace(' ', '_'), methodName.toLowerCase().replace(' ', '_')]);
+
+    const usageCount = usageResult[0].values[0][0] as number;
+
+    if (usageCount > 0) {
+      // Si está en uso, solo marcar como inactivo
+      db.exec(`
+        UPDATE payment_methods 
+        SET is_active = 0
+        WHERE id = ?
+      `, [id]);
+
+      logger.info('PaymentMethods', 'delete_soft', 'Método de pago marcado como inactivo (en uso)', { id, methodName });
+
+      return {
+        success: true,
+        message: `Método de pago "${methodName}" desactivado (estaba en uso en ${usageCount} transacciones)`
+      };
+    } else {
+      // Si no está en uso, eliminar completamente
+      db.exec(`
+        DELETE FROM payment_methods WHERE id = ?
+      `, [id]);
+
+      // Registrar en auditoría
+      db.exec(`
+        INSERT INTO audit_log (table_name, record_id, action, old_values, user_id, audit_hash)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [
+        'payment_methods',
+        id,
+        'DELETE',
+        JSON.stringify({ method_name: methodName }),
+        1,
+        generateSimpleHash({ method_name: methodName })
+      ]);
+
+      logger.info('PaymentMethods', 'delete_hard', 'Método de pago eliminado completamente', { id, methodName });
+
+      return {
+        success: true,
+        message: `Método de pago "${methodName}" eliminado correctamente`
+      };
+    }
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'delete_failed', 'Error al eliminar método de pago', { id }, error as Error);
+    return {
+      success: false,
+      message: `Error al eliminar método de pago: ${error instanceof Error ? error.message : 'Error desconocido'}`
+    };
+  }
+}
+
+/**
+ * Obtiene un método de pago por ID
+ */
+export function getPaymentMethodById(id: number): PaymentMethod | null {
+  if (!db) {
+    logger.error('PaymentMethods', 'get_by_id_no_db', 'Base de datos no disponible');
+    return null;
+  }
+
+  try {
+    logger.info('PaymentMethods', 'get_by_id_start', 'Obteniendo método de pago por ID', { id });
+
+    const result = db.exec(`
+      SELECT id, method_name, method_type, is_active, requires_reference, created_at
+      FROM payment_methods
+      WHERE id = ?
+    `, [id]);
+
+    if (result.length === 0 || result[0].values.length === 0) {
+      logger.warn('PaymentMethods', 'get_by_id_not_found', 'Método de pago no encontrado', { id });
+      return null;
+    }
+
+    const row = result[0].values[0];
+    const columns = result[0].columns;
+
+    const paymentMethod: any = {};
+    columns.forEach((col, index) => {
+      paymentMethod[col] = row[index];
+    });
+
+    logger.info('PaymentMethods', 'get_by_id_success', 'Método de pago obtenido', { id });
+    return paymentMethod as PaymentMethod;
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'get_by_id_failed', 'Error al obtener método de pago', { id }, error as Error);
+    return null;
+  }
+}
+
+/**
+ * Verifica si se puede eliminar un método de pago
+ */
+export function canDeletePaymentMethod(id: number): { canDelete: boolean; reason?: string } {
+  if (!db) {
+    return { canDelete: false, reason: 'Base de datos no disponible' };
+  }
+
+  try {
+    // Verificar que el método existe
+    const existingResult = db.exec(`
+      SELECT method_name FROM payment_methods WHERE id = ?
+    `, [id]);
+
+    if (existingResult.length === 0 || existingResult[0].values.length === 0) {
+      return { canDelete: false, reason: 'Método de pago no encontrado' };
+    }
+
+    const methodName = existingResult[0].values[0][0] as string;
+
+    // Verificar si está siendo usado
+    const usageResult = db.exec(`
+      SELECT COUNT(*) as count FROM (
+        SELECT 1 FROM payments WHERE payment_method = ?
+        UNION ALL
+        SELECT 1 FROM supplier_payments WHERE payment_method = ?
+      )
+    `, [methodName.toLowerCase().replace(' ', '_'), methodName.toLowerCase().replace(' ', '_')]);
+
+    const usageCount = usageResult[0].values[0][0] as number;
+
+    if (usageCount > 0) {
+      return {
+        canDelete: false,
+        reason: `El método de pago está siendo usado en ${usageCount} transacciones. Solo se puede desactivar.`
+      };
+    }
+
+    return { canDelete: true };
+
+  } catch (error) {
+    logger.error('PaymentMethods', 'can_delete_failed', 'Error al verificar si se puede eliminar método de pago', { id }, error as Error);
+    return { canDelete: false, reason: 'Error al verificar el método de pago' };
+  }
 }

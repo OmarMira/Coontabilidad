@@ -49,18 +49,27 @@ class BackupService {
   private db: any = null;
 
   constructor() {
-    this.initialize();
+    // No inicializar en el constructor, hacerlo bajo demanda
   }
 
-  private async initialize() {
+  private async ensureDatabase() {
+    if (this.db) return this.db;
+    
     try {
       // Importar la base de datos de forma dinámica
       const dbModule = await import('../database/simple-db');
       // Acceder a la instancia de db exportada
       this.db = (dbModule as any).db;
-      logger.info('BackupService', 'init_success', 'Servicio de backup inicializado');
+      
+      if (!this.db) {
+        throw new Error('Database instance not available');
+      }
+      
+      logger.info('BackupService', 'db_connected', 'Conexión a base de datos establecida');
+      return this.db;
     } catch (error) {
-      logger.error('BackupService', 'init_failed', 'Error al inicializar servicio de backup', null, error as Error);
+      logger.error('BackupService', 'db_connection_failed', 'Error al conectar con la base de datos', null, error as Error);
+      throw error;
     }
   }
 
@@ -68,7 +77,10 @@ class BackupService {
    * Exporta toda la base de datos a un archivo .aex cifrado
    */
   public async exportToAex(password: string, includeSystemLogs: boolean = false): Promise<BackupResult> {
-    if (!this.db) {
+    try {
+      // Asegurar que la base de datos esté disponible
+      await this.ensureDatabase();
+    } catch (error) {
       return { success: false, message: 'Base de datos no disponible', error: 'DB_NOT_AVAILABLE' };
     }
 
@@ -263,7 +275,10 @@ class BackupService {
    * Restaura la base de datos desde un archivo .aex cifrado
    */
   public async restoreFromAex(file: File, password: string): Promise<RestoreResult> {
-    if (!this.db) {
+    try {
+      // Asegurar que la base de datos esté disponible
+      await this.ensureDatabase();
+    } catch (error) {
       return { success: false, message: 'Base de datos no disponible', error: 'DB_NOT_AVAILABLE' };
     }
 
@@ -494,18 +509,31 @@ class BackupService {
   /**
    * Verifica si el servicio está disponible
    */
-  public isAvailable(): boolean {
-    return this.db !== null && BasicEncryption.isSupported();
+  public async isAvailable(): Promise<boolean> {
+    try {
+      await this.ensureDatabase();
+      return this.db !== null && BasicEncryption.isSupported();
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
    * Obtiene información del servicio
    */
-  public getServiceInfo() {
+  public async getServiceInfo() {
+    let databaseConnected = false;
+    try {
+      await this.ensureDatabase();
+      databaseConnected = this.db !== null;
+    } catch (error) {
+      databaseConnected = false;
+    }
+
     return {
-      available: this.isAvailable(),
+      available: databaseConnected && BasicEncryption.isSupported(),
       encryption_supported: BasicEncryption.isSupported(),
-      database_connected: this.db !== null,
+      database_connected: databaseConnected,
       supported_formats: ['.aex'],
       encryption_method: 'AES-256-GCM',
       version: '1.0'

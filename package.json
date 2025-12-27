@@ -33,6 +33,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
@@ -41,11 +42,14 @@
     "setup": "npm install && npm run postinstall"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.12",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sql.js": "^1.13.0",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "zod": "^4.2.1",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

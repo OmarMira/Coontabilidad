@@ -46,12 +46,86 @@ export const BackupRestore: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'warning'; text: string } | null>(null);
   const [lastBackupInfo, setLastBackupInfo] = useState<BackupResult | null>(null);
+  const [systemInfo, setSystemInfo] = useState<{
+    lastBackupDate: string | null;
+    estimatedDbSize: string;
+  }>({
+    lastBackupDate: null,
+    estimatedDbSize: 'Calculando...'
+  });
 
   // Referencias
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Verificar disponibilidad del servicio
-  const serviceInfo = backupService.getServiceInfo();
+  const [serviceInfo, setServiceInfo] = useState<{
+    available: boolean;
+    encryption_supported: boolean;
+    database_connected: boolean;
+    supported_formats: string[];
+    encryption_method: string;
+    version: string;
+  }>({
+    available: false,
+    encryption_supported: false,
+    database_connected: false,
+    supported_formats: [],
+    encryption_method: '',
+    version: ''
+  });
+
+  // Cargar información del servicio al montar el componente
+  React.useEffect(() => {
+    const loadServiceInfo = async () => {
+      try {
+        const info = await backupService.getServiceInfo();
+        setServiceInfo(info);
+      } catch (error) {
+        console.error('Error loading service info:', error);
+      }
+    };
+    
+    loadServiceInfo();
+    loadSystemInfo();
+  }, []);
+
+  const loadSystemInfo = async () => {
+    try {
+      // Obtener fecha del último backup desde localStorage
+      const lastBackupDate = localStorage.getItem('lastBackupDate');
+      
+      // Calcular tamaño estimado de la base de datos
+      let estimatedSize = 'No disponible';
+      try {
+        // Importar la base de datos para obtener estadísticas
+        const dbModule = await import('../database/simple-db');
+        const db = (dbModule as any).db;
+        
+        if (db) {
+          // Obtener número de páginas y tamaño de página
+          const pageSizeResult = db.exec('PRAGMA page_size');
+          const pageCountResult = db.exec('PRAGMA page_count');
+          
+          if (pageSizeResult.length > 0 && pageCountResult.length > 0) {
+            const pageSize = pageSizeResult[0].values[0][0] as number;
+            const pageCount = pageCountResult[0].values[0][0] as number;
+            const totalBytes = pageSize * pageCount;
+            estimatedSize = formatFileSize(totalBytes);
+          }
+        }
+      } catch (error) {
+        console.warn('No se pudo calcular el tamaño de la base de datos:', error);
+        estimatedSize = 'No disponible';
+      }
+
+      setSystemInfo({
+        lastBackupDate,
+        estimatedDbSize: estimatedSize
+      });
+    } catch (error) {
+      console.error('Error cargando información del sistema:', error);
+    }
+  };
 
   const showMessage = (type: 'success' | 'error' | 'warning', text: string) => {
     setMessage({ type, text });
@@ -87,6 +161,13 @@ export const BackupRestore: React.FC = () => {
 
       if (result.success) {
         setLastBackupInfo(result);
+        
+        // Guardar fecha del último backup en localStorage
+        localStorage.setItem('lastBackupDate', new Date().toISOString());
+        
+        // Recargar información del sistema
+        loadSystemInfo();
+        
         showMessage('success', result.message);
         
         // Limpiar formulario
@@ -353,6 +434,29 @@ export const BackupRestore: React.FC = () => {
                     <li className="flex items-center">
                       <HardDrive className="w-3 h-3 mr-2 text-yellow-400" />
                       Incluye: Todas las tablas y esquemas
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Estado del Sistema */}
+                <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
+                  <h4 className="text-blue-300 font-medium mb-3 flex items-center">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Estado del Sistema
+                  </h4>
+                  <ul className="text-blue-200 text-sm space-y-2">
+                    <li className="flex items-center justify-between">
+                      <span>Último backup:</span>
+                      <span className="font-mono">
+                        {systemInfo.lastBackupDate 
+                          ? new Date(systemInfo.lastBackupDate).toLocaleString()
+                          : 'Nunca'
+                        }
+                      </span>
+                    </li>
+                    <li className="flex items-center justify-between">
+                      <span>Tamaño de BD:</span>
+                      <span className="font-mono">{systemInfo.estimatedDbSize}</span>
                     </li>
                   </ul>
                 </div>

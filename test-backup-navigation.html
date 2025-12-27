@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Navegación a Backup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1f2937;
+            color: white;
+        }
+        .test-step {
+            background-color: #374151;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .success {
+            border-left-color: #10b981;
+        }
+        .warning {
+            border-left-color: #f59e0b;
+        }
+        .error {
+            border-left-color: #ef4444;
+        }
+        code {
+            background-color: #1f2937;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #4b5563;
+        }
+        .checklist li:before {
+            content: "□ ";
+            font-size: 18px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Manual - Componente BackupRestore</h1>
+    
+    <div class="test-step success">
+        <h3>✅ TAREA 1 COMPLETADA</h3>
+        <p>El componente <code>BackupRestore.tsx</code> ha sido completado y cumple con todos los criterios especificados.</p>
+    </div>
+
+    <div class="test-step">
+        <h3>📋 Instrucciones para Verificación Manual</h3>
+        <p>Para verificar que el componente funciona correctamente, sigue estos pasos:</p>
+        
+        <ol>
+            <li><strong>Abrir la aplicación:</strong> Ve a <code>http://localhost:3003</code></li>
+            <li><strong>Navegar a Backup:</strong> En el menú lateral, ve a <code>ARCHIVO → Respaldos y Restauración</code></li>
+            <li><strong>Verificar la interfaz:</strong> Deberías ver dos pestañas: "Crear Backup" y "Restaurar Backup"</li>
+        </ol>
+    </div>
+
+    <div class="test-step warning">
+        <h3>🧪 Checklist de Verificación</h3>
+        <p>Marca cada elemento cuando lo hayas verificado:</p>
+        
+        <ul class="checklist">
+            <li><strong>Botón "Crear Backup Ahora":</strong> Al hacer clic, descarga un archivo .aex</li>
+            <li><strong>Spinner de carga:</strong> Aparece durante la creación del backup</li>
+            <li><strong>Input de archivo:</strong> Permite seleccionar solo archivos .aex</li>
+            <li><strong>Botón "Restaurar":</strong> Aparece al seleccionar un archivo .aex válido</li>
+            <li><strong>Diálogo de confirmación:</strong> Se muestra antes de restaurar</li>
+            <li><strong>Estado del Sistema:</strong> Muestra fecha del último backup y tamaño de BD</li>
+        </ul>
+    </div>
+
+    <div class="test-step">
+        <h3>🔧 Funcionalidades Implementadas</h3>
+        <ul>
+            <li>✅ Creación de backup cifrado (.aex)</li>
+            <li>✅ Descarga automática del archivo</li>
+            <li>✅ Restauración desde archivo .aex</li>
+            <li>✅ Validación de contraseñas (mínimo 8 caracteres)</li>
+            <li>✅ Confirmación de contraseña</li>
+            <li>✅ Diálogo de confirmación para restauración</li>
+            <li>✅ Información del estado del sistema</li>
+            <li>✅ Fecha del último backup (localStorage)</li>
+            <li>✅ Tamaño estimado de la base de datos</li>
+            <li>✅ Manejo de errores y mensajes de éxito</li>
+            <li>✅ Interfaz con pestañas (Export/Import)</li>
+            <li>✅ Recomendaciones de seguridad</li>
+        </ul>
+    </div>
+
+    <div class="test-step success">
+        <h3>🎯 Criterios de Éxito Cumplidos</h3>
+        <p>Todos los criterios especificados en la TAREA 1 han sido implementados:</p>
+        <ul>
+            <li>✅ Botón conectado al servicio BackupService</li>
+            <li>✅ Descarga automática con URL.createObjectURL()</li>
+            <li>✅ Estado de loading con spinner</li>
+            <li>✅ Input de archivo con accept=".aex"</li>
+            <li>✅ Botón de restauración funcional</li>
+            <li>✅ Diálogo de confirmación implementado</li>
+            <li>✅ Fecha del último backup mostrada</li>
+            <li>✅ Tamaño de la base de datos calculado</li>
+        </ul>
+    </div>
+
+    <div class="test-step">
+        <h3>🚀 Próximo Paso</h3>
+        <p>Una vez que hayas verificado manualmente que todos los elementos funcionan correctamente, 
+        puedes dar luz verde para proceder con la <strong>TAREA 2: FloridaTaxReport.tsx</strong></p>
+    </div>
+
+    <script>
+        // Agregar funcionalidad de checklist interactivo
+        document.querySelectorAll('.checklist li').forEach(item => {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', function() {
+                if (this.style.textDecoration === 'line-through') {
+                    this.style.textDecoration = 'none';
+                    this.style.opacity = '1';
+                    this.innerHTML = this.innerHTML.replace('☑', '□');
+                } else {
+                    this.style.textDecoration = 'line-through';
+                    this.style.opacity = '0.6';
+                    this.innerHTML = this.innerHTML.replace('□', '☑');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, TrendingUp, FileText, Shield } from 'lucide-react';
-import { 
+import {
   initDB, addCustomer, getCustomers, updateCustomer, deleteCustomer, canDeleteCustomer, getStatsWithSuppliers, isDatabaseReady, Customer,
   getInvoices, getInvoiceById, createInvoice, updateInvoice, deleteInvoice, getActiveProducts, Invoice, Product, InvoiceItem,
   addSupplier, getSuppliers, updateSupplier, deleteSupplier, canDeleteSupplier, Supplier,
@@ -43,10 +43,14 @@ import { ProductList } from './components/ProductList';
 import { ProductDetailView } from './components/ProductDetailView';
 import { ProductCategoryForm } from './components/ProductCategoryForm';
 import { ProductCategoryList } from './components/ProductCategoryList';
-import { IAPanel } from './components/IAPanel';
-import FinancialAssistantChat from './components/FinancialAssistantChat';
 import { FloridaTaxReport } from './components/FloridaTaxReport';
 import { BackupRestore } from './components/BackupRestore';
+import { UnifiedAssistant } from './components/ai/UnifiedAssistant';
+import { CustomerPayments } from './components/CustomerPayments';
+import { SupplierPayments } from './components/SupplierPayments';
+import { ManualJournalEntries } from './components/ManualJournalEntries';
+import { GeneralLedger } from './components/GeneralLedger';
+import { PaymentMethods } from './components/PaymentMethods';
 
 interface AppState {
   isLoading: boolean;
@@ -89,6 +93,7 @@ interface AppState {
 }
 
 function App() {
+  const [showUnifiedAssistant, setShowUnifiedAssistant] = useState(false);
   const [state, setState] = useState<AppState>({
     isLoading: true,
     isOnline: navigator.onLine,
@@ -141,48 +146,48 @@ function App() {
     const initializeApp = async () => {
       try {
         setState(prev => ({ ...prev, isLoading: true, error: null, initializationStep: 'Verificando compatibilidad...' }));
-        
+
         logger.info('App', 'init_start', 'Iniciando AccountExpress Next-Gen MVP');
-        
+
         // Verificar compatibilidad básica
         if (typeof window === 'undefined') {
           throw new Error('Entorno no compatible - se requiere navegador web');
         }
 
         setState(prev => ({ ...prev, initializationStep: 'Configurando SQLite...' }));
-        
+
         // Inicializar sin contraseña primero para simplificar
         await initDB();
-        
+
         setState(prev => ({ ...prev, initializationStep: 'Cargando datos...' }));
-        
+
         // Cargar datos iniciales
         await loadData();
-        
-        setState(prev => ({ 
-          ...prev, 
+
+        setState(prev => ({
+          ...prev,
           isLoading: false,
           success: 'AccountExpress inicializado correctamente',
           initializationStep: 'Completado'
         }));
-        
+
         logger.info('App', 'init_success', 'AccountExpress inicializado correctamente', {
           customers: state.customers.length,
           suppliers: state.suppliers.length,
           invoices: state.invoices.length,
           bills: state.bills.length
         });
-        
+
         // Limpiar mensaje de éxito después de 3 segundos
         setTimeout(() => {
           setState(prev => ({ ...prev, success: null }));
         }, 3000);
-        
+
       } catch (error) {
         logger.critical('App', 'init_failed', `Error crítico en inicialización: ${error instanceof Error ? error.message : 'Error desconocido'}`, null, error as Error);
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
           error: `Error al inicializar: ${error instanceof Error ? error.message : 'Error desconocido'}`,
           initializationStep: 'Error'
         }));
@@ -201,7 +206,7 @@ function App() {
       const products = getProducts();
       const productCategories = getProductCategories();
       const stats = getStatsWithSuppliers();
-      
+
       setState(prev => ({
         ...prev,
         customers,
@@ -212,7 +217,7 @@ function App() {
         productCategories,
         dbStats: stats
       }));
-      
+
     } catch (error) {
       console.error('Error loading data:', error);
       showError('Error al cargar los datos');
@@ -234,10 +239,14 @@ function App() {
   };
 
   const handleNavigate = (section: string) => {
-    setState(prev => ({ 
-      ...prev, 
-      currentSection: section, 
-      editingCustomer: null, 
+    if (section === 'ai-assistant') {
+      setShowUnifiedAssistant(true);
+      return;
+    }
+    setState(prev => ({
+      ...prev,
+      currentSection: section,
+      editingCustomer: null,
       viewingCustomer: null,
       editingSupplier: null,
       viewingSupplier: null,
@@ -262,25 +271,25 @@ function App() {
       console.log('=== ADDING CUSTOMER ===');
       console.log('Input data:', customerData);
       console.log('App loading state:', state.isLoading);
-      
+
       // Verificar que la aplicación esté completamente cargada
       if (state.isLoading) {
         showError('El sistema aún se está inicializando. Por favor espera un momento.');
         return;
       }
-      
+
       // Verificar que la base de datos esté lista
       if (!isDatabaseReady()) {
         showError('La base de datos no está lista. Por favor recarga la página.');
         return;
       }
-      
+
       const customerId = addCustomer(customerData);
       console.log('Customer added with ID:', customerId);
-      
+
       await loadData();
       console.log('Data reloaded, new customer count:', state.customers.length);
-      
+
       // Cerrar el formulario y mostrar mensaje de éxito
       setState(prev => ({ ...prev, showingCustomerForm: false }));
       showSuccess(`Cliente "${customerData.name}" agregado correctamente (ID: ${customerId})`);
@@ -360,7 +369,7 @@ function App() {
       console.log('=== CREATING INVOICE ===');
       console.log('Invoice data:', invoiceData);
       console.log('Items:', items);
-      
+
       const result = createInvoice(invoiceData, items);
       if (result.success) {
         await loadData();
@@ -440,25 +449,25 @@ function App() {
       console.log('=== ADDING SUPPLIER ===');
       console.log('Input data:', supplierData);
       console.log('App loading state:', state.isLoading);
-      
+
       // Verificar que la aplicación esté completamente cargada
       if (state.isLoading) {
         showError('El sistema aún se está inicializando. Por favor espera un momento.');
         return;
       }
-      
+
       // Verificar que la base de datos esté lista
       if (!isDatabaseReady()) {
         showError('La base de datos no está lista. Por favor recarga la página.');
         return;
       }
-      
+
       const supplierId = addSupplier(supplierData);
       console.log('Supplier added with ID:', supplierId);
-      
+
       await loadData();
       console.log('Data reloaded, new supplier count:', state.suppliers.length);
-      
+
       // Cerrar el formulario y mostrar mensaje de éxito
       setState(prev => ({ ...prev, showingSupplierForm: false }));
       showSuccess(`Proveedor "${supplierData.name}" agregado correctamente (ID: ${supplierId})`);
@@ -538,7 +547,7 @@ function App() {
       console.log('=== CREATING BILL ===');
       console.log('Bill data:', billData);
       console.log('Items:', items);
-      
+
       const result = createBill(billData, items);
       if (result.success) {
         await loadData();
@@ -618,10 +627,10 @@ function App() {
         // Actualizar factura existente
         const result = await updateBill(state.editingBill.id, billData, items);
         if (result.success) {
-          setState(prev => ({ 
-            ...prev, 
+          setState(prev => ({
+            ...prev,
             editingBill: null,
-            success: result.message 
+            success: result.message
           }));
           await loadData(); // Recargar datos
         } else {
@@ -631,10 +640,10 @@ function App() {
         // Crear nueva factura
         const result = await createBill(billData, items);
         if (result.success) {
-          setState(prev => ({ 
-            ...prev, 
+          setState(prev => ({
+            ...prev,
             showingBillForm: false,
-            success: result.message 
+            success: result.message
           }));
           await loadData(); // Recargar datos
         } else {
@@ -642,9 +651,9 @@ function App() {
         }
       }
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        error: `Error al guardar factura: ${error instanceof Error ? error.message : 'Error desconocido'}` 
+      setState(prev => ({
+        ...prev,
+        error: `Error al guardar factura: ${error instanceof Error ? error.message : 'Error desconocido'}`
       }));
     }
   };
@@ -657,7 +666,7 @@ function App() {
     try {
       console.log('=== CREATING PRODUCT ===');
       console.log('Product data:', productData);
-      
+
       const result = createProduct(productData);
       if (result.success) {
         await loadData();
@@ -740,7 +749,7 @@ function App() {
     try {
       console.log('=== CREATING PRODUCT CATEGORY ===');
       console.log('Category data:', categoryData);
-      
+
       const result = createProductCategory(categoryData);
       if (result.success) {
         await loadData();
@@ -823,7 +832,7 @@ function App() {
             <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-red-300 mb-2">Error de Inicialización</h2>
             <p className="text-red-200 mb-4">{state.error}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
             >
@@ -840,7 +849,7 @@ function App() {
       // Secciones de Archivo
       case 'dashboard':
         return <Dashboard stats={state.dbStats} onNavigate={handleNavigate} />;
-      
+
       case 'auditoria':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -850,7 +859,7 @@ function App() {
               <p className="text-green-300 text-sm">✅ Sistema de auditoría activo</p>
               <p className="text-green-200 text-xs mt-1">Todas las operaciones se registran automáticamente</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -887,7 +896,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -908,7 +917,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -929,7 +938,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -937,6 +946,9 @@ function App() {
             </button>
           </div>
         );
+
+      case 'payment-methods':
+        return <PaymentMethods onPaymentMethodsChange={loadData} />;
 
       // Sección de Impuestos Florida
       case 'tax-config':
@@ -948,7 +960,7 @@ function App() {
               <p className="text-green-300 text-sm">✅ Tasas de impuestos por condado configuradas</p>
               <p className="text-green-200 text-xs mt-1">Sistema calcula automáticamente según el condado del cliente</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -976,7 +988,7 @@ function App() {
                 <p className="text-green-400 text-lg font-mono">6.5%</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -997,7 +1009,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1015,7 +1027,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1023,7 +1035,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       // Secciones de Cuentas a Pagar
       case 'suppliers':
         // Si estamos viendo un proveedor específico
@@ -1036,7 +1048,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos editando un proveedor
         if (state.editingSupplier) {
           return (
@@ -1048,7 +1060,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos creando un nuevo proveedor
         if (state.showingSupplierForm) {
           return (
@@ -1058,7 +1070,7 @@ function App() {
             />
           );
         }
-        
+
         // Vista principal - LISTADO PRIMERO con botón Nuevo Proveedor
         return (
           <div className="space-y-6">
@@ -1076,7 +1088,7 @@ function App() {
                 <span>Nuevo Proveedor</span>
               </button>
             </div>
-            
+
             {/* Lista de proveedores */}
             <SupplierList
               suppliers={state.suppliers}
@@ -1098,7 +1110,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos editando una factura
         if (state.editingBill) {
           return (
@@ -1112,7 +1124,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos creando una nueva factura
         if (state.showingBillForm) {
           return (
@@ -1124,7 +1136,7 @@ function App() {
             />
           );
         }
-        
+
         // Vista principal - LISTADO PRIMERO con botón Nueva Factura
         return (
           <div className="space-y-6">
@@ -1142,7 +1154,7 @@ function App() {
                 <span>Nueva Factura</span>
               </button>
             </div>
-            
+
             {/* Lista de facturas */}
             <BillList
               bills={state.bills}
@@ -1163,7 +1175,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos editando un cliente
         if (state.editingCustomer) {
           return (
@@ -1175,7 +1187,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos creando un nuevo cliente
         if (state.showingCustomerForm) {
           return (
@@ -1185,7 +1197,7 @@ function App() {
             />
           );
         }
-        
+
         // Vista principal - LISTADO PRIMERO con botón Nuevo Cliente
         return (
           <div className="space-y-6">
@@ -1203,7 +1215,7 @@ function App() {
                 <span>Nuevo Cliente</span>
               </button>
             </div>
-            
+
             {/* Lista de clientes */}
             <CustomerList
               customers={state.customers}
@@ -1213,7 +1225,7 @@ function App() {
             />
           </div>
         );
-      
+
       case 'invoices':
         // Si estamos viendo una factura específica
         if (state.viewingInvoice) {
@@ -1225,7 +1237,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos editando una factura
         if (state.editingInvoice) {
           return (
@@ -1239,7 +1251,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos creando una nueva factura
         if (state.showingInvoiceForm) {
           return (
@@ -1251,7 +1263,7 @@ function App() {
             />
           );
         }
-        
+
         // Vista principal - LISTADO PRIMERO con botón Nueva Factura
         return (
           <div className="space-y-6">
@@ -1269,7 +1281,7 @@ function App() {
                 <span>Nueva Factura</span>
               </button>
             </div>
-            
+
             {/* Lista de facturas */}
             <InvoiceList
               invoices={state.invoices}
@@ -1279,25 +1291,16 @@ function App() {
             />
           </div>
         );
-      
+
       case 'customer-payments':
         return (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Pagos de Clientes</h2>
-            <p className="text-gray-400 mb-6">Registro de pagos recibidos de clientes</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
-            </div>
-            <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Volver al Dashboard
-            </button>
-          </div>
+          <CustomerPayments
+            invoices={state.invoices}
+            customers={state.customers}
+            onPaymentCreated={loadData}
+          />
         );
-      
+
       case 'quotes':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1307,7 +1310,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1315,7 +1318,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       case 'receivable-reports':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1325,7 +1328,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1336,22 +1339,13 @@ function App() {
 
       case 'supplier-payments':
         return (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Pagos a Proveedores</h2>
-            <p className="text-gray-400 mb-6">Registro de pagos realizados a proveedores</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
-            </div>
-            <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Volver al Dashboard
-            </button>
-          </div>
+          <SupplierPayments
+            bills={state.bills}
+            suppliers={state.suppliers}
+            onPaymentCreated={loadData}
+          />
         );
-      
+
       case 'purchase-orders':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1361,7 +1355,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1369,7 +1363,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       case 'payable-reports':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1379,7 +1373,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1387,7 +1381,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       // Secciones de Inventario
       case 'products':
         // Si estamos viendo un producto específico
@@ -1400,7 +1394,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos editando un producto
         if (state.editingProduct) {
           return (
@@ -1412,7 +1406,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos creando un nuevo producto
         if (state.showingProductForm) {
           return (
@@ -1422,7 +1416,7 @@ function App() {
             />
           );
         }
-        
+
         // Vista principal - LISTADO PRIMERO con botón Nuevo Producto
         return (
           <div className="space-y-6">
@@ -1440,7 +1434,7 @@ function App() {
                 <span>Nuevo Producto</span>
               </button>
             </div>
-            
+
             {/* Lista de productos */}
             <ProductList
               products={state.products}
@@ -1463,7 +1457,7 @@ function App() {
             />
           );
         }
-        
+
         // Si estamos creando una nueva categoría
         if (state.showingProductCategoryForm) {
           return (
@@ -1473,7 +1467,7 @@ function App() {
             />
           );
         }
-        
+
         // Vista principal - LISTADO con gestión de categorías
         return (
           <div className="space-y-6">
@@ -1482,7 +1476,7 @@ function App() {
               <h1 className="text-2xl font-bold text-white">Categorías de Productos</h1>
               <p className="text-gray-400">Organización y clasificación de productos</p>
             </div>
-            
+
             {/* Lista de categorías */}
             <ProductCategoryList
               categories={state.productCategories}
@@ -1492,7 +1486,7 @@ function App() {
             />
           </div>
         );
-      
+
       case 'inventory-movements':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1502,7 +1496,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1510,7 +1504,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       case 'inventory-adjustments':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1520,7 +1514,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1528,7 +1522,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       case 'inventory-reports':
         return (
           <div className="bg-gray-800 rounded-lg p-8 text-center">
@@ -1538,7 +1532,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1556,26 +1550,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Volver al Dashboard
-            </button>
-          </div>
-        );
-      
-      // Secciones de parámetros generales
-      case 'journal-entries':
-        return (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Asientos Contables</h2>
-            <p className="text-gray-400 mb-6">Registro manual de asientos contables</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
-            </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1584,22 +1559,20 @@ function App() {
           </div>
         );
 
+      // Secciones de parámetros generales
+      case 'journal-entries':
+        return (
+          <ManualJournalEntries
+            chartOfAccounts={getChartOfAccounts()}
+            onEntryCreated={loadData}
+          />
+        );
+
       case 'general-ledger':
         return (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-semibold text-white mb-4">Libro Mayor</h2>
-            <p className="text-gray-400 mb-6">Registro detallado de todas las transacciones contables</p>
-            <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4 mb-6">
-              <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
-              <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
-            </div>
-            <button 
-              onClick={() => handleNavigate('dashboard')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Volver al Dashboard
-            </button>
-          </div>
+          <GeneralLedger
+            chartOfAccounts={getChartOfAccounts()}
+          />
         );
 
       case 'trial-balance':
@@ -1611,7 +1584,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1648,7 +1621,7 @@ function App() {
                 <p className="text-gray-400 mb-4">
                   Generar reporte oficial de impuestos sobre ventas para el estado de Florida
                 </p>
-                <button 
+                <button
                   onClick={() => handleNavigate('florida-dr15')}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
@@ -1664,7 +1637,7 @@ function App() {
                 <p className="text-gray-400 mb-4">
                   Crear respaldos cifrados de tus datos financieros
                 </p>
-                <button 
+                <button
                   onClick={() => handleNavigate('backups')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
@@ -1686,11 +1659,11 @@ function App() {
                   </div>
                 </div>
               </div>
-              
-              <IAPanel
-                isVisible={true}
-                onClose={() => {}}
-              />
+
+              <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
+                <p className="text-yellow-300 text-sm">🚧 Panel de IA en desarrollo</p>
+                <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
+              </div>
             </div>
           </div>
         );
@@ -1704,7 +1677,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1722,7 +1695,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1740,7 +1713,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1758,7 +1731,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1798,7 +1771,7 @@ function App() {
                 </ul>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('reports')}
               className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors mt-4"
             >
@@ -1806,7 +1779,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       // Secciones de configuración
       case 'transactions':
         return (
@@ -1817,7 +1790,7 @@ function App() {
               <p className="text-yellow-300 text-sm">🚧 En desarrollo</p>
               <p className="text-yellow-200 text-xs mt-1">Próximamente disponible</p>
             </div>
-            <button 
+            <button
               onClick={() => handleNavigate('dashboard')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
@@ -1825,7 +1798,7 @@ function App() {
             </button>
           </div>
         );
-      
+
       default:
         return <Dashboard stats={state.dbStats} onNavigate={handleNavigate} />;
     }
@@ -1834,7 +1807,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-950 flex">
       {/* Sidebar */}
-      <Sidebar 
+      <Sidebar
         currentSection={state.currentSection}
         onNavigate={handleNavigate}
       />
@@ -1842,9 +1815,10 @@ function App() {
       {/* Contenido principal */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <Header 
-          isOnline={state.isOnline} 
-          dbStats={state.dbStats} 
+        <Header
+          isOnline={state.isOnline}
+          dbStats={state.dbStats}
+          onAssistantClick={() => setShowUnifiedAssistant(true)}
         />
 
         {/* Notificaciones */}
@@ -1884,10 +1858,9 @@ function App() {
               <div className="text-right">
                 <p>Datos almacenados localmente con SQLite</p>
                 <p>
-                  Estado: 
-                  <span className={`ml-1 font-medium ${
-                    state.isOnline ? 'text-green-400' : 'text-yellow-400'
-                  }`}>
+                  Estado:
+                  <span className={`ml-1 font-medium ${state.isOnline ? 'text-green-400' : 'text-yellow-400'
+                    }`}>
                     {state.isOnline ? 'Online' : 'Offline'} • Funcionando
                   </span>
                 </p>
@@ -1897,8 +1870,11 @@ function App() {
         </footer>
       </div>
 
-      {/* Asistente Conversacional */}
-      <FinancialAssistantChat />
+      {/* Asistente IA Unificado */}
+      <UnifiedAssistant
+        isOpen={showUnifiedAssistant}
+        onClose={() => setShowUnifiedAssistant(false)}
+      />
     </div>
   );
 }

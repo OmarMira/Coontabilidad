@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prueba AI en Navegador</title>
+</head>
+<body>
+    <h1>🧪 PRUEBA DE CONFIGURACIÓN EN VIVO</h1>
+    <p>Abre la consola (F12) y ejecuta el código de prueba</p>
+    
+    <script>
+        console.log("🧪 PRUEBA DE CONFIGURACIÓN EN VIVO");
+        console.log("================================");
+        
+        // Código de prueba para copiar y pegar en AccountExpress
+        const testCode = `
+// PRUEBA DE CONFIGURACIÓN EN VIVO
+(async () => {
+  console.log("🧪 PRUEBA DE CONFIGURACIÓN EN VIVO");
+  console.log("================================");
+  
+  // 1. Verificar acceso a variables
+  console.log("1. Variables de entorno:");
+  console.log("   - REACT_APP_AI_MODE:", import.meta.env?.REACT_APP_AI_MODE || "NO ACCESIBLE");
+  console.log("   - REACT_APP_DEEPSEEK_API_KEY:", import.meta.env?.REACT_APP_DEEPSEEK_API_KEY ? "✅ CONFIGURADA" : "❌ NO CONFIGURADA");
+  
+  // 2. Verificar que el servicio AI esté cargado
+  console.log("\\n2. Servicios AI cargados:");
+  console.log("   - window.aiServices:", Object.keys(window).filter(k => k.includes('ai') || k.includes('AI') || k.includes('Ai')));
+  
+  // 3. Hacer una prueba DIRECTA al servicio
+  console.log("\\n3. Probando servicio directamente...");
+  
+  try {
+    // Intenta acceder al servicio ConversationalIA
+    const aiService = window.__aiService || window.conversationalIA || window.ConversationalIAService;
+    if (aiService && typeof aiService.processQuery === 'function') {
+      console.log("   ✅ Servicio AI encontrado");
+      
+      // Prueba con consulta MUY específica que FORCE DeepSeek
+      const testQuery = "ANÁLISIS PROFESIONAL REQUERIDO: Calcula la depreciación fiscal MACRS de 5 años para un activo de $15,000 en Miami-Dade con surtax, y genera el asiento contable correspondiente en partida doble.";
+      
+      console.log("   Enviando consulta forzada...");
+      const start = Date.now();
+      const response = await aiService.processQuery(testQuery, 1);
+      const time = Date.now() - start;
+      
+      console.log(\`   ⏱️ Tiempo: \${time}ms\`);
+      console.log(\`   🎯 Respuesta:\`, response?.metadata?.fallbackUsed ? "FALLBACK LOCAL" : "DEEPSEEK DIRECT");
+      console.log(\`   🤖 Modelo:\`, response?.metadata?.model || "DESCONOCIDO");
+      
+    } else {
+      console.log("   ❌ Servicio AI NO encontrado en window");
+    }
+  } catch (error) {
+    console.log("   ❌ Error probando servicio:", error.message);
+  }
+  
+  console.log("\\n🎯 PRUEBA COMPLETADA");
+})();
+        `;
+        
+        console.log("📋 CÓDIGO PARA COPIAR EN ACCOUNTEXPRESS:");
+        console.log("=======================================");
+        console.log(testCode);
+        console.log("=======================================");
+        
+        console.log("\n🎯 INSTRUCCIONES:");
+        console.log("1. Abre http://localhost:3002 en otra pestaña");
+        console.log("2. Presiona F12 → pestaña Console");
+        console.log("3. Copia y pega el código de arriba");
+        console.log("4. Presiona Enter");
+        console.log("5. Reporta los resultados exactos");
+    </script>
+</body>
+</html>
