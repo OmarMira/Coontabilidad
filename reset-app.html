@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset AccountExpress</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        .button {
+            background: #f44336;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            display: block;
+            width: 300px;
+            margin: 10px auto;
+        }
+        .button:hover {
+            background: #d32f2f;
+        }
+        .success {
+            background: #4CAF50;
+        }
+        .success:hover {
+            background: #45a049;
+        }
+        .info {
+            background: #2196F3;
+        }
+        .info:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Reset AccountExpress</h1>
+    <p>Herramienta para resetear completamente la aplicación</p>
+    
+    <button class="button" onclick="clearAll()">
+        🗑️ LIMPIAR TODO (BD + Cache)
+    </button>
+    
+    <button class="button info" onclick="clearDatabase()">
+        🗄️ Solo Limpiar Base de Datos
+    </button>
+    
+    <button class="button info" onclick="clearCache()">
+        🧹 Solo Limpiar Cache
+    </button>
+    
+    <button class="button success" onclick="goToApp()">
+        🚀 Ir a la Aplicación
+    </button>
+    
+    <div id="status"></div>
+    
+    <script>
+        function showStatus(message, type = 'success') {
+            const color = type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3';
+            document.getElementById('status').innerHTML = `
+                <div style="background: ${color}; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    ${message}
+                </div>
+            `;
+        }
+        
+        function clearAll() {
+            clearDatabase();
+            clearCache();
+            showStatus('✅ TODO limpiado: Base de datos + Cache + Storage');
+        }
+        
+        function clearDatabase() {
+            try {
+                // Limpiar localStorage relacionado con BD
+                localStorage.removeItem('accountexpress-db');
+                localStorage.removeItem('accountexpress-encrypted');
+                localStorage.removeItem('accountexpress-last-backup');
+                
+                // Limpiar IndexedDB
+                if ('indexedDB' in window) {
+                    indexedDB.deleteDatabase('accountexpress');
+                    indexedDB.deleteDatabase('sql.js');
+                }
+                
+                // Limpiar OPFS
+                if ('storage' in navigator && 'getDirectory' in navigator.storage) {
+                    navigator.storage.getDirectory().then(async (opfsRoot) => {
+                        try {
+                            await opfsRoot.removeEntry('accountexpress.db');
+                        } catch (e) {
+                            console.log('No OPFS database to clear');
+                        }
+                    });
+                }
+                
+                showStatus('✅ Base de datos limpiada');
+            } catch (error) {
+                showStatus('❌ Error limpiando BD: ' + error.message, 'error');
+            }
+        }
+        
+        function clearCache() {
+            try {
+                // Limpiar sessionStorage
+                sessionStorage.clear();
+                
+                // Limpiar cache del navegador si es posible
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            if (name.includes('account') || name.includes('vite')) {
+                                caches.delete(name);
+                            }
+                        });
+                    });
+                }
+                
+                showStatus('✅ Cache limpiado');
+            } catch (error) {
+                showStatus('❌ Error limpiando cache: ' + error.message, 'error');
+            }
+        }
+        
+        function goToApp() {
+            window.location.href = '/';
+        }
+        
+        // Auto-limpiar al cargar la página
+        window.onload = function() {
+            showStatus('🔄 Herramienta de reset cargada. Usa los botones para limpiar.', 'info');
+        };
+    </script>
+</body>
+</html>
