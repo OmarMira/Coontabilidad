@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Error Letos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+        .log {
+            background: #2a2a2a;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Error "letos is not defined"</h1>
+    <div id="logs"></div>
+    
+    <script type="module">
+        const logs = document.getElementById('logs');
+        
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logs.appendChild(div);
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+        
+        async function testInitialization() {
+            try {
+                addLog('🚀 Iniciando test de inicialización...');
+                
+                // Limpiar todo primero
+                addLog('🧹 Limpiando localStorage...');
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                addLog('📦 Importando módulo de base de datos...');
+                const { initDB, isDatabaseReady } = await import('./src/database/simple-db.ts');
+                
+                addLog('✅ Módulo importado sin errores');
+                
+                addLog('🔧 Intentando inicializar base de datos...');
+                const db = await initDB();
+                
+                addLog('✅ ¡Base de datos inicializada correctamente!');
+                addLog('🎉 NO HAY ERROR "letos is not defined"', 'info');
+                
+                // Probar una consulta
+                const result = db.exec("SELECT 'test' as message");
+                addLog(`✅ Consulta de prueba exitosa: ${JSON.stringify(result)}`);
+                
+            } catch (error) {
+                addLog(`❌ ERROR CAPTURADO: ${error.message}`, 'error');
+                addLog(`Tipo: ${error.name}`, 'error');
+                addLog(`Stack: ${error.stack}`, 'error');
+                
+                if (error.message.includes('letos')) {
+                    addLog('🎯 CONFIRMADO: Error "letos is not defined" encontrado', 'error');
+                } else {
+                    addLog('ℹ️ Error diferente, no es "letos"', 'info');
+                }
+            }
+        }
+        
+        // Ejecutar test
+        testInitialization();
+    </script>
+</body>
+</html>

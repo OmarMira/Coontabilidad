@@ -26,9 +26,9 @@ export function CompanyDataForm() {
     try {
       setLoading(true);
       setError(null);
-      
+
       logger.info('CompanyDataForm', 'load_start', 'Cargando datos de empresa');
-      
+
       const data = getCompanyData();
       if (data) {
         setCompanyData(data);
@@ -38,7 +38,7 @@ export function CompanyDataForm() {
         setError('No se encontraron datos de empresa. Contacte al administrador.');
         logger.warn('CompanyDataForm', 'no_data', 'No se encontraron datos de empresa');
       }
-      
+
     } catch (error) {
       logger.error('CompanyDataForm', 'load_failed', 'Error al cargar datos de empresa', null, error as Error);
       setError('Error al cargar los datos de la empresa');
@@ -71,10 +71,9 @@ export function CompanyDataForm() {
       setSuccess(null);
       setWarnings([]);
 
-      // Si hay datos contables y se están cambiando campos críticos, mostrar advertencia
       if (!skipWarning && accountingCheck.hasData) {
         const criticalFields = ['company_name', 'legal_name', 'tax_id'];
-        const hasCriticalChanges = criticalFields.some(field => 
+        const hasCriticalChanges = criticalFields.some(field =>
           formData[field as keyof CompanyData] !== companyData?.[field as keyof CompanyData]
         );
 
@@ -89,16 +88,15 @@ export function CompanyDataForm() {
       logger.info('CompanyDataForm', 'save_start', 'Guardando datos de empresa', formData);
 
       const result = updateCompanyData(formData);
-      
+
       if (result.success) {
         setSuccess(result.message);
         if (result.warnings) {
           setWarnings(result.warnings);
         }
-        
-        // Recargar datos
+
         await loadCompanyData();
-        
+
         logger.info('CompanyDataForm', 'save_success', 'Datos de empresa guardados correctamente');
       } else {
         setError(result.message);
@@ -128,249 +126,161 @@ export function CompanyDataForm() {
 
   if (loading) {
     return (
-      <div className="bg-gray-800 rounded-lg p-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Cargando datos de la empresa...</p>
+      <div className="bg-slate-900 rounded-3xl p-12 border border-slate-800 flex flex-col items-center justify-center animate-pulse">
+        <div className="relative mb-6">
+          <div className="h-16 w-16 rounded-full border-4 border-slate-800 border-t-blue-500 animate-spin"></div>
         </div>
+        <p className="text-slate-300 font-black uppercase tracking-widest text-xs">Cargando Estructura Corporativa...</p>
       </div>
     );
   }
 
   if (error && !companyData) {
     return (
-      <div className="bg-red-900/20 border border-red-700 rounded-lg p-6">
-        <div className="flex items-center space-x-3">
-          <AlertTriangle className="h-6 w-6 text-red-400" />
-          <div>
-            <h3 className="text-lg font-semibold text-red-300">Error</h3>
-            <p className="text-red-200">{error}</p>
-          </div>
+      <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-8 flex flex-col items-center text-center">
+        <div className="p-4 bg-rose-500/20 rounded-2xl mb-4">
+          <AlertTriangle className="h-8 w-8 text-rose-400" />
         </div>
+        <h3 className="text-xl font-black text-rose-300 mb-2">Error Crítico</h3>
+        <p className="text-rose-200/70 font-medium max-w-md">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-slate-950 p-8 rounded-2xl border border-slate-800 shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Building2 className="h-8 w-8 text-blue-400" />
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6">
+        <div className="flex items-center space-x-5">
+          <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20">
+            <Building2 className="h-10 w-10 text-blue-500" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Datos de la Empresa</h1>
-            <p className="text-gray-400">Configuración de la empresa propietaria del sistema</p>
+            <h1 className="text-3xl font-black text-white tracking-tight">Datos Corporativos</h1>
+            <p className="text-slate-400 font-medium">Configuración de la entidad titular del sistema</p>
           </div>
         </div>
         <button
           onClick={() => handleSave()}
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 text-white px-8 py-3 rounded-2xl flex items-center space-x-3 transition-all font-black shadow-lg shadow-blue-900/40"
         >
           {saving ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
+            <RefreshCw className="h-5 w-5 animate-spin" />
           ) : (
-            <Save className="h-4 w-4" />
+            <Save className="h-5 w-5" />
           )}
-          <span>{saving ? 'Guardando...' : 'Guardar Cambios'}</span>
+          <span>{saving ? 'Procesando...' : 'Guardar Cambios'}</span>
         </button>
       </div>
 
       {/* Alertas de datos contables */}
       {accountingCheck.hasData && (
-        <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-6">
-          <div className="flex items-start space-x-3">
-            <Shield className="h-6 w-6 text-yellow-400 mt-1" />
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Shield className="w-24 h-24 text-amber-500" />
+          </div>
+          <div className="flex items-start space-x-4 relative z-10">
+            <div className="p-3 bg-amber-500/20 rounded-2xl">
+              <Shield className="h-6 w-6 text-amber-400" />
+            </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-yellow-300 mb-2">⚠️ Empresa con Datos Contables</h3>
-              <p className="text-yellow-200 mb-3">
-                Esta empresa tiene información contable asociada. Los cambios en datos críticos pueden afectar reportes y documentos.
+              <h3 className="text-lg font-black text-amber-400 mb-1">Entidad con Operaciones Activas</h3>
+              <p className="text-amber-200/70 font-medium mb-6 text-sm leading-relaxed">
+                Se detectaron registros contables asociados. La modificación de campos fiscales afectará la integridad histórica de los reportes.
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-blue-400" />
-                  <span className="text-sm text-gray-300">{accountingCheck.customers} Clientes</span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="h-3.5 w-3.5 text-blue-400" />
+                    <span className="text-[10px] font-black uppercase text-slate-500">Clientes</span>
+                  </div>
+                  <span className="text-lg font-black text-white leading-none">{accountingCheck.customers}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Building2 className="h-4 w-4 text-green-400" />
-                  <span className="text-sm text-gray-300">{accountingCheck.suppliers} Proveedores</span>
+                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Building2 className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-[10px] font-black uppercase text-slate-500">Aliados</span>
+                  </div>
+                  <span className="text-lg font-black text-white leading-none">{accountingCheck.suppliers}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4 text-purple-400" />
-                  <span className="text-sm text-gray-300">{accountingCheck.invoices} Facturas</span>
+                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="h-3.5 w-3.5 text-purple-400" />
+                    <span className="text-[10px] font-black uppercase text-slate-500">Facturas</span>
+                  </div>
+                  <span className="text-lg font-black text-white leading-none">{accountingCheck.invoices}</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Receipt className="h-4 w-4 text-orange-400" />
-                  <span className="text-sm text-gray-300">{accountingCheck.bills} Compras</span>
+                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Receipt className="h-3.5 w-3.5 text-orange-400" />
+                    <span className="text-[10px] font-black uppercase text-slate-500">Compras</span>
+                  </div>
+                  <span className="text-lg font-black text-white leading-none">{accountingCheck.bills}</span>
                 </div>
               </div>
-              <p className="text-yellow-200 text-sm">
-                💡 <strong>Recomendación:</strong> Cree un respaldo antes de cambiar el nombre de la empresa o datos fiscales.
-              </p>
             </div>
           </div>
         </div>
       )}
 
       {/* Mensajes de estado */}
-      {error && (
-        <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 h-5 text-red-400" />
-            <p className="text-red-300">{error}</p>
+      <div className="space-y-3">
+        {error && (
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
+            <AlertTriangle className="h-5 w-5 text-rose-400" />
+            <p className="text-rose-300 font-bold text-sm tracking-tight">{error}</p>
           </div>
-        </div>
-      )}
+        )}
 
-      {success && (
-        <div className="bg-green-900/20 border border-green-700 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-green-400" />
-            <p className="text-green-300">{success}</p>
+        {success && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3 animate-in slide-in-from-top-2">
+            <CheckCircle className="h-5 w-5 text-emerald-400" />
+            <p className="text-emerald-300 font-bold text-sm tracking-tight">{success}</p>
           </div>
-        </div>
-      )}
-
-      {warnings.length > 0 && (
-        <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-4">
-          <div className="space-y-2">
-            {warnings.map((warning, index) => (
-              <div key={index} className="flex items-start space-x-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5" />
-                <p className="text-yellow-200 text-sm">{warning}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Formulario con pestañas */}
       {companyData && (
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
-          {/* Pestañas */}
-          <div className="border-b border-gray-700">
-            <nav className="flex space-x-8 px-6">
-              <button
-                onClick={() => setActiveTab('empresa')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'empresa'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
-                }`}
-              >
-                Empresa
-              </button>
-              <button
-                onClick={() => setActiveTab('finanzas')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'finanzas'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
-                }`}
-              >
-                Finanzas
-              </button>
-              <button
-                onClick={() => setActiveTab('usuarios')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'usuarios'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300'
-                }`}
-              >
-                Usuarios
-              </button>
+        <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
+          {/* Pestañas Modernas */}
+          <div className="bg-slate-950/50 px-6 pt-6 border-b border-slate-800">
+            <nav className="flex space-x-6">
+              {[
+                { id: 'empresa', label: 'Estructura Legal', icon: Building2 },
+                { id: 'finanzas', label: 'Parámetros Financieros', icon: Receipt },
+                { id: 'usuarios', label: 'Acceso y Seguridad', icon: Shield }
+              ].map((tab: any) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-4 px-4 font-black text-xs uppercase tracking-widest transition-all relative ${activeTab === tab.id
+                      ? 'text-blue-400'
+                      : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                >
+                  <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-blue-500' : 'text-slate-600'}`} />
+                  {tab.label}
+                  {activeTab === tab.id && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                  )}
+                </button>
+              ))}
             </nav>
           </div>
 
           {/* Contenido de pestañas */}
-          <div className="p-6">
+          <div className="p-10">
             {activeTab === 'empresa' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Información básica */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white mb-4">Información Básica</h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Nombre Comercial *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.company_name || ''}
-                      onChange={(e) => handleInputChange('company_name', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="Nombre que aparece en facturas y documentos"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Razón Social *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.legal_name || ''}
-                      onChange={(e) => handleInputChange('legal_name', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="Nombre legal registrado"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Tax ID / EIN *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.tax_id || ''}
-                      onChange={(e) => handleInputChange('tax_id', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="XX-XXXXXXX"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Teléfono *
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone || ''}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="+1 (305) 000-0000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={formData.email || ''}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="info@empresa.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Sitio Web
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.website || ''}
-                      onChange={(e) => handleInputChange('website', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="www.empresa.com"
-                    />
-                  </div>
-
-                  {/* Logo de la empresa */}
-                  <div className="col-span-full">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                {/* Logo Section */}
+                <div className="lg:col-span-4 space-y-6">
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    Identidad Visual
+                  </h3>
+                  <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 border-dashed hover:border-blue-500/30 transition-colors">
                     <LogoUploader
                       currentLogo={formData.logo_path || ''}
                       onLogoChange={(logoPath) => handleInputChange('logo_path', logoPath || '')}
@@ -379,45 +289,66 @@ export function CompanyDataForm() {
                   </div>
                 </div>
 
-                {/* Dirección y configuración */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white mb-4">Dirección y Configuración</h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Dirección *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.address || ''}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="123 Main Street"
-                    />
+                {/* Información básica */}
+                <div className="lg:col-span-8 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
+                      <input
+                        type="text"
+                        value={formData.company_name || ''}
+                        onChange={(e) => handleInputChange('company_name', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Razón Social</label>
+                      <input
+                        type="text"
+                        value={formData.legal_name || ''}
+                        onChange={(e) => handleInputChange('legal_name', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Ciudad *
-                      </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ID Fiscal</label>
+                      <input
+                        type="text"
+                        value={formData.tax_id || ''}
+                        onChange={(e) => handleInputChange('tax_id', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Física</label>
+                      <input
+                        type="text"
+                        value={formData.address || ''}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="space-y-2 col-span-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Ciudad</label>
                       <input
                         type="text"
                         value={formData.city || ''}
                         onChange={(e) => handleInputChange('city', e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                        placeholder="Miami"
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
                       />
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Estado *
-                      </label>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado</label>
                       <select
                         value={formData.state || 'FL'}
                         onChange={(e) => handleInputChange('state', e.target.value)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
                       >
                         <option value="FL">Florida</option>
                         <option value="CA">California</option>
@@ -425,350 +356,125 @@ export function CompanyDataForm() {
                         <option value="TX">Texas</option>
                       </select>
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ZIP / Postal</label>
+                      <input
+                        type="text"
+                        value={formData.zip_code || ''}
+                        onChange={(e) => handleInputChange('zip_code', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Código Postal *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.zip_code || ''}
-                      onChange={(e) => handleInputChange('zip_code', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="33101"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Moneda
-                    </label>
-                    <select
-                      value={formData.currency || 'USD'}
-                      onChange={(e) => handleInputChange('currency', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="USD">USD - Dólar Estadounidense</option>
-                      <option value="EUR">EUR - Euro</option>
-                      <option value="CAD">CAD - Dólar Canadiense</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Idioma
-                    </label>
-                    <select
-                      value={formData.language || 'es'}
-                      onChange={(e) => handleInputChange('language', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="es">Español</option>
-                      <option value="en">English</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Inicio Año Fiscal
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.fiscal_year_start || '01-01'}
-                      onChange={(e) => handleInputChange('fiscal_year_start', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="MM-DD (ej: 01-01)"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Teléfono</label>
+                      <input
+                        type="tel"
+                        value={formData.phone || ''}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email</label>
+                      <input
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none font-bold"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'finanzas' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Configuraciones de ventas */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white mb-4">Configuraciones de Ventas</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Comisión Vendedores
-                      </label>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div className="space-y-10">
+                  <div>
+                    <h3 className="text-xl font-black text-white tracking-tight mb-2">Ventas & Distribución</h3>
+                    <p className="text-slate-500 font-medium text-sm mb-8 tracking-tight">Reglas globales</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Comisión %</label>
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.sales_commission_rate || 0}
-                        onChange={(e) => handleInputChange('sales_commission_rate', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        max="100"
                         value={formData.sales_commission_percentage || 0}
                         onChange={(e) => handleInputChange('sales_commission_percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                        placeholder="0.00 %"
+                        className="w-full bg-slate-950 border border-slate-800 text-blue-400 px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-right"
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Descuentos
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.discount_amount || 50}
-                        onChange={(e) => handleInputChange('discount_amount', parseFloat(e.target.value) || 50)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        max="100"
-                        value={formData.discount_percentage || 0}
-                        onChange={(e) => handleInputChange('discount_percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                        placeholder="0.00 %"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Tarifa Envío
-                      </label>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tarifa Envío $</label>
                       <input
                         type="number"
                         step="0.01"
                         value={formData.shipping_rate || 0}
                         onChange={(e) => handleInputChange('shipping_rate', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-right"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        max="100"
-                        value={formData.shipping_percentage || 0}
-                        onChange={(e) => handleInputChange('shipping_percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                        placeholder="0.00 %"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Política Reposición (Días)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.reposition_policy_days || 32}
-                      onChange={(e) => handleInputChange('reposition_policy_days', parseInt(e.target.value) || 32)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
                   </div>
                 </div>
 
-                {/* Configuraciones financieras */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white mb-4">Configuraciones Financieras</h3>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Monto Por Mora
-                      </label>
+                <div className="space-y-10">
+                  <div>
+                    <h3 className="text-xl font-black text-white tracking-tight mb-2">Contabilidad</h3>
+                    <p className="text-slate-500 font-medium text-sm mb-8 tracking-tight">Libro mayor</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mora %</label>
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.late_fee_amount || 0}
-                        onChange={(e) => handleInputChange('late_fee_amount', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        max="100"
                         value={formData.late_fee_percentage || 0}
                         onChange={(e) => handleInputChange('late_fee_percentage', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                        placeholder="0.00 %"
+                        className="w-full bg-slate-950 border border-slate-800 text-rose-400 px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-right"
                       />
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Tasa Interés Anual (%)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      max="100"
-                      value={formData.annual_interest_rate || 0}
-                      onChange={(e) => handleInputChange('annual_interest_rate', parseFloat(e.target.value) || 0)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                      placeholder="0.00 %"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Plazo de Gracia (Días)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.grace_period_days || 0}
-                      onChange={(e) => handleInputChange('grace_period_days', parseInt(e.target.value) || 0)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Costo Documentación
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.documentation_cost || 0}
-                      onChange={(e) => handleInputChange('documentation_cost', parseFloat(e.target.value) || 0)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Otros Costos
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.other_costs || 0}
-                      onChange={(e) => handleInputChange('other_costs', parseFloat(e.target.value) || 0)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Nombre Plan de Cuentas
-                    </label>
-                    <select
-                      value={formData.chart_of_accounts_name || 'Plan de Cuenta Ejemplo'}
-                      onChange={(e) => handleInputChange('chart_of_accounts_name', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="Plan de Cuenta Ejemplo">Plan de Cuenta Ejemplo</option>
-                      <option value="Plan Contable Estándar">Plan Contable Estándar</option>
-                      <option value="Plan Personalizado">Plan Personalizado</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Formato de Fecha Contables
-                    </label>
-                    <select
-                      value={formData.date_format || 'MM/DD/AAAA'}
-                      onChange={(e) => handleInputChange('date_format', e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="MM/DD/AAAA">MM/DD/AAAA</option>
-                      <option value="DD/MM/AAAA">DD/MM/AAAA</option>
-                      <option value="AAAA-MM-DD">AAAA-MM-DD</option>
-                    </select>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Gracia (Días)</label>
+                      <input
+                        type="number"
+                        value={formData.grace_period_days || 0}
+                        onChange={(e) => handleInputChange('grace_period_days', parseInt(e.target.value) || 0)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white px-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 font-black text-center"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'usuarios' && (
-              <div className="space-y-6">
-                <div className="bg-yellow-900/20 border border-yellow-700 rounded-lg p-6">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className="h-6 w-6 text-yellow-400" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-yellow-300">Gestión de Usuarios</h3>
-                      <p className="text-yellow-200">
-                        La gestión de usuarios está en desarrollo. Actualmente el sistema opera con un usuario administrador único.
-                      </p>
-                    </div>
+              <div className="space-y-10 py-10">
+                <div className="max-w-3xl mx-auto bg-amber-500/5 border border-amber-500/20 rounded-3xl p-10 text-center relative overflow-hidden">
+                  <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Shield className="h-10 w-10 text-amber-500" />
                   </div>
-                </div>
+                  <h3 className="text-2xl font-black text-white mb-4">Acceso Restringido</h3>
+                  <p className="text-slate-400 font-medium mb-10 leading-relaxed">
+                    Sistema en modalidad "Local-Single-User". El administrador Root es el único perfil habilitado.
+                  </p>
 
-                <div className="bg-gray-700 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Usuario Actual</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Apellido y Nombre
-                      </label>
-                      <input
-                        type="text"
-                        value="USUARIO ADMINISTRADOR"
-                        disabled
-                        className="w-full bg-gray-600 border border-gray-500 text-gray-300 px-3 py-2 rounded-lg"
-                      />
+                  <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800 inline-flex flex-col md:flex-row items-center gap-8 text-left">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Perfil</span>
+                      <span className="text-lg font-black text-white tracking-tight">Root Administrator</span>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Contraseña
-                      </label>
-                      <input
-                        type="password"
-                        value="••••••"
-                        disabled
-                        className="w-full bg-gray-600 border border-gray-500 text-gray-300 px-3 py-2 rounded-lg"
-                      />
+                    <div className="w-px h-10 bg-slate-800 hidden md:block"></div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Estado</span>
+                      <span className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase">Protección Activa</span>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Creador
-                      </label>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          disabled
-                          className="rounded border-gray-500"
-                        />
-                        <span className="text-gray-300 text-sm">Administrador del Sistema</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
-                    <p className="text-blue-200 text-sm">
-                      <strong>Próximamente:</strong> Gestión completa de usuarios con roles, permisos y autenticación avanzada.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -777,46 +483,24 @@ export function CompanyDataForm() {
         </div>
       )}
 
-      {/* Modal de advertencia */}
+      {/* Modal Advertencia */}
       {showWarningModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <AlertTriangle className="h-8 w-8 text-yellow-400" />
-              <h3 className="text-xl font-semibold text-white">Confirmar Cambios Críticos</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-in fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-3xl shadow-2xl p-10 text-center">
+            <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="h-10 w-10 text-amber-500" />
             </div>
-            
-            <div className="space-y-3 mb-6">
-              <p className="text-gray-300">
-                Está a punto de cambiar información crítica de la empresa que tiene datos contables asociados.
-              </p>
-              <div className="bg-yellow-900/20 border border-yellow-700 rounded p-3">
-                <p className="text-yellow-200 text-sm">
-                  <strong>⚠️ Advertencia:</strong> Estos cambios pueden afectar:
-                </p>
-                <ul className="text-yellow-200 text-sm mt-2 space-y-1">
-                  <li>• Reportes financieros existentes</li>
-                  <li>• Documentos ya generados</li>
-                  <li>• Referencias en facturas y compras</li>
-                </ul>
-              </div>
-              <p className="text-gray-300 text-sm">
-                <strong>Recomendación:</strong> Cree un respaldo antes de continuar.
-              </p>
-            </div>
+            <h3 className="text-2xl font-black text-white mb-4">¡Cambio Crítico!</h3>
+            <p className="text-slate-400 font-medium mb-8 leading-relaxed">
+              Está modificando identificadores fiscales con registros contables activos.
+            </p>
 
-            <div className="flex space-x-3">
-              <button
-                onClick={cancelSaveWithWarning}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Cancelar
+            <div className="space-y-3">
+              <button onClick={confirmSaveWithWarning} className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-black">
+                Proceder (Riesgos Conocidos)
               </button>
-              <button
-                onClick={confirmSaveWithWarning}
-                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Continuar
+              <button onClick={cancelSaveWithWarning} className="w-full py-4 bg-slate-800 text-slate-400 rounded-2xl font-bold">
+                Cancelar
               </button>
             </div>
           </div>

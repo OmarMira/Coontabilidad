@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  Users, 
-  Package, 
-  DollarSign, 
-  TrendingUp, 
-  FileText, 
+import {
+  Users,
+  Package,
+  DollarSign,
+  TrendingUp,
+  FileText,
   Calendar,
   AlertCircle,
   CheckCircle,
@@ -88,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
       description: 'Reportes para cumplimiento Florida',
       icon: TrendingUp,
       color: 'bg-purple-600 hover:bg-purple-700',
-      action: () => onNavigate('reports')
+      action: () => onNavigate('tax-reports')
     }
   ];
 
@@ -119,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
   return (
     <div className="space-y-8">
       {/* Bienvenida */}
-      <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-6 border border-blue-700/50">
+      <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 shadow-xl relative overflow-hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
             {/* Logo de la empresa */}
@@ -132,24 +132,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                 />
               </div>
             )}
-            
+
             <div>
-              <h1 className="text-2xl font-bold text-white mb-2">
-                ¡Bienvenido a AccountExpress Next-Gen!
+              <h1 className="text-section-title mb-2">
+                ¡Bienvenido a <span className="text-blue-500">AccountExpress</span>!
               </h1>
-              <p className="text-blue-200">
-                Tu sistema ERP contable está funcionando offline con cifrado AES-256
+              <p className="text-standard-body">
+                Sistema ERP de última generación con cifrado bancario <span className="text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-sm">AES-256</span> activo.
               </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center gap-2 text-green-400">
-              <CheckCircle className="w-4 h-4" />
-              Sistema Operativo
-            </div>
-            <div className="flex items-center gap-2 text-blue-400">
-              <Shield className="w-4 h-4" />
-              Datos Cifrados
             </div>
           </div>
         </div>
@@ -164,9 +154,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
                 <p className="text-gray-400 text-sm font-medium">{stat.title}</p>
                 <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
                 <div className="flex items-center mt-2">
-                  <span className={`text-sm font-medium ${
-                    stat.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
-                  }`}>
+                  <span className={`text-sm font-medium ${stat.changeType === 'positive' ? 'text-green-400' : 'text-red-400'
+                    }`}>
                     {stat.change}
                   </span>
                   <span className="text-gray-500 text-sm ml-1">vs mes anterior</span>
@@ -259,28 +248,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate }) => {
       </div>
 
       {/* Información de Cumplimiento Florida */}
-      <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-lg p-6 border border-green-700/50">
-        <div className="flex items-start gap-4">
-          <Shield className="w-8 h-8 text-green-400 mt-1" />
-          <div>
-            <h3 className="text-lg font-semibold text-green-300 mb-2">
-              Cumplimiento Fiscal Florida
-            </h3>
-            <p className="text-green-200 mb-3">
-              AccountExpress está configurado para cumplir con las regulaciones fiscales del estado de Florida.
+      <div className="bg-slate-900 rounded-xl p-6 border border-emerald-500/20 shadow-lg">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="p-3 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-900/30 flex-shrink-0">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h3 className="text-lg font-bold text-white">
+                Cumplimiento Fiscal Florida
+              </h3>
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase tracking-tighter font-bold">Verificado</span>
+            </div>
+            <p className="text-slate-400 text-sm mb-4 leading-normal">
+              Configuración optimizada para el cumplimiento de las regulaciones del <span className="text-white font-semibold">Florida Department of Revenue</span>.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-green-200">Sales Tax por condado</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex items-center gap-2 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <span className="text-white text-xs font-medium">Sales Tax por condado</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-green-200">Formato DR-15 compatible</span>
+              <div className="flex items-center gap-2 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <span className="text-white text-xs font-medium">Formato DR-15 oficial</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-green-200">67 condados precargados</span>
+              <div className="flex items-center gap-2 bg-slate-800/50 p-2.5 rounded-lg border border-slate-700">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                <span className="text-white text-xs font-medium">67 condados actualizados</span>
               </div>
             </div>
           </div>

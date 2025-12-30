@@ -58,3 +58,128 @@ textarea:focus {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* --- Global Standardized Typography --- */
+.text-section-title {
+  @apply text-3xl font-black text-white tracking-tight;
+}
+
+.text-item-title {
+  @apply text-xl font-bold text-white tracking-tight;
+}
+
+.text-standard-body {
+  @apply text-base text-slate-300 font-medium leading-relaxed;
+}
+
+.text-table-header {
+  @apply text-[10px] font-black uppercase tracking-widest text-slate-500;
+}
+
+.text-form-label {
+  @apply text-sm font-black uppercase tracking-widest text-slate-400 mb-2 block;
+}
+
+.text-input-field {
+  @apply text-base bg-slate-800 border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 transition-all p-3;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  html {
+    background: white !important;
+    color: black !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Reset parent containers that fix height in App.tsx */
+  div.flex.h-screen {
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .overflow-auto,
+  .overflow-hidden {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Reset colors for printing compatibility */
+  .bg-slate-950,
+  .bg-slate-900,
+  .bg-slate-800,
+  .bg-slate-950\/50,
+  .bg-slate-900\/40 {
+    background-color: white !important;
+    background: white !important;
+    color: black !important;
+    background-image: none !important;
+  }
+
+  .text-white,
+  .text-slate-200,
+  .text-slate-300,
+  .text-slate-400,
+  .text-slate-500,
+  .text-blue-400,
+  .text-emerald-400,
+  .text-rose-400 {
+    color: black !important;
+    text-shadow: none !important;
+  }
+
+  .border-slate-800,
+  .border-slate-700,
+  .border {
+    border-color: #ddd !important;
+  }
+
+  .shadow-2xl,
+  .shadow-xl,
+  .shadow-lg,
+  .shadow-md {
+    box-shadow: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  table {
+    width: 100% !important;
+    border: 1px solid #ddd !important;
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid #eee !important;
+    color: black !important;
+    padding: 8px !important;
+  }
+
+  thead {
+    background-color: #f7f7f7 !important;
+  }
+
+  /* Ensure text is black for printing */
+  span,
+  div,
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: black !important;
+  }
+}

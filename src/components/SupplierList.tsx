@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Truck, Edit, Trash2, MapPin, Mail, Phone, Search, Eye } from 'lucide-react';
+import { Truck, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus } from 'lucide-react';
 import { Supplier } from '../database/simple-db';
 
 interface SupplierListProps {
@@ -7,13 +7,15 @@ interface SupplierListProps {
   onEdit: (supplier: Supplier) => void;
   onView: (supplier: Supplier) => void;
   onDelete: (id: number) => void;
+  onAddSupplier: () => void;
 }
 
-export const SupplierList: React.FC<SupplierListProps> = ({ 
-  suppliers, 
-  onEdit, 
+export const SupplierList: React.FC<SupplierListProps> = ({
+  suppliers,
+  onEdit,
   onView,
-  onDelete 
+  onDelete,
+  onAddSupplier
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCounty, setSelectedCounty] = useState('');
@@ -21,11 +23,11 @@ export const SupplierList: React.FC<SupplierListProps> = ({
   // Filtrar proveedores
   const filteredSuppliers = suppliers.filter(supplier => {
     const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.phone.includes(searchTerm);
-    
+      supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.phone.includes(searchTerm);
+
     const matchesCounty = selectedCounty === '' || supplier.florida_county === selectedCounty;
-    
+
     return matchesSearch && matchesCounty;
   });
 
@@ -53,11 +55,20 @@ export const SupplierList: React.FC<SupplierListProps> = ({
   return (
     <div className="bg-gray-800 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Truck className="w-5 h-5 text-orange-500" />
-          Proveedores ({filteredSuppliers.length})
-        </h2>
-        
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Truck className="w-5 h-5 text-orange-500" />
+            Proveedores ({filteredSuppliers.length})
+          </h2>
+          <button
+            onClick={onAddSupplier}
+            className="flex items-center gap-2 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-md transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Proveedor
+          </button>
+        </div>
+
         {/* Filtros */}
         <div className="flex items-center space-x-4">
           {/* Búsqueda */}
@@ -71,7 +82,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
               className="pl-10 pr-4 py-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none w-64"
             />
           </div>
-          
+
           {/* Filtro por condado */}
           {uniqueCounties.length > 1 && (
             <select
@@ -89,7 +100,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
           )}
         </div>
       </div>
-      
+
       {filteredSuppliers.length === 0 ? (
         <div className="text-center py-12">
           <Truck className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -97,7 +108,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
             {searchTerm || selectedCounty ? 'No se encontraron proveedores' : 'No hay proveedores registrados'}
           </p>
           <p className="text-gray-500 text-sm">
-            {searchTerm || selectedCounty 
+            {searchTerm || selectedCounty
               ? 'Intenta cambiar los filtros de búsqueda'
               : 'Agrega tu primer proveedor usando el formulario de arriba'
             }
@@ -106,8 +117,8 @@ export const SupplierList: React.FC<SupplierListProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredSuppliers.map((supplier) => (
-            <div 
-              key={supplier.id} 
+            <div
+              key={supplier.id}
               className="bg-gray-700 p-4 rounded-md hover:bg-gray-650 transition-colors border border-gray-600"
             >
               <div className="flex justify-between items-start mb-3">
@@ -119,7 +130,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
                     ID: {supplier.id} • {formatDate(supplier.created_at)}
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-1">
                   <button
                     onClick={() => onView(supplier)}
@@ -144,28 +155,28 @@ export const SupplierList: React.FC<SupplierListProps> = ({
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 {supplier.business_name && (
                   <div className="text-gray-300 text-sm">
                     <span className="font-medium">{supplier.business_name}</span>
                   </div>
                 )}
-                
+
                 {supplier.email && (
                   <div className="flex items-center text-gray-300 text-sm">
                     <Mail className="w-4 h-4 mr-2 text-gray-400" />
                     <span className="truncate">{supplier.email}</span>
                   </div>
                 )}
-                
+
                 {supplier.phone && (
                   <div className="flex items-center text-gray-300 text-sm">
                     <Phone className="w-4 h-4 mr-2 text-gray-400" />
                     <span>{supplier.phone}</span>
                   </div>
                 )}
-                
+
                 <div className="flex items-center text-gray-300 text-sm">
                   <MapPin className="w-4 h-4 mr-2 text-gray-400" />
                   <span className="text-orange-400 font-medium">{supplier.florida_county}</span>
@@ -181,7 +192,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
           ))}
         </div>
       )}
-      
+
       {/* Estadísticas */}
       {suppliers.length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-700">

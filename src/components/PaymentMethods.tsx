@@ -53,7 +53,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
     try {
       let result;
-      
+
       if (editingMethod) {
         result = updatePaymentMethod(editingMethod.id, formData);
       } else {
@@ -65,7 +65,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         resetForm();
         loadPaymentMethods();
         onPaymentMethodsChange?.();
-        
+
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(result.message);
@@ -91,7 +91,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
   const handleDelete = async (method: PaymentMethod) => {
     const deleteCheck = canDeletePaymentMethod(method.id);
-    
+
     if (!deleteCheck.canDelete) {
       setError(deleteCheck.reason || 'No se puede eliminar el método de pago');
       return;
@@ -103,12 +103,12 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
     try {
       const result = deletePaymentMethod(method.id);
-      
+
       if (result.success) {
         setSuccess(result.message);
         loadPaymentMethods();
         onPaymentMethodsChange?.();
-        
+
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(result.message);
@@ -132,26 +132,29 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
   const getMethodTypeColor = (type: string) => {
     const colors = {
-      cash: 'bg-green-100 text-green-800',
-      check: 'bg-blue-100 text-blue-800',
-      credit_card: 'bg-purple-100 text-purple-800',
-      bank_transfer: 'bg-orange-100 text-orange-800',
-      other: 'bg-gray-100 text-gray-800'
+      cash: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      check: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+      credit_card: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+      bank_transfer: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+      other: 'text-slate-400 bg-slate-500/10 border-slate-500/20'
     };
-    return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[type as keyof typeof colors] || 'text-slate-400 bg-slate-500/10 border-slate-500/20';
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-slate-950 p-8 rounded-2xl border border-slate-800 shadow-2xl">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Métodos de Pago</h2>
-          <p className="text-gray-300">Gestiona los métodos de pago disponibles en el sistema</p>
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <CreditCard className="w-8 h-8 text-blue-500" />
+            Métodos de Pago
+          </h2>
+          <p className="text-slate-400 font-medium ml-11">Gestiona las opciones de cobro y pago disponibles</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center space-x-2 transition-all font-bold shadow-lg shadow-blue-900/40"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nuevo Método
@@ -160,16 +163,11 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
       {/* Mensajes */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto text-red-400 hover:text-red-600"
-            >
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-rose-400" />
+            <p className="text-sm text-rose-300 font-medium flex-1">{error}</p>
+            <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-200">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -177,16 +175,11 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       )}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-md p-4">
-          <div className="flex">
-            <Check className="h-5 w-5 text-green-400" />
-            <div className="ml-3">
-              <p className="text-sm text-green-800">{success}</p>
-            </div>
-            <button
-              onClick={() => setSuccess(null)}
-              className="ml-auto text-green-400 hover:text-green-600"
-            >
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <Check className="h-5 w-5 text-emerald-400" />
+            <p className="text-sm text-emerald-300 font-medium flex-1">{success}</p>
+            <button onClick={() => setSuccess(null)} className="text-emerald-400 hover:text-emerald-200">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -194,81 +187,82 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       )}
 
       {/* Lista de métodos de pago */}
-      <div className="bg-gray-800 shadow overflow-hidden sm:rounded-md border border-gray-700">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-700">
-          <h3 className="text-lg leading-6 font-medium text-white">
-            Métodos de Pago Configurados
+      <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50">
+          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+            Configuraciones Activas
           </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-300">
-            {paymentMethods.length} métodos de pago configurados
+          <p className="text-slate-400 text-sm font-medium mt-1">
+            {paymentMethods.length} métodos de pago registrados en el motor
           </p>
         </div>
 
         {paymentMethods.length === 0 ? (
-          <div className="text-center py-12">
-            <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-white">No hay métodos de pago</h3>
-            <p className="mt-1 text-sm text-gray-300">
-              Comienza agregando tu primer método de pago.
-            </p>
-            <div className="mt-6">
-              <button
-                onClick={() => setShowForm(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Método de Pago
-              </button>
+          <div className="text-center py-20 bg-slate-950/50">
+            <div className="bg-slate-800 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
+              <CreditCard className="h-8 w-8 text-slate-500" />
             </div>
+            <h3 className="text-lg font-black text-white">No hay registros</h3>
+            <p className="mt-1 text-slate-400 font-medium">
+              Comienza configurando tu primer método de cobro.
+            </p>
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-6 inline-flex items-center px-6 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 transition-all font-bold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Método
+            </button>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-700">
+          <ul className="divide-y divide-slate-800/50">
             {paymentMethods.map((method) => (
-              <li key={method.id} className="px-4 py-4 sm:px-6">
+              <li key={method.id} className="px-6 py-5 hover:bg-slate-800/30 transition-colors group">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <CreditCard className="h-6 w-6 text-gray-400" />
+                  <div className="flex items-center gap-5">
+                    <div className="p-3 bg-slate-800 rounded-2xl border border-slate-700 group-hover:border-slate-600 transition-all">
+                      <CreditCard className="h-6 w-6 text-slate-400" />
                     </div>
-                    <div className="ml-4">
-                      <div className="flex items-center">
-                        <p className="text-sm font-medium text-white">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-lg font-black text-white tracking-tight">
                           {method.method_name}
                         </p>
-                        <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getMethodTypeColor(method.method_type)}`}>
+                        <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded-lg border bg-slate-950/50 ${getMethodTypeColor(method.method_type)}`}>
                           {getMethodTypeLabel(method.method_type)}
                         </span>
                         {!method.is_active && (
-                          <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                          <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
                             Inactivo
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center text-sm text-gray-300">
+                      <div className="mt-1 flex items-center gap-4 text-xs font-medium text-slate-500">
                         {method.requires_reference && (
-                          <span className="inline-flex items-center">
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Requiere referencia
+                          <span className="flex items-center gap-1.5 text-blue-400/70 bg-blue-400/5 px-2 py-0.5 rounded-md border border-blue-400/10">
+                            <AlertCircle className="w-3 h-3" />
+                            Requiere Referencia
                           </span>
                         )}
-                        <span className="ml-2">
-                          Creado: {new Date(method.created_at).toLocaleDateString()}
+                        <span className="opacity-60 text-[10px] uppercase font-bold tracking-widest">
+                          ID: {method.id} • {new Date(method.created_at).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEdit(method)}
-                      className="text-blue-600 hover:text-blue-900"
-                      title="Editar método"
+                      className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl transition-all"
+                      title="Editar"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(method)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Eliminar método"
+                      className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+                      title="Eliminar"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -282,90 +276,94 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
       {/* Modal de formulario */}
       {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-gray-800 border-gray-700">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-white">
-                  {editingMethod ? 'Editar Método de Pago' : 'Nuevo Método de Pago'}
-                </h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-2xl font-black text-white tracking-tight">
+                    {editingMethod ? 'Actualizar Método' : 'Nuevo Método de Pago'}
+                  </h3>
+                  <p className="text-slate-400 font-medium text-sm">Configura las reglas de validación para esta vía de pago</p>
+                </div>
                 <button
                   onClick={resetForm}
-                  className="text-gray-400 hover:text-gray-300"
+                  className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-1">
-                    Nombre del Método
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                    Nombre Descriptivo
                   </label>
                   <input
                     type="text"
                     value={formData.method_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, method_name: e.target.value }))}
-                    placeholder="Ej: Efectivo, Cheque, Tarjeta Visa..."
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ej: Transferencia Zelle, Efectivo USD..."
+                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium"
                     required
+                    autoFocus
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-white mb-1">
-                    Tipo de Método
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                    Tipo de Transacción
                   </label>
                   <select
                     value={formData.method_type}
                     onChange={(e) => setFormData(prev => ({ ...prev, method_type: e.target.value as any }))}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium appearance-none cursor-pointer"
                     required
                   >
-                    <option value="cash">Efectivo</option>
-                    <option value="check">Cheque</option>
-                    <option value="credit_card">Tarjeta de Crédito</option>
-                    <option value="bank_transfer">Transferencia Bancaria</option>
-                    <option value="other">Otro</option>
+                    <option value="cash">💵 Efectivo (Cash)</option>
+                    <option value="check">✍️ Cheque (Check)</option>
+                    <option value="credit_card">💳 Tarjeta (Card)</option>
+                    <option value="bank_transfer">🏦 Transferencia (ACH/Zelle)</option>
+                    <option value="other">⚙️ Otro (Other)</option>
                   </select>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-                      className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-sm text-white">Activo</span>
-                  </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${formData.is_active ? 'bg-blue-500/10 border-blue-500/30' : 'bg-slate-950 border-slate-800'}`}
+                  >
+                    <span className={`text-sm font-bold ${formData.is_active ? 'text-blue-400' : 'text-slate-500'}`}>Habilitado</span>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.is_active ? 'border-blue-400 bg-blue-400' : 'border-slate-700'}`}>
+                      {formData.is_active && <Check className="w-3 h-3 text-slate-950 font-black" />}
+                    </div>
+                  </div>
 
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.requires_reference}
-                      onChange={(e) => setFormData(prev => ({ ...prev, requires_reference: e.target.checked }))}
-                      className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="ml-2 text-sm text-white">Requiere referencia</span>
-                  </label>
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, requires_reference: !prev.requires_reference }))}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${formData.requires_reference ? 'bg-blue-500/10 border-blue-500/30' : 'bg-slate-950 border-slate-800'}`}
+                  >
+                    <span className={`text-sm font-bold ${formData.requires_reference ? 'text-blue-400' : 'text-slate-500'}`}>Referencia Oblig.</span>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.requires_reference ? 'border-blue-400 bg-blue-400' : 'border-slate-700'}`}>
+                      {formData.requires_reference && <Check className="w-3 h-3 text-slate-950 font-black" />}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex gap-3 pt-6">
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="px-4 py-2 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="flex-1 py-3 bg-slate-800 text-slate-300 rounded-2xl font-bold hover:bg-slate-700 transition-colors"
                   >
-                    Cancelar
+                    Descartar
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                    className="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/40 disabled:opacity-50"
                   >
-                    {isLoading ? 'Guardando...' : editingMethod ? 'Actualizar' : 'Crear'}
+                    {isLoading ? 'Guardando...' : editingMethod ? 'Guardar Cambios' : 'Confirmar Registro'}
                   </button>
                 </div>
               </form>

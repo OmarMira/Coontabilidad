@@ -43,15 +43,24 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
+    "@types/big.js": "^6.2.2",
+    "@types/sjcl": "^1.0.34",
+    "big.js": "^7.0.1",
     "lucide-react": "^0.294.0",
+    "lz4js": "^0.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "recharts": "^3.6.0",
+    "sjcl": "^1.0.8",
     "sql.js": "^1.13.0",
     "sqlite3": "^5.1.7",
     "zod": "^4.2.1",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@types/sql.js": "^1.4.9",
@@ -64,9 +73,11 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "jsdom": "^27.4.0",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.9.3",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vitest": "^4.0.16"
   }
 }

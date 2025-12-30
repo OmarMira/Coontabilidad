@@ -1,0 +1,203 @@
+
+// ==========================================
+// FUNCIONES PARA CUENTAS BANCARIAS
+// ==========================================
+
+/**
+ * Obtiene todas las cuentas bancarias
+ */
+export function getBankAccounts(): BankAccount[] {
+  if (!db) {
+    logger.error('BankAccounts', 'get_all_no_db', 'Base de datos no disponible');
+    return [];
+  }
+
+  try {
+    const result = db.exec("SELECT * FROM bank_accounts ORDER BY account_name");
+    
+    if (result.length === 0 || result[0].values.length === 0) {
+      return [];
+    }
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const account: any = {};
+      columns.forEach((col, index) => {
+        account[col] = row[index];
+      });
+      return account as BankAccount;
+    });
+  } catch (error) {
+    logger.error('BankAccounts', 'get_failed', 'Error al obtener cuentas bancarias', null, error as Error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene una cuenta bancaria por ID
+ */
+export function getBankAccountById(id: number): BankAccount | null {
+  if (!db) return null;
+
+  try {
+    const result = db.exec("SELECT * FROM bank_accounts WHERE id = ?", [id]);
+
+    if (result.length === 0 || result[0].values.length === 0) {
+      return null;
+    }
+
+    const row = result[0].values[0];
+    const columns = result[0].columns;
+    const account: any = {};
+    
+    columns.forEach((col, index) => {
+      account[col] = row[index];
+    });
+
+    return account as BankAccount;
+  } catch (error) {
+    logger.error('BankAccounts', 'get_by_id_failed', 'Error al obtener cuenta bancaria', { id }, error as Error);
+    return null;
+  }
+}
+
+/**
+ * Crea una nueva cuenta bancaria
+ */
+export function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Base de datos no disponible' };
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO bank_accounts (
+        account_name, bank_name, account_number, account_type, 
+        routing_number, balance, currency, is_active, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run([
+      data.account_name, 
+      data.bank_name, 
+      data.account_number, 
+      data.account_type,
+      data.routing_number || null, 
+      data.balance || 0, 
+      data.currency || 'USD',
+      data.is_active ? 1 : 0, 
+      data.notes || null
+    ]);
+    
+    const idResult = db.exec("SELECT last_insert_rowid()");
+    const id = idResult[0].values[0][0] as number;
+
+    // Auditoría
+    db.exec(`
+      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      'bank_accounts',
+      id,
+      'INSERT',
+      JSON.stringify(data),
+      1,
+      generateSimpleHash(data)
+    ]);
+
+    logger.info('BankAccounts', 'create_success', 'Cuenta bancaria creada', { id });
+    return { success: true, message: 'Cuenta bancaria creada correctamente', id };
+  } catch (error) {
+    logger.error('BankAccounts', 'create_failed', 'Error al crear cuenta bancaria', null, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+}
+
+/**
+ * Actualiza una cuenta bancaria existente
+ */
+export function updateBankAccount(id: number, data: Partial<BankAccount>): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Base de datos no disponible' };
+
+  try {
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    
+    // Lista de campos actualizables
+    const fields = ['account_name', 'bank_name', 'account_number', 'account_type', 'routing_number', 'balance', 'currency', 'is_active', 'notes'];
+    
+    fields.forEach(field => {
+      if ((data as any)[field] !== undefined) {
+        updateFields.push(`${field} = ?`);
+        let val = (data as any)[field];
+        if (typeof val === 'boolean') val = val ? 1 : 0;
+        updateValues.push(val);
+      }
+    });
+    
+    if (updateFields.length === 0) {
+      return { success: false, message: 'No hay datos para actualizar' };
+    }
+    
+    updateValues.push(id);
+    
+    const stmt = db.prepare(`UPDATE bank_accounts SET ${updateFields.join(', ')} WHERE id = ?`);
+    stmt.run(updateValues);
+
+    // Auditoría
+    db.exec(`
+      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      'bank_accounts',
+      id,
+      'UPDATE',
+      JSON.stringify(data),
+      1,
+      generateSimpleHash(data)
+    ]);
+
+    logger.info('BankAccounts', 'update_success', 'Cuenta bancaria actualizada', { id });
+    return { success: true, message: 'Cuenta bancaria actualizada correctamente' };
+  } catch (error) {
+    logger.error('BankAccounts', 'update_failed', 'Error al actualizar cuenta bancaria', { id }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+}
+
+/**
+ * Elimina una cuenta bancaria (o la desactiva si tiene saldo)
+ */
+export function deleteBankAccount(id: number): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Base de datos no disponible' };
+
+  try {
+    // Verificar saldo
+    const account = getBankAccountById(id);
+    if (!account) return { success: false, message: 'Cuenta no encontrada' };
+    
+    if (account.balance !== 0) {
+      return { success: false, message: 'No se puede eliminar una cuenta con saldo diferente a 0. Ajuste el saldo o desactívela.' };
+    }
+
+    // Por seguridad, preferimos Soft Delete para bancos
+    db.exec("UPDATE bank_accounts SET is_active = 0 WHERE id = ?", [id]);
+
+    // Auditoría
+     db.exec(`
+      INSERT INTO audit_log (table_name, record_id, action, old_values, user_id, audit_hash)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [
+      'bank_accounts',
+      id,
+      'DELETE', // Marcamos como DELETE en auditoría aunque sea soft delete para indicar la intención
+      JSON.stringify(account),
+      1,
+      generateSimpleHash(account)
+    ]);
+
+    logger.info('BankAccounts', 'delete_success', 'Cuenta bancaria desactivada/eliminada', { id });
+    return { success: true, message: 'Cuenta bancaria eliminada correctamente' };
+  } catch (error) {
+    logger.error('BankAccounts', 'delete_failed', 'Error al eliminar cuenta bancaria', { id }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+}

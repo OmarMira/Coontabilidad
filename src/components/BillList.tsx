@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Edit, Trash2, FileText, Calendar, DollarSign, Truck, Filter } from 'lucide-react';
+import { Eye, Edit, Trash2, FileText, Calendar, DollarSign, Truck, Filter, Plus } from 'lucide-react';
 import { Bill } from '../database/simple-db';
 
 interface BillListProps {
@@ -7,26 +7,28 @@ interface BillListProps {
   onView: (bill: Bill) => void;
   onEdit: (bill: Bill) => void;
   onDelete: (id: number) => void;
+  onAddBill: () => void;
 }
 
 export const BillList: React.FC<BillListProps> = ({
   bills,
   onView,
   onEdit,
-  onDelete
+  onDelete,
+  onAddBill
 }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'draft': return 'bg-gray-600 text-gray-200';
-      case 'received': return 'bg-yellow-600 text-yellow-200';
-      case 'approved': return 'bg-blue-600 text-blue-200';
-      case 'paid': return 'bg-green-600 text-green-200';
-      case 'overdue': return 'bg-red-600 text-red-200';
-      case 'cancelled': return 'bg-gray-600 text-gray-200';
-      default: return 'bg-gray-600 text-gray-200';
+      case 'draft': return 'bg-slate-700 text-slate-100 border border-slate-500';
+      case 'received': return 'bg-amber-600 text-white border border-amber-400';
+      case 'approved': return 'bg-blue-600 text-white border border-blue-400';
+      case 'paid': return 'bg-emerald-600 text-white border border-emerald-400';
+      case 'overdue': return 'bg-rose-600 text-white border border-rose-400';
+      case 'cancelled': return 'bg-gray-700 text-gray-300 border border-gray-600';
+      default: return 'bg-slate-600 text-white';
     }
   };
 
@@ -44,11 +46,11 @@ export const BillList: React.FC<BillListProps> = ({
 
   const filteredBills = bills.filter(bill => {
     const matchesStatus = statusFilter === 'all' || bill.status === statusFilter;
-    const matchesSearch = 
+    const matchesSearch =
       bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (bill.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (bill.supplier?.business_name || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesStatus && matchesSearch;
   });
 
@@ -57,7 +59,7 @@ export const BillList: React.FC<BillListProps> = ({
       alert('No se pueden eliminar facturas pagadas');
       return;
     }
-    
+
     if (window.confirm(`¿Estás seguro de que quieres eliminar la factura ${bill.bill_number}?`)) {
       onDelete(bill.id);
     }
@@ -68,7 +70,14 @@ export const BillList: React.FC<BillListProps> = ({
       <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
         <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-white mb-2">No hay Facturas de Compra</h3>
-        <p className="text-gray-400">Crea tu primera factura de compra para comenzar.</p>
+        <p className="text-gray-400 mb-4">Crea tu primera factura de compra para comenzar.</p>
+        <button
+          onClick={onAddBill}
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Nueva Factura
+        </button>
       </div>
     );
   }
@@ -82,6 +91,13 @@ export const BillList: React.FC<BillListProps> = ({
             <FileText className="w-5 h-5 text-orange-400" />
             Facturas de Compra ({filteredBills.length})
           </h2>
+          <button
+            onClick={onAddBill}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Factura
+          </button>
         </div>
 
         {/* Filters */}
@@ -184,7 +200,7 @@ export const BillList: React.FC<BillListProps> = ({
                 >
                   <Eye className="w-4 h-4" />
                 </button>
-                
+
                 <button
                   onClick={() => onEdit(bill)}
                   className="p-2 text-yellow-400 hover:text-yellow-300 hover:bg-gray-700 rounded-lg transition-colors"
@@ -192,14 +208,13 @@ export const BillList: React.FC<BillListProps> = ({
                 >
                   <Edit className="w-4 h-4" />
                 </button>
-                
+
                 <button
                   onClick={() => handleDelete(bill)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    bill.status === 'paid' 
-                      ? 'text-gray-500 cursor-not-allowed' 
-                      : 'text-red-400 hover:text-red-300 hover:bg-gray-700'
-                  }`}
+                  className={`p-2 rounded-lg transition-colors ${bill.status === 'paid'
+                    ? 'text-gray-500 cursor-not-allowed'
+                    : 'text-red-400 hover:text-red-300 hover:bg-gray-700'
+                    }`}
                   title={bill.status === 'paid' ? 'No se pueden eliminar facturas pagadas' : 'Eliminar Factura'}
                   disabled={bill.status === 'paid'}
                 >

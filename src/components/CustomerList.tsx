@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Edit, Trash2, MapPin, Mail, Phone, Search, Eye } from 'lucide-react';
+import { Users, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus } from 'lucide-react';
 import { Customer } from '../database/simple-db';
 
 interface CustomerListProps {
@@ -7,13 +7,15 @@ interface CustomerListProps {
   onEdit: (customer: Customer) => void;
   onView: (customer: Customer) => void;
   onDelete: (id: number) => void;
+  onAddCustomer: () => void;
 }
 
-export const CustomerList: React.FC<CustomerListProps> = ({ 
-  customers, 
-  onEdit, 
+export const CustomerList: React.FC<CustomerListProps> = ({
+  customers,
+  onEdit,
   onView,
-  onDelete 
+  onDelete,
+  onAddCustomer
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCounty, setSelectedCounty] = useState('');
@@ -21,11 +23,11 @@ export const CustomerList: React.FC<CustomerListProps> = ({
   // Filtrar clientes
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm);
-    
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.includes(searchTerm);
+
     const matchesCounty = selectedCounty === '' || customer.florida_county === selectedCounty;
-    
+
     return matchesSearch && matchesCounty;
   });
 
@@ -53,11 +55,20 @@ export const CustomerList: React.FC<CustomerListProps> = ({
   return (
     <div className="bg-gray-800 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-500" />
-          Clientes ({filteredCustomers.length})
-        </h2>
-        
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-500" />
+            Clientes ({filteredCustomers.length})
+          </h2>
+          <button
+            onClick={onAddCustomer}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo Cliente
+          </button>
+        </div>
+
         {/* Filtros */}
         <div className="flex items-center space-x-4">
           {/* Búsqueda */}
@@ -71,7 +82,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
               className="pl-10 pr-4 py-2 bg-gray-700 text-white rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none w-64"
             />
           </div>
-          
+
           {/* Filtro por condado */}
           {uniqueCounties.length > 1 && (
             <select
@@ -89,7 +100,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
           )}
         </div>
       </div>
-      
+
       {filteredCustomers.length === 0 ? (
         <div className="text-center py-12">
           <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -97,7 +108,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             {searchTerm || selectedCounty ? 'No se encontraron clientes' : 'No hay clientes registrados'}
           </p>
           <p className="text-gray-500 text-sm">
-            {searchTerm || selectedCounty 
+            {searchTerm || selectedCounty
               ? 'Intenta cambiar los filtros de búsqueda'
               : 'Agrega tu primer cliente usando el formulario de arriba'
             }
@@ -106,8 +117,8 @@ export const CustomerList: React.FC<CustomerListProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCustomers.map((customer) => (
-            <div 
-              key={customer.id} 
+            <div
+              key={customer.id}
               className="bg-gray-700 p-4 rounded-md hover:bg-gray-650 transition-colors border border-gray-600"
             >
               <div className="flex justify-between items-start mb-3">
@@ -115,86 +126,86 @@ export const CustomerList: React.FC<CustomerListProps> = ({
                   <h3 className="font-semibold text-white text-lg mb-1">
                     {customer.name}
                   </h3>
-                  <div className="text-xs text-gray-400 mb-2">
+                  <div className="text-xs text-slate-300 mb-2 font-medium">
                     ID: {customer.id} • {formatDate(customer.created_at)}
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-1">
                   <button
                     onClick={() => onView(customer)}
-                    className="p-2 text-green-400 hover:text-green-300 hover:bg-gray-600 rounded transition-colors"
+                    className="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-emerald-500/30"
                     title="Ver detalles del cliente"
                   >
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => onEdit(customer)}
-                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-600 rounded transition-colors"
+                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-blue-500/30"
                     title="Editar cliente"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(customer)}
-                    className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-600 rounded transition-colors"
+                    className="p-2 text-rose-400 hover:text-rose-300 hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-rose-500/30"
                     title="Eliminar cliente"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-              
-              <div className="space-y-2">
+
+              <div className="space-y-2 border-t border-slate-600/50 pt-3">
                 {customer.email && (
-                  <div className="flex items-center text-gray-300 text-sm">
-                    <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                    <span className="truncate">{customer.email}</span>
+                  <div className="flex items-center text-white text-sm">
+                    <Mail className="w-4 h-4 mr-2 text-blue-400" />
+                    <span className="truncate font-medium">{customer.email}</span>
                   </div>
                 )}
-                
+
                 {customer.phone && (
-                  <div className="flex items-center text-gray-300 text-sm">
-                    <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                    <span>{customer.phone}</span>
+                  <div className="flex items-center text-white text-sm">
+                    <Phone className="w-4 h-4 mr-2 text-emerald-400" />
+                    <span className="font-bold">{customer.phone}</span>
                   </div>
                 )}
-                
-                <div className="flex items-center text-gray-300 text-sm">
-                  <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                  <span className="text-blue-400 font-medium">{customer.florida_county}</span>
+
+                <div className="flex items-center text-white text-sm">
+                  <MapPin className="w-4 h-4 mr-2 text-rose-400" />
+                  <span className="text-white font-black bg-blue-900/40 px-2 py-0.5 rounded border border-blue-500/30">{customer.florida_county}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-      
+
       {/* Estadísticas */}
       {customers.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-gray-700">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-400">{customers.length}</div>
-              <div className="text-sm text-gray-400">Total Clientes</div>
+        <div className="mt-8 pt-6 border-t border-slate-700">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <div className="text-3xl font-black text-blue-400">{customers.length}</div>
+              <div className="text-xs uppercase tracking-widest font-bold text-slate-400 mt-1">Total Clientes</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-green-400">
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <div className="text-3xl font-black text-emerald-400">
                 {customers.filter(c => c.email).length}
               </div>
-              <div className="text-sm text-gray-400">Con Email</div>
+              <div className="text-xs uppercase tracking-widest font-bold text-slate-400 mt-1">Con Email</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-yellow-400">
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <div className="text-3xl font-black text-amber-400">
                 {customers.filter(c => c.phone).length}
               </div>
-              <div className="text-sm text-gray-400">Con Teléfono</div>
+              <div className="text-xs uppercase tracking-widest font-bold text-slate-400 mt-1">Con Teléfono</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-400">
+            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+              <div className="text-3xl font-black text-purple-400">
                 {uniqueCounties.length}
               </div>
-              <div className="text-sm text-gray-400">Condados</div>
+              <div className="text-xs uppercase tracking-widest font-bold text-slate-400 mt-1">Condados</div>
             </div>
           </div>
         </div>

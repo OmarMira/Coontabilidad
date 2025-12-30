@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { 
-  Edit, 
-  Eye, 
-  Trash2, 
-  Package, 
-  Search, 
-  Filter, 
-  AlertTriangle, 
+import {
+  Edit,
+  Eye,
+  Trash2,
+  Package,
+  Search,
+  Filter,
+  AlertTriangle,
   CheckCircle,
   DollarSign,
   Tag,
   Truck,
-  BarChart3
+  BarChart3,
+  Plus
 } from 'lucide-react';
 import { Product } from '../database/simple-db';
 
@@ -20,13 +21,15 @@ interface ProductListProps {
   onEdit: (product: Product) => void;
   onView: (product: Product) => void;
   onDelete: (id: number) => void;
+  onAddProduct: () => void;
 }
 
 export const ProductList: React.FC<ProductListProps> = ({
   products,
   onEdit,
   onView,
-  onDelete
+  onDelete,
+  onAddProduct
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'products' | 'services'>('all');
@@ -34,17 +37,17 @@ export const ProductList: React.FC<ProductListProps> = ({
 
   // Filtrar productos
   const filteredProducts = products.filter(product => {
-    const matchesSearch = 
+    const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesType = 
+    const matchesType =
       filterType === 'all' ||
       (filterType === 'products' && !product.is_service) ||
       (filterType === 'services' && product.is_service);
 
-    const matchesStock = 
+    const matchesStock =
       filterStock === 'all' ||
       (filterStock === 'low' && !product.is_service && product.stock_quantity <= product.reorder_point) ||
       (filterStock === 'out' && !product.is_service && product.stock_quantity === 0);
@@ -54,7 +57,7 @@ export const ProductList: React.FC<ProductListProps> = ({
 
   const getStockStatus = (product: Product) => {
     if (product.is_service) return null;
-    
+
     if (product.stock_quantity === 0) {
       return { status: 'out', label: 'Sin Stock', color: 'text-red-400', bgColor: 'bg-red-900/20' };
     } else if (product.stock_quantity <= product.reorder_point) {
@@ -79,6 +82,20 @@ export const ProductList: React.FC<ProductListProps> = ({
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <Package className="w-5 h-5 text-blue-400" />
+          Catálogo de Productos y Servicios
+        </h2>
+        <button
+          onClick={onAddProduct}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+        >
+          <Plus className="w-4 h-4" />
+          Nuevo Producto
+        </button>
+      </div>
+
       {/* Filtros y búsqueda */}
       <div className="bg-gray-800 rounded-lg p-4">
         <div className="flex flex-col lg:flex-row gap-4">
@@ -178,8 +195,8 @@ export const ProductList: React.FC<ProductListProps> = ({
         <div className="bg-gray-800 rounded-lg p-8 text-center">
           <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-400 mb-2">
-            {searchTerm || filterType !== 'all' || filterStock !== 'all' 
-              ? 'No se encontraron productos' 
+            {searchTerm || filterType !== 'all' || filterStock !== 'all'
+              ? 'No se encontraron productos'
               : 'No hay productos registrados'
             }
           </h3>
@@ -222,7 +239,7 @@ export const ProductList: React.FC<ProductListProps> = ({
               <tbody className="divide-y divide-gray-700">
                 {filteredProducts.map((product) => {
                   const stockStatus = getStockStatus(product);
-                  
+
                   return (
                     <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
                       <td className="px-6 py-4">
@@ -244,17 +261,16 @@ export const ProductList: React.FC<ProductListProps> = ({
                           </div>
                         </div>
                       </td>
-                      
+
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          product.is_service 
-                            ? 'bg-purple-900/20 text-purple-300' 
-                            : 'bg-blue-900/20 text-blue-300'
-                        }`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.is_service
+                          ? 'bg-purple-900/20 text-purple-300'
+                          : 'bg-blue-900/20 text-blue-300'
+                          }`}>
                           {product.is_service ? 'Servicio' : 'Producto'}
                         </span>
                       </td>
-                      
+
                       <td className="px-6 py-4">
                         <div className="text-sm text-white font-medium">
                           {formatPrice(product.price)}
@@ -265,7 +281,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                           </div>
                         )}
                       </td>
-                      
+
                       <td className="px-6 py-4">
                         {product.is_service ? (
                           <span className="text-sm text-gray-400">N/A</span>
@@ -282,13 +298,13 @@ export const ProductList: React.FC<ProductListProps> = ({
                           </div>
                         )}
                       </td>
-                      
+
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-300">
                           {product.category?.name || 'Sin categoría'}
                         </div>
                       </td>
-                      
+
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           {product.active ? (
@@ -304,7 +320,7 @@ export const ProductList: React.FC<ProductListProps> = ({
                           )}
                         </div>
                       </td>
-                      
+
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
                           <button
