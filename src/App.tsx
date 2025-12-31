@@ -1411,6 +1411,18 @@ function App() {
                 <UnifiedAssistant
                   isOpen={true}
                   onClose={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
+                  stats={state.dbStats}
+                  transactionCount={state.invoices.length + state.bills.length}
+                  auditStatus={{
+                    healthy: true,
+                    lastEvent: new Date().toISOString(),
+                    integrityScore: 100
+                  }}
+                  complianceMetrics={{
+                    taxCompliance: 100,
+                    dr15Status: 'Al día',
+                    pendingForms: 0
+                  }}
                 />
               </div>
             )}
@@ -1427,6 +1439,18 @@ function App() {
             <UnifiedAssistant
               isOpen={true}
               onClose={() => setState(prev => ({ ...prev, showAssistant: false }))}
+              stats={state.dbStats}
+              transactionCount={state.invoices.length + state.bills.length}
+              auditStatus={{
+                healthy: true,
+                lastEvent: new Date().toISOString(),
+                integrityScore: 100
+              }}
+              complianceMetrics={{
+                taxCompliance: 100,
+                dr15Status: 'Al día',
+                pendingForms: 0
+              }}
             />
           </div>
         </div>

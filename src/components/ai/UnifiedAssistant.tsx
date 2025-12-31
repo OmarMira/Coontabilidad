@@ -40,12 +40,36 @@ interface UnifiedAssistantProps {
     isOpen: boolean;
     onClose: () => void;
     initialMode?: AssistantMode;
+    // Real-time data props
+    stats?: {
+        customers: number;
+        invoices: number;
+        revenue: number;
+        suppliers: number;
+        bills: number;
+        expenses: number;
+    };
+    transactionCount?: number;
+    auditStatus?: {
+        healthy: boolean;
+        lastEvent: string;
+        integrityScore: number;
+    };
+    complianceMetrics?: {
+        taxCompliance: number;
+        dr15Status: string;
+        pendingForms: number;
+    };
 }
 
 export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
     isOpen,
     onClose,
-    initialMode = 'dashboard'
+    initialMode = 'dashboard',
+    stats,
+    transactionCount,
+    auditStatus,
+    complianceMetrics
 }) => {
     const [mode, setMode] = useState<AssistantMode>(initialMode);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -224,15 +248,40 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                     {/* DASHBOARD MODE */}
                     {mode === 'dashboard' && (
                         <div className="h-full overflow-y-auto p-6 space-y-6">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-semibold text-white">Análisis Financiero</h3>
+                            {/* Real-time System Metrics */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Clientes</p>
+                                    <p className="text-2xl font-bold text-white">{stats?.customers || 0}</p>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Ingresos</p>
+                                    <p className="text-2xl font-bold text-green-400">${stats?.revenue.toLocaleString() || 0}</p>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Gastos</p>
+                                    <p className="text-2xl font-bold text-red-400">${stats?.expenses.toLocaleString() || 0}</p>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Salud Audit</p>
+                                    <p className={`text-2xl font-bold ${auditStatus?.healthy ? 'text-blue-400' : 'text-yellow-400'}`}>
+                                        {auditStatus?.integrityScore || 0}%
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">Análisis Financiero IA</h3>
+                                    <p className="text-xs text-gray-400">Última auditoría: {auditStatus?.lastEvent ? new Date(auditStatus.lastEvent).toLocaleTimeString() : 'N/A'}</p>
+                                </div>
                                 <button
                                     onClick={loadDashboardAnalysis}
                                     disabled={isLoading}
                                     className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                                 >
                                     <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                                    <span>Actualizar</span>
+                                    <span>Actualizar Análisis</span>
                                 </button>
                             </div>
 

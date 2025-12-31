@@ -29,14 +29,22 @@ export class TransactionManager {
     constructor(engine: SQLiteEngine) {
         this.engine = engine;
         this.auditService = new AuditChainService(engine);
-        this.inventoryManager = new InventoryManager(engine); // New
-
-        const defaultRates: FloridaTaxRate[] = [{ county: 'Miami-Dade', stateRate: 0.06, discretionaryRate: 0.01, validFrom: '' }];
-        this.taxEngine = new FloridaTaxEngine(defaultRates);
+        this.inventoryManager = new InventoryManager(engine);
+        this.taxEngine = new FloridaTaxEngine([]); // Initialize empty, load on demand
         this.journalManager = new JournalManager(engine);
     }
 
+    private async ensureTaxRatesLoaded(): Promise<void> {
+        const rates = await this.engine.select("SELECT county_name as county, state_rate as stateRate, county_rate as discretionaryRate FROM florida_tax_rates");
+        if (rates && rates.length > 0) {
+            this.taxEngine = new FloridaTaxEngine(rates as FloridaTaxRate[]);
+        }
+    }
+
     async processSale(sale: SaleTransaction): Promise<void> {
+        // Ensure tax rates are current from DB
+        await this.ensureTaxRatesLoaded();
+
         // 0. Pre-Calculation (Big.js Precision)
         let subtotal = Big(0);
         let taxableSubtotal = Big(0);
@@ -94,14 +102,21 @@ export class TransactionManager {
                 await this.inventoryManager.shipStock(line.productId, line.quantity, invNumber);
             }
 
-            // C2. Insert Tax Transaction
+            // Get the specific rates used for this county from DB for audit/history
+            const rateRecord = await this.engine.select(
+                "SELECT state_rate, county_rate FROM florida_tax_rates WHERE county_name = ? ORDER BY effective_date DESC LIMIT 1",
+                [sale.county]
+            );
+            const stateRate = rateRecord[0]?.state_rate || 0.06;
+
+            // C2. Insert Tax Transaction (Florida State)
             await this.engine.run(`
                 INSERT INTO tax_transactions (invoice_id, transaction_date, county_name, gross_amount, exempt_amount, taxable_amount, tax_collected, tax_rate_applied)
-                VALUES (?, DATE('now'), 'Florida State', ?, ?, ?, ?, 0.06)
-             `, [invoiceId, taxResult.subtotal, taxResult.exemptAmount, taxResult.taxableAmount, taxResult.stateTax]);
+                VALUES (?, DATE('now'), 'Florida State', ?, ?, ?, ?, ?)
+             `, [invoiceId, taxResult.subtotal, taxResult.exemptAmount, taxResult.taxableAmount, taxResult.stateTax, stateRate]);
 
             if (taxResult.countyTax > 0) {
-                const countyRate = parseFloat((taxResult.countyTax / taxResult.taxableAmount).toFixed(4));
+                const countyRate = rateRecord[0]?.county_rate || parseFloat((taxResult.countyTax / taxResult.taxableAmount).toFixed(4));
                 await this.engine.run(`
                     INSERT INTO tax_transactions (invoice_id, transaction_date, county_name, gross_amount, exempt_amount, taxable_amount, tax_collected, tax_rate_applied)
                     VALUES (?, DATE('now'), ?, ?, ?, ?, ?, ?)

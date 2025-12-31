@@ -255,6 +255,17 @@ export interface JournalEntry {
   details?: JournalDetail[];
 }
 
+/**
+ * Mapea una fila de base de datos a una entidad tipada
+ */
+function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
+  const entity = {} as Record<string, unknown>;
+  columns.forEach((col, index) => {
+    entity[col] = row[index];
+  });
+  return entity as unknown as T;
+}
+
 export interface JournalDetail {
   id?: number;
   journal_entry_id?: number;
@@ -457,6 +468,15 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
       if (productCount === 0) {
         logger.info('Database', 'insert_products', 'Insertando productos iniciales');
         await insertInitialProducts();
+      }
+
+      // Insertar tasas de impuesto iniciales si no existen
+      const taxResult = db.exec("SELECT COUNT(*) as count FROM florida_tax_rates");
+      const taxCount = taxResult[0]?.values[0]?.[0] as number || 0;
+
+      if (taxCount === 0) {
+        logger.info('Database', 'insert_tax_rates', 'Insertando tasas de impuesto iniciales');
+        await insertInitialTaxRates();
       }
 
       // Inicializar datos de empresa si no existen
@@ -1379,6 +1399,25 @@ const insertInitialProducts = async (): Promise<void> => {
   console.log('Initial products inserted successfully');
 };
 
+const insertInitialTaxRates = async (): Promise<void> => {
+  if (!db) return;
+
+  db.run(`
+    INSERT INTO florida_tax_rates (county_name, state_rate, county_rate, total_rate) VALUES
+    ('Miami-Dade', 0.06, 0.01, 0.07),
+    ('Broward', 0.06, 0.01, 0.07),
+    ('Palm Beach', 0.06, 0.01, 0.07),
+    ('Orange', 0.06, 0.005, 0.065),
+    ('Hillsborough', 0.06, 0.015, 0.075),
+    ('Monroe', 0.06, 0.015, 0.075),
+    ('Duval', 0.06, 0.015, 0.075),
+    ('Pinellas', 0.06, 0.01, 0.07),
+    ('Lee', 0.06, 0.005, 0.065)
+  `);
+
+  console.log('Initial tax rates inserted successfully');
+};
+
 // Configurar auto-save
 const setupAutoSave = (): void => {
   if (!db) return;
@@ -1687,11 +1726,8 @@ export const getCustomers = (): Customer[] => {
       const columns = result[0].columns;
       const values = result[0].values;
 
-      values.forEach((row: any[]) => {
-        const customerObj: any = {};
-        columns.forEach((col: string, index: number) => {
-          customerObj[col] = row[index];
-        });
+      values.forEach((row: initSqlJs.SqlValue[]) => {
+        const customerObj = rowToEntity<Record<string, unknown>>(columns, row);
         customers.push(processCustomerRow(customerObj));
       });
     }
@@ -1707,7 +1743,7 @@ export const getCustomers = (): Customer[] => {
 };
 
 // Función auxiliar para procesar una fila de cliente
-const processCustomerRow = (row: any): Customer => {
+const processCustomerRow = (row: Record<string, unknown>): Customer => {
   return {
     id: Number(row.id),
     name: String(row.name || ''),
@@ -2192,20 +2228,17 @@ export const getInvoices = (): Invoice[] => {
     const invoices: Invoice[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
-      const invoice: any = {};
-      columns.forEach((col, index) => {
-        invoice[col] = row[index];
-      });
+    result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
+      const invoice = rowToEntity<Invoice & { customer_name: string; customer_business_name: string; customer_email: string }>(columns, row);
 
       // Agregar información del cliente
       invoice.customer = {
         name: invoice.customer_name,
         business_name: invoice.customer_business_name,
         email: invoice.customer_email
-      };
+      } as Customer;
 
-      invoices.push(invoice as Invoice);
+      invoices.push(invoice);
     });
 
     return invoices;
@@ -2472,11 +2505,16 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
+      // Obtener condado para recálculo de impuestos
+      const invoice = getInvoiceById(id);
+      const county = invoice?.customer?.florida_county || 'Miami-Dade';
+      const taxRate = getFloridaTaxRate(county);
+
       items.forEach(item => {
         const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
         subtotal += lineTotal;
         if (item.taxable) {
-          taxAmount += lineTotal * 0.075;
+          taxAmount += lineTotal * taxRate;
         }
 
         itemStmt.run([
@@ -2599,18 +2637,19 @@ export const getFloridaTaxRate = (county: string): number => {
     console.error('Error getting tax rate for county:', county, error);
   }
 
-  // Tasas de respaldo por condado de Florida
+  // Tasas de respaldo por condado de Florida (Seguir datos de insertInitialTaxRates)
   const fallbackRates: Record<string, number> = {
-    'Miami-Dade': 0.075,
+    'Miami-Dade': 0.07,
     'Broward': 0.07,
     'Orange': 0.065,
-    'Hillsborough': 0.0675,
+    'Hillsborough': 0.075,
     'Palm Beach': 0.07,
     'Pinellas': 0.07,
     'Duval': 0.075,
     'Lee': 0.065,
     'Polk': 0.07,
-    'Brevard': 0.065
+    'Brevard': 0.07,
+    'Monroe': 0.075
   };
 
   return fallbackRates[county] || 0.06; // 6% tasa base de Florida
@@ -2784,11 +2823,8 @@ export const getSuppliers = (): Supplier[] => {
       const columns = result[0].columns;
       const values = result[0].values;
 
-      values.forEach((row: any[]) => {
-        const supplierObj: any = {};
-        columns.forEach((col: string, index: number) => {
-          supplierObj[col] = row[index];
-        });
+      values.forEach((row: initSqlJs.SqlValue[]) => {
+        const supplierObj = rowToEntity<Record<string, unknown>>(columns, row);
         suppliers.push(processSupplierRow(supplierObj));
       });
     }
@@ -3074,20 +3110,17 @@ export const getBills = (): Bill[] => {
     const bills: Bill[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
-      const bill: any = {};
-      columns.forEach((col, index) => {
-        bill[col] = row[index];
-      });
+    result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
+      const bill = rowToEntity<Bill & { supplier_name: string; supplier_business_name: string; supplier_email: string }>(columns, row);
 
       // Agregar información del proveedor
       bill.supplier = {
         name: bill.supplier_name,
         business_name: bill.supplier_business_name,
         email: bill.supplier_email
-      };
+      } as Supplier;
 
-      bills.push(bill as Bill);
+      bills.push(bill);
     });
 
     return bills;
@@ -5967,6 +6000,23 @@ export function getDR15Reports(): FloridaDR15Report[] {
 
   } catch (error) {
     logger.error('DR15', 'get_reports_failed', 'Error al obtener reportes DR-15', null, error as Error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene todas las tasas de impuesto de Florida de la DB
+ */
+export function getAllFloridaTaxRates(): { county: string; stateRate: number; discretionaryRate: number; totalRate: number }[] {
+  if (!db) return [];
+  try {
+    const result = db.exec("SELECT county_name as county, state_rate as stateRate, county_rate as discretionaryRate, total_rate as totalRate FROM florida_tax_rates");
+    if (result.length === 0 || result[0].values.length === 0) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => rowToEntity<any>(columns, row as initSqlJs.SqlValue[]));
+  } catch (error) {
+    console.error('Error getting all tax rates:', error);
     return [];
   }
 }

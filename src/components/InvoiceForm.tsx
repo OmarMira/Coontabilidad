@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Save, X, Calculator, User, Calendar } from 'lucide-react';
-import { Customer, Product, Invoice, InvoiceItem } from '../database/simple-db';
+import { Customer, Product, Invoice, InvoiceItem, getFloridaTaxRate } from '../database/simple-db';
 
 interface InvoiceFormProps {
   onSubmit: (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[]) => void;
@@ -66,7 +66,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const handleItemChange = (index: number, field: keyof ItemData, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
-    
+
     // Si se selecciona un producto, llenar automáticamente descripción y precio
     if (field === 'product_id' && value) {
       const product = products.find(p => p.id === parseInt(value));
@@ -76,7 +76,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         newItems[index].taxable = product.taxable;
       }
     }
-    
+
     setItems(newItems);
   };
 
@@ -93,15 +93,19 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const calculateTotals = () => {
     let subtotal = 0;
     let taxAmount = 0;
-    
+
+    const selectedCustomer = customers.find(c => c.id === formData.customer_id);
+    const county = selectedCustomer?.florida_county || 'Miami-Dade';
+    const taxRate = getFloridaTaxRate(county);
+
     items.forEach(item => {
       const lineTotal = item.quantity * item.unit_price;
       subtotal += lineTotal;
       if (item.taxable) {
-        taxAmount += lineTotal * 0.075; // 7.5% Florida tax
+        taxAmount += lineTotal * taxRate;
       }
     });
-    
+
     return {
       subtotal: subtotal,
       taxAmount: taxAmount,
@@ -111,24 +115,24 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.customer_id) {
       newErrors.customer_id = 'Customer is required';
     }
-    
+
     if (!formData.issue_date) {
       newErrors.issue_date = 'Issue date is required';
     }
-    
+
     if (!formData.due_date) {
       newErrors.due_date = 'Due date is required';
     }
-    
+
     // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
     if (formData.issue_date && formData.due_date && formData.due_date < formData.issue_date) {
       newErrors.due_date = 'Due date must be after issue date';
     }
-    
+
     // Validar items
     items.forEach((item, index) => {
       if (!item.description.trim()) {
@@ -141,18 +145,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         newErrors[`item_${index}_unit_price`] = 'Unit price cannot be negative';
       }
     });
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     const invoiceData: Partial<Invoice> = {
       customer_id: formData.customer_id as number,
       issue_date: formData.issue_date,
@@ -160,7 +164,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       status: formData.status,
       notes: formData.notes
     };
-    
+
     const invoiceItems: Partial<InvoiceItem>[] = items.map(item => ({
       product_id: item.product_id || undefined,
       description: item.description,
@@ -168,7 +172,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       unit_price: item.unit_price,
       taxable: item.taxable
     }));
-    
+
     onSubmit(invoiceData, invoiceItems);
   };
 
@@ -202,9 +206,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <select
               value={formData.customer_id}
               onChange={(e) => handleInputChange('customer_id', parseInt(e.target.value) || '')}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-                errors.customer_id ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-              } focus:outline-none`}
+              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.customer_id ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+                } focus:outline-none`}
             >
               <option value="">Select Customer</option>
               {customers.map(customer => (
@@ -224,9 +227,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               type="date"
               value={formData.issue_date}
               onChange={(e) => handleInputChange('issue_date', e.target.value)}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-                errors.issue_date ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-              } focus:outline-none`}
+              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.issue_date ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+                } focus:outline-none`}
             />
             {errors.issue_date && <p className="text-red-400 text-sm mt-1">{errors.issue_date}</p>}
           </div>
@@ -239,9 +241,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               type="date"
               value={formData.due_date}
               onChange={(e) => handleInputChange('due_date', e.target.value)}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-                errors.due_date ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-              } focus:outline-none`}
+              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.due_date ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+                } focus:outline-none`}
             />
             {errors.due_date && <p className="text-red-400 text-sm mt-1">{errors.due_date}</p>}
           </div>
@@ -318,9 +319,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       type="text"
                       value={item.description}
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${
-                        errors[`item_${index}_description`] ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-                      } focus:outline-none`}
+                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_description`] ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+                        } focus:outline-none`}
                       placeholder="Item description"
                     />
                     {errors[`item_${index}_description`] && (
@@ -338,9 +338,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       step="0.01"
                       value={item.quantity}
                       onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${
-                        errors[`item_${index}_quantity`] ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-                      } focus:outline-none`}
+                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_quantity`] ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+                        } focus:outline-none`}
                     />
                     {errors[`item_${index}_quantity`] && (
                       <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_quantity`]}</p>
@@ -357,9 +356,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       step="0.01"
                       value={item.unit_price}
                       onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${
-                        errors[`item_${index}_unit_price`] ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-                      } focus:outline-none`}
+                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_unit_price`] ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+                        } focus:outline-none`}
                     />
                     {errors[`item_${index}_unit_price`] && (
                       <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_unit_price`]}</p>

@@ -1,7 +1,7 @@
-import * as initSqlJs from 'sql.js';
+import initSqlJs from 'sql.js';
 
 export class SQLiteEngine {
-    private db: any | null = null;
+    private db: initSqlJs.Database | null = null;
     private dbName: string;
 
     constructor() {
@@ -18,16 +18,11 @@ export class SQLiteEngine {
 
         try {
             // 2. Inicializar SQLite con sql.js
-            // We use a dynamic import or assuming global if script tag, but here we use node module
             const SQL = await (initSqlJs as any).default({
                 locateFile: (file: string) => `/${file}`
             });
 
             // 3. Crear base de datos
-            // For real persistence we need to read from OPFS here.
-            // But for now keeping it aligned with previous logic where simple-db handled loading.
-            // As per directive, we are focusing on the Engine structure. 
-            // The loading logic should ideally be here.
             this.db = new SQL.Database();
 
             // 4. Configurar SQLite para mejor rendimiento
@@ -51,17 +46,17 @@ export class SQLiteEngine {
     }
 
     // Ejecutar con parámetros (Insert, Update)
-    run(sql: string, params: any[] = []): void {
+    run(sql: string, params: (string | number | boolean | null | Uint8Array)[] = []): void {
         if (!this.db) throw new Error('DB not initialized');
-        this.db.run(sql, params);
+        this.db.run(sql, params as initSqlJs.SqlValue[]);
     }
 
     // Consultar (Select)
-    select(sql: string, params: any[] = []): any[] {
+    select(sql: string, params: (string | number | boolean | null | Uint8Array)[] = []): Record<string, any>[] {
         if (!this.db) throw new Error('DB not initialized');
         const stmt = this.db.prepare(sql);
-        stmt.bind(params);
-        const results = [];
+        stmt.bind(params as initSqlJs.SqlValue[]);
+        const results: Record<string, any>[] = [];
         while (stmt.step()) {
             results.push(stmt.getAsObject());
         }

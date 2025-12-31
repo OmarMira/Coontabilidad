@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { getAllFloridaTaxRates } from '../database/simple-db';
 
 interface CountyTaxRate {
-    id: string;
+    id?: string | number;
     county: string;
     surtaxRate: number; // Discretionary Sales Surtax (e.g., 0.01 for 1%)
     active: boolean;
@@ -11,22 +12,39 @@ interface CountyTaxRate {
 // Initial data based on common Florida counties
 const INITIAL_RATES: CountyTaxRate[] = [
     { id: '1', county: 'Miami-Dade', surtaxRate: 0.01, active: true },
-    { id: '2', county: 'Broward', surtaxRate: 0.02, active: true }, // Verified common rate
+    { id: '2', county: 'Broward', surtaxRate: 0.01, active: true },
     { id: '3', county: 'Palm Beach', surtaxRate: 0.01, active: true },
     { id: '4', county: 'Orange', surtaxRate: 0.005, active: true },
-    { id: '5', county: 'Hillsborough', surtaxRate: 0.025, active: true },
+    { id: '5', county: 'Hillsborough', surtaxRate: 0.015, active: true },
 ];
 
 export const TaxRates: React.FC = () => {
     const [rates, setRates] = useState<CountyTaxRate[]>(INITIAL_RATES);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [newRate, setNewRate] = useState<number>(0);
+    const [loading, setLoading] = useState<boolean>(true);
 
-    const handleRateChange = (id: string, newRate: number) => {
+    useEffect(() => {
+        const fetchRates = () => {
+            const dbRates = getAllFloridaTaxRates();
+            if (dbRates && dbRates.length > 0) {
+                const mappedRates = dbRates.map((r, idx) => ({
+                    id: r.id || idx,
+                    county: r.county,
+                    surtaxRate: r.discretionaryRate,
+                    active: true
+                }));
+                setRates(mappedRates);
+            }
+            setLoading(false);
+        };
+
+        fetchRates();
+    }, []);
+
+    const handleRateChange = (id: string | number, newRate: number) => {
         setRates(rates.map(r => r.id === id ? { ...r, surtaxRate: newRate } : r));
     };
 
-    const toggleActive = (id: string) => {
+    const toggleActive = (id: string | number) => {
         setRates(rates.map(r => r.id === id ? { ...r, active: !r.active } : r));
     };
 
@@ -78,7 +96,7 @@ export const TaxRates: React.FC = () => {
                                                 min="0"
                                                 max="5"
                                                 value={(rate.surtaxRate * 100).toFixed(2)}
-                                                onChange={(e) => handleRateChange(rate.id, parseFloat(e.target.value) / 100)}
+                                                onChange={(e) => rate.id !== undefined && handleRateChange(rate.id, parseFloat(e.target.value) / 100)}
                                                 className="w-20 px-2 py-1 text-right border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                             />
                                             <span className="text-gray-500">%</span>
@@ -89,10 +107,10 @@ export const TaxRates: React.FC = () => {
                                     </td>
                                     <td className="p-4 text-center">
                                         <button
-                                            onClick={() => toggleActive(rate.id)}
+                                            onClick={() => rate.id !== undefined && toggleActive(rate.id)}
                                             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${rate.active
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
                                                 }`}
                                         >
                                             {rate.active ? 'Activo' : 'Inactivo'}

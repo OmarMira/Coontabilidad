@@ -1,5 +1,10 @@
 import { SQLiteEngine } from '../database/SQLiteEngine';
 import { InitialSchemaMigration } from './list/001_initial_schema';
+import { AIViewsMigration } from './list/002_ai_views';
+import { InventorySchemaMigration } from './list/003_inventory_schema';
+import { PurchasingSchemaMigration } from './list/004_purchasing_schema';
+import { AccountingSchemaMigration } from './list/005_accounting_schema';
+import { SystemSchemaMigration } from './list/006_system_schema';
 
 export interface Migration {
     version: number;
@@ -11,8 +16,12 @@ export interface Migration {
 export class MigrationEngine {
     private static instance: MigrationEngine;
     private migrations: Migration[] = [
-        InitialSchemaMigration
-        // Future migrations go here
+        InitialSchemaMigration,
+        AIViewsMigration,
+        InventorySchemaMigration,
+        PurchasingSchemaMigration,
+        AccountingSchemaMigration,
+        SystemSchemaMigration
     ];
 
     private constructor() { }

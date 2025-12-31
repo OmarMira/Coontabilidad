@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Save, X, Calculator, Truck, Calendar } from 'lucide-react';
-import { Supplier, Product, Bill, BillItem } from '../database/simple-db';
+import { Supplier, Product, Bill, BillItem, getFloridaTaxRate } from '../database/simple-db';
 
 interface BillFormProps {
   onSubmit: (billData: Partial<Bill>, items: Partial<BillItem>[]) => void;
@@ -67,7 +67,7 @@ export const BillForm: React.FC<BillFormProps> = ({
   const handleItemChange = (index: number, field: keyof ItemData, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
-    
+
     // Si se selecciona un producto, llenar automáticamente descripción y precio
     if (field === 'product_id' && value) {
       const product = products.find(p => p.id === parseInt(value));
@@ -77,7 +77,7 @@ export const BillForm: React.FC<BillFormProps> = ({
         newItems[index].taxable = product.taxable;
       }
     }
-    
+
     setItems(newItems);
   };
 
@@ -94,15 +94,19 @@ export const BillForm: React.FC<BillFormProps> = ({
   const calculateTotals = () => {
     let subtotal = 0;
     let taxAmount = 0;
-    
+
+    const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
+    const county = selectedSupplier?.florida_county || 'Miami-Dade';
+    const taxRate = getFloridaTaxRate(county);
+
     items.forEach(item => {
       const lineTotal = item.quantity * item.unit_price;
       subtotal += lineTotal;
       if (item.taxable) {
-        taxAmount += lineTotal * 0.075; // 7.5% Florida tax
+        taxAmount += lineTotal * taxRate;
       }
     });
-    
+
     return {
       subtotal: subtotal,
       taxAmount: taxAmount,
@@ -112,24 +116,24 @@ export const BillForm: React.FC<BillFormProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.supplier_id) {
       newErrors.supplier_id = 'Supplier is required';
     }
-    
+
     if (!formData.issue_date) {
       newErrors.issue_date = 'Issue date is required';
     }
-    
+
     if (!formData.due_date) {
       newErrors.due_date = 'Due date is required';
     }
-    
+
     // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
     if (formData.issue_date && formData.due_date && formData.due_date < formData.issue_date) {
       newErrors.due_date = 'Due date must be after issue date';
     }
-    
+
     // Validar items
     items.forEach((item, index) => {
       if (!item.description.trim()) {
@@ -142,18 +146,18 @@ export const BillForm: React.FC<BillFormProps> = ({
         newErrors[`item_${index}_unit_price`] = 'Unit price cannot be negative';
       }
     });
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     const billData: Partial<Bill> = {
       supplier_id: formData.supplier_id as number,
       issue_date: formData.issue_date,
@@ -161,7 +165,7 @@ export const BillForm: React.FC<BillFormProps> = ({
       status: formData.status,
       notes: formData.notes
     };
-    
+
     const billItems: Partial<BillItem>[] = items.map(item => ({
       product_id: item.product_id || undefined,
       description: item.description,
@@ -169,7 +173,7 @@ export const BillForm: React.FC<BillFormProps> = ({
       unit_price: item.unit_price,
       taxable: item.taxable
     }));
-    
+
     onSubmit(billData, billItems);
   };
 
@@ -203,9 +207,8 @@ export const BillForm: React.FC<BillFormProps> = ({
             <select
               value={formData.supplier_id}
               onChange={(e) => handleInputChange('supplier_id', parseInt(e.target.value) || '')}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-                errors.supplier_id ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-              } focus:outline-none`}
+              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.supplier_id ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
+                } focus:outline-none`}
             >
               <option value="">Seleccionar Proveedor</option>
               {suppliers.map(supplier => (
@@ -225,9 +228,8 @@ export const BillForm: React.FC<BillFormProps> = ({
               type="date"
               value={formData.issue_date}
               onChange={(e) => handleInputChange('issue_date', e.target.value)}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-                errors.issue_date ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-              } focus:outline-none`}
+              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.issue_date ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
+                } focus:outline-none`}
             />
             {errors.issue_date && <p className="text-red-400 text-sm mt-1">{errors.issue_date}</p>}
           </div>
@@ -240,9 +242,8 @@ export const BillForm: React.FC<BillFormProps> = ({
               type="date"
               value={formData.due_date}
               onChange={(e) => handleInputChange('due_date', e.target.value)}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-                errors.due_date ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-              } focus:outline-none`}
+              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.due_date ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
+                } focus:outline-none`}
             />
             {errors.due_date && <p className="text-red-400 text-sm mt-1">{errors.due_date}</p>}
           </div>
@@ -320,9 +321,8 @@ export const BillForm: React.FC<BillFormProps> = ({
                       type="text"
                       value={item.description}
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${
-                        errors[`item_${index}_description`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                      } focus:outline-none`}
+                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_description`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
+                        } focus:outline-none`}
                       placeholder="Descripción del producto/servicio"
                     />
                     {errors[`item_${index}_description`] && (
@@ -340,9 +340,8 @@ export const BillForm: React.FC<BillFormProps> = ({
                       step="0.01"
                       value={item.quantity}
                       onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${
-                        errors[`item_${index}_quantity`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                      } focus:outline-none`}
+                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_quantity`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
+                        } focus:outline-none`}
                     />
                     {errors[`item_${index}_quantity`] && (
                       <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_quantity`]}</p>
@@ -359,9 +358,8 @@ export const BillForm: React.FC<BillFormProps> = ({
                       step="0.01"
                       value={item.unit_price}
                       onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${
-                        errors[`item_${index}_unit_price`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                      } focus:outline-none`}
+                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_unit_price`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
+                        } focus:outline-none`}
                     />
                     {errors[`item_${index}_unit_price`] && (
                       <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_unit_price`]}</p>

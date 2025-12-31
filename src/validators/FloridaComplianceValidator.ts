@@ -1,18 +1,5 @@
 import { z } from 'zod';
-
-export const FloridaCountyRates2024: Record<string, number> = {
-    // Standard 6% state + Discretionary Surtax
-    // Examples (Approximate/Common)
-    "Miami-Dade": 0.07, // 6% + 1%
-    "Broward": 0.07,
-    "Palm Beach": 0.07,
-    "Orange": 0.065,
-    "Hillsborough": 0.075,
-    "Duval": 0.075,
-    "Pinellas": 0.07,
-    "Lee": 0.065,
-    // Add more as needed, or default to 0.06 base
-};
+import { getFloridaTaxRate } from '../database/simple-db';
 
 export const DR15ReturnSchema = z.object({
     period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Period must be YYYY-MM"), // YYYY-MM
@@ -52,13 +39,14 @@ export class FloridaComplianceValidator {
      * @param rateApplied 
      */
     static checkCountyRateCompliance(county: string, rateApplied: number): { compliant: boolean; expected?: number; message?: string } {
-        const expected = FloridaCountyRates2024[county];
-        if (expected === undefined) {
-            // If we don't know the county, we assume 6% is minimum
+        const expected = getFloridaTaxRate(county);
+
+        // If the rate returned is the base 6%, we check if it's at least that
+        if (expected <= 0.06) {
             if (rateApplied < 0.06) {
                 return { compliant: false, message: "Rate below Florida State minimum (6%)" };
             }
-            return { compliant: true, message: "County not in validation list, assuming compliant if >= 6%" };
+            return { compliant: true, message: "County base rate or unknown county, minimum 6% met" };
         }
 
         // Allow small float diff or strict match? 
