@@ -1,7 +1,7 @@
 import { SystemKnowledge } from '../../knowledge/SystemKnowledge';
 import { DatabaseService } from '../database/DatabaseService';
 import { AssistantContext, KnowledgeSnippet } from './types';
-import { SECURITY_FILTERS } from '../../config/deepseek';
+import { AI_SECURITY_CONFIG } from '../../config/ai-security';
 
 export class ContextBuilder {
     private dbService: DatabaseService;
@@ -90,20 +90,21 @@ export class ContextBuilder {
         const queries: string[] = [];
 
         // Construir consultas seguras basadas en temas
+        // Construir consultas seguras basadas en temas
         if (topics.includes('inventario')) {
-            queries.push('SELECT product_name, current_stock, min_stock, last_movement FROM inventory_summary LIMIT 10');
+            queries.push('SELECT name, stock_quantity, min_stock_level FROM products ORDER BY stock_quantity ASC LIMIT 10');
         }
 
         if (topics.includes('impuestos')) {
-            queries.push('SELECT county_code, tax_rate, surtax_rate, effective_date FROM tax_summary_florida LIMIT 5');
+            queries.push('SELECT * FROM tax_summary_florida');
         }
 
         if (topics.includes('facturación')) {
-            queries.push('SELECT invoice_type, count, total_amount, last_30_days FROM invoices_summary LIMIT 5');
+            queries.push('SELECT * FROM v_facturas_reales');
         }
 
         if (topics.includes('contabilidad')) {
-            queries.push('SELECT account_type, balance, last_entry_date FROM financial_summary LIMIT 10');
+            queries.push('SELECT * FROM v_facturas_reales');
         }
 
         if (queries.length === 0) {
@@ -142,7 +143,7 @@ export class ContextBuilder {
         return {
             userId,
             roles: ['admin'], // Simplificado para desarrollo
-            allowedViews: SECURITY_FILTERS.allowedTables
+            allowedViews: AI_SECURITY_CONFIG.allowedTables
         };
     }
 

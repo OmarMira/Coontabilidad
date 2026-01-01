@@ -2,6 +2,8 @@
 import initSqlJs from 'sql.js';
 import { BasicEncryption } from '../core/security/BasicEncryption';
 import { logger } from '../core/logging/SystemLogger';
+import { ViewManager } from './views/ViewManager';
+import { DatabaseInitializer } from './DatabaseInitializer';
 
 let db: initSqlJs.Database | null = null;
 
@@ -14,7 +16,7 @@ let encryptionEnabled = false;
 let currentPassword: string | null = null;
 
 // Configuración de persistencia
-const DB_NAME = 'accountexpress.db';
+export const DB_NAME = 'accountexpress.db';
 const BACKUP_INTERVAL = 30000; // 30 segundos
 
 export interface Customer {
@@ -430,57 +432,81 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
       logger.initialize(db);
     }
 
+    // NUEVO: Inicialización robusta con manejo de FK
+    if (db) {
+      await DatabaseInitializer.initializeWithFix(db);
+    }
+
     // Crear esquema de base de datos
     await createSchema();
 
     // Insertar datos de ejemplo si es nueva
     if (db) {
-      const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
-      const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-
-      if (customerCount === 0) {
-        logger.info('Database', 'insert_sample_data', 'Insertando datos de ejemplo');
-        await insertSampleData();
-      }
-
-      // Insertar plan de cuentas inicial si no existe
-      const accountResult = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
-      const accountCount = accountResult[0]?.values[0]?.[0] as number || 0;
-
-      if (accountCount === 0) {
-        logger.info('Database', 'insert_chart_accounts', 'Insertando plan de cuentas inicial');
-        await insertInitialChartOfAccounts();
-      }
-
-      // Insertar categorías de productos iniciales si no existen
-      const categoryResult = db.exec("SELECT COUNT(*) as count FROM product_categories");
-      const categoryCount = categoryResult[0]?.values[0]?.[0] as number || 0;
-
-      if (categoryCount === 0) {
-        logger.info('Database', 'insert_product_categories', 'Insertando categorías de productos iniciales');
-        await insertInitialProductCategories();
-      }
-
-      // Insertar productos iniciales si no existen
-      const productResult = db.exec("SELECT COUNT(*) as count FROM products");
-      const productCount = productResult[0]?.values[0]?.[0] as number || 0;
-
-      if (productCount === 0) {
-        logger.info('Database', 'insert_products', 'Insertando productos iniciales');
-        await insertInitialProducts();
-      }
-
-      // Insertar tasas de impuesto iniciales si no existen
+      // 1. Insertar tasas de impuesto iniciales si no existen (Independiente)
       const taxResult = db.exec("SELECT COUNT(*) as count FROM florida_tax_rates");
       const taxCount = taxResult[0]?.values[0]?.[0] as number || 0;
-
       if (taxCount === 0) {
         logger.info('Database', 'insert_tax_rates', 'Insertando tasas de impuesto iniciales');
         await insertInitialTaxRates();
       }
 
+      // 2. Insertar plan de cuentas inicial si no existe (Requerido para Journal Entries)
+      const accountResult = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
+      const accountCount = accountResult[0]?.values[0]?.[0] as number || 0;
+      if (accountCount === 0) {
+        logger.info('Database', 'insert_chart_accounts', 'Insertando plan de cuentas inicial');
+        await insertInitialChartOfAccounts();
+      }
+
+      // 3. Insertar categorías de productos iniciales si no existen
+      const categoryResult = db.exec("SELECT COUNT(*) as count FROM product_categories");
+      const categoryCount = categoryResult[0]?.values[0]?.[0] as number || 0;
+      if (categoryCount === 0) {
+        logger.info('Database', 'insert_product_categories', 'Insertando categorías de productos iniciales');
+        await insertInitialProductCategories();
+      }
+
+      // 4. Insertar productos iniciales si no existen
+      const productResult = db.exec("SELECT COUNT(*) as count FROM products");
+      const productCount = productResult[0]?.values[0]?.[0] as number || 0;
+      if (productCount === 0) {
+        logger.info('Database', 'insert_products', 'Insertando productos iniciales');
+        await insertInitialProducts();
+      }
+
+      // 5. Insertar datos de ejemplo transaccionales (Clientes, Facturas, Asientos)
+      const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
+      const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
+      if (customerCount === 0) {
+        logger.info('Database', 'insert_sample_data', 'Insertando datos de ejemplo transaccionales');
+        await insertSampleData();
+      }
+
       // Inicializar datos de empresa si no existen
       initializeCompanyData();
+
+      // Inicializar y crear vistas de solo lectura para IA
+      try {
+        const viewManagerInstance = new ViewManager(db);
+        await viewManagerInstance.createAllViews();
+        logger.info('Database', 'views_created', 'Vistas de solo lectura para IA inicializadas correctamente');
+      } catch (error) {
+        logger.error('Database', 'views_failed', 'Error al inicializar vistas de solo lectura', { error });
+      }
+
+      // NUEVO: Verificación profunda de datos transaccionales para el asistente IA
+      if (db) {
+        const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
+        const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
+
+        const journalResult = db.exec("SELECT COUNT(*) as count FROM journal_entries");
+        const journalCount = journalResult[0]?.values[0]?.[0] as number || 0;
+
+        if (invoiceCount === 0 || journalCount === 0) {
+          logger.info('Database', 'massive_data_injection', 'Tablas transaccionales vacías, inyectando datos masivos para IA');
+          await insertMassiveSampleData();
+        }
+      }
     }
 
     // Configurar auto-save
@@ -489,16 +515,133 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
     isInitialized = true;
     logger.info('Database', 'init_complete', 'Base de datos inicializada correctamente con persistencia');
     return db!;
-
   } catch (error) {
     logger.critical('Database', 'init_failed', `Error crítico en inicialización de base de datos: ${error instanceof Error ? error.message : 'Unknown error'}`, null, error as Error);
     throw new Error(`Database initialization failed: ${error}`);
   }
 };
 
+/**
+* Inyecta un conjunto masivo de datos para pruebas reales del Asistente IA
+*/
+const insertMassiveSampleData = async (): Promise<void> => {
+  if (!db) return;
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Clientes Adicionales (Total: 8)
+    db.run(`
+    INSERT INTO customers (name, business_name, email, phone, city, state, florida_county, credit_limit, status) VALUES 
+    ('Sarah Miller', 'Miller Design Studio', 'sarah@miller.com', '305-555-0001', 'Miami', 'FL', 'Miami-Dade', 10000.00, 'active'),
+    ('David Chen', 'Tech Hub Orlando', 'david@techhub.com', '407-555-0002', 'Orlando', 'FL', 'Orange', 15000.00, 'active'),
+    ('Elena Rossi', 'Rossi Catering', 'elena@rossi.com', '813-555-0003', 'Tampa', 'FL', 'Hillsborough', 5000.00, 'active'),
+    ('Frank Wright', 'Wright Architecture', 'frank@wright.com', '904-555-0004', 'Jacksonville', 'FL', 'Duval', 20000.00, 'active'),
+    ('Grace Lee', 'Glory Retail', 'grace@glory.com', '954-555-0005', 'Fort Lauderdale', 'FL', 'Broward', 8000.00, 'active')
+  `);
+
+    // 2. Proveedores Adicionales (Ya hay 5 en insertSampleData, añadimos coherencia)
+    // No hace falta más proveedores, con 5 es suficiente (Tech Solutions, Office Supplies, FBS, Global Logistics, Janitorial Experts)
+
+    // 3. Productos Adicionales (Total: 15)
+    db.run(`
+    INSERT INTO products (sku, name, description, price, cost, category_id, stock_quantity, min_stock_level, is_service, active) VALUES 
+    ('PROD-005', 'Monitor Dell 27"', 'UltraSharp 4K Monitor', 450.00, 300.00, 3, 15, 5, 0, 1),
+    ('PROD-006', 'Teclado Mecánico', 'RGB Mechanical Keyboard', 120.00, 65.00, 3, 25, 10, 0, 1),
+    ('PROD-007', 'Mouse Inalámbrico', 'Ergonomic Wireless Mouse', 60.00, 32.00, 3, 40, 15, 0, 1),
+    ('PROD-008', 'Escritorio Oficina', 'L-Shaped Office Desk', 350.00, 210.00, 4, 8, 2, 0, 1),
+    ('PROD-009', 'Silla Ergonómica', 'Premium Mesh Office Chair', 250.00, 145.00, 4, 12, 3, 0, 1),
+    ('SERV-005', 'Mantenimiento Red', 'Servicio de mantenimiento mensual de red', 250.00, 50.00, 5, 0, 0, 1, 1),
+    ('SERV-006', 'Backup en la Nube', 'Suscripción mensual backup cloud', 45.00, 10.00, 2, 0, 0, 1, 1)
+  `);
+
+    // 4. Facturas de Venta e Items (Total: 18 facturas)
+    for (let i = 1; i <= 15; i++) {
+      const customerId = (i % 8) + 1;
+      const productId = (i % 9) + 1;
+      const qty = (i % 5) + 1;
+      const unitPrice = 100 + (i * 10);
+      const subtotal = qty * unitPrice;
+      const tax = subtotal * 0.07;
+      const total = subtotal + tax;
+      const date = `2024-01-${i.toString().padStart(2, '0')}`;
+      const status = i % 5 === 0 ? 'overdue' : (i % 3 === 0 ? 'sent' : 'paid');
+      const dueDate = i % 5 === 0 ? '2023-12-01' : date;
+
+      db.run(`
+        INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) 
+        VALUES ('INV-2024-${i.toString().padStart(3, '0')}', ${customerId}, '${date}', '${dueDate}', ${subtotal}, ${tax}, ${total}, '${status}')
+      `);
+
+      db.run(`
+        INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, line_total)
+        VALUES (last_insert_rowid(), ${productId}, 'Venta de prueba ${i}', ${qty}, ${unitPrice}, ${subtotal})
+      `);
+    }
+
+    // 5. Facturas de Compra (Bills) (Total: 12 facturas)
+    for (let i = 1; i <= 8; i++) {
+      const supplierId = (i % 5) + 1;
+      const amount = 300 + (i * 95.25);
+      const tax = amount * 0.07;
+      const total = amount + tax;
+      const date = `2024-01-${(i + 2).toString().padStart(2, '0')}`;
+      const status = 'paid';
+      db.run(`
+      INSERT INTO bills (bill_number, supplier_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) 
+      VALUES ('BILL-2024-${i.toString().padStart(3, '0')}', ${supplierId}, '${date}', '${date}', ${amount}, ${tax}, ${total}, '${status}')
+    `);
+    }
+
+    // 6. Asientos Contables Coherentes (Journal Entries)
+    // Primero asegurar que las cuentas existen (Inyección directa por seguridad)
+    db.run(`INSERT OR IGNORE INTO chart_of_accounts (account_code, account_name, account_type, normal_balance, is_active) VALUES 
+    ('1121', 'Cuentas por Cobrar - Clientes', 'asset', 'debit', 1),
+    ('4110', 'Ingresos por Ventas', 'revenue', 'credit', 1),
+    ('2121', 'Impuesto sobre Ventas Florida', 'liability', 'credit', 1),
+    ('5240', 'Gastos Profesionales', 'expense', 'debit', 1),
+    ('3100', 'Capital Social', 'equity', 'credit', 1)
+  `);
+
+    // Apertura (100k)
+    db.run(`INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES ('2024-01-01', 'APER-01', 'Apertura ejercicio 2024', 100000, 100000)`);
+    db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (last_insert_rowid(), '1112', 100000, 0), (last_insert_rowid(), '3100', 0, 100000)`);
+
+    // Registro de Venta Grande (10k)
+    db.run(`INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES ('2024-01-05', 'SALE-01', 'Venta corporativa masiva', 10700, 10700)`);
+    db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (last_insert_rowid(), '1121', 10700, 0), (last_insert_rowid(), '4110', 0, 10000), (last_insert_rowid(), '2121', 0, 700)`);
+
+    // Registro de Gasto Grande (5k)
+    db.run(`INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES ('2024-01-10', 'EXP-01', 'Servicios legales anuales', 5350, 5350)`);
+    db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (last_insert_rowid(), '5240', 5000, 0), (last_insert_rowid(), '2121', 350, 0), (last_insert_rowid(), '1112', 0, 5350)`);
+
+    db.run('COMMIT');
+    logger.info('Database', 'massive_data_success', 'Datos inyectados correctamente');
+  } catch (error) {
+    db.run('ROLLBACK');
+    logger.error('Database', 'massive_data_failed', 'Error inyectando datos masivos', {}, error as Error);
+  }
+};
+
 // Crear esquema de base de datos
 const createSchema = async (): Promise<void> => {
   if (!db) return;
+
+  // Tabla del plan de cuentas (CRITICAL - DOCUMENTO TÉCNICO OFICIAL)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS chart_of_accounts (
+      account_code TEXT PRIMARY KEY,
+      account_name TEXT NOT NULL,
+      account_type TEXT NOT NULL CHECK(account_type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
+      normal_balance TEXT NOT NULL CHECK(normal_balance IN ('debit', 'credit')),
+      parent_account TEXT REFERENCES chart_of_accounts(account_code),
+      is_active BOOLEAN DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER DEFAULT 1,
+      updated_by INTEGER DEFAULT 1
+    )
+  `);
 
   // Tabla de clientes con campos completos para Florida
   db.run(`
@@ -533,6 +676,37 @@ const createSchema = async (): Promise<void> => {
       assigned_salesperson TEXT,
       
       -- Metadatos
+      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabla de proveedores (suppliers) - REQUERIDA PARA productos
+  db.run(`
+    CREATE TABLE IF NOT EXISTS suppliers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      business_name TEXT,
+      document_type TEXT DEFAULT 'EIN' CHECK(document_type IN ('SSN', 'EIN', 'ITIN', 'PASSPORT')),
+      document_number TEXT,
+      business_type TEXT,
+      email TEXT,
+      email_secondary TEXT,
+      phone TEXT,
+      phone_secondary TEXT,
+      address_line1 TEXT,
+      address_line2 TEXT,
+      city TEXT DEFAULT 'Miami',
+      state TEXT DEFAULT 'FL',
+      zip_code TEXT,
+      florida_county TEXT DEFAULT 'Miami-Dade',
+      credit_limit DECIMAL(12,2) DEFAULT 0.00,
+      payment_terms INTEGER DEFAULT 30,
+      tax_exempt BOOLEAN DEFAULT 0,
+      tax_id TEXT,
+      assigned_buyer TEXT,
       status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -655,45 +829,6 @@ const createSchema = async (): Promise<void> => {
     )
   `);
 
-  // Tabla de proveedores (suppliers)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS suppliers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      -- Información del proveedor
-      name TEXT NOT NULL,
-      business_name TEXT,
-      document_type TEXT DEFAULT 'EIN' CHECK(document_type IN ('SSN', 'EIN', 'ITIN', 'PASSPORT')),
-      document_number TEXT,
-      business_type TEXT,
-      
-      -- Datos de contacto
-      email TEXT,
-      email_secondary TEXT,
-      phone TEXT,
-      phone_secondary TEXT,
-      
-      -- Dirección
-      address_line1 TEXT,
-      address_line2 TEXT,
-      city TEXT DEFAULT 'Miami',
-      state TEXT DEFAULT 'FL',
-      zip_code TEXT,
-      florida_county TEXT DEFAULT 'Miami-Dade',
-      
-      -- Datos comerciales
-      credit_limit DECIMAL(12,2) DEFAULT 0.00,
-      payment_terms INTEGER DEFAULT 30,
-      tax_exempt BOOLEAN DEFAULT 0,
-      tax_id TEXT,
-      assigned_buyer TEXT,
-      
-      -- Metadatos
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
 
   // Tabla de facturas de compra (bills)
   db.run(`
@@ -865,22 +1000,6 @@ const createSchema = async (): Promise<void> => {
   // TABLAS PARA PLAN DE CUENTAS Y DOBLE ENTRADA
   // ==========================================
 
-  // Tabla del plan de cuentas (CRITICAL - DOCUMENTO TÉCNICO OFICIAL)
-  db.run(`
-    CREATE TABLE IF NOT EXISTS chart_of_accounts (
-      account_code TEXT PRIMARY KEY,
-      account_name TEXT NOT NULL,
-      account_type TEXT NOT NULL CHECK(account_type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
-      normal_balance TEXT NOT NULL CHECK(normal_balance IN ('debit', 'credit')),
-      parent_account TEXT REFERENCES chart_of_accounts(account_code),
-      is_active BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER DEFAULT 1,
-      updated_by INTEGER DEFAULT 1
-    )
-  `);
-
   // Tabla de asientos contables (journal entries)
   db.run(`
     CREATE TABLE IF NOT EXISTS journal_entries (
@@ -1009,30 +1128,26 @@ const createSchema = async (): Promise<void> => {
     ORDER BY total_operaciones DESC
   `);
 
-  // Vista de resumen de clientes para IA
-  db.run(`
-    CREATE VIEW IF NOT EXISTS customers_summary AS
-    SELECT 
-      status,
-      COUNT(*) as cantidad_clientes,
-      AVG(credit_limit) as limite_credito_promedio,
-      florida_county
-    FROM customers
-    GROUP BY status, florida_county
-  `);
+  // DROPEAR VISTAS ANTIGUAS
+  db.run(`DROP VIEW IF EXISTS customers_summary`);
+  db.run(`DROP VIEW IF EXISTS invoices_summary`);
+  db.run(`DROP VIEW IF EXISTS v_clientes_reales`);
+  db.run(`DROP VIEW IF EXISTS v_facturas_reales`);
+  db.run(`DROP VIEW IF EXISTS v_proveedores_reales`);
+  db.run(`DROP VIEW IF EXISTS datos_sistema`);
 
-  // Vista de resumen de facturas para IA
+  // VISTA "TODO EN UNO" SOLICITADA
   db.run(`
-    CREATE VIEW IF NOT EXISTS invoices_summary AS
+    CREATE VIEW IF NOT EXISTS datos_sistema AS
     SELECT 
-      status,
-      COUNT(*) as cantidad_facturas,
-      SUM(total_amount) as monto_total,
-      AVG(total_amount) as monto_promedio,
-      strftime('%Y-%m', issue_date) as periodo
-    FROM invoices
-    GROUP BY status, strftime('%Y-%m', issue_date)
-    ORDER BY periodo DESC
+      (SELECT COUNT(*) FROM customers) as total_clientes,
+      (SELECT GROUP_CONCAT(name, ', ') FROM (SELECT name FROM customers LIMIT 5)) as lista_clientes,
+      (SELECT COUNT(*) FROM invoices) as facturas_venta,
+      (SELECT COUNT(*) FROM bills) as facturas_compra,
+      (SELECT MAX(total_amount) FROM invoices) as mayor_venta_monto,
+      (SELECT invoice_number FROM invoices ORDER BY total_amount DESC LIMIT 1) as mayor_venta_numero,
+      (SELECT COUNT(*) FROM suppliers) as total_proveedores,
+      (SELECT IFNULL(SUM(stock_quantity * price), 0) FROM products) as valor_inventario
   `);
 
   // Vista de alertas para IA
@@ -1063,6 +1178,7 @@ const createSchema = async (): Promise<void> => {
   console.log('Database schema created successfully');
   console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN N°1 IMPLEMENTADA');
 
+
   // Tabla de historial de conversaciones IA
   db.run(`
     CREATE TABLE IF NOT EXISTS ai_conversations (
@@ -1078,6 +1194,109 @@ const createSchema = async (): Promise<void> => {
       was_fallback BOOLEAN DEFAULT 0,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+
+  // ==========================================
+  // TABLAS NUEVAS FASE 3 (COMPLETE SCHEMA)
+  // ==========================================
+
+  // Tabla de ajustes manuales de inventario
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventory_adjustments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      quantity_delta INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      adjusted_by INTEGER DEFAULT 1,
+      adjusted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      CHECK(quantity_delta != 0)
+    )
+  `);
+
+  // Tabla de envíos fiscales DR-15
+  db.run(`
+    CREATE TABLE IF NOT EXISTS dr15_submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      period_year INTEGER NOT NULL,
+      period_month INTEGER NOT NULL,
+      total_tax_collected DECIMAL(15,2) DEFAULT 0,
+      total_taxable_sales DECIMAL(15,2) DEFAULT 0,
+      status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'submitted', 'accepted', 'rejected')),
+      submission_date DATETIME,
+      confirmation_number TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(period_year, period_month)
+    )
+  `);
+
+  // ==========================================
+  // TRIGGERS CRÍTICOS FASE 2
+  // ==========================================
+
+  // 1. TRIGGER calculate_florida_tax (Aproximación en SQLite ya que no soporta lógica compleja en triggers)
+  // Nota: SQLite triggers son limitados. La lógica compleja se mantiene en la capa de aplicación (FloridaTaxCalculator),
+  // pero agregamos un trigger básico para mantener consistencia.
+  db.run(`
+    CREATE TRIGGER IF NOT EXISTS update_invoice_totals_after_insert
+    AFTER INSERT ON invoice_lines
+    BEGIN
+      UPDATE invoices 
+      SET 
+        subtotal = (SELECT SUM(line_total) FROM invoice_lines WHERE invoice_id = NEW.invoice_id),
+        tax_amount = (SELECT SUM(CASE WHEN taxable = 1 THEN line_total * 0.07 ELSE 0 END) FROM invoice_lines WHERE invoice_id = NEW.invoice_id),
+        total_amount = (SELECT SUM(line_total + (CASE WHEN taxable = 1 THEN line_total * 0.07 ELSE 0 END)) FROM invoice_lines WHERE invoice_id = NEW.invoice_id)
+      WHERE id = NEW.invoice_id;
+    END;
+  `);
+
+  // 2. TRIGGER update_inventory_on_sale (Simplificado para SQLite)
+  db.run(`
+    CREATE TRIGGER IF NOT EXISTS decrease_stock_on_invoice
+    AFTER INSERT ON invoice_lines
+    BEGIN
+      UPDATE products
+      SET stock_quantity = stock_quantity - NEW.quantity
+      WHERE id = NEW.product_id AND is_service = 0;
+    END;
+  `);
+
+  // 5. TRIGGER auto_generate_numbers (Simulado con formateo en inserción o valores por defecto, 
+  // SQLite no tiene secuencias complejas nativas "BEFORE INSERT" para alterar NEW.value fácilmente sin extensiones)
+
+  // ==========================================
+  // VISTAS OPTIMIZADAS PARA DEEPSEEK RAG (FASE 1.3 NUEVA)
+  // ==========================================
+
+  db.run(`
+    CREATE VIEW IF NOT EXISTS v_ai_context_invoices AS
+    SELECT 
+        'INVOICE_DATA' as data_type,
+        i.id,
+        i.invoice_number as number,
+        i.issue_date as date,
+        c.name as customer_name,
+        i.total_amount as total,
+        i.tax_amount,
+        json_object(
+            'status', i.status,
+            'items_count', (SELECT COUNT(*) FROM invoice_lines WHERE invoice_id = i.id)
+        ) as metadata
+    FROM invoices i
+    JOIN customers c ON i.customer_id = c.id
+  `);
+
+  db.run(`
+    CREATE VIEW IF NOT EXISTS v_ai_context_financial AS
+    SELECT 
+        'FINANCIAL_SNAPSHOT' as data_type,
+        date('now') as snapshot_date,
+        (SELECT SUM(total_amount) FROM invoices WHERE status = 'paid') as total_revenue,
+        (SELECT SUM(total_amount) FROM bills WHERE status = 'paid') as total_expenses,
+        ((SELECT IFNULL(SUM(total_amount), 0) FROM invoices WHERE status = 'paid') - (SELECT IFNULL(SUM(total_amount), 0) FROM bills WHERE status = 'paid')) as net_profit,
+        (SELECT SUM(tax_amount) FROM invoices WHERE status = 'paid') as tax_liability,
+        (SELECT SUM(balance) FROM bank_accounts) as cash_balance
   `);
 
   // Tabla de auditoría específica para IA
@@ -1123,29 +1342,7 @@ const insertSampleData = async (): Promise<void> => {
     )
   `);
 
-  // Productos de ejemplo - ACTUALIZADO PARA NUEVO ESQUEMA
-  // Primero insertar categorías de productos
-  db.run(`
-    INSERT INTO product_categories (name, description, tax_rate, active, created_at, updated_at) VALUES 
-    ('Servicios Profesionales', 'Servicios de consultoría y asesoría', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Software y Licencias', 'Software, aplicaciones y licencias digitales', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Hardware y Equipos', 'Equipos de cómputo y hardware', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Suministros de Oficina', 'Materiales y suministros para oficina', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `);
-
-  // Luego insertar productos con referencias a categorías
-  db.run(`
-    INSERT INTO products (
-      sku, name, description, price, cost, category_id, unit_of_measure,
-      taxable, stock_quantity, min_stock_level, max_stock_level, reorder_point,
-      is_service, active, created_at, updated_at
-    ) VALUES 
-    ('SERV-001', 'Consultoría Contable', 'Servicios de consultoría contable y fiscal para empresas', 150.00, 75.00, 1, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('SERV-002', 'Auditoría Fiscal', 'Servicios de auditoría y cumplimiento fiscal', 500.00, 250.00, 1, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-001', 'Software License', 'Licencia anual de software contable', 299.99, 150.00, 2, 'unidad', 1, 50, 10, 100, 20, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-002', 'Hardware Setup', 'Configuración de hardware contable', 199.99, 100.00, 3, 'unidad', 1, 25, 5, 50, 10, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-003', 'Papel Bond A4', 'Resma de papel bond tamaño carta', 12.99, 8.50, 4, 'resma', 1, 100, 20, 200, 30, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `);
+  // Los productos ya se insertan en insertInitialProducts
 
   // Facturas de ejemplo
   db.run(`
@@ -1201,6 +1398,16 @@ const insertSampleData = async (): Promise<void> => {
       'Florida Business Services', 'FBS Corp', 'EIN', '65-4321098', 'Professional Services',
       'info@flbusiness.com', '(813) 555-3003', '4200 W Kennedy Blvd', 'Tampa', 'FL', '33609', 'Hillsborough',
       75000.00, 45, 'María Rodríguez'
+    ),
+    (
+      'Global Logistics', 'Global Logistics Florida', 'EIN', '54-3210987', 'Logistics',
+      'ops@globallogistics.com', '(305) 555-4004', '1000 Port Blvd', 'Miami', 'FL', '33132', 'Miami-Dade',
+      120000.00, 30, 'Carlos López'
+    ),
+    (
+      'Janitorial Experts', 'Janitorial Experts LLC', 'EIN', '43-2109876', 'Cleaning',
+      'service@janitorial.com', '(407) 555-5005', '500 International Dr', 'Orlando', 'FL', '32819', 'Orange',
+      5000.00, 7, 'Ana García'
     )
   `);
 
@@ -1209,7 +1416,8 @@ const insertSampleData = async (): Promise<void> => {
     INSERT INTO bills (bill_number, supplier_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES 
     ('BILL-2024-001', 1, '2024-01-10', '2024-02-09', 2000.00, 140.00, 2140.00, 'approved'),
     ('BILL-2024-002', 2, '2024-01-15', '2024-01-30', 850.00, 55.25, 905.25, 'received'),
-    ('BILL-2024-003', 3, '2024-01-20', '2024-03-05', 1500.00, 105.00, 1605.00, 'paid')
+    ('BILL-2024-003', 3, '2024-01-20', '2024-03-05', 1500.00, 105.00, 1605.00, 'paid'),
+    ('BILL-2024-004', 4, '2024-01-22', '2024-02-21', 500.00, 35.00, 535.00, 'approved')
   `);
 
   // Líneas de factura de compra de ejemplo
@@ -1217,147 +1425,35 @@ const insertSampleData = async (): Promise<void> => {
     INSERT INTO bill_lines (bill_id, product_id, description, quantity, unit_price, line_total) VALUES 
     (1, 2, 'Software Licenses - Bulk Purchase', 10.000, 200.00, 2000.00),
     (2, 4, 'Office Equipment Setup', 5.000, 170.00, 850.00),
-    (3, 1, 'Professional Consulting Services', 10.000, 150.00, 1500.00)
+    (3, 1, 'Professional Consulting Services', 10.000, 150.00, 1500.00),
+    (4, 3, 'Shipping Fees', 1.000, 500.00, 500.00)
   `);
 
-  // Pagos a proveedores de ejemplo
+  // Asientos Contables de ejemplo (Journal Entries)
   db.run(`
-    INSERT INTO supplier_payments (supplier_id, bill_id, payment_number, payment_date, amount, payment_method, reference_number) VALUES 
-    (3, 3, 'SPAY-2024-001', '2024-03-01', 1605.00, 'bank_transfer', 'TXN-SP789123'),
-    (1, NULL, 'SPAY-2024-002', '2024-01-20', 1000.00, 'check', 'CHK-SP001')
+    INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES 
+    ('2024-01-01', 'OB-2024', 'Asiento de Apertura', 100000.00, 100000.00),
+    ('2024-01-15', 'INV-2024-001', 'Venta a John Smith', 1605.00, 1605.00),
+    ('2024-01-20', 'BILL-2024-003', 'Pago a Florida Business Services', 1605.00, 1605.00)
   `);
 
-  // Cuentas bancarias de ejemplo
+  // Detalles de Asientos Contables (Journal Details)
+  // 1. Apertura: Caja (1112) Debit 100k, Capital (3110) Credit 100k
+  // 2. Venta: Cuentas por Cobrar (1121) Debit 1605, Ventas (4110) Credit 1500, Tax Payable (2121) Credit 105
+  // 3. Compra: Gastos Profesionales (5240) Debit 1500, Tax Credit (1121?) Debit 105, Cash (1112) Credit 1605
   db.run(`
-    INSERT INTO bank_accounts (account_name, bank_name, account_number, account_type, routing_number, balance) VALUES 
-    ('Cuenta Corriente Principal', 'Bank of America', '****1234', 'checking', '021000322', 25000.00),
-    ('Cuenta de Ahorros', 'Wells Fargo', '****5678', 'savings', '121042882', 50000.00),
-    ('Cuenta de Nómina', 'Chase Bank', '****9012', 'checking', '021000021', 15000.00)
+    INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount, description) VALUES 
+    (1, '1112', 100000.00, 0, 'Apertura de banco'),
+    (1, '3110', 0, 100000.00, 'Aporte de capital'),
+    (2, '1121', 1605.00, 0, 'Saldo deudor cliente'),
+    (2, '4110', 0, 1500.00, 'Venta de productos'),
+    (2, '2121', 0, 105.00, 'Impuesto ventas Florida'),
+    (3, '5240', 1500.00, 0, 'Servicios profesionales recibidos'),
+    (3, '2121', 105.00, 0, 'Crédito fiscal Florida'),
+    (3, '1112', 0, 1605.00, 'Pago en efectivo/banco')
   `);
 
-  // Métodos de pago de ejemplo
-  db.run(`
-    INSERT INTO payment_methods (method_name, method_type, requires_reference) VALUES 
-    ('Efectivo', 'cash', 0),
-    ('Cheque', 'check', 1),
-    ('Transferencia Bancaria', 'bank_transfer', 1),
-    ('Tarjeta de Crédito', 'credit_card', 1),
-    ('ACH', 'bank_transfer', 1),
-    ('Wire Transfer', 'bank_transfer', 1)
-  `);
-
-  // ==========================================
-  // PLAN DE CUENTAS ESTÁNDAR PARA FLORIDA
-  // ==========================================
-
-  // Plan de cuentas básico siguiendo estándares contables de Florida
-  db.run(`
-    INSERT OR IGNORE INTO chart_of_accounts (account_code, account_name, account_type, normal_balance, parent_account) VALUES 
-    -- ACTIVOS (ASSETS)
-    ('1000', 'ACTIVOS', 'asset', 'debit', NULL),
-    ('1100', 'Activos Corrientes', 'asset', 'debit', '1000'),
-    ('1110', 'Efectivo y Equivalentes', 'asset', 'debit', '1100'),
-    ('1111', 'Caja Chica', 'asset', 'debit', '1110'),
-    ('1112', 'Cuenta Corriente Principal', 'asset', 'debit', '1110'),
-    ('1113', 'Cuenta de Ahorros', 'asset', 'debit', '1110'),
-    ('1120', 'Cuentas por Cobrar', 'asset', 'debit', '1100'),
-    ('1121', 'Cuentas por Cobrar - Clientes', 'asset', 'debit', '1120'),
-    ('1122', 'Provisión para Cuentas Incobrables', 'asset', 'credit', '1120'),
-    ('1130', 'Inventario', 'asset', 'debit', '1100'),
-    ('1131', 'Inventario - Productos', 'asset', 'debit', '1130'),
-    ('1132', 'Inventario - Servicios en Proceso', 'asset', 'debit', '1130'),
-    ('1140', 'Gastos Pagados por Adelantado', 'asset', 'debit', '1100'),
-    ('1141', 'Seguros Pagados por Adelantado', 'asset', 'debit', '1140'),
-    ('1142', 'Rentas Pagadas por Adelantado', 'asset', 'debit', '1140'),
-    
-    -- Activos Fijos
-    ('1200', 'Activos Fijos', 'asset', 'debit', '1000'),
-    ('1210', 'Equipos y Mobiliario', 'asset', 'debit', '1200'),
-    ('1211', 'Equipos de Oficina', 'asset', 'debit', '1210'),
-    ('1212', 'Equipos de Cómputo', 'asset', 'debit', '1210'),
-    ('1213', 'Mobiliario', 'asset', 'debit', '1210'),
-    ('1220', 'Depreciación Acumulada', 'asset', 'credit', '1200'),
-    ('1221', 'Depreciación - Equipos de Oficina', 'asset', 'credit', '1220'),
-    ('1222', 'Depreciación - Equipos de Cómputo', 'asset', 'credit', '1220'),
-    ('1223', 'Depreciación - Mobiliario', 'asset', 'credit', '1220'),
-    
-    -- PASIVOS (LIABILITIES)
-    ('2000', 'PASIVOS', 'liability', 'credit', NULL),
-    ('2100', 'Pasivos Corrientes', 'liability', 'credit', '2000'),
-    ('2110', 'Cuentas por Pagar', 'liability', 'credit', '2100'),
-    ('2111', 'Cuentas por Pagar - Proveedores', 'liability', 'credit', '2110'),
-    ('2112', 'Cuentas por Pagar - Servicios', 'liability', 'credit', '2110'),
-    ('2120', 'Impuestos por Pagar', 'liability', 'credit', '2100'),
-    ('2121', 'Impuesto Estatal Florida por Pagar', 'liability', 'credit', '2120'),
-    ('2122', 'Impuestos Locales por Pagar', 'liability', 'credit', '2120'),
-    ('2123', 'Impuesto Federal por Pagar', 'liability', 'credit', '2120'),
-    ('2130', 'Nómina por Pagar', 'liability', 'credit', '2100'),
-    ('2131', 'Sueldos por Pagar', 'liability', 'credit', '2130'),
-    ('2132', 'Beneficios por Pagar', 'liability', 'credit', '2130'),
-    ('2140', 'Otros Pasivos Corrientes', 'liability', 'credit', '2100'),
-    ('2141', 'Intereses por Pagar', 'liability', 'credit', '2140'),
-    ('2142', 'Servicios por Pagar', 'liability', 'credit', '2140'),
-    
-    -- Pasivos a Largo Plazo
-    ('2200', 'Pasivos a Largo Plazo', 'liability', 'credit', '2000'),
-    ('2210', 'Préstamos Bancarios', 'liability', 'credit', '2200'),
-    ('2220', 'Hipotecas por Pagar', 'liability', 'credit', '2200'),
-    
-    -- PATRIMONIO (EQUITY)
-    ('3000', 'PATRIMONIO', 'equity', 'credit', NULL),
-    ('3100', 'Capital', 'equity', 'credit', '3000'),
-    ('3110', 'Capital Social', 'equity', 'credit', '3100'),
-    ('3120', 'Utilidades Retenidas', 'equity', 'credit', '3100'),
-    ('3130', 'Utilidad del Ejercicio', 'equity', 'credit', '3100'),
-    
-    -- INGRESOS (REVENUE)
-    ('4000', 'INGRESOS', 'revenue', 'credit', NULL),
-    ('4100', 'Ingresos por Ventas', 'revenue', 'credit', '4000'),
-    ('4110', 'Ventas de Productos', 'revenue', 'credit', '4100'),
-    ('4120', 'Ventas de Servicios', 'revenue', 'credit', '4100'),
-    ('4130', 'Ingresos por Consultoría', 'revenue', 'credit', '4100'),
-    ('4200', 'Otros Ingresos', 'revenue', 'credit', '4000'),
-    ('4210', 'Ingresos por Intereses', 'revenue', 'credit', '4200'),
-    ('4220', 'Ingresos Diversos', 'revenue', 'credit', '4200'),
-    
-    -- GASTOS (EXPENSES)
-    ('5000', 'GASTOS', 'expense', 'debit', NULL),
-    ('5100', 'Costo de Ventas', 'expense', 'debit', '5000'),
-    ('5110', 'Costo de Productos Vendidos', 'expense', 'debit', '5100'),
-    ('5120', 'Costo de Servicios Prestados', 'expense', 'debit', '5100'),
-    ('5200', 'Gastos Operativos', 'expense', 'debit', '5000'),
-    ('5210', 'Gastos de Personal', 'expense', 'debit', '5200'),
-    ('5211', 'Sueldos y Salarios', 'expense', 'debit', '5210'),
-    ('5212', 'Beneficios de Empleados', 'expense', 'debit', '5210'),
-    ('5213', 'Impuestos sobre Nómina', 'expense', 'debit', '5210'),
-    ('5220', 'Gastos de Oficina', 'expense', 'debit', '5200'),
-    ('5221', 'Renta de Oficina', 'expense', 'debit', '5220'),
-    ('5222', 'Servicios Públicos', 'expense', 'debit', '5220'),
-    ('5223', 'Teléfono e Internet', 'expense', 'debit', '5220'),
-    ('5224', 'Suministros de Oficina', 'expense', 'debit', '5220'),
-    ('5230', 'Gastos de Marketing', 'expense', 'debit', '5200'),
-    ('5231', 'Publicidad', 'expense', 'debit', '5230'),
-    ('5232', 'Promociones', 'expense', 'debit', '5230'),
-    ('5240', 'Gastos Profesionales', 'expense', 'debit', '5200'),
-    ('5241', 'Servicios Legales', 'expense', 'debit', '5240'),
-    ('5242', 'Servicios Contables', 'expense', 'debit', '5240'),
-    ('5243', 'Consultoría', 'expense', 'debit', '5240'),
-    ('5250', 'Gastos de Viaje', 'expense', 'debit', '5200'),
-    ('5251', 'Transporte', 'expense', 'debit', '5250'),
-    ('5252', 'Hospedaje', 'expense', 'debit', '5250'),
-    ('5253', 'Alimentación', 'expense', 'debit', '5250'),
-    ('5300', 'Gastos Financieros', 'expense', 'debit', '5000'),
-    ('5310', 'Intereses Bancarios', 'expense', 'debit', '5300'),
-    ('5320', 'Comisiones Bancarias', 'expense', 'debit', '5300'),
-    ('5400', 'Depreciación y Amortización', 'expense', 'debit', '5000'),
-    ('5410', 'Depreciación de Activos Fijos', 'expense', 'debit', '5400'),
-    ('5500', 'Impuestos y Licencias', 'expense', 'debit', '5000'),
-    ('5510', 'Impuestos Estatales Florida', 'expense', 'debit', '5500'),
-    ('5520', 'Impuestos Locales', 'expense', 'debit', '5500'),
-    ('5530', 'Licencias y Permisos', 'expense', 'debit', '5500')
-  `);
-
-  console.log('Sample data inserted successfully');
+  console.log('Sample data and Journal Entries inserted successfully');
 };
 
 // Insertar categorías de productos iniciales
@@ -6007,10 +6103,10 @@ export function getDR15Reports(): FloridaDR15Report[] {
 /**
  * Obtiene todas las tasas de impuesto de Florida de la DB
  */
-export function getAllFloridaTaxRates(): { county: string; stateRate: number; discretionaryRate: number; totalRate: number }[] {
+export function getAllFloridaTaxRates(): { id: number; county: string; stateRate: number; discretionaryRate: number; totalRate: number }[] {
   if (!db) return [];
   try {
-    const result = db.exec("SELECT county_name as county, state_rate as stateRate, county_rate as discretionaryRate, total_rate as totalRate FROM florida_tax_rates");
+    const result = db.exec("SELECT id, county_name as county, state_rate as stateRate, county_rate as discretionaryRate, total_rate as totalRate FROM florida_tax_rates");
     if (result.length === 0 || result[0].values.length === 0) return [];
 
     const columns = result[0].columns;

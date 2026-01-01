@@ -44,8 +44,8 @@ export class SupplierManagement {
         const rows = await this.engine.select(query, [id]);
         if (rows.length === 0) return null;
         return {
-            ...rows[0],
+            ...(rows[0] as any),
             active: Boolean(rows[0].active)
-        };
+        } as Supplier;
     }
 }

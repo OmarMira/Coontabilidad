@@ -1,4 +1,4 @@
-import { FloridaCountyRates2024 } from '../../validators/FloridaComplianceValidator';
+import { getFloridaTaxRate } from '../../database/simple-db';
 
 export interface TaxExplanationContext {
     subtotal: number;
@@ -29,7 +29,7 @@ export class ExplanationEngine {
         }
 
         const stateRate = 0.06;
-        const totalRate = FloridaCountyRates2024[context.county] || 0.06;
+        const totalRate = getFloridaTaxRate(context.county);
         const surtaxRate = totalRate - stateRate;
         const taxAmount = context.subtotal * totalRate;
 

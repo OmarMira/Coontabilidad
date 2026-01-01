@@ -61,7 +61,7 @@ export class SystemLogger {
   initialize(database: initSqlJs.Database): void {
     this.db = database;
     this.log('INFO', 'SystemLogger', 'initialize', 'Sistema de logging inicializado correctamente');
-    
+
     // Procesar logs fallback si existen
     this.processFallbackLogs();
   }
@@ -71,23 +71,25 @@ export class SystemLogger {
   }
 
   private setupErrorHandlers(): void {
+    if (typeof window === 'undefined') return;
+
     // Capturar errores no manejados
     window.addEventListener('error', (event) => {
-      this.log('ERROR', 'GlobalErrorHandler', 'unhandled_error', 
-        `Error no manejado: ${event.message}`, 
-        { 
-          filename: event.filename, 
-          lineno: event.lineno, 
-          colno: event.colno 
-        }, 
+      this.log('ERROR', 'GlobalErrorHandler', 'unhandled_error',
+        `Error no manejado: ${event.message}`,
+        {
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno
+        },
         event.error
       );
     });
 
     // Capturar promesas rechazadas
     window.addEventListener('unhandledrejection', (event) => {
-      this.log('ERROR', 'GlobalErrorHandler', 'unhandled_rejection', 
-        `Promesa rechazada: ${event.reason}`, 
+      this.log('ERROR', 'GlobalErrorHandler', 'unhandled_rejection',
+        `Promesa rechazada: ${event.reason}`,
         { reason: event.reason }
       );
     });
@@ -178,11 +180,11 @@ export class SystemLogger {
     const logMessage = `[${timestamp}] [${level}] ${module}.${action}: ${message}`;
 
     console.log(`%c${logMessage}`, `color: ${colors[level]}; font-weight: ${level === 'ERROR' || level === 'CRITICAL' ? 'bold' : 'normal'}`);
-    
+
     if (data) {
       console.log('%cData:', 'color: #6B7280; font-style: italic', data);
     }
-    
+
     if (error) {
       console.error('%cError:', 'color: #EF4444; font-weight: bold', error);
     }
@@ -190,7 +192,7 @@ export class SystemLogger {
 
   private fallbackLog(logEntry: any): void {
     this.fallbackLogs.push(logEntry);
-    
+
     // Mantener solo últimos 100 logs en memoria
     if (this.fallbackLogs.length > 100) {
       this.fallbackLogs.shift();
@@ -200,11 +202,11 @@ export class SystemLogger {
     try {
       const stored = JSON.parse(localStorage.getItem('system_logs_fallback') || '[]');
       stored.push(logEntry);
-      
+
       if (stored.length > 100) {
         stored.shift();
       }
-      
+
       localStorage.setItem('system_logs_fallback', JSON.stringify(stored));
     } catch (error) {
       console.error('Failed to save fallback logs to localStorage:', error);
@@ -214,7 +216,7 @@ export class SystemLogger {
   private processFallbackLogs(): void {
     if (this.fallbackLogs.length > 0 && this.db) {
       console.log(`Processing ${this.fallbackLogs.length} fallback logs...`);
-      
+
       this.fallbackLogs.forEach(logEntry => {
         try {
           const stmt = this.db!.prepare(`
@@ -299,7 +301,7 @@ export class SystemLogger {
       }
 
       const result = this.db.exec(query, params);
-      
+
       if (!result[0]) return [];
 
       const logs: SystemLog[] = [];
@@ -310,10 +312,10 @@ export class SystemLogger {
         columns.forEach((col, index) => {
           log[col] = row[index];
         });
-        
+
         // Convertir valores booleanos
         log.resolved = Boolean(log.resolved);
-        
+
         logs.push(log as SystemLog);
       });
 
@@ -321,7 +323,7 @@ export class SystemLogger {
 
     } catch (error) {
       console.error('Error getting logs:', error);
-      this.log('ERROR', 'SystemLogger', 'get_logs_failed', 
+      this.log('ERROR', 'SystemLogger', 'get_logs_failed',
         'Error al obtener logs de la base de datos', { filter }, error as Error);
       return [];
     }
@@ -340,7 +342,7 @@ export class SystemLogger {
       stmt.run([resolvedBy, logId]);
       stmt.free();
 
-      this.log('INFO', 'SystemLogger', 'mark_resolved', 
+      this.log('INFO', 'SystemLogger', 'mark_resolved',
         `Log ${logId} marcado como resuelto`, { logId, resolvedBy });
 
       return true;
@@ -386,7 +388,7 @@ export class SystemLogger {
         GROUP BY module 
         ORDER BY count DESC
       `);
-      
+
       const byModule: Record<string, number> = {};
       if (moduleResult[0]) {
         moduleResult[0].values.forEach(row => {
@@ -401,7 +403,7 @@ export class SystemLogger {
         GROUP BY level 
         ORDER BY count DESC
       `);
-      
+
       const byLevel: Record<string, number> = {};
       if (levelResult[0]) {
         levelResult[0].values.forEach(row => {
@@ -443,9 +445,9 @@ export class SystemLogger {
 
     } catch (error) {
       console.error('Error getting error stats:', error);
-      this.log('ERROR', 'SystemLogger', 'get_stats_failed', 
+      this.log('ERROR', 'SystemLogger', 'get_stats_failed',
         'Error al obtener estadísticas de errores', null, error as Error);
-      
+
       return {
         totalErrors: 0,
         unresolved: 0,
@@ -463,7 +465,7 @@ export class SystemLogger {
 
     try {
       const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
-      
+
       const result = this.db.exec(`
         DELETE FROM system_logs 
         WHERE timestamp < ? AND resolved = 1
@@ -471,14 +473,14 @@ export class SystemLogger {
 
       const deletedCount = this.db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
 
-      this.log('INFO', 'SystemLogger', 'cleanup', 
-        `Limpieza de logs completada: ${deletedCount} registros eliminados`, 
+      this.log('INFO', 'SystemLogger', 'cleanup',
+        `Limpieza de logs completada: ${deletedCount} registros eliminados`,
         { daysToKeep, cutoffDate: cutoffDate.toISOString() });
 
       return deletedCount;
     } catch (error) {
       console.error('Error clearing old logs:', error);
-      this.log('ERROR', 'SystemLogger', 'cleanup_failed', 
+      this.log('ERROR', 'SystemLogger', 'cleanup_failed',
         'Error al limpiar logs antiguos', { daysToKeep }, error as Error);
       return 0;
     }
@@ -503,6 +505,14 @@ export class SystemLogger {
 
   critical(module: string, action: string, message: string, data?: any, error?: Error): void {
     this.log('CRITICAL', module, action, message, data, error);
+  }
+
+  emergency(module: string, action: string, message: string, data?: any, error?: Error): void {
+    this.log('CRITICAL', module, action, `🚨 EMERGENCY: ${message}`, data, error);
+  }
+
+  success(module: string, action: string, message: string, data?: any): void {
+    this.log('INFO', module, action, `✅ ${message}`, data);
   }
 }
 

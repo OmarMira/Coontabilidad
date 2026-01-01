@@ -47,15 +47,15 @@ export class InvoiceComplianceValidator {
     public validate(invoice: unknown): ValidationResult {
         const result: ValidationResult = {
             isValid: true,
-            errors: [],
-            warnings: []
+            errors: [] as string[],
+            warnings: [] as string[]
         };
 
         // 1. Validación de Estructura (Schema)
         const parseResult = ComplianceInvoiceSchema.safeParse(invoice);
         if (!parseResult.success) {
             result.isValid = false;
-            result.errors.push(...parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`));
+            result.errors.push(...parseResult.error.issues.map(e => `${e.path.join('.')}: ${e.message}`));
             return result; // Si la estructura está mal, no seguimos con lógica
         }
 

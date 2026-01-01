@@ -43,9 +43,9 @@ export class SystemService {
         const rows = await this.engine.select('SELECT * FROM fiscal_settings ORDER BY id DESC LIMIT 1');
         if (rows.length === 0) return null;
         return {
-            ...rows[0],
+            ...(rows[0] as any),
             active: Boolean(rows[0].active)
-        };
+        } as FiscalSettings;
     }
 
     async updateFiscalSettings(settings: FiscalSettings): Promise<void> {

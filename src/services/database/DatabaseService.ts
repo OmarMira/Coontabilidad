@@ -1,6 +1,6 @@
 import { db } from '../../database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
-import { SECURITY_FILTERS } from '../../config/deepseek';
+import { AI_SECURITY_CONFIG } from '../../config/ai-security';
 
 export class DatabaseService {
     private static instance: DatabaseService;
@@ -30,7 +30,7 @@ export class DatabaseService {
 
         // Verificar que solo accede a tablas permitidas
         const lowerQuery = query.toLowerCase();
-        const isTargetingAllowedTable = SECURITY_FILTERS.allowedTables.some(table =>
+        const isTargetingAllowedTable = AI_SECURITY_CONFIG.allowedTables.some(table =>
             lowerQuery.includes(table.toLowerCase())
         );
 

@@ -1,7 +1,27 @@
 import { QueryProcessor, AIResponse as LegacyAIResponse } from './AIEngine/QueryProcessor';
 import { SYSTEM_GUIDES, ACCOUNTING_KNOWLEDGE } from '../knowledge/SystemKnowledge';
-import { DeepSeekService } from './ai/DeepSeekService';
+import { LocalAIService } from './ai/LocalAIService';
 import { DeepSeekAIResponse } from './ai/types';
+import { getCustomers, getInvoices, getProducts, getSuppliers, getBills } from '../database/simple-db';
+import {
+  getAccountBalances,
+  getIncomeStatement,
+  getFloridaTaxSummary,
+  getInventoryValuation,
+  getTotalSales,
+  getTotalPurchases,
+  getTopCustomer,
+  getTopProduct,
+  getLowStockProducts,
+  getMostExpensiveProduct,
+  getTaxByCounty,
+  getAccountsReceivable,
+  getLatestInvoice,
+  getHighestInvoice,
+  getAuditAlerts,
+  getTopPayingCustomer,
+  getTopSupplier
+} from '../database/accounting-queries';
 
 export interface ConversationResponse {
   content: string;
@@ -21,10 +41,10 @@ export interface ConversationResponse {
 export class ConversationalIAService {
   private static instance: ConversationalIAService;
   private conversationHistory: any[] = [];
-  private deepSeekService: DeepSeekService;
+  private localAIService: LocalAIService;
 
   private constructor() {
-    this.deepSeekService = new DeepSeekService();
+    this.localAIService = new LocalAIService();
   }
 
   static getInstance(): ConversationalIAService {
@@ -40,39 +60,107 @@ export class ConversationalIAService {
     console.log(`📝 SmartRouter procesando: "${userQuery}"`);
 
     try {
-      // 1. INTENTO: DEEPSEEK (Inteligencia Avanzada)
-      // Si la consulta parece compleja, DeepSeek tiene prioridad para dar una respuesta rica
-      if (this.shouldUseDeepSeek(query)) {
-        try {
-          const deepSeekResponse = await this.deepSeekService.processQuery(userQuery, userId);
-          if (!deepSeekResponse.metadata.fallbackUsed) {
-            return this.formatDeepSeekResponse(deepSeekResponse, startTime);
-          } else {
-            console.warn(`[SmartRouter] DeepSeek Service indicó fallback: ${deepSeekResponse.metadata.fallbackReason}`);
+      // --- PRE-CALIFICACIÓN: ¿Es una consulta de datos contables? ---
+      const isDataRequest = this.isDataQuery(query);
+
+      // 0. INTENTO: CONSULTAS DE DATOS LOCALES Y CONTABLES (Prioridad Máxima si es data request)
+      if (isDataRequest) {
+        // A. BALANCE Y SITUACIÓN FINANCIERA
+        if (query.includes('balance') || query.includes('situación') || query.includes('situacion') || query.includes('activo') || query.includes('pasivo') || query.includes('patrimonio')) {
+          const balances = await getAccountBalances();
+          const activo = balances.filter(b => b.account_type === 'asset').reduce((s, b) => s + b.balance, 0);
+          const pasivo = balances.filter(b => b.account_type === 'liability').reduce((s, b) => s + b.balance, 0);
+          const patrimonio = balances.filter(b => b.account_type === 'equity').reduce((s, b) => s + b.balance, 0);
+          const content = `📊 **Estado de Situación:**\n\n• **Activo Total:** $${activo.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Pasivo Total:** $${pasivo.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Patrimonio:** $${patrimonio.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n\n*Nota: Datos calculados en tiempo real desde el catálogo de cuentas.*`;
+          return this.formatLocalResponse(userQuery, content, { activo, pasivo, patrimonio }, 'local-accounting', startTime);
+        }
+
+        // B. GANANCIAS / UTILIDADES
+        if (query.includes('ganancia') || query.includes('utilidad') || query.includes('beneficio') || query.includes('gané') || query.includes('gane') || query.includes('net income')) {
+          const income = await getIncomeStatement();
+          const content = `📈 **Resumen de Utilidades (P&L):**\n\n• **Ingresos Totales:** $${income.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Gastos Totales:** $${income.expenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Utilidad Neta:** $${income.net_income.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n\n${income.net_income > 0 ? '✅ Generando beneficios reales.' : '⚠️ Los egresos están superando los ingresos.'}`;
+          return this.formatLocalResponse(userQuery, content, income, 'local-accounting', startTime);
+        }
+
+        // C. GASTOS / COMPRAS
+        if (query.includes('gasté') || query.includes('gaste') || query.includes('gastos') || query.includes('compra') || query.includes('compré') || query.includes('compre') || query.includes('egresos')) {
+          const purchases = await getTotalPurchases();
+          const content = `💸 **Gastos y Compras:**\n\n• **Total Acumulado:** $${purchases.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Transacciones:** ${purchases.count}\n\nIncluye todos los gastos y facturas de proveedores registrados.`;
+          return this.formatLocalResponse(userQuery, content, purchases, 'local-purchases', startTime);
+        }
+
+        // D. MEJOR CLIENTE / PAGOS
+        if (query.includes('cliente') && (query.includes('pago mas') || query.includes('pagó mas') || query.includes('pagó más') || query.includes('mejor pagador'))) {
+          const top = await getTopPayingCustomer();
+          if (top) {
+            return this.formatLocalResponse(userQuery, `💰 **Mejor Pagador:**\n\nEl cliente que más ha pagado es **${top.name}** con un total de **$${top.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}** en **${top.count}** facturas pagadas.`, top, 'local-analytics', startTime);
           }
-        } catch (error) {
-          console.warn('⚠️ DeepSeek falló, continuando con motor local:', error);
+        }
+
+        if (query.includes('mejor cliente') || query.includes('top cliente') || (query.includes('cliente') && query.includes('compro mas'))) {
+          const top = await getTopCustomer();
+          if (top) {
+            return this.formatLocalResponse(userQuery, `🏆 **Top Cliente:**\n\nTu mejor cliente por volumen de ventas es **${top.name}** con un total de **$${top.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}**.`, top, 'local-analytics', startTime);
+          }
+        }
+
+        // E. PROVEEDORES
+        if (query.includes('mejor proveedor') || query.includes('top proveedor') || (query.includes('proveedor') && (query.includes('compro mas') || query.includes('compro más')))) {
+          const top = await getTopSupplier();
+          if (top) {
+            return this.formatLocalResponse(userQuery, `🤝 **Mejor Proveedor:**\n\nTu proveedor principal es **${top.name}** con un volumen de negocio de **$${top.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}** en **${top.count}** compras.`, top, 'local-analytics', startTime);
+          }
+        }
+
+        // F. INVENTARIO
+        if (query.includes('valor') && (query.includes('inventario') || query.includes('stock') || query.includes('mercancia'))) {
+          const inv = await getInventoryValuation();
+          const content = `📦 **Valoración de Inventario:**\n\n• **Valor Total (Costo):** $${inv.total_value.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Items Activos:** ${inv.item_count}\n\nBasado en existencias actuales por costo unitario.`;
+          return this.formatLocalResponse(userQuery, content, inv, 'local-inventory', startTime);
+        }
+
+        // G. TAX / FLORIDA
+        if (query.includes('impuesto') || query.includes('tax') || query.includes('florida') || query.includes('dr15') || query.includes('dr-15')) {
+          const tax = await getFloridaTaxSummary();
+          const content = `🌴 **Resumen Fiscal Florida:**\n\n• **Impuesto Acumulado:** $${tax.total_tax.toLocaleString('en-US', { minimumFractionDigits: 2 })}\n• **Estado DR-15:** ${tax.dr15_status === 'filed' ? '✅ Presentado' : '⏳ Pendiente'}`;
+          return this.formatLocalResponse(userQuery, content, tax, 'local-tax', startTime);
         }
       }
 
-      // 2. INTENTO: BUSCAR EN GUÍAS DEL SISTEMA (Local Fallback for How-To)
-      const guideMatch = this.findGuideMatch(query);
-      if (guideMatch) {
-        return this.formatKnowledgeResponse(userQuery, guideMatch, 'system_guides', startTime);
+      // 1. INTENTO: BUSCAR EN GUÍAS DEL SISTEMA (Solo si no es una consulta clara de datos)
+      if (!isDataRequest || query.includes('como') || query.includes('pasos') || query.includes('donde')) {
+        const guideMatch = this.findGuideMatch(query);
+        if (guideMatch) {
+          return this.formatKnowledgeResponse(userQuery, guideMatch, 'system_guides', startTime);
+        }
       }
 
-      // 3. INTENTO: BUSCAR EN CONOCIMIENTO CONTABLE/FISCAL (Local Fallback)
+      // 2. INTENTO: DEEPSEEK (Inteligencia Avanzada para análisis complejo)
+      if (this.shouldUseDeepSeek(query)) {
+        try {
+          const localAIResponse = await this.localAIService.processQuery(userQuery, userId);
+          if (!localAIResponse.metadata.fallbackUsed) {
+            return this.formatDeepSeekResponse(localAIResponse, startTime);
+          }
+        } catch (error) {
+          console.warn('⚠️ Local AI falló, continuando con motor local:', error);
+        }
+      }
+
+      // 3. FALLBACK: PROCESAR CON QUERY PROCESSOR (SQL DINÁMICO)
+      const aiResponse = await QueryProcessor.process(userQuery);
+      if (aiResponse && aiResponse.formattedResponse && !aiResponse.formattedResponse.includes('financial_summary')) {
+        this.addToHistory(aiResponse);
+        return this.formatForConversation(aiResponse);
+      }
+
+      // 4. ÚLTIMO RECURSO: CONOCIMIENTO GENERAL
       const knowledgeMatch = this.findKnowledgeMatch(query);
       if (knowledgeMatch) {
         return this.formatKnowledgeResponse(userQuery, knowledgeMatch, 'accounting_knowledge', startTime);
       }
 
-      // 4. FALLBACK: PROCESAR CON QUERY PROCESSOR (SQL)
-      const aiResponse = await QueryProcessor.process(userQuery);
-      this.addToHistory(aiResponse);
-      const conversationResponse = this.formatForConversation(aiResponse);
-      console.log(`✅ Consulta SQL procesada: ${aiResponse.intent.category}`);
-      return conversationResponse;
+      return this.formatLocalResponse(userQuery, "Lo siento, no pude encontrar una respuesta precisa a tu consulta de datos. ¿Podrías ser más específico o pedirme ayuda sobre cómo usar una función?", null, 'fallback', startTime);
 
     } catch (error) {
       console.error('❌ Error en ConversationalIAService:', error);
@@ -80,13 +168,41 @@ export class ConversationalIAService {
     }
   }
 
-  private shouldUseDeepSeek(query: string): boolean {
-    const complexKeywords = [
-      'por que', 'analisis', 'recomienda', 'explicame', 'diferencia',
-      'estrategia', 'macrs', 'depreciacion', 'acelerada', 'fiscal',
-      'legal', 'florida', 'tax', 'impuesto', 'dr-15'
+  /**
+   * Determina si la consulta es de DATOS (números, resúmenes, auditoría) 
+   * vs una consulta de AYUDA/GUÍA.
+   */
+  private isDataQuery(query: string): boolean {
+    const dataKeywords = [
+      'cuanto', 'cuánto', 'quien', 'quién', 'total', 'ganancia', 'gaste', 'gasté',
+      'balance', 'valor', 'stock', 'debo', 'deben', 'impuesto', 'tax', 'mejor',
+      'top', 'vendí', 'vendi', 'compré', 'compre', 'situacion', 'situación',
+      'pago', 'pagó', 'pagador', 'compras', 'ventas', 'factura'
     ];
-    return complexKeywords.some(k => query.includes(k)) || query.split(' ').length > 8;
+
+    // Si contiene Keywords de datos
+    return dataKeywords.some(k => query.includes(k));
+  }
+
+  private formatLocalResponse(query: string, content: string, data: any, dataSource: string, startTime: number): ConversationResponse {
+    return {
+      content,
+      data,
+      metadata: {
+        query,
+        timestamp: new Date().toISOString(),
+        intent: 'local_data_query',
+        confidence: 1.0,
+        dataSource,
+        processingTime: Date.now() - startTime
+      },
+      suggestions: [
+        "Ver más detalles",
+        "Generar reporte PDF",
+        "Ir al Dashboard principal"
+      ],
+      requiresAttention: false
+    };
   }
 
   private formatDeepSeekResponse(aiRes: DeepSeekAIResponse, startTime: number): ConversationResponse {
@@ -158,10 +274,10 @@ export class ConversationalIAService {
 
       let content = `📖 **${guide.title}**\n\n${guide.description || ''}\n\n`;
       content += `**Pasos:**\n`;
-      guide.steps.forEach((step, i) => content += `${i + 1}. ${step}\n`);
+      guide.steps.forEach((step: string, i: number) => content += `${i + 1}. ${step}\n`);
       if (guide.tips) {
         content += `\n💡 **Tips:**\n`;
-        guide.tips.forEach(tip => content += `• ${tip}\n`);
+        guide.tips.forEach((tip: string) => content += `• ${tip}\n`);
       }
       content += `\n📍 **Ubicación:** ${guide.relatedMenu}`;
       return content;
@@ -304,6 +420,15 @@ export class ConversationalIAService {
     if (this.conversationHistory.length > 20) {
       this.conversationHistory = this.conversationHistory.slice(0, 20);
     }
+  }
+
+  private shouldUseDeepSeek(query: string): boolean {
+    const complexKeywords = [
+      'por que', 'analisis', 'recomienda', 'explicame', 'diferencia',
+      'estrategia', 'macrs', 'depreciacion', 'acelerada', 'fiscal',
+      'legal', 'florida', 'tax', 'impuesto', 'dr-15'
+    ];
+    return complexKeywords.some(k => query.includes(k)) || query.split(' ').length > 8;
   }
 }
 

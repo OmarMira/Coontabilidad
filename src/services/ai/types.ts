@@ -34,6 +34,44 @@ export interface AssistantContext {
     }>;
 }
 
+export interface AIResponse {
+    content: string;
+    intent: string;
+    information: string;
+    action: string;
+    explanation: string;
+    considerations: string;
+    metadata: {
+        model: string;
+        processingTime: number;
+        dataSource: string;
+    };
+}
+
+export interface IAnalysisService {
+    analyzeFinancialHealth(): Promise<AIResponse>;
+    explainTaxCalculation(taxData: any): Promise<AIResponse>;
+    processQuery(query: string, userId?: number): Promise<DeepSeekAIResponse>;
+}
+
+export interface OllamaConfig {
+    model: string;
+    baseUrl?: string;
+    temperature?: number;
+    top_p?: number;
+    num_ctx?: number;
+    enable_thinking?: boolean;
+    thinking_tokens?: number;
+    system_prompt?: string;
+    options?: {
+        temperature: number;
+        top_p: number;
+        num_ctx: number;
+    };
+}
+
+export interface LocalAIResponse extends DeepSeekAIResponse { }
+
 export interface DeepSeekAIResponse {
     id: string;
     timestamp: string;

@@ -1,3 +1,5 @@
+import { getCustomers, getInvoices, getProducts } from '../database/simple-db';
+
 /**
  * BASE DE CONOCIMIENTO DEL SISTEMA - GUÍAS Y OPERACIONES
  * 
@@ -6,8 +8,22 @@
  */
 
 // ===========================================
-// GUÍAS DEL SISTEMA (OPERACIONES)
+// DATOS EN TIEMPO REAL (DINÁMICO)
 // ===========================================
+
+export const getSystemStats = () => {
+    const customers = getCustomers();
+    const invoices = getInvoices();
+    const products = getProducts();
+
+    return {
+        customerCount: customers.length,
+        invoiceCount: invoices.length,
+        productCount: products.length,
+        revenue: invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0),
+        pendingAmount: invoices.filter(inv => inv.status !== 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0)
+    };
+};
 
 interface SystemGuide {
     title: string;
