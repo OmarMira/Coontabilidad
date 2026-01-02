@@ -1551,18 +1551,18 @@ const insertInitialTaxRates = async (): Promise<void> => {
 
   db.run(`
     INSERT INTO florida_tax_rates (county_name, state_rate, county_rate, total_rate) VALUES
-    ('Miami-Dade', 0.06, 0.01, 0.07),
-    ('Broward', 0.06, 0.01, 0.07),
-    ('Palm Beach', 0.06, 0.01, 0.07),
+    ('Miami-Dade', 0.06, 0.005, 0.065),
+    ('Broward', 0.06, 0.00, 0.06),
+    ('Palm Beach', 0.06, 0.00, 0.06),
     ('Orange', 0.06, 0.005, 0.065),
-    ('Hillsborough', 0.06, 0.015, 0.075),
+    ('Hillsborough', 0.06, 0.005, 0.065),
     ('Monroe', 0.06, 0.015, 0.075),
-    ('Duval', 0.06, 0.015, 0.075),
+    ('Duval', 0.06, 0.0075, 0.0675),
     ('Pinellas', 0.06, 0.01, 0.07),
-    ('Lee', 0.06, 0.005, 0.065)
+    ('Lee', 0.06, 0.01, 0.07)
   `);
 
-  console.log('Initial tax rates inserted successfully');
+  console.log('Initial tax rates inserted successfully (2026 rates)');
 };
 
 // Configurar auto-save
