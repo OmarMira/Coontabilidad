@@ -414,7 +414,7 @@ export const BillForm: React.FC<BillFormProps> = ({
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-gray-300">
-              <span>Impuestos (7.5% FL):</span>
+              <span>Impuestos ({(getFloridaTaxRate(selectedSupplier?.florida_county || 'Miami-Dade') * 100).toFixed(1)}% FL):</span>
               <span>${taxAmount.toFixed(2)}</span>
             </div>
             <div className="border-t border-gray-700 pt-2">

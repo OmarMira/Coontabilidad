@@ -78,7 +78,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             <User className="w-5 h-5 text-blue-400" />
             Customer Information
           </h2>
-          
+
           <div className="space-y-3">
             <div>
               <p className="text-gray-400 text-sm">Customer Name</p>
@@ -86,7 +86,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
                 {invoice.customer?.business_name || invoice.customer?.name || 'Unknown Customer'}
               </p>
             </div>
-            
+
             {invoice.customer?.email && (
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-400" />
@@ -96,7 +96,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
                 </div>
               </div>
             )}
-            
+
             {invoice.customer?.phone && (
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-400" />
@@ -106,7 +106,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
                 </div>
               </div>
             )}
-            
+
             {invoice.customer?.address_line1 && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-400 mt-1" />
@@ -128,13 +128,13 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             <Calendar className="w-5 h-5 text-blue-400" />
             Invoice Details
           </h2>
-          
+
           <div className="space-y-3">
             <div>
               <p className="text-gray-400 text-sm">Invoice Number</p>
               <p className="text-white font-medium">{invoice.invoice_number}</p>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-400 text-sm">Issue Date</p>
@@ -145,12 +145,12 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
                 <p className="text-white">{new Date(invoice.due_date).toLocaleDateString()}</p>
               </div>
             </div>
-            
+
             <div>
               <p className="text-gray-400 text-sm">Created</p>
               <p className="text-white">{new Date(invoice.created_at).toLocaleString()}</p>
             </div>
-            
+
             {invoice.notes && (
               <div>
                 <p className="text-gray-400 text-sm">Notes</p>
@@ -168,7 +168,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             Invoice Items
           </h2>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-900">
@@ -222,18 +222,18 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
               <DollarSign className="w-5 h-5 text-blue-400" />
               Invoice Summary
             </h2>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between text-gray-300">
                 <span>Subtotal:</span>
                 <span>${invoice.subtotal.toFixed(2)}</span>
               </div>
-              
+
               <div className="flex justify-between text-gray-300">
-                <span>Tax (7.5% FL):</span>
+                <span>Tax (FL):</span>
                 <span>${invoice.tax_amount.toFixed(2)}</span>
               </div>
-              
+
               <div className="border-t border-gray-700 pt-2">
                 <div className="flex justify-between text-white font-semibold text-xl">
                   <span>Total:</span>
