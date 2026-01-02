@@ -9,13 +9,13 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { 
-  Download, 
-  Upload, 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  Lock, 
+import {
+  Download,
+  Upload,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  Lock,
   Database,
   FileText,
   Clock,
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { backupService, BackupResult, RestoreResult } from '../services/BackupService';
 import { logger } from '../core/logging/SystemLogger';
+import { DatabaseMaintenance } from './maintenance/DatabaseMaintenance';
 
 export const BackupRestore: React.FC = () => {
   // Estados para exportación
@@ -84,7 +85,7 @@ export const BackupRestore: React.FC = () => {
         console.error('Error loading service info:', error);
       }
     };
-    
+
     loadServiceInfo();
     loadSystemInfo();
   }, []);
@@ -93,19 +94,19 @@ export const BackupRestore: React.FC = () => {
     try {
       // Obtener fecha del último backup desde localStorage
       const lastBackupDate = localStorage.getItem('lastBackupDate');
-      
+
       // Calcular tamaño estimado de la base de datos
       let estimatedSize = 'No disponible';
       try {
         // Importar la base de datos para obtener estadísticas
         const dbModule = await import('../database/simple-db');
         const db = (dbModule as any).db;
-        
+
         if (db) {
           // Obtener número de páginas y tamaño de página
           const pageSizeResult = db.exec('PRAGMA page_size');
           const pageCountResult = db.exec('PRAGMA page_count');
-          
+
           if (pageSizeResult.length > 0 && pageCountResult.length > 0) {
             const pageSize = pageSizeResult[0].values[0][0] as number;
             const pageCount = pageCountResult[0].values[0][0] as number;
@@ -163,13 +164,13 @@ export const BackupRestore: React.FC = () => {
 
       if (result.success) {
         setLastBackupInfo(result);
-        
+
         // Guardar fecha del último backup en localStorage
         localStorage.setItem('lastBackupDate', new Date().toISOString());
-        
+
         // Recargar información del sistema
         loadSystemInfo();
-        
+
         // Mensaje de éxito más detallado
         const successMessage = `✅ Backup creado exitosamente!\n\n` +
           `📁 Archivo: ${result.filename}\n` +
@@ -177,13 +178,13 @@ export const BackupRestore: React.FC = () => {
           `🕒 Fecha: ${new Date().toLocaleString()}\n` +
           `🔒 Cifrado: AES-256-GCM\n\n` +
           `El archivo se ha descargado automáticamente a su carpeta de Descargas.`;
-        
+
         showMessage('success', successMessage);
-        
+
         // Limpiar formulario
         setExportPassword('');
         setConfirmPassword('');
-        
+
         logger.info('BackupRestore', 'export_success', 'Backup exportado por usuario', {
           filename: result.filename,
           size: result.size
@@ -243,9 +244,9 @@ export const BackupRestore: React.FC = () => {
           `🕒 Fecha: ${new Date().toLocaleString()}\n\n` +
           `Todos sus datos han sido restaurados correctamente.\n` +
           `Se recomienda recargar la página para ver los cambios.`;
-        
+
         showMessage('success', successMessage);
-        
+
         // Limpiar formulario
         setSelectedFile(null);
         setImportPassword('');
@@ -325,20 +326,18 @@ export const BackupRestore: React.FC = () => {
 
       {/* Mensajes */}
       {message && (
-        <div className={`rounded-lg p-6 ${
-          message.type === 'success' ? 'bg-green-900/20 border border-green-700' :
+        <div className={`rounded-lg p-6 ${message.type === 'success' ? 'bg-green-900/20 border border-green-700' :
           message.type === 'error' ? 'bg-red-900/20 border border-red-700' :
-          'bg-yellow-900/20 border border-yellow-700'
-        }`}>
+            'bg-yellow-900/20 border border-yellow-700'
+          }`}>
           <div className="flex items-start space-x-3">
             {message.type === 'success' && <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0 mt-0.5" />}
             {message.type === 'error' && <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />}
             {message.type === 'warning' && <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />}
-            <div className={`flex-1 ${
-              message.type === 'success' ? 'text-green-300' :
+            <div className={`flex-1 ${message.type === 'success' ? 'text-green-300' :
               message.type === 'error' ? 'text-red-300' :
-              'text-yellow-300'
-            }`}>
+                'text-yellow-300'
+              }`}>
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
                 {message.text}
               </pre>
@@ -360,22 +359,20 @@ export const BackupRestore: React.FC = () => {
       <div className="flex space-x-1 bg-gray-800 rounded-lg p-1">
         <button
           onClick={() => setActiveTab('export')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'export'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-gray-700'
-          }`}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'export'
+            ? 'bg-blue-600 text-white'
+            : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
         >
           <Download className="w-4 h-4 inline mr-2" />
           Crear Backup
         </button>
         <button
           onClick={() => setActiveTab('import')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'import'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-400 hover:text-white hover:bg-gray-700'
-          }`}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${activeTab === 'import'
+            ? 'bg-blue-600 text-white'
+            : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
         >
           <Upload className="w-4 h-4 inline mr-2" />
           Restaurar Backup
@@ -480,7 +477,7 @@ export const BackupRestore: React.FC = () => {
                     <li className="flex items-center justify-between">
                       <span>Último backup:</span>
                       <span className="font-mono">
-                        {systemInfo.lastBackupDate 
+                        {systemInfo.lastBackupDate
                           ? new Date(systemInfo.lastBackupDate).toLocaleString()
                           : 'Nunca'
                         }
@@ -645,6 +642,9 @@ export const BackupRestore: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Componente de Mantenimiento de Base de Datos */}
+      <DatabaseMaintenance />
     </div>
   );
 };

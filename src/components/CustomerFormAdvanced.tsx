@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Save, X, User, MapPin, CreditCard, FileText } from 'lucide-react';
 import { FLORIDA_COUNTIES } from '../database/simple-db';
-import { AddressAutocomplete } from './AddressAutocomplete';
-import { addressService } from '../services/addressService';
+import { AddressAutocomplete } from './ui/AddressAutocomplete';
 
 interface CustomerFormAdvancedProps {
   onSubmit: (customerData: any) => void;
@@ -11,11 +10,11 @@ interface CustomerFormAdvancedProps {
   isEditing?: boolean;
 }
 
-export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({ 
-  onSubmit, 
-  onCancel, 
+export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
+  onSubmit,
+  onCancel,
   initialData,
-  isEditing = false 
+  isEditing = false
 }) => {
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
@@ -25,13 +24,13 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
     document_type: initialData?.document_type || 'SSN',
     document_number: initialData?.document_number || '',
     business_type: initialData?.business_type || '',
-    
+
     // Datos de contacto
     email: initialData?.email || '',
     email_secondary: initialData?.email_secondary || '',
     phone: initialData?.phone || '',
     phone_secondary: initialData?.phone_secondary || '',
-    
+
     // Dirección
     address_line1: initialData?.address_line1 || '',
     address_line2: initialData?.address_line2 || '',
@@ -39,14 +38,14 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
     state: initialData?.state || 'FL',
     zip_code: initialData?.zip_code || '',
     florida_county: initialData?.florida_county || 'Miami-Dade',
-    
+
     // Datos comerciales
     credit_limit: initialData?.credit_limit || 0,
     payment_terms: initialData?.payment_terms || 30,
     tax_exempt: initialData?.tax_exempt || false,
     tax_id: initialData?.tax_id || '',
     assigned_salesperson: initialData?.assigned_salesperson || '',
-    
+
     // Metadatos
     status: initialData?.status || 'active',
     notes: initialData?.notes || ''
@@ -106,10 +105,10 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       onSubmit(formData);
-      
+
       // Reset form if not editing
       if (!isEditing) {
         setFormData({
@@ -126,7 +125,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -135,39 +134,22 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
   const handleAddressSelect = async (addressDetails: any) => {
     console.log('Address selected:', addressDetails);
-    
+
     // Actualizar los campos de dirección con los datos seleccionados
     setFormData(prev => ({
       ...prev,
+      address_line1: addressDetails.address,
       city: addressDetails.city,
       state: addressDetails.state,
       zip_code: addressDetails.zipCode,
-      florida_county: addressDetails.state === 'FL' ? 
-        addressService.getFloridaCounty(addressDetails.county || '', addressDetails.city) : 
+      florida_county: addressDetails.state === 'FL' && addressDetails.county ?
+        addressDetails.county :
         prev.florida_county
     }));
   };
 
   const handleZipCodeChange = async (zipCode: string) => {
     handleInputChange('zip_code', zipCode);
-    
-    // Si el código postal tiene 5 dígitos, buscar automáticamente
-    if (zipCode.length === 5 && /^\d{5}$/.test(zipCode)) {
-      try {
-        const result = await addressService.searchByZipCode(zipCode);
-        if (result) {
-          setFormData(prev => ({
-            ...prev,
-            city: result.city,
-            state: result.stateCode,
-            zip_code: result.zipCode,
-            florida_county: result.stateCode === 'FL' ? result.county : prev.florida_county
-          }));
-        }
-      } catch (error) {
-        console.error('Error searching by zip code:', error);
-      }
-    }
   };
 
   const renderPersonalTab = () => (
@@ -181,9 +163,8 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             type="text"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
-            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.name ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.name ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="Ej: Juan Pérez o Acme Corp LLC"
             required
           />
@@ -260,9 +241,8 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             type="email"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
-            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.email ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.email ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="ejemplo@email.com"
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
@@ -291,9 +271,8 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             type="tel"
             value={formData.phone}
             onChange={(e) => handleInputChange('phone', e.target.value)}
-            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.phone ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.phone ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="(305) 555-0123"
           />
           {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
@@ -320,7 +299,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4 mb-4">
         <h4 className="text-blue-300 font-medium mb-2">🌟 Autocompletado de Direcciones</h4>
         <p className="text-blue-200 text-sm">
-          Busca por ciudad, estado o código postal. Incluye más de 400 ciudades principales de Estados Unidos. 
+          Busca por ciudad, estado o código postal. Incluye más de 400 ciudades principales de Estados Unidos.
           Usa APIs gratuitas de OpenStreetMap para sugerir direcciones adicionales.
         </p>
       </div>
@@ -331,9 +310,11 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
           Buscar Ciudad/Estado/Código Postal
         </label>
         <AddressAutocomplete
+          value={formData.address_line1}
+          onChange={(addr) => handleInputChange('address_line1', addr)}
           onAddressSelect={handleAddressSelect}
-          placeholder="Ej: Miami, New York, 33101, Los Angeles, Chicago..."
-          className="mb-4"
+          placeholder="Empiece a escribir una dirección..."
+          className="w-full bg-gray-700 text-white px-4 py-2 rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none"
         />
         <p className="text-xs text-gray-400 mt-1">
           💡 Tip: Escribe al menos 2 caracteres. Funciona con ciudades, estados y códigos postales de todo Estados Unidos
@@ -405,9 +386,8 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             type="text"
             value={formData.zip_code}
             onChange={(e) => handleZipCodeChange(e.target.value)}
-            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.zip_code ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.zip_code ? 'border-red-500' : 'border-gray-600 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="33101"
             maxLength={10}
           />
@@ -584,25 +564,24 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
           </>
         )}
       </h2>
-      
+
       {/* Pestañas */}
       <div className="flex space-x-1 mb-6 bg-gray-900 p-1 rounded-lg">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${
-              activeTab === tab.id
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${activeTab === tab.id
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
           </button>
         ))}
       </div>
-      
+
       <form onSubmit={handleSubmit}>
         {/* Contenido de las pestañas */}
         <div className="min-h-[400px]">
@@ -629,7 +608,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
                 Anterior
               </button>
             )}
-            
+
             {activeTab !== 'commercial' && (
               <button
                 type="button"
@@ -659,11 +638,10 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             )}
             <button
               type="submit"
-              className={`px-6 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                isEditing
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}
+              className={`px-6 py-2 rounded-md transition-colors flex items-center gap-2 ${isEditing
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
             >
               {isEditing ? (
                 <>

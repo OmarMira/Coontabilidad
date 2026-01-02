@@ -1,49 +1,22 @@
+
 import initSqlJs from 'sql.js';
 import { logger } from '../core/logging/SystemLogger';
+import { SchemaRepairService } from './SchemaRepairService';
 
 export class DatabaseInitializer {
-    /**
-     * Inicializa la base de datos de forma segura, manejando restricciones de claves foráneas
-     * y asegurando un orden correcto de creación de tablas.
-     */
     static async initializeWithFix(db: initSqlJs.Database): Promise<void> {
         try {
-            logger.info('Database', 'fix_init_start', 'Iniciando inicialización robusta con manejo de FK');
+            logger.info('Database', 'init', 'Iniciando verificación de esquema...');
+            const repairService = new SchemaRepairService(db);
+            const repairLogs = await repairService.repairSchema();
 
-            // 1. DESACTIVAR FK TEMPORALMENTE para permitir creación y seeding sin bloqueos
-            db.run('PRAGMA foreign_keys = OFF;');
-            logger.debug('Database', 'fk_disabled', 'Claves foráneas desactivadas temporalmente');
-
-            // 2. CREACIÓN DE TABLAS Y VISTAS (Ya se maneja en simple-db)
-
-            // 3. SEEDING DE DATOS (Ya se maneja en simple-db)
-
-            // 4. VERIFICAR INTEGRIDAD Y REACTIVAR FK
-            db.run('PRAGMA foreign_keys = ON;');
-            logger.debug('Database', 'fk_enabled', 'Claves foráneas reactivadas');
-
-            // 5. VERIFICACIÓN FINAL DE INTEGRIDAD
-            const fkCheck = db.exec('PRAGMA foreign_key_check;');
-            if (fkCheck.length > 0) {
-                const errors = fkCheck[0].values.map(row =>
-                    `Tabla ${row[0]}, fila ${row[1]}, destino FK ${row[2]}`
-                );
-                logger.error('Database', 'fk_violations', 'Violaciones de integridad detectadas', { errors });
-            } else {
-                logger.success('Database', 'integrity_check', 'Integridad de base de datos verificada correctamente');
-            }
+            repairLogs.forEach(log => {
+                if (log.startsWith('❌')) logger.error('Database', 'repair_failed', log);
+                else logger.info('Database', 'repair_success', log);
+            });
 
         } catch (error: any) {
-            logger.critical('Database', 'fix_init_failed', 'Error en la inicialización robusta', { error: error.message });
-            throw error;
+            logger.error('Database', 'init_failed', error.message);
         }
-    }
-
-    /**
-     * Método estático para verificar FK individualmente si es necesario
-     */
-    static verifyIntegrity(db: initSqlJs.Database): boolean {
-        const result = db.exec('PRAGMA foreign_key_check;');
-        return result.length === 0;
     }
 }

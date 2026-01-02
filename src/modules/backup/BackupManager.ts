@@ -35,8 +35,21 @@ export class BackupManager {
     async createBackup(options: BackupOptions = {}): Promise<BackupFileContainer> {
         // 1. Gather Data
         const tablesToBackup = options.tables || [
-            'invoices', 'invoice_lines', 'customers', 'suppliers',
-            'products', 'audit_chain', 'florida_tax_rates'
+            'company_data',
+            'payment_methods',
+            'bank_accounts',
+            'customers',
+            'suppliers',
+            'products',
+            'invoices',
+            'invoice_lines',
+            'bills',
+            'bill_lines',
+            'payments',
+            'journal_entries',
+            'journal_details',
+            'florida_tax_rates',
+            'audit_chain'
         ];
 
         const dbDump: Record<string, any[]> = {};

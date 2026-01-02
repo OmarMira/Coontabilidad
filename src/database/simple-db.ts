@@ -1318,8 +1318,42 @@ const createSchema = async (): Promise<void> => {
 const insertSampleData = async (): Promise<void> => {
   if (!db) return;
 
-  // Clientes de ejemplo con datos completos
-  db.run(`
+  // ============================================
+  // ORDEN SEGURO: Desactivar FKs durante seeding
+  // ============================================
+  db.run(`PRAGMA foreign_keys = OFF`);
+
+  try {
+    // PASO 1: Tablas maestras SIN dependencias
+    // -----------------------------------------
+
+    // 1.1 Métodos de Pago (Sin FK)
+    db.run(`
+      INSERT INTO payment_methods (name, type, is_active, requires_reference) VALUES 
+      ('Efectivo', 'cash', 1, 0),
+      ('Transferencia Bancaria', 'bank_transfer', 1, 1),
+      ('Cheque', 'check', 1, 1),
+      ('Tarjeta de Crédito', 'credit_card', 1, 1),
+      ('Zelle', 'digital', 1, 1)
+    `);
+
+    // 1.2 Datos de la Empresa (Sin FK)
+    db.run(`
+      INSERT INTO company_data (
+        company_name, legal_name, address, city, state, zip_code, phone, email, tax_id, 
+        fiscal_year_start, currency, timezone, date_format, is_active
+      ) VALUES (
+        'Account Express Demo Inc.', 'Account Express Demo Inc.', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000', 
+        'admin@accountexpress.com', 'US-DEMO-123', 
+        '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
+      )
+    `);
+
+    // PASO 2: Tablas con FK (después de maestras)
+    // --------------------------------------------
+
+    // Clientes de ejemplo con datos completos
+    db.run(`
     INSERT INTO customers (
       name, business_name, document_type, document_number, business_type,
       email, phone, address_line1, city, state, zip_code, florida_county,
@@ -1342,34 +1376,42 @@ const insertSampleData = async (): Promise<void> => {
     )
   `);
 
-  // Los productos ya se insertan en insertInitialProducts
+    // Los productos ya se insertan en insertInitialProducts
 
-  // Facturas de ejemplo
-  db.run(`
+    // Facturas de ejemplo
+    db.run(`
     INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES 
     ('INV-2024-001', 1, '2024-01-15', '2024-02-14', 1500.00, 105.00, 1605.00, 'paid'),
     ('INV-2024-002', 2, '2024-01-20', '2024-02-04', 299.99, 19.50, 319.49, 'sent'),
     ('INV-2024-003', 3, '2024-01-25', '2024-03-10', 2500.00, 175.00, 2675.00, 'draft')
   `);
 
-  // Líneas de factura de ejemplo
-  db.run(`
+    // Líneas de factura de ejemplo
+    db.run(`
     INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, line_total) VALUES 
     (1, 1, 'Consultoría Contable - 10 horas', 10.000, 150.00, 1500.00),
     (2, 2, 'Software License - Anual', 1.000, 299.99, 299.99),
     (3, 3, 'Auditoría Fiscal Completa', 5.000, 500.00, 2500.00)
   `);
 
-  // Pagos de ejemplo
-  db.run(`
+    // Pagos de ejemplo
+    db.run(`
     INSERT INTO payments (customer_id, invoice_id, payment_number, payment_date, amount, payment_method, reference_number) VALUES 
     (1, 1, 'PAY-2024-001', '2024-02-10', 1605.00, 'bank_transfer', 'TXN-789456123'),
     (2, NULL, 'PAY-2024-002', '2024-01-25', 500.00, 'check', 'CHK-001234')
   `);
 
-  // Tasas de impuestos para condados principales
-  db.run(`
-    INSERT INTO florida_tax_rates (county_name, county_rate, total_rate) VALUES 
+    // Tasas de impuestos para condados principales (REPARACIÓN: Dedup)
+
+    // 1. Limpieza de duplicados existentes
+    db.run(`DELETE FROM florida_tax_rates WHERE id NOT IN (SELECT MIN(id) FROM florida_tax_rates GROUP BY county_name)`);
+
+    // 2. Asegurar unicidad futura
+    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_florida_county ON florida_tax_rates(county_name)`);
+
+    // 3. Insertar solo si no existen
+    db.run(`
+    INSERT OR IGNORE INTO florida_tax_rates (county_name, county_rate, total_rate) VALUES 
     ('Miami-Dade', 0.01, 0.07),
     ('Orange', 0.005, 0.065),
     ('Hillsborough', 0.0075, 0.0675),
@@ -1377,8 +1419,8 @@ const insertSampleData = async (): Promise<void> => {
     ('Palm Beach', 0.01, 0.07)
   `);
 
-  // Proveedores de ejemplo
-  db.run(`
+    // Proveedores de ejemplo
+    db.run(`
     INSERT INTO suppliers (
       name, business_name, document_type, document_number, business_type,
       email, phone, address_line1, city, state, zip_code, florida_county,
@@ -1411,8 +1453,8 @@ const insertSampleData = async (): Promise<void> => {
     )
   `);
 
-  // Facturas de compra de ejemplo
-  db.run(`
+    // Facturas de compra de ejemplo
+    db.run(`
     INSERT INTO bills (bill_number, supplier_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES 
     ('BILL-2024-001', 1, '2024-01-10', '2024-02-09', 2000.00, 140.00, 2140.00, 'approved'),
     ('BILL-2024-002', 2, '2024-01-15', '2024-01-30', 850.00, 55.25, 905.25, 'received'),
@@ -1420,8 +1462,8 @@ const insertSampleData = async (): Promise<void> => {
     ('BILL-2024-004', 4, '2024-01-22', '2024-02-21', 500.00, 35.00, 535.00, 'approved')
   `);
 
-  // Líneas de factura de compra de ejemplo
-  db.run(`
+    // Líneas de factura de compra de ejemplo
+    db.run(`
     INSERT INTO bill_lines (bill_id, product_id, description, quantity, unit_price, line_total) VALUES 
     (1, 2, 'Software Licenses - Bulk Purchase', 10.000, 200.00, 2000.00),
     (2, 4, 'Office Equipment Setup', 5.000, 170.00, 850.00),
@@ -1429,19 +1471,19 @@ const insertSampleData = async (): Promise<void> => {
     (4, 3, 'Shipping Fees', 1.000, 500.00, 500.00)
   `);
 
-  // Asientos Contables de ejemplo (Journal Entries)
-  db.run(`
+    // Asientos Contables de ejemplo (Journal Entries)
+    db.run(`
     INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES 
     ('2024-01-01', 'OB-2024', 'Asiento de Apertura', 100000.00, 100000.00),
     ('2024-01-15', 'INV-2024-001', 'Venta a John Smith', 1605.00, 1605.00),
     ('2024-01-20', 'BILL-2024-003', 'Pago a Florida Business Services', 1605.00, 1605.00)
   `);
 
-  // Detalles de Asientos Contables (Journal Details)
-  // 1. Apertura: Caja (1112) Debit 100k, Capital (3110) Credit 100k
-  // 2. Venta: Cuentas por Cobrar (1121) Debit 1605, Ventas (4110) Credit 1500, Tax Payable (2121) Credit 105
-  // 3. Compra: Gastos Profesionales (5240) Debit 1500, Tax Credit (1121?) Debit 105, Cash (1112) Credit 1605
-  db.run(`
+    // Detalles de Asientos Contables (Journal Details)
+    // 1. Apertura: Caja (1112) Debit 100k, Capital (3110) Credit 100k
+    // 2. Venta: Cuentas por Cobrar (1121) Debit 1605, Ventas (4110) Credit 1500, Tax Payable (2121) Credit 105
+    // 3. Compra: Gastos Profesionales (5240) Debit 1500, Tax Credit (1121?) Debit 105, Cash (1112) Credit 1605
+    db.run(`
     INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount, description) VALUES 
     (1, '1112', 100000.00, 0, 'Apertura de banco'),
     (1, '3110', 0, 100000.00, 'Aporte de capital'),
@@ -1453,7 +1495,16 @@ const insertSampleData = async (): Promise<void> => {
     (3, '1112', 0, 1605.00, 'Pago en efectivo/banco')
   `);
 
-  console.log('Sample data and Journal Entries inserted successfully');
+    console.log('Sample data and Journal Entries inserted successfully');
+  } catch (error) {
+    console.error('Error inserting sample data:', error);
+    throw error;
+  } finally {
+    // PASO 3: Reactivar Foreign Keys
+    // -------------------------------
+    db.run(`PRAGMA foreign_keys = ON`);
+    console.log('✅ Foreign Keys reactivadas - Base de datos segura');
+  }
 };
 
 // Insertar categorías de productos iniciales

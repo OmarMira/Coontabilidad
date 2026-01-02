@@ -3,6 +3,7 @@ import { InvoiceForm } from '@/components/invoices/InvoiceForm';
 import { TaxComplianceDashboard } from './components/TaxComplianceDashboard';
 import { AuditChainStatus } from './components/AuditChainStatus';
 import { BackupRestoreWidget } from './components/BackupRestoreWidget';
+import { DatabaseMaintenance } from '@/components/maintenance/DatabaseMaintenance';
 
 export const ForensicDemoPage: React.FC = () => {
     return (
@@ -39,6 +40,7 @@ export const ForensicDemoPage: React.FC = () => {
                             <TaxComplianceDashboard />
                             <AuditChainStatus />
                             <BackupRestoreWidget />
+                            <DatabaseMaintenance />
                         </div>
                     </section>
 

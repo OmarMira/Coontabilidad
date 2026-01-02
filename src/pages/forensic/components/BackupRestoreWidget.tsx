@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Database, Download, Upload, Loader2, Check } from 'lucide-react';
@@ -16,6 +16,7 @@ export const BackupRestoreWidget: React.FC = () => {
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState<string>('');
     const [backupManager] = useState(() => new BackupManager(new SQLiteEngine()));
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleBackup = async () => {
         setLoading(true);
@@ -37,6 +38,39 @@ export const BackupRestoreWidget: React.FC = () => {
         }
     };
 
+    const handleRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setLoading(true);
+        setStatus('Reading backup file...');
+        setProgress(20);
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            setStatus('Decrypting and Restoring...');
+            setProgress(50);
+
+            // Assuming default password for now or prompting - for MVP executing with default
+            await backupManager.restoreBackup(uint8Array, 'default-system-key');
+
+            setProgress(100);
+            setStatus('System successfully restored!');
+
+            // Reload to reflect changes
+            setTimeout(() => window.location.reload(), 2000);
+
+        } catch (error) {
+            console.error(error);
+            setStatus('Restore Failed: Invalid file or password');
+        } finally {
+            setLoading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -51,10 +85,22 @@ export const BackupRestoreWidget: React.FC = () => {
                         {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
                         Backup
                     </Button>
-                    <Button variant="outline" disabled={loading} className="w-full">
+                    <Button
+                        variant="outline"
+                        disabled={loading}
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
                         <Upload className="w-4 h-4 mr-2" />
                         Restore
                     </Button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleRestoreFile}
+                        className="hidden"
+                        accept=".enc,.backup,.json"
+                    />
                 </div>
 
                 {loading && (
