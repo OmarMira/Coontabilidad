@@ -47,6 +47,8 @@
     "@types/big.js": "^6.2.2",
     "@types/sjcl": "^1.0.34",
     "big.js": "^7.0.1",
+    "jspdf": "^3.0.4",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.294.0",
     "lz4js": "^0.2.0",
     "ollama": "^0.6.3",

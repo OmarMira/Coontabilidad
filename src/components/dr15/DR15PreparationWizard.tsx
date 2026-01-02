@@ -3,7 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FloridaTaxCalculator } from '@/modules/billing/FloridaTaxCalculator';
 import { ExplanationEngine } from '@/modules/ai/ExplanationEngine';
-import { FileText, ChevronRight, CheckCircle, Calculator, AlertTriangle, Shield } from 'lucide-react';
+import { FileText, ChevronRight, CheckCircle, Calculator, AlertTriangle, Shield, Download } from 'lucide-react';
+import { dr15PDFGenerator } from '@/modules/dr15/DR15PDFGenerator';
+import { CountyBreakdownTable } from './CountyBreakdownTable';
+import { DORComplianceChecklist } from './DORComplianceChecklist';
 
 interface WizardStepProps {
     onNext: () => void;
@@ -15,6 +18,8 @@ interface WizardStepProps {
 
 interface DR15Data {
     period: string; // YYYY-MM
+    year: number;
+    month: number;
     grossSales: number;
     exemptSales: number;
     taxableSales: number;
@@ -22,6 +27,14 @@ interface DR15Data {
     surtaxCollected: number;
     totalTaxDue: number;
     confirmed: boolean;
+    countyBreakdown?: Array<{
+        county: string;
+        grossSales: number;
+        taxableSales: number;
+        taxRate: number;
+        taxCollected: number;
+    }>;
+    auditHash?: string;
 }
 
 const StepSelectPeriod: React.FC<WizardStepProps> = ({ onNext, data, updateData }) => {
@@ -57,6 +70,13 @@ const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, up
         taxCollected: data.totalTaxDue
     });
 
+    // Validación DOR
+    const validation = {
+        isValid: data.totalTaxDue > 0 && data.taxableSales <= data.grossSales,
+        errors: data.totalTaxDue <= 0 ? ['No hay impuestos calculados para este período'] : [],
+        warnings: data.exemptSales > data.grossSales * 0.5 ? ['Más del 50% de ventas están exentas'] : []
+    };
+
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-medium text-white">Paso 2: Revisar Cifras Calculadas</h3>
@@ -80,6 +100,19 @@ const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, up
                 </div>
             </div>
 
+            {/* Tabla de desglose por condado */}
+            {data.countyBreakdown && data.countyBreakdown.length > 0 && (
+                <CountyBreakdownTable data={data.countyBreakdown} />
+            )}
+
+            {/* Validación DOR */}
+            <DORComplianceChecklist
+                validation={validation}
+                period={data.period}
+                fein="12-3456789"
+                totalTax={data.totalTaxDue}
+            />
+
             <div className="bg-gray-800 p-3 rounded border border-gray-700">
                 <div className="flex items-start gap-2">
                     <BotIcon className="w-5 h-5 text-purple-400 mt-0.5" />
@@ -99,6 +132,19 @@ const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, up
 };
 
 const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) => {
+    const handleDownloadPDF = () => {
+        const companyData = {
+            name: 'AccountExpress Next-Gen',
+            fein: '12-3456789',
+            address: '123 Business St',
+            city: 'Miami',
+            state: 'FL',
+            zipCode: '33101'
+        };
+
+        dr15PDFGenerator.downloadPDF(data, companyData);
+    };
+
     return (
         <div className="space-y-6 text-center py-4">
             <div className="flex justify-center">
@@ -119,6 +165,15 @@ const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) =
                     </p>
                 </div>
             </div>
+
+            {/* Botón de descarga PDF */}
+            <Button
+                onClick={handleDownloadPDF}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+                <Download className="w-4 h-4 mr-2" />
+                📥 Descargar PDF DR-15
+            </Button>
 
             <Button onClick={() => updateData({ confirmed: true })} className="w-full bg-green-600 hover:bg-green-700 text-white">
                 <Shield className="w-4 h-4 mr-2" />
@@ -153,6 +208,8 @@ export const DR15PreparationWizard: React.FC = () => {
     const [step, setStep] = useState(1);
     const [data, setData] = useState<DR15Data>({
         period: '',
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
         grossSales: 0,
         exemptSales: 0,
         taxableSales: 0,
@@ -164,14 +221,25 @@ export const DR15PreparationWizard: React.FC = () => {
     const [engine] = useState(() => new ExplanationEngine('es-US')); // Spanish for output
 
     const loadMockData = () => {
+        // Parse year and month from period
+        const [year, month] = data.period.split('-').map(Number);
+
         // Simulate DB fetch based on period
         setData(prev => ({
             ...prev,
+            year,
+            month,
             grossSales: 15450.00,
             exemptSales: 2450.00,
             taxableSales: 13000.00,
-            taxCollected: 910.00, // 7% approximate
-            totalTaxDue: 910.00
+            taxCollected: 910.00,
+            totalTaxDue: 910.00,
+            countyBreakdown: [
+                { county: 'Miami-Dade', grossSales: 8500.00, taxableSales: 8500.00, taxRate: 0.065, taxCollected: 552.50 },
+                { county: 'Broward', grossSales: 4500.00, taxableSales: 4500.00, taxRate: 0.060, taxCollected: 270.00 },
+                { county: 'Palm Beach', grossSales: 2450.00, taxableSales: 0, taxRate: 0.060, taxCollected: 0 }
+            ],
+            auditHash: Array(64).fill('0').map((_, i) => (Math.random() * 16 | 0).toString(16)).join('')
         }));
     };
 
