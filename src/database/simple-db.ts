@@ -6959,3 +6959,78 @@ export function getInventoryMovements(): any[] {
     return [];
   }
 }
+
+// ==========================================
+// REPORTES CONTABLES: BALANCE DE COMPROBACIÓN
+// ==========================================
+
+export interface TrialBalanceRow {
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  initial_balance: number;
+  debit: number;
+  credit: number;
+  final_balance: number;
+}
+
+export function getTrialBalanceReport(year: number, month: number): TrialBalanceRow[] {
+  if (!db) return [];
+
+  try {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    // Calcular fin de mes
+    const nextMonth = new Date(year, month, 0);
+    const endDate = nextMonth.toISOString().split('T')[0];
+
+    // Consulta para obtener: saldo inicial, movimientos del mes, saldo final
+    const query = `
+      SELECT 
+        ca.account_code as account_code,
+        ca.account_name as account_name,
+        ca.account_type as account_type,
+        -- Saldo Inicial: Movimientos ANTES del inicio del mes
+        IFNULL(SUM(CASE WHEN je.entry_date < '${startDate}' THEN jd.debit_amount - jd.credit_amount ELSE 0 END), 0) as initial_balance_raw,
+        -- Movimientos del Mes
+        IFNULL(SUM(CASE WHEN je.entry_date BETWEEN '${startDate}' AND '${endDate}' THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
+        IFNULL(SUM(CASE WHEN je.entry_date BETWEEN '${startDate}' AND '${endDate}' THEN jd.credit_amount ELSE 0 END), 0) as period_credit
+      FROM chart_of_accounts ca
+      LEFT JOIN journal_details jd ON ca.account_code = jd.account_code
+      LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
+      WHERE ca.is_active = 1
+      GROUP BY ca.account_code, ca.account_name, ca.account_type
+      HAVING initial_balance_raw != 0 OR period_debit != 0 OR period_credit != 0
+      ORDER BY ca.account_code ASC
+    `;
+
+    const result = db.exec(query);
+
+    if (!result.length || !result[0].values.length) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const r: any = {};
+      columns.forEach((col, i) => r[col] = row[i]);
+
+      const initial = Number(r.initial_balance_raw);
+      const debit = Number(r.period_debit);
+      const credit = Number(r.period_credit);
+      const final = initial + debit - credit;
+
+      return {
+        account_code: String(r.account_code),
+        account_name: String(r.account_name),
+        account_type: String(r.account_type),
+        initial_balance: initial,
+        debit: debit,
+        credit: credit,
+        final_balance: final
+      };
+    });
+
+  } catch (error) {
+    logger.error('Accounting', 'trial_balance_failed', 'Error generando balance de comprobación', { year, month }, error as Error);
+    return [];
+  }
+}
+

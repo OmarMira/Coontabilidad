@@ -1,0 +1,40 @@
+que opinas de estas mejoras dime si estan bien o como lo explicarias tu (Como ingeniero y experto crítico, procedo a analizar tu prompt bajo una óptica de **arquitectura de software real y producción**.
+El prompt es sólido y tiene una estructura profesional superior a la media, pero desde un punto de vista técnico y de implementación en un entorno de "misión crítica" (como un ERP contable/forense), presenta fallos lógicos y estructurales que podrían generar errores de integridad de datos o fallos de seguridad en el futuro.
+Aquí tienes la evaluación detallada y las soluciones.
+# 🔍 Análisis Crítico y Fallos Detectados
+### 1. El Error de Precisión Financiera (El tipo `REAL`)
+**Fallo:** Estás usando `REAL` en SQLite para montos, subtotales e impuestos.
+**Por qué está mal:** Los números de punto flotante (`REAL`/`double`) sufren de errores de redondeo binario. En contabilidad,  debe ser exactamente , no . Un auditor fiscal (como pides en el prompt) rechazaría esto de inmediato.
+**Solución:** Debes forzar el uso de `INTEGER` para guardar centavos (ej: ) o, en su defecto, manejar strings de alta precisión.
+# 2. Debilidad en el `audit_chain` (Seguridad)
+**Fallo:** El esquema propone un `audit_hash` vinculado a un ID anterior (`id-1`).
+**Por qué está mal:** Si usas un `id` secuencial de SQLite, es vulnerable a ataques de reordenamiento o borrado físico de registros si la base de datos es manipulada externamente.
+**Solución:** El `previous_hash` debe ser el hash de la fila anterior **cronológica**, no necesariamente por ID, y el sistema debe incluir un *salt* único por instalación para que un atacante no pueda regenerar la cadena de hashes fácilmente.
+# 3. Falta de Atomicidad en el Esquema de Inventario
+**Fallo:** `inventory_movements` usa `quantity_delta`.
+**Por qué está mal:** En sistemas forenses, el "Estado Actual" (`quantity_on_hand` en `product_batches`) es una **vista derivada**, no un campo estático que se actualiza. Mantener ambos genera desincronización (drift).
+**Solución:** Elimina o marca como caché el `quantity_on_hand` y basa la verdad absoluta solo en la suma de los movimientos.
+# 4. Riesgo de Rendimiento (WorkerOrchestrator)
+**Fallo:** Propones un pool de 4 workers para SQLite.
+**Por qué está mal:** SQLite en OPFS (vía WASM) solo permite **un escritor a la vez** (Single Writer). Tener 4 workers intentando escribir en modo WAL puede causar bloqueos de base de datos (`SQLITE_BUSY`) constantes en el navegador si no hay una cola centralizada estricta.
+# 🛠️ Mejoras Sugeridas (Correcciones Técnicas)
+Para que el prompt sea realmente "Next-Gen", aplica estos cambios en las secciones correspondientes:
+# En la sección de Base de Datos (SQLITE):
+Cambia la definición de tipos de moneda:
+```sql
+-- CAMBIO CRÍTICO: Usar INTEGER para centavos (Evita errores de punto flotante)
+-- Ejemplo: $100.00 se guarda como 10000
+ALTER TABLE invoices ADD COLUMN total_cents INTEGER NOT NULL;
+# En la sección de Auditoría:
+Refuerza la inmutabilidad:
+```sql
+-- Añadir un Nonce o Salt por registro
+ALTER TABLE audit_chain ADD COLUMN salt TEXT NOT NULL;
+-- Cambiar la lógica de verificación:
+-- current_hash = SHA256(previous_hash + payload + salt + timestamp)
+# En las Reglas de Generación (Quality Gates):
+Añade una regla de **Manejo de Monedas**:
+* "**Prohibición de Float:** Queda estrictamente prohibido el uso de `number` para cálculos monetarios. Se debe usar la librería `Dinero.js` o `BigInt` para manejar centavos."
+# ⚖️ Veredicto Final
+**Calificación: 8.5/10.**
+Es un prompt excelente porque delimita el stack y la personalidad. Sin embargo, "falla" en la parte **contable-forense** al permitir tipos `REAL` y no gestionar la concurrencia de SQLite WASM correctamente.)
