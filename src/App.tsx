@@ -57,30 +57,31 @@ import { logger } from './core/logging/SystemLogger';
 import { SystemLogs } from './components/SystemLogs';
 import { ChartOfAccounts } from './components/ChartOfAccounts';
 import { AccountingDiagnosis } from './components/AccountingDiagnosis';
-import { JournalEntryTest } from './components/JournalEntryTest';
-import { BalanceSheet } from './components/BalanceSheet';
-import { IncomeStatement } from './components/IncomeStatement';
-import { CompanyDataForm } from './components/CompanyDataForm';
+import { BankingModule } from './components/banking/BankingModule';
+import { CustomerPayments } from './components/CustomerPayments';
+import { SupplierPayments } from './components/SupplierPayments';
 import { ProductForm } from './components/ProductForm';
 import { ProductList } from './components/ProductList';
 import { ProductDetailView } from './components/ProductDetailView';
 import { ProductCategoryForm } from './components/ProductCategoryForm';
 import { ProductCategoryList } from './components/ProductCategoryList';
-import { ModulePlaceholder } from './components/ModulePlaceholder';
-import { FloridaTaxReport } from './components/FloridaTaxReport';
-import { TaxRates } from './components/TaxRates';
-import { TransactionAudit } from './components/TransactionAudit';
-import { BackupRestore } from './components/BackupRestore';
-import { UnifiedAssistant } from './components/ai/UnifiedAssistant';
-import { CustomerPayments } from './components/CustomerPayments';
-import { SupplierPayments } from './components/SupplierPayments';
-import { ManualJournalEntries } from './components/ManualJournalEntries';
-import { GeneralLedger } from './components/GeneralLedger';
+import { CompanyDataForm } from './components/CompanyDataForm';
 import { PaymentMethods } from './components/PaymentMethods';
+import { BackupRestore } from './components/BackupRestore';
+import { TransactionAudit } from './components/TransactionAudit';
+// ... existing imports ...
 import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
-import { DiagnosticPanel } from './debug/DiagnosticPanel';
 import { SalesInvoiceForm } from './components/SalesInvoiceForm';
+import { ManualJournalEntries } from './components/ManualJournalEntries';
+import { GeneralLedger } from './components/GeneralLedger';
+import { IncomeStatement } from './components/accounting/IncomeStatement';
+import { ModulePlaceholder } from './components/ModulePlaceholder';
+import { UnifiedAssistant } from './components/ai/UnifiedAssistant';
+import { TaxRates } from './components/TaxRates';
+import { DiagnosticPanel } from './debug/DiagnosticPanel';
+import { BalanceSheet } from './components/BalanceSheet';
+import { FloridaTaxReport } from './components/FloridaTaxReport';
 import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
@@ -1389,6 +1390,8 @@ function App() {
                 )}
               </>
             )}
+
+            {state.currentSection === 'bank-reconciliation' && <BankingModule />}
 
             {state.currentSection === 'help' && <ModulePlaceholder title="Centro de Ayuda" />}
 

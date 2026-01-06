@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BalanceSheet } from '../BalanceSheet';
-import { IncomeStatement } from '../IncomeStatement';
+import { IncomeStatement } from './IncomeStatement';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 

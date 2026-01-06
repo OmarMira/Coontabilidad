@@ -132,6 +132,7 @@ const menuItems: MenuItem[] = [
       { id: 'accounting-diagnosis', label: 'Diagnóstico Contable', icon: Activity },
       { id: 'journal-entry-test', label: 'Pruebas de Asientos', icon: FileText },
       { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
+      { id: 'bank-reconciliation', label: 'Conciliación Bancaria', icon: FileText, badge: 'Nuevo' },
       { id: 'help', label: 'Centro de Ayuda', icon: HelpCircle, badge: 'Próximo' }
     ]
   },

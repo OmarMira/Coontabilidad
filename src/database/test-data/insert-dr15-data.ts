@@ -16,7 +16,7 @@ async function insertDR15TestData() {
 
     try {
         // Importar funciones de base de datos
-        const { addCustomer, createInvoice } = await import('./database/simple-db');
+        const { addCustomer, createInvoice } = await import('../simple-db');
 
         // ================================================================
         // PASO 1: CREAR CLIENTES DE PRUEBA

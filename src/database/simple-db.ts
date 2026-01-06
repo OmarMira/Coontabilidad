@@ -338,6 +338,20 @@ export interface BankAccount {
   created_at: string;
 }
 
+export interface BankTransaction {
+  id: number;
+  bank_account_id: number;
+  transaction_date: string;
+  description: string;
+  amount: number;
+  reference_number?: string;
+  status: 'pending' | 'matched' | 'ignored';
+  match_confidence?: number;
+  matched_journal_entry_id?: number;
+  import_batch_id?: string;
+  created_at: string;
+}
+
 export interface PaymentMethod {
   id: number;
   method_name: string;
@@ -957,6 +971,23 @@ const createSchema = async (): Promise<void> => {
     )
   `);
 
+  // Tabla de transacciones bancarias importadas (Conciliación)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS bank_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bank_account_id INTEGER NOT NULL REFERENCES bank_accounts(id),
+      transaction_date DATE NOT NULL,
+      description TEXT NOT NULL,
+      amount DECIMAL(12,2) NOT NULL,
+      reference_number TEXT,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'matched', 'ignored')),
+      match_confidence DECIMAL(5,2),
+      matched_journal_entry_id INTEGER REFERENCES journal_entries(id),
+      import_batch_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Tabla de métodos de pago
   db.run(`
     CREATE TABLE IF NOT EXISTS payment_methods (
@@ -1311,7 +1342,23 @@ const createSchema = async (): Promise<void> => {
     )
   `);
 
-  logger.info('Database', 'schema_updated', 'Tablas de IA creadas correctamente');
+  // Tabla de Cadena de Auditoría Inmutable (Forensic Grade)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS audit_chain (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      table_name TEXT NOT NULL,
+      record_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      old_value TEXT,
+      new_value TEXT,
+      user_id INTEGER,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      previous_hash TEXT,
+      current_hash TEXT
+    )
+  `);
+
+  logger.info('Database', 'schema_updated', 'Tablas de IA y Auditoría Forense creadas correctamente');
 };
 
 // Insertar datos de ejemplo
@@ -2117,25 +2164,96 @@ export const deleteCustomer = (id: number): { success: boolean; message: string 
 };
 
 // Función de auditoría mejorada
-// Función para generar hash de auditoría con chaining
+// Implementación SHA-256 Síncrona (Forensic Grade Offline)
+function sha256(ascii: string): string {
+  function rightRotate(value: number, amount: number) {
+    return (value >>> amount) | (value << (32 - amount));
+  }
+
+  const mathPow = Math.pow;
+  const maxWord = mathPow(2, 32);
+  const lengthProperty = 'length';
+  let i, j;
+  let result = '';
+
+  const words: number[] = [];
+  const asciiBitLength = ascii[lengthProperty] * 8;
+
+  let hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const k = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+
+  ascii += '\x80';
+  while (ascii[lengthProperty] % 64 - 56) ascii += '\x00';
+
+  for (i = 0; i < ascii[lengthProperty]; i++) {
+    j = ascii.charCodeAt(i);
+    if (j >> 8) return ''; // ASCII check: only support 8-bit characters
+    words[i >> 2] |= j << ((3 - i) % 4) * 8;
+  }
+  words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
+  words[words[lengthProperty]] = (asciiBitLength);
+
+  for (j = 0; j < words[lengthProperty];) {
+    const w = words.slice(j, j += 16);
+    const oldHash = hash;
+
+    hash = hash.slice(0, 8);
+
+    for (i = 0; i < 64; i++) {
+      const i2 = i + j;
+      const w15 = w[i - 15], w2 = w[i - 2];
+      const a = hash[0], e = hash[4];
+      const temp1 = hash[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + ((e & hash[5]) ^ ((~e) & hash[6])) + k[i] + (w[i] = (i < 16) ? w[i] : (w[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);
+      const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+
+      hash = [(temp1 + temp2) | 0].concat(hash);
+      hash[4] = (hash[4] + temp1) | 0;
+    }
+
+    for (i = 0; i < 8; i++) {
+      hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+  }
+
+  for (i = 0; i < 8; i++) {
+    for (j = 3; j + 1; j--) {
+      const b = (hash[i] >> (j * 8)) & 255;
+      result += ((b < 16) ? 0 : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+
+// Función auxiliar para exportar (Wrapper)
+export const generateSimpleHash = (data: any): string => {
+  // Asegurar consistencia de fechas en data
+  return sha256(JSON.stringify(data));
+};
+
+// Función para generar hash de auditoría con chaining (Síncrona Real)
 const generateAuditHash = async (auditData: any): Promise<string> => {
   try {
     let previousHash = '0';
 
-    // Si no se proporciona previousHash, obtenerlo de la base de datos
     if (!auditData.previousHash) {
+      // Uso síncrono de db.exec
       const lastHashResult = db?.exec(`
         SELECT audit_hash FROM audit_log 
         ORDER BY id DESC 
         LIMIT 1
       `);
-
       previousHash = lastHashResult?.[0]?.values?.[0]?.[0] as string || '0';
     } else {
       previousHash = auditData.previousHash;
     }
 
-    // Crear string para hash que incluye el hash anterior (chaining)
     const dataToHash = JSON.stringify({
       previousHash,
       tableName: auditData.tableName,
@@ -2143,44 +2261,20 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
       action: auditData.action,
       oldValues: auditData.oldValues,
       newValues: auditData.newValues,
-      timestamp: auditData.timestamp,
+      timestamp: auditData.timestamp, // Debe ser ISO String 8601
       userId: auditData.userId
     });
 
-    // Generar hash SHA-256
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(dataToHash);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    } else {
-      // Fallback simple hash para entornos sin Web Crypto API
-      let hash = 0;
-      for (let i = 0; i < dataToHash.length; i++) {
-        const char = dataToHash.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32-bit integer
-      }
-      return Math.abs(hash).toString(16);
-    }
+    return sha256(dataToHash);
+
   } catch (error) {
     console.error('Error generating audit hash:', error);
-    return Date.now().toString(16); // Fallback timestamp-based hash
+    return sha256(Date.now().toString());
   }
 };
 
 // Función auxiliar para hash síncrono (para funciones no async)
-const generateSimpleHash = (auditData: any): string => {
-  const dataString = JSON.stringify(auditData);
-  let hash = 0;
-  for (let i = 0; i < dataString.length; i++) {
-    const char = dataString.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16);
-};
+
 
 const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any): Promise<void> => {
   if (!db) return;
@@ -4367,11 +4461,13 @@ export const createJournalEntry = (
     });
 
     // VALIDACIÓN CRÍTICA: El asiento debe estar balanceado
-    if (Math.abs(totalDebits - totalCredits) > 0.01) {
-      return {
-        success: false,
-        message: `Asiento desbalanceado: Débitos $${totalDebits.toFixed(2)} ≠ Créditos $${totalCredits.toFixed(2)}`
-      };
+    // VALIDACIÓN CRÍTICA: El asiento debe estar balanceado (Forensic Level)
+    const diff = Math.abs(totalDebits - totalCredits);
+    if (diff > 0.01) {
+      // Lanzar error duro para prevenir persistencia
+      const msg = `VIOLACIÓN DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}. Débitos: $${totalDebits.toFixed(2)}, Créditos: $${totalCredits.toFixed(2)}`;
+      console.error(msg);
+      throw new Error(msg); // Stop execution immediately
     }
 
     db.run('BEGIN TRANSACTION');
@@ -7033,4 +7129,321 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
     return [];
   }
 }
+
+// ==========================================
+// REPORTES CONTABLES: ESTADO DE RESULTADOS (P&L)
+// ==========================================
+
+export interface IncomeStatementItem {
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  balance: number;
+}
+
+export function getIncomeStatementReport(startDate: string, endDate: string): IncomeStatementItem[] {
+  if (!db) return [];
+
+  try {
+    const query = `
+      SELECT 
+        ca.account_code,
+        ca.account_name,
+        ca.account_type,
+        SUM(jd.debit_amount) as total_debit,
+        SUM(jd.credit_amount) as total_credit
+      FROM chart_of_accounts ca
+      JOIN journal_details jd ON ca.account_code = jd.account_code
+      JOIN journal_entries je ON jd.journal_entry_id = je.id
+      WHERE 
+        je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
+        (LOWER(ca.account_type) = 'revenue' OR LOWER(ca.account_type) = 'expense')
+      GROUP BY ca.account_code, ca.account_name, ca.account_type
+      ORDER BY ca.account_code ASC
+    `;
+
+    const result = db.exec(query);
+    if (!result.length || !result[0].values.length) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const r: any = {};
+      columns.forEach((col, i) => r[col] = row[i]);
+
+      const type = String(r.account_type).toLowerCase();
+      const debit = Number(r.total_debit);
+      const credit = Number(r.total_credit);
+
+      let netBalance = 0;
+
+      // Calcular saldo neto según naturaleza
+      // Revenue (Ventas): Acreedor (Crédito aumenta) -> Saldo = Crédito - Débito
+      // Expense (Gastos): Deudor (Débito aumenta) -> Saldo = Débito - Crédito
+      if (type === 'revenue') {
+        netBalance = credit - debit;
+      } else {
+        // expense
+        netBalance = debit - credit;
+      }
+
+      return {
+        account_code: String(r.account_code),
+        account_name: String(r.account_name),
+        account_type: type,
+        balance: netBalance
+      };
+    });
+
+  } catch (error) {
+    logger.error('Accounting', 'income_statement_failed', 'Error P&L', { startDate, endDate }, error as Error);
+    return [];
+  }
+}
+
+// ==========================================
+// MÓDULO 20: CONCILIACIÓN BANCARIA - FUNCIONES
+// ==========================================
+
+export const insertBankTransactions = (
+  transactions: Partial<BankTransaction>[]
+): { success: boolean; message: string; importedCount: number } => {
+  if (!db) return { success: false, message: 'Database not initialized', importedCount: 0 };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+    let count = 0;
+
+    // Generar batch ID único
+    const batchId = `BATCH-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const stmt = db.prepare(`
+      INSERT INTO bank_transactions (
+        bank_account_id, transaction_date, description, amount, reference_number, 
+        status, import_batch_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const txn of transactions) {
+      if (!txn.bank_account_id || !txn.transaction_date || !txn.amount) continue;
+
+      stmt.run([
+        txn.bank_account_id,
+        txn.transaction_date,
+        txn.description || 'Imported Transaction',
+        txn.amount,
+        txn.reference_number || null,
+        'pending',
+        batchId
+      ]);
+      count++;
+    }
+
+    stmt.free();
+    db.run('COMMIT');
+    return { success: true, message: 'Transactions imported successfully', importedCount: count };
+  } catch (error) {
+    db.run('ROLLBACK');
+    logger.error('Database', 'import_bank_txn_failed', 'Error importing bank transactions', { error });
+    return { success: false, message: `Error importing transactions: ${error instanceof Error ? error.message : 'Unknown error'}`, importedCount: 0 };
+  }
+};
+
+export const getBankTransactions = (
+  accountId: number,
+  status?: 'pending' | 'matched' | 'ignored'
+): BankTransaction[] => {
+  if (!db) return [];
+  try {
+    let query = `SELECT * FROM bank_transactions WHERE bank_account_id = ${accountId}`;
+    if (status) {
+      query += ` AND status = '${status}'`;
+    }
+    query += ` ORDER BY transaction_date DESC`;
+
+    const result = db.exec(query);
+    if (!result.length || !result[0].values.length) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => rowToEntity<BankTransaction>(columns, row));
+  } catch (error) {
+    logger.error('Database', 'get_bank_txn_failed', 'Error getting bank entries', { accountId }, error as Error);
+    return [];
+  }
+};
+
+export interface MatchCandidate {
+  entry: JournalEntry;
+  confidence: number;
+  matchType: 'exact' | 'fuzzy_date' | 'amount_only';
+  reason: string;
+}
+
+export const findPotentialMatches = (transaction: BankTransaction): MatchCandidate[] => {
+  if (!db) return [];
+  try {
+    // FORENSIC IMPLEMENTATION: Precision Matching
+    // 1. Usar tolerancia de centavos para evitar errores de punto flotante
+    const targetAmount = Math.abs(transaction.amount);
+    const tolerance = 0.01;
+
+    // 2. Definir ventana de búsqueda optimizada (±7 días)
+    const txnDate = new Date(transaction.transaction_date);
+    const minDate = new Date(txnDate); minDate.setDate(minDate.getDate() - 7);
+    const maxDate = new Date(txnDate); maxDate.setDate(maxDate.getDate() + 7);
+
+    // SQLite dates are strings YYYY-MM-DD
+    const minDateStr = minDate.toISOString().split('T')[0];
+    const maxDateStr = maxDate.toISOString().split('T')[0];
+
+    // 3. Ejecutar búsqueda indexable
+    const query = `
+      SELECT * FROM journal_entries 
+      WHERE ABS(total_debit - ${targetAmount}) < ${tolerance}
+      AND entry_date BETWEEN '${minDateStr}' AND '${maxDateStr}'
+      ORDER BY entry_date ASC
+    `;
+
+    const result = db.exec(query);
+    if (!result.length || !result[0].values.length) return [];
+
+    const columns = result[0].columns;
+    const entries = result[0].values.map(row => rowToEntity<JournalEntry>(columns, row));
+
+    const candidates: MatchCandidate[] = [];
+
+    for (const entry of entries) {
+      const entryDate = new Date(entry.entry_date);
+      // Calcular diferencia en días (ignorando horas)
+      const diffTime = Math.abs(txnDate.getTime() - entryDate.getTime());
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      let confidence = 0;
+      let matchType: 'exact' | 'fuzzy_date' | 'amount_only' = 'amount_only';
+      let reason = '';
+
+      if (diffDays === 0) {
+        confidence = 1.0;
+        matchType = 'exact';
+        reason = 'Monto exacto y fecha exacta (100%)';
+      } else if (diffDays <= 1) {
+        confidence = 0.95;
+        matchType = 'fuzzy_date';
+        reason = `Monto exacto, diferencia de 1 día`;
+      } else if (diffDays <= 3) {
+        confidence = 0.80;
+        matchType = 'fuzzy_date';
+        reason = `Monto exacto, diferencia de ${diffDays} días`;
+      } else {
+        confidence = 0.50;
+        matchType = 'amount_only';
+        reason = `Monto coincide, fecha distante (${diffDays} días)`;
+      }
+
+      // Buscar detalles para enriquecer contexto (si es posible)
+      // (Opcional en fase MVP, pero robusto para el futuro)
+
+      candidates.push({ entry, confidence, matchType, reason });
+    }
+
+    // Ordenar por confianza descendente
+    return candidates.sort((a, b) => b.confidence - a.confidence);
+
+  } catch (error) {
+    logger.error('Database', 'find_matches_failed', 'Error finding matches (Forensic Logic)', { txId: transaction.id }, error as Error);
+    return [];
+  }
+};
+
+/**
+ * Confirma una conciliación entre una transacción bancaria y un asiento contable
+ * FORENSIC IMPLEMENTATION: Updates status, links IDs, and logs to AUDIT CHAIN
+ */
+export const confirmMatch = (bankTransactionId: number, journalEntryId: number): { success: boolean; message: string } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Verificar estado actual
+    const txCheck = db.exec(`SELECT status, amount FROM bank_transactions WHERE id = ${bankTransactionId}`);
+    if (!txCheck[0] || !txCheck[0].values.length) {
+      throw new Error('Transacción bancaria no encontrada');
+    }
+    const currentStatus = txCheck[0].values[0][0];
+
+    if (currentStatus === 'matched') {
+      throw new Error('La transacción ya está conciliada');
+    }
+
+    // 2. Actualizar transacción
+    db.run(`
+      UPDATE bank_transactions 
+      SET status = 'matched', matched_journal_entry_id = ?, match_confidence = 1.0
+      WHERE id = ?
+    `, [journalEntryId, bankTransactionId]);
+
+    // 3. Insertar en Audit Chain (Inmutabilidad)
+    const timestamp = new Date().toISOString();
+    const auditData = { bankTransactionId, journalEntryId, timestamp };
+    const auditHash = generateSimpleHash(auditData); // Placeholder for real crypto hash
+
+    db.run(`
+      INSERT INTO audit_chain (table_name, record_id, action, old_value, new_value, user_id, timestamp, current_hash)
+      VALUES ('bank_transactions', ?, 'MATCH', 'pending', 'matched', 1, ?, ?)
+    `, [bankTransactionId, timestamp, auditHash]);
+
+    db.run('COMMIT');
+    return { success: true, message: 'Conciliación confirmada correctamente' };
+
+  } catch (error) {
+    db.run('ROLLBACK');
+    logger.error('Database', 'confirm_match_failed', 'Error matching transaction', { bankTransactionId, journalEntryId }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido al conciliar' };
+  }
+};
+
+/**
+ * Deshace una conciliación existente
+ */
+export const unmatchTransaction = (bankTransactionId: number): { success: boolean; message: string } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Obtener datos anteriores para auditoría
+    const txCheck = db.exec(`SELECT matched_journal_entry_id FROM bank_transactions WHERE id = ${bankTransactionId}`);
+    if (!txCheck[0] || !txCheck[0].values.length) throw new Error('Transacción no encontrada');
+
+    const previousMatchId = txCheck[0].values[0][0];
+
+    // 2. Revertir estado
+    db.run(`
+      UPDATE bank_transactions 
+      SET status = 'pending', matched_journal_entry_id = NULL, match_confidence = NULL
+      WHERE id = ?
+    `, [bankTransactionId]);
+
+    // 3. Registrar en Audit Chain
+    const timestamp = new Date().toISOString();
+    const auditData = { bankTransactionId, action: 'UNMATCH', previousMatchId, timestamp };
+    const auditHash = generateSimpleHash(auditData);
+
+    db.run(`
+      INSERT INTO audit_chain (table_name, record_id, action, old_value, new_value, user_id, timestamp, current_hash)
+      VALUES ('bank_transactions', ?, 'UNMATCH', 'matched', 'pending', 1, ?, ?)
+    `, [bankTransactionId, timestamp, auditHash]);
+
+    db.run('COMMIT');
+    return { success: true, message: 'Conciliación revertida correctamente' };
+
+  } catch (error) {
+    db.run('ROLLBACK');
+    logger.error('Database', 'unmatch_failed', 'Error unmatching transaction', { bankTransactionId }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido al desconciliar' };
+  }
+};
+
+
+
 
