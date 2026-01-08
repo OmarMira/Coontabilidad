@@ -86,7 +86,7 @@ export class AssetDepreciationService {
         // We need row ID of JE. DatabaseService.insertJournalEntry returns entryNumber (string).
         // We subquery to get ID.
 
-        await DatabaseService.dbInstance.run(`
+        await DatabaseService.executeQuery(`
             INSERT INTO asset_depreciation 
             (asset_id, fiscal_year, federal_depreciation, florida_addback, net_florida_depreciation, journal_entry_id)
             VALUES (?, ?, ?, ?, ?, (SELECT id FROM journal_entries WHERE entry_number = ?))
