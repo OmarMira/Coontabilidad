@@ -1,0 +1,243 @@
+﻿
+> coontabilidad@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Account Express[39m
+
+ [32mΓ£ô[39m src/modules/dr15/DR15Generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/billing/FloridaTaxCalculator.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/accounting/GeneralLedgerService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/inventory/InventoryManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/backup/BackupManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32mΓ£ô[39m src/services/__tests__/TaxService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/components/banking/importers/__tests__/FormatDetector.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/system/CompanyService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/billing/InvoiceComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChain.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[14:26:24] [CRITICAL] Forensic.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO FIX DEFINITIVO PARA ERROR FK - MODO NUCLEAR
+[14:26:24] [WARN] Forensic.cleanup: Iniciando Nuclear Rebuild: Eliminando todos los artefactos...
+[14:26:24] [DEBUG] Forensic.cleanup: Eliminado table: old_table
+[14:26:24] [INFO] Forensic.schema: Creando schema garantizado con arquitectura a prueba de fallos...
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[14:26:24] [INFO] Forensic.success: Γ£à SISTEMA RECONSTRUIDO Y VALIDADO TRAS FIX NUCLEAR
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[14:26:24] [INFO] Monitor.startup: Monitor de Integridad 24/7 activado.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[14:26:24] [INFO] DatabaseService.forensic_init: Iniciando verificaci├│n de n├║cleo forense...
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[14:26:24] [CRITICAL] Monitor.integrity_failure: ≡ƒÜ¿ EMERGENCY: FALLA DE INTEGRIDAD DETECTADA POR MONITOR CONTINUO
+Data: {
+  failures: [
+    [32m'Inconsistencia f├¡sica: corrupt'[39m,
+    [32m'Estructura de tablas incompleta'[39m
+  ]
+}
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[14:26:24] [WARN] Monitor.shutdown: Monitor de Integridad detenido manualmente.
+
+ [32mΓ£ô[39m tests/database/DefinitiveFix.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[14:26:24] [INFO] DatabaseService.tax_config_populated: Se han poblado 67 condados de Florida.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[14:26:24] [INFO] DatabaseService.triggers_installed: Triggers de inmutabilidad instalados.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[14:26:24] [INFO] DatabaseService.forensic_ready: N├║cleo forense verificado y listo.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)[2m > [22m[2mshould pass forensic integrity check on new journal entries
+[22m[39m[14:26:24] [INFO] DatabaseService.entry_sealed: Asiento JE-1767900384416 sellado criptogr├íficamente.
+
+node.exe : [90mstderr[2m | src/tests/integration/regul
+atory-flow.integration.test.ts[2m > 
+[22m[2mRegulatory & Forensic Integration Test 
+(L1/L3)[2m > [22m[2mshould generate accurate DR-15 
+report from tax transactions
+En C:\Program Files\nodejs\npm.ps1: 29 Carácter: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstder 
+   r[2m...ax transactions:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mXML DEBUG: <?xml version="1.0" 
+encoding="UTF-8"?>
+<FDOR_DR15_Return 
+xmlns="http://www.floridarevenue.com/schemas/dr15/v3" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <TransmissionHeader>
+        <TransmissionId>fcada5ae-0718-491c-822d-a689a0cd
+3e28</TransmissionId>
+        <Timestamp>2026-01-08T19:26:24.456Z</Timestamp>
+        <SoftwareProvider>AccountExpress Iron Core 
+v1.0</SoftwareProvider>
+        <ForensicChecksum>0ed038afac07c3cc7fa05b9dd4ca2f
+e0cc08afc2f97e80ee9d7d9032ed2b1b62</ForensicChecksum>
+    </TransmissionHeader>
+    <TaxpayerData>
+        <FEIN>20-2026FL</FEIN>
+        <ReportingPeriod>2026-01</ReportingPeriod>
+    </TaxpayerData>
+    <FinancialData>
+        <TotalGrossSales>100000</TotalGrossSales>
+        <TotalTaxDue>7000</TotalTaxDue>
+        <CountyBreakdown>
+            
+            <CountyRecord>
+                <CountyCode>MIAMI-DADE</CountyCode>
+                <GrossSales>100000</GrossSales>
+                <TaxCollected>7000</TaxCollected>
+                <SurtaxDue>0</SurtaxDue>
+            </CountyRecord>
+        </CountyBreakdown>
+    </FinancialData>
+</FDOR_DR15_Return>
+
+ [32mΓ£ô[39m src/tests/integration/regulatory-flow.integration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 153[2mms[22m[39m
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[14:26:24] [CRITICAL] EmergencyInit.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO INICIALIZACI├ôN DE EMERGENCIA CON FIX FK
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[14:26:24] [INFO] EmergencyInit.diagnosis: Diagn├│stico FK:
+Data: {
+  hasError: [33mtrue[39m,
+  existingTables: [ [32m'users'[39m, [32m'customers'[39m ],
+  fkEnabled: [33mtrue[39m,
+  fkViolations: [],
+  recommendation: [32m'VERIFICACION_COMPLETA_REQUERIDA'[39m
+}
+[14:26:24] [INFO] EmergencyInit.schema: Creando tablas en orden estrat├⌐gico...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[14:26:24] [INFO] EmergencyInit.repair: Verificando y reparando relaciones...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[14:26:24] [INFO] EmergencyInit.data: Cargando datos iniciales...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[14:26:24] [INFO] EmergencyInit.success: Γ£à BASE DE DATOS INICIALIZADA CORRECTAMENTE CON FIX DE EMERGENCIA
+
+ [32mΓ£ô[39m tests/emergency/EmergencyInitializer.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/ai/ExplanationEngine.test.ts [2m([22m[2m5 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 28[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChainVerifier.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32mΓ£ô[39m src/validators/FloridaComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 8[2mms[22m[39m
+ [32mΓ£ô[39m tests/database/ViewManager.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos clientes tengo
+A: Tienes 8 clientes registrados.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantas facturas hay
+A: Hay 15 facturas de venta y 5 de compra.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cual es la mayor venta
+A: La mayor venta es INV-001 por $2850.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos proveedores tengo
+A: Tienes 3 proveedores.
+
+ [32mΓ£ô[39m tests/ai/final-verification.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/DoubleEntryValidator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/ai/deepseek-implementation.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m tests/ai/emergency-fix.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [32mΓ£ô[39m src/tests/regulatory-flow.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [2m[90mΓåô[39m[22m src/modules/purchasing/GoodsReceiptService.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m tests/database/InitializationFix.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m tests/ai/LocalAIService.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [32mΓ£ô[39m tests/ai/ResponseAccuracy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [2m[90mΓåô[39m[22m src/components/audit/AuditTrailMonitor.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/components/dashboard/TaxComplianceWidget.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [31mΓ¥»[39m src/components/banking/importers/__tests__/TransactionNormalizer.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 58[2mms[22m[39m
+       [32mΓ£ô[39m should handle standard positive amounts[32m 7[2mms[22m[39m
+       [32mΓ£ô[39m should handle negative amounts with minus sign[32m 17[2mms[22m[39m
+       [32mΓ£ô[39m should handle negative amounts in parentheses[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should strip currency symbols[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should valid strict mode fail on garbage[39m[32m 17[2mms[22m[39m
+       [32mΓ£ô[39m should convert US date MM/DD/YYYY to ISO[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should keep already ISO dates[32m 2[2mms[22m[39m
+[31m       [31m├ù[31m should fail on invalid date in strict mode[39m[32m 4[2mms[22m[39m
+       [32mΓ£ô[39m should trim and uppercase[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should remove excessive whitespace[32m 1[2mms[22m[39m
+ [2m[90mΓåô[39m[22m src/components/dr15/DR15PreparationWizard.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[33m4 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/components/invoices/InvoiceForm.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/lib/__tests__/pdf-parser.test.ts [2m([22m[2m6 tests[22m[2m | [22m[33m6 skipped[39m[2m)[22m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 2 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould valid strict mode fail 
+on garbage
+[31m[1mAssertionError[22m: expected 'Monto 
+inv├ílido: abc' to contain 'Invalid Amount'[39m
+
+Expected: [32m"[7mI[27mnv[7ma[27mlid[7m 
+Amount[27m"[39m
+Received: [31m"[7mMonto i[27mnv[7m├í[27mlid[7mo: 
+abc[27m"[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m31:34[22m[39m
+    [90m 29| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 30| [39m            [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfalse[3
+9m)[33m;[39m
+    [90m 31| [39m            [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'Inva
+lid Amount'[39m)[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 32| [39m        })[33m;[39m
+    [90m 33| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/2]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mDate 
+Normalization[2m > [22mshould fail on invalid date in 
+strict mode
+[31m[1mAssertionError[22m: expected 'Fecha 
+inv├ílida: InvalidDate' to contain 'Invalid Date'[39m
+
+Expected: [32m"Invalid[7m [27mDate"[39m
+Received: [31m"[7mFecha inv├ílida: 
+[27mInvalidDate"[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m50:34[22m[39m
+    [90m 48| [39m            const result = 
+normalizeTransaction('InvalidDate', 'Test',ΓÇª
+    [90m 49| [39m            [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfalse[3
+9m)[33m;[39m
+    [90m 50| [39m            [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'Inva
+lid Date'[39m)[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 51| [39m        })[33m;[39m
+    [90m 52| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/2]ΓÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m21 passed[39m[22m[2m | [22m[33m10 skipped[39m[90m (32)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m88 passed[39m[22m[2m | [22m[33m32 skipped[39m[90m (122)[39m
+[2m   Start at [22m 14:26:21
+[2m   Duration [22m 10.49s[2m (transform 13.58s, setup 0ms, import 27.06s, tests 540ms, environment 24.47s)[22m
+
