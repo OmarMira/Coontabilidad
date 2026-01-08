@@ -128,7 +128,9 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
         return new Promise<void>((resolve) => {
             Papa.parse(f, {
                 header: true,
-                skipEmptyLines: true,
+                skipEmptyLines: 'greedy', // Skip all empty lines
+                dynamicTyping: false, // Keep everything as strings
+                transformHeader: (header) => header.trim(), // Trim whitespace from headers
                 preview: 20,
                 complete: (results) => {
                     console.log('CSV Parse Complete:', {
@@ -139,11 +141,15 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
                         errors: results.errors
                     });
 
+                    // Show errors but don't fail if we got some data
                     if (results.errors && results.errors.length > 0) {
-                        console.error('CSV Parse Errors:', results.errors);
-                        setErrorMsg(`Error al parsear ${f.name}: ${results.errors[0].message}`);
-                        resolve();
-                        return;
+                        console.warn('CSV Parse Warnings:', results.errors);
+                        // Only fail if we have NO data at all
+                        if (results.data.length === 0) {
+                            setErrorMsg(`Error al parsear ${f.name}: ${results.errors[0].message}`);
+                            resolve();
+                            return;
+                        }
                     }
 
                     if (results.meta.fields && results.meta.fields.length > 0) {
@@ -198,7 +204,9 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
             return new Promise<NormalizedTransaction[]>((resolve) => {
                 Papa.parse(file, {
                     header: true,
-                    skipEmptyLines: true,
+                    skipEmptyLines: 'greedy',
+                    dynamicTyping: false,
+                    transformHeader: (header) => header.trim(),
                     complete: (results) => {
                         const fileTxs: NormalizedTransaction[] = [];
                         results.data.forEach((row: any, i) => {
