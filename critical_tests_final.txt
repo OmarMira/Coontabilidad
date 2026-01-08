@@ -1,0 +1,245 @@
+﻿
+> coontabilidad@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Account Express[39m
+
+ [32mΓ£ô[39m src/modules/dr15/DR15Generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/billing/FloridaTaxCalculator.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m src/services/__tests__/TaxService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/accounting/GeneralLedgerService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/inventory/InventoryManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/backup/BackupManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/system/CompanyService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/billing/InvoiceComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [31mΓ¥»[39m src/validators/FloridaComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 20[2mms[22m[39m
+     [32mΓ£ô[39m should validate valid registration numbers[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should reject invalid registration numbers[32m 0[2mms[22m[39m
+     [32mΓ£ô[39m should validate correct DR-15 return data[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should reject invalid DR-15 return data[32m 2[2mms[22m[39m
+[31m     [31m├ù[31m should check county rate compliance[39m[32m 10[2mms[22m[39m
+ [31mΓ¥»[39m src/modules/ai/ExplanationEngine.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 57[2mms[22m[39m
+     [32mΓ£ô[39m should explain non-taxable transactions[32m 27[2mms[22m[39m
+     [32mΓ£ô[39m should explain tax exempt customers[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should explain standard calculation with surtax[39m[32m 22[2mms[22m[39m
+     [32mΓ£ô[39m should explain calculation without surtax[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should explain DR-15 summary[32m 2[2mms[22m[39m
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[13:48:12] [CRITICAL] Forensic.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO FIX DEFINITIVO PARA ERROR FK - MODO NUCLEAR
+[13:48:12] [WARN] Forensic.cleanup: Iniciando Nuclear Rebuild: Eliminando todos los artefactos...
+[13:48:12] [DEBUG] Forensic.cleanup: Eliminado table: old_table
+[13:48:12] [INFO] Forensic.schema: Creando schema garantizado con arquitectura a prueba de fallos...
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[13:48:12] [INFO] Forensic.success: Γ£à SISTEMA RECONSTRUIDO Y VALIDADO TRAS FIX NUCLEAR
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:48:12] [INFO] Monitor.startup: Monitor de Integridad 24/7 activado.
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:48:12] [CRITICAL] Monitor.integrity_failure: ≡ƒÜ¿ EMERGENCY: FALLA DE INTEGRIDAD DETECTADA POR MONITOR CONTINUO
+Data: {
+  failures: [
+    [32m'Inconsistencia f├¡sica: corrupt'[39m,
+    [32m'Estructura de tablas incompleta'[39m
+  ]
+}
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:48:12] [WARN] Monitor.shutdown: Monitor de Integridad detenido manualmente.
+
+ [32mΓ£ô[39m tests/database/DefinitiveFix.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 72[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChain.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:48:12] [INFO] DatabaseService.forensic_init: Iniciando verificaci├│n de n├║cleo forense...
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:48:12] [INFO] DatabaseService.tax_config_populated: Se han poblado 67 condados de Florida.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:48:12] [INFO] DatabaseService.triggers_installed: Triggers de inmutabilidad instalados.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:48:12] [INFO] DatabaseService.forensic_ready: N├║cleo forense verificado y listo.
+
+ [32mΓ£ô[39m src/modules/audit/AuditChainVerifier.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:48:12] [CRITICAL] EmergencyInit.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO INICIALIZACI├ôN DE EMERGENCIA CON FIX FK
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:48:12] [INFO] EmergencyInit.diagnosis: Diagn├│stico FK:
+Data: {
+  hasError: [33mtrue[39m,
+  existingTables: [ [32m'users'[39m, [32m'customers'[39m ],
+  fkEnabled: [33mtrue[39m,
+  fkViolations: [],
+  recommendation: [32m'VERIFICACION_COMPLETA_REQUERIDA'[39m
+}
+[13:48:12] [INFO] EmergencyInit.schema: Creando tablas en orden estrat├⌐gico...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:48:12] [INFO] EmergencyInit.repair: Verificando y reparando relaciones...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:48:12] [INFO] EmergencyInit.data: Cargando datos iniciales...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:48:12] [INFO] EmergencyInit.success: Γ£à BASE DE DATOS INICIALIZADA CORRECTAMENTE CON FIX DE EMERGENCIA
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos clientes tengo
+A: Tienes 8 clientes registrados.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantas facturas hay
+A: Hay 15 facturas de venta y 5 de compra.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cual es la mayor venta
+A: La mayor venta es INV-001 por $2850.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)[2m > [22m[2mshould pass forensic integrity check on new journal entries
+[22m[39m[13:48:12] [INFO] DatabaseService.entry_sealed: Asiento JE-1767898092583 sellado criptogr├íficamente.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos proveedores tengo
+A: Tienes 3 proveedores.
+
+ [32mΓ£ô[39m tests/ai/final-verification.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mΓ£ô[39m tests/emergency/EmergencyInitializer.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+node.exe : [90mstderr[2m | src/tests/integration/regul
+atory-flow.integration.test.ts[2m > 
+[22m[2mRegulatory & Forensic Integration Test 
+(L1/L3)[2m > [22m[2mshould generate accurate DR-15 
+report from tax transactions
+En C:\Program Files\nodejs\npm.ps1: 29 Carácter: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstder 
+   r[2m...ax transactions:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mXML DEBUG: <?xml version="1.0" 
+encoding="UTF-8"?>
+<FDOR_DR15_Return 
+xmlns="http://www.floridarevenue.com/schemas/dr15/v3" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <TransmissionHeader>
+        <TransmissionId>4a318651-87c0-4006-a8ae-3bee3065
+3fbc</TransmissionId>
+        <Timestamp>2026-01-08T18:48:12.653Z</Timestamp>
+        <SoftwareProvider>AccountExpress Iron Core 
+v1.0</SoftwareProvider>
+        <ForensicChecksum>0ed038afac07c3cc7fa05b9dd4ca2f
+e0cc08afc2f97e80ee9d7d9032ed2b1b62</ForensicChecksum>
+    </TransmissionHeader>
+    <TaxpayerData>
+        <FEIN>20-2026FL</FEIN>
+        <ReportingPeriod>2026-01</ReportingPeriod>
+    </TaxpayerData>
+    <FinancialData>
+        <TotalGrossSales>100000</TotalGrossSales>
+        <TotalTaxDue>7000</TotalTaxDue>
+        <CountyBreakdown>
+            
+            <CountyRecord>
+                <CountyCode>MIAMI-DADE</CountyCode>
+                <GrossSales>100000</GrossSales>
+                <TaxCollected>7000</TaxCollected>
+                <SurtaxDue>0</SurtaxDue>
+            </CountyRecord>
+        </CountyBreakdown>
+    </FinancialData>
+</FDOR_DR15_Return>
+
+ [32mΓ£ô[39m src/tests/integration/regulatory-flow.integration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 293[2mms[22m[39m
+ [32mΓ£ô[39m tests/unit/DoubleEntryValidator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/ai/emergency-fix.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m tests/ai/deepseek-implementation.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [32mΓ£ô[39m tests/database/ViewManager.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/components/banking/importers/__tests__/FormatDetector.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32mΓ£ô[39m src/tests/regulatory-flow.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/database/InitializationFix.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/components/dashboard/TaxComplianceWidget.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/components/audit/AuditTrailMonitor.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/modules/purchasing/GoodsReceiptService.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/components/dr15/DR15PreparationWizard.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[33m4 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m tests/ai/LocalAIService.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [32mΓ£ô[39m tests/ai/ResponseAccuracy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [2m[90mΓåô[39m[22m src/components/invoices/InvoiceForm.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/components/banking/importers/__tests__/TransactionNormalizer.test.ts [2m([22m[2m10 tests[22m[2m | [22m[33m10 skipped[39m[2m)[22m
+ [2m[90mΓåô[39m[22m src/lib/__tests__/pdf-parser.test.ts [2m([22m[2m6 tests[22m[2m | [22m[33m6 skipped[39m[2m)[22m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 2 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+src/validators/FloridaComplianceValidator.test.ts[2m > 
+[22mFloridaComplianceValidator[2m > [22mshould check 
+county rate compliance
+[31m[1mAssertionError[22m: expected true to be false 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+[36m [2mΓ¥»[22m src/validators/FloridaComplianceValid
+ator.test.ts:[2m49:35[22m[39m
+    [90m 47| [39m
+    [90m 48| [39m        const result2 = 
+FloridaComplianceValidator.checkCountyRateCompΓÇª
+    [90m 49| [39m        [34mexpect[39m(result2[33m
+.[39mcompliant)[33m.[39m[34mtoBe[39m([35mfalse[39
+m)[33m;[39m
+    [90m   | [39m                                  
+[31m^[39m
+    [90m 50| [39m        [34mexpect[39m(result2[33m
+.[39mmessage)[33m.[39m[34mtoContain[39m([32m'lower
+ than expected'[39m)[33m;[39m
+    [90m 51| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/2]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/ai/ExplanationEngine.test.ts[2m > 
+[22mExplanationEngine[2m > [22mshould explain 
+standard calculation with surtax
+[31m[1mAssertionError[22m: expected 'Sales tax is 
+calculated at a total raΓÇª' to contain '6.5%'[39m
+
+Expected: [32m"6.5%"[39m
+Received: [31m"Sales tax is calculated at a total rate 
+of 6.0% based on the delivery location in Miami-Dade. 
+This consists of the specific Florida State Base Rate 
+(6.0%). No discretionary surtax applies or is known for 
+this county. Applied to the subtotal of $1,000.00, the 
+tax amount is $60.00."[39m
+
+[36m [2mΓ¥»[22m src/modules/ai/ExplanationEngine.test
+.ts:[2m38:22[22m[39m
+    [90m 36| [39m        })[33m;[39m
+    [90m 37| [39m
+    [90m 38| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'6.5%'[39m)[33m;[39m
+    [90m   | [39m                     [31m^[39m
+    [90m 39| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'Miami-Dade'[39m)[33m;[3
+9m
+    [90m 40| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'Florida State Base Rate 
+(6.0%)'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/2]ΓÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m19 passed[39m[22m[2m | [22m[33m11 skipped[39m[90m (32)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m80 passed[39m[22m[2m | [22m[33m40 skipped[39m[90m (122)[39m
+[2m   Start at [22m 13:48:09
+[2m   Duration [22m 12.21s[2m (transform 21.35s, setup 0ms, import 34.69s, tests 735ms, environment 30.06s)[22m
+
