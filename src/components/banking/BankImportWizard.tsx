@@ -124,75 +124,111 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
 
     // --- CSV Handling ---
 
-    const prepareCSVPreload = (f: File) => {
-        return new Promise<void>((resolve) => {
-            Papa.parse(f, {
-                header: true,
-                skipEmptyLines: 'greedy', // Skip all empty lines
-                dynamicTyping: false, // Keep everything as strings
-                transformHeader: (header) => header.trim(), // Trim whitespace from headers
-                preview: 20,
-                complete: (results) => {
-                    console.log('CSV Parse Complete:', {
-                        fileName: f.name,
-                        hasFields: !!results.meta.fields,
-                        fields: results.meta.fields,
-                        dataRows: results.data.length,
-                        errors: results.errors
-                    });
+    /**
+     * Preprocesses CSV content to skip summary sections and find transaction data
+     * Many bank CSVs have a summary section at the top followed by transaction details
+     */
+    const preprocessCSV = async (file: File): Promise<string> => {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/);
 
-                    // Show errors but don't fail if we got some data
-                    if (results.errors && results.errors.length > 0) {
-                        console.warn('CSV Parse Warnings:', results.errors);
-                        // Only fail if we have NO data at all
-                        if (results.data.length === 0) {
-                            setErrorMsg(`Error al parsear ${f.name}: ${results.errors[0].message}`);
-                            resolve();
-                            return;
-                        }
-                    }
-
-                    if (results.meta.fields && results.meta.fields.length > 0) {
-                        setCsvHeaders(results.meta.fields);
-                        setCsvSampleData(results.data);
-
-                        // Auto-map
-                        const newMapping = { date: '', desc: '', amount: '', ref: '' };
-                        results.meta.fields.forEach(h => {
-                            const lower = h.toLowerCase();
-                            if (lower.includes('date') || lower.includes('fecha')) newMapping.date = h;
-                            if (lower.includes('desc') || lower.includes('detail') || lower.includes('payee') || lower.includes('concepto')) newMapping.desc = h;
-                            if (lower.includes('amount') || lower.includes('monto') || lower.includes('importe')) newMapping.amount = h;
-                            if (lower.includes('ref') || lower.includes('num') || lower.includes('cheque')) newMapping.ref = h;
-                        });
-                        setMapping(newMapping);
-
-                        console.log('CSV Headers loaded:', results.meta.fields);
-                        console.log('Auto-mapping:', newMapping);
-
-                        setStage('mapping');
-                        resolve();
-                    } else {
-                        setErrorMsg(`El archivo ${f.name} no tiene encabezados válidos. Asegúrate de que la primera fila contenga los nombres de las columnas.`);
-                        resolve();
-                    }
-                },
-                error: (error) => {
-                    console.error('Papa.parse error:', error);
-                    setErrorMsg(`Error al leer ${f.name}: ${error.message}`);
-                    resolve();
-                }
-            });
+        // Look for the line that contains "Date" as the first column (transaction header)
+        const transactionHeaderIndex = lines.findIndex(line => {
+            const firstColumn = line.split(',')[0].trim().replace(/"/g, '');
+            return firstColumn.toLowerCase() === 'date';
         });
+
+        if (transactionHeaderIndex > 0) {
+            console.log(`Found transaction header at line ${transactionHeaderIndex + 1}, skipping ${transactionHeaderIndex} summary lines`);
+            // Return only the transaction section
+            return lines.slice(transactionHeaderIndex).join('\n');
+        }
+
+        // If no "Date" header found, return original content
+        console.log('No summary section detected, using full file');
+        return text;
+    };
+
+    const prepareCSVPreload = async (f: File) => {
+        try {
+            // Preprocess to skip summary section
+            const csvContent = await preprocessCSV(f);
+
+            return new Promise<void>((resolve) => {
+                Papa.parse(csvContent, {
+                    header: true,
+                    skipEmptyLines: 'greedy',
+                    dynamicTyping: false,
+                    transformHeader: (header) => header.trim(),
+                    preview: 20,
+                    complete: (results) => {
+                        console.log('CSV Parse Complete:', {
+                            fileName: f.name,
+                            hasFields: !!results.meta.fields,
+                            fields: results.meta.fields,
+                            dataRows: results.data.length,
+                            errors: results.errors
+                        });
+
+                        // Show errors but don't fail if we got some data
+                        if (results.errors && results.errors.length > 0) {
+                            console.warn('CSV Parse Warnings:', results.errors);
+                            // Only fail if we have NO data at all
+                            if (results.data.length === 0) {
+                                setErrorMsg(`Error al parsear ${f.name}: ${results.errors[0].message}`);
+                                resolve();
+                                return;
+                            }
+                        }
+
+                        if (results.meta.fields && results.meta.fields.length > 0) {
+                            setCsvHeaders(results.meta.fields);
+                            setCsvSampleData(results.data);
+
+                            // Auto-map
+                            const newMapping = { date: '', desc: '', amount: '', ref: '' };
+                            results.meta.fields.forEach(h => {
+                                const lower = h.toLowerCase();
+                                if (lower.includes('date') || lower.includes('fecha')) newMapping.date = h;
+                                if (lower.includes('desc') || lower.includes('detail') || lower.includes('payee') || lower.includes('concepto')) newMapping.desc = h;
+                                if (lower.includes('amount') || lower.includes('monto') || lower.includes('importe')) newMapping.amount = h;
+                                if (lower.includes('ref') || lower.includes('num') || lower.includes('cheque')) newMapping.ref = h;
+                            });
+                            setMapping(newMapping);
+
+                            console.log('CSV Headers loaded:', results.meta.fields);
+                            console.log('Auto-mapping:', newMapping);
+
+                            setStage('mapping');
+                            resolve();
+                        } else {
+                            setErrorMsg(`El archivo ${f.name} no tiene encabezados válidos. Asegúrate de que la primera fila contenga los nombres de las columnas.`);
+                            resolve();
+                        }
+                    },
+                    error: (error: any) => {
+                        console.error('Papa.parse error:', error);
+                        setErrorMsg(`Error al leer ${f.name}: ${error.message}`);
+                        resolve();
+                    }
+                });
+            });
+        } catch (error: unknown) {
+            console.error('Preprocessing error:', error);
+            setErrorMsg(`Error al preprocesar ${f.name}: ${(error as Error).message}`);
+            return Promise.resolve();
+        }
     };
 
     const handleCSVMapConfirm = () => {
         if (!selectedAccount) {
             setErrorMsg("Selecciona una cuenta bancaria destino.");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
         if (!mapping.date || !mapping.desc || !mapping.amount) {
             setErrorMsg("Debes mapear al menos Fecha, Descripción y Monto.");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
@@ -200,28 +236,36 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
         setProgress(`Procesando ${csvFiles.length} archivos CSV...`);
 
         // Process ALL pending CSVs with this mapping
-        const batchPromises = csvFiles.map((file, fileIdx) => {
-            return new Promise<NormalizedTransaction[]>((resolve) => {
-                Papa.parse(file, {
-                    header: true,
-                    skipEmptyLines: 'greedy',
-                    dynamicTyping: false,
-                    transformHeader: (header) => header.trim(),
-                    complete: (results) => {
-                        const fileTxs: NormalizedTransaction[] = [];
-                        results.data.forEach((row: any, i) => {
-                            const rDate = mapping.date ? row[mapping.date] : undefined;
-                            const rDesc = mapping.desc ? row[mapping.desc] : '';
-                            const rAmt = mapping.amount ? row[mapping.amount] : undefined;
-                            const rRef = mapping.ref ? row[mapping.ref] : undefined;
+        const batchPromises = csvFiles.map(async (file, fileIdx) => {
+            try {
+                // Preprocess to skip summary section
+                const csvContent = await preprocessCSV(file);
 
-                            const norm = normalizeTransaction(rDate, rDesc, rAmt, rRef || `csv_${fileIdx}_${i}`);
-                            if (norm.success && norm.data) fileTxs.push(norm.data);
-                        });
-                        resolve(fileTxs);
-                    }
+                return new Promise<NormalizedTransaction[]>((resolve) => {
+                    Papa.parse(csvContent, {
+                        header: true,
+                        skipEmptyLines: 'greedy',
+                        dynamicTyping: false,
+                        transformHeader: (header) => header.trim(),
+                        complete: (results) => {
+                            const fileTxs: NormalizedTransaction[] = [];
+                            results.data.forEach((row: any, i) => {
+                                const rDate = mapping.date ? row[mapping.date] : undefined;
+                                const rDesc = mapping.desc ? row[mapping.desc] : '';
+                                const rAmt = mapping.amount ? row[mapping.amount] : undefined;
+                                const rRef = mapping.ref ? row[mapping.ref] : undefined;
+
+                                const norm = normalizeTransaction(rDate, rDesc, rAmt, rRef || `csv_${fileIdx}_${i}`);
+                                if (norm.success && norm.data) fileTxs.push(norm.data);
+                            });
+                            resolve(fileTxs);
+                        }
+                    });
                 });
-            });
+            } catch (error: unknown) {
+                console.error(`Error preprocessing ${file.name}:`, error);
+                return [];
+            }
         });
 
         Promise.all(batchPromises).then(allResults => {
@@ -239,6 +283,7 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
     const handleFinalizeImport = async (selectedIndices: number[]) => {
         if (!selectedAccount) {
             setErrorMsg("No se ha seleccionado una cuenta bancaria.");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
         setLoading(true);

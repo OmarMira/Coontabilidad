@@ -1,0 +1,83 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Account Express[39m
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL
+[22m[39mΓ£à ModernConversationalAssistant Inicializado.
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22m[2mDEBE responder a "cuantos clientes tengo" con un formato JSON v├ílido
+[22m[39mDEBUG: Query="cuantos clientes tengo" Intent=COUNT Entity=CUSTOMER Conf=0.46
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22m[2mDEBE funcionar el fallback si el modelo no entiende nada
+[22m[39mDEBUG: Query="xyz abc 123" Intent=COUNT Entity=UNKNOWN Conf=0.00
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22m[2mDEBE identificar al "mejor cliente" con datos de m├⌐tricas
+[22m[39mDEBUG: Query="quien es mi mejor cliente" Intent=FIND_MAX Entity=CUSTOMER Conf=0.31
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22m[2mDEBE recuperar conceptos de la base de conocimiento
+[22m[39mDEBUG: Query="que es un activo" Intent=EXPLAIN Entity=ASSET Conf=0.90
+[Assistant] Knowledge Search (Concept): FOUND
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22m[2mDEBE recuperar procedimientos reales
+[22m[39mDEBUG: Query="como registro una venta" Intent=HOW_TO Entity=INVOICE Conf=0.90
+
+[90mstdout[2m | src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22m[2mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22m[2mDEBE evitar devolver HTML en caso de error (Protecci├│n vs HTML)
+[22m[39mDEBUG: Query="''' DROP TABLE users; --" Intent=UNKNOWN Entity=CUSTOMER Conf=0.00
+
+ [32mΓ£ô[39m src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE responder a "cuantos clientes tengo" con un formato JSON v├ílido[32m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE funcionar el fallback si el modelo no entiende nada[32m 9[2mms[22m[39m
+ [31m├ù[39m src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE identificar al "mejor cliente" con datos de m├⌐tricas[32m 14[2mms[22m[39m
+[31m   ΓåÆ expected 'He analizado tu solicitud sobre **cusΓÇª' to contain 'mejor resultado'[39m
+ [32mΓ£ô[39m src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE recuperar conceptos de la base de conocimiento[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE recuperar procedimientos reales[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m src/services/ai/__tests__/ModernSemanticAssistant.test.ts[2m > [22mModern Semantic Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE evitar devolver HTML en caso de error (Protecci├│n vs HTML)[32m 7[2mms[22m[39m
+node.exe : 
+En C:\Program Files\nodejs\npx.ps1: 29 Carácter: 3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [ 
+   ], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 1 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m src/services/ai/__tests__/Mode
+rnSemanticAssistant.test.ts[2m > [22mModern Semantic 
+Assistant - PRUEBAS DE PRODUCCI├ôN REAL[2m > [22mDEBE 
+identificar al "mejor cliente" con datos de m├⌐tricas
+[31m[1mAssertionError[22m: expected 'He analizado tu 
+solicitud sobre **cusΓÇª' to contain 'mejor 
+resultado'[39m
+
+Expected: [32m"mejor resultado"[39m
+Received: [31m"He analizado tu solicitud sobre 
+**customer**, pero actualmente no hay registros reales 
+en la base de datos. Te recomiendo verificar si ya has 
+realizado importaciones o registros manuales."[39m
+
+[36m [2mΓ¥»[22m src/services/ai/__tests__/ModernSeman
+ticAssistant.test.ts:[2m42:29[22m[39m
+    [90m 40| [39m        [34mexpect[39m(res[33m.[3
+9mmetadata[33m.[39mdataSource)[33m.[39m[34mtoBe[39
+m([32m'Database'[39m)[33m;[39m
+    [90m 41| [39m        // El contenido deber├¡a 
+mencionar el criterio o al menos ser nΓÇª
+    [90m 42| [39m        [34mexpect[39m(res[33m.[3
+9mcontent)[33m.[39m[34mtoContain[39m([32m'mejor 
+resultado'[39m)[33m;[39m
+    [90m   | [39m                            
+[31m^[39m
+    [90m 43| [39m        [34mexpect[39m(res[33m.[3
+9mcontent)[33m.[39m[34mtoContain[39m([32m'volumen 
+total'[39m)[33m;[39m
+    [90m 44| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 17:35:43
+[2m   Duration [22m 3.17s[2m (transform 476ms, setup 0ms, import 774ms, tests 1.74s, environment 0ms)[22m
+

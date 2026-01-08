@@ -111,7 +111,7 @@ export class SystemLogger {
       message,
       user_id: 1, // TODO: Implementar sistema de usuarios
       ip_address: this.getClientIP(),
-      user_agent: navigator.userAgent,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'NodeJS',
       data: data ? JSON.stringify(data, null, 2) : null,
       stack_trace: error?.stack || null,
       resolved: false,
@@ -199,17 +199,19 @@ export class SystemLogger {
     }
 
     // Guardar en localStorage también
-    try {
-      const stored = JSON.parse(localStorage.getItem('system_logs_fallback') || '[]');
-      stored.push(logEntry);
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const stored = JSON.parse(localStorage.getItem('system_logs_fallback') || '[]');
+        stored.push(logEntry);
 
-      if (stored.length > 100) {
-        stored.shift();
+        if (stored.length > 100) {
+          stored.shift();
+        }
+
+        localStorage.setItem('system_logs_fallback', JSON.stringify(stored));
+      } catch (error) {
+        console.error('Failed to save fallback logs to localStorage:', error);
       }
-
-      localStorage.setItem('system_logs_fallback', JSON.stringify(stored));
-    } catch (error) {
-      console.error('Failed to save fallback logs to localStorage:', error);
     }
   }
 
