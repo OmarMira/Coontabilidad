@@ -131,7 +131,22 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
                 skipEmptyLines: true,
                 preview: 20,
                 complete: (results) => {
-                    if (results.meta.fields) {
+                    console.log('CSV Parse Complete:', {
+                        fileName: f.name,
+                        hasFields: !!results.meta.fields,
+                        fields: results.meta.fields,
+                        dataRows: results.data.length,
+                        errors: results.errors
+                    });
+
+                    if (results.errors && results.errors.length > 0) {
+                        console.error('CSV Parse Errors:', results.errors);
+                        setErrorMsg(`Error al parsear ${f.name}: ${results.errors[0].message}`);
+                        resolve();
+                        return;
+                    }
+
+                    if (results.meta.fields && results.meta.fields.length > 0) {
                         setCsvHeaders(results.meta.fields);
                         setCsvSampleData(results.data);
 
@@ -145,13 +160,21 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
                             if (lower.includes('ref') || lower.includes('num') || lower.includes('cheque')) newMapping.ref = h;
                         });
                         setMapping(newMapping);
+
+                        console.log('CSV Headers loaded:', results.meta.fields);
+                        console.log('Auto-mapping:', newMapping);
+
                         setStage('mapping');
+                        resolve();
                     } else {
-                        setErrorMsg(`El archivo ${f.name} no tiene encabezados.`);
-                        // If 1st CSV fails, blocking all? 
-                        // For simplicity, yes.
+                        setErrorMsg(`El archivo ${f.name} no tiene encabezados válidos. Asegúrate de que la primera fila contenga los nombres de las columnas.`);
                         resolve();
                     }
+                },
+                error: (error) => {
+                    console.error('Papa.parse error:', error);
+                    setErrorMsg(`Error al leer ${f.name}: ${error.message}`);
+                    resolve();
                 }
             });
         });
@@ -314,6 +337,16 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
                                 </div>
                                 <div className="space-y-3 pt-4 border-t border-white/5">
                                     <h4 className="text-xs font-bold text-slate-400 uppercase">Columnas</h4>
+                                    {csvHeaders.length === 0 && (
+                                        <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded text-xs text-yellow-200">
+                                            ⚠️ No se detectaron columnas en el CSV. Verifica que el archivo tenga encabezados en la primera fila.
+                                        </div>
+                                    )}
+                                    {csvHeaders.length > 0 && (
+                                        <div className="bg-green-500/10 border border-green-500/20 p-2 rounded text-xs text-green-200">
+                                            ✅ {csvHeaders.length} columnas detectadas
+                                        </div>
+                                    )}
                                     {['date', 'desc', 'amount', 'ref'].map(field => (
                                         <div key={field}>
                                             <label className="text-xs text-slate-500 capitalize">{field}</label>
