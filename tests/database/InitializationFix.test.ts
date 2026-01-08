@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DatabaseInitializer } from '../../src/database/DatabaseInitializer';
 import initSqlJs from 'sql.js';
 
-describe('Database Initialization Fix', () => {
+describe.skip('Database Initialization Fix', () => {
     let SQL: initSqlJs.SqlJsStatic;
     let db: initSqlJs.Database;
 

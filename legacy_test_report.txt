@@ -1,0 +1,1893 @@
+﻿
+> coontabilidad@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Account Express[39m
+
+ [31mΓ¥»[39m src/modules/billing/FloridaTaxCalculator.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 27[2mms[22m[39m
+[31m       [31m├ù[31m should correctly calculate tax for Miami-Dade (7.5%)[39m[32m 13[2mms[22m[39m
+[31m       [31m├ù[31m should correctly calculate tax for Broward (7.0%)[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should correctly calculate tax for Orange (6.5%)[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should handle decimal subtotals correctly (Rounding)[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should throw error for unknown county[32m 2[2mms[22m[39m
+       [32mΓ£ô[39m should throw Zod validation error for negative subtotal[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should throw Zod validation error for empty county string[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should mark DR-15 as required for valid transactions[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should match rates defined in the static config[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should calculate correctly for Lee county (7.0%)[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should calculate correctly for Pinellas county (7.0%)[32m 2[2mms[22m[39m
+       [32mΓ£ô[39m should handle zero subtotal without error[32m 0[2mms[22m[39m
+ [31mΓ¥»[39m tests/ai/emergency-fix.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 13[2mms[22m[39m
+[31m     [31m├ù[31m IA debe dar respuestas espec├¡ficas y no gen├⌐ricas[39m[32m 11[2mms[22m[39m
+ [31mΓ¥»[39m src/components/dr15/DR15PreparationWizard.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m├ù[31m should render step 1 initially[39m[32m 6[2mms[22m[39m
+[31m     [31m├ù[31m should enable next button when period is selected[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should progress to step 2 review figures[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should show success screen after confirmation[39m[32m 1[2mms[22m[39m
+ [31mΓ¥»[39m src/tests/regulatory-flow.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 11[2mms[22m[39m
+[31m     [31m├ù[31m should generate a valid DR-15 report and XML with forensic checksum[39m[32m 8[2mms[22m[39m
+[90mstdout[2m | tests/database/InitializationFix.test.ts[2m > [22m[2mDatabase Initialization Fix[2m > [22m[2mDebe desactivar y reactivar foreign_keys durante la inicializaci├│n
+[22m[39m[13:03:18] [INFO] Database.init: Iniciando verificaci├│n de esquema...
+[13:03:18] [INFO] SchemaRepair.start: Iniciando reparaci├│n de esquema...
+
+[90mstdout[2m | tests/database/InitializationFix.test.ts[2m > [22m[2mDatabase Initialization Fix[2m > [22m[2mDebe desactivar y reactivar foreign_keys durante la inicializaci├│n
+[22m[39m[13:03:18] [INFO] Database.repair_success: Γ£à Tabla company_data creada desde cero
+[13:03:18] [INFO] Database.repair_success: Γ£à Datos de empresa por defecto insertados
+[13:03:18] [INFO] Database.repair_success: Γ£à Vistas del sistema sincronizadas
+[13:03:18] [INFO] Database.repair_success: Γ£à No se encontraron registros hu├⌐rfanos
+[13:03:18] [INFO] Database.repair_success: Γ£à Tabla payment_methods restaurada
+
+ [31mΓ¥»[39m tests/database/InitializationFix.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 141[2mms[22m[39m
+[31m     [31m├ù[31m Debe desactivar y reactivar foreign_keys durante la inicializaci├│n[39m[32m 133[2mms[22m[39m
+[31m     [31m├ù[31m Debe pasar el integrity check en una base de datos nueva[39m[32m 2[2mms[22m[39m
+[31m     [31m├ù[31m Debe detectar violaciones de integridad si existen (simulaci├│n)[39m[32m 3[2mms[22m[39m
+ [31mΓ¥»[39m tests/database/ViewManager.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 20[2mms[22m[39m
+[31m     [31m├ù[31m debe tener 5 vistas de solo lectura para IA[39m[32m 12[2mms[22m[39m
+     [32mΓ£ô[39m debe permitir acceso solo a vistas autorizadas[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m debe rechazar queries que no sean SELECT[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m debe rechazar acceso a tablas base no autorizadas[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m debe ejecutar consulta SELECT en vista autorizada con mapeo de objetos[32m 2[2mms[22m[39m
+ [31mΓ¥»[39m src/validators/FloridaComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 17[2mms[22m[39m
+     [32mΓ£ô[39m should validate valid registration numbers[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should reject invalid registration numbers[32m 0[2mms[22m[39m
+     [32mΓ£ô[39m should validate correct DR-15 return data[32m 3[2mms[22m[39m
+     [32mΓ£ô[39m should reject invalid DR-15 return data[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should check county rate compliance[39m[32m 8[2mms[22m[39m
+ [31mΓ¥»[39m tests/ai/deepseek-implementation.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 12[2mms[22m[39m
+     [32mΓ£ô[39m ChainOfThoughtProcessor debe extraer thinking tags[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m LocalAIService debe usar configuraci├│n DeepSeek[39m[32m 4[2mms[22m[39m
+     [32mΓ£ô[39m LocalAIService debe prohibir acceso a tablas sensibles[32m 1[2mms[22m[39m
+ [31mΓ¥»[39m src/modules/ai/ExplanationEngine.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 57[2mms[22m[39m
+     [32mΓ£ô[39m should explain non-taxable transactions[32m 39[2mms[22m[39m
+     [32mΓ£ô[39m should explain tax exempt customers[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should explain standard calculation with surtax[39m[32m 13[2mms[22m[39m
+     [32mΓ£ô[39m should explain calculation without surtax[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m should explain DR-15 summary[32m 1[2mms[22m[39m
+ [31mΓ¥»[39m src/modules/purchasing/GoodsReceiptService.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 12[2mms[22m[39m
+[31m     [31m├ù[31m should process receipt and update inventory[39m[32m 9[2mms[22m[39m
+ [31mΓ¥»[39m src/components/audit/AuditTrailMonitor.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 9[2mms[22m[39m
+[31m     [31m├ù[31m should show verifying state initially[39m[32m 5[2mms[22m[39m
+[31m     [31m├ù[31m should show secure or compromised state after timeout[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should refresh verification on click[39m[32m 1[2mms[22m[39m
+ [31mΓ¥»[39m src/components/invoices/InvoiceForm.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 205[2mms[22m[39m
+     [32mΓ£ô[39m se renderiza correctamente[32m 73[2mms[22m[39m
+[31m     [31m├ù[31m muestra el resumen de impuestos correctamente[39m[32m 99[2mms[22m[39m
+[31m     [31m├ù[31m el bot├│n de guardar est├í habilitado con datos v├ílidos[39m[32m 31[2mms[22m[39m
+ [31mΓ¥»[39m src/components/dashboard/TaxComplianceWidget.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 11[2mms[22m[39m
+[31m     [31m├ù[31m should render loading state initially[39m[32m 7[2mms[22m[39m
+[31m     [31m├ù[31m should render compliance status after loading[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should display estimated liability[39m[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/dr15/DR15Generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/backup/BackupManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32mΓ£ô[39m src/services/__tests__/TaxService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/inventory/InventoryManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/accounting/GeneralLedgerService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/billing/InvoiceComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChain.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/system/CompanyService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos clientes tengo
+A: Tienes 8 clientes registrados.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantas facturas hay
+A: Hay 15 facturas de venta y 5 de compra.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cual es la mayor venta
+A: La mayor venta es INV-001 por $2850.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos proveedores tengo
+A: Tienes 3 proveedores.
+
+ [32mΓ£ô[39m tests/ai/final-verification.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChainVerifier.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[13:03:21] [CRITICAL] Forensic.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO FIX DEFINITIVO PARA ERROR FK - MODO NUCLEAR
+[13:03:21] [WARN] Forensic.cleanup: Iniciando Nuclear Rebuild: Eliminando todos los artefactos...
+[13:03:21] [DEBUG] Forensic.cleanup: Eliminado table: old_table
+[13:03:21] [INFO] Forensic.schema: Creando schema garantizado con arquitectura a prueba de fallos...
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[13:03:21] [INFO] Forensic.success: Γ£à SISTEMA RECONSTRUIDO Y VALIDADO TRAS FIX NUCLEAR
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:03:21] [CRITICAL] EmergencyInit.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO INICIALIZACI├ôN DE EMERGENCIA CON FIX FK
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:03:21] [INFO] EmergencyInit.diagnosis: Diagn├│stico FK:
+Data: {
+  hasError: [33mtrue[39m,
+  existingTables: [ [32m'users'[39m, [32m'customers'[39m ],
+  fkEnabled: [33mtrue[39m,
+  fkViolations: [],
+  recommendation: [32m'VERIFICACION_COMPLETA_REQUERIDA'[39m
+}
+[13:03:21] [INFO] EmergencyInit.schema: Creando tablas en orden estrat├⌐gico...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:03:21] [INFO] EmergencyInit.repair: Verificando y reparando relaciones...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:03:21] [INFO] EmergencyInit.data: Cargando datos iniciales...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:03:21] [INFO] EmergencyInit.success: Γ£à BASE DE DATOS INICIALIZADA CORRECTAMENTE CON FIX DE EMERGENCIA
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:03:21] [INFO] Monitor.startup: Monitor de Integridad 24/7 activado.
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:03:21] [CRITICAL] Monitor.integrity_failure: ≡ƒÜ¿ EMERGENCY: FALLA DE INTEGRIDAD DETECTADA POR MONITOR CONTINUO
+Data: {
+  failures: [
+    [32m'Inconsistencia f├¡sica: corrupt'[39m,
+    [32m'Estructura de tablas incompleta'[39m
+  ]
+}
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:03:21] [WARN] Monitor.shutdown: Monitor de Integridad detenido manualmente.
+
+ [32mΓ£ô[39m tests/database/DefinitiveFix.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32mΓ£ô[39m tests/emergency/EmergencyInitializer.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:03:21] [INFO] DatabaseService.forensic_init: Iniciando verificaci├│n de n├║cleo forense...
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:03:21] [INFO] DatabaseService.tax_config_populated: Se han poblado 67 condados de Florida.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:03:21] [INFO] DatabaseService.triggers_installed: Triggers de inmutabilidad instalados.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:03:21] [INFO] DatabaseService.forensic_ready: N├║cleo forense verificado y listo.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)[2m > [22m[2mshould pass forensic integrity check on new journal entries
+[22m[39m[13:03:21] [INFO] DatabaseService.entry_sealed: Asiento JE-1767895401332 sellado criptogr├íficamente.
+
+node.exe : [90mstderr[2m | src/tests/integration/regul
+atory-flow.integration.test.ts[2m > 
+[22m[2mRegulatory & Forensic Integration Test 
+(L1/L3)[2m > [22m[2mshould generate accurate DR-15 
+report from tax transactions
+En C:\Program Files\nodejs\npm.ps1: 29 Carácter: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstder 
+   r[2m...ax transactions:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mXML DEBUG: <?xml version="1.0" 
+encoding="UTF-8"?>
+<FDOR_DR15_Return 
+xmlns="http://www.floridarevenue.com/schemas/dr15/v3" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <TransmissionHeader>
+        <TransmissionId>86c98c37-a417-4d69-90f2-d5e7004b
+eadc</TransmissionId>
+        <Timestamp>2026-01-08T18:03:21.379Z</Timestamp>
+        <SoftwareProvider>AccountExpress Iron Core 
+v1.0</SoftwareProvider>
+        <ForensicChecksum>0ed038afac07c3cc7fa05b9dd4ca2f
+e0cc08afc2f97e80ee9d7d9032ed2b1b62</ForensicChecksum>
+    </TransmissionHeader>
+    <TaxpayerData>
+        <FEIN>20-2026FL</FEIN>
+        <ReportingPeriod>2026-01</ReportingPeriod>
+    </TaxpayerData>
+    <FinancialData>
+        <TotalGrossSales>100000</TotalGrossSales>
+        <TotalTaxDue>7000</TotalTaxDue>
+        <CountyBreakdown>
+            
+            <CountyRecord>
+                <CountyCode>MIAMI-DADE</CountyCode>
+                <GrossSales>100000</GrossSales>
+                <TaxCollected>7000</TaxCollected>
+                <SurtaxDue>0</SurtaxDue>
+            </CountyRecord>
+        </CountyBreakdown>
+    </FinancialData>
+</FDOR_DR15_Return>
+
+ [32mΓ£ô[39m src/tests/integration/regulatory-flow.integration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 156[2mms[22m[39m
+ [31mΓ¥»[39m tests/ai/LocalAIService.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 11[2mms[22m[39m
+[31m     [31m├ù[31m debe usar configuraci├│n Ollama correcta[39m[32m 6[2mms[22m[39m
+[31m     [31m├ù[31m debe acceder solo a vistas de solo lectura[39m[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m debe rechazar acceso a tablas crudas[32m 2[2mms[22m[39m
+ [32mΓ£ô[39m src/components/banking/importers/__tests__/FormatDetector.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [31mΓ¥»[39m src/components/banking/importers/__tests__/TransactionNormalizer.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 26[2mms[22m[39m
+[31m       [31m├ù[31m should handle standard positive amounts[39m[32m 11[2mms[22m[39m
+[31m       [31m├ù[31m should handle negative amounts with minus sign[39m[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should handle negative amounts in parentheses[39m[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should strip currency symbols[39m[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should valid strict mode fail on garbage[39m[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should convert US date MM/DD/YYYY to ISO[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should keep already ISO dates[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should fail on invalid date in strict mode[39m[32m 2[2mms[22m[39m
+       [32mΓ£ô[39m should trim and uppercase[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should remove excessive whitespace[32m 1[2mms[22m[39m
+ [32mΓ£ô[39m tests/ai/ResponseAccuracy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [31mΓ¥»[39m src/lib/__tests__/pdf-parser.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 19[2mms[22m[39m
+     [32mΓ£ô[39m should parse and normalize a standard Chase PDF transaction line[32m 6[2mms[22m[39m
+     [32mΓ£ô[39m should handle negative amounts in parentheses (US Accounting)[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should handle European format (dots for thousands, comma for decimal)[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should filter noise and balance lines[39m[32m 6[2mms[22m[39m
+     [32mΓ£ô[39m should extract correct amount when multiple numbers (Amount/Balance) are present[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m should parse Spanish dates and formats (Gold+)[32m 2[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Suites 1 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+tests/unit/DoubleEntryValidator.test.ts[2m [ 
+tests/unit/DoubleEntryValidator.test.ts ][22m
+[31m[1mReferenceError[22m: describe is not 
+defined[39m
+[36m [2mΓ¥»[22m tests/unit/DoubleEntryValidator.test.
+ts:[2m7:1[22m[39m
+    [90m  5| [39mimport { DoubleEntryValidator, 
+JournalEntry } from '../../src/servicesΓÇª
+    [90m  6| [39m
+    [90m  7| [39m[34mdescribe[39m([32m'DoubleEntryV
+alidator'[39m[33m,[39m () [33m=>[39m {
+    [90m   | [39m[31m^[39m
+    [90m  8| [39m  [34mtest[39m([32m'should 
+validate balanced journal entry'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m  9| [39m    [35mconst[39m entry[33m:[39m 
+[33mJournalEntry[39m [33m=[39m {
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/36]ΓÄ»[22m[39m
+
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 35 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+src/tests/regulatory-flow.test.ts[2m > [22mRegulatory 
+Reporting Flow (DR-15)[2m > [22mshould generate a 
+valid DR-15 report and XML with forensic checksum
+[31m[1mError[22m: Web Crypto API not supported[39m
+[36m [2mΓ¥»[22m Function.hash src/core/security/Basic
+Encryption.ts:[2m152:13[22m[39m
+    [90m150| [39m  [35mstatic[39m [35masync[39m 
+[34mhash[39m(data[33m:[39m 
+[33mUint8Array[39m)[33m:[39m 
+[33mPromise[39m[33m<[39mstring[33m>[39m {
+    [90m151| [39m    [35mif[39m ([33m![39m[35mthi
+s[39m[33m.[39m[34misSupported[39m()) {
+    [90m152| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m'Web Crypto API not 
+supported'[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m153| [39m    }
+    [90m154| [39m
+[90m [2mΓ¥»[22m Function.generateDR15Report 
+src/services/TaxReportingService.ts:[2m89:48[22m[39m
+[90m [2mΓ¥»[22m 
+src/tests/regulatory-flow.test.ts:[2m36:24[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/validators/FloridaComplianceValidator.test.ts[2m > 
+[22mFloridaComplianceValidator[2m > [22mshould check 
+county rate compliance
+[31m[1mAssertionError[22m: expected true to be false 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+[36m [2mΓ¥»[22m src/validators/FloridaComplianceValid
+ator.test.ts:[2m49:35[22m[39m
+    [90m 47| [39m
+    [90m 48| [39m        const result2 = 
+FloridaComplianceValidator.checkCountyRateCompΓÇª
+    [90m 49| [39m        [34mexpect[39m(result2[33m
+.[39mcompliant)[33m.[39m[34mtoBe[39m([35mfalse[39
+m)[33m;[39m
+    [90m   | [39m                                  
+[31m^[39m
+    [90m 50| [39m        [34mexpect[39m(result2[33m
+.[39mmessage)[33m.[39m[34mtoContain[39m([32m'lower
+ than expected'[39m)[33m;[39m
+    [90m 51| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/database/InitializationFix.test.ts[2m > 
+[22mDatabase Initialization Fix[2m > [22mDebe 
+desactivar y reactivar foreign_keys durante la 
+inicializaci├│n
+[31m[1mAssertionError[22m: expected "Mock" to be 
+called with arguments: [ 'PRAGMA foreign_keys = OFF;' 
+][90m
+
+Received: 
+
+[1m  1st Mock call:
+
+[22m[2m  [[22m
+[32m-   "PRAGMA foreign_keys = OFF;",[90m
+[31m+   "[90m
+[31m+                     CREATE TABLE IF NOT EXISTS 
+company_data ([90m
+[31m+                         id INTEGER PRIMARY KEY 
+AUTOINCREMENT,[90m
+[31m+                         company_name TEXT NOT 
+NULL,[90m
+[31m+                         legal_name TEXT NOT 
+NULL,[90m
+[31m+                         tax_id TEXT NOT 
+NULL,[90m
+[31m+                         address TEXT NOT 
+NULL,[90m
+[31m+                         city TEXT NOT NULL,[90m
+[31m+                         state TEXT NOT NULL 
+DEFAULT 'FL',[90m
+[31m+                         zip_code TEXT NOT 
+NULL,[90m
+[31m+                         phone TEXT NOT NULL,[90m
+[31m+                         email TEXT NOT NULL,[90m
+[31m+                         website TEXT,[90m
+[31m+                         logo_path TEXT,[90m
+[31m+                         fiscal_year_start TEXT 
+DEFAULT '01-01',[90m
+[31m+                         currency TEXT DEFAULT 
+'USD',[90m
+[31m+                         language TEXT DEFAULT 
+'es',[90m
+[31m+                         timezone TEXT DEFAULT 
+'America/New_York',[90m
+[31m+                         date_format TEXT DEFAULT 
+'MM/DD/YYYY',[90m
+[31m+                         is_active BOOLEAN 
+DEFAULT 1,[90m
+[31m+                         created_at DATETIME 
+DEFAULT CURRENT_TIMESTAMP,[90m
+[31m+                         updated_at DATETIME 
+DEFAULT CURRENT_TIMESTAMP[90m
+[31m+                     )[90m
+[31m+                 ",[90m
+[2m  ][22m
+
+[1m  2nd Mock call:
+
+[22m[2m  [[22m
+[32m-   "PRAGMA foreign_keys = OFF;",[90m
+[31m+   "[90m
+[31m+                     INSERT INTO company_data 
+([90m
+[31m+                         company_name, 
+legal_name, tax_id, address, city, state, zip_code, 
+[90m
+[31m+                         phone, email, 
+fiscal_year_start, currency, language, timezone, 
+date_format, is_active[90m
+[31m+                     ) VALUES ([90m
+[31m+                         'Account Express Demo 
+Inc.', 'Account Express Demo Inc.', 'US-DEMO-123', [90m
+[31m+                         '100 Biscayne Blvd', 
+'Miami', 'FL', '33132', '(305) 555-0000', [90m
+[31m+                         
+'admin@accountexpress.com', '01-01', 'USD', 'es', 
+'America/New_York', 'MM/DD/YYYY', 1[90m
+[31m+                     )[90m
+[31m+                 ",[90m
+[2m  ][22m
+
+[1m  3rd Mock call:
+
+[22m[2m  [[22m
+[32m-   "PRAGMA foreign_keys = OFF;",[90m
+[31m+   "DROP VIEW IF EXISTS datos_sistema",[90m
+[2m  ][22m
+
+[1m  4th Mock call:
+
+[22m[2m  [[22m
+[32m-   "PRAGMA foreign_keys = OFF;",[90m
+[31m+   "[90m
+[31m+                 CREATE VIEW IF NOT EXISTS 
+datos_sistema AS[90m
+[31m+                 SELECT [90m
+[31m+                   (SELECT COUNT(*) FROM 
+customers) as total_clientes,[90m
+[31m+                   (SELECT COUNT(*) FROM 
+invoices) as facturas_venta,[90m
+[31m+                   (SELECT COUNT(*) FROM bills) 
+as facturas_compra,[90m
+[31m+                   (SELECT MAX(total_amount) FROM 
+invoices) as mayor_venta_monto,[90m
+[31m+                   (SELECT COUNT(*) FROM 
+suppliers) as total_proveedores,[90m
+[31m+                   (SELECT 
+IFNULL(SUM(stock_quantity * price), 0) FROM products) 
+as valor_inventario[90m
+[31m+             ",[90m
+[2m  ][22m
+
+[1m  5th Mock call:
+
+[22m[2m  [[22m
+[32m-   "PRAGMA foreign_keys = OFF;",[90m
+[31m+   "[90m
+[31m+                   CREATE TABLE IF NOT EXISTS 
+payment_methods ([90m
+[31m+                     id INTEGER PRIMARY KEY 
+AUTOINCREMENT,[90m
+[31m+                     name TEXT NOT NULL,[90m
+[31m+                     type TEXT NOT NULL,[90m
+[31m+                     is_active BOOLEAN DEFAULT 
+1,[90m
+[31m+                     requires_reference BOOLEAN 
+DEFAULT 0[90m
+[31m+                   )[90m
+[31m+                  ",[90m
+[2m  ][22m
+
+[1m  6th Mock call:
+
+[22m[2m  [[22m
+[32m-   "PRAGMA foreign_keys = OFF;",[90m
+[31m+   "[90m
+[31m+                   INSERT INTO payment_methods 
+(name, type, is_active, requires_reference) VALUES [90m
+[31m+                   ('Efectivo', 'cash', 1, 
+0),[90m
+[31m+                   ('Transferencia Bancaria', 
+'bank_transfer', 1, 1),[90m
+[31m+                   ('Cheque', 'check', 1, 1),[90m
+[31m+                   ('Tarjeta de Cr├⌐dito', 
+'credit_card', 1, 1),[90m
+[31m+                   ('Zelle', 'digital', 1, 1)[90m
+[31m+                  ",[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m6[22m
+[31m[39m
+[36m [2mΓ¥»[22m tests/database/InitializationFix.test
+.ts:[2m24:24[22m[39m
+    [90m 22| [39m
+    [90m 23| [39m        [90m// Verificar que se 
+llam├│ a PRAGMA foreign_keys[39m
+    [90m 24| [39m        
+expect(runSpy).toHaveBeenCalledWith('PRAGMA 
+foreign_keys = OFFΓÇª
+    [90m   | [39m                       [31m^[39m
+    [90m 25| [39m        
+expect(runSpy).toHaveBeenCalledWith('PRAGMA 
+foreign_keys = ON;ΓÇª
+    [90m 26| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/database/InitializationFix.test.ts[2m > 
+[22mDatabase Initialization Fix[2m > [22mDebe pasar 
+el integrity check en una base de datos nueva
+[31m[1mTypeError[22m: __vite_ssr_import_1__.DatabaseI
+nitializer.verifyIntegrity is not a function[39m
+[36m [2mΓ¥»[22m tests/database/InitializationFix.test
+.ts:[2m29:44[22m[39m
+    [90m 27| [39m
+    [90m 28| [39m    it('Debe pasar el integrity 
+check en una base de datos nueva', asyΓÇª
+    [90m 29| [39m        [35mconst[39m result 
+[33m=[39m [33mDatabaseInitializer[39m[33m.[39m[34
+mverifyIntegrity[39m(db)[33m;[39m
+    [90m   | [39m                                     
+      [31m^[39m
+    [90m 30| [39m        [34mexpect[39m(result)[33m
+.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m 31| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/database/InitializationFix.test.ts[2m > 
+[22mDatabase Initialization Fix[2m > [22mDebe 
+detectar violaciones de integridad si existen 
+(simulaci├│n)
+[31m[1mTypeError[22m: __vite_ssr_import_1__.DatabaseI
+nitializer.verifyIntegrity is not a function[39m
+[36m [2mΓ¥»[22m tests/database/InitializationFix.test
+.ts:[2m43:44[22m[39m
+    [90m 41| [39m
+    [90m 42| [39m        [90m// Verificamos 
+integridad[39m
+    [90m 43| [39m        [35mconst[39m result 
+[33m=[39m [33mDatabaseInitializer[39m[33m.[39m[34
+mverifyIntegrity[39m(db)[33m;[39m
+    [90m   | [39m                                     
+      [31m^[39m
+    [90m 44| [39m        [34mexpect[39m(result)[33m
+.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 45| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/database/ViewManager.test.ts[2m > 
+[22mViewManager - Vistas de Solo Lectura[2m > 
+[22mdebe tener 5 vistas de solo lectura para IA
+[31m[1mAssertionError[22m: expected [ 
+'v_invoice_summary', ΓÇª(9) ] to have a length of 5 but 
+got 10[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 5[39m
+[31m+ 10[39m
+
+[36m [2mΓ¥»[22m 
+tests/database/ViewManager.test.ts:[2m23:25[22m[39m
+    [90m 21| [39m    [34mit[39m([32m'debe tener 5 
+vistas de solo lectura para IA'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 22| [39m        [35mconst[39m aiViews 
+[33m=[39m viewManager[33m.[39m[34mgetAIReadOnlyView
+s[39m()[33m;[39m
+    [90m 23| [39m        [34mexpect[39m(aiViews)[33
+m.[39m[34mtoHaveLength[39m([34m5[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m 24| [39m        [34mexpect[39m(aiViews)[33
+m.[39m[34mtoContain[39m([32m'v_invoice_summary'[39m
+)[33m;[39m
+    [90m 25| [39m        [34mexpect[39m(aiViews)[33
+m.[39m[34mtoContain[39m([32m'v_tax_alerts'[39m)[33
+m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/ai/deepseek-implementation.test.ts[2m > 
+[22mDeepSeek R1 Implementation Validation[2m > 
+[22mLocalAIService debe usar configuraci├│n DeepSeek
+[31m[1mTypeError[22m: aiService.getConfig is not a 
+function[39m
+[36m [2mΓ¥»[22m tests/ai/deepseek-implementation.test
+.ts:[2m33:34[22m[39m
+    [90m 31| [39m    test('LocalAIService debe usar 
+configuraci├│n DeepSeek', async () =ΓÇª
+    [90m 32| [39m        [35mconst[39m aiService 
+[33m=[39m [35mnew[39m 
+[33mLocalAIService[39m()[33m;[39m
+    [90m 33| [39m        [35mconst[39m config 
+[33m=[39m 
+aiService[33m.[39m[34mgetConfig[39m()[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 34| [39m
+    [90m 35| [39m        [34mexpect[39m(config[33m.
+[39mmodel)[33m.[39m[34mtoBe[39m([32m'deepseek-r1-d
+istill-llama-8b'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/ai/emergency-fix.test.ts[2m > [22mEmergency AI 
+Fix Validation[2m > [22mIA debe dar respuestas 
+espec├¡ficas y no gen├⌐ricas
+[31m[1mAssertionError[22m: expected 'Respuesta 
+generada por consulta SQL dΓÇª' to match /\d+/[39m
+
+[32m- Expected:[39m 
+/\d+/
+
+[31m+ Received:[39m 
+"Respuesta generada por consulta SQL directa (Modo 
+Seguro)No se pudieron obtener los datos del sistema."
+
+[36m [2mΓ¥»[22m 
+tests/ai/emergency-fix.test.ts:[2m72:36[22m[39m
+    [90m 70| [39m
+    [90m 71| [39m            [90m// VERIFICAR QUE 
+TENGA DATOS REALES (Simulados en el mock)[39m
+    [90m 72| [39m            
+expect(textoRespuesta).toMatch(/\d+/); // Al menos un 
+n├║meΓÇª
+    [90m   | [39m                                   
+[31m^[39m
+    [90m 73| [39m        }
+    [90m 74| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/ai/LocalAIService.test.ts[2m > 
+[22mLocalAIService - Arquitectura Validada[2m > 
+[22mdebe usar configuraci├│n Ollama correcta
+[31m[1mTypeError[22m: aiService.getConfig is not a 
+function[39m
+[36m [2mΓ¥»[22m 
+tests/ai/LocalAIService.test.ts:[2m13:26[22m[39m
+    [90m 11| [39m
+    [90m 12| [39m    [34mit[39m([32m'debe usar 
+configuraci├│n Ollama correcta'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 13| [39m        expect(aiService.getConfig().
+model).toBe('deepseek-r1-distill-ΓÇª
+    [90m   | [39m                         [31m^[39m
+    [90m 14| [39m        [34mexpect[39m(aiService[3
+3m.[39m[34mgetConfig[39m()[33m.[39moptions[33m.[3
+9mtemperature)[33m.[39m[34mtoBe[39m([34m0.1[39m)[
+33m;[39m
+    [90m 15| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/ai/LocalAIService.test.ts[2m > 
+[22mLocalAIService - Arquitectura Validada[2m > 
+[22mdebe acceder solo a vistas de solo lectura
+[31m[1mTypeError[22m: aiService.getAllowedViews is 
+not a function[39m
+[36m [2mΓ¥»[22m 
+tests/ai/LocalAIService.test.ts:[2m18:40[22m[39m
+    [90m 16| [39m
+    [90m 17| [39m    [34mit[39m([32m'debe acceder 
+solo a vistas de solo lectura'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 18| [39m        [35mconst[39m allowedViews 
+[33m=[39m aiService[33m.[39m[34mgetAllowedViews[39
+m()[33m;[39m
+    [90m   | [39m                                     
+  [31m^[39m
+    [90m 19| [39m        [34mexpect[39m(allowedViews
+[33m.[39m[34mevery[39m(view [33m=>[39m
+    [90m 20| [39m            
+view[33m.[39m[34mendsWith[39m([32m'_summary'[39m) 
+[33m||[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/audit/AuditTrailMonitor.test.tsx[2m > 
+[22mAuditTrailMonitor[2m > [22mshould show verifying 
+state initially
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/audit/AuditTrailMonito
+r.test.tsx:[2m18:9[22m[39m
+    [90m 16| [39m[34mdescribe[39m([32m'AuditTrailMo
+nitor'[39m[33m,[39m () [33m=>[39m {
+    [90m 17| [39m    [34mit[39m([32m'should show 
+verifying state initially'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 18| [39m        
+[34mrender[39m([33m<[39m[33mAuditTrailMonitor[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 19| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([36m/Verificando/i[39m))[33m
+.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 20| [39m        
+expect(screen.getByText(/Calculando 
+hashes/i)).toBeInTheDocumeΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/audit/AuditTrailMonitor.test.tsx[2m > 
+[22mAuditTrailMonitor[2m > [22mshould show secure or 
+compromised state after timeout
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/audit/AuditTrailMonito
+r.test.tsx:[2m24:9[22m[39m
+    [90m 22| [39m
+    [90m 23| [39m    it('should show secure or 
+compromised state after timeout', async ΓÇª
+    [90m 24| [39m        
+[34mrender[39m([33m<[39m[33mAuditTrailMonitor[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 25| [39m        [35mawait[39m 
+[34mwaitFor[39m(() [33m=>[39m {
+    [90m 26| [39m            [35mconst[39m secure 
+[33m=[39m 
+screen[33m.[39m[34mqueryByText[39m([36m/Cadena 
+Segura/i[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/audit/AuditTrailMonitor.test.tsx[2m > 
+[22mAuditTrailMonitor[2m > [22mshould refresh 
+verification on click
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/audit/AuditTrailMonito
+r.test.tsx:[2m33:9[22m[39m
+    [90m 31| [39m
+    [90m 32| [39m    [34mit[39m([32m'should 
+refresh verification on click'[39m[33m,[39m 
+[35masync[39m () [33m=>[39m {
+    [90m 33| [39m        
+[34mrender[39m([33m<[39m[33mAuditTrailMonitor[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 34| [39m        [90m// Wait for first 
+verification[39m
+    [90m 35| [39m        await waitFor(() => 
+screen.queryByText(/(Segura|Comprometida)/ΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/dashboard/TaxCo
+mplianceWidget.test.tsx[2m > 
+[22mTaxComplianceWidget[2m > [22mshould render 
+loading state initially
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dashboard/TaxComplianc
+eWidget.test.tsx:[2m17:31[22m[39m
+    [90m 15| [39m[34mdescribe[39m([32m'TaxComplianc
+eWidget'[39m[33m,[39m () [33m=>[39m {
+    [90m 16| [39m    [34mit[39m([32m'should render 
+loading state initially'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 17| [39m        [35mconst[39m { container 
+} [33m=[39m [34mrender[39m([33m<[39m[33mTaxCompli
+anceWidget[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                              
+[31m^[39m
+    [90m 18| [39m        expect(container.querySelecto
+r('.animate-pulse')).toBeInTheDocΓÇª
+    [90m 19| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/dashboard/TaxCo
+mplianceWidget.test.tsx[2m > 
+[22mTaxComplianceWidget[2m > [22mshould render 
+compliance status after loading
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dashboard/TaxComplianc
+eWidget.test.tsx:[2m22:9[22m[39m
+    [90m 20| [39m
+    [90m 21| [39m    [34mit[39m([32m'should render 
+compliance status after loading'[39m[33m,[39m 
+[35masync[39m () [33m=>[39m {
+    [90m 22| [39m        [34mrender[39m([33m<[39m
+[33mTaxComplianceWidget[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 23| [39m
+    [90m 24| [39m        [35mawait[39m 
+[34mwaitFor[39m(() [33m=>[39m {
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/dashboard/TaxCo
+mplianceWidget.test.tsx[2m > 
+[22mTaxComplianceWidget[2m > [22mshould display 
+estimated liability
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dashboard/TaxComplianc
+eWidget.test.tsx:[2m36:9[22m[39m
+    [90m 34| [39m
+    [90m 35| [39m    [34mit[39m([32m'should 
+display estimated liability'[39m[33m,[39m 
+[35masync[39m () [33m=>[39m {
+    [90m 36| [39m        [34mrender[39m([33m<[39m
+[33mTaxComplianceWidget[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 37| [39m        [35mawait[39m 
+[34mwaitFor[39m(() [33m=>[39m {
+    [90m 38| [39m            
+expect(screen.getByText(/Impuesto 
+Estimado/i)).toBeInTheDoΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould render 
+step 1 initially
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m38:9[22m[39m
+    [90m 36| [39m
+    [90m 37| [39m    [34mit[39m([32m'should render 
+step 1 initially'[39m[33m,[39m () [33m=>[39m {
+    [90m 38| [39m        [34mrender[39m([33m<[39m
+[33mDR15PreparationWizard[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m        [31m^[39m
+    [90m 39| [39m        
+expect(screen.getByText(/Paso 1: Seleccionar Periodo 
+Fiscal/i)ΓÇª
+    [90m 40| [39m        // Since we are using 
+standard input type="month", let's checkΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould enable 
+next button when period is selected
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m46:31[22m[39m
+    [90m 44| [39m
+    [90m 45| [39m    [34mit[39m([32m'should enable 
+next button when period is selected'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 46| [39m        [35mconst[39m { container 
+} [33m=[39m [34mrender[39m([33m<[39m[33mDR15Prepa
+rationWizard[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                              
+[31m^[39m
+    [90m 47| [39m        [90m// Find input by type 
+directly to avoid selector ambiguity[39m
+    [90m 48| [39m        const fileInput = 
+container.querySelector('input[type="month"]ΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould progress 
+to step 2 review figures
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m59:31[22m[39m
+    [90m 57| [39m
+    [90m 58| [39m    [34mit[39m([32m'should 
+progress to step 2 review figures'[39m[33m,[39m 
+[35masync[39m () [33m=>[39m {
+    [90m 59| [39m        [35mconst[39m { container 
+} [33m=[39m [34mrender[39m([33m<[39m[33mDR15Prepa
+rationWizard[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                              
+[31m^[39m
+    [90m 60| [39m        [35mconst[39m input 
+[33m=[39m container[33m.[39m[34mquerySelector[39m(
+[32m'input[type="month"]'[39m)[33m;[39m
+    [90m 61| [39m        fireEvent[33m.[39m[34mchan
+ge[39m(input[33m![39m[33m,[39m { target[33m:[39m 
+{ value[33m:[39m [32m'2023-10'[39m } })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[20/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould show 
+success screen after confirmation
+[31m[1mReferenceError[22m: document is not 
+defined[39m
+[90m [2mΓ¥»[22m Proxy.render node_modules/@testing-li
+brary/react/dist/pure.js:[2m256:5[22m[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m75:31[22m[39m
+    [90m 73| [39m
+    [90m 74| [39m    [34mit[39m([32m'should show 
+success screen after confirmation'[39m[33m,[39m 
+[35masync[39m () [33m=>[39m {
+    [90m 75| [39m        [35mconst[39m { container 
+} [33m=[39m [34mrender[39m([33m<[39m[33mDR15Prepa
+rationWizard[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m   | [39m                              
+[31m^[39m
+    [90m 76| [39m        [90m// Step 1[39m
+    [90m 77| [39m        fireEvent.change(container.qu
+erySelector('input[type="month"]'ΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[21/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/invoices/InvoiceForm.test.tsx[2m > 
+[22mInvoiceForm[2m > [22mmuestra el resumen de 
+impuestos correctamente
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: Subtotal: 100
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div>[39m
+  [0mSubtotal: [0m
+  [0m100[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div>[39m
+  [0mSubtotal: [0m
+  [0m100[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-4xl mx-auto 
+my-8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 undefined"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-2xl"[39m
+        [36m>[39m
+          [0mFacturaci├│n Forense Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [33mfor[39m=[32m"customer"[39m
+          [36m>[39m
+            [0mCliente[0m
+          [36m</label>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"customer-selector"[39m
+          [36m>[39m
+            [0mCustomer Selector Mock[0m
+            [36m<span>[39m
+              [0mCliente Test[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm 
+text-muted-foreground"[39m
+          [36m>[39m
+            [0mCondado: [0m
+            [36m<strong>[39m
+              [0mMiami-Dade[0m
+            [36m</strong>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex justify-between 
+items-center"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [36m>[39m
+              [0mProductos/Servicios[0m
+            [36m</label>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+undefined  border border-input bg-background 
+hover:bg-accent hover:text-accent-foreground"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide 
+lucide-plus-circle w-4 h-4 mr-2"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                
+[33mstroke[39m=[32m"currentColor"[39m
+                
+[33mstroke-linecap[39m=[32m"round"[39m
+                
+[33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 12h8"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 8v8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mAgregar L├¡nea[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-4 
+items-start p-4 border rounded-lg"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 
+space-y-2"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"flex h-10 w-full 
+rounded-md border border-input bg-background px-3 py-2 
+text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                
+[33mplaceholder[39m=[32m"Descripci├│n"[39m
+                [33mvalue[39m=[32m"Producto 1"[39m
+              [36m/>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex gap-2"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"quantity-1"[39m
+                  [36m>[39m
+                    [0mCantidad[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"quantity-1"[39m
+                    [33mmin[39m=[32m"0.01"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    [33mtype[39m=[32m"number"[39m
+                    [33mvalue[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"price-1"[39m
+                  [36m>[39m
+                    [0mPrecio Unitario[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"price-1"[39m
+                    [33mmin[39m=[32m"0"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    ...
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@
+testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m getElementError node_modules/@testing
+-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2mΓ¥»[22m getMultipleElementsFoundError node_mo
+dules/@testing-library/dom/dist/query-helpers.js:[2m23:
+10[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m55:13[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m src/components/invoices/InvoiceForm.t
+est.tsx:[2m66:23[22m[39m
+    [90m 64| [39m        
+[34mrender[39m([33m<[39m[33mInvoiceForm[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 65| [39m
+    [90m 66| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([32m'Subtotal: 100'[39m))[33
+m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 67| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([32m'Tax: 6.5'[39m))[33m.[3
+9m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 68| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([32m'Total: 106.5'[39m))[33m
+.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[22/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/invoices/InvoiceForm.test.tsx[2m > 
+[22mInvoiceForm[2m > [22mel bot├│n de guardar est├í 
+habilitado con datos v├ílidos
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: Guardar con Auditor├¡a
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+min-w-32  "[39m
+[36m>[39m
+  [0mGuardar con Auditor├¡a[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+min-w-32  "[39m
+[36m>[39m
+  [0mGuardar con Auditor├¡a[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+min-w-32  "[39m
+[36m>[39m
+  [0mGuardar con Auditor├¡a[0m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-4xl mx-auto 
+my-8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 undefined"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-2xl"[39m
+        [36m>[39m
+          [0mFacturaci├│n Forense Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [33mfor[39m=[32m"customer"[39m
+          [36m>[39m
+            [0mCliente[0m
+          [36m</label>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"customer-selector"[39m
+          [36m>[39m
+            [0mCustomer Selector Mock[0m
+            [36m<span>[39m
+              [0mCliente Test[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm 
+text-muted-foreground"[39m
+          [36m>[39m
+            [0mCondado: [0m
+            [36m<strong>[39m
+              [0mMiami-Dade[0m
+            [36m</strong>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex justify-between 
+items-center"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [36m>[39m
+              [0mProductos/Servicios[0m
+            [36m</label>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+undefined  border border-input bg-background 
+hover:bg-accent hover:text-accent-foreground"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide 
+lucide-plus-circle w-4 h-4 mr-2"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                
+[33mstroke[39m=[32m"currentColor"[39m
+                
+[33mstroke-linecap[39m=[32m"round"[39m
+                
+[33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 12h8"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 8v8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mAgregar L├¡nea[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-4 
+items-start p-4 border rounded-lg"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 
+space-y-2"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"flex h-10 w-full 
+rounded-md border border-input bg-background px-3 py-2 
+text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                
+[33mplaceholder[39m=[32m"Descripci├│n"[39m
+                [33mvalue[39m=[32m"Producto 1"[39m
+              [36m/>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex gap-2"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"quantity-1"[39m
+                  [36m>[39m
+                    [0mCantidad[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"quantity-1"[39m
+                    [33mmin[39m=[32m"0.01"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    [33mtype[39m=[32m"number"[39m
+                    [33mvalue[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"price-1"[39m
+                  [36m>[39m
+                    [0mPrecio Unitario[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"price-1"[39m
+                    [33mmin[39m=[32m"0"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    ...
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@
+testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m getElementError node_modules/@testing
+-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2mΓ¥»[22m getMultipleElementsFoundError node_mo
+dules/@testing-library/dom/dist/query-helpers.js:[2m23:
+10[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m55:13[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m src/components/invoices/InvoiceForm.t
+est.tsx:[2m75:35[22m[39m
+    [90m 73| [39m        
+[34mrender[39m([33m<[39m[33mInvoiceForm[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 74| [39m
+    [90m 75| [39m        [35mconst[39m saveButton 
+[33m=[39m 
+screen[33m.[39m[34mgetByText[39m([32m'Guardar con 
+Auditor├¡a'[39m)[33m;[39m
+    [90m   | [39m                                  
+[31m^[39m
+    [90m 76| [39m        [34mexpect[39m(saveButton)
+[33m.[39m[34mtoBeEnabled[39m()[33m;[39m
+    [90m 77| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[23/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/lib/__tests__/pdf-parser.test.ts[2m > [22mPDF 
+Parser (Gold+)[2m > [22mshould filter noise and 
+balance lines
+[31m[1mAssertionError[22m: expected [] to have a 
+length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m 
+src/lib/__tests__/pdf-parser.test.ts:[2m71:25[22m[39m
+    [90m 69| [39m        [35mconst[39m results 
+[33m=[39m [35mawait[39m pdfParser[33m.[39m[34mpar
+seBankPDF[39m(file)[33m;[39m
+    [90m 70| [39m
+    [90m 71| [39m        [34mexpect[39m(results)[33
+m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m 72| [39m        [34mexpect[39m(results[[34
+m0[39m][33m.[39mdata[33m?.[39mdescription)[33m.[3
+9m[34mtoBe[39m([32m'VALID TRANS'[39m)[33m;[39m
+    [90m 73| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[24/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/ai/ExplanationEngine.test.ts[2m > 
+[22mExplanationEngine[2m > [22mshould explain 
+standard calculation with surtax
+[31m[1mAssertionError[22m: expected 'Sales tax is 
+calculated at a total raΓÇª' to contain '7.0%'[39m
+
+Expected: [32m"7.0%"[39m
+Received: [31m"Sales tax is calculated at a total rate 
+of 6.0% based on the delivery location in Miami-Dade. 
+This consists of the specific Florida State Base Rate 
+(6.0%). No discretionary surtax applies or is known for 
+this county. Applied to the subtotal of $1,000.00, the 
+tax amount is $60.00."[39m
+
+[36m [2mΓ¥»[22m src/modules/ai/ExplanationEngine.test
+.ts:[2m38:22[22m[39m
+    [90m 36| [39m        })[33m;[39m
+    [90m 37| [39m
+    [90m 38| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'7.0%'[39m)[33m;[39m
+    [90m   | [39m                     [31m^[39m
+    [90m 39| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'Miami-Dade'[39m)[33m;[3
+9m
+    [90m 40| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'Florida State Base Rate 
+(6.0%)'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[25/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mHappy Path 
+Calculations[2m > [22mshould correctly calculate tax 
+for Miami-Dade (7.5%)
+[31m[1mAssertionError[22m: expected 0.065 to be 
+0.075 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0.075[39m
+[31m+ 0.065[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m13:40[22m[39m
+    [90m 11| [39m
+    [90m 12| [39m            [34mexpect[39m(result[
+33m.[39msubtotal)[33m.[39m[34mtoBe[39m([34m100.00
+[39m)[33m;[39m
+    [90m 13| [39m            [34mexpect[39m(result[
+33m.[39mappliedRate)[33m.[39m[34mtoBe[39m([34m0.07
+5[39m)[33m;[39m
+    [90m   | [39m                                     
+  [31m^[39m
+    [90m 14| [39m            [34mexpect[39m(result[
+33m.[39mtaxAmount)[33m.[39m[34mtoBe[39m([34m7.50[
+39m)[33m;[39m
+    [90m 15| [39m            [34mexpect[39m(result[
+33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m107.50[39
+m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[26/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mHappy Path 
+Calculations[2m > [22mshould correctly calculate tax 
+for Broward (7.0%)
+[31m[1mAssertionError[22m: expected 0.06 to be 0.07 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0.07[39m
+[31m+ 0.06[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m22:40[22m[39m
+    [90m 20| [39m            [35mconst[39m result 
+[33m=[39m calculator[33m.[39m[34mcalculate[39m([3
+4m100.00[39m[33m,[39m [32m'Broward'[39m)[33m;[39m
+    [90m 21| [39m
+    [90m 22| [39m            [34mexpect[39m(result[
+33m.[39mappliedRate)[33m.[39m[34mtoBe[39m([34m0.07
+[39m)[33m;[39m
+    [90m   | [39m                                     
+  [31m^[39m
+    [90m 23| [39m            [34mexpect[39m(result[
+33m.[39mtaxAmount)[33m.[39m[34mtoBe[39m([34m7.00[
+39m)[33m;[39m
+    [90m 24| [39m            [34mexpect[39m(result[
+33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m107.00[39
+m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[27/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mHappy Path 
+Calculations[2m > [22mshould handle decimal subtotals 
+correctly (Rounding)
+[31m[1mAssertionError[22m: expected 9.79 to be 11.29 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 11.29[39m
+[31m+ 9.79[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m39:38[22m[39m
+    [90m 37| [39m            [90m// 150.55 * 0.075 = 
+11.29125 -> 11.29[39m
+    [90m 38| [39m            [35mconst[39m result 
+[33m=[39m calculator[33m.[39m[34mcalculate[39m([3
+4m150.55[39m[33m,[39m 
+[32m'Miami-Dade'[39m)[33m;[39m
+    [90m 39| [39m            [34mexpect[39m(result[
+33m.[39mtaxAmount)[33m.[39m[34mtoBe[39m([34m11.29
+[39m)[33m;[39m
+    [90m   | [39m                                     
+[31m^[39m
+    [90m 40| [39m            [34mexpect[39m(result[
+33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m161.84[39
+m)[33m;[39m
+    [90m 41| [39m        })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[28/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mBusiness Rules[2m 
+> [22mshould match rates defined in the static config
+[31m[1mAssertionError[22m: expected 0.065 to be 
+0.075 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0.075[39m
+[31m+ 0.065[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m73:31[22m[39m
+    [90m 71| [39m        [34mit[39m([32m'should 
+match rates defined in the static 
+config'[39m[33m,[39m () [33m=>[39m {
+    [90m 72| [39m            const miamiRate = 
+calculator.getRateForCounty('Miami-Dade'ΓÇª
+    [90m 73| [39m            [34mexpect[39m(miamiRat
+e)[33m.[39m[34mtoBe[39m([34m0.075[39m)[33m;[39m
+    [90m   | [39m                              
+[31m^[39m
+    [90m 74| [39m
+    [90m 75| [39m            [35mconst[39m 
+brevardRate [33m=[39m calculator[33m.[39m[34mgetRat
+eForCounty[39m([32m'Brevard'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[29/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/purchasing/GoodsReceiptService.test.ts[2m 
+> [22mGoodsReceiptService[2m > [22mshould process 
+receipt and update inventory
+[31m[1mTypeError[22m: this.engine.select is not a 
+function[39m
+[36m [2mΓ¥»[22m GoodsReceiptService.processReceipt sr
+c/modules/purchasing/GoodsReceiptService.ts:[2m69:47[2
+2m[39m
+    [90m 67| [39m
+    [90m 68| [39m            // Fetch product cost 
+for accounting (simplified: use costΓÇª
+    [90m 69| [39m            const prodRes = await 
+this.engine.select('SELECT cost_pricΓÇª
+    [90m   | [39m                                     
+         [31m^[39m
+    [90m 70| [39m            [35mconst[39m unitCost 
+[33m=[39m [33mBig[39m(prodRes[[34m0[39m][33m?.[3
+9mcost_price [33m||[39m [34m0[39m)[33m;[39m
+    [90m 71| [39m            totalValue = 
+totalValue.plus(unitCost.times(line.quantity_ΓÇª
+[90m [2mΓ¥»[22m src/modules/purchasing/GoodsReceiptSe
+rvice.test.ts:[2m38:27[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[30/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould handle standard 
+positive amounts
+[31m[1mAssertionError[22m: expected 100050 to be 
+1000.5 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1000.5[39m
+[31m+ 100050[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m10:41[22m[39m
+    [90m  8| [39m        [34mit[39m([32m'should 
+handle standard positive amounts'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m  9| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 10| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([34m1000.50[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 11| [39m        })[33m;[39m
+    [90m 12| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[31/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould handle negative amounts 
+with minus sign
+[31m[1mAssertionError[22m: expected -5025 to be 
+-50.25 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- -50.25[39m
+[31m+ -5025[39m
+
+
+[2m Test Files [22m [1m[31m17 failed[39m[22m[2m | [22m[1m[32m15 passed[39m[22m[90m (32)[39m
+[2m      Tests [22m [1m[31m35 failed[39m[22m[2m | [22m[1m[32m85 passed[39m[22m[90m (120)[39m
+[2m   Start at [22m 13:03:15
+[2m   Duration [22m 7.04s[2m (transform 10.95s, setup 0ms, import 25.67s, tests 1.02s, environment 17.16s)[22m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m15:41[22m[39m
+    [90m 13| [39m        [34mit[39m([32m'should 
+handle negative amounts with minus 
+sign'[39m[33m,[39m () [33m=>[39m {
+    [90m 14| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 15| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([33m-[39m[34m50.25[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 16| [39m        })[33m;[39m
+    [90m 17| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[32/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould handle negative amounts 
+in parentheses
+[31m[1mAssertionError[22m: expected -150000 to be 
+-1500 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- -1500[39m
+[31m+ -150000[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m20:41[22m[39m
+    [90m 18| [39m        [34mit[39m([32m'should 
+handle negative amounts in parentheses'[39m[33m,[39m 
+() [33m=>[39m {
+    [90m 19| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 20| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([33m-[39m[34m1500.00[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 21| [39m        })[33m;[39m
+    [90m 22| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[33/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould strip currency symbols
+[31m[1mAssertionError[22m: expected 12345 to be 
+123.45 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 123.45[39m
+[31m+ 12345[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m25:41[22m[39m
+    [90m 23| [39m        [34mit[39m([32m'should 
+strip currency symbols'[39m[33m,[39m () [33m=>[39m 
+{
+    [90m 24| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 25| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([34m123.45[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 26| [39m        })[33m;[39m
+    [90m 27| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[34/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould valid strict mode fail 
+on garbage
+[31m[1mAssertionError[22m: expected 'Monto 
+inv├ílido: abc' to contain 'Invalid Amount'[39m
+
+Expected: [32m"[7mI[27mnv[7ma[27mlid[7m 
+Amount[27m"[39m
+Received: [31m"[7mMonto i[27mnv[7m├í[27mlid[7mo: 
+abc[27m"[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m31:34[22m[39m
+    [90m 29| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 30| [39m            [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfalse[3
+9m)[33m;[39m
+    [90m 31| [39m            [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'Inva
+lid Amount'[39m)[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 32| [39m        })[33m;[39m
+    [90m 33| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[35/36]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mDate 
+Normalization[2m > [22mshould fail on invalid date in 
+strict mode
+[31m[1mAssertionError[22m: expected 'Fecha 
+inv├ílida: InvalidDate' to contain 'Invalid Date'[39m
+
+Expected: [32m"Invalid[7m [27mDate"[39m
+Received: [31m"[7mFecha inv├ílida: 
+[27mInvalidDate"[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m50:34[22m[39m
+    [90m 48| [39m            const result = 
+normalizeTransaction('InvalidDate', 'Test',ΓÇª
+    [90m 49| [39m            [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfalse[3
+9m)[33m;[39m
+    [90m 50| [39m            [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'Inva
+lid Date'[39m)[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 51| [39m        })[33m;[39m
+    [90m 52| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[36/36]ΓÄ»[22m[39m
+

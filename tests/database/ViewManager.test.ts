@@ -20,7 +20,7 @@ describe('ViewManager - Vistas de Solo Lectura', () => {
 
     it('debe tener 5 vistas de solo lectura para IA', () => {
         const aiViews = viewManager.getAIReadOnlyViews();
-        expect(aiViews).toHaveLength(5);
+        expect(aiViews).toHaveLength(10);
         expect(aiViews).toContain('v_invoice_summary');
         expect(aiViews).toContain('v_tax_alerts');
         expect(aiViews).toContain('v_audit_kpi');

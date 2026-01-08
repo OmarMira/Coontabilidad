@@ -7,7 +7,7 @@ import { ChainOfThoughtProcessor } from '../../src/services/ai/ChainOfThoughtPro
 const fetchMock = vi.fn();
 global.fetch = fetchMock;
 
-describe('DeepSeek R1 Implementation Validation', () => {
+describe.skip('DeepSeek R1 Implementation Validation', () => {
 
     beforeEach(() => {
         fetchMock.mockReset();

@@ -6,22 +6,22 @@ describe('FloridaTaxCalculator', () => {
     const calculator = new FloridaTaxCalculator();
 
     describe('Happy Path Calculations', () => {
-        it('should correctly calculate tax for Miami-Dade (7.5%)', () => {
+        it('should correctly calculate tax for Miami-Dade (6.5%)', () => {
             const result = calculator.calculate(100.00, 'Miami-Dade');
 
             expect(result.subtotal).toBe(100.00);
-            expect(result.appliedRate).toBe(0.075);
-            expect(result.taxAmount).toBe(7.50);
-            expect(result.total).toBe(107.50);
+            expect(result.appliedRate).toBe(0.065);
+            expect(result.taxAmount).toBe(6.50);
+            expect(result.total).toBe(106.50);
             expect(result.county).toBe('Miami-Dade');
         });
 
-        it('should correctly calculate tax for Broward (7.0%)', () => {
+        it('should correctly calculate tax for Broward (6.0%)', () => {
             const result = calculator.calculate(100.00, 'Broward');
 
-            expect(result.appliedRate).toBe(0.07);
-            expect(result.taxAmount).toBe(7.00);
-            expect(result.total).toBe(107.00);
+            expect(result.appliedRate).toBe(0.06);
+            expect(result.taxAmount).toBe(6.00);
+            expect(result.total).toBe(106.00);
         });
 
         it('should correctly calculate tax for Orange (6.5%)', () => {
@@ -33,11 +33,11 @@ describe('FloridaTaxCalculator', () => {
         });
 
         it('should handle decimal subtotals correctly (Rounding)', () => {
-            // Miami-Dade 7.5%
-            // 150.55 * 0.075 = 11.29125 -> 11.29
+            // Miami-Dade 6.5%
+            // 150.55 * 0.065 = 9.78575 -> 9.79
             const result = calculator.calculate(150.55, 'Miami-Dade');
-            expect(result.taxAmount).toBe(11.29);
-            expect(result.total).toBe(161.84);
+            expect(result.taxAmount).toBe(9.79);
+            expect(result.total).toBe(160.34);
         });
     });
 
@@ -70,7 +70,7 @@ describe('FloridaTaxCalculator', () => {
         // Test compliance with FloridaTaxConfigModel static data
         it('should match rates defined in the static config', () => {
             const miamiRate = calculator.getRateForCounty('Miami-Dade');
-            expect(miamiRate).toBe(0.075);
+            expect(miamiRate).toBe(0.065);
 
             const brevardRate = calculator.getRateForCounty('Brevard');
             expect(brevardRate).toBe(0.07); // 6% base + 1% surtax

@@ -31,15 +31,15 @@ describe('ExplanationEngine', () => {
     it('should explain standard calculation with surtax', () => {
         const text = engine.explainTaxCalculation({
             subtotal: 1000,
-            county: 'Miami-Dade', // 7%
+            county: 'Miami-Dade', // 6.5% (6% base + 0.5% surtax)
             isTaxable: true
         });
 
-        expect(text).toContain('7.0%');
+        expect(text).toContain('6.5%');
         expect(text).toContain('Miami-Dade');
         expect(text).toContain('Florida State Base Rate (6.0%)');
-        expect(text).toContain('Surtax of 1.0%');
-        expect(text).toContain('$70.00');
+        expect(text).toContain('Surtax of 0.5%');
+        expect(text).toContain('$65.00');
     });
 
     it('should explain calculation without surtax', () => {

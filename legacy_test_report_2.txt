@@ -1,0 +1,5046 @@
+﻿
+> coontabilidad@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Account Express[39m
+
+ [31mΓ¥»[39m src/modules/billing/FloridaTaxCalculator.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 29[2mms[22m[39m
+[31m       [31m├ù[31m should correctly calculate tax for Miami-Dade (7.5%)[39m[32m 14[2mms[22m[39m
+[31m       [31m├ù[31m should correctly calculate tax for Broward (7.0%)[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should correctly calculate tax for Orange (6.5%)[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should handle decimal subtotals correctly (Rounding)[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should throw error for unknown county[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should throw Zod validation error for negative subtotal[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should throw Zod validation error for empty county string[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should mark DR-15 as required for valid transactions[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should match rates defined in the static config[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should calculate correctly for Lee county (7.0%)[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should calculate correctly for Pinellas county (7.0%)[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should handle zero subtotal without error[32m 0[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/ai/emergency-fix.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [31mΓ¥»[39m src/modules/purchasing/GoodsReceiptService.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 11[2mms[22m[39m
+[31m     [31m├ù[31m should process receipt and update inventory[39m[32m 9[2mms[22m[39m
+ [31mΓ¥»[39m src/validators/FloridaComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 18[2mms[22m[39m
+     [32mΓ£ô[39m should validate valid registration numbers[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should reject invalid registration numbers[32m 0[2mms[22m[39m
+     [32mΓ£ô[39m should validate correct DR-15 return data[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should reject invalid DR-15 return data[32m 2[2mms[22m[39m
+[31m     [31m├ù[31m should check county rate compliance[39m[32m 9[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/ai/deepseek-implementation.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [31mΓ¥»[39m src/modules/ai/ExplanationEngine.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 128[2mms[22m[39m
+     [32mΓ£ô[39m should explain non-taxable transactions[32m 82[2mms[22m[39m
+     [32mΓ£ô[39m should explain tax exempt customers[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should explain standard calculation with surtax[39m[32m 40[2mms[22m[39m
+     [32mΓ£ô[39m should explain calculation without surtax[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m should explain DR-15 summary[32m 1[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/database/InitializationFix.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+ [32mΓ£ô[39m tests/database/ViewManager.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [31mΓ¥»[39m tests/unit/DoubleEntryValidator.test.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 14[2mms[22m[39m
+     [32mΓ£ô[39m should validate balanced journal entry[32m 3[2mms[22m[39m
+[31m     [31m├ù[31m should reject unbalanced journal entry[39m[32m 9[2mms[22m[39m
+ [31mΓ¥»[39m src/components/invoices/InvoiceForm.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 211[2mms[22m[39m
+     [32mΓ£ô[39m se renderiza correctamente[32m 98[2mms[22m[39m
+[31m     [31m├ù[31m muestra el resumen de impuestos correctamente[39m[32m 62[2mms[22m[39m
+[31m     [31m├ù[31m el bot├│n de guardar est├í habilitado con datos v├ílidos[39m[32m 48[2mms[22m[39m
+ [32mΓ£ô[39m src/tests/regulatory-flow.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChain.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [2m[90mΓåô[39m[22m tests/ai/LocalAIService.test.ts [2m([22m[2m3 tests[22m[2m | [22m[33m3 skipped[39m[2m)[22m
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:35:46] [INFO] DatabaseService.forensic_init: Iniciando verificaci├│n de n├║cleo forense...
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:35:46] [INFO] DatabaseService.tax_config_populated: Se han poblado 67 condados de Florida.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:35:46] [INFO] DatabaseService.triggers_installed: Triggers de inmutabilidad instalados.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)
+[22m[39m[13:35:46] [INFO] DatabaseService.forensic_ready: N├║cleo forense verificado y listo.
+
+[90mstdout[2m | src/tests/integration/regulatory-flow.integration.test.ts[2m > [22m[2mRegulatory & Forensic Integration Test (L1/L3)[2m > [22m[2mshould pass forensic integrity check on new journal entries
+[22m[39m[13:35:46] [INFO] DatabaseService.entry_sealed: Asiento JE-1767897346335 sellado criptogr├íficamente.
+
+node.exe : [90mstderr[2m | src/tests/integration/regul
+atory-flow.integration.test.ts[2m > 
+[22m[2mRegulatory & Forensic Integration Test 
+(L1/L3)[2m > [22m[2mshould generate accurate DR-15 
+report from tax transactions
+En C:\Program Files\nodejs\npm.ps1: 29 Carácter: 3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstder 
+   r[2m...ax transactions:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mXML DEBUG: <?xml version="1.0" 
+encoding="UTF-8"?>
+<FDOR_DR15_Return 
+xmlns="http://www.floridarevenue.com/schemas/dr15/v3" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <TransmissionHeader>
+        <TransmissionId>b9021f53-0a81-47c3-96ae-d8c285f6
+0d6e</TransmissionId>
+        <Timestamp>2026-01-08T18:35:46.356Z</Timestamp>
+        <SoftwareProvider>AccountExpress Iron Core 
+v1.0</SoftwareProvider>
+        <ForensicChecksum>0ed038afac07c3cc7fa05b9dd4ca2f
+e0cc08afc2f97e80ee9d7d9032ed2b1b62</ForensicChecksum>
+    </TransmissionHeader>
+    <TaxpayerData>
+        <FEIN>20-2026FL</FEIN>
+        <ReportingPeriod>2026-01</ReportingPeriod>
+    </TaxpayerData>
+    <FinancialData>
+        <TotalGrossSales>100000</TotalGrossSales>
+        <TotalTaxDue>7000</TotalTaxDue>
+        <CountyBreakdown>
+            
+            <CountyRecord>
+                <CountyCode>MIAMI-DADE</CountyCode>
+                <GrossSales>100000</GrossSales>
+                <TaxCollected>7000</TaxCollected>
+                <SurtaxDue>0</SurtaxDue>
+            </CountyRecord>
+        </CountyBreakdown>
+    </FinancialData>
+</FDOR_DR15_Return>
+
+ [32mΓ£ô[39m src/tests/integration/regulatory-flow.integration.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 161[2mms[22m[39m
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[13:35:46] [CRITICAL] Forensic.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO FIX DEFINITIVO PARA ERROR FK - MODO NUCLEAR
+[13:35:46] [WARN] Forensic.cleanup: Iniciando Nuclear Rebuild: Eliminando todos los artefactos...
+[13:35:46] [DEBUG] Forensic.cleanup: Eliminado table: old_table
+[13:35:46] [INFO] Forensic.schema: Creando schema garantizado con arquitectura a prueba de fallos...
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe ejecutar el fix nuclear correctamente reconstruyendo el esquema
+[22m[39m[13:35:46] [INFO] Forensic.success: Γ£à SISTEMA RECONSTRUIDO Y VALIDADO TRAS FIX NUCLEAR
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:35:46] [INFO] Monitor.startup: Monitor de Integridad 24/7 activado.
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:35:46] [CRITICAL] Monitor.integrity_failure: ≡ƒÜ¿ EMERGENCY: FALLA DE INTEGRIDAD DETECTADA POR MONITOR CONTINUO
+Data: {
+  failures: [
+    [32m'Inconsistencia f├¡sica: corrupt'[39m,
+    [32m'Estructura de tablas incompleta'[39m
+  ]
+}
+
+[90mstdout[2m | tests/database/DefinitiveFix.test.ts[2m > [22m[2mDefinitive Forensic system[2m > [22m[2mDebe iniciar el monitor de integridad sin errores
+[22m[39m[13:35:46] [WARN] Monitor.shutdown: Monitor de Integridad detenido manualmente.
+
+ [32mΓ£ô[39m tests/database/DefinitiveFix.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/dr15/DR15Generator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:35:46] [CRITICAL] EmergencyInit.start: ≡ƒÜ¿ EMERGENCY: EJECUTANDO INICIALIZACI├ôN DE EMERGENCIA CON FIX FK
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:35:46] [INFO] EmergencyInit.diagnosis: Diagn├│stico FK:
+Data: {
+  hasError: [33mtrue[39m,
+  existingTables: [ [32m'users'[39m, [32m'customers'[39m ],
+  fkEnabled: [33mtrue[39m,
+  fkViolations: [],
+  recommendation: [32m'VERIFICACION_COMPLETA_REQUERIDA'[39m
+}
+[13:35:46] [INFO] EmergencyInit.schema: Creando tablas en orden estrat├⌐gico...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:35:46] [INFO] EmergencyInit.repair: Verificando y reparando relaciones...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:35:46] [INFO] EmergencyInit.data: Cargando datos iniciales...
+
+[90mstdout[2m | tests/emergency/EmergencyInitializer.test.ts[2m > [22m[2mEmergency Database Initializer[2m > [22m[2mDebe ejecutar la inicializaci├│n de emergencia sin errores
+[22m[39m[13:35:46] [INFO] EmergencyInit.success: Γ£à BASE DE DATOS INICIALIZADA CORRECTAMENTE CON FIX DE EMERGENCIA
+
+ [32mΓ£ô[39m tests/emergency/EmergencyInitializer.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/backup/BackupManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32mΓ£ô[39m src/services/__tests__/TaxService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/system/CompanyService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/inventory/InventoryManager.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/accounting/GeneralLedgerService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos clientes tengo
+A: Tienes 8 clientes registrados.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantas facturas hay
+A: Hay 15 facturas de venta y 5 de compra.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cual es la mayor venta
+A: La mayor venta es INV-001 por $2850.
+
+[90mstdout[2m | tests/ai/final-verification.test.ts[2m > [22m[2mFinal AI Verification[2m > [22m[2mDebe responder correctamente a preguntas clave
+[22m[39mQ: cuantos proveedores tengo
+A: Tienes 3 proveedores.
+
+ [32mΓ£ô[39m tests/ai/final-verification.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [31mΓ¥»[39m src/components/dashboard/TaxComplianceWidget.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 2078[2mms[22m[39m
+[31m     [31m├ù[31m should render loading state initially[39m[32m 33[2mms[22m[39m
+[31m     [31m├ù[31m should render compliance status after loading[39m[33m 1018[2mms[22m[39m
+[31m     [31m├ù[31m should display estimated liability[39m[33m 1024[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/billing/InvoiceComplianceValidator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [31mΓ¥»[39m src/components/dr15/DR15PreparationWizard.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 1137[2mms[22m[39m
+[31m     [31m├ù[31m should render step 1 initially[39m[32m 72[2mms[22m[39m
+[31m     [31m├ù[31m should enable next button when period is selected[39m[32m 38[2mms[22m[39m
+[31m     [31m├ù[31m should progress to step 2 review figures[39m[33m 710[2mms[22m[39m
+[31m     [31m├ù[31m should show success screen after confirmation[39m[33m 314[2mms[22m[39m
+ [32mΓ£ô[39m src/modules/audit/AuditChainVerifier.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [31mΓ¥»[39m src/components/banking/importers/__tests__/TransactionNormalizer.test.ts [2m([22m[2m10 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 34[2mms[22m[39m
+[31m       [31m├ù[31m should handle standard positive amounts[39m[32m 16[2mms[22m[39m
+[31m       [31m├ù[31m should handle negative amounts with minus sign[39m[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should handle negative amounts in parentheses[39m[32m 2[2mms[22m[39m
+[31m       [31m├ù[31m should strip currency symbols[39m[32m 2[2mms[22m[39m
+[31m       [31m├ù[31m should valid strict mode fail on garbage[39m[32m 4[2mms[22m[39m
+       [32mΓ£ô[39m should convert US date MM/DD/YYYY to ISO[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should keep already ISO dates[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should fail on invalid date in strict mode[39m[32m 2[2mms[22m[39m
+       [32mΓ£ô[39m should trim and uppercase[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should remove excessive whitespace[32m 0[2mms[22m[39m
+ [32mΓ£ô[39m src/components/banking/importers/__tests__/FormatDetector.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mΓ£ô[39m tests/ai/ResponseAccuracy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [31mΓ¥»[39m src/components/audit/AuditTrailMonitor.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 3173[2mms[22m[39m
+[31m     [31m├ù[31m should show verifying state initially[39m[32m 133[2mms[22m[39m
+[31m     [31m├ù[31m should show secure or compromised state after timeout[39m[33m 2020[2mms[22m[39m
+[31m     [31m├ù[31m should refresh verification on click[39m[33m 1017[2mms[22m[39m
+ [31mΓ¥»[39m src/lib/__tests__/pdf-parser.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 26[2mms[22m[39m
+     [32mΓ£ô[39m should parse and normalize a standard Chase PDF transaction line[32m 9[2mms[22m[39m
+     [32mΓ£ô[39m should handle negative amounts in parentheses (US Accounting)[32m 2[2mms[22m[39m
+     [32mΓ£ô[39m should handle European format (dots for thousands, comma for decimal)[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m should filter noise and balance lines[39m[32m 8[2mms[22m[39m
+     [32mΓ£ô[39m should extract correct amount when multiple numbers (Amount/Balance) are present[32m 1[2mms[22m[39m
+     [32mΓ£ô[39m should parse Spanish dates and formats (Gold+)[32m 3[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 27 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+src/validators/FloridaComplianceValidator.test.ts[2m > 
+[22mFloridaComplianceValidator[2m > [22mshould check 
+county rate compliance
+[31m[1mAssertionError[22m: expected true to be false 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+[36m [2mΓ¥»[22m src/validators/FloridaComplianceValid
+ator.test.ts:[2m49:35[22m[39m
+    [90m 47| [39m
+    [90m 48| [39m        const result2 = 
+FloridaComplianceValidator.checkCountyRateCompΓÇª
+    [90m 49| [39m        [34mexpect[39m(result2[33m
+.[39mcompliant)[33m.[39m[34mtoBe[39m([35mfalse[39
+m)[33m;[39m
+    [90m   | [39m                                  
+[31m^[39m
+    [90m 50| [39m        [34mexpect[39m(result2[33m
+.[39mmessage)[33m.[39m[34mtoContain[39m([32m'lower
+ than expected'[39m)[33m;[39m
+    [90m 51| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+tests/unit/DoubleEntryValidator.test.ts[2m > 
+[22mDoubleEntryValidator[2m > [22mshould reject 
+unbalanced journal entry
+[31m[1mAssertionError[22m: expected [ Array(1) ] to 
+include StringContaining "no igualan"[39m
+[36m [2mΓ¥»[22m tests/unit/DoubleEntryValidator.test.
+ts:[2m44:27[22m[39m
+    [90m 42| [39m
+    [90m 43| [39m    [34mexpect[39m(result[33m.[39
+mvalid)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;
+[39m
+    [90m 44| [39m    expect(result.errors).toContain(e
+xpect.stringContaining('no igualaΓÇª
+    [90m   | [39m                          [31m^[39m
+    [90m 45| [39m    [34mexpect[39m(result[33m.[39
+mtotals[33m.[39mdifference)[33m.[39m[34mtoBe[39m(
+[34m100[39m)[33m;[39m
+    [90m 46| [39m  })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/audit/AuditTrailMonitor.test.tsx[2m > 
+[22mAuditTrailMonitor[2m > [22mshould show verifying 
+state initially
+[31m[1mError[22m: Invalid Chai property: 
+toBeInTheDocument[39m
+[36m [2mΓ¥»[22m src/components/audit/AuditTrailMonito
+r.test.tsx:[2m21:48[22m[39m
+    [90m 19| [39m    [34mit[39m([32m'should show 
+verifying state initially'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 20| [39m        
+[34mrender[39m([33m<[39m[33mAuditTrailMonitor[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 21| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([36m/Verificando/i[39m))[33m
+.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   | [39m                                     
+          [31m^[39m
+    [90m 22| [39m        
+expect(screen.getByText(/Calculando 
+hashes/i)).toBeInTheDocumeΓÇª
+    [90m 23| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/audit/AuditTrailMonitor.test.tsx[2m > 
+[22mAuditTrailMonitor[2m > [22mshould show secure or 
+compromised state after timeout
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: /Cadena Segura/i
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<h3[39m
+  [33mclass[39m=[32m"font-bold text-lg"[39m
+[36m>[39m
+  [0mCadena Segura[0m
+[36m</h3>[39m
+
+Ignored nodes: comments, script, style
+[36m<h3[39m
+  [33mclass[39m=[32m"font-bold text-lg"[39m
+[36m>[39m
+  [0mCadena Segura[0m
+[36m</h3>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2 border-b border-gray-800/50"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+            [36m/>[39m
+            [0mMonitor de Integridad[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-4 
+mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+            [36m>[39m
+              [0mCadena Segura[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+            [36m>[39m
+              [0mVerificaci├│n SHA-256 Exitosa[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mEventos:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m740[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m├Ültimo Hash:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0mb0315325a3c6c935...[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mVerificado:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m13:35:47[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2 border-b border-gray-800/50"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+            [36m/>[39m
+            [0mMonitor de Integridad[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-4 
+mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+            [36m>[39m
+              [0mCadena Segura[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+            [36m>[39m
+              [0mVerificaci├│n SHA-256 Exitosa[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mEventos:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m210[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m├Ültimo Hash:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0ma613b51cfba7c0f4...[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mVerificado:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m13:35:47[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2 border-b border-gray-800/50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+              [36m/>[39m
+              [0mMonitor de Integridad[0m
+            [36m</h3>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+              [36m/>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+gap-4 mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+              [36m>[39m
+                [0mCadena Segura[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+              [36m>[39m
+                [0mVerificaci├│n SHA-256 Exitosa[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mEventos:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m740[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m├Ültimo Hash:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0mb0315325a3c6c935...[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mVerificado:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m13:35:47[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2 border-b border-gray-800/50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+              [36m/>[39m
+              [0mMonitor de Integridad[0m
+            [36m</h3>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+              [36m/>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+gap-4 mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+              [36m>[39m
+                [0mCadena Segura[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+              [36m>[39m
+                [0mVerificaci├│n SHA-256 Exitosa[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mEventos:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m210[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m├Ültimo Hash:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0ma613b51cfba7c0f4...[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mVerificado:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m13:35:47[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+[90m [2mΓ¥»[22m Proxy.waitForWrapper node_modules/@te
+sting-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[36m [2mΓ¥»[22m src/components/audit/AuditTrailMonito
+r.test.tsx:[2m27:15[22m[39m
+    [90m 25| [39m    it('should show secure or 
+compromised state after timeout', async ΓÇª
+    [90m 26| [39m        
+[34mrender[39m([33m<[39m[33mAuditTrailMonitor[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 27| [39m        [35mawait[39m 
+[34mwaitFor[39m(() [33m=>[39m {
+    [90m   | [39m              [31m^[39m
+    [90m 28| [39m            [35mconst[39m secure 
+[33m=[39m 
+screen[33m.[39m[34mqueryByText[39m([36m/Cadena 
+Segura/i[39m)[33m;[39m
+    [90m 29| [39m            const compromised = 
+screen.queryByText(/Integridad CompromΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/audit/AuditTrailMonitor.test.tsx[2m > 
+[22mAuditTrailMonitor[2m > [22mshould refresh 
+verification on click
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: 
+/(Segura|Comprometida)/i
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<h3[39m
+  [33mclass[39m=[32m"font-bold text-lg"[39m
+[36m>[39m
+  [0mCadena Segura[0m
+[36m</h3>[39m
+
+Ignored nodes: comments, script, style
+[36m<h3[39m
+  [33mclass[39m=[32m"font-bold text-lg"[39m
+[36m>[39m
+  [0mCadena Segura[0m
+[36m</h3>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2 border-b border-gray-800/50"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+            [36m/>[39m
+            [0mMonitor de Integridad[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-4 
+mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+            [36m>[39m
+              [0mCadena Segura[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+            [36m>[39m
+              [0mVerificaci├│n SHA-256 Exitosa[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mEventos:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m740[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m├Ültimo Hash:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0mb0315325a3c6c935...[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mVerificado:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m13:35:47[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2 border-b border-gray-800/50"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+            [36m/>[39m
+            [0mMonitor de Integridad[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-4 
+mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+            [36m>[39m
+              [0mCadena Segura[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+            [36m>[39m
+              [0mVerificaci├│n SHA-256 Exitosa[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mEventos:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m210[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m├Ültimo Hash:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0ma613b51cfba7c0f4...[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mVerificado:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m13:35:47[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2 border-b border-gray-800/50"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+            [36m/>[39m
+            [0mMonitor de Integridad[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0 animate-spin  "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-4 
+mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        
+                        
+                        border-blue-500/20 
+bg-blue-500/10 animate-pulse
+                        
+                    "[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Shield"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+            [36m>[39m
+              [0mVerificando...[0m
+            [36m</h3>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs 
+text-blue-400"[39m
+            [36m>[39m
+              [0mCalculando hashes...[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mEventos:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m0[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0m├Ültimo Hash:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m...[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex 
+justify-between"[39m
+          [36m>[39m
+            [36m<span>[39m
+              [0mVerificado:[0m
+            [36m</span>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-white"[39m
+            [36m>[39m
+              [0m13:35:48[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2 border-b border-gray-800/50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+              [36m/>[39m
+              [0mMonitor de Integridad[0m
+            [36m</h3>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+              [36m/>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+gap-4 mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+              [36m>[39m
+                [0mCadena Segura[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+              [36m>[39m
+                [0mVerificaci├│n SHA-256 Exitosa[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mEventos:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m740[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m├Ültimo Hash:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0mb0315325a3c6c935...[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mVerificado:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m13:35:47[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2 border-b border-gray-800/50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+              [36m/>[39m
+              [0mMonitor de Integridad[0m
+            [36m</h3>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0   "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+              [36m/>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+gap-4 mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        border-green-500/20 
+bg-green-500/10
+                        
+                        
+                        
+                    "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-ShieldCheck"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+              [36m>[39m
+                [0mCadena Segura[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs 
+text-green-400"[39m
+              [36m>[39m
+                [0mVerificaci├│n SHA-256 Exitosa[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mEventos:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m210[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m├Ültimo Hash:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0ma613b51cfba7c0f4...[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mVerificado:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m13:35:47[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2 border-b border-gray-800/50"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<h3[39m
+              [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-Activity"[39m
+              [36m/>[39m
+              [0mMonitor de Integridad[0m
+            [36m</h3>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 h-8 
+w-8 p-0 animate-spin  "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-RefreshCw"[39m
+              [36m/>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 pt-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+gap-4 mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"
+                        w-16 h-16 rounded-full flex 
+items-center justify-center border-4
+                        
+                        
+                        border-blue-500/20 
+bg-blue-500/10 animate-pulse
+                        
+                    "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-Shield"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"font-bold 
+text-lg"[39m
+              [36m>[39m
+                [0mVerificando...[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs 
+text-blue-400"[39m
+              [36m>[39m
+                [0mCalculando hashes...[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-2 text-xs 
+font-mono text-gray-500 bg-black/30 p-3 rounded"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mEventos:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m0[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0m├Ültimo Hash:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m...[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex 
+justify-between"[39m
+            [36m>[39m
+              [36m<span>[39m
+                [0mVerificado:[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-white"[39m
+              [36m>[39m
+                [0m13:35:48[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+[90m [2mΓ¥»[22m Proxy.waitForWrapper node_modules/@te
+sting-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[36m [2mΓ¥»[22m src/components/audit/AuditTrailMonito
+r.test.tsx:[2m37:15[22m[39m
+    [90m 35| [39m        
+[34mrender[39m([33m<[39m[33mAuditTrailMonitor[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 36| [39m        [90m// Wait for first 
+verification[39m
+    [90m 37| [39m        await waitFor(() => 
+screen.queryByText(/(Segura|Comprometida)/ΓÇª
+    [90m   | [39m              [31m^[39m
+    [90m 38| [39m
+    [90m 39| [39m        [90m// Click refresh (icon 
+RefreshCw)[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould render 
+step 1 initially
+[31m[1mError[22m: Invalid Chai property: 
+toBeInTheDocument[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m40:71[22m[39m
+    [90m 38| [39m    [34mit[39m([32m'should render 
+step 1 initially'[39m[33m,[39m () [33m=>[39m {
+    [90m 39| [39m        [34mrender[39m([33m<[39m
+[33mDR15PreparationWizard[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 40| [39m        
+expect(screen.getByText(/Paso 1: Seleccionar Periodo 
+Fiscal/i)ΓÇª
+    [90m   | [39m                                     
+                                 [31m^[39m
+    [90m 41| [39m        // Since we are using 
+standard input type="month", let's checkΓÇª
+    [90m 42| [39m        // Using container queries 
+since testing-library queries can bΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould enable 
+next button when period is selected
+[31m[1mError[22m: Invalid Chai property: 
+toBeInTheDocument[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m50:25[22m[39m
+    [90m 48| [39m        [90m// Find input by type 
+directly to avoid selector ambiguity[39m
+    [90m 49| [39m        const fileInput = 
+container.querySelector('input[type="month"]ΓÇª
+    [90m 50| [39m        [34mexpect[39m(fileInput)[
+33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m 51| [39m
+    [90m 52| [39m        fireEvent[33m.[39m[34mchan
+ge[39m(fileInput[33m![39m[33m,[39m { 
+target[33m:[39m { value[33m:[39m 
+[32m'2023-10'[39m } })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould progress 
+to step 2 review figures
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the role "button" and name 
+`/Siguiente/i`
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+  [33mdisabled[39m=[32m""[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+  [33mdisabled[39m=[32m""[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m"2023-10"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@
+testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m getElementError node_modules/@testing
+-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2mΓ¥»[22m getMultipleElementsFoundError node_mo
+dules/@testing-library/dom/dist/query-helpers.js:[2m23:
+10[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m55:13[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m64:35[22m[39m
+    [90m 62| [39m        fireEvent[33m.[39m[34mchan
+ge[39m(input[33m![39m[33m,[39m { target[33m:[39m 
+{ value[33m:[39m [32m'2023-10'[39m } })[33m;[39m
+    [90m 63| [39m
+    [90m 64| [39m        const nextButton = 
+screen.getByRole('button', { name: /SiguienΓÇª
+    [90m   | [39m                                  
+[31m^[39m
+    [90m 65| [39m        fireEvent[33m.[39m[34mclic
+k[39m(nextButton)[33m;[39m
+    [90m 66| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/dr15/DR15PreparationWizard.test.tsx[2m 
+> [22mDR15PreparationWizard[2m > [22mshould show 
+success screen after confirmation
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the role "button" and name 
+`/Siguiente/i`
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+  [33mdisabled[39m=[32m""[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+  [33mdisabled[39m=[32m""[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+[36m>[39m
+  [0mSiguiente [0m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+  [36m/>[39m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m"2023-10"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-2xl mx-auto 
+bg-gray-900 border-gray-800 text-gray-100 
+shadow-xl"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 border-b border-gray-800 pb-4"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-xl flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+            [36m/>[39m
+            [0mPreparaci├│n DR-15 Florida[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-xs font-mono 
+text-gray-500"[39m
+          [36m>[39m
+            [0mPaso [0m
+            [0m1[0m
+            [0m de 3[0m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"w-full bg-gray-800 h-1 
+mt-4 rounded-full overflow-hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-500 h-full 
+transition-all duration-300"[39m
+            [33mstyle[39m=[32m"width: 
+33.33333333333333%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 pt-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-lg font-medium 
+text-white"[39m
+          [36m>[39m
+            [0mPaso 1: Seleccionar Periodo Fiscal[0m
+          [36m</h3>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-2"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm 
+text-gray-400"[39m
+            [36m>[39m
+              [0mPeriodo (Mes/A├▒o)[0m
+            [36m</label>[39m
+            [36m<input[39m
+              [33mclass[39m=[32m"bg-gray-800 border 
+border-gray-700 rounded p-2 text-white w-full"[39m
+              [33mtype[39m=[32m"month"[39m
+              [33mvalue[39m=[32m"2023-10"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bg-blue-900/20 p-4 
+rounded border border-blue-900"[39m
+          [36m>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-sm 
+text-blue-200"[39m
+            [36m>[39m
+              [0mSeleccione el mes para el cual desea 
+generar el reporte DR-15. El sistema calcular├í 
+autom├íticamente las ventas brutas bas├índose en las 
+facturas emitidas en ese mes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+ "[39m
+          [36m>[39m
+            [0mSiguiente [0m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-ChevronRight"[39m
+            [36m/>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@
+testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m getElementError node_modules/@testing
+-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2mΓ¥»[22m getMultipleElementsFoundError node_mo
+dules/@testing-library/dom/dist/query-helpers.js:[2m23:
+10[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m55:13[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m src/components/dr15/DR15PreparationWi
+zard.test.tsx:[2m79:32[22m[39m
+    [90m 77| [39m        [90m// Step 1[39m
+    [90m 78| [39m        fireEvent.change(container.qu
+erySelector('input[type="month"]'ΓÇª
+    [90m 79| [39m        
+fireEvent.click(screen.getByRole('button', { name: 
+/Siguiente/ΓÇª
+    [90m   | [39m                               
+[31m^[39m
+    [90m 80| [39m
+    [90m 81| [39m        [90m// Step 2[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/dashboard/TaxCo
+mplianceWidget.test.tsx[2m > 
+[22mTaxComplianceWidget[2m > [22mshould render 
+loading state initially
+[31m[1mError[22m: Invalid Chai property: 
+toBeInTheDocument[39m
+[36m [2mΓ¥»[22m src/components/dashboard/TaxComplianc
+eWidget.test.tsx:[2m19:57[22m[39m
+    [90m 17| [39m    [34mit[39m([32m'should render 
+loading state initially'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m 18| [39m        [35mconst[39m { container 
+} [33m=[39m [34mrender[39m([33m<[39m[33mTaxCompli
+anceWidget[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m 19| [39m        expect(container.querySelecto
+r('.animate-pulse')).toBeInTheDocΓÇª
+    [90m   | [39m                                     
+                   [31m^[39m
+    [90m 20| [39m    })[33m;[39m
+    [90m 21| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/dashboard/TaxCo
+mplianceWidget.test.tsx[2m > 
+[22mTaxComplianceWidget[2m > [22mshould render 
+compliance status after loading
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: /Cumplimiento Fiscal 
+Florida/i
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<h3[39m
+  [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-Calculator"[39m
+  [36m/>[39m
+  [0mCumplimiento Fiscal Florida[0m
+[36m</h3>[39m
+
+Ignored nodes: comments, script, style
+[36m<h3[39m
+  [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mdata-testid[39m=[32m"icon-Calculator"[39m
+  [36m/>[39m
+  [0mCumplimiento Fiscal Florida[0m
+[36m</h3>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+        [36m>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+          [36m/>[39m
+          [0mCumplimiento Fiscal Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+            [36m>[39m
+              [0mEstado Actual[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+              [36m/>[39m
+              [0mAL D├ìA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mPr├│ximo Vencimiento[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+              [36m>[39m
+                [0m20/02/2026[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+              [36m>[39m
+                [0mDR-15 Periodo [0m
+                [0m2026[0m
+                [0m-[0m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mImpuesto Estimado[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-lg font-bold 
+text-white block"[39m
+              [36m>[39m
+                [0m$[0m
+                [0m1250.00[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"pt-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+              [36m/>[39m
+              [0mPreparar Declaraci├│n[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+        [36m>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+          [36m/>[39m
+          [0mCumplimiento Fiscal Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+            [36m>[39m
+              [0mEstado Actual[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+              [36m/>[39m
+              [0mAL D├ìA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mPr├│ximo Vencimiento[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+              [36m>[39m
+                [0m20/02/2026[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+              [36m>[39m
+                [0mDR-15 Periodo [0m
+                [0m2026[0m
+                [0m-[0m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mImpuesto Estimado[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-lg font-bold 
+text-white block"[39m
+              [36m>[39m
+                [0m$[0m
+                [0m1250.00[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"pt-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+              [36m/>[39m
+              [0mPreparar Declaraci├│n[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+            [36m/>[39m
+            [0mCumplimiento Fiscal Florida[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+              [36m>[39m
+                [0mEstado Actual[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+                [36m/>[39m
+                [0mAL D├ìA[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mPr├│ximo Vencimiento[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+                [36m>[39m
+                  [0m20/02/2026[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+                [36m>[39m
+                  [0mDR-15 Periodo [0m
+                  [0m2026[0m
+                  [0m-[0m
+                  [0m1[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mImpuesto Estimado[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-lg 
+font-bold text-white block"[39m
+                [36m>[39m
+                  [0m$[0m
+                  [0m1250.00[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"pt-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+                [36m/>[39m
+                [0mPreparar Declaraci├│n[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+            [36m/>[39m
+            [0mCumplimiento Fiscal Florida[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+              [36m>[39m
+                [0mEstado Actual[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+                [36m/>[39m
+                [0mAL D├ìA[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mPr├│ximo Vencimiento[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+                [36m>[39m
+                  [0m20/02/2026[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+                [36m>[39m
+                  [0mDR-15 Periodo [0m
+                  [0m2026[0m
+                  [0m-[0m
+                  [0m1[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mImpuesto Estimado[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-lg 
+font-bold text-white block"[39m
+                [36m>[39m
+                  [0m$[0m
+                  [0m1250.00[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"pt-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+                [36m/>[39m
+                [0mPreparar Declaraci├│n[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+[90m [2mΓ¥»[22m Proxy.waitForWrapper node_modules/@te
+sting-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[36m [2mΓ¥»[22m src/components/dashboard/TaxComplianc
+eWidget.test.tsx:[2m25:15[22m[39m
+    [90m 23| [39m        [34mrender[39m([33m<[39m
+[33mTaxComplianceWidget[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 24| [39m
+    [90m 25| [39m        [35mawait[39m 
+[34mwaitFor[39m(() [33m=>[39m {
+    [90m   | [39m              [31m^[39m
+    [90m 26| [39m            
+expect(screen.getByText(/Cumplimiento Fiscal 
+Florida/i)).tΓÇª
+    [90m 27| [39m        })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/dashboard/TaxCo
+mplianceWidget.test.tsx[2m > 
+[22mTaxComplianceWidget[2m > [22mshould display 
+estimated liability
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: /Impuesto Estimado/i
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"text-xs text-gray-500 block 
+mb-1"[39m
+[36m>[39m
+  [0mImpuesto Estimado[0m
+[36m</span>[39m
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"text-xs text-gray-500 block 
+mb-1"[39m
+[36m>[39m
+  [0mImpuesto Estimado[0m
+[36m</span>[39m
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"text-xs text-gray-500 block 
+mb-1"[39m
+[36m>[39m
+  [0mImpuesto Estimado[0m
+[36m</span>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+        [36m>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+          [36m/>[39m
+          [0mCumplimiento Fiscal Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+            [36m>[39m
+              [0mEstado Actual[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+              [36m/>[39m
+              [0mAL D├ìA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mPr├│ximo Vencimiento[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+              [36m>[39m
+                [0m20/02/2026[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+              [36m>[39m
+                [0mDR-15 Periodo [0m
+                [0m2026[0m
+                [0m-[0m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mImpuesto Estimado[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-lg font-bold 
+text-white block"[39m
+              [36m>[39m
+                [0m$[0m
+                [0m1250.00[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"pt-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+              [36m/>[39m
+              [0mPreparar Declaraci├│n[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+        [36m>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+          [36m/>[39m
+          [0mCumplimiento Fiscal Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+            [36m>[39m
+              [0mEstado Actual[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+              [36m/>[39m
+              [0mAL D├ìA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mPr├│ximo Vencimiento[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+              [36m>[39m
+                [0m20/02/2026[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+              [36m>[39m
+                [0mDR-15 Periodo [0m
+                [0m2026[0m
+                [0m-[0m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mImpuesto Estimado[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-lg font-bold 
+text-white block"[39m
+              [36m>[39m
+                [0m$[0m
+                [0m1250.00[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"pt-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+              [36m/>[39m
+              [0mPreparar Declaraci├│n[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 pb-2"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-lg flex items-center 
+gap-2"[39m
+        [36m>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+          [36m/>[39m
+          [0mCumplimiento Fiscal Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+            [36m>[39m
+              [0mEstado Actual[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+              [36m/>[39m
+              [0mAL D├ìA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mPr├│ximo Vencimiento[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+              [36m>[39m
+                [0m20/02/2026[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+              [36m>[39m
+                [0mDR-15 Periodo [0m
+                [0m2026[0m
+                [0m-[0m
+                [0m1[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bg-gray-800/50 p-3 
+rounded border border-gray-700"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+              [36m>[39m
+                [0mImpuesto Estimado[0m
+              [36m</span>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-lg font-bold 
+text-white block"[39m
+              [36m>[39m
+                [0m$[0m
+                [0m1250.00[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"pt-2"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+            [36m>[39m
+              [36m<div[39m
+                
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+              [36m/>[39m
+              [0mPreparar Declaraci├│n[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+            [36m/>[39m
+            [0mCumplimiento Fiscal Florida[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+              [36m>[39m
+                [0mEstado Actual[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+                [36m/>[39m
+                [0mAL D├ìA[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mPr├│ximo Vencimiento[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+                [36m>[39m
+                  [0m20/02/2026[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+                [36m>[39m
+                  [0mDR-15 Periodo [0m
+                  [0m2026[0m
+                  [0m-[0m
+                  [0m1[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mImpuesto Estimado[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-lg 
+font-bold text-white block"[39m
+                [36m>[39m
+                  [0m$[0m
+                  [0m1250.00[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"pt-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+                [36m/>[39m
+                [0mPreparar Declaraci├│n[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+            [36m/>[39m
+            [0mCumplimiento Fiscal Florida[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+              [36m>[39m
+                [0mEstado Actual[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+                [36m/>[39m
+                [0mAL D├ìA[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mPr├│ximo Vencimiento[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+                [36m>[39m
+                  [0m20/02/2026[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+                [36m>[39m
+                  [0mDR-15 Periodo [0m
+                  [0m2026[0m
+                  [0m-[0m
+                  [0m1[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mImpuesto Estimado[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-lg 
+font-bold text-white block"[39m
+                [36m>[39m
+                  [0m$[0m
+                  [0m1250.00[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"pt-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+                [36m/>[39m
+                [0mPreparar Declaraci├│n[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm bg-gray-900 
+border-gray-800 text-white"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex flex-col 
+space-y-1.5 p-6 pb-2"[39m
+        [36m>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-2xl 
+font-semibold leading-none tracking-tight text-lg flex 
+items-center gap-2"[39m
+          [36m>[39m
+            [36m<div[39m
+              
+[33mdata-testid[39m=[32m"icon-Calculator"[39m
+            [36m/>[39m
+            [0mCumplimiento Fiscal Florida[0m
+          [36m</h3>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"p-6 pt-0 undefined"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center 
+justify-between"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"text-gray-400 
+text-sm"[39m
+              [36m>[39m
+                [0mEstado Actual[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex items-center 
+gap-1.5 text-green-400 bg-green-900/20 px-2 py-0.5 
+rounded text-xs font-medium border 
+border-green-800"[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-CheckCircle"[39m
+                [36m/>[39m
+                [0mAL D├ìA[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid grid-cols-2 
+gap-4 pt-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mPr├│ximo Vencimiento[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-sm 
+font-medium block"[39m
+                [36m>[39m
+                  [0m20/02/2026[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-[10px] 
+text-orange-400"[39m
+                [36m>[39m
+                  [0mDR-15 Periodo [0m
+                  [0m2026[0m
+                  [0m-[0m
+                  [0m1[0m
+                [36m</span>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bg-gray-800/50 
+p-3 rounded border border-gray-700"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-xs 
+text-gray-500 block mb-1"[39m
+                [36m>[39m
+                  [0mImpuesto Estimado[0m
+                [36m</span>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"text-lg 
+font-bold text-white block"[39m
+                [36m>[39m
+                  [0m$[0m
+                  [0m1250.00[0m
+                [36m</span>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"pt-2"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 w-full 
+bg-blue-600 hover:bg-blue-700 text-xs h-8  "[39m
+              [36m>[39m
+                [36m<div[39m
+                  
+[33mdata-testid[39m=[32m"icon-FileText"[39m
+                [36m/>[39m
+                [0mPreparar Declaraci├│n[0m
+              [36m</button>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+[90m [2mΓ¥»[22m Proxy.waitForWrapper node_modules/@te
+sting-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[36m [2mΓ¥»[22m src/components/dashboard/TaxComplianc
+eWidget.test.tsx:[2m38:15[22m[39m
+    [90m 36| [39m    [34mit[39m([32m'should 
+display estimated liability'[39m[33m,[39m 
+[35masync[39m () [33m=>[39m {
+    [90m 37| [39m        [34mrender[39m([33m<[39m
+[33mTaxComplianceWidget[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 38| [39m        [35mawait[39m 
+[34mwaitFor[39m(() [33m=>[39m {
+    [90m   | [39m              [31m^[39m
+    [90m 39| [39m            
+expect(screen.getByText(/Impuesto 
+Estimado/i)).toBeInTheDoΓÇª
+    [90m 40| [39m        })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/invoices/InvoiceForm.test.tsx[2m > 
+[22mInvoiceForm[2m > [22mmuestra el resumen de 
+impuestos correctamente
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: Subtotal: 100
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div>[39m
+  [0mSubtotal: [0m
+  [0m100[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div>[39m
+  [0mSubtotal: [0m
+  [0m100[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-4xl mx-auto 
+my-8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 undefined"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-2xl"[39m
+        [36m>[39m
+          [0mFacturaci├│n Forense Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [33mfor[39m=[32m"customer"[39m
+          [36m>[39m
+            [0mCliente[0m
+          [36m</label>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"customer-selector"[39m
+          [36m>[39m
+            [0mCustomer Selector Mock[0m
+            [36m<span>[39m
+              [0mCliente Test[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm 
+text-muted-foreground"[39m
+          [36m>[39m
+            [0mCondado: [0m
+            [36m<strong>[39m
+              [0mMiami-Dade[0m
+            [36m</strong>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex justify-between 
+items-center"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [36m>[39m
+              [0mProductos/Servicios[0m
+            [36m</label>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+undefined  border border-input bg-background 
+hover:bg-accent hover:text-accent-foreground"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide 
+lucide-plus-circle w-4 h-4 mr-2"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                
+[33mstroke[39m=[32m"currentColor"[39m
+                
+[33mstroke-linecap[39m=[32m"round"[39m
+                
+[33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 12h8"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 8v8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mAgregar L├¡nea[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-4 
+items-start p-4 border rounded-lg"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 
+space-y-2"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"flex h-10 w-full 
+rounded-md border border-input bg-background px-3 py-2 
+text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                
+[33mplaceholder[39m=[32m"Descripci├│n"[39m
+                [33mvalue[39m=[32m"Producto 1"[39m
+              [36m/>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex gap-2"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"quantity-1"[39m
+                  [36m>[39m
+                    [0mCantidad[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"quantity-1"[39m
+                    [33mmin[39m=[32m"0.01"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    [33mtype[39m=[32m"number"[39m
+                    [33mvalue[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"price-1"[39m
+                  [36m>[39m
+                    [0mPrecio Unitario[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"price-1"[39m
+                    [33mmin[39m=[32m"0"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    ...
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@
+testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m getElementError node_modules/@testing
+-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2mΓ¥»[22m getMultipleElementsFoundError node_mo
+dules/@testing-library/dom/dist/query-helpers.js:[2m23:
+10[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m55:13[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m src/components/invoices/InvoiceForm.t
+est.tsx:[2m66:23[22m[39m
+    [90m 64| [39m        
+[34mrender[39m([33m<[39m[33mInvoiceForm[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 65| [39m
+    [90m 66| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([32m'Subtotal: 100'[39m))[33
+m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 67| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([32m'Tax: 6.5'[39m))[33m.[3
+9m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 68| [39m        [34mexpect[39m(screen[33m.
+[39m[34mgetByText[39m([32m'Total: 106.5'[39m))[33m
+.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/components/invoices/InvoiceForm.test.tsx[2m > 
+[22mInvoiceForm[2m > [22mel bot├│n de guardar est├í 
+habilitado con datos v├ílidos
+[31m[1mTestingLibraryElementError[22m[39m: Found 
+multiple elements with the text: Guardar con Auditor├¡a
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+min-w-32  "[39m
+[36m>[39m
+  [0mGuardar con Auditor├¡a[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+min-w-32  "[39m
+[36m>[39m
+  [0mGuardar con Auditor├¡a[0m
+[36m</button>[39m
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33mclass[39m=[32m"inline-flex items-center 
+justify-center whitespace-nowrap rounded-md text-sm 
+font-medium ring-offset-background transition-colors 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+min-w-32  "[39m
+[36m>[39m
+  [0mGuardar con Auditor├¡a[0m
+[36m</button>[39m
+
+(If this is intentional, then use the `*AllBy*` variant 
+of the query (like `queryAllByText`, `getAllByText`, or 
+`findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"rounded-lg border bg-card 
+text-card-foreground shadow-sm w-full max-w-4xl mx-auto 
+my-8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-col space-y-1.5 
+p-6 undefined"[39m
+      [36m>[39m
+        [36m<h3[39m
+          [33mclass[39m=[32m"text-2xl font-semibold 
+leading-none tracking-tight text-2xl"[39m
+        [36m>[39m
+          [0mFacturaci├│n Forense Florida[0m
+        [36m</h3>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"p-6 pt-0 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<label[39m
+            [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [33mfor[39m=[32m"customer"[39m
+          [36m>[39m
+            [0mCliente[0m
+          [36m</label>[39m
+          [36m<div[39m
+            
+[33mdata-testid[39m=[32m"customer-selector"[39m
+          [36m>[39m
+            [0mCustomer Selector Mock[0m
+            [36m<span>[39m
+              [0mCliente Test[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"text-sm 
+text-muted-foreground"[39m
+          [36m>[39m
+            [0mCondado: [0m
+            [36m<strong>[39m
+              [0mMiami-Dade[0m
+            [36m</strong>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex justify-between 
+items-center"[39m
+          [36m>[39m
+            [36m<label[39m
+              [33mclass[39m=[32m"text-sm font-medium 
+leading-none peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+            [36m>[39m
+              [0mProductos/Servicios[0m
+            [36m</label>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"inline-flex 
+items-center justify-center whitespace-nowrap 
+rounded-md text-sm font-medium ring-offset-background 
+transition-colors focus-visible:outline-none 
+focus-visible:ring-2 focus-visible:ring-ring 
+focus-visible:ring-offset-2 
+disabled:pointer-events-none disabled:opacity-50 
+undefined  border border-input bg-background 
+hover:bg-accent hover:text-accent-foreground"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33mclass[39m=[32m"lucide 
+lucide-plus-circle w-4 h-4 mr-2"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                
+[33mstroke[39m=[32m"currentColor"[39m
+                
+[33mstroke-linecap[39m=[32m"round"[39m
+                
+[33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                
+[33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M8 12h8"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M12 8v8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mAgregar L├¡nea[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex gap-4 
+items-start p-4 border rounded-lg"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex-1 
+space-y-2"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"flex h-10 w-full 
+rounded-md border border-input bg-background px-3 py-2 
+text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                
+[33mplaceholder[39m=[32m"Descripci├│n"[39m
+                [33mvalue[39m=[32m"Producto 1"[39m
+              [36m/>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex gap-2"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"quantity-1"[39m
+                  [36m>[39m
+                    [0mCantidad[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"quantity-1"[39m
+                    [33mmin[39m=[32m"0.01"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    [33mtype[39m=[32m"number"[39m
+                    [33mvalue[39m=[32m"2"[39m
+                  [36m/>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"text-sm 
+font-medium leading-none 
+peer-disabled:cursor-not-allowed 
+peer-disabled:opacity-70 undefined"[39m
+                    [33mfor[39m=[32m"price-1"[39m
+                  [36m>[39m
+                    [0mPrecio Unitario[0m
+                  [36m</label>[39m
+                  [36m<input[39m
+                    [33mclass[39m=[32m"flex h-10 
+w-full rounded-md border border-input bg-background 
+px-3 py-2 text-sm ring-offset-background file:border-0 
+file:bg-transparent file:text-sm file:font-medium 
+placeholder:text-muted-foreground 
+focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-ring focus-visible:ring-offset-2 
+disabled:cursor-not-allowed disabled:opacity-50 
+undefined"[39m
+                    [33mid[39m=[32m"price-1"[39m
+                    [33mmin[39m=[32m"0"[39m
+                    [33mstep[39m=[32m"0.01"[39m
+                    ...
+[90m [2mΓ¥»[22m Object.getElementError node_modules/@
+testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2mΓ¥»[22m getElementError node_modules/@testing
+-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2mΓ¥»[22m getMultipleElementsFoundError node_mo
+dules/@testing-library/dom/dist/query-helpers.js:[2m23:
+10[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m55:13[22m[39m
+[90m [2mΓ¥»[22m node_modules/@testing-library/dom/dis
+t/query-helpers.js:[2m95:19[22m[39m
+[36m [2mΓ¥»[22m src/components/invoices/InvoiceForm.t
+est.tsx:[2m75:35[22m[39m
+    [90m 73| [39m        
+[34mrender[39m([33m<[39m[33mInvoiceForm[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [90m 74| [39m
+    [90m 75| [39m        [35mconst[39m saveButton 
+[33m=[39m 
+screen[33m.[39m[34mgetByText[39m([32m'Guardar con 
+Auditor├¡a'[39m)[33m;[39m
+    [90m   | [39m                                  
+[31m^[39m
+    [90m 76| [39m        [34mexpect[39m(saveButton)
+[33m.[39m[34mtoBeEnabled[39m()[33m;[39m
+    [90m 77| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/lib/__tests__/pdf-parser.test.ts[2m > [22mPDF 
+Parser (Gold+)[2m > [22mshould filter noise and 
+balance lines
+[31m[1mAssertionError[22m: expected [] to have a 
+length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m 
+src/lib/__tests__/pdf-parser.test.ts:[2m71:25[22m[39m
+    [90m 69| [39m        [35mconst[39m results 
+[33m=[39m [35mawait[39m pdfParser[33m.[39m[34mpar
+seBankPDF[39m(file)[33m;[39m
+    [90m 70| [39m
+    [90m 71| [39m        [34mexpect[39m(results)[33
+m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m 72| [39m        [34mexpect[39m(results[[34
+m0[39m][33m.[39mdata[33m?.[39mdescription)[33m.[3
+9m[34mtoBe[39m([32m'VALID TRANS'[39m)[33m;[39m
+    [90m 73| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mHappy Path 
+Calculations[2m > [22mshould correctly calculate tax 
+for Miami-Dade (7.5%)
+[31m[1mAssertionError[22m: expected 0.065 to be 
+0.075 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0.075[39m
+[31m+ 0.065[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m13:40[22m[39m
+    [90m 11| [39m
+    [90m 12| [39m            [34mexpect[39m(result[
+33m.[39msubtotal)[33m.[39m[34mtoBe[39m([34m100.00
+[39m)[33m;[39m
+    [90m 13| [39m            [34mexpect[39m(result[
+33m.[39mappliedRate)[33m.[39m[34mtoBe[39m([34m0.07
+5[39m)[33m;[39m
+    [90m   | [39m                                     
+  [31m^[39m
+    [90m 14| [39m            [34mexpect[39m(result[
+33m.[39mtaxAmount)[33m.[39m[34mtoBe[39m([34m7.50[
+39m)[33m;[39m
+    [90m 15| [39m            [34mexpect[39m(result[
+33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m107.50[39
+m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mHappy Path 
+Calculations[2m > [22mshould correctly calculate tax 
+for Broward (7.0%)
+[31m[1mAssertionError[22m: expected 0.06 to be 0.07 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0.07[39m
+[31m+ 0.06[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m22:40[22m[39m
+    [90m 20| [39m            [35mconst[39m result 
+[33m=[39m calculator[33m.[39m[34mcalculate[39m([3
+4m100.00[39m[33m,[39m [32m'Broward'[39m)[33m;[39m
+    [90m 21| [39m
+    [90m 22| [39m            [34mexpect[39m(result[
+33m.[39mappliedRate)[33m.[39m[34mtoBe[39m([34m0.07
+[39m)[33m;[39m
+    [90m   | [39m                                     
+  [31m^[39m
+    [90m 23| [39m            [34mexpect[39m(result[
+33m.[39mtaxAmount)[33m.[39m[34mtoBe[39m([34m7.00[
+39m)[33m;[39m
+    [90m 24| [39m            [34mexpect[39m(result[
+33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m107.00[39
+m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mHappy Path 
+Calculations[2m > [22mshould handle decimal subtotals 
+correctly (Rounding)
+[31m[1mAssertionError[22m: expected 9.79 to be 11.29 
+// Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 11.29[39m
+[31m+ 9.79[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m39:38[22m[39m
+    [90m 37| [39m            [90m// 150.55 * 0.075 = 
+11.29125 -> 11.29[39m
+    [90m 38| [39m            [35mconst[39m result 
+[33m=[39m calculator[33m.[39m[34mcalculate[39m([3
+4m150.55[39m[33m,[39m 
+[32m'Miami-Dade'[39m)[33m;[39m
+    [90m 39| [39m            [34mexpect[39m(result[
+33m.[39mtaxAmount)[33m.[39m[34mtoBe[39m([34m11.29
+[39m)[33m;[39m
+    [90m   | [39m                                     
+[31m^[39m
+    [90m 40| [39m            [34mexpect[39m(result[
+33m.[39mtotal)[33m.[39m[34mtoBe[39m([34m161.84[39
+m)[33m;[39m
+    [90m 41| [39m        })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/billing/FloridaTaxCalculator.test.ts[2m > 
+[22mFloridaTaxCalculator[2m > [22mBusiness Rules[2m 
+> [22mshould match rates defined in the static config
+[31m[1mAssertionError[22m: expected 0.065 to be 
+0.075 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0.075[39m
+[31m+ 0.065[39m
+
+[36m [2mΓ¥»[22m src/modules/billing/FloridaTaxCalcula
+tor.test.ts:[2m73:31[22m[39m
+    [90m 71| [39m        [34mit[39m([32m'should 
+match rates defined in the static 
+config'[39m[33m,[39m () [33m=>[39m {
+    [90m 72| [39m            const miamiRate = 
+calculator.getRateForCounty('Miami-Dade'ΓÇª
+    [90m 73| [39m            [34mexpect[39m(miamiRat
+e)[33m.[39m[34mtoBe[39m([34m0.075[39m)[33m;[39m
+    [90m   | [39m                              
+[31m^[39m
+    [90m 74| [39m
+    [90m 75| [39m            [35mconst[39m 
+brevardRate [33m=[39m calculator[33m.[39m[34mgetRat
+eForCounty[39m([32m'Brevard'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/ai/ExplanationEngine.test.ts[2m > 
+[22mExplanationEngine[2m > [22mshould explain 
+standard calculation with surtax
+[31m[1mAssertionError[22m: expected 'Sales tax is 
+calculated at a total raΓÇª' to contain '7.0%'[39m
+
+Expected: [32m"7.0%"[39m
+Received: [31m"Sales tax is calculated at a total rate 
+of 6.0% based on the delivery location in Miami-Dade. 
+This consists of the specific Florida State Base Rate 
+(6.0%). No discretionary surtax applies or is known for 
+this county. Applied to the subtotal of $1,000.00, the 
+tax amount is $60.00."[39m
+
+[36m [2mΓ¥»[22m src/modules/ai/ExplanationEngine.test
+.ts:[2m38:22[22m[39m
+    [90m 36| [39m        })[33m;[39m
+    [90m 37| [39m
+    [90m 38| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'7.0%'[39m)[33m;[39m
+    [90m   | [39m                     [31m^[39m
+    [90m 39| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'Miami-Dade'[39m)[33m;[3
+9m
+    [90m 40| [39m        [34mexpect[39m(text)[33m.
+[39m[34mtoContain[39m([32m'Florida State Base Rate 
+(6.0%)'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[20/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m 
+src/modules/purchasing/GoodsReceiptService.test.ts[2m 
+> [22mGoodsReceiptService[2m > [22mshould process 
+receipt and update inventory
+[31m[1mTypeError[22m: this.engine.select is not a 
+function[39m
+[36m [2mΓ¥»[22m GoodsReceiptService.processReceipt sr
+c/modules/purchasing/GoodsReceiptService.ts:[2m69:47[2
+2m[39m
+    [90m 67| [39m
+    [90m 68| [39m            // Fetch product cost 
+for accounting (simplified: use costΓÇª
+    [90m 69| [39m            const prodRes = await 
+this.engine.select('SELECT cost_pricΓÇª
+    [90m   | [39m                                     
+         [31m^[39m
+    [90m 70| [39m            [35mconst[39m unitCost 
+[33m=[39m [33mBig[39m(prodRes[[34m0[39m][33m?.[3
+9mcost_price [33m||[39m [34m0[39m)[33m;[39m
+    [90m 71| [39m            totalValue = 
+totalValue.plus(unitCost.times(line.quantity_ΓÇª
+[90m [2mΓ¥»[22m src/modules/purchasing/GoodsReceiptSe
+rvice.test.ts:[2m38:27[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[21/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould handle standard 
+positive amounts
+[31m[1mAssertionError[22m: expected 100050 to be 
+1000.5 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1000.5[39m
+[31m+ 100050[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m10:41[22m[39m
+    [90m  8| [39m        [34mit[39m([32m'should 
+handle standard positive amounts'[39m[33m,[39m () 
+[33m=>[39m {
+    [90m  9| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 10| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([34m1000.50[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 11| [39m        })[33m;[39m
+    [90m 12| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[22/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould handle negative amounts 
+with minus sign
+[31m[1mAssertionError[22m: expected -5025 to be 
+-50.25 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- -50.25[39m
+[31m+ -5025[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m15:41[22m[39m
+
+[2m Test Files [22m [1m[31m11 failed[39m[22m[2m | [22m[1m[32m17 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (32)[39m
+[2m      Tests [22m [1m[31m27 failed[39m[22m[2m | [22m[1m[32m85 passed[39m[22m[2m | [22m[33m10 skipped[39m[90m (122)[39m
+[2m   Start at [22m 13:35:39
+[2m   Duration [22m 9.65s[2m (transform 11.25s, setup 0ms, import 33.10s, tests 7.34s, environment 31.34s)[22m
+
+    [90m 13| [39m        [34mit[39m([32m'should 
+handle negative amounts with minus 
+sign'[39m[33m,[39m () [33m=>[39m {
+    [90m 14| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 15| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([33m-[39m[34m50.25[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 16| [39m        })[33m;[39m
+    [90m 17| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[23/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould handle negative amounts 
+in parentheses
+[31m[1mAssertionError[22m: expected -150000 to be 
+-1500 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- -1500[39m
+[31m+ -150000[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m20:41[22m[39m
+    [90m 18| [39m        [34mit[39m([32m'should 
+handle negative amounts in parentheses'[39m[33m,[39m 
+() [33m=>[39m {
+    [90m 19| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 20| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([33m-[39m[34m1500.00[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 21| [39m        })[33m;[39m
+    [90m 22| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[24/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould strip currency symbols
+[31m[1mAssertionError[22m: expected 12345 to be 
+123.45 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 123.45[39m
+[31m+ 12345[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m25:41[22m[39m
+    [90m 23| [39m        [34mit[39m([32m'should 
+strip currency symbols'[39m[33m,[39m () [33m=>[39m 
+{
+    [90m 24| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 25| [39m            [34mexpect[39m(result[
+33m.[39mdata[33m?.[39mamount)[33m.[39m[34mtoBe[39
+m([34m123.45[39m)[33m;[39m
+    [90m   | [39m                                     
+   [31m^[39m
+    [90m 26| [39m        })[33m;[39m
+    [90m 27| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[25/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mAmount 
+Normalization[2m > [22mshould valid strict mode fail 
+on garbage
+[31m[1mAssertionError[22m: expected 'Monto 
+inv├ílido: abc' to contain 'Invalid Amount'[39m
+
+Expected: [32m"[7mI[27mnv[7ma[27mlid[7m 
+Amount[27m"[39m
+Received: [31m"[7mMonto i[27mnv[7m├í[27mlid[7mo: 
+abc[27m"[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m31:34[22m[39m
+    [90m 29| [39m            const result = 
+normalizeTransaction('2023-01-01', 'Test', ΓÇª
+    [90m 30| [39m            [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfalse[3
+9m)[33m;[39m
+    [90m 31| [39m            [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'Inva
+lid Amount'[39m)[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 32| [39m        })[33m;[39m
+    [90m 33| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[26/27]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m src/components/banking/importe
+rs/__tests__/TransactionNormalizer.test.ts[2m > 
+[22mTransactionNormalizer[2m > [22mDate 
+Normalization[2m > [22mshould fail on invalid date in 
+strict mode
+[31m[1mAssertionError[22m: expected 'Fecha 
+inv├ílida: InvalidDate' to contain 'Invalid Date'[39m
+
+Expected: [32m"Invalid[7m [27mDate"[39m
+Received: [31m"[7mFecha inv├ílida: 
+[27mInvalidDate"[39m
+
+[36m [2mΓ¥»[22m src/components/banking/importers/__te
+sts__/TransactionNormalizer.test.ts:[2m50:34[22m[39m
+    [90m 48| [39m            const result = 
+normalizeTransaction('InvalidDate', 'Test',ΓÇª
+    [90m 49| [39m            [34mexpect[39m(result[
+33m.[39msuccess)[33m.[39m[34mtoBe[39m([35mfalse[3
+9m)[33m;[39m
+    [90m 50| [39m            [34mexpect[39m(result[
+33m.[39merror)[33m.[39m[34mtoContain[39m([32m'Inva
+lid Date'[39m)[33m;[39m
+    [90m   | [39m                                 
+[31m^[39m
+    [90m 51| [39m        })[33m;[39m
+    [90m 52| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[27/27]ΓÄ»[22m[39m
+

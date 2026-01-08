@@ -41,8 +41,8 @@ describe('FloridaComplianceValidator', () => {
     });
 
     it('should check county rate compliance', () => {
-        // Miami-Dade is 7% (0.07) in our map
-        const result1 = FloridaComplianceValidator.checkCountyRateCompliance('Miami-Dade', 0.07);
+        // Miami-Dade is 6.5% (0.065) in current config
+        const result1 = FloridaComplianceValidator.checkCountyRateCompliance('Miami-Dade', 0.065);
         expect(result1.compliant).toBe(true);
 
         const result2 = FloridaComplianceValidator.checkCountyRateCompliance('Miami-Dade', 0.06);

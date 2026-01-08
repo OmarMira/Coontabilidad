@@ -1,4 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// @vitest-environment jsdom
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+
+beforeAll(async () => {
+    if (typeof window !== 'undefined' && !window.crypto) {
+        const { webcrypto } = await import('node:crypto');
+        Object.defineProperty(window, 'crypto', {
+            value: webcrypto,
+            writable: true
+        });
+    }
+});
+
 import { TaxReportingService } from '../services/TaxReportingService';
 import { XMLGeneratorService } from '../services/XMLGeneratorService';
 import { DatabaseService } from '../database/DatabaseService';

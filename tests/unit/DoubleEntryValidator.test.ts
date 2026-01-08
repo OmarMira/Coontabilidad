@@ -3,6 +3,7 @@
  */
 
 import { DoubleEntryValidator, JournalEntry } from '../../src/services/accounting/DoubleEntryValidator';
+import { describe, test, expect } from 'vitest';
 
 describe('DoubleEntryValidator', () => {
   test('should validate balanced journal entry', () => {
@@ -16,15 +17,15 @@ describe('DoubleEntryValidator', () => {
         { account_id: 2, account_code: '4100', account_name: 'Ventas', debit: 0, credit: 1000 }
       ]
     };
-    
+
     const result = DoubleEntryValidator.validateJournalEntry(entry);
-    
+
     expect(result.valid).toBe(true);
     expect(result.errors).toHaveLength(0);
     expect(result.totals.debits).toBe(1000);
     expect(result.totals.credits).toBe(1000);
   });
-  
+
   test('should reject unbalanced journal entry', () => {
     const entry: JournalEntry = {
       id: 2,
@@ -36,11 +37,12 @@ describe('DoubleEntryValidator', () => {
         { account_id: 2, account_code: '4100', account_name: 'Ventas', debit: 0, credit: 900 }
       ]
     };
-    
+
     const result = DoubleEntryValidator.validateJournalEntry(entry);
-    
+
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain(expect.stringContaining('no igualan'));
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]).toMatch(/no igualan/);
     expect(result.totals.difference).toBe(100);
   });
 });
