@@ -42,8 +42,8 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, dbStats, onAssistantCl
         {/* Estado de conexión y Botón IA */}
         <div className="flex items-center space-x-6">
           <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border ${isOnline
-              ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
-              : 'bg-amber-500/5 border-amber-500/20 text-amber-400'
+            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
+            : 'bg-amber-500/5 border-amber-500/20 text-amber-400'
             }`}>
             <div className="relative">
               {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
@@ -54,17 +54,6 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, dbStats, onAssistantCl
             </span>
           </div>
 
-          <div className="w-px h-6 bg-slate-900 mx-2"></div>
-
-          {onAssistantClick && (
-            <button
-              onClick={onAssistantClick}
-              className="flex items-center space-x-2.5 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-900/40 transform hover:scale-105 active:scale-95 border border-blue-400/30"
-            >
-              <Brain className="w-4 h-4 animate-pulse" />
-              <span>Smart Assistant</span>
-            </button>
-          )}
         </div>
       </div>
     </header>

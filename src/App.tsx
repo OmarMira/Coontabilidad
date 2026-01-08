@@ -43,6 +43,8 @@ import { CustomerFormAdvanced } from './components/CustomerFormAdvanced';
 import { CustomerDetailView } from './components/CustomerDetailView';
 import { CustomerList } from './components/CustomerList';
 import { Dashboard } from './components/Dashboard';
+import { BackupPanel } from './components/BackupPanel';
+import { LiveVerification } from './pages/LiveVerification';
 import { InvoiceForm } from './components/InvoiceForm';
 import { InvoiceList } from './components/InvoiceList';
 import { InvoiceDetailView } from './components/InvoiceDetailView';
@@ -85,6 +87,7 @@ import { FloridaTaxReport } from './components/FloridaTaxReport';
 import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
+import { NotificationService } from './services/NotificationService';
 
 // 1. Add to AppState
 interface AppState {
@@ -167,6 +170,7 @@ function App() {
     editingBankAccount: null,
     showingBankAccountForm: false,
     initializationStep: 'Iniciando...',
+    initializationStep: 'Iniciando...',
     currentSection: 'dashboard',
     showAssistant: false
   });
@@ -175,6 +179,15 @@ function App() {
   useEffect(() => {
     const handleOnline = () => setState(prev => ({ ...prev, isOnline: true }));
     const handleOffline = () => setState(prev => ({ ...prev, isOnline: false }));
+
+
+    // Configurar Notificaciones y Service Worker (Iron Core Task 4)
+    NotificationService.init();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('SW Registered'))
+        .catch(e => console.error('SW Fail', e));
+    }
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -1335,17 +1348,9 @@ function App() {
 
 
             {/* --- ARCHIVO / CONFIG / HERRAMIENTAS --- */}
-            {state.currentSection === 'system-config' && (
-              <div className="space-y-6">
-                <CompanyInfoForm />
-                <FiscalSettingsForm />
-              </div>
-            )}
-
             {state.currentSection === 'company-data' && (
               <div className="space-y-6">
                 <CompanyDataForm />
-                <PaymentMethods />
               </div>
             )}
 
@@ -1407,6 +1412,8 @@ function App() {
             {state.currentSection === 'tax-reports' && <TaxReports />}
 
             {state.currentSection === 'tax-calendar' && <TaxCalendar />}
+            {state.currentSection === 'backups' && <BackupPanel />}
+            {state.currentSection === 'verify' && <LiveVerification />}
 
             {/* --- ASISTENTE IA --- */}
             {state.currentSection === 'ai-assistant' && (

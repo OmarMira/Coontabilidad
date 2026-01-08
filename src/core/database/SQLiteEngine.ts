@@ -8,6 +8,11 @@ export class SQLiteEngine {
         this.dbName = 'accountexpress.db';
     }
 
+    public setDB(db: initSqlJs.Database): void {
+        this.db = db;
+        console.log('✅ SQLiteEngine: External DB injected');
+    }
+
     async initialize(databaseName?: string): Promise<void> {
         if (databaseName) this.dbName = databaseName;
 

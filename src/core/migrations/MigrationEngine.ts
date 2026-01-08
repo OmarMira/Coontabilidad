@@ -5,6 +5,9 @@ import { InventorySchemaMigration } from './list/003_inventory_schema';
 import { PurchasingSchemaMigration } from './list/004_purchasing_schema';
 import { AccountingSchemaMigration } from './list/005_accounting_schema';
 import { SystemSchemaMigration } from './list/006_system_schema';
+import { CurrencyFixAndFiscalMigration } from './list/007_currency_fix_and_fiscal';
+import { HistoricalDataFixMigration } from './list/008_historical_data_fix';
+import { PerformanceIndicesMigration } from './list/009_performance_indices';
 
 export interface Migration {
     version: number;
@@ -21,7 +24,10 @@ export class MigrationEngine {
         InventorySchemaMigration,
         PurchasingSchemaMigration,
         AccountingSchemaMigration,
-        SystemSchemaMigration
+        SystemSchemaMigration,
+        CurrencyFixAndFiscalMigration,
+        new HistoricalDataFixMigration(),
+        new PerformanceIndicesMigration()
     ];
 
     private constructor() { }

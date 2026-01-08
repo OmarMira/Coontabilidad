@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:80"
+    env_file:
+      - .env.production
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Placeholder for Centralized SQLite/Postgres Backup Server if needed
+  # db_sync:
+  #   image: postgrest
+  # ...

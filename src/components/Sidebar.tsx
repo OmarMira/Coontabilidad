@@ -23,7 +23,8 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
-  CreditCard
+  CreditCard,
+  Shield
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,14 +52,14 @@ const menuItems: MenuItem[] = [
     label: 'ARCHIVO',
     icon: FileText,
     children: [
-      { id: 'system-config', label: 'Configuración del Sistema', icon: Settings },
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2 },
       { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard },
       { id: 'users', label: 'Usuarios y Roles', icon: UserCheck },
       { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive },
       { id: 'system-logs', label: 'Logs del Sistema', icon: Activity },
       { id: 'auditoria', label: 'Auditoría de Transacciones', icon: Search },
-      { id: 'security', label: 'Seguridad y Cifrado', icon: Lock }
+      { id: 'security', label: 'Seguridad y Cifrado', icon: Lock },
+      { id: 'verify', label: 'Verificación Iron Core', icon: Shield }
     ]
   },
   {

@@ -4,6 +4,9 @@ import { BasicEncryption } from '../core/security/BasicEncryption';
 import { logger } from '../core/logging/SystemLogger';
 import { ViewManager } from './views/ViewManager';
 import { DatabaseInitializer } from './DatabaseInitializer';
+import { DatabaseService } from './DatabaseService';
+import { SQLiteEngine } from '../core/database/SQLiteEngine';
+import { MigrationEngine } from '../core/migrations/MigrationEngine';
 
 let db: initSqlJs.Database | null = null;
 
@@ -523,11 +526,27 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
       }
     }
 
+    // --- INYECCIÓN NÚCLEO FORENSE (IRON CORE) ---
+    if (db) {
+      // 1. Inicializar Forense (SIN TRIGGERS para permitir migración de corrección monetaria)
+      DatabaseService.setDB(db);
+      await DatabaseService.initializeForensicLayer(true);
+
+      // 2. Ejecutar Migraciones (Task 5.1: Floats -> Cents)
+      const engine = new SQLiteEngine();
+      engine.setDB(db);
+      await MigrationEngine.getInstance().migrate(engine);
+
+      // 3. Instalar Triggers Anti-Tamper (Ahora que los datos están limpios)
+      await DatabaseService.createForensicTriggers();
+    }
+    // ---------------------------------------------
+
     // Configurar auto-save
     setupAutoSave();
 
     isInitialized = true;
-    logger.info('Database', 'init_complete', 'Base de datos inicializada correctamente con persistencia');
+    logger.info('Database', 'init_complete', 'Base de datos inicializada correctamente con persistencia (Modo Forense)');
     return db!;
   } catch (error) {
     logger.critical('Database', 'init_failed', `Error crítico en inicialización de base de datos: ${error instanceof Error ? error.message : 'Unknown error'}`, null, error as Error);
@@ -7444,6 +7463,23 @@ export const unmatchTransaction = (bankTransactionId: number): { success: boolea
   }
 };
 
+export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void> => {
+  try {
+    if (opfsRoot) {
+      const fileHandle = await opfsRoot.getFileHandle(DB_NAME, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(data as any);
+      await writable.close();
+      logger.info('Database', 'restore_success', 'Backup restaurado en OPFS');
+    } else {
+      // LocalStorage Fallback (Limited support)
+      logger.warn('Database', 'restore_warning', 'Restaurando en modo sin OPFS (experimental)');
+    }
 
-
-
+    // Force reload
+    window.location.reload();
+  } catch (e) {
+    logger.error('Database', 'restore_error', 'Fallo al restaurar backup', null, e as Error);
+    throw e;
+  }
+};
