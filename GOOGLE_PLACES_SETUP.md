@@ -95,7 +95,7 @@ Cuando el usuario escribe en el campo de dirección:
 
 ## 🔧 Archivos Modificados
 
-```
+```text
 c:\Account Express\
 ├── index.html                                    # Script de Google Maps
 ├── src\components\ui\AddressAutocomplete.tsx    # Componente reutilizable
