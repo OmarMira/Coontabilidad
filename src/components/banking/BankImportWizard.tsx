@@ -8,7 +8,9 @@ import { parseOFX } from '@/lib/ofx-parser';
 import { parseBankPDF } from '@/lib/pdf-parser';
 import { TransactionPreview } from './importers/TransactionPreview';
 import Papa from 'papaparse';
-import { BankAccount, insertBankTransactions, BankTransaction } from '@/database/simple-db';
+import { BankAccount, insertBankTransactions, BankTransaction, getBankTransactions } from '@/database/simple-db';
+import { BankImportService } from '@/services/banking/BankImportService';
+import { DuplicateDetectionService } from '@/services/banking/DuplicateDetectionService';
 
 type ImportStage = 'upload' | 'mapping' | 'preview' | 'result';
 
@@ -203,7 +205,7 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
 
     // --- Finalize ---
 
-    const handleFinalizeImport = (selectedIndices: number[]) => {
+    const handleFinalizeImport = async (selectedIndices: number[]) => {
         if (!selectedAccount) {
             setErrorMsg("No se ha seleccionado una cuenta bancaria.");
             return;
@@ -213,6 +215,7 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
         const toImport = transactions.filter((_, i) => selectedIndices.includes(i));
 
         try {
+            // Convert cents to dollars
             const dbTxs: Partial<BankTransaction>[] = toImport.map(t => ({
                 bank_account_id: selectedAccount,
                 transaction_date: t.transaction_date,
@@ -222,9 +225,47 @@ export const BankImportWizard: React.FC<{ accounts: BankAccount[], onComplete: (
                 status: 'pending' as const
             }));
 
-            const result = insertBankTransactions(dbTxs);
-            setImportResult(result);
-            setStage('result');
+            // Validate and check for duplicates
+            const existingTxs = getBankTransactions(selectedAccount);
+            const validationResult = BankImportService.validateImport(
+                selectedAccount,
+                dbTxs,
+                existingTxs
+            );
+
+            if (!validationResult.success) {
+                // Show validation errors or duplicates detected
+                if (validationResult.duplicateDetection?.hasDuplicates) {
+                    const userConfirm = confirm(
+                        `${validationResult.message}\n\n` +
+                        `¿Deseas importar solo las ${validationResult.duplicateDetection.safeToImport.length} transacciones no duplicadas?`
+                    );
+
+                    if (userConfirm && validationResult.duplicateDetection.safeToImport.length > 0) {
+                        // Import only safe transactions
+                        const result = insertBankTransactions(validationResult.duplicateDetection.safeToImport);
+                        setImportResult({
+                            success: true,
+                            message: `${result.importedCount} transacciones importadas. ${validationResult.skippedCount} duplicados omitidos.`
+                        });
+                        setStage('result');
+                    } else {
+                        setErrorMsg(validationResult.message);
+                        setLoading(false);
+                        return;
+                    }
+                } else {
+                    // Other validation errors
+                    setErrorMsg(validationResult.message);
+                    setLoading(false);
+                    return;
+                }
+            } else {
+                // All validations passed, proceed with import
+                const result = insertBankTransactions(dbTxs);
+                setImportResult(result);
+                setStage('result');
+            }
         } catch (e) {
             console.error(e);
             setImportResult({ success: false, message: "Error crítico insertando en BD" });
