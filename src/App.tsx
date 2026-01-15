@@ -1370,7 +1370,7 @@ function App() {
 
             {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
 
-            {state.currentSection === 'journal-entry-test' && <JournalEntryTest />}
+            {/* JournalEntryTest removed */}
 
             {state.currentSection === 'banks' && (
               <>
