@@ -53,13 +53,9 @@ const menuItems: MenuItem[] = [
     icon: FileText,
     children: [
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2 },
-      { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard },
       { id: 'users', label: 'Usuarios y Roles', icon: UserCheck },
-      { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive },
-      { id: 'system-logs', label: 'Logs del Sistema', icon: Activity },
-      { id: 'auditoria', label: 'Auditoría de Transacciones', icon: Search },
-      { id: 'security', label: 'Seguridad y Cifrado', icon: Lock },
-      { id: 'verify', label: 'Verificación Iron Core', icon: Shield }
+      { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
+      { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard }
     ]
   },
   {
@@ -93,10 +89,11 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'chart-accounts', label: 'Plan de Cuentas', icon: FileText },
       { id: 'journal-entries', label: 'Asientos Contables', icon: FileText },
+      { id: 'bank-reconciliation', label: 'Conciliación Bancaria', icon: FileText },
       { id: 'general-ledger', label: 'Libro Mayor', icon: Database },
+      { id: 'trial-balance', label: 'Balance de Comprobación', icon: BarChart3 },
       { id: 'balance-sheet', label: 'Balance General', icon: BarChart3 },
       { id: 'income-statement', label: 'Estado de Resultados', icon: BarChart3 },
-      { id: 'trial-balance', label: 'Balance de Comprobación', icon: BarChart3 },
       { id: 'financial-reports', label: 'Reportes Financieros', icon: BarChart3 }
     ]
   },
@@ -106,10 +103,10 @@ const menuItems: MenuItem[] = [
     icon: Package,
     children: [
       { id: 'products', label: 'Productos y Servicios', icon: Package },
-      { id: 'product-categories', label: 'Categorías', icon: Package2 },
       { id: 'inventory-movements', label: 'Movimientos', icon: TrendingUp },
       { id: 'inventory-adjustments', label: 'Ajustes de Inventario', icon: Settings },
       { id: 'inventory-reports', label: 'Reportes de Inventario', icon: BarChart3 },
+      { id: 'product-categories', label: 'Categorías', icon: Package2 },
       { id: 'locations', label: 'Ubicaciones', icon: MapPin }
     ]
   },
@@ -120,9 +117,9 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'tax-config', label: 'Configuración Fiscal', icon: Settings },
       { id: 'florida-dr15', label: 'Reporte DR-15', icon: FileText },
+      { id: 'tax-calendar', label: 'Calendario Fiscal', icon: FileText },
       { id: 'tax-rates', label: 'Tasas por Condado', icon: MapPin },
-      { id: 'tax-reports', label: 'Reportes Fiscales', icon: BarChart3 },
-      { id: 'tax-calendar', label: 'Calendario Fiscal', icon: FileText }
+      { id: 'tax-reports', label: 'Reportes Fiscales', icon: BarChart3 }
     ]
   },
   {
@@ -132,9 +129,12 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'accounting-diagnosis', label: 'Diagnóstico Contable', icon: Activity },
       { id: 'journal-entry-test', label: 'Pruebas de Asientos', icon: FileText },
-      { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
-      { id: 'bank-reconciliation', label: 'Conciliación Bancaria', icon: FileText, badge: 'Nuevo' },
-      { id: 'help', label: 'Centro de Ayuda', icon: HelpCircle, badge: 'Próximo' }
+      { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive },
+      { id: 'system-logs', label: 'Logs del Sistema', icon: Activity },
+      { id: 'auditoria', label: 'Auditoría de Transacciones', icon: Search },
+      { id: 'security', label: 'Seguridad y Cifrado', icon: Lock },
+      { id: 'verify', label: 'Verificación Iron Core', icon: Shield },
+      { id: 'help', label: 'Centro de Ayuda', icon: HelpCircle }
     ]
   },
   {

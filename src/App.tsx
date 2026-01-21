@@ -83,6 +83,7 @@ import { UnifiedAssistant } from './components/ai/UnifiedAssistant';
 import { TaxRates } from './components/TaxRates';
 import { DiagnosticPanel } from './debug/DiagnosticPanel';
 import { BalanceSheet } from './components/BalanceSheet';
+import { HelpCenter } from './components/HelpCenter';
 import { FloridaTaxReport } from './components/FloridaTaxReport';
 import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
@@ -253,6 +254,12 @@ function App() {
 
     initializeApp();
   }, []);
+
+  // Asegurar que siempre iniciamos en dashboard
+  useEffect(() => {
+    setState(prev => ({ ...prev, currentSection: 'dashboard' }));
+  }, []);
+
 
   const loadData = async () => {
     try {
@@ -1396,12 +1403,14 @@ function App() {
               </>
             )}
 
-            {state.currentSection === 'bank-reconciliation' && <BankingModule />}
 
-            {state.currentSection === 'help' && <ModulePlaceholder title="Centro de Ayuda" />}
+
+            {state.currentSection === 'bank-reconciliation' && <BankingModule />}
 
             {/* --- IMPUESTOS FLORIDA --- */}
             {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
+
+            {state.currentSection === 'help' && <HelpCenter />}
 
             {/* FIXED: Render FloridaTaxReport correctly */}
             {state.currentSection === 'florida-dr15' && <DR15PreparationWizard />}
@@ -1415,7 +1424,7 @@ function App() {
             {state.currentSection === 'backups' && <BackupPanel />}
             {state.currentSection === 'verify' && <LiveVerification />}
 
-            {/* --- ASISTENTE IA --- */}
+            {/* --- ASISTENTE IA (Classic Mode if needed, currently unused via Sidebar) --- */}
             {state.currentSection === 'ai-assistant' && (
               <div className="h-[calc(100vh-140px)]">
                 <UnifiedAssistant
