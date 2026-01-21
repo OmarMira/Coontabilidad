@@ -72,11 +72,14 @@ async function initializeApplication(): Promise<void> {
   }
 
   const App = (await import('./App')).default;
+  const { AuthProvider } = await import('./contexts/AuthContext');
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <DynamicErrorBoundary>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </DynamicErrorBoundary>
     </React.StrictMode>
   );
