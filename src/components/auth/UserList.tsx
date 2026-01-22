@@ -4,6 +4,7 @@ import UserService from '../../services/UserService';
 import type { User } from '../../types/user.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserForm } from './UserForm';
+import { RolesDiagnostic } from './RolesDiagnostic';
 
 export const UserList: React.FC = () => {
     const { user: currentUser } = useAuth();
@@ -265,6 +266,9 @@ export const UserList: React.FC = () => {
                     }}
                 />
             )}
+
+            {/* Diagnostic Tool - Remove after fixing */}
+            <RolesDiagnostic />
         </div>
     );
 };
