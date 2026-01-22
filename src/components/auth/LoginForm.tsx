@@ -3,12 +3,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Lock, User, AlertCircle, Loader2 } from 'lucide-react';
 import { GoogleLoginButton } from './GoogleLoginButton';
 
+// Verificar si Google está configurado
+const isGoogleConfigured = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    return clientId && clientId !== 'YOUR_GOOGLE_CLIENT_ID_HERE' && clientId.length > 20;
+};
+
 const LoginForm: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login, loginWithGoogle } = useAuth();
+    const showGoogleLogin = isGoogleConfigured();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,23 +81,27 @@ const LoginForm: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Google Login */}
-                    <div className="mb-6">
-                        <GoogleLoginButton
-                            onSuccess={handleGoogleSuccess}
-                            onError={handleGoogleError}
-                        />
-                    </div>
+                    {/* Google Login - Solo si está configurado */}
+                    {showGoogleLogin && (
+                        <>
+                            <div className="mb-6">
+                                <GoogleLoginButton
+                                    onSuccess={handleGoogleSuccess}
+                                    onError={handleGoogleError}
+                                />
+                            </div>
 
-                    {/* Divider */}
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-white/20"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white/10 text-white/60 font-semibold">O continúa con</span>
-                        </div>
-                    </div>
+                            {/* Divider */}
+                            <div className="relative my-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-white/20"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-4 bg-white/10 text-white/60 font-semibold">O continúa con</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                     {/* Traditional Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -157,6 +168,14 @@ const LoginForm: React.FC = () => {
                                 <p className="text-white/70 mt-1">Usuario: <span className="text-white font-mono">demo</span></p>
                                 <p className="text-white/70">Contraseña: <span className="text-white font-mono">demo123</span></p>
                             </div>
+                        </div>
+
+                        {/* Mensaje de ayuda si no hay usuarios */}
+                        <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                            <p className="text-yellow-300 text-xs font-semibold mb-1">💡 ¿No puedes iniciar sesión?</p>
+                            <p className="text-yellow-200/80 text-xs">
+                                Abre la consola (F12) y ejecuta: <code className="bg-black/30 px-1 rounded">forceInitDB()</code>
+                            </p>
                         </div>
                     </div>
                 </div>

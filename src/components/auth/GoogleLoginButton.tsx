@@ -14,27 +14,37 @@ interface GoogleLoginButtonProps {
     onError: () => void;
 }
 
-// IMPORTANTE: Reemplaza esto con tu Google Client ID
-// Obtenerlo en: https://console.cloud.google.com/apis/credentials
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-    '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com';
+// Obtener Client ID del .env
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+// Verificar si Google OAuth está configurado
+const isGoogleConfigured = GOOGLE_CLIENT_ID &&
+    GOOGLE_CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID_HERE' &&
+    GOOGLE_CLIENT_ID.length > 20;
 
 export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess, onError }) => {
+    // Si Google no está configurado, no mostrar nada
+    if (!isGoogleConfigured) {
+        console.warn('⚠️ Google OAuth no configurado. Crea un archivo .env con VITE_GOOGLE_CLIENT_ID');
+        console.warn('📖 Lee GOOGLE_OAUTH_SETUP.md para instrucciones');
+        return null;
+    }
+
     const handleSuccess = (credentialResponse: CredentialResponse) => {
         try {
             if (credentialResponse.credential) {
                 const decoded = jwtDecode<GoogleUserInfo>(credentialResponse.credential);
-                console.log('Google login exitoso:', decoded);
+                console.log('✅ Google login exitoso:', decoded);
                 onSuccess(decoded);
             }
         } catch (error) {
-            console.error('Error decodificando credencial de Google:', error);
+            console.error('❌ Error decodificando credencial de Google:', error);
             onError();
         }
     };
 
     const handleError = () => {
-        console.error('Error en login de Google');
+        console.error('❌ Error en login de Google');
         onError();
     };
 
@@ -59,7 +69,10 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
 // Hook para usar Google One Tap
 export const useGoogleOneTap = (onSuccess: (userInfo: GoogleUserInfo) => void) => {
     React.useEffect(() => {
-        // Google One Tap se inicializa automáticamente con useOneTap en GoogleLogin
-        console.log('Google One Tap habilitado');
+        if (isGoogleConfigured) {
+            console.log('✅ Google One Tap habilitado');
+        } else {
+            console.log('⚠️ Google One Tap deshabilitado (no configurado)');
+        }
     }, []);
 };

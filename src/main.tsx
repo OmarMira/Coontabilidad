@@ -8,6 +8,7 @@ import { AIResponseFixer } from '@/services/ai/AIResponseFixer';
 import { DashboardRestorer } from '@/core/DashboardRestorer';
 import { db, initDB } from '@/database/simple-db';
 import { logger } from '@/utils/logger';
+import { forceInitializeDatabase } from '@/utils/forceInitDB';
 import './index.css';
 import './styles/error-recovery.css';
 
