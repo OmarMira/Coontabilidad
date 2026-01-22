@@ -54,6 +54,7 @@ const menuItems: MenuItem[] = [
     children: [
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2 },
       { id: 'admin-users', label: 'Usuarios y Permisos', icon: UserCheck, badge: 'NEW' },
+      { id: 'role-manager', label: 'Gestión de Roles', icon: Shield, badge: 'NEW' },
       { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
       { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard }
     ]

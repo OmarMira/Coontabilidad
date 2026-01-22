@@ -92,6 +92,8 @@ import { MigrationEngine } from './core/migrations/MigrationEngine';
 import { NotificationService } from './services/NotificationService';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { UserList } from './components/auth/UserList';
+import { RoleManager } from './components/auth/RoleManager';
+
 
 
 
@@ -1436,6 +1438,8 @@ function App() {
 
               {/* --- GESTIÓN DE USUARIOS --- */}
               {state.currentSection === 'admin-users' && <UserList />}
+              {state.currentSection === 'role-manager' && <RoleManager />}
+
 
 
 

@@ -7854,3 +7854,141 @@ export const updateUserPassword = async (id: number, newPassword: string): Promi
   }
 };
 
+// Añadir al final de simple-db.ts
+
+// ==========================================
+// GESTIÓN DE ROLES (CRUD COMPLETO)
+// ==========================================
+
+/**
+ * Crear un nuevo rol
+ */
+export const createUserRole = (roleData: {
+    name: string;
+    description: string;
+    level: number;
+}): { success: boolean; message: string; roleId?: number } => {
+    if (!db) return { success: false, message: 'Database not initialized' };
+
+    try {
+        // Validar que el nombre no exista
+        const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${roleData.name}'`);
+        if (existing[0]?.values.length > 0) {
+            return { success: false, message: 'Ya existe un rol con ese nombre' };
+        }
+
+        // Insertar rol
+        db.run(`
+      INSERT INTO user_roles (name, description, level)
+      VALUES (?, ?, ?)
+    `, [roleData.name, roleData.description, roleData.level]);
+
+        const result = db.exec('SELECT last_insert_rowid() as id');
+        const roleId = result[0]?.values[0]?.[0] as number;
+
+        logger.info('Roles', 'role_created', `Rol creado: ${roleData.name}`, { roleId });
+
+        return { success: true, message: 'Rol creado correctamente', roleId };
+    } catch (error) {
+        logger.error('Roles', 'create_role_failed', 'Error creating role', { name: roleData.name }, error as Error);
+        return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+    }
+};
+
+/**
+ * Actualizar un rol existente
+ */
+export const updateUserRole = (id: number, updates: {
+    name?: string;
+    description?: string;
+    level?: number;
+}): { success: boolean; message: string } => {
+    if (!db) return { success: false, message: 'Database not initialized' };
+
+    try {
+        // Verificar que el rol existe
+        const roleCheck = db.exec(`SELECT id FROM user_roles WHERE id = ${id}`);
+        if (!roleCheck[0] || roleCheck[0].values.length === 0) {
+            return { success: false, message: 'Rol no encontrado' };
+        }
+
+        // Si se está cambiando el nombre, verificar que no exista otro con ese nombre
+        if (updates.name) {
+            const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${updates.name}' AND id != ${id}`);
+            if (existing[0]?.values.length > 0) {
+                return { success: false, message: 'Ya existe otro rol con ese nombre' };
+            }
+        }
+
+        const setParts: string[] = [];
+        const values: any[] = [];
+
+        if (updates.name !== undefined) {
+            setParts.push('name = ?');
+            values.push(updates.name);
+        }
+        if (updates.description !== undefined) {
+            setParts.push('description = ?');
+            values.push(updates.description);
+        }
+        if (updates.level !== undefined) {
+            setParts.push('level = ?');
+            values.push(updates.level);
+        }
+
+        if (setParts.length === 0) {
+            return { success: false, message: 'No hay cambios para actualizar' };
+        }
+
+        values.push(id);
+
+        db.run(`UPDATE user_roles SET ${setParts.join(', ')} WHERE id = ?`, values);
+
+        logger.info('Roles', 'role_updated', `Rol actualizado: ${id}`, { updates });
+
+        return { success: true, message: 'Rol actualizado correctamente' };
+    } catch (error) {
+        logger.error('Roles', 'update_role_failed', 'Error updating role', { id, updates }, error as Error);
+        return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+    }
+};
+
+/**
+ * Eliminar un rol (solo si no tiene usuarios asignados)
+ */
+export const deleteUserRole = (id: number): { success: boolean; message: string } => {
+    if (!db) return { success: false, message: 'Database not initialized' };
+
+    try {
+        // Verificar que el rol existe
+        const roleCheck = db.exec(`SELECT name FROM user_roles WHERE id = ${id}`);
+        if (!roleCheck[0] || roleCheck[0].values.length === 0) {
+            return { success: false, message: 'Rol no encontrado' };
+        }
+
+        const roleName = roleCheck[0].values[0][0] as string;
+
+        // No permitir eliminar roles del sistema (admin, accountant, viewer)
+        if (['admin', 'accountant', 'viewer'].includes(roleName)) {
+            return { success: false, message: 'No se pueden eliminar los roles del sistema' };
+        }
+
+        // Verificar que no haya usuarios con este rol
+        const usersWithRole = db.exec(`SELECT COUNT(*) as count FROM users WHERE role_id = ${id}`);
+        const userCount = usersWithRole[0]?.values[0]?.[0] as number || 0;
+
+        if (userCount > 0) {
+            return { success: false, message: `No se puede eliminar el rol porque tiene ${userCount} usuario(s) asignado(s)` };
+        }
+
+        // Eliminar rol
+        db.run('DELETE FROM user_roles WHERE id = ?', [id]);
+
+        logger.info('Roles', 'role_deleted', `Rol eliminado: ${roleName}`, { id });
+
+        return { success: true, message: 'Rol eliminado correctamente' };
+    } catch (error) {
+        logger.error('Roles', 'delete_role_failed', 'Error deleting role', { id }, error as Error);
+        return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+    }
+};
