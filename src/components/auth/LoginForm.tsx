@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Lock, User, AlertCircle, Loader2 } from 'lucide-react';
+import { GoogleLoginButton } from './GoogleLoginButton';
 
 const LoginForm: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -19,13 +20,33 @@ const LoginForm: React.FC = () => {
             if (!success) {
                 setError('Usuario o contraseña incorrectos');
             }
-            // Si es exitoso, el AuthContext manejará la redirección
         } catch (err) {
             setError('Error al iniciar sesión. Por favor intenta de nuevo.');
             console.error('Login error:', err);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleGoogleSuccess = async (userInfo: any) => {
+        setLoading(true);
+        setError('');
+
+        try {
+            const success = await loginWithGoogle(userInfo);
+            if (!success) {
+                setError('Error al iniciar sesión con Google');
+            }
+        } catch (err) {
+            setError('Error al procesar login de Google');
+            console.error('Google login error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleError = () => {
+        setError('Error al iniciar sesión con Google. Por favor intenta de nuevo.');
     };
 
     return (
@@ -45,15 +66,34 @@ const LoginForm: React.FC = () => {
 
                 {/* Login Card */}
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom duration-500">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Error Message */}
-                        {error && (
-                            <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top duration-300">
-                                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                <span className="text-sm">{error}</span>
-                            </div>
-                        )}
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-6 bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top duration-300">
+                            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <span className="text-sm">{error}</span>
+                        </div>
+                    )}
 
+                    {/* Google Login */}
+                    <div className="mb-6">
+                        <GoogleLoginButton
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                        />
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-white/20"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-4 bg-white/10 text-white/60 font-semibold">O continúa con</span>
+                        </div>
+                    </div>
+
+                    {/* Traditional Login Form */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Username Field */}
                         <div className="space-y-2">
                             <label className="text-white text-sm font-semibold flex items-center gap-2">
@@ -67,7 +107,6 @@ const LoginForm: React.FC = () => {
                                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 placeholder="Ingresa tu usuario"
                                 required
-                                autoFocus
                             />
                         </div>
 
