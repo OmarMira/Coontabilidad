@@ -53,7 +53,7 @@ const menuItems: MenuItem[] = [
     icon: FileText,
     children: [
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2 },
-      { id: 'users', label: 'Usuarios y Roles', icon: UserCheck },
+      { id: 'admin-users', label: 'Usuarios y Permisos', icon: UserCheck, badge: 'NEW' },
       { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
       { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard }
     ]

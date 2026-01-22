@@ -59,6 +59,7 @@ import { logger } from './core/logging/SystemLogger';
 import { SystemLogs } from './components/SystemLogs';
 import { ChartOfAccounts } from './components/ChartOfAccounts';
 import { AccountingDiagnosis } from './components/AccountingDiagnosis';
+import { JournalEntryTest } from './components/JournalEntryTest';
 import { BankingModule } from './components/banking/BankingModule';
 import { CustomerPayments } from './components/CustomerPayments';
 import { SupplierPayments } from './components/SupplierPayments';
@@ -90,6 +91,8 @@ import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
 import { NotificationService } from './services/NotificationService';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { UserList } from './components/auth/UserList';
+
 
 
 // 1. Add to AppState
@@ -1426,6 +1429,15 @@ function App() {
               {state.currentSection === 'tax-calendar' && <TaxCalendar />}
               {state.currentSection === 'backups' && <BackupPanel />}
               {state.currentSection === 'verify' && <LiveVerification />}
+
+              {/* --- HERRAMIENTAS --- */}
+              {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
+              {state.currentSection === 'journal-entry-test' && <JournalEntryTest />}
+
+              {/* --- GESTIÓN DE USUARIOS --- */}
+              {state.currentSection === 'admin-users' && <UserList />}
+
+
 
               {/* --- ASISTENTE IA (Classic Mode if needed, currently unused via Sidebar) --- */}
               {state.currentSection === 'ai-assistant' && (

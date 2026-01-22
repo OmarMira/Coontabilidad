@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import UserService from '../services/UserService';
+import type { User as DBUser } from '../types/user.types';
 
 interface User {
     id: number;
     username: string;
-    email: string;
-    role: 'admin' | 'user' | 'guest';
+    display_name: string;
+    role: string;
+    role_id: number;
+    role_level?: number;
 }
 
 interface AuthContextType {
@@ -12,6 +16,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<boolean>;
     logout: () => void;
     isAuthenticated: boolean;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,34 +38,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const login = async (username: string, password: string): Promise<boolean> => {
-        // Validación SIMPLE por ahora (hardcoded)
-        // TODO: Conectar con base de datos real
-        if (username === 'admin' && password === 'admin123') {
-            const userData: User = {
-                id: 1,
-                username: 'admin',
-                email: 'admin@accountexpress.com',
-                role: 'admin'
-            };
-            setUser(userData);
-            localStorage.setItem('accountexpress_user', JSON.stringify(userData));
-            return true;
-        }
+        try {
+            // Autenticar con UserService (base de datos real)
+            const result = await UserService.authenticateUser(username, password);
 
-        // Usuario demo regular
-        if (username === 'demo' && password === 'demo123') {
-            const userData: User = {
-                id: 2,
-                username: 'demo',
-                email: 'demo@accountexpress.com',
-                role: 'user'
-            };
-            setUser(userData);
-            localStorage.setItem('accountexpress_user', JSON.stringify(userData));
-            return true;
-        }
+            if (result.success && result.data) {
+                const dbUser = result.data;
 
-        return false;
+                // Mapear usuario de BD a formato de AuthContext
+                const userData: User = {
+                    id: dbUser.id,
+                    username: dbUser.username,
+                    display_name: dbUser.display_name,
+                    role: dbUser.role_name || 'user',
+                    role_id: dbUser.role_id,
+                    role_level: dbUser.role_level
+                };
+
+                setUser(userData);
+                localStorage.setItem('accountexpress_user', JSON.stringify(userData));
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Login error:', error);
+            return false;
+        }
     };
 
     const logout = () => {
@@ -68,12 +72,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('accountexpress_user');
     };
 
+    const refreshUser = async () => {
+        if (!user) return;
+
+        try {
+            const dbUser = UserService.getUserByUsername(user.username);
+            if (dbUser) {
+                const userData: User = {
+                    id: dbUser.id,
+                    username: dbUser.username,
+                    display_name: dbUser.display_name,
+                    role: dbUser.role_name || 'user',
+                    role_id: dbUser.role_id,
+                    role_level: dbUser.role_level
+                };
+                setUser(userData);
+                localStorage.setItem('accountexpress_user', JSON.stringify(userData));
+            }
+        } catch (error) {
+            console.error('Error refreshing user:', error);
+        }
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
             login,
             logout,
-            isAuthenticated: !!user
+            isAuthenticated: !!user,
+            refreshUser
         }}>
             {children}
         </AuthContext.Provider>

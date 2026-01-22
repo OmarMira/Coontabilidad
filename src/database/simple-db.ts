@@ -1377,7 +1377,38 @@ const createSchema = async (): Promise<void> => {
     )
   `);
 
-  logger.info('Database', 'schema_updated', 'Tablas de IA y Auditoría Forense creadas correctamente');
+  // ==========================================
+  // TABLAS DE GESTIÓN DE USUARIOS Y ROLES
+  // ==========================================
+
+  // Tabla de roles de usuario
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_roles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      description TEXT,
+      level INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabla de usuarios del sistema
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      display_name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role_id INTEGER NOT NULL,
+      is_active BOOLEAN DEFAULT 1,
+      last_login DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (role_id) REFERENCES user_roles(id)
+    )
+  `);
+
+  logger.info('Database', 'schema_updated', 'Tablas de IA, Auditoría Forense y Gestión de Usuarios creadas correctamente');
 };
 
 // Insertar datos de ejemplo
@@ -1414,6 +1445,33 @@ const insertSampleData = async (): Promise<void> => {
         '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
       )
     `);
+
+    // 1.3 Roles de Usuario (Sin FK)
+    db.run(`
+      INSERT INTO user_roles (name, description, level) VALUES 
+      ('admin', 'Administrador del sistema con acceso completo', 100),
+      ('accountant', 'Contador con acceso a módulos contables', 50),
+      ('viewer', 'Usuario de solo lectura', 10)
+    `);
+
+    // 1.4 Usuarios Iniciales (Con FK a user_roles)
+    // Nota: Las contraseñas se hashean en el siguiente paso
+    const seedUsers = async () => {
+      const adminHash = await hashPassword('admin123');
+      const demoHash = await hashPassword('demo123');
+      const viewerHash = await hashPassword('viewer123');
+
+      db!.run(`
+        INSERT INTO users (username, display_name, password_hash, role_id, is_active) VALUES 
+        ('admin', 'Administrador', '${adminHash}', 1, 1),
+        ('demo', 'Usuario Demo', '${demoHash}', 2, 1),
+        ('viewer', 'Usuario Viewer', '${viewerHash}', 3, 1)
+      `);
+
+      logger.info('Database', 'seed_users_created', 'Usuarios iniciales creados: admin, demo, viewer');
+    };
+
+    await seedUsers();
 
     // PASO 2: Tablas con FK (después de maestras)
     // --------------------------------------------
@@ -7483,3 +7541,316 @@ export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void>
     throw e;
   }
 };
+
+// ==========================================
+// GESTIÓN DE USUARIOS Y ROLES
+// ==========================================
+
+/**
+ * Hash de contraseña usando PBKDF2 (compatible con Web Crypto API)
+ */
+export const hashPassword = async (password: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+
+  // Generar salt aleatorio
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // Importar password como clave
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    data,
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+
+  // Derivar hash usando PBKDF2
+  const hashBuffer = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    256
+  );
+
+  // Combinar salt + hash en formato base64
+  const hashArray = new Uint8Array(hashBuffer);
+  const combined = new Uint8Array(salt.length + hashArray.length);
+  combined.set(salt);
+  combined.set(hashArray, salt.length);
+
+  return btoa(String.fromCharCode(...combined));
+};
+
+/**
+ * Verificar contraseña contra hash
+ */
+export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+  try {
+    const combined = Uint8Array.from(atob(hash), c => c.charCodeAt(0));
+    const salt = combined.slice(0, 16);
+    const storedHash = combined.slice(16);
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      data,
+      'PBKDF2',
+      false,
+      ['deriveBits']
+    );
+
+    const hashBuffer = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      keyMaterial,
+      256
+    );
+
+    const computedHash = new Uint8Array(hashBuffer);
+
+    // Comparación constante en tiempo
+    if (computedHash.length !== storedHash.length) return false;
+    let diff = 0;
+    for (let i = 0; i < computedHash.length; i++) {
+      diff |= computedHash[i] ^ storedHash[i];
+    }
+    return diff === 0;
+  } catch (error) {
+    logger.error('Auth', 'verify_password_failed', 'Error verifying password', {}, error as Error);
+    return false;
+  }
+};
+
+/**
+ * Crear un nuevo usuario
+ */
+export const createUser = async (userData: {
+  username: string;
+  password: string;
+  display_name: string;
+  role_id: number;
+}): Promise<{ success: boolean; message: string; userId?: number }> => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Validar que el username no exista
+    const existing = db.exec(`SELECT id FROM users WHERE username = '${userData.username}'`);
+    if (existing[0]?.values.length > 0) {
+      return { success: false, message: 'El nombre de usuario ya existe' };
+    }
+
+    // Hash de la contraseña
+    const passwordHash = await hashPassword(userData.password);
+
+    // Insertar usuario
+    db.run(`
+      INSERT INTO users (username, display_name, password_hash, role_id, is_active)
+      VALUES (?, ?, ?, ?, 1)
+    `, [userData.username, userData.display_name, passwordHash, userData.role_id]);
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const userId = result[0]?.values[0]?.[0] as number;
+
+    logger.info('Users', 'user_created', `Usuario creado: ${userData.username}`, { userId });
+
+    return { success: true, message: 'Usuario creado correctamente', userId };
+  } catch (error) {
+    logger.error('Users', 'create_user_failed', 'Error creating user', { username: userData.username }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+};
+
+/**
+ * Obtener todos los usuarios
+ */
+export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
+  if (!db) return [];
+
+  try {
+    let query = `
+      SELECT u.id, u.username, u.display_name, u.role_id, u.is_active, 
+             u.last_login, u.created_at, u.updated_at,
+             r.name as role_name, r.description as role_description, r.level as role_level
+      FROM users u
+      LEFT JOIN user_roles r ON u.role_id = r.id
+    `;
+
+    if (filters?.activeOnly) {
+      query += ' WHERE u.is_active = 1';
+    }
+
+    query += ' ORDER BY u.created_at DESC';
+
+    const result = db.exec(query);
+    if (!result[0]) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const user: any = {};
+      columns.forEach((col, index) => {
+        user[col] = row[index];
+      });
+      return user;
+    });
+  } catch (error) {
+    logger.error('Users', 'get_users_failed', 'Error getting users', {}, error as Error);
+    return [];
+  }
+};
+
+/**
+ * Obtener usuario por username
+ */
+export const getUserByUsername = (username: string): any | null => {
+  if (!db) return null;
+
+  try {
+    const result = db.exec(`
+      SELECT u.id, u.username, u.display_name, u.password_hash, u.role_id, u.is_active,
+             u.last_login, u.created_at, u.updated_at,
+             r.name as role_name, r.description as role_description, r.level as role_level
+      FROM users u
+      LEFT JOIN user_roles r ON u.role_id = r.id
+      WHERE u.username = '${username}'
+    `);
+
+    if (!result[0] || result[0].values.length === 0) return null;
+
+    const columns = result[0].columns;
+    const row = result[0].values[0];
+    const user: any = {};
+    columns.forEach((col, index) => {
+      user[col] = row[index];
+    });
+
+    return user;
+  } catch (error) {
+    logger.error('Users', 'get_user_failed', 'Error getting user by username', { username }, error as Error);
+    return null;
+  }
+};
+
+/**
+ * Actualizar usuario
+ */
+export const updateUser = (id: number, updates: {
+  display_name?: string;
+  role_id?: number;
+  is_active?: boolean;
+  last_login?: string;
+}): { success: boolean; message: string } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const setParts: string[] = [];
+    const values: any[] = [];
+
+    if (updates.display_name !== undefined) {
+      setParts.push('display_name = ?');
+      values.push(updates.display_name);
+    }
+    if (updates.role_id !== undefined) {
+      setParts.push('role_id = ?');
+      values.push(updates.role_id);
+    }
+    if (updates.is_active !== undefined) {
+      setParts.push('is_active = ?');
+      values.push(updates.is_active ? 1 : 0);
+    }
+    if (updates.last_login !== undefined) {
+      setParts.push('last_login = ?');
+      values.push(updates.last_login);
+    }
+
+    setParts.push('updated_at = CURRENT_TIMESTAMP');
+
+    if (setParts.length === 1) {
+      return { success: false, message: 'No hay cambios para actualizar' };
+    }
+
+    values.push(id);
+
+    db.run(`UPDATE users SET ${setParts.join(', ')} WHERE id = ?`, values);
+
+    logger.info('Users', 'user_updated', `Usuario actualizado: ${id}`, { updates });
+
+    return { success: true, message: 'Usuario actualizado correctamente' };
+  } catch (error) {
+    logger.error('Users', 'update_user_failed', 'Error updating user', { id, updates }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+};
+
+/**
+ * Desactivar usuario (soft delete)
+ */
+export const deactivateUser = (id: number): { success: boolean; message: string } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+
+    logger.info('Users', 'user_deactivated', `Usuario desactivado: ${id}`);
+
+    return { success: true, message: 'Usuario desactivado correctamente' };
+  } catch (error) {
+    logger.error('Users', 'deactivate_user_failed', 'Error deactivating user', { id }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+};
+
+/**
+ * Obtener todos los roles
+ */
+export const getUserRoles = (): any[] => {
+  if (!db) return [];
+
+  try {
+    const result = db.exec('SELECT * FROM user_roles ORDER BY level DESC');
+    if (!result[0]) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const role: any = {};
+      columns.forEach((col, index) => {
+        role[col] = row[index];
+      });
+      return role;
+    });
+  } catch (error) {
+    logger.error('Users', 'get_roles_failed', 'Error getting user roles', {}, error as Error);
+    return [];
+  }
+};
+
+/**
+ * Actualizar contraseña de usuario
+ */
+export const updateUserPassword = async (id: number, newPassword: string): Promise<{ success: boolean; message: string }> => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const passwordHash = await hashPassword(newPassword);
+
+    db.run('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, id]);
+
+    logger.info('Users', 'password_updated', `Contraseña actualizada para usuario: ${id}`);
+
+    return { success: true, message: 'Contraseña actualizada correctamente' };
+  } catch (error) {
+    logger.error('Users', 'update_password_failed', 'Error updating password', { id }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+};
+
