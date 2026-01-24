@@ -50,6 +50,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (username: string, password: string): Promise<boolean> => {
         try {
+            // --- BYPASS DE EMERGENCIA (Opción B) ---
+            if (username === 'demo' && password === 'demo123') {
+                const demoUser: User = {
+                    id: 999,
+                    username: 'demo',
+                    display_name: 'Usuario Demo (Bypass)',
+                    role: 'admin',
+                    role_id: 1,
+                    role_level: 100
+                };
+                setUser(demoUser);
+                localStorage.setItem('accountexpress_user', JSON.stringify(demoUser));
+                console.log('✅ Acceso concedido mediante Bypass de Emergencia');
+                return true;
+            }
+
             // Autenticar con UserService (base de datos real)
             const result = await UserService.authenticateUser(username, password);
 
@@ -147,7 +163,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('accountexpress_user');
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/';
     };
 
     const refreshUser = async () => {

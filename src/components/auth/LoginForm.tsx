@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, User, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, User, AlertCircle, Loader2, Zap, ShieldCheck } from 'lucide-react';
 import { GoogleLoginButton } from './GoogleLoginButton';
 
 // Verificar si Google está configurado
@@ -30,6 +30,21 @@ const LoginForm: React.FC = () => {
         } catch (err) {
             setError('Error al iniciar sesión. Por favor intenta de nuevo.');
             console.error('Login error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleQuickDemoLogin = async () => {
+        setError('');
+        setLoading(true);
+        try {
+            const success = await login('demo', 'demo123');
+            if (!success) {
+                setError('Error en el acceso rápido. Intente manualmente.');
+            }
+        } catch (err) {
+            setError('Error de conexión.');
         } finally {
             setLoading(false);
         }
@@ -65,14 +80,26 @@ const LoginForm: React.FC = () => {
                 {/* Logo/Header */}
                 <div className="text-center mb-8 animate-in fade-in slide-in-from-top duration-500">
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-2xl shadow-2xl shadow-blue-900/50 mb-4">
-                        <Lock className="w-10 h-10 text-white" />
+                        <ShieldCheck className="w-10 h-10 text-white" />
                     </div>
                     <h1 className="text-4xl font-black text-white tracking-tight">AccountExpress</h1>
-                    <p className="text-blue-300 text-sm mt-2 font-medium">Sistema de Gestión Empresarial</p>
+                    <p className="text-blue-300 text-sm mt-2 font-medium">Enterprise Management System</p>
                 </div>
 
                 {/* Login Card */}
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom duration-500">
+
+                    {/* Botón de Acceso Rápido (NEW) */}
+                    <button
+                        onClick={handleQuickDemoLogin}
+                        disabled={loading}
+                        className="w-full mb-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black rounded-xl shadow-lg shadow-emerald-900/40 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden group relative"
+                    >
+                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-[-20deg]"></div>
+                        <Zap className="w-6 h-6 animate-pulse" />
+                        <span className="text-lg tracking-wider">ACCESO RÁPIDO DEMO</span>
+                    </button>
+
                     {/* Error Message */}
                     {error && (
                         <div className="mb-6 bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top duration-300">
@@ -97,92 +124,72 @@ const LoginForm: React.FC = () => {
                                     <div className="w-full border-t border-white/20"></div>
                                 </div>
                                 <div className="relative flex justify-center text-sm">
-                                    <span className="px-4 bg-white/10 text-white/60 font-semibold">O continúa con</span>
+                                    <span className="px-4 bg-white/15 text-white/60 font-semibold text-xs uppercase tracking-widest">O credenciales locales</span>
                                 </div>
                             </div>
                         </>
                     )}
 
                     {/* Traditional Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Username Field */}
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
-                            <label className="text-white text-sm font-semibold flex items-center gap-2">
-                                <User className="w-4 h-4" />
+                            <label className="text-white/80 text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                <User className="w-3 h-3" />
                                 Usuario
                             </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="Ingresa tu usuario"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                placeholder="usuario"
                                 required
                             />
                         </div>
 
-                        {/* Password Field */}
                         <div className="space-y-2">
-                            <label className="text-white text-sm font-semibold flex items-center gap-2">
-                                <Lock className="w-4 h-4" />
+                            <label className="text-white/80 text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                                <Lock className="w-3 h-3" />
                                 Contraseña
                             </label>
                             <input
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="Ingresa tu contraseña"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                placeholder="••••••••"
                                 required
                             />
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-blue-900/50 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2"
                         >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Iniciando sesión...
-                                </>
-                            ) : (
-                                'Iniciar Sesión'
-                            )}
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Iniciar Sesión'}
                         </button>
                     </form>
 
-                    {/* Demo Credentials */}
-                    <div className="mt-6 pt-6 border-t border-white/10">
-                        <p className="text-white/60 text-xs text-center mb-3 font-semibold">Credenciales de prueba:</p>
-                        <div className="space-y-2 text-xs">
-                            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                                <p className="text-blue-300 font-semibold">👨‍💼 Administrador</p>
-                                <p className="text-white/70 mt-1">Usuario: <span className="text-white font-mono">admin</span></p>
-                                <p className="text-white/70">Contraseña: <span className="text-white font-mono">admin123</span></p>
+                    {/* Demo Credentials Footer */}
+                    <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-4">
+                        <div className="flex gap-4">
+                            <div className="text-[10px] text-white/40 text-center">
+                                <p className="font-black uppercase">Admin</p>
+                                <p>admin / admin123</p>
                             </div>
-                            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                                <p className="text-green-300 font-semibold">👤 Usuario Demo</p>
-                                <p className="text-white/70 mt-1">Usuario: <span className="text-white font-mono">demo</span></p>
-                                <p className="text-white/70">Contraseña: <span className="text-white font-mono">demo123</span></p>
+                            <div className="text-[10px] text-white/40 text-center border-l border-white/10 pl-4">
+                                <p className="font-black uppercase">Demo</p>
+                                <p>demo / demo123</p>
                             </div>
                         </div>
 
-                        {/* Mensaje de ayuda si no hay usuarios */}
-                        <div className="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                            <p className="text-yellow-300 text-xs font-semibold mb-1">💡 ¿No puedes iniciar sesión?</p>
-                            <p className="text-yellow-200/80 text-xs">
-                                Abre la consola (F12) y ejecuta: <code className="bg-black/30 px-1 rounded">forceInitDB()</code>
-                            </p>
-                        </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <p className="text-center text-white/40 text-xs mt-6">
-                    © 2026 AccountExpress. Sistema seguro con cifrado AES-256.
+                <p className="text-center text-white/20 text-[10px] mt-8 uppercase tracking-[0.2em] font-medium">
+                    Secured by Iron Core Encryption © 2026
                 </p>
             </div>
         </div>

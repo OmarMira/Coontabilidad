@@ -491,7 +491,10 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
         await insertInitialProducts();
       }
 
-      // 5. Insertar datos de ejemplo transaccionales (Clientes, Facturas, Asientos)
+      // 5. Insertar roles y usuarios del sistema si no existen (CRÍTICO para login)
+      await seedUsersAndRoles();
+
+      // 6. Insertar datos de ejemplo transaccionales (Clientes, Facturas, Asientos)
       const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
       const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
       if (customerCount === 0) {
@@ -1408,7 +1411,95 @@ const createSchema = async (): Promise<void> => {
     )
   `);
 
-  logger.info('Database', 'schema_updated', 'Tablas de IA, Auditoría Forense y Gestión de Usuarios creadas correctamente');
+  // --- MIGRACIONES EN CALIENTE (Para bases de datos existentes) ---
+
+  // 1. Asegurar columna 'level' en user_roles
+  try {
+    db.run(`ALTER TABLE user_roles ADD COLUMN level INTEGER DEFAULT 0`);
+    logger.info('Database', 'migration', 'Columna level agregada a user_roles');
+  } catch (e) { }
+
+  // 2. Asegurar columna 'display_name' en users
+  try {
+    db.run(`ALTER TABLE users ADD COLUMN display_name TEXT`);
+    // Poblar con username si estaba vacío
+    db.run(`UPDATE users SET display_name = username WHERE display_name IS NULL`);
+    logger.info('Database', 'migration', 'Columna display_name agregada a users');
+  } catch (e) { }
+
+  // 3. Asegurar columna 'is_active' en users
+  try {
+    db.run(`ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1`);
+  } catch (e) { }
+
+  logger.info('Database', 'schema_updated', 'Tablas de Gestión de Usuarios verificadas y actualizadas');
+};
+
+// Insertar roles y usuarios iniciales (Idempotente)
+const seedUsersAndRoles = async (): Promise<void> => {
+  if (!db) return;
+
+  try {
+    // 1. Roles
+    const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
+    const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
+
+    if (roleCount === 0) {
+      db.run(`
+        INSERT INTO user_roles (name, description, level) VALUES 
+        ('admin', 'Administrador del sistema con acceso completo', 100),
+        ('accountant', 'Contador con acceso a módulos contables', 50),
+        ('viewer', 'Usuario de solo lectura', 10)
+      `);
+      logger.info('Database', 'roles_seeded', 'Roles de sistema creados');
+    }
+
+    // 2. Usuarios
+    const usersToVerify = [
+      { username: 'admin', display_name: 'Administrador', password: 'admin123', role: 'admin' },
+      { username: 'demo', display_name: 'Usuario Demo', password: 'demo123', role: 'admin' },
+      { username: 'viewer', display_name: 'Usuario Viewer', password: 'viewer123', role: 'viewer' }
+    ];
+
+    const rolesResult = db.exec("SELECT id, name FROM user_roles");
+    const roleMap: Record<string, number> = {};
+    rolesResult[0]?.values.forEach(row => {
+      roleMap[row[1] as string] = row[0] as number;
+    });
+
+    for (const sysUser of usersToVerify) {
+      try {
+        const existing = db.exec(`SELECT id FROM users WHERE username = ?`, [sysUser.username]);
+        if (!existing[0] || existing[0].values.length === 0) {
+          const hash = await hashPassword(sysUser.password);
+          const roleId = roleMap[sysUser.role] || 1;
+
+          db.run(`
+            INSERT INTO users (username, display_name, password_hash, role_id, is_active) 
+            VALUES (?, ?, ?, ?, 1)
+          `, [sysUser.username, sysUser.display_name, hash, roleId]);
+
+          logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} creado correctamente`);
+        } else {
+          // Asegurarse de que esté activo y resetear password a default en este ambiente demo
+          const hash = await hashPassword(sysUser.password);
+          db.run(`UPDATE users SET is_active = 1, password_hash = ? WHERE username = ?`, [hash, sysUser.username]);
+        }
+      } catch (userErr) {
+        logger.error('Database', 'seed_user_failed', `Error al procesar usuario ${sysUser.username}`, { error: userErr });
+      }
+    }
+
+    // 3. ACTUALIZACIÓN FORZADA DE NIVELES (Fuera del loop)
+    db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
+    db.run(`UPDATE user_roles SET level = 50 WHERE name = 'accountant'`);
+    db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
+    db.run(`UPDATE user_roles SET level = 30 WHERE name = 'sales' OR name = 'vendedor'`);
+    logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados');
+
+  } catch (error) {
+    logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
+  }
 };
 
 // Insertar datos de ejemplo
@@ -1445,33 +1536,6 @@ const insertSampleData = async (): Promise<void> => {
         '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
       )
     `);
-
-    // 1.3 Roles de Usuario (Sin FK)
-    db.run(`
-      INSERT INTO user_roles (name, description, level) VALUES 
-      ('admin', 'Administrador del sistema con acceso completo', 100),
-      ('accountant', 'Contador con acceso a módulos contables', 50),
-      ('viewer', 'Usuario de solo lectura', 10)
-    `);
-
-    // 1.4 Usuarios Iniciales (Con FK a user_roles)
-    // Nota: Las contraseñas se hashean en el siguiente paso
-    const seedUsers = async () => {
-      const adminHash = await hashPassword('admin123');
-      const demoHash = await hashPassword('demo123');
-      const viewerHash = await hashPassword('viewer123');
-
-      db!.run(`
-        INSERT INTO users (username, display_name, password_hash, role_id, is_active) VALUES 
-        ('admin', 'Administrador', '${adminHash}', 1, 1),
-        ('demo', 'Usuario Demo', '${demoHash}', 2, 1),
-        ('viewer', 'Usuario Viewer', '${viewerHash}', 3, 1)
-      `);
-
-      logger.info('Database', 'seed_users_created', 'Usuarios iniciales creados: admin, demo, viewer');
-    };
-
-    await seedUsers();
 
     // PASO 2: Tablas con FK (después de maestras)
     // --------------------------------------------
@@ -7864,131 +7928,131 @@ export const updateUserPassword = async (id: number, newPassword: string): Promi
  * Crear un nuevo rol
  */
 export const createUserRole = (roleData: {
-    name: string;
-    description: string;
-    level: number;
+  name: string;
+  description: string;
+  level: number;
 }): { success: boolean; message: string; roleId?: number } => {
-    if (!db) return { success: false, message: 'Database not initialized' };
+  if (!db) return { success: false, message: 'Database not initialized' };
 
-    try {
-        // Validar que el nombre no exista
-        const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${roleData.name}'`);
-        if (existing[0]?.values.length > 0) {
-            return { success: false, message: 'Ya existe un rol con ese nombre' };
-        }
+  try {
+    // Validar que el nombre no exista
+    const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${roleData.name}'`);
+    if (existing[0]?.values.length > 0) {
+      return { success: false, message: 'Ya existe un rol con ese nombre' };
+    }
 
-        // Insertar rol
-        db.run(`
+    // Insertar rol
+    db.run(`
       INSERT INTO user_roles (name, description, level)
       VALUES (?, ?, ?)
     `, [roleData.name, roleData.description, roleData.level]);
 
-        const result = db.exec('SELECT last_insert_rowid() as id');
-        const roleId = result[0]?.values[0]?.[0] as number;
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const roleId = result[0]?.values[0]?.[0] as number;
 
-        logger.info('Roles', 'role_created', `Rol creado: ${roleData.name}`, { roleId });
+    logger.info('Roles', 'role_created', `Rol creado: ${roleData.name}`, { roleId });
 
-        return { success: true, message: 'Rol creado correctamente', roleId };
-    } catch (error) {
-        logger.error('Roles', 'create_role_failed', 'Error creating role', { name: roleData.name }, error as Error);
-        return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-    }
+    return { success: true, message: 'Rol creado correctamente', roleId };
+  } catch (error) {
+    logger.error('Roles', 'create_role_failed', 'Error creating role', { name: roleData.name }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
 };
 
 /**
  * Actualizar un rol existente
  */
 export const updateUserRole = (id: number, updates: {
-    name?: string;
-    description?: string;
-    level?: number;
+  name?: string;
+  description?: string;
+  level?: number;
 }): { success: boolean; message: string } => {
-    if (!db) return { success: false, message: 'Database not initialized' };
+  if (!db) return { success: false, message: 'Database not initialized' };
 
-    try {
-        // Verificar que el rol existe
-        const roleCheck = db.exec(`SELECT id FROM user_roles WHERE id = ${id}`);
-        if (!roleCheck[0] || roleCheck[0].values.length === 0) {
-            return { success: false, message: 'Rol no encontrado' };
-        }
-
-        // Si se está cambiando el nombre, verificar que no exista otro con ese nombre
-        if (updates.name) {
-            const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${updates.name}' AND id != ${id}`);
-            if (existing[0]?.values.length > 0) {
-                return { success: false, message: 'Ya existe otro rol con ese nombre' };
-            }
-        }
-
-        const setParts: string[] = [];
-        const values: any[] = [];
-
-        if (updates.name !== undefined) {
-            setParts.push('name = ?');
-            values.push(updates.name);
-        }
-        if (updates.description !== undefined) {
-            setParts.push('description = ?');
-            values.push(updates.description);
-        }
-        if (updates.level !== undefined) {
-            setParts.push('level = ?');
-            values.push(updates.level);
-        }
-
-        if (setParts.length === 0) {
-            return { success: false, message: 'No hay cambios para actualizar' };
-        }
-
-        values.push(id);
-
-        db.run(`UPDATE user_roles SET ${setParts.join(', ')} WHERE id = ?`, values);
-
-        logger.info('Roles', 'role_updated', `Rol actualizado: ${id}`, { updates });
-
-        return { success: true, message: 'Rol actualizado correctamente' };
-    } catch (error) {
-        logger.error('Roles', 'update_role_failed', 'Error updating role', { id, updates }, error as Error);
-        return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  try {
+    // Verificar que el rol existe
+    const roleCheck = db.exec(`SELECT id FROM user_roles WHERE id = ${id}`);
+    if (!roleCheck[0] || roleCheck[0].values.length === 0) {
+      return { success: false, message: 'Rol no encontrado' };
     }
+
+    // Si se está cambiando el nombre, verificar que no exista otro con ese nombre
+    if (updates.name) {
+      const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${updates.name}' AND id != ${id}`);
+      if (existing[0]?.values.length > 0) {
+        return { success: false, message: 'Ya existe otro rol con ese nombre' };
+      }
+    }
+
+    const setParts: string[] = [];
+    const values: any[] = [];
+
+    if (updates.name !== undefined) {
+      setParts.push('name = ?');
+      values.push(updates.name);
+    }
+    if (updates.description !== undefined) {
+      setParts.push('description = ?');
+      values.push(updates.description);
+    }
+    if (updates.level !== undefined) {
+      setParts.push('level = ?');
+      values.push(updates.level);
+    }
+
+    if (setParts.length === 0) {
+      return { success: false, message: 'No hay cambios para actualizar' };
+    }
+
+    values.push(id);
+
+    db.run(`UPDATE user_roles SET ${setParts.join(', ')} WHERE id = ?`, values);
+
+    logger.info('Roles', 'role_updated', `Rol actualizado: ${id}`, { updates });
+
+    return { success: true, message: 'Rol actualizado correctamente' };
+  } catch (error) {
+    logger.error('Roles', 'update_role_failed', 'Error updating role', { id, updates }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
 };
 
 /**
  * Eliminar un rol (solo si no tiene usuarios asignados)
  */
 export const deleteUserRole = (id: number): { success: boolean; message: string } => {
-    if (!db) return { success: false, message: 'Database not initialized' };
+  if (!db) return { success: false, message: 'Database not initialized' };
 
-    try {
-        // Verificar que el rol existe
-        const roleCheck = db.exec(`SELECT name FROM user_roles WHERE id = ${id}`);
-        if (!roleCheck[0] || roleCheck[0].values.length === 0) {
-            return { success: false, message: 'Rol no encontrado' };
-        }
-
-        const roleName = roleCheck[0].values[0][0] as string;
-
-        // No permitir eliminar roles del sistema (admin, accountant, viewer)
-        if (['admin', 'accountant', 'viewer'].includes(roleName)) {
-            return { success: false, message: 'No se pueden eliminar los roles del sistema' };
-        }
-
-        // Verificar que no haya usuarios con este rol
-        const usersWithRole = db.exec(`SELECT COUNT(*) as count FROM users WHERE role_id = ${id}`);
-        const userCount = usersWithRole[0]?.values[0]?.[0] as number || 0;
-
-        if (userCount > 0) {
-            return { success: false, message: `No se puede eliminar el rol porque tiene ${userCount} usuario(s) asignado(s)` };
-        }
-
-        // Eliminar rol
-        db.run('DELETE FROM user_roles WHERE id = ?', [id]);
-
-        logger.info('Roles', 'role_deleted', `Rol eliminado: ${roleName}`, { id });
-
-        return { success: true, message: 'Rol eliminado correctamente' };
-    } catch (error) {
-        logger.error('Roles', 'delete_role_failed', 'Error deleting role', { id }, error as Error);
-        return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  try {
+    // Verificar que el rol existe
+    const roleCheck = db.exec(`SELECT name FROM user_roles WHERE id = ${id}`);
+    if (!roleCheck[0] || roleCheck[0].values.length === 0) {
+      return { success: false, message: 'Rol no encontrado' };
     }
+
+    const roleName = roleCheck[0].values[0][0] as string;
+
+    // No permitir eliminar roles del sistema (admin, accountant, viewer)
+    if (['admin', 'accountant', 'viewer'].includes(roleName)) {
+      return { success: false, message: 'No se pueden eliminar los roles del sistema' };
+    }
+
+    // Verificar que no haya usuarios con este rol
+    const usersWithRole = db.exec(`SELECT COUNT(*) as count FROM users WHERE role_id = ${id}`);
+    const userCount = usersWithRole[0]?.values[0]?.[0] as number || 0;
+
+    if (userCount > 0) {
+      return { success: false, message: `No se puede eliminar el rol porque tiene ${userCount} usuario(s) asignado(s)` };
+    }
+
+    // Eliminar rol
+    db.run('DELETE FROM user_roles WHERE id = ?', [id]);
+
+    logger.info('Roles', 'role_deleted', `Rol eliminado: ${roleName}`, { id });
+
+    return { success: true, message: 'Rol eliminado correctamente' };
+  } catch (error) {
+    logger.error('Roles', 'delete_role_failed', 'Error deleting role', { id }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
 };

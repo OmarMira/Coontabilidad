@@ -1,99 +1,111 @@
 /**
- * Script de inicialización forzada de la base de datos
- * Ejecutar si los usuarios no existen o el login no funciona
+ * Diagnóstico y Restauración Exhaustiva de Autenticación
  */
+import {
+    initDB,
+    db,
+    getUserRoles,
+    createUserRole,
+    createUser,
+    updateUserPassword,
+    getUserByUsername
+} from '../database/simple-db';
+import { logger } from '../core/logging/SystemLogger';
 
-import { initDB, getUserRoles, createUserRole, createUser } from '../database/simple-db';
-
-export const forceInitializeDatabase = async () => {
-    console.log('🔄 Iniciando reinicialización forzada de la base de datos...');
+export const exhaustiveAuthDiagnostic = async () => {
+    console.log('--- STARTING EXHAUSTIVE AUTH DIAGNOSTIC ---');
 
     try {
-        // 1. Inicializar BD
-        await initDB();
-        console.log('✅ Base de datos inicializada');
+        // 1. Verificar Inicialización
+        if (!db) {
+            console.log('⚠️ Database not initialized. Attempting initDB()...');
+            await initDB();
+        }
 
-        // 2. Verificar roles
+        if (!db) {
+            console.error('❌ CRITICAL: Could not initialize database.');
+            return;
+        }
+        console.log('✅ Database is active.');
+
+        // 2. Verificar Roles
+        console.log('🔍 Checking user_roles...');
         const roles = getUserRoles();
-        console.log(`📊 Roles encontrados: ${roles.length}`);
+        console.log('📊 Current roles:', roles);
 
-        // 3. Si no hay roles, crearlos
-        if (roles.length === 0) {
-            console.log('⚠️ No hay roles, creando roles del sistema...');
+        const systemRoles = [
+            { name: 'admin', level: 100 },
+            { name: 'accountant', level: 50 },
+            { name: 'viewer', level: 10 }
+        ];
 
-            const adminRole = createUserRole({
-                name: 'admin',
-                description: 'Administrador del sistema con acceso completo',
-                level: 100
-            });
-
-            const accountantRole = createUserRole({
-                name: 'accountant',
-                description: 'Contador con acceso a módulos contables',
-                level: 50
-            });
-
-            const viewerRole = createUserRole({
-                name: 'viewer',
-                description: 'Usuario de solo lectura',
-                level: 10
-            });
-
-            console.log('✅ Roles creados:', { adminRole, accountantRole, viewerRole });
+        for (const sysRole of systemRoles) {
+            const exists = roles.find(r => r.name === sysRole.name);
+            if (!exists) {
+                console.log(`➕ Creating missing role: ${sysRole.name}`);
+                createUserRole({
+                    name: sysRole.name,
+                    description: `Sistema: ${sysRole.name}`,
+                    level: sysRole.level
+                });
+            }
         }
 
-        // 4. Obtener roles actualizados
+        // Refrescar roles
         const updatedRoles = getUserRoles();
-        const adminRole = updatedRoles.find(r => r.name === 'admin');
-        const accountantRole = updatedRoles.find(r => r.name === 'accountant');
-        const viewerRole = updatedRoles.find(r => r.name === 'viewer');
+        console.log('✅ Final roles:', updatedRoles);
 
-        if (!adminRole || !accountantRole || !viewerRole) {
-            console.error('❌ Error: No se pudieron crear los roles');
-            return false;
+        // 3. Verificar Usuarios y Restaurar Contraseñas
+        const systemUsers = [
+            { username: 'admin', display_name: 'Administrador', password: 'admin123', role: 'admin' },
+            { username: 'demo', display_name: 'Usuario Demo', password: 'demo123', role: 'accountant' },
+            { username: 'viewer', display_name: 'Usuario Viewer', password: 'viewer123', role: 'viewer' }
+        ];
+
+        for (const sysUser of systemUsers) {
+            console.log(`👤 Processing user: ${sysUser.username}`);
+
+            const role = updatedRoles.find(r => r.name === sysUser.role);
+            if (!role) {
+                console.error(`❌ Role ${sysUser.role} not found for user ${sysUser.username}`);
+                continue;
+            }
+
+            const existingUser = getUserByUsername(sysUser.username);
+
+            if (!existingUser) {
+                console.log(`➕ User ${sysUser.username} not found. Creating...`);
+                const result = await createUser({
+                    username: sysUser.username,
+                    password: sysUser.password,
+                    display_name: sysUser.display_name,
+                    role_id: role.id
+                });
+                console.log(`   Result:`, result);
+            } else {
+                console.log(`🔄 User ${sysUser.username} already exists. Resetting password...`);
+                const result = await updateUserPassword(existingUser.id, sysUser.password);
+                console.log(`   Password reset result:`, result);
+
+                // Asegurarse de que esté activo
+                db.run('UPDATE users SET is_active = 1 WHERE id = ?', [existingUser.id]);
+                console.log(`   User activated.`);
+            }
         }
 
-        // 5. Crear usuarios de prueba
-        console.log('👥 Creando usuarios de prueba...');
+        console.log('--- DIAGNOSTIC COMPLETED ---');
+        console.log('✅ You can now try logging in with:');
+        console.log('   - admin / admin123');
+        console.log('   - demo / demo123');
+        console.log('   - viewer / viewer123');
 
-        const adminUser = await createUser({
-            username: 'admin',
-            password: 'admin123',
-            display_name: 'Administrador',
-            role_id: adminRole.id
-        });
-
-        const demoUser = await createUser({
-            username: 'demo',
-            password: 'demo123',
-            display_name: 'Usuario Demo',
-            role_id: accountantRole.id
-        });
-
-        const viewerUser = await createUser({
-            username: 'viewer',
-            password: 'viewer123',
-            display_name: 'Usuario Viewer',
-            role_id: viewerRole.id
-        });
-
-        console.log('✅ Usuarios creados:', { adminUser, demoUser, viewerUser });
-
-        console.log('🎉 Inicialización completada exitosamente!');
-        console.log('📝 Usuarios disponibles:');
-        console.log('   - admin / admin123 (Administrador)');
-        console.log('   - demo / demo123 (Contador)');
-        console.log('   - viewer / viewer123 (Solo lectura)');
-
-        return true;
     } catch (error) {
-        console.error('❌ Error en inicialización:', error);
-        return false;
+        console.error('❌ Error during diagnostic:', error);
     }
 };
 
-// Exportar para uso en consola
+// Expose to window
 if (typeof window !== 'undefined') {
-    (window as any).forceInitDB = forceInitializeDatabase;
-    console.log('💡 Función disponible: window.forceInitDB()');
+    (window as any).runAuthDiagnostic = exhaustiveAuthDiagnostic;
+    console.log('💡 Run window.runAuthDiagnostic() to fix authentication issues.');
 }

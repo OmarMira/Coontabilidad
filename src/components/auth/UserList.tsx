@@ -267,8 +267,7 @@ export const UserList: React.FC = () => {
                 />
             )}
 
-            {/* Diagnostic Tool - Remove after fixing */}
-            <RolesDiagnostic />
+            {/* Diagnostic Tool Removed */}
         </div>
     );
 };

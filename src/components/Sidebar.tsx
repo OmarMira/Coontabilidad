@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Home,
   Users,
@@ -146,6 +147,7 @@ const menuItems: MenuItem[] = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) => {
+  const { logout } = useAuth();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['dashboard']));
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -269,26 +271,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         </div>
       </nav>
 
-      {/* Footer del Sidebar */}
-      <div className="p-5 bg-slate-900/30 border-t border-slate-900/50">
-        {!isCollapsed ? (
-          <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2">
-            <div className="relative">
-              <div className="w-10 h-10 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-center">
-                <Database className="w-5 h-5 text-slate-400" />
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-950 shadow-sm animate-pulse"></div>
-            </div>
-            <div>
-              <p className="text-white font-black text-xs uppercase tracking-tight">Estatus Local</p>
-              <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Cifrado Militar AES-256</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-          </div>
-        )}
+
+
+      {/* Botón de Cerrar Sesión */}
+      <div className="p-4 border-t border-slate-900/50 mt-auto">
+        <button
+          onClick={() => {
+            if (confirm('¿Deseas cerrar la sesión?')) {
+              logout();
+            }
+          }}
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs"
+        >
+          <Lock className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+          {!isCollapsed && <span>CERRAR SESIÓN</span>}
+        </button>
       </div>
 
       {/* Botón para colapsar/expandir mejorado */}
