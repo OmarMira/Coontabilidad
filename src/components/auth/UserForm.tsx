@@ -49,14 +49,17 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
             newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
         }
 
+        // Validación de password: obligatoria en creación, opcional en edición
         if (!isEditing) {
             if (!formData.password || formData.password.length < 6) {
                 newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
             }
+        } else if (formData.password && formData.password.length < 6) {
+            newErrors.password = 'La nueva contraseña debe tener al menos 6 caracteres';
+        }
 
-            if (formData.password !== formData.confirmPassword) {
-                newErrors.confirmPassword = 'Las contraseñas no coinciden';
-            }
+        if (formData.password && formData.password !== formData.confirmPassword) {
+            newErrors.confirmPassword = 'Las contraseñas no coinciden';
         }
 
         if (!formData.display_name || formData.display_name.length < 2) {
@@ -80,7 +83,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
 
         try {
             if (isEditing && user) {
-                // Actualizar usuario existente
+                // 1. Actualizar datos básicos
                 const result = UserService.updateUser(
                     user.id,
                     {
@@ -91,6 +94,15 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                 );
 
                 if (result.success) {
+                    // 2. Si hay password, actualizarla administrativamente
+                    if (formData.password) {
+                        const passResult = await UserService.resetUserPassword(user.id, formData.password);
+                        if (!passResult.success) {
+                            setErrors({ password: passResult.message });
+                            setLoading(false);
+                            return;
+                        }
+                    }
                     onSave();
                 } else {
                     setErrors({ submit: result.message });
@@ -216,46 +228,73 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                         )}
                     </div>
 
-                    {/* Password (solo para nuevo usuario) */}
-                    {!isEditing && (
-                        <>
+                    {/* Password Section */}
+                    <div className="space-y-4 pt-4 border-t border-slate-800">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-black text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                                <Lock className="w-4 h-4" />
+                                {isEditing ? 'Cambiar Contraseña (Opcional)' : 'Contraseña del Usuario'}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                                    let generated = '';
+                                    for (let i = 0; i < 10; i++) {
+                                        generated += chars.charAt(Math.floor(Math.random() * chars.length));
+                                    }
+                                    setFormData({ ...formData, password: generated, confirmPassword: generated });
+                                    // Cambiar el tipo de input temporalmente podría ser buena idea, pero por ahora solo lo seteamos
+                                    alert(`Contraseña generada: ${generated}\n\nPor favor, cópiela antes de guardar.`);
+                                }}
+                                className="text-[10px] font-black bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg border border-blue-500/20 transition-all uppercase tracking-tighter"
+                            >
+                                Generar Password
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
-                                    <Lock className="w-4 h-4" />
-                                    Contraseña
+                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
+                                    Nueva Contraseña
                                 </label>
                                 <input
                                     type="password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.password ? 'border-red-500' : 'border-slate-700'
-                                        } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                        } rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
                                     placeholder="••••••••"
                                 />
                                 {errors.password && (
                                     <p className="mt-2 text-sm text-red-400">{errors.password}</p>
                                 )}
-                                <p className="mt-2 text-xs text-slate-500">Mínimo 6 caracteres</p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-300 mb-2">
-                                    Confirmar Contraseña
+                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
+                                    Confirmar
                                 </label>
                                 <input
                                     type="password"
                                     value={formData.confirmPassword}
                                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                     className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.confirmPassword ? 'border-red-500' : 'border-slate-700'
-                                        } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                                        } rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
                                     placeholder="••••••••"
                                 />
                                 {errors.confirmPassword && (
                                     <p className="mt-2 text-sm text-red-400">{errors.confirmPassword}</p>
                                 )}
                             </div>
-                        </>
-                    )}
+                        </div>
+                        {isEditing && (
+                            <p className="text-[10px] text-slate-500 italic">
+                                * Deje en blanco si no desea cambiar la contraseña actual.
+                            </p>
+                        )}
+                    </div>
+
 
                     {/* Actions */}
                     <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">

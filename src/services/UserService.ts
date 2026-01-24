@@ -258,6 +258,32 @@ export class UserService {
     }
 
     /**
+     * Resetear contraseña de usuario (Administración)
+     */
+    async resetUserPassword(userId: number, newPassword: string): Promise<UserServiceResponse> {
+        try {
+            if (!newPassword || newPassword.length < 6) {
+                return { success: false, message: 'La nueva contraseña debe tener al menos 6 caracteres' };
+            }
+
+            const result = await dbUpdateUserPassword(userId, newPassword);
+
+            if (result.success) {
+                logger.info('UserService', 'password_reset', `Contraseña reseteada por administrador para usuario: ${userId}`);
+            }
+
+            return result;
+        } catch (error) {
+            logger.error('UserService', 'reset_password_error', 'Error al resetear contraseña', { userId }, error as Error);
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Error al resetear la contraseña'
+            };
+        }
+    }
+
+
+    /**
      * Autenticar usuario (para login)
      */
     async authenticateUser(username: string, password: string): Promise<UserServiceResponse<User>> {
