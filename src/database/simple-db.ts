@@ -1355,6 +1355,27 @@ const createSchema = async (): Promise<void> => {
   `);
 
   // ==========================================
+  // TABLAS MÓDULO ARD (Análisis de Recibos)
+  // ==========================================
+  db.run(`
+    CREATE TABLE IF NOT EXISTS ard_documents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT CHECK(type IN ('invoice_in', 'receipt', 'check', 'other')),
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'analyzing', 'processed', 'converted', 'error')),
+      file_size INTEGER,
+      customer_id INTEGER REFERENCES customers(id),
+      detected_amount DECIMAL(15,2),
+      detected_tax DECIMAL(15,2),
+      detected_date DATE,
+      raw_analysis TEXT, -- Almacena el JSON crudo del motor OCR/IA
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // ==========================================
   // TRIGGERS CRÍTICOS FASE 2
   // ==========================================
 
@@ -6005,6 +6026,73 @@ export function updateCompanyData(companyData: Partial<CompanyData>): { success:
       message: `Error al actualizar datos de empresa: ${error instanceof Error ? error.message : 'Error desconocido'}`
     };
   }
+}
+
+// ==========================================
+// MÓDULO ARD (Gestión de Archivos y Recibos)
+// ==========================================
+
+export function getARDDocuments(): any[] {
+  if (!db) return [];
+  try {
+    const result = db.exec('SELECT * FROM ard_documents ORDER BY created_at DESC');
+    if (!result[0]) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const doc: any = {};
+      columns.forEach((col, i) => doc[col] = row[i]);
+      return doc;
+    });
+  } catch (e) {
+    console.error('Error fetching ARD docs:', e);
+    return [];
+  }
+}
+
+export function saveARDDocument(doc: any): { success: boolean; id: string } {
+  if (!db) return { success: false, id: '' };
+  try {
+    db.run(`
+      INSERT INTO ard_documents (id, name, type, status, file_size, detected_amount, detected_tax, detected_date, raw_analysis)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      doc.id, doc.name, doc.type, doc.status, doc.fileSize,
+      doc.detectedAmount || 0, doc.detectedTax || 0,
+      doc.detectedDate || new Date().toISOString().split('T')[0],
+      doc.rawAnalysis || '{}'
+    ]);
+    return { success: true, id: doc.id };
+  } catch (e) {
+    console.error('Error saving ARD doc:', e);
+    return { success: false, id: '' };
+  }
+}
+
+export function updateARDDocumentStatus(id: string, status: string, results?: any): void {
+  if (!db) return;
+  try {
+    if (results) {
+      db.run(`
+        UPDATE ard_documents 
+        SET status = ?, 
+            detected_amount = ?, 
+            detected_tax = ?, 
+            raw_analysis = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [status, results.amount, results.tax, JSON.stringify(results), id]);
+    } else {
+      db.run('UPDATE ard_documents SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, id]);
+    }
+  } catch (e) {
+    console.error('Error updating ARD doc:', e);
+  }
+}
+
+export function deleteARDDocument(id: string): void {
+  if (!db) return;
+  db.run('DELETE FROM ard_documents WHERE id = ?', [id]);
 }
 
 export function checkAccountingDataAssociation(): { hasData: boolean; customers: number; suppliers: number; invoices: number; bills: number } {

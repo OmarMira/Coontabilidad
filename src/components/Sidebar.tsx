@@ -15,6 +15,7 @@ import {
   Settings,
   Receipt,
   Search,
+  ScanSearch,
   HardDrive,
   UserCheck,
   Lock,
@@ -83,6 +84,7 @@ const menuItems: MenuItem[] = [
     label: 'CTA POR COBRAR',
     icon: TrendingUp,
     children: [
+      { id: 'ard-module', label: 'Análisis ARD', icon: ScanSearch, badge: 'PRO' },
       { id: 'customers', label: 'Clientes', icon: Users },
       { id: 'invoices', label: 'Facturas de Venta', icon: FileText },
       { id: 'customer-payments', label: 'Pagos de Clientes', icon: CreditCard },

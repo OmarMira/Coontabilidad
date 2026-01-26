@@ -103,6 +103,9 @@ import { CashFlowStatement } from './components/reports/CashFlowStatement';
 import { AgingReport } from './components/reports/AgingReport';
 import { AccountLedger } from './components/reports/AccountLedger';
 
+// --- NEW ARD MODULE FASE 1 ---
+import { ARDModule } from './components/ard/ARDModule';
+
 
 
 
@@ -1201,6 +1204,8 @@ function App() {
                   }}
                 />
               )}
+
+              {state.currentSection === 'ard-module' && <ARDModule />}
 
               {state.currentSection === 'quotes' && <QuotesList />}
               {state.currentSection === 'receivable-reports' && <ReceivableReports />}
