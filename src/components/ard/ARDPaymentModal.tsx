@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, User, FileCheck, ArrowRight, Wallet } from 'lucide-react';
-import { getCustomers, getInvoices, createCustomerPayment, updateARDDocumentStatus } from '../../database/simple-db';
+import { getCustomers, getInvoices, createPayment, updateARDDocumentStatus } from '../../database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 
 interface ARDPaymentModalProps {
@@ -25,8 +25,12 @@ export const ARDPaymentModal: React.FC<ARDPaymentModalProps> = ({ document, onCl
 
     useEffect(() => {
         if (selectedCustomerId) {
-            const pendingInvoices = getInvoices({ customerId: selectedCustomerId })
-                .filter((inv: any) => inv.status !== 'paid');
+            // getInvoices only accepts userId/role filters for access control
+            // We filter by customerId here on the client side
+            const allInvoices = getInvoices();
+            const pendingInvoices = allInvoices.filter((inv: any) =>
+                inv.customer_id === Number(selectedCustomerId) && inv.status !== 'paid'
+            );
             setInvoices(pendingInvoices);
         } else {
             setInvoices([]);
@@ -43,16 +47,16 @@ export const ARDPaymentModal: React.FC<ARDPaymentModalProps> = ({ document, onCl
         try {
             // 1. Registrar el pago en el sistema
             const paymentData = {
-                customer_id: selectedCustomerId,
-                invoice_id: selectedInvoiceId || null,
+                customer_id: Number(selectedCustomerId),
+                invoice_id: selectedInvoiceId ? Number(selectedInvoiceId) : undefined,
                 amount: Number(amount),
                 payment_date: date,
-                payment_method: paymentMethod,
-                reference: `ARD-CONV-${document.id}`,
+                payment_method: paymentMethod as any,
+                reference_number: `ARD-CONV-${document.id}`,
                 notes: `Cobro generado automáticamente desde ARD. Documento: ${document.name}`
             };
 
-            const result = createCustomerPayment(paymentData);
+            const result = createPayment(paymentData, 1); // Mock User ID 1 for now
 
             if (result.success) {
                 // 2. Marcar documento como CONVERTIDO

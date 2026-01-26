@@ -22,13 +22,15 @@ export const ARDModule: React.FC = () => {
 
     useEffect(() => {
         loadDocuments();
-        // Polling si hay documentos analizando
-        const interval = setInterval(() => {
-            const hasAnalyzing = documents.some(d => d.status === 'analyzing');
-            if (hasAnalyzing) loadDocuments();
-        }, 2000);
-        return () => clearInterval(interval);
-    }, [documents]);
+    }, []);
+
+    useEffect(() => {
+        const hasAnalyzing = documents.some(d => d.status === 'analyzing');
+        if (hasAnalyzing) {
+            const interval = setInterval(loadDocuments, 2000);
+            return () => clearInterval(interval);
+        }
+    }, [documents.some(d => d.status === 'analyzing')]);
 
     const stats = {
         pending: documents.filter(d => d.status === 'pending' || d.status === 'analyzing').length,

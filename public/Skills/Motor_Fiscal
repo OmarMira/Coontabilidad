@@ -1,0 +1,35 @@
+/**
+ * SKILL: Florida_Tax_Engine
+ * Objetivo: Cálculo de Sales Tax basado en los 67 condados de Florida.
+ */
+export const Florida_Tax_Engine = {
+    name: "calculate_fl_tax",
+    description: "Calcula el impuesto de venta según el condado de Florida.",
+    params: {
+        county: "string",
+        amount: "number"
+    },
+    execute(context, { county, amount }) {
+        // Base de datos de tasas 2024/2025 (Ejemplo de estructura técnica)
+        const taxRates = {
+            "MIAMI-DADE": 0.07,
+            "BROWARD": 0.07,
+            "ORANGE": 0.065,
+            "OSCEOLA": 0.075,
+            "HILLSBOROUGH": 0.075,
+            "DEFAULT": 0.06
+        };
+
+        const normalizedCounty = county.toUpperCase().trim();
+        const rate = taxRates[normalizedCounty] || taxRates["DEFAULT"];
+
+        const taxAmount = amount * rate;
+
+        return {
+            county: normalizedCounty,
+            rate: rate,
+            tax_amount: parseFloat(taxAmount.toFixed(2)),
+            total_with_tax: parseFloat((amount + taxAmount).toFixed(2))
+        };
+    }
+};

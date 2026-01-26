@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, Clock, CheckCircle2, AlertCircle, Eye, Trash2, ArrowUpRight, DollarSign } from 'lucide-react';
 import { deleteARDDocument } from '../../database/simple-db';
 import { ARDPaymentModal } from './ARDPaymentModal';
+import { ARDPreviewModal } from './ARDPreviewModal';
 
 interface ARDDocumentListProps {
     documents: any[];
@@ -10,6 +11,7 @@ interface ARDDocumentListProps {
 
 export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onRefresh }) => {
     const [selectedToConvert, setSelectedToConvert] = React.useState<any | null>(null);
+    const [previewDocument, setPreviewDocument] = React.useState<any | null>(null);
 
     const handleDelete = (id: string) => {
         if (confirm('¿Desea eliminar este registro de análisis?')) {
@@ -79,7 +81,11 @@ export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onR
                                 </td>
                                 <td className="px-8 py-6 text-center">
                                     <div className="flex items-center justify-center gap-2">
-                                        <button className="p-2 hover:bg-white/5 rounded-lg text-gray-500 hover:text-white transition-colors">
+                                        <button
+                                            onClick={() => setPreviewDocument(doc)}
+                                            className="p-2 hover:bg-white/5 rounded-lg text-gray-500 hover:text-white transition-colors"
+                                            title="Ver Análisis IA"
+                                        >
                                             <Eye className="w-4 h-4" />
                                         </button>
                                         {doc.status === 'processed' && (
@@ -118,6 +124,13 @@ export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onR
                     document={selectedToConvert}
                     onClose={() => setSelectedToConvert(null)}
                     onSuccess={onRefresh}
+                />
+            )}
+
+            {previewDocument && (
+                <ARDPreviewModal
+                    document={previewDocument}
+                    onClose={() => setPreviewDocument(null)}
                 />
             )}
         </div>
