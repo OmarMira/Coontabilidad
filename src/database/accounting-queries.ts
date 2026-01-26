@@ -379,3 +379,84 @@ export async function getAuditAlerts(): Promise<string[]> {
 
     return alerts;
 }
+/**
+ * Obtiene los datos para un Balance de Comprobación detallado
+ */
+export async function getDetailedTrialBalance(periodStart: string, periodEnd: string): Promise<any[]> {
+    if (!db) return [];
+
+    const query = `
+    SELECT 
+      a.account_code,
+      a.account_name,
+      a.account_type,
+      a.normal_balance,
+      -- Saldo anterior
+      COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as previous_debit,
+      COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as previous_credit,
+      -- Movimientos del período
+      COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
+      COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
+    FROM chart_of_accounts a
+    LEFT JOIN journal_details jd ON a.account_code = jd.account_code
+    LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
+    WHERE a.is_active = 1
+    GROUP BY a.account_code, a.account_name, a.account_type, a.normal_balance
+    ORDER BY a.account_code;
+  `;
+
+    try {
+        const res = db.exec(query, [periodStart, periodStart, periodStart, periodEnd, periodStart, periodEnd]);
+        if (!res.length) return [];
+
+        return res[0].values.map(row => ({
+            account_code: row[0],
+            account_name: row[1],
+            account_type: row[2],
+            normal_balance: row[3],
+            previous_debit: Number(row[4]) || 0,
+            previous_credit: Number(row[5]) || 0,
+            period_debit: Number(row[6]) || 0,
+            period_credit: Number(row[7]) || 0
+        }));
+    } catch (error) {
+        console.error('Error in getDetailedTrialBalance:', error);
+        return [];
+    }
+}
+
+/**
+ * Obtiene movimientos de una cuenta específica en un período
+ */
+export async function getAccountMovements(accountCode: string, start: string, end: string): Promise<any[]> {
+    if (!db) return [];
+
+    const query = `
+        SELECT 
+            je.entry_date,
+            je.reference,
+            je.description as entry_description,
+            jd.description as line_description,
+            jd.debit_amount,
+            jd.credit_amount
+        FROM journal_details jd
+        JOIN journal_entries je ON jd.journal_entry_id = je.id
+        WHERE jd.account_code = ? AND je.entry_date BETWEEN ? AND ?
+        ORDER BY je.entry_date ASC, je.id ASC
+    `;
+
+    try {
+        const res = db.exec(query, [accountCode, start, end]);
+        if (!res.length) return [];
+        return res[0].values.map(row => ({
+            date: row[0],
+            reference: row[1],
+            description: row[3] || row[2],
+            debit: Number(row[4]) || 0,
+            credit: Number(row[5]) || 0
+        }));
+    } catch (error) {
+        console.error('Error fetching account movements:', error);
+        return [];
+    }
+}

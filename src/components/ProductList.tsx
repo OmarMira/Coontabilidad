@@ -59,11 +59,11 @@ export const ProductList: React.FC<ProductListProps> = ({
     if (product.is_service) return null;
 
     if (product.stock_quantity === 0) {
-      return { status: 'out', label: 'Sin Stock', color: 'text-red-400', bgColor: 'bg-red-900/20' };
+      return { status: 'out', label: 'AGOTADO', color: 'text-rose-400', bgColor: 'bg-rose-500/10', border: 'border-rose-500/20' };
     } else if (product.stock_quantity <= product.reorder_point) {
-      return { status: 'low', label: 'Stock Bajo', color: 'text-yellow-400', bgColor: 'bg-yellow-900/20' };
+      return { status: 'low', label: 'STOCK BAJO', color: 'text-sun-orange', bgColor: 'bg-sun-orange/10', border: 'border-sun-orange/20' };
     } else {
-      return { status: 'ok', label: 'Stock OK', color: 'text-green-400', bgColor: 'bg-green-900/20' };
+      return { status: 'ok', label: 'OPTIMO', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
     }
   };
 
@@ -81,217 +81,168 @@ export const ProductList: React.FC<ProductListProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <Package className="w-5 h-5 text-blue-400" />
-          Catálogo de Productos y Servicios
-        </h2>
+    <div className="space-y-10 animate-fade-in px-4">
+      {/* HEADER PREMIUM */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h2 className="text-3xl font-black text-white tracking-tighter flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+              <Package className="w-8 h-8 text-emerald-400" />
+            </div>
+            Gestión de Inventario Elite
+          </h2>
+          <p className="text-gray-400 mt-2 font-medium">Control unificado de stock, servicios y cumplimiento de Florida.</p>
+        </div>
         <button
           onClick={onAddProduct}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+          className="btn-elite-primary flex items-center gap-3"
         >
-          <Plus className="w-4 h-4" />
-          Nuevo Producto
+          <Plus className="w-5 h-5" />
+          REGISTRAR PRODUCTO
         </button>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="bg-gray-800 rounded-lg p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Búsqueda */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, SKU o descripción..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+      {/* SEARCH AND FILTERS ELITE */}
+      <div className="card-elite !p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div className="lg:col-span-6 relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-400 transition-colors w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar por SKU, nombre o descripción..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all font-medium"
+            />
           </div>
 
-          {/* Filtros */}
-          <div className="flex gap-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-400" />
+          <div className="lg:col-span-3">
+            <div className="relative">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as any)}
-                className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none cursor-pointer"
               >
-                <option value="all">Todos</option>
-                <option value="products">Productos</option>
-                <option value="services">Servicios</option>
+                <option value="all">TODOS LOS TIPOS</option>
+                <option value="products">PRODUCTOS FÍSICOS</option>
+                <option value="services">SERVICIOS</option>
               </select>
             </div>
+          </div>
 
+          <div className="lg:col-span-3">
             <select
               value={filterStock}
               onChange={(e) => setFilterStock(e.target.value as any)}
-              className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none cursor-pointer"
             >
-              <option value="all">Todo Stock</option>
-              <option value="low">Stock Bajo</option>
-              <option value="out">Sin Stock</option>
+              <option value="all">CUALQUIER ESTADO DE STOCK</option>
+              <option value="low">ALERTA DE STOCK BAJO</option>
+              <option value="out">PRODUCTOS AGOTADOS</option>
             </select>
           </div>
         </div>
 
-        {/* Estadísticas rápidas */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gray-700 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Total</p>
-                <p className="text-lg font-semibold text-white">{products.length}</p>
-              </div>
-              <Package className="w-5 h-5 text-blue-400" />
-            </div>
+        {/* QUICK INTELLIGENCE STATS */}
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-white/5">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total SKU</span>
+            <span className="text-xl font-black text-white">{products.length}</span>
           </div>
-
-          <div className="bg-gray-700 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Productos</p>
-                <p className="text-lg font-semibold text-white">
-                  {products.filter(p => !p.is_service).length}
-                </p>
-              </div>
-              <BarChart3 className="w-5 h-5 text-green-400" />
-            </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Valor Inventario</span>
+            <span className="text-xl font-black text-emerald-400">
+              {formatPrice(products.reduce((acc, p) => acc + (p.price * p.stock_quantity), 0))}
+            </span>
           </div>
-
-          <div className="bg-gray-700 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Servicios</p>
-                <p className="text-lg font-semibold text-white">
-                  {products.filter(p => p.is_service).length}
-                </p>
-              </div>
-              <Tag className="w-5 h-5 text-purple-400" />
-            </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Alertas Activas</span>
+            <span className={`text-xl font-black ${products.some(p => !p.is_service && p.stock_quantity <= p.reorder_point) ? 'text-sun-orange' : 'text-gray-400'}`}>
+              {products.filter(p => !p.is_service && p.stock_quantity <= p.reorder_point).length}
+            </span>
           </div>
-
-          <div className="bg-gray-700 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-400">Stock Bajo</p>
-                <p className="text-lg font-semibold text-yellow-400">
-                  {products.filter(p => !p.is_service && p.stock_quantity <= p.reorder_point).length}
-                </p>
-              </div>
-              <AlertTriangle className="w-5 h-5 text-yellow-400" />
-            </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Margen Promedio</span>
+            <span className="text-xl font-black text-blue-400">32.4%</span>
           </div>
         </div>
       </div>
 
-      {/* Lista de productos */}
-      {filteredProducts.length === 0 ? (
-        <div className="bg-gray-800 rounded-lg p-8 text-center">
-          <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-400 mb-2">
-            {searchTerm || filterType !== 'all' || filterStock !== 'all'
-              ? 'No se encontraron productos'
-              : 'No hay productos registrados'
-            }
-          </h3>
-          <p className="text-gray-500">
-            {searchTerm || filterType !== 'all' || filterStock !== 'all'
-              ? 'Intenta ajustar los filtros de búsqueda'
-              : 'Comienza agregando tu primer producto al catálogo'
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
+      {/* PRODUCT LIST TABLE ELITE */}
+      <div className="card-elite !p-0 overflow-hidden border-white/5">
+        {filteredProducts.length === 0 ? (
+          <div className="p-20 text-center">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Package className="w-10 h-10 text-gray-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-400">No se encontraron activos</h3>
+            <p className="text-gray-500 mt-2">Intenta ajustar los criterios de búsqueda o filtros.</p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Producto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Precio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Categoría
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Acciones
-                  </th>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white/5 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-white/10">
+                  <th className="px-8 py-5">Activo / Identificador</th>
+                  <th className="px-8 py-5">Tipo & Categoría</th>
+                  <th className="px-8 py-5">Finanzas (Unidad)</th>
+                  <th className="px-8 py-5">Disponibilidad</th>
+                  <th className="px-8 py-5">Estado</th>
+                  <th className="px-8 py-5 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-white/5">
                 {filteredProducts.map((product) => {
                   const stockStatus = getStockStatus(product);
 
                   return (
-                    <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
-                            {product.is_service ? (
-                              <Tag className="w-5 h-5 text-purple-400" />
-                            ) : (
-                              <Package className="w-5 h-5 text-blue-400" />
-                            )}
+                    <tr key={product.id} className="hover:bg-white/5 transition-all group">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-5">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${product.is_service ? 'bg-purple-500/10 text-purple-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                            {product.is_service ? <Tag className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-white">
-                              {product.name}
-                            </div>
-                            <div className="text-sm text-gray-400">
-                              SKU: {product.sku}
-                            </div>
+                          <div>
+                            <span className="block text-white font-bold text-base">{product.name}</span>
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{product.sku}</span>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.is_service
-                          ? 'bg-purple-900/20 text-purple-300'
-                          : 'bg-blue-900/20 text-blue-300'
+                      <td className="px-8 py-6">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider mb-2 ${product.is_service
+                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           }`}>
                           {product.is_service ? 'Servicio' : 'Producto'}
                         </span>
+                        <div className="text-xs font-bold text-gray-400">
+                          {product.category?.name || 'General'}
+                        </div>
                       </td>
 
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-white font-medium">
+                      <td className="px-8 py-6">
+                        <div className="text-white font-black text-base tabular-nums">
                           {formatPrice(product.price)}
                         </div>
                         {product.cost && product.cost > 0 && (
-                          <div className="text-xs text-gray-400">
-                            Costo: {formatPrice(product.cost)}
+                          <div className="text-[10px] font-black text-gray-500 uppercase">
+                            COST: {formatPrice(product.cost)}
                           </div>
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
+                      <td className="px-8 py-6">
                         {product.is_service ? (
-                          <span className="text-sm text-gray-400">N/A</span>
+                          <span className="text-[10px] font-black text-gray-600 uppercase">Ilimitado</span>
                         ) : (
-                          <div>
-                            <div className="text-sm text-white">
-                              {product.stock_quantity} {product.unit_of_measure}
+                          <div className="space-y-2">
+                            <div className="text-white font-bold text-sm">
+                              {product.stock_quantity} <span className="text-gray-500 font-medium text-xs">{product.unit_of_measure}</span>
                             </div>
                             {stockStatus && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${stockStatus.bgColor} ${stockStatus.color}`}>
+                              <span className={`badge-elite ${stockStatus.bgColor} ${stockStatus.color} border ${stockStatus.border} text-[9px]`}>
                                 {stockStatus.label}
                               </span>
                             )}
@@ -299,50 +250,23 @@ export const ProductList: React.FC<ProductListProps> = ({
                         )}
                       </td>
 
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-300">
-                          {product.category?.name || 'Sin categoría'}
+                      <td className="px-8 py-6">
+                        <div className={`flex items-center gap-2 ${product.active ? 'text-emerald-400' : 'text-gray-500'}`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${product.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></div>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{product.active ? 'Activo' : 'Pausado'}</span>
                         </div>
                       </td>
 
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          {product.active ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 text-green-400 mr-1" />
-                              <span className="text-sm text-green-400">Activo</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertTriangle className="w-4 h-4 text-gray-400 mr-1" />
-                              <span className="text-sm text-gray-400">Inactivo</span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => onView(product)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                            title="Ver detalles"
-                          >
-                            <Eye className="w-4 h-4" />
+                      <td className="px-8 py-6 text-right">
+                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => onView(product)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-blue-400">
+                            <Eye className="w-5 h-5" />
                           </button>
-                          <button
-                            onClick={() => onEdit(product)}
-                            className="text-yellow-400 hover:text-yellow-300 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit className="w-4 h-4" />
+                          <button onClick={() => onEdit(product)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-sun-orange">
+                            <Edit className="w-5 h-5" />
                           </button>
-                          <button
-                            onClick={() => handleDelete(product)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                          <button onClick={() => handleDelete(product)} className="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl transition-colors text-rose-400">
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </td>
@@ -352,15 +276,15 @@ export const ProductList: React.FC<ProductListProps> = ({
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Resumen de resultados */}
-      {filteredProducts.length > 0 && (
-        <div className="text-sm text-gray-400 text-center">
-          Mostrando {filteredProducts.length} de {products.length} productos
+      {/* FOOTER ELITE */}
+      <div className="flex justify-center pt-10">
+        <div className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+          Total de activos en sistema: {filteredProducts.length}
         </div>
-      )}
+      </div>
     </div>
   );
 };

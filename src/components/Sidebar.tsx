@@ -25,7 +25,12 @@ import {
   ChevronRight,
   Database,
   CreditCard,
-  Shield
+  Shield,
+  History,
+  PieChart,
+  ShieldCheck,
+  Clock,
+  DollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -54,8 +59,9 @@ const menuItems: MenuItem[] = [
     icon: FileText,
     children: [
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2 },
-      { id: 'admin-users', label: 'Usuarios y Permisos', icon: UserCheck, badge: 'NEW' },
-      { id: 'role-manager', label: 'Gestión de Roles', icon: Shield, badge: 'NEW' },
+      { id: 'admin-users', label: 'Usuarios y Seguridad', icon: UserCheck },
+      { id: 'role-manager', label: 'Gestión de Roles', icon: Shield },
+      { id: 'audit-trail', label: 'Trazabilidad (Audit)', icon: History, badge: 'LOG' },
       { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
       { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard }
     ]
@@ -86,17 +92,22 @@ const menuItems: MenuItem[] = [
   },
   {
     id: 'libro-mayor',
-    label: 'CONTABILIDAD',
+    label: 'CONTABILIDAD PRO',
     icon: Calculator,
     children: [
+      { id: 'reports-dashboard', label: 'Dashboard de Reportes', icon: BarChart3, badge: 'NUEVO' },
+      { id: 'ledger-hub', label: 'Libros y Auxiliares', icon: Database, isNew: true },
       { id: 'chart-accounts', label: 'Plan de Cuentas', icon: FileText },
       { id: 'journal-entries', label: 'Asientos Contables', icon: FileText },
       { id: 'bank-reconciliation', label: 'Conciliación Bancaria', icon: FileText },
-      { id: 'general-ledger', label: 'Libro Mayor', icon: Database },
+      { id: 'bank-smart-import', label: 'AI Bank Smart Import', icon: Bot, badge: 'AI' },
+      { id: 'general-ledger', label: 'Libro Mayor', icon: FileText },
       { id: 'trial-balance', label: 'Balance de Comprobación', icon: BarChart3 },
-      { id: 'balance-sheet', label: 'Balance General', icon: BarChart3 },
-      { id: 'income-statement', label: 'Estado de Resultados', icon: BarChart3 },
-      { id: 'financial-reports', label: 'Reportes Financieros', icon: BarChart3 }
+      { id: 'account-ledger', label: 'Auxiliares de Cuentas', icon: PieChart, badge: 'NUEVO' },
+      { id: 'balance-sheet', label: 'Balance General', icon: ShieldCheck },
+      { id: 'income-statement', label: 'Estado de Resultados', icon: TrendingUp },
+      { id: 'cash-flow', label: 'Flujo de Efectivo', icon: DollarSign, badge: 'NUEVO' },
+      { id: 'aging-report', label: 'Aging Report (Cuentas)', icon: Clock, badge: 'NUEVO' }
     ]
   },
   {
@@ -147,9 +158,49 @@ const menuItems: MenuItem[] = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['dashboard']));
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Definir acceso por rol
+  const hasAccess = (itemId: string): boolean => {
+    if (!user) return false;
+    const role = user.role;
+
+    if (role === 'admin') return true; // Admin ve todo
+
+    switch (itemId) {
+      case 'dashboard':
+      case 'ai-assistant':
+        return true; // Todos ven dashboard e IA
+
+      case 'archivo':
+        return role === 'auditor'; // Solo admin y auditor (admin ya manejado arriba)
+
+      case 'cuentas-pagar':
+        return ['contador', 'comprador', 'auditor'].includes(role);
+
+      case 'cuentas-cobrar':
+        return ['contador', 'vendedor', 'auditor'].includes(role);
+
+      case 'libro-mayor':
+      case 'impuestos':
+      case 'bank-smart-import':
+        return ['contador', 'auditor'].includes(role);
+
+      case 'inventario':
+        return ['contador', 'vendedor', 'comprador', 'auditor'].includes(role);
+
+      case 'herramientas':
+        return role === 'auditor';
+
+      default:
+        return false;
+    }
+  };
+
+  // Filtrar ítems del menú según rol
+  const filteredMenuItems = menuItems.filter(item => hasAccess(item.id));
 
   const toggleExpanded = (itemId: string) => {
     const isAlreadyExpanded = expandedItems.has(itemId);
@@ -267,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       {/* Menú de navegación */}
       <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar relative px-3">
         <div className="space-y-1">
-          {menuItems.map(item => renderMenuItem(item))}
+          {filteredMenuItems.map(item => renderMenuItem(item))}
         </div>
       </nav>
 

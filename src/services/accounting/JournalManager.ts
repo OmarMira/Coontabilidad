@@ -12,6 +12,7 @@ export interface JournalEntryRequest {
     date: string; // ISO Date String
     description: string;
     reference: string;
+    userId?: number;
     details: JournalEntryDetail[];
 }
 
@@ -37,14 +38,24 @@ export class JournalManager {
         // 2. Validate Balance (Double Entry Rule)
         this.validateBalance(entry.details);
 
-        // 3. Calculated Total
-        const totalAmount = entry.details.reduce((sum, d) => sum.plus(d.debit), Big(0));
+        // 3. Calculated Totals
+        const totalDebit = entry.details.reduce((sum, d) => sum.plus(d.debit), Big(0));
+        const totalCredit = entry.details.reduce((sum, d) => sum.plus(d.credit), Big(0));
+        const userId = entry.userId || 1;
 
-        // 4. Insert Header
+        // 4. Insert Header - Synchronized with simple-db schema
         await this.engine.run(`
-            INSERT INTO journal_entries (entry_date, description, reference, total, status)
-            VALUES (?, ?, ?, ?, 'posted')
-        `, [entry.date, entry.description, entry.reference, totalAmount.toFixed(2)]);
+            INSERT INTO journal_entries (entry_date, description, reference, total_debit, total_credit, status, created_by, updated_by)
+            VALUES (?, ?, ?, ?, ?, 'posted', ?, ?)
+        `, [
+            entry.date,
+            entry.description,
+            entry.reference,
+            totalDebit.toFixed(2),
+            totalCredit.toFixed(2),
+            userId,
+            userId
+        ]);
 
         const jeIdResult = await this.engine.select("SELECT last_insert_rowid() as id");
         const jeId = jeIdResult[0].id;
@@ -52,7 +63,7 @@ export class JournalManager {
         // 5. Insert Details
         for (const detail of entry.details) {
             await this.engine.run(`
-                INSERT INTO journal_details (journal_id, account_code, debit, credit, description)
+                INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount, description)
                 VALUES (?, ?, ?, ?, ?)
             `, [
                 jeId,

@@ -76,6 +76,7 @@ import { TransactionAudit } from './components/TransactionAudit';
 import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
 import { SalesInvoiceForm } from './components/SalesInvoiceForm';
+import { BankStatementImporter } from './components/BankStatementImporter';
 import { ManualJournalEntries } from './components/ManualJournalEntries';
 import { GeneralLedger } from './components/GeneralLedger';
 import { IncomeStatement } from './components/accounting/IncomeStatement';
@@ -90,9 +91,17 @@ import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
 import { NotificationService } from './services/NotificationService';
+import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { UserList } from './components/auth/UserList';
 import { RoleManager } from './components/auth/RoleManager';
+import { AuditTrailTable } from './components/audit/AuditTrailTable';
+
+// --- NEW ELITE REPORTS FASE 3 ---
+import { ReportsDashboard } from './components/reports/ReportsDashboard';
+import { CashFlowStatement } from './components/reports/CashFlowStatement';
+import { AgingReport } from './components/reports/AgingReport';
+import { AccountLedger } from './components/reports/AccountLedger';
 
 
 
@@ -140,10 +149,12 @@ interface AppState {
   showingBankAccountForm: boolean;
   initializationStep: string;
   currentSection: string;
+  chartOfAccounts: ChartOfAccount[];
 }
 
 
 function App() {
+  const { user } = useAuth();
   const [showUnifiedAssistant, setShowUnifiedAssistant] = useState(false);
   const [state, setState] = useState<AppState>({
     isLoading: true,
@@ -178,9 +189,9 @@ function App() {
     editingBankAccount: null,
     showingBankAccountForm: false,
     initializationStep: 'Iniciando...',
-    initializationStep: 'Iniciando...',
     currentSection: 'dashboard',
-    showAssistant: false
+    showAssistant: false,
+    chartOfAccounts: []
   });
 
   // Detectar cambios de conectividad
@@ -262,6 +273,13 @@ function App() {
     initializeApp();
   }, []);
 
+  // Recargar datos cuando el usuario cambie (importante para aislamiento)
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user]);
+
   // Asegurar que siempre iniciamos en dashboard
   useEffect(() => {
     setState(prev => ({ ...prev, currentSection: 'dashboard' }));
@@ -270,14 +288,17 @@ function App() {
 
   const loadData = async () => {
     try {
-      const customers = getCustomers();
-      const suppliers = getSuppliers();
-      const invoices = getInvoices();
-      const bills = getBills();
+      const filters = user ? { userId: user.id, role: user.role } : undefined;
+
+      const customers = getCustomers(filters);
+      const suppliers = getSuppliers(filters);
+      const invoices = getInvoices(filters);
+      const bills = getBills(filters);
       const products = getProducts();
       const productCategories = getProductCategories();
       const bankAccounts = getBankAccounts();
-      const stats = getStatsWithSuppliers();
+      const chartOfAccounts = getChartOfAccounts();
+      const stats = getStatsWithSuppliers(filters);
 
       setState(prev => ({
         ...prev,
@@ -288,6 +309,7 @@ function App() {
         products,
         productCategories,
         bankAccounts,
+        chartOfAccounts,
         dbStats: stats
       }));
 
@@ -343,7 +365,6 @@ function App() {
     try {
       console.log('=== ADDING CUSTOMER ===');
       console.log('Input data:', customerData);
-      console.log('App loading state:', state.isLoading);
 
       // Verificar que la aplicación esté completamente cargada
       if (state.isLoading) {
@@ -357,18 +378,17 @@ function App() {
         return;
       }
 
-      const customerId = addCustomer(customerData);
+      const customerId = await addCustomer(customerData, user?.id);
       console.log('Customer added with ID:', customerId);
 
       await loadData();
-      console.log('Data reloaded, new customer count:', state.customers.length);
 
       // Cerrar el formulario y mostrar mensaje de éxito
       setState(prev => ({ ...prev, showingCustomerForm: false }));
-      showSuccess(`Cliente "${customerData.name}" agregado correctamente(ID: ${customerId})`);
+      showSuccess(`Cliente "${customerData.name}" agregado correctamente (ID: ${customerId})`);
     } catch (error) {
       console.error('Error adding customer:', error);
-      showError(`Error al agregar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} `);
+      showError(`Error al agregar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
@@ -384,7 +404,7 @@ function App() {
     if (!state.editingCustomer) return;
 
     try {
-      const result = updateCustomer(state.editingCustomer.id, customerData);
+      const result = updateCustomer(state.editingCustomer.id, customerData, user?.id);
       if (result.success) {
         await loadData();
         setState(prev => ({ ...prev, editingCustomer: null }));
@@ -412,7 +432,7 @@ function App() {
         return;
       }
 
-      const result = deleteCustomer(id);
+      const result = deleteCustomer(id, user?.id);
       if (result.success) {
         await loadData();
         showSuccess(result.message);
@@ -442,13 +462,15 @@ function App() {
       console.log('=== CREATING INVOICE (NEXT-GEN) ===');
       console.log('Data:', data);
 
-      // Initialize Engine Transiently (Shared Lock handling depends on browser, but works for MVP)
       const engine = new SQLiteEngine();
-      await engine.initialize('accountexpress.db');
-      await MigrationEngine.getInstance().migrate(engine);
+      engine.setDB(db);
+      // await engine.initialize('accountexpress.db'); // Don't re-initialize, use existing db
       const service = new InvoiceService(engine);
 
-      await service.createInvoice(data);
+      // Pasar userId al DTO si no está
+      const invoiceData = { ...data, userId: user?.id || 1 };
+
+      await service.createInvoice(invoiceData);
 
       await loadData();
       setState(prev => ({ ...prev, showingInvoiceForm: false }));
@@ -531,7 +553,6 @@ function App() {
     try {
       console.log('=== ADDING SUPPLIER ===');
       console.log('Input data:', supplierData);
-      console.log('App loading state:', state.isLoading);
 
       // Verificar que la aplicación esté completamente cargada
       if (state.isLoading) {
@@ -545,18 +566,17 @@ function App() {
         return;
       }
 
-      const supplierId = addSupplier(supplierData);
+      const supplierId = addSupplier(supplierData, user?.id);
       console.log('Supplier added with ID:', supplierId);
 
       await loadData();
-      console.log('Data reloaded, new supplier count:', state.suppliers.length);
 
       // Cerrar el formulario y mostrar mensaje de éxito
       setState(prev => ({ ...prev, showingSupplierForm: false }));
-      showSuccess(`Proveedor "${supplierData.name}" agregado correctamente(ID: ${supplierId})`);
+      showSuccess(`Proveedor "${supplierData.name}" agregado correctamente (ID: ${supplierId})`);
     } catch (error) {
       console.error('Error adding supplier:', error);
-      showError(`Error al agregar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'} `);
+      showError(`Error al agregar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
@@ -572,7 +592,7 @@ function App() {
     if (!state.editingSupplier) return;
 
     try {
-      const result = updateSupplier(state.editingSupplier.id, supplierData);
+      const result = updateSupplier(state.editingSupplier.id, supplierData, user?.id);
       if (result.success) {
         await loadData();
         setState(prev => ({ ...prev, editingSupplier: null }));
@@ -600,7 +620,7 @@ function App() {
         return;
       }
 
-      const result = deleteSupplier(id);
+      const result = deleteSupplier(id, user?.id);
       if (result.success) {
         await loadData();
         showSuccess(result.message);
@@ -708,7 +728,7 @@ function App() {
     try {
       if (state.editingBill) {
         // Actualizar factura existente
-        const result = await updateBill(state.editingBill.id, billData, items);
+        const result = await updateBill(state.editingBill.id, billData, items, user?.id);
         if (result.success) {
           setState(prev => ({
             ...prev,
@@ -721,7 +741,7 @@ function App() {
         }
       } else {
         // Crear nueva factura
-        const result = await createBill(billData, items);
+        const result = await createBill(billData, items, user?.id);
         if (result.success) {
           setState(prev => ({
             ...prev,
@@ -1273,22 +1293,28 @@ function App() {
               {state.currentSection === 'chart-accounts' && <ChartOfAccounts />}
 
               {state.currentSection === 'journal-entries' && <ManualJournalEntries
-                chartOfAccounts={[]} // This needs to be connected to real data later
+                chartOfAccounts={state.chartOfAccounts}
                 onEntryCreated={() => {
                   refreshData();
                   setState(prev => ({ ...prev, success: 'Asiento registrado' }));
                 }}
               />}
 
-              {state.currentSection === 'general-ledger' && <GeneralLedger chartOfAccounts={[]} />}
-
+              {state.currentSection === 'general-ledger' && <GeneralLedger chartOfAccounts={state.chartOfAccounts} />}
+              {state.currentSection === 'trial-balance' && <TrialBalanceReport />}
               {state.currentSection === 'balance-sheet' && <BalanceSheet />}
-
               {state.currentSection === 'income-statement' && <IncomeStatement />}
 
-              {state.currentSection === 'trial-balance' && <TrialBalanceReport />}
-
-              {state.currentSection === 'financial-reports' && <FinancialStatements />}
+              {/* --- NEW ELITE REPORTS FASE 3 --- */}
+              {state.currentSection === 'reports-dashboard' && (
+                <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+              )}
+              {state.currentSection === 'financial-reports' && (
+                <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+              )}
+              {state.currentSection === 'cash-flow' && <CashFlowStatement />}
+              {state.currentSection === 'aging-report' && <AgingReport />}
+              {state.currentSection === 'account-ledger' && <AccountLedger />}
 
 
               {/* --- INVENTARIO --- */}
@@ -1414,6 +1440,7 @@ function App() {
 
 
               {state.currentSection === 'bank-reconciliation' && <BankingModule />}
+              {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
 
               {/* --- IMPUESTOS FLORIDA --- */}
               {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
@@ -1439,6 +1466,7 @@ function App() {
               {/* --- GESTIÓN DE USUARIOS --- */}
               {state.currentSection === 'admin-users' && <UserList />}
               {state.currentSection === 'role-manager' && <RoleManager />}
+              {state.currentSection === 'audit-trail' && <AuditTrailTable />}
 
 
 

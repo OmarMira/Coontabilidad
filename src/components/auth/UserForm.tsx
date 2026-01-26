@@ -15,6 +15,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
     const [roles, setRoles] = useState<UserRole[]>([]);
     const [formData, setFormData] = useState({
         username: '',
+        email: '',
+        full_name: '',
         password: '',
         confirmPassword: '',
         display_name: '',
@@ -34,6 +36,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
         if (user) {
             setFormData({
                 username: user.username,
+                email: user.email || '',
+                full_name: user.full_name || '',
                 password: '',
                 confirmPassword: '',
                 display_name: user.display_name,
@@ -47,6 +51,14 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
 
         if (!formData.username || formData.username.length < 3) {
             newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
+        }
+
+        if (!formData.email || !formData.email.includes('@')) {
+            newErrors.email = 'Debe ingresar un email válido';
+        }
+
+        if (!formData.full_name || formData.full_name.length < 2) {
+            newErrors.full_name = 'El nombre completo es requerido';
         }
 
         // Validación de password: obligatoria en creación, opcional en edición
@@ -87,6 +99,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                 const result = UserService.updateUser(
                     user.id,
                     {
+                        email: formData.email,
+                        full_name: formData.full_name,
                         display_name: formData.display_name,
                         role_id: formData.role_id
                     },
@@ -112,6 +126,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                 const result = await UserService.createUser(
                     {
                         username: formData.username,
+                        email: formData.email,
+                        full_name: formData.full_name,
                         password: formData.password,
                         display_name: formData.display_name,
                         role_id: formData.role_id
@@ -178,12 +194,49 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                             disabled={isEditing}
                             className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.username ? 'border-red-500' : 'border-slate-700'
-                                } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed`}
+                                } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
                             placeholder="usuario123"
                         />
                         {errors.username && (
                             <p className="mt-2 text-sm text-red-400">{errors.username}</p>
                         )}
+                    </div>
+
+                    {/* Email and Full Name */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-300 mb-2">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-700'
+                                    } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                placeholder="juan@ejemplo.com"
+                            />
+                            {errors.email && (
+                                <p className="mt-2 text-sm text-red-400">{errors.email}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-300 mb-2">
+                                Nombre Completo
+                            </label>
+                            <input
+                                type="text"
+                                value={formData.full_name}
+                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.full_name ? 'border-red-500' : 'border-slate-700'
+                                    } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                placeholder="Juan Pérez"
+                            />
+                            {errors.full_name && (
+                                <p className="mt-2 text-sm text-red-400">{errors.full_name}</p>
+                            )}
+                        </div>
                     </div>
 
                     {/* Display Name */}

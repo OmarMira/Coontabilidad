@@ -16,7 +16,7 @@ const InvoiceLineSchema = z.object({
 const CreateInvoiceSchema = z.object({
     customerId: z.number().int().positive(),
     county: z.string().min(1), // e.g., "Miami-Dade"
-    userId: z.string().min(1),
+    userId: z.number().int().positive(),
     lines: z.array(InvoiceLineSchema).min(1)
 });
 

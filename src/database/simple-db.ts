@@ -22,6 +22,9 @@ let currentPassword: string | null = null;
 export const DB_NAME = 'accountexpress.db';
 const BACKUP_INTERVAL = 30000; // 30 segundos
 
+// Roles con privilegios de ver todos los datos (Admin, Contadores, Auditores)
+export const PRIVILEGED_ROLES = ['admin', 'contador', 'auditor', 'viewer', 'accountant'];
+
 export interface Customer {
   id: number;
   // Información personal
@@ -51,12 +54,12 @@ export interface Customer {
   tax_exempt: boolean;
   tax_id?: string;
   assigned_salesperson?: string;
-
-  // Metadatos
-  created_at: string;
-  updated_at: string;
   status: 'active' | 'inactive' | 'suspended';
   notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
 export interface Supplier {
@@ -92,6 +95,8 @@ export interface Supplier {
   // Metadatos
   created_at: string;
   updated_at: string;
+  created_by?: number;
+  updated_by?: number;
   status: 'active' | 'inactive' | 'suspended';
   notes?: string;
 }
@@ -125,6 +130,8 @@ export interface Product {
   active: boolean;
   created_at: string;
   updated_at: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
 export interface ProductCategory {
@@ -137,6 +144,8 @@ export interface ProductCategory {
   active: boolean;
   created_at: string;
   updated_at: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
 export interface Invoice {
@@ -152,6 +161,8 @@ export interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   notes?: string;
   created_at: string;
+  created_by?: number;
+  updated_by?: number;
   items?: InvoiceItem[];
 }
 
@@ -181,6 +192,8 @@ export interface Bill {
   status: 'draft' | 'received' | 'approved' | 'paid' | 'overdue' | 'cancelled';
   notes?: string;
   created_at: string;
+  created_by?: number;
+  updated_by?: number;
   items?: BillItem[];
 }
 
@@ -364,6 +377,28 @@ export interface PaymentMethod {
   created_at: string;
 }
 
+export interface AuditEntry {
+  id?: number;
+  user_id?: number;
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
+  entity_type: string;
+  entity_id?: number;
+  old_value?: string;
+  new_value?: string;
+  ip_address?: string;
+  timestamp?: string;
+}
+
+export interface UserSession {
+  id?: number;
+  user_id: number;
+  session_token: string;
+  ip_address?: string;
+  user_agent?: string;
+  expires_at: string;
+  created_at?: string;
+}
+
 export const initDB = async (password?: string): Promise<initSqlJs.Database> => {
   if (isInitialized && db) {
     return db;
@@ -493,6 +528,9 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
 
       // 5. Insertar roles y usuarios del sistema si no existen (CRÍTICO para login)
       await seedUsersAndRoles();
+
+      // 5.1 Migración de Propiedad de Datos (Validation Step 1)
+      await migrateDataOwnership();
 
       // 6. Insertar datos de ejemplo transaccionales (Clientes, Facturas, Asientos)
       const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
@@ -674,8 +712,8 @@ const createSchema = async (): Promise<void> => {
       is_active BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER DEFAULT 1,
-      updated_by INTEGER DEFAULT 1
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1
     )
   `);
 
@@ -715,7 +753,9 @@ const createSchema = async (): Promise<void> => {
       status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1
     )
   `);
 
@@ -746,7 +786,9 @@ const createSchema = async (): Promise<void> => {
       status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1
     )
   `);
 
@@ -761,6 +803,8 @@ const createSchema = async (): Promise<void> => {
       active BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
       FOREIGN KEY (parent_id) REFERENCES product_categories(id)
     )
   `);
@@ -794,6 +838,8 @@ const createSchema = async (): Promise<void> => {
       active BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
       FOREIGN KEY (category_id) REFERENCES product_categories(id),
       FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
     )
@@ -813,6 +859,9 @@ const createSchema = async (): Promise<void> => {
       status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'sent', 'paid', 'overdue', 'cancelled')),
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
   `);
@@ -847,6 +896,7 @@ const createSchema = async (): Promise<void> => {
       reference_number TEXT,
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER DEFAULT 1,
       FOREIGN KEY (customer_id) REFERENCES customers (id),
       FOREIGN KEY (invoice_id) REFERENCES invoices (id)
     )
@@ -880,6 +930,9 @@ const createSchema = async (): Promise<void> => {
       status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'received', 'approved', 'paid', 'overdue', 'cancelled')),
       notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
       FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
     )
   `);
@@ -932,6 +985,21 @@ const createSchema = async (): Promise<void> => {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
       audit_hash TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Nueva tabla de trazabilidad general
+  db.run(`
+    CREATE TABLE IF NOT EXISTS audit_trail (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id),
+      action TEXT NOT NULL,
+      entity_type TEXT,
+      entity_id TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      ip_address TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -1064,8 +1132,10 @@ const createSchema = async (): Promise<void> => {
       total_credit DECIMAL(15,2) NOT NULL CHECK(total_credit >= 0),
       is_balanced BOOLEAN GENERATED ALWAYS AS (total_debit = total_credit) STORED,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER DEFAULT 1,
-      verified_by INTEGER,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+      verified_by INTEGER REFERENCES users(id),
       verified_at DATETIME
     )
   `);
@@ -1391,6 +1461,8 @@ const createSchema = async (): Promise<void> => {
       name TEXT UNIQUE NOT NULL,
       description TEXT,
       level INTEGER DEFAULT 0,
+      permissions_json TEXT DEFAULT '{}',
+      is_system_role BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -1400,6 +1472,8 @@ const createSchema = async (): Promise<void> => {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      full_name TEXT NOT NULL,
       display_name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       role_id INTEGER NOT NULL,
@@ -1432,6 +1506,28 @@ const createSchema = async (): Promise<void> => {
     db.run(`ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1`);
   } catch (e) { }
 
+  // 4. Asegurar columnas de auditoría y aislamiento en tablas core
+  const coreTables = ['customers', 'suppliers', 'invoices', 'bills', 'products', 'product_categories', 'bank_accounts', 'journal_entries', 'chart_of_accounts'];
+  for (const table of coreTables) {
+    try { db.run(`ALTER TABLE ${table} ADD COLUMN created_by INTEGER DEFAULT 1`); } catch (e) { }
+    try { db.run(`ALTER TABLE ${table} ADD COLUMN updated_by INTEGER DEFAULT 1`); } catch (e) { }
+  }
+
+  // 5. Casos específicos para pagos
+  try { db.run(`ALTER TABLE payments ADD COLUMN created_by INTEGER DEFAULT 1`); } catch (e) { }
+  try { db.run(`ALTER TABLE supplier_payments ADD COLUMN created_by INTEGER DEFAULT 1`); } catch (e) { }
+
+  // 5. Índices de Performance Multi-Usuario
+  try {
+    db.run(`CREATE INDEX IF NOT EXISTS idx_customers_created_by ON customers(created_by)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_invoices_created_by ON invoices(created_by)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_suppliers_created_by ON suppliers(created_by)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_bills_created_by ON bills(created_by)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_payments_created_by ON payments(created_by)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log (user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_trail_user_id ON audit_trail (user_id)`);
+  } catch (e) { }
+
   logger.info('Database', 'schema_updated', 'Tablas de Gestión de Usuarios verificadas y actualizadas');
 };
 
@@ -1448,17 +1544,22 @@ const seedUsersAndRoles = async (): Promise<void> => {
       db.run(`
         INSERT INTO user_roles (name, description, level) VALUES 
         ('admin', 'Administrador del sistema con acceso completo', 100),
-        ('accountant', 'Contador con acceso a módulos contables', 50),
-        ('viewer', 'Usuario de solo lectura', 10)
+        ('contador', 'Contador con acceso a módulos contables y reportes', 80),
+        ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
+        ('comprador', 'Comprador con acceso a proveedores y compras', 40),
+        ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
+        ('viewer', 'Usuario de consulta básica', 10)
       `);
-      logger.info('Database', 'roles_seeded', 'Roles de sistema creados');
+      logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
     }
 
     // 2. Usuarios
     const usersToVerify = [
-      { username: 'admin', display_name: 'Administrador', password: 'admin123', role: 'admin' },
-      { username: 'demo', display_name: 'Usuario Demo', password: 'demo123', role: 'admin' },
-      { username: 'viewer', display_name: 'Usuario Viewer', password: 'viewer123', role: 'viewer' }
+      { username: 'admin', email: 'admin@empresa.com', display_name: 'Administrador Principal', password: 'admin123', role: 'admin' },
+      { username: 'demo', email: 'demo@empresa.com', display_name: 'Usuario Demo', password: 'demo123', role: 'admin' },
+      { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Vendedor Test', password: 'vendedor123', role: 'vendedor' },
+      { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Contador Test', password: 'contador123', role: 'contador' },
+      { username: 'auditor1', email: 'auditor1@empresa.com', display_name: 'Auditor Test', password: 'auditor123', role: 'auditor' }
     ];
 
     const rolesResult = db.exec("SELECT id, name FROM user_roles");
@@ -1475,11 +1576,11 @@ const seedUsersAndRoles = async (): Promise<void> => {
           const roleId = roleMap[sysUser.role] || 1;
 
           db.run(`
-            INSERT INTO users (username, display_name, password_hash, role_id, is_active) 
-            VALUES (?, ?, ?, ?, 1)
-          `, [sysUser.username, sysUser.display_name, hash, roleId]);
+            INSERT INTO users (username, email, display_name, password_hash, role_id, is_active) 
+            VALUES (?, ?, ?, ?, ?, 1)
+          `, [sysUser.username, sysUser.email, sysUser.display_name, hash, roleId]);
 
-          logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} creado correctamente`);
+          logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} (${sysUser.email}) creado correctamente`);
         } else {
           // Asegurarse de que esté activo y resetear password a default en este ambiente demo
           const hash = await hashPassword(sysUser.password);
@@ -1491,14 +1592,69 @@ const seedUsersAndRoles = async (): Promise<void> => {
     }
 
     // 3. ACTUALIZACIÓN FORZADA DE NIVELES (Fuera del loop)
+    // 3. ACTUALIZACIÓN FORZADA DE NIVELES
     db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
-    db.run(`UPDATE user_roles SET level = 50 WHERE name = 'accountant'`);
+    db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
+    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
+    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
+    db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
     db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
-    db.run(`UPDATE user_roles SET level = 30 WHERE name = 'sales' OR name = 'vendedor'`);
-    logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados');
+    logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados y actualizados');
 
   } catch (error) {
     logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
+  }
+};
+
+/**
+ * Migra la propiedad de datos existentes al usuario Admin (ID 1)
+ * Cumple con el Paso 1 del Plan de Validación Multi-Usuario
+ */
+const migrateDataOwnership = async (): Promise<void> => {
+  if (!db) return;
+
+  try {
+    const tablesToCheck = [
+      'customers', 'suppliers', 'products', 'invoices', 'bills',
+      'payments', 'supplier_payments', 'chart_of_accounts', 'journal_entries'
+    ];
+
+    // Asegurar ID de admin es 1 (buscamos por username por seguridad)
+    const adminRes = db.exec("SELECT id FROM users WHERE username = 'admin'");
+    const adminId = (adminRes[0]?.values[0]?.[0] as number) || 1;
+
+    let totalMigrated = 0;
+
+    for (const table of tablesToCheck) {
+      try {
+        // Verificar si tabla existe
+        const tableExists = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`);
+        if (tableExists.length === 0 || tableExists[0].values.length === 0) continue;
+
+        // Verificar si tiene columna created_by
+        const colInfo = db.exec(`PRAGMA table_info(${table})`);
+        const hasCreatedBy = colInfo[0]?.values.some(col => col[1] === 'created_by');
+
+        if (hasCreatedBy) {
+          db.run(`UPDATE ${table} SET created_by = ? WHERE created_by IS NULL OR created_by = 0`, [adminId]);
+          db.run(`UPDATE ${table} SET updated_by = ? WHERE updated_by IS NULL OR updated_by = 0`, [adminId]);
+
+          // Count changes? Sql.js doesn't return affected rows easily in basic exec without using changes()
+          const changes = db.exec("SELECT changes()");
+          totalMigrated += (changes[0]?.values[0]?.[0] as number) || 0;
+        }
+      } catch (e) {
+        // Ignorar errores de tablas/columnas faltantes en esta etapa soft
+        // console.warn(`Skipping migration for ${table}:`, e);
+      }
+    }
+
+    if (totalMigrated > 0) {
+      logger.info('Database', 'migration_ownership', `Migrados ${totalMigrated} registros huérfanos a Admin ID ${adminId}`);
+    }
+
+  } catch (error) {
+    logger.error('Database', 'migration_ownership_failed', 'Error migrando propiedad de datos', { error });
   }
 };
 
@@ -1950,7 +2106,7 @@ export const isDatabaseReady = (): boolean => {
   return ready;
 };
 
-export const addCustomer = async (customerData: Partial<Customer>): Promise<number> => {
+export const addCustomer = async (customerData: Partial<Customer>, userId?: number): Promise<number> => {
   logger.debug('CustomerModule', 'add_customer_start', 'Iniciando proceso de agregar cliente', { customerName: customerData.name });
 
   if (!db) {
@@ -1969,8 +2125,8 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
         email, email_secondary, phone, phone_secondary,
         address_line1, address_line2, city, state, zip_code, florida_county,
         credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-        status, notes, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        status, notes, updated_at, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
     `);
 
     const values = [
@@ -1995,7 +2151,9 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
       customerData.tax_id || null,
       customerData.assigned_salesperson || null,
       customerData.status || 'active',
-      customerData.notes || null
+      customerData.notes || null,
+      userId || 1,
+      userId || 1
     ];
 
     stmt.run(values);
@@ -2006,7 +2164,7 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
     stmt.free();
 
     // Registrar en auditoría
-    await logAuditEvent('customers', insertId, 'INSERT', null, customerData);
+    await logAuditEvent('customers', insertId, 'INSERT', null, customerData, userId);
 
     // Confirmar transacción
     db.run('COMMIT');
@@ -2031,8 +2189,9 @@ export const addCustomer = async (customerData: Partial<Customer>): Promise<numb
   }
 };
 
-export const getCustomers = (): Customer[] => {
-  console.log('=== GETTING CUSTOMERS ===');
+// Obtener todos los clientes (con filtro opcional por usuario/rol para aislamiento)
+export const getCustomers = (filters?: { userId?: number, role?: string }): Customer[] => {
+  console.log('=== GETTING CUSTOMERS ===', filters);
   console.log('Database initialized:', !!db);
 
   if (!db) {
@@ -2041,7 +2200,7 @@ export const getCustomers = (): Customer[] => {
   }
 
   try {
-    const result = db.exec(`
+    let query = `
       SELECT 
         id, name, business_name, document_type, document_number, business_type,
         email, email_secondary, phone, phone_secondary,
@@ -2049,8 +2208,26 @@ export const getCustomers = (): Customer[] => {
         credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
         status, notes, created_at, updated_at
       FROM customers 
-      ORDER BY created_at DESC
-    `);
+    `;
+
+    const params: any[] = [];
+
+    // Isolation Logic: Non-admin/audit/accountant users only see their own records
+    // Assuming 'sales' role should is restricted. 
+    // If role is NOT in system/privileged list, we filter.
+    const privilegedRoles = ['admin', 'accountant', 'auditor', 'viewer']; // Viewer sees all? Adjust per requirement. 
+    // User req: "Vendedor1 solo ve SUS registros". Viewer usually implies GLOBAL read only. 
+    // If requirement says "usuarios no-admin no ven datos de otros", we can be strict.
+    // Let's assume 'viewer' sees all for now, but 'sales'/'purchasing' are restricted.
+
+    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
+      query += ` WHERE created_by = ?`;
+      params.push(filters.userId);
+    }
+
+    query += ` ORDER BY created_at DESC`;
+
+    const result = db.exec(query, params);
 
     console.log('Raw query result:', result);
 
@@ -2143,7 +2320,7 @@ export const getCustomerById = (id: number): Customer | null => {
   }
 };
 
-export const updateCustomer = (id: number, customerData: Partial<Customer>): { success: boolean; message: string } => {
+export const updateCustomer = (id: number, customerData: Partial<Customer>, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -2161,7 +2338,7 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>): { s
           email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
           address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
           credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_salesperson = ?,
-          status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+          status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
       WHERE id = ?
     `);
 
@@ -2188,6 +2365,7 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>): { s
       customerData.assigned_salesperson || oldCustomer.assigned_salesperson || null,
       customerData.status || oldCustomer.status,
       customerData.notes || oldCustomer.notes || null,
+      userId || 1,
       id
     ];
 
@@ -2201,7 +2379,7 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>): { s
     }
 
     // Registrar en auditoría
-    logAuditEvent('customers', id, 'UPDATE', oldCustomer, customerData);
+    logAuditEvent('customers', id, 'UPDATE', oldCustomer, customerData, userId);
 
     db.run('COMMIT');
 
@@ -2257,7 +2435,7 @@ export const canDeleteCustomer = (customerId: number): { canDelete: boolean; rea
   }
 };
 
-export const deleteCustomer = (id: number): { success: boolean; message: string } => {
+export const deleteCustomer = (id: number, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -2287,7 +2465,7 @@ export const deleteCustomer = (id: number): { success: boolean; message: string 
     }
 
     // Registrar en auditoría
-    logAuditEvent('customers', id, 'DELETE', customer, null);
+    logAuditEvent('customers', id, 'DELETE', customer, null, userId);
 
     db.run('COMMIT');
 
@@ -2417,7 +2595,7 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
 // Función auxiliar para hash síncrono (para funciones no async)
 
 
-const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any): Promise<void> => {
+const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any, userId?: number): Promise<void> => {
   if (!db) return;
 
   try {
@@ -2429,7 +2607,7 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
       oldValues: oldValues ? JSON.stringify(oldValues) : null,
       newValues: newValues ? JSON.stringify(newValues) : null,
       timestamp: new Date().toISOString(),
-      userId: 1 // TODO: Implementar sistema de usuarios
+      userId: userId || 1
     };
 
     // Generar hash con chaining
@@ -2590,11 +2768,12 @@ export const generateInvoiceNumber = (): string => {
 };
 
 // Obtener todas las facturas con información del cliente
-export const getInvoices = (): Invoice[] => {
+// Obtener todas las facturas con información del cliente y aislamiento
+export const getInvoices = (filters?: { userId?: number, role?: string }): Invoice[] => {
   if (!db) return [];
 
   try {
-    const result = db.exec(`
+    let query = `
       SELECT 
         i.*,
         c.name as customer_name,
@@ -2602,8 +2781,17 @@ export const getInvoices = (): Invoice[] => {
         c.email as customer_email
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id = c.id
-      ORDER BY i.created_at DESC
-    `);
+    `;
+
+    const params: any[] = [];
+    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
+      query += ` WHERE i.created_by = ?`;
+      params.push(filters.userId);
+    }
+
+    query += ` ORDER BY i.created_at DESC`;
+
+    const result = db.exec(query, params);
 
     if (!result[0]) return [];
 
@@ -2714,7 +2902,7 @@ export const getInvoiceById = (id: number): Invoice | null => {
 };
 
 // Crear nueva factura
-export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[]): { success: boolean; message: string; invoiceId?: number } => {
+export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[], userId?: number): { success: boolean; message: string; invoiceId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -2752,8 +2940,9 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
     const stmt = db.prepare(`
       INSERT INTO invoices (
         invoice_number, customer_id, issue_date, due_date, 
-        subtotal, tax_amount, total_amount, status, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        subtotal, tax_amount, total_amount, status, notes,
+        created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const issueDate = invoiceData.issue_date || new Date().toISOString().split('T')[0];
@@ -2768,7 +2957,9 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
       taxAmount,
       total,
       invoiceData.status || 'draft',
-      invoiceData.notes || ''
+      invoiceData.notes || '',
+      userId || 1,
+      userId || 1
     ]);
 
     const invoiceId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
@@ -2799,13 +2990,13 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
       customer_id: invoiceData.customer_id,
       total_amount: total,
       status: invoiceData.status || 'draft'
-    });
+    }, userId);
 
     // GENERAR ASIENTO CONTABLE AUTOMÁTICO (DOBLE ENTRADA)
     if (invoiceData.status === 'sent' || invoiceData.status === 'paid') {
       const fullInvoice = getInvoiceById(invoiceId);
       if (fullInvoice) {
-        const journalResult = generateSalesJournalEntry(fullInvoice);
+        const journalResult = generateSalesJournalEntry(fullInvoice, userId);
         if (!journalResult.success) {
           console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
         } else {
@@ -2830,7 +3021,7 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
 };
 
 // Actualizar factura
-export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?: Partial<InvoiceItem>[]): { success: boolean; message: string } => {
+export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?: Partial<InvoiceItem>[], userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -2866,6 +3057,8 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
 
     if (updateFields.length > 0) {
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      updateFields.push('updated_by = ?');
+      updateValues.push(userId || 1);
       updateValues.push(id);
 
       const updateQuery = `UPDATE invoices SET ${updateFields.join(', ')} WHERE id = ?`;
@@ -2914,13 +3107,13 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
       const total = subtotal + taxAmount;
       db.exec(`
         UPDATE invoices 
-        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP 
+        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? 
         WHERE id = ?
-      `, [subtotal, taxAmount, total, id]);
+      `, [subtotal, taxAmount, total, userId || 1, id]);
     }
 
     // Registrar en auditoría
-    logAuditAction('invoices', id, 'UPDATE', currentInvoice, invoiceData);
+    logAuditAction('invoices', id, 'UPDATE', currentInvoice, invoiceData, userId);
 
     return { success: true, message: 'Invoice updated successfully' };
 
@@ -2934,7 +3127,7 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
 };
 
 // Eliminar factura
-export const deleteInvoice = (id: number): { success: boolean; message: string } => {
+export const deleteInvoice = (id: number, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -2956,7 +3149,7 @@ export const deleteInvoice = (id: number): { success: boolean; message: string }
     db.exec('DELETE FROM invoices WHERE id = ?', [id]);
 
     // Registrar en auditoría
-    logAuditAction('invoices', id, 'DELETE', invoice, null);
+    logAuditAction('invoices', id, 'DELETE', invoice, null, userId);
 
     return { success: true, message: 'Invoice deleted successfully' };
 
@@ -3094,7 +3287,7 @@ export const getStatsWithInvoices = () => {
 // ==========================================
 
 // Agregar proveedor
-export const addSupplier = (supplierData: Partial<Supplier>): number => {
+export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): number => {
   console.log('=== ADD SUPPLIER FUNCTION ===');
   console.log('Database object:', db);
   console.log('Is initialized:', isInitialized);
@@ -3116,8 +3309,8 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
         email, email_secondary, phone, phone_secondary,
         address_line1, address_line2, city, state, zip_code, florida_county,
         credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
-        status, notes, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        status, notes, updated_at, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
     `);
 
     const values = [
@@ -3142,7 +3335,9 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
       supplierData.tax_id || null,
       supplierData.assigned_buyer || null,
       supplierData.status || 'active',
-      supplierData.notes || null
+      supplierData.notes || null,
+      userId || 1,
+      userId || 1
     ];
 
     console.log('Executing insert with values:', values);
@@ -3155,7 +3350,7 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
     stmt.free();
 
     // Registrar en auditoría
-    logAuditEvent('suppliers', insertId, 'INSERT', null, supplierData);
+    logAuditEvent('suppliers', insertId, 'INSERT', null, supplierData, userId);
 
     // Confirmar transacción
     db.run('COMMIT');
@@ -3175,8 +3370,9 @@ export const addSupplier = (supplierData: Partial<Supplier>): number => {
 };
 
 // Obtener todos los proveedores
-export const getSuppliers = (): Supplier[] => {
-  console.log('=== GETTING SUPPLIERS ===');
+// Obtener todos los proveedores con aislamiento
+export const getSuppliers = (filters?: { userId?: number, role?: string }): Supplier[] => {
+  console.log('=== GETTING SUPPLIERS ===', filters);
   console.log('Database initialized:', !!db);
 
   if (!db) {
@@ -3185,7 +3381,7 @@ export const getSuppliers = (): Supplier[] => {
   }
 
   try {
-    const result = db.exec(`
+    let query = `
       SELECT 
         id, name, business_name, document_type, document_number, business_type,
         email, email_secondary, phone, phone_secondary,
@@ -3193,8 +3389,17 @@ export const getSuppliers = (): Supplier[] => {
         credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
         status, notes, created_at, updated_at
       FROM suppliers 
-      ORDER BY created_at DESC
-    `);
+    `;
+
+    const params: any[] = [];
+    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
+      query += ` WHERE created_by = ?`;
+      params.push(filters.userId);
+    }
+
+    query += ` ORDER BY created_at DESC`;
+
+    const result = db.exec(query, params);
 
     console.log('Raw query result:', result);
 
@@ -3289,7 +3494,7 @@ export const getSupplierById = (id: number): Supplier | null => {
 };
 
 // Actualizar proveedor
-export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { success: boolean; message: string } => {
+export const updateSupplier = (id: number, supplierData: Partial<Supplier>, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -3307,7 +3512,7 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { s
           email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
           address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
           credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_buyer = ?,
-          status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+          status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
       WHERE id = ?
     `);
 
@@ -3334,6 +3539,7 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { s
       supplierData.assigned_buyer || oldSupplier.assigned_buyer || null,
       supplierData.status || oldSupplier.status,
       supplierData.notes || oldSupplier.notes || null,
+      userId || 1,
       id
     ];
 
@@ -3347,7 +3553,7 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>): { s
     }
 
     // Registrar en auditoría
-    logAuditEvent('suppliers', id, 'UPDATE', oldSupplier, supplierData);
+    logAuditEvent('suppliers', id, 'UPDATE', oldSupplier, supplierData, userId);
 
     db.run('COMMIT');
 
@@ -3404,7 +3610,7 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; rea
 };
 
 // Eliminar proveedor
-export const deleteSupplier = (id: number): { success: boolean; message: string } => {
+export const deleteSupplier = (id: number, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -3434,7 +3640,7 @@ export const deleteSupplier = (id: number): { success: boolean; message: string 
     }
 
     // Registrar en auditoría
-    logAuditEvent('suppliers', id, 'DELETE', supplier, null);
+    logAuditEvent('suppliers', id, 'DELETE', supplier, null, userId);
 
     db.run('COMMIT');
 
@@ -3472,11 +3678,12 @@ export const generateBillNumber = (): string => {
 };
 
 // Obtener todas las facturas de compra con información del proveedor
-export const getBills = (): Bill[] => {
+// Obtener todas las facturas de compra con información del proveedor y aislamiento
+export const getBills = (filters?: { userId?: number, role?: string }): Bill[] => {
   if (!db) return [];
 
   try {
-    const result = db.exec(`
+    let query = `
       SELECT 
         b.*,
         s.name as supplier_name,
@@ -3484,8 +3691,17 @@ export const getBills = (): Bill[] => {
         s.email as supplier_email
       FROM bills b
       LEFT JOIN suppliers s ON b.supplier_id = s.id
-      ORDER BY b.created_at DESC
-    `);
+    `;
+
+    const params: any[] = [];
+    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
+      query += ` WHERE b.created_by = ?`;
+      params.push(filters.userId);
+    }
+
+    query += ` ORDER BY b.created_at DESC`;
+
+    const result = db.exec(query, params);
 
     if (!result[0]) return [];
 
@@ -3596,7 +3812,7 @@ export const getBillById = (id: number): Bill | null => {
 };
 
 // Crear nueva factura de compra
-export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]): { success: boolean; message: string; billId?: number } => {
+export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], userId?: number): { success: boolean; message: string; billId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -3634,8 +3850,9 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
     const stmt = db.prepare(`
       INSERT INTO bills (
         bill_number, supplier_id, issue_date, due_date, 
-        subtotal, tax_amount, total_amount, status, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        subtotal, tax_amount, total_amount, status, notes,
+        created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const issueDate = billData.issue_date || new Date().toISOString().split('T')[0];
@@ -3650,7 +3867,9 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
       taxAmount,
       total,
       billData.status || 'draft',
-      billData.notes || ''
+      billData.notes || '',
+      userId || 1,
+      userId || 1
     ]);
 
     const billId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
@@ -3681,13 +3900,13 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
       supplier_id: billData.supplier_id,
       total_amount: total,
       status: billData.status || 'draft'
-    });
+    }, userId);
 
     // GENERAR ASIENTO CONTABLE AUTOMÁTICO (DOBLE ENTRADA)
     if (billData.status === 'approved' || billData.status === 'paid') {
       const fullBill = getBillById(billId);
       if (fullBill) {
-        const journalResult = generatePurchaseJournalEntry(fullBill);
+        const journalResult = generatePurchaseJournalEntry(fullBill, userId);
         if (!journalResult.success) {
           console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
         } else {
@@ -3712,23 +3931,36 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[]):
 };
 
 // Actualizar estadísticas para incluir proveedores
-export const getStatsWithSuppliers = () => {
+// Actualizar estadísticas para incluir proveedores con aislamiento
+export const getStatsWithSuppliers = (filters?: { userId?: number, role?: string }) => {
   if (!db) return { customers: 0, invoices: 0, revenue: 0, suppliers: 0, bills: 0, expenses: 0 };
 
   try {
-    const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
-    const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
-    const revenueResult = db.exec("SELECT SUM(total_amount) as total FROM invoices WHERE status = 'paid'");
-    const supplierResult = db.exec("SELECT COUNT(*) as count FROM suppliers");
-    const billResult = db.exec("SELECT COUNT(*) as count FROM bills");
-    const expenseResult = db.exec("SELECT SUM(total_amount) as total FROM bills WHERE status = 'paid'");
+    let customerQuery = "SELECT COUNT(*) as count FROM customers";
+    let invoiceQuery = "SELECT COUNT(*) as count FROM invoices";
+    let revenueQuery = "SELECT SUM(total_amount) as total FROM invoices WHERE status = 'paid'";
+    let supplierQuery = "SELECT COUNT(*) as count FROM suppliers";
+    let billQuery = "SELECT COUNT(*) as count FROM bills";
+    let expenseQuery = "SELECT SUM(total_amount) as total FROM bills WHERE status = 'paid'";
 
-    const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-    const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
-    const revenue = revenueResult[0]?.values[0]?.[0] as number || 0;
-    const supplierCount = supplierResult[0]?.values[0]?.[0] as number || 0;
-    const billCount = billResult[0]?.values[0]?.[0] as number || 0;
-    const expenses = expenseResult[0]?.values[0]?.[0] as number || 0;
+    const params: any[] = [];
+
+    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
+      customerQuery += " WHERE created_by = ?";
+      invoiceQuery += " WHERE created_by = ?";
+      revenueQuery += " AND created_by = ?";
+      supplierQuery += " WHERE created_by = ?";
+      billQuery += " WHERE created_by = ?";
+      expenseQuery += " AND created_by = ?";
+      params.push(filters.userId);
+    }
+
+    const customerCount = db.exec(customerQuery, params)[0]?.values[0]?.[0] as number || 0;
+    const invoiceCount = db.exec(invoiceQuery, params)[0]?.values[0]?.[0] as number || 0;
+    const revenue = db.exec(revenueQuery, params)[0]?.values[0]?.[0] as number || 0;
+    const supplierCount = db.exec(supplierQuery, params)[0]?.values[0]?.[0] as number || 0;
+    const billCount = db.exec(billQuery, params)[0]?.values[0]?.[0] as number || 0;
+    const expenses = db.exec(expenseQuery, params)[0]?.values[0]?.[0] as number || 0;
 
     return {
       customers: customerCount,
@@ -3746,7 +3978,7 @@ export const getStatsWithSuppliers = () => {
 };
 
 // Actualizar factura de compra
-export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[]): { success: boolean; message: string } => {
+export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[], userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -3784,6 +4016,8 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
 
     if (updateFields.length > 0) {
       updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      updateFields.push('updated_by = ?');
+      updateValues.push(userId || 1);
       updateValues.push(id);
 
       const updateQuery = `UPDATE bills SET ${updateFields.join(', ')} WHERE id = ?`;
@@ -3833,13 +4067,13 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
       const total = subtotal + taxAmount;
       db.exec(`
         UPDATE bills 
-        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP 
+        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? 
         WHERE id = ?
-      `, [subtotal, taxAmount, total, id]);
+      `, [subtotal, taxAmount, total, userId || 1, id]);
     }
 
     // Registrar en auditoría
-    logAuditEvent('bills', id, 'UPDATE', currentBill, billData);
+    logAuditEvent('bills', id, 'UPDATE', currentBill, billData, userId);
 
     db.run('COMMIT');
 
@@ -3859,7 +4093,7 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
 };
 
 // Eliminar factura de compra
-export const deleteBill = (id: number): { success: boolean; message: string } => {
+export const deleteBill = (id: number, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -3904,7 +4138,7 @@ export const deleteBill = (id: number): { success: boolean; message: string } =>
     }
 
     // Registrar en auditoría
-    logAuditEvent('bills', id, 'DELETE', bill, null);
+    logAuditEvent('bills', id, 'DELETE', bill, null, userId);
 
     db.run('COMMIT');
 
@@ -4043,7 +4277,7 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
 };
 
 // Actualizar cuenta contable
-export const updateChartOfAccount = (accountCode: string, accountData: Partial<ChartOfAccount>): { success: boolean; message: string } => {
+export const updateChartOfAccount = (accountCode: string, accountData: Partial<ChartOfAccount>, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -4070,7 +4304,7 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
       accountData.normal_balance || currentAccount.normal_balance,
       accountData.parent_account || currentAccount.parent_account || null,
       accountData.is_active !== undefined ? (accountData.is_active ? 1 : 0) : (currentAccount.is_active ? 1 : 0),
-      1, // TODO: Implementar sistema de usuarios
+      userId || 1,
       accountCode
     ]);
 
@@ -4083,7 +4317,7 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
     }
 
     // Registrar en auditoría
-    logAuditEvent('chart_of_accounts', currentAccount.id || 0, 'UPDATE', currentAccount, accountData);
+    logAuditEvent('chart_of_accounts', currentAccount.id || 0, 'UPDATE', currentAccount, accountData, userId);
 
     db.run('COMMIT');
 
@@ -4104,7 +4338,7 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 };
 
 // Eliminar cuenta contable (solo si no tiene movimientos)
-export const deleteChartOfAccount = (accountCode: string): { success: boolean; message: string } => {
+export const deleteChartOfAccount = (accountCode: string, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -4151,7 +4385,7 @@ export const deleteChartOfAccount = (accountCode: string): { success: boolean; m
     }
 
     // Registrar en auditoría
-    logAuditEvent('chart_of_accounts', account.id || 0, 'DELETE', account, null);
+    logAuditEvent('chart_of_accounts', account.id || 0, 'DELETE', account, null, userId);
 
     db.run('COMMIT');
 
@@ -4582,7 +4816,8 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
 // Crear asiento contable automático
 export const createJournalEntry = (
   entryData: Partial<JournalEntry>,
-  details: Partial<JournalDetail>[]
+  details: Partial<JournalDetail>[],
+  userId?: number
 ): { success: boolean; message: string; entryId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
@@ -4616,8 +4851,8 @@ export const createJournalEntry = (
     // Insertar asiento principal
     const stmt = db.prepare(`
       INSERT INTO journal_entries (
-        entry_date, reference, description, total_debit, total_credit, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?)
+        entry_date, reference, description, total_debit, total_credit, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     const entryDate = entryData.entry_date || new Date().toISOString().split('T')[0];
@@ -4628,7 +4863,8 @@ export const createJournalEntry = (
       entryData.description || null,
       totalDebits,
       totalCredits,
-      1 // TODO: Implementar sistema de usuarios
+      userId || 1,
+      userId || 1
     ]);
 
     const entryId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
@@ -4668,7 +4904,7 @@ export const createJournalEntry = (
       total_debit: totalDebits,
       total_credit: totalCredits,
       details_count: details.length
-    });
+    }, userId);
 
     db.run('COMMIT');
 
@@ -4691,19 +4927,29 @@ export const createJournalEntry = (
   }
 };
 
-// Obtener asientos contables con detalles
-export const getJournalEntries = (limit: number = 50): JournalEntry[] => {
+// Obtener asientos contables con detalles y aislamiento
+export const getJournalEntries = (limit: number = 50, filters?: { userId?: number, role?: string }): JournalEntry[] => {
   if (!db) return [];
 
   try {
-    const result = db.exec(`
+    let query = `
       SELECT 
         id, entry_date, reference, description, total_debit, total_credit, 
         is_balanced, created_at, created_by, verified_by, verified_at
       FROM journal_entries 
-      ORDER BY entry_date DESC, id DESC
-      LIMIT ?
-    `, [limit]);
+    `;
+
+    const params: any[] = [];
+
+    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
+      query += ` WHERE created_by = ?`;
+      params.push(filters.userId);
+    }
+
+    query += ` ORDER BY entry_date DESC, id DESC LIMIT ?`;
+    params.push(limit);
+
+    const result = db.exec(query, params);
 
     if (!result[0]) return [];
 
@@ -4779,7 +5025,7 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
 // ==========================================
 
 // Generar asiento automático para factura de venta
-export const generateSalesJournalEntry = (invoice: Invoice): { success: boolean; message: string; entryId?: number } => {
+export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { success: boolean; message: string; entryId?: number } => {
   if (!invoice.customer) {
     return { success: false, message: 'Información del cliente requerida' };
   }
@@ -4815,11 +5061,11 @@ export const generateSalesJournalEntry = (invoice: Invoice): { success: boolean;
     entry_date: invoice.issue_date,
     reference_number: `INV-${invoice.invoice_number}`,
     description: `Venta a ${invoice.customer.name} - Factura ${invoice.invoice_number}`
-  }, details);
+  }, details, userId);
 };
 
 // Generar asiento automático para factura de compra
-export const generatePurchaseJournalEntry = (bill: Bill): { success: boolean; message: string; entryId?: number } => {
+export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { success: boolean; message: string; entryId?: number } => {
   if (!bill.supplier) {
     return { success: false, message: 'Información del proveedor requerida' };
   }
@@ -4855,11 +5101,11 @@ export const generatePurchaseJournalEntry = (bill: Bill): { success: boolean; me
     entry_date: bill.issue_date,
     reference_number: `BILL-${bill.bill_number}`,
     description: `Compra a ${bill.supplier.name} - Factura ${bill.bill_number}`
-  }, details);
+  }, details, userId);
 };
 
 // Generar asiento automático para pago recibido
-export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: Customer): { success: boolean; message: string; entryId?: number } => {
+export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: Customer, userId?: number): { success: boolean; message: string; entryId?: number } => {
   const details: Partial<JournalDetail>[] = [
     // Débito: Efectivo/Banco
     {
@@ -4881,8 +5127,253 @@ export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: 
     entry_date: payment.payment_date,
     reference_number: `PAY-${payment.payment_number}`,
     description: `Pago recibido de ${customer.name} - ${payment.payment_number}`
-  }, details);
+  }, details, userId);
 };
+
+// ==========================================
+// FUNCIONES PARA GESTIÓN DE PAGOS (CLIENTES Y PROVEEDORES)
+// ==========================================
+
+export const generatePaymentNumber = (): string => {
+  if (!db) return '';
+  try {
+    const result = db.exec("SELECT COUNT(*) as count FROM payments");
+    const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
+    return `PAY-C-${new Date().getFullYear()}-${count.toString().padStart(4, '0')}`;
+  } catch (error) {
+    return `PAY-C-${Date.now()}`;
+  }
+};
+
+export const generateSupplierPaymentNumber = (): string => {
+  if (!db) return '';
+  try {
+    const result = db.exec("SELECT COUNT(*) as count FROM supplier_payments");
+    const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
+    return `PAY-S-${new Date().getFullYear()}-${count.toString().padStart(4, '0')}`;
+  } catch (error) {
+    return `PAY-S-${Date.now()}`;
+  }
+};
+
+/**
+ * Crea un pago de cliente (Customer Payment)
+ */
+export const createPayment = (paymentData: Partial<Payment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Validaciones básicas
+    if (!paymentData.customer_id || !paymentData.amount) {
+      throw new Error('Faltan datos requeridos (Cliente o Monto)');
+    }
+
+    // 2. Generar número si no existe
+    const paymentNumber = paymentData.payment_number || generatePaymentNumber();
+
+    // 3. Insertar pago
+    db.run(`
+      INSERT INTO payments (
+        customer_id, invoice_id, payment_number, payment_date, amount, 
+        payment_method, reference_number, notes, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      paymentData.customer_id,
+      paymentData.invoice_id || null,
+      paymentNumber,
+      paymentData.payment_date || new Date().toISOString().split('T')[0],
+      paymentData.amount,
+      paymentData.payment_method || 'cash',
+      paymentData.reference_number || null,
+      paymentData.notes || null,
+      userId || 1
+    ]);
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const paymentId = result[0]?.values[0]?.[0] as number;
+
+    // 4. Actualizar estado de factura (si aplica)
+    if (paymentData.invoice_id) {
+      // Obtener total de la factura
+      const invoiceResult = db.exec(`SELECT total_amount FROM invoices WHERE id = ${paymentData.invoice_id}`);
+      if (invoiceResult.length > 0 && invoiceResult[0].values.length > 0) {
+        const totalAmount = invoiceResult[0].values[0][0] as number;
+
+        // Obtener pagos previos de esta factura (incluyendo este)
+        const paymentsResult = db.exec(`SELECT SUM(amount) FROM payments WHERE invoice_id = ${paymentData.invoice_id}`);
+        const totalPaid = paymentsResult[0]?.values[0]?.[0] as number || 0;
+
+        let newStatus = 'partial';
+        // Tolerancia pequeña para errores de punto flotante
+        if (Math.abs(totalPaid - totalAmount) < 0.01 || totalPaid > totalAmount) {
+          newStatus = 'paid';
+        }
+
+        db.run(`UPDATE invoices SET status = ? WHERE id = ?`, [newStatus, paymentData.invoice_id]);
+      }
+    }
+
+    // 5. Auditoría
+    const auditData = { ...paymentData, id: paymentId, payment_number: paymentNumber };
+    logAuditEvent('payments', paymentId, 'INSERT', null, auditData, userId);
+
+    // 6. Generar Asiento Contable
+    const fullPayment: Payment = {
+      id: paymentId,
+      customer_id: paymentData.customer_id,
+      invoice_id: paymentData.invoice_id,
+      payment_number: paymentNumber,
+      payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
+      amount: paymentData.amount,
+      payment_method: paymentData.payment_method || 'cash',
+      reference_number: paymentData.reference_number,
+      notes: paymentData.notes,
+      created_at: new Date().toISOString()
+    };
+
+    const customer = getCustomerById(paymentData.customer_id);
+    if (customer) {
+      generatePaymentReceivedJournalEntry(fullPayment, customer, userId);
+    }
+
+    db.run('COMMIT');
+    logger.info('Payments', 'create_success', 'Pago de cliente creado correctamente', { paymentId, userId });
+    return { success: true, message: 'Pago registrado correctamente', paymentId };
+
+  } catch (error) {
+    db.run('ROLLBACK');
+    logger.error('Payments', 'create_failed', 'Error al crear pago', { error }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+};
+
+/**
+ * Generar asiento automático para pago realizado (a proveedor)
+ */
+export const generatePaymentSentJournalEntry = (payment: SupplierPayment, supplier: Supplier, userId?: number): { success: boolean; message: string; entryId?: number } => {
+  const details: Partial<JournalDetail>[] = [
+    // Débito: Cuentas por Pagar (Disminuye pasivo)
+    {
+      account_code: '2111', // Cuentas por Pagar - Proveedores
+      debit_amount: payment.amount,
+      credit_amount: 0,
+      description: `Pago a proveedor ${supplier.name} - ${payment.payment_number}`
+    },
+    // Crédito: Efectivo/Banco (Disminuye activo)
+    {
+      account_code: payment.payment_method === 'cash' ? '1111' : '1112',
+      debit_amount: 0,
+      credit_amount: payment.amount,
+      description: `Pago realizado ${payment.payment_number} - ${supplier.name}`
+    }
+  ];
+
+  return createJournalEntry({
+    entry_date: payment.payment_date,
+    reference_number: `PAY-${payment.payment_number}`,
+    description: `Pago a ${supplier.name} - ${payment.payment_number}`
+  }, details, userId);
+};
+
+/**
+ * Crea un pago a proveedor (Supplier Payment) - Alias: addPayment
+ */
+export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Validaciones básicas
+    if (!paymentData.supplier_id || !paymentData.amount) {
+      throw new Error('Faltan datos requeridos (Proveedor o Monto)');
+    }
+
+    // 2. Generar número si no existe
+    const paymentNumber = paymentData.payment_number || generateSupplierPaymentNumber();
+
+    // 3. Insertar pago en tabla supplier_payments (necesita existir en schema!)
+    // Verificamos si existe la tabla supplier_payments, si no usamos payments con flag o similar?
+    // En createSchema linea 954 se crea supplier_payments. Confío en que existe.
+
+    db.run(`
+      INSERT INTO supplier_payments (
+        supplier_id, bill_id, payment_number, payment_date, amount, 
+        payment_method, reference_number, notes, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      paymentData.supplier_id,
+      paymentData.bill_id || null,
+      paymentNumber,
+      paymentData.payment_date || new Date().toISOString().split('T')[0],
+      paymentData.amount,
+      paymentData.payment_method || 'cash',
+      paymentData.reference_number || null,
+      paymentData.notes || null,
+      userId || 1
+    ]);
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const paymentId = result[0]?.values[0]?.[0] as number;
+
+    // 4. Actualizar estado de factura de compra (si aplica)
+    if (paymentData.bill_id) {
+      const billResult = db.exec(`SELECT total_amount FROM bills WHERE id = ${paymentData.bill_id}`);
+      if (billResult.length > 0 && billResult[0].values.length > 0) {
+        const totalAmount = billResult[0].values[0][0] as number;
+
+        const paymentsResult = db.exec(`SELECT SUM(amount) FROM supplier_payments WHERE bill_id = ${paymentData.bill_id}`);
+        const totalPaid = paymentsResult[0]?.values[0]?.[0] as number || 0;
+
+        let newStatus = 'partial';
+        if (Math.abs(totalPaid - totalAmount) < 0.01 || totalPaid > totalAmount) {
+          newStatus = 'paid';
+        }
+
+        db.run(`UPDATE bills SET status = ? WHERE id = ?`, [newStatus, paymentData.bill_id]);
+      }
+    }
+
+    // 5. Auditoría
+    const auditData = { ...paymentData, id: paymentId, payment_number: paymentNumber };
+    logAuditEvent('supplier_payments', paymentId, 'INSERT', null, auditData, userId);
+
+    // 6. Generar Asiento Contable
+    const fullPayment: SupplierPayment = {
+      id: paymentId,
+      supplier_id: paymentData.supplier_id,
+      bill_id: paymentData.bill_id,
+      payment_number: paymentNumber,
+      payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
+      amount: paymentData.amount,
+      payment_method: paymentData.payment_method || 'cash',
+      reference_number: paymentData.reference_number,
+      notes: paymentData.notes,
+      created_at: new Date().toISOString()
+    };
+
+    const supplier = getSupplierById(paymentData.supplier_id);
+    if (supplier) {
+      generatePaymentSentJournalEntry(fullPayment, supplier, userId);
+    }
+
+    db.run('COMMIT');
+    logger.info('Payments', 'add_payment_success', 'Pago a proveedor registrado', { paymentId, userId });
+    return { success: true, message: 'Pago registrado correctamente', paymentId };
+
+  } catch (error) {
+    db.run('ROLLBACK');
+    logger.error('Payments', 'add_payment_failed', 'Error al crear pago a proveedor', { error }, error as Error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+};
+
+/**
+ * Create alias for consistency if needed, but keeping addPayment as primary for supplier payments per request
+ */
+export const createSupplierPayment = addPayment; // Alias for consistency
 
 // ==========================================
 // FUNCIONES PARA REPORTES CONTABLES
@@ -5037,6 +5528,82 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
   }
 };
 
+// Generar Estado de Flujo de Efectivo (Método Indirecto)
+export const getCashFlowStatement = (fromDate: string, toDate: string): {
+  netIncome: number,
+  operatingActivities: { title: string, amount: number }[],
+  investingActivities: { title: string, amount: number }[],
+  financingActivities: { title: string, amount: number }[],
+  netIncreaseInCash: number,
+  startingCash: number,
+  endingCash: number
+} => {
+  if (!db) return { netIncome: 0, operatingActivities: [], investingActivities: [], financingActivities: [], netIncreaseInCash: 0, startingCash: 0, endingCash: 0 };
+
+  try {
+    // 1. Obtener Net Income del periodo
+    const incomeStatement = generateIncomeStatement(fromDate, toDate);
+    const netIncome = incomeStatement.netIncome;
+
+    // 2. Calcular cambios en Working Capital
+    // Necesitamos saldos al inicio y al final
+    const startBalanceSheet = generateBalanceSheet(new Date(new Date(fromDate).getTime() - 86400000).toISOString().split('T')[0]);
+    const endBalanceSheet = generateBalanceSheet(toDate);
+
+    const operatingActivities: { title: string, amount: number }[] = [];
+    let operatingTotal = netIncome;
+
+    // Ajuste por Cuentas por Cobrar (Asset: Increase = Cash Decrease)
+    const startAR = startBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('cobrar')).reduce((sum, a) => sum + (a.balance || 0), 0);
+    const endAR = endBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('cobrar')).reduce((sum, a) => sum + (a.balance || 0), 0);
+    const deltaAR = endAR - startAR;
+    if (deltaAR !== 0) {
+      operatingActivities.push({ title: deltaAR > 0 ? 'Aumento en Cuentas por Cobrar' : 'Disminución en Cuentas por Cobrar', amount: -deltaAR });
+      operatingTotal -= deltaAR;
+    }
+
+    // Ajuste por Inventario (Asset: Increase = Cash Decrease)
+    const startInv = startBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('inventario')).reduce((sum, a) => sum + (a.balance || 0), 0);
+    const endInv = endBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('inventario')).reduce((sum, a) => sum + (a.balance || 0), 0);
+    const deltaInv = endInv - startInv;
+    if (deltaInv !== 0) {
+      operatingActivities.push({ title: deltaInv > 0 ? 'Aumento en Inventario' : 'Disminución en Inventario', amount: -deltaInv });
+      operatingTotal -= deltaInv;
+    }
+
+    // Ajuste por Cuentas por Pagar (Liability: Increase = Cash Increase)
+    const startAP = startBalanceSheet.liabilities.filter(l => l.account_name.toLowerCase().includes('pagar')).reduce((sum, l) => sum + (l.balance || 0), 0);
+    const endAP = endBalanceSheet.liabilities.filter(l => l.account_name.toLowerCase().includes('pagar')).reduce((sum, l) => sum + (l.balance || 0), 0);
+    const deltaAP = endAP - startAP;
+    if (deltaAP !== 0) {
+      operatingActivities.push({ title: deltaAP > 0 ? 'Aumento en Cuentas por Pagar' : 'Disminución en Cuentas por Pagar', amount: deltaAP });
+      operatingTotal += deltaAP;
+    }
+
+    // 3. Investing & Financing (Simplificado para este sistema)
+    const investingActivities: { title: string, amount: number }[] = [];
+    const financingActivities: { title: string, amount: number }[] = [];
+
+    // 4. Calcular Efectivo Neto
+    const startCash = startBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('caja') || a.account_name.toLowerCase().includes('banco')).reduce((sum, a) => sum + (a.balance || 0), 0);
+    const endCash = endBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('caja') || a.account_name.toLowerCase().includes('banco')).reduce((sum, a) => sum + (a.balance || 0), 0);
+
+    return {
+      netIncome,
+      operatingActivities,
+      investingActivities,
+      financingActivities,
+      netIncreaseInCash: endCash - startCash,
+      startingCash: startCash,
+      endingCash: endCash
+    };
+
+  } catch (error) {
+    console.error('Error generating cash flow statement:', error);
+    return { netIncome: 0, operatingActivities: [], investingActivities: [], financingActivities: [], netIncreaseInCash: 0, startingCash: 0, endingCash: 0 };
+  }
+};
+
 // ==========================================
 // GESTIÓN DE DATOS DE LA EMPRESA
 // ==========================================
@@ -5078,6 +5645,164 @@ export interface CompanyData {
   updated_at: string;
   is_active: boolean;
 }
+
+// Generar Aging Report (Antigüedad de Cuentas)
+export const getAgingReport = (type: 'receivable' | 'payable'): {
+  total: number,
+  buckets: { [key: string]: { amount: number, percentage: number } },
+  details: { name: string, amount: number, days: number, bucket: string }[]
+} => {
+  if (!db) return { total: 0, buckets: {}, details: [] };
+
+  try {
+    const table = type === 'receivable' ? 'invoices' : 'bills';
+    const entityTable = type === 'receivable' ? 'customers' : 'suppliers';
+    const entityIdField = type === 'receivable' ? 'customer_id' : 'supplier_id';
+
+    const result = db.exec(`
+      SELECT 
+        e.name,
+        t.total_amount,
+        t.due_date,
+        (julianday('now') - julianday(t.due_date)) as days_overdue
+      FROM ${table} t
+      JOIN ${entityTable} e ON t.${entityIdField} = e.id
+      WHERE t.status IN ('pending', 'partial', 'overdue')
+    `);
+
+    if (!result[0]) return { total: 0, buckets: {}, details: [] };
+
+    const buckets: any = {
+      'current': { amount: 0, percentage: 0 },
+      '1-30': { amount: 0, percentage: 0 },
+      '31-60': { amount: 0, percentage: 0 },
+      '61-90': { amount: 0, percentage: 0 },
+      '90+': { amount: 0, percentage: 0 }
+    };
+
+    let total = 0;
+    const details: any[] = [];
+
+    const columns = result[0].columns;
+    result[0].values.forEach(row => {
+      const name = row[0] as string;
+      const amount = Number(row[1]) || 0;
+      const days = Math.floor(Number(row[3]) || 0);
+
+      let bucket = 'current';
+      if (days > 90) bucket = '90+';
+      else if (days > 60) bucket = '61-90';
+      else if (days > 30) bucket = '31-60';
+      else if (days > 0) bucket = '1-30';
+
+      buckets[bucket].amount += amount;
+      total += amount;
+
+      details.push({ name, amount, days, bucket });
+    });
+
+    // Calcular porcentajes
+    if (total > 0) {
+      Object.keys(buckets).forEach(key => {
+        buckets[key].percentage = (buckets[key].amount / total) * 100;
+      });
+    }
+
+    return { total, buckets, details };
+
+  } catch (error) {
+    console.error('Error generating aging report:', error);
+    return { total: 0, buckets: {}, details: [] };
+  }
+};
+
+// Obtener Auxiliar de Cuenta (Account Ledger)
+export const getAccountLedger = (accountCode: string, fromDate: string, toDate: string): {
+  account: any,
+  startingBalance: number,
+  transactions: any[],
+  endingBalance: number,
+  totalDebit: number,
+  totalCredit: number
+} => {
+  if (!db) return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
+
+  try {
+    // 1. Obtener info de la cuenta
+    const accResult = db.exec(`SELECT * FROM chart_of_accounts WHERE account_code = ?`, [accountCode]);
+    if (!accResult[0]) return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
+
+    const account: any = {};
+    accResult[0].columns.forEach((col, i) => account[col] = accResult[0].values[0][i]);
+
+    // 2. Calcular saldo inicial (antes de fromDate)
+    const startBalResult = db.exec(`
+      SELECT 
+        COALESCE(SUM(debit_amount), 0) as debits,
+        COALESCE(SUM(credit_amount), 0) as credits
+      FROM journal_details jd
+      JOIN journal_entries je ON jd.journal_entry_id = je.id
+      WHERE jd.account_code = ? AND je.entry_date < ?
+    `, [accountCode, fromDate]);
+
+    const startDebits = Number(startBalResult[0].values[0][0]);
+    const startCredits = Number(startBalResult[0].values[0][1]);
+    const startingBalance = account.normal_balance === 'debit' ? (startDebits - startCredits) : (startCredits - startDebits);
+
+    // 3. Obtener transacciones en el periodo
+    const txResult = db.exec(`
+      SELECT 
+        je.entry_date,
+        je.reference,
+        jd.description,
+        jd.debit_amount,
+        jd.credit_amount,
+        je.id as journal_id
+      FROM journal_details jd
+      JOIN journal_entries je ON jd.journal_entry_id = je.id
+      WHERE jd.account_code = ? AND je.entry_date BETWEEN ? AND ?
+      ORDER BY je.entry_date ASC, je.id ASC
+    `, [accountCode, fromDate, toDate]);
+
+    const transactions: any[] = [];
+    let runningBalance = startingBalance;
+    let totalDebit = 0;
+    let totalCredit = 0;
+
+    if (txResult[0]) {
+      const cols = txResult[0].columns;
+      txResult[0].values.forEach(row => {
+        const tx: any = {};
+        cols.forEach((col, i) => tx[col] = row[i]);
+
+        totalDebit += tx.debit_amount;
+        totalCredit += tx.credit_amount;
+
+        if (account.normal_balance === 'debit') {
+          runningBalance += (tx.debit_amount - tx.credit_amount);
+        } else {
+          runningBalance += (tx.credit_amount - tx.debit_amount);
+        }
+
+        tx.running_balance = runningBalance;
+        transactions.push(tx);
+      });
+    }
+
+    return {
+      account,
+      startingBalance,
+      transactions,
+      endingBalance: runningBalance,
+      totalDebit,
+      totalCredit
+    };
+
+  } catch (error) {
+    console.error('Error generating account ledger:', error);
+    return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
+  }
+};
 
 export function getCompanyData(): CompanyData | null {
   try {
@@ -5467,7 +6192,7 @@ export function getProductCategories(): ProductCategory[] {
   }
 }
 
-export function createProductCategory(categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>): { success: boolean; message: string; id?: number } {
+export function createProductCategory(categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>, userId?: number): { success: boolean; message: string; id?: number } {
   try {
     logger.info('ProductCategories', 'create_start', 'Creando categoría de producto', categoryData);
 
@@ -5492,8 +6217,8 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
 
     const stmt = db.prepare(`
       INSERT INTO product_categories (
-        name, description, parent_id, tax_rate, active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        name, description, parent_id, tax_rate, active, created_at, updated_at, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = new Date().toISOString();
@@ -5504,7 +6229,9 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
       categoryData.tax_rate || 0,
       categoryData.active ? 1 : 0,
       now,
-      now
+      now,
+      userId || 1,
+      userId || 1
     ]);
 
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
@@ -5513,7 +6240,7 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
     stmt.free();
 
     // Registrar en auditoría
-    logAuditEvent('product_categories', categoryId, 'INSERT', null, JSON.stringify(categoryData));
+    logAuditEvent('product_categories', categoryId, 'INSERT', null, JSON.stringify(categoryData), userId);
 
     logger.info('ProductCategories', 'create_success', 'Categoría creada', { id: categoryId, name: categoryData.name });
 
@@ -5532,7 +6259,7 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
   }
 }
 
-export function updateProductCategory(id: number, categoryData: Partial<ProductCategory>): { success: boolean; message: string } {
+export function updateProductCategory(id: number, categoryData: Partial<ProductCategory>, userId?: number): { success: boolean; message: string } {
   try {
     logger.info('ProductCategories', 'update_start', 'Actualizando categoría', { id, ...categoryData });
 
@@ -5553,7 +6280,8 @@ export function updateProductCategory(id: number, categoryData: Partial<ProductC
         parent_id = COALESCE(?, parent_id),
         tax_rate = COALESCE(?, tax_rate),
         active = COALESCE(?, active),
-        updated_at = ?
+        updated_at = ?,
+        updated_by = ?
       WHERE id = ?
     `);
 
@@ -5564,11 +6292,12 @@ export function updateProductCategory(id: number, categoryData: Partial<ProductC
       categoryData.tax_rate || null,
       categoryData.active !== undefined ? (categoryData.active ? 1 : 0) : null,
       new Date().toISOString(),
+      userId || 1,
       id
     ]);
 
     // Registrar en auditoría
-    logAuditEvent('product_categories', id, 'UPDATE', JSON.stringify(currentResult[0].values[0]), JSON.stringify(categoryData));
+    logAuditEvent('product_categories', id, 'UPDATE', JSON.stringify(currentResult[0].values[0]), JSON.stringify(categoryData), userId);
 
     logger.info('ProductCategories', 'update_success', 'Categoría actualizada', { id });
 
@@ -5586,7 +6315,7 @@ export function updateProductCategory(id: number, categoryData: Partial<ProductC
   }
 }
 
-export function deleteProductCategory(id: number): { success: boolean; message: string } {
+export function deleteProductCategory(id: number, userId?: number): { success: boolean; message: string } {
   try {
     logger.info('ProductCategories', 'delete_start', 'Eliminando categoría', { id });
 
@@ -5624,7 +6353,7 @@ export function deleteProductCategory(id: number): { success: boolean; message: 
     stmt.run([new Date().toISOString(), id]);
 
     // Registrar en auditoría
-    logAuditEvent('product_categories', id, 'DELETE', JSON.stringify(currentResult[0]?.values[0]), null);
+    logAuditEvent('product_categories', id, 'DELETE', JSON.stringify(currentResult[0]?.values[0]), null, userId);
 
     logger.info('ProductCategories', 'delete_success', 'Categoría eliminada', { id });
 
@@ -5699,7 +6428,7 @@ export function getProducts(): Product[] {
   }
 }
 
-export function createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>): { success: boolean; message: string; id?: number } {
+export function createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>, userId?: number): { success: boolean; message: string; id?: number } {
   try {
     logger.info('Products', 'create_start', 'Creando producto', productData);
 
@@ -5736,8 +6465,8 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
         taxable, tax_rate, stock_quantity, min_stock_level, max_stock_level,
         reorder_point, supplier_id, barcode, image_path, weight, dimensions,
         is_service, service_duration, warranty_period, notes, active,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        created_at, updated_at, created_by, updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = new Date().toISOString();
@@ -5766,7 +6495,9 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
       productData.notes || null,
       productData.active ? 1 : 0,
       now,
-      now
+      now,
+      userId || 1,
+      userId || 1
     ]);
 
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
@@ -5775,7 +6506,7 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
     stmt.free();
 
     // Registrar en auditoría
-    logAuditEvent('products', productId, 'INSERT', null, JSON.stringify(productData));
+    logAuditEvent('products', productId, 'INSERT', null, JSON.stringify(productData), userId);
 
     logger.info('Products', 'create_success', 'Producto creado', { id: productId, sku: productData.sku });
 
@@ -5794,7 +6525,7 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
   }
 }
 
-export function updateProduct(id: number, productData: Partial<Product>): { success: boolean; message: string } {
+export function updateProduct(id: number, productData: Partial<Product>, userId?: number): { success: boolean; message: string } {
   try {
     logger.info('Products', 'update_start', 'Actualizando producto', { id, ...productData });
 
@@ -5845,7 +6576,8 @@ export function updateProduct(id: number, productData: Partial<Product>): { succ
         warranty_period = COALESCE(?, warranty_period),
         notes = COALESCE(?, notes),
         active = COALESCE(?, active),
-        updated_at = ?
+        updated_at = ?,
+        updated_by = ?
       WHERE id = ?
     `);
 
@@ -5874,11 +6606,12 @@ export function updateProduct(id: number, productData: Partial<Product>): { succ
       productData.notes || null,
       productData.active !== undefined ? (productData.active ? 1 : 0) : null,
       new Date().toISOString(),
+      userId || 1,
       id
     ]);
 
     // Registrar en auditoría
-    logAuditEvent('products', id, 'UPDATE', JSON.stringify(currentResult[0].values[0]), JSON.stringify(productData));
+    logAuditEvent('products', id, 'UPDATE', JSON.stringify(currentResult[0].values[0]), JSON.stringify(productData), userId);
 
     logger.info('Products', 'update_success', 'Producto actualizado', { id });
 
@@ -5896,7 +6629,7 @@ export function updateProduct(id: number, productData: Partial<Product>): { succ
   }
 }
 
-export function deleteProduct(id: number): { success: boolean; message: string } {
+export function deleteProduct(id: number, userId?: number): { success: boolean; message: string } {
   try {
     logger.info('Products', 'delete_start', 'Eliminando producto', { id });
 
@@ -5934,7 +6667,7 @@ export function deleteProduct(id: number): { success: boolean; message: string }
     stmt.run([new Date().toISOString(), id]);
 
     // Registrar en auditoría
-    logAuditEvent('products', id, 'DELETE', JSON.stringify(currentResult[0]?.values[0]), null);
+    logAuditEvent('products', id, 'DELETE', JSON.stringify(currentResult[0]?.values[0]), null, userId);
 
     logger.info('Products', 'delete_success', 'Producto eliminado', { id });
 
@@ -7205,9 +7938,14 @@ export interface TrialBalanceRow {
   account_code: string;
   account_name: string;
   account_type: string;
+  normal_balance: 'debit' | 'credit';
+  previous_debit: number;
+  previous_credit: number;
+  period_debit: number;
+  period_credit: number;
+  total_debit: number;
+  total_credit: number;
   initial_balance: number;
-  debit: number;
-  credit: number;
   final_balance: number;
 }
 
@@ -7216,52 +7954,72 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
 
   try {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    // Calcular fin de mes
     const nextMonth = new Date(year, month, 0);
     const endDate = nextMonth.toISOString().split('T')[0];
 
-    // Consulta para obtener: saldo inicial, movimientos del mes, saldo final
     const query = `
       SELECT 
-        ca.account_code as account_code,
-        ca.account_name as account_name,
-        ca.account_type as account_type,
-        -- Saldo Inicial: Movimientos ANTES del inicio del mes
-        IFNULL(SUM(CASE WHEN je.entry_date < '${startDate}' THEN jd.debit_amount - jd.credit_amount ELSE 0 END), 0) as initial_balance_raw,
-        -- Movimientos del Mes
-        IFNULL(SUM(CASE WHEN je.entry_date BETWEEN '${startDate}' AND '${endDate}' THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
-        IFNULL(SUM(CASE WHEN je.entry_date BETWEEN '${startDate}' AND '${endDate}' THEN jd.credit_amount ELSE 0 END), 0) as period_credit
+        ca.account_code,
+        ca.account_name,
+        ca.account_type,
+        ca.normal_balance,
+        COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as prev_debit,
+        COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as prev_credit,
+        COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
+        COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
       FROM chart_of_accounts ca
       LEFT JOIN journal_details jd ON ca.account_code = jd.account_code
       LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
       WHERE ca.is_active = 1
-      GROUP BY ca.account_code, ca.account_name, ca.account_type
-      HAVING initial_balance_raw != 0 OR period_debit != 0 OR period_credit != 0
+      GROUP BY ca.account_code, ca.account_name, ca.account_type, ca.normal_balance
+      HAVING prev_debit != 0 OR prev_credit != 0 OR period_debit != 0 OR period_credit != 0
       ORDER BY ca.account_code ASC
     `;
 
-    const result = db.exec(query);
+    const result = db.exec(query, [startDate, startDate, startDate, endDate, startDate, endDate]);
 
     if (!result.length || !result[0].values.length) return [];
 
-    const columns = result[0].columns;
     return result[0].values.map(row => {
-      const r: any = {};
-      columns.forEach((col, i) => r[col] = row[i]);
+      const account_code = String(row[0]);
+      const account_name = String(row[1]);
+      const account_type = String(row[2]);
+      const normal_balance = row[3] as 'debit' | 'credit';
+      const previous_debit = Number(row[4]);
+      const previous_credit = Number(row[5]);
+      const debit = Number(row[6]);
+      const credit = Number(row[7]);
 
-      const initial = Number(r.initial_balance_raw);
-      const debit = Number(r.period_debit);
-      const credit = Number(r.period_credit);
-      const final = initial + debit - credit;
+      let initial_balance = 0;
+      if (normal_balance === 'debit') {
+        initial_balance = previous_debit - previous_credit;
+      } else {
+        initial_balance = previous_credit - previous_debit;
+      }
+
+      const total_debit = previous_debit + debit;
+      const total_credit = previous_credit + credit;
+
+      let final_balance = 0;
+      if (normal_balance === 'debit') {
+        final_balance = total_debit - total_credit;
+      } else {
+        final_balance = total_credit - total_debit;
+      }
 
       return {
-        account_code: String(r.account_code),
-        account_name: String(r.account_name),
-        account_type: String(r.account_type),
-        initial_balance: initial,
-        debit: debit,
-        credit: credit,
-        final_balance: final
+        account_code,
+        account_name,
+        account_type,
+        normal_balance,
+        initial_balance,
+        period_debit: debit,
+        period_credit: credit,
+        total_debit,
+        total_credit,
+        final_balance,
+        previous_debit,
+        previous_credit
       };
     });
 
@@ -7270,6 +8028,51 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
     return [];
   }
 }
+
+export function getAccountMovementsDetails(accountCode: string, startDate: string, endDate: string) {
+  if (!db) return [];
+  const query = `
+      SELECT 
+          je.entry_date as date,
+          je.reference,
+          je.description as entry_desc,
+          jd.description as line_desc,
+          jd.debit_amount as debit,
+          jd.credit_amount as credit
+      FROM journal_details jd
+      JOIN journal_entries je ON jd.journal_entry_id = je.id
+      WHERE jd.account_code = ? AND je.entry_date BETWEEN ? AND ?
+      ORDER BY je.entry_date ASC, je.id ASC
+  `;
+  try {
+    const res = db.exec(query, [accountCode, startDate, endDate]);
+    if (!res.length) return [];
+    return res[0].values.map(row => ({
+      date: row[0],
+      reference: row[1],
+      description: row[3] || row[2],
+      debit: Number(row[4]),
+      credit: Number(row[5])
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+export function validateAccountingIntegrity(): { isValid: boolean; errors: string[] } {
+  if (!db) return { isValid: false, errors: ['Database not initialized'] };
+  const errors: string[] = [];
+
+  const res = db.exec("SELECT id, entry_date, description, total_debit, total_credit FROM journal_entries WHERE ABS(total_debit - total_credit) > 0.001");
+  if (res.length && res[0].values.length > 0) {
+    res[0].values.forEach(row => {
+      errors.push(`Asiento #${row[0]} (${row[1]}) descuadrado por $${Math.abs(Number(row[3]) - Number(row[4])).toFixed(2)}`);
+    });
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
 
 // ==========================================
 // REPORTES CONTABLES: ESTADO DE RESULTADOS (P&L)
@@ -7701,17 +8504,20 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
  */
 export const createUser = async (userData: {
   username: string;
-  password: string;
+  email?: string;
+  full_name?: string;
   display_name: string;
+  password: string;
   role_id: number;
 }): Promise<{ success: boolean; message: string; userId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
-    // Validar que el username no exista
-    const existing = db.exec(`SELECT id FROM users WHERE username = '${userData.username}'`);
+    // Validar que el username o email no exista
+    const emailToCheck = userData.email || userData.username;
+    const existing = db.exec(`SELECT id FROM users WHERE username = ? OR email = ?`, [userData.username, emailToCheck]);
     if (existing[0]?.values.length > 0) {
-      return { success: false, message: 'El nombre de usuario ya existe' };
+      return { success: false, message: 'El nombre de usuario o email ya existe' };
     }
 
     // Hash de la contraseña
@@ -7719,9 +8525,16 @@ export const createUser = async (userData: {
 
     // Insertar usuario
     db.run(`
-      INSERT INTO users (username, display_name, password_hash, role_id, is_active)
-      VALUES (?, ?, ?, ?, 1)
-    `, [userData.username, userData.display_name, passwordHash, userData.role_id]);
+      INSERT INTO users (username, email, full_name, display_name, password_hash, role_id, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, 1)
+    `, [
+      userData.username,
+      userData.email || userData.username,
+      userData.full_name || userData.display_name,
+      userData.display_name,
+      passwordHash,
+      userData.role_id
+    ]);
 
     const result = db.exec('SELECT last_insert_rowid() as id');
     const userId = result[0]?.values[0]?.[0] as number;
@@ -7743,9 +8556,10 @@ export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
 
   try {
     let query = `
-      SELECT u.id, u.username, u.display_name, u.role_id, u.is_active, 
+      SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.role_id, u.is_active, 
              u.last_login, u.created_at, u.updated_at,
-             r.name as role_name, r.description as role_description, r.level as role_level
+             r.name as role_name, r.description as role_description, r.level as role_level,
+             r.permissions_json
       FROM users u
       LEFT JOIN user_roles r ON u.role_id = r.id
     `;
@@ -7781,13 +8595,14 @@ export const getUserByUsername = (username: string): any | null => {
 
   try {
     const result = db.exec(`
-      SELECT u.id, u.username, u.display_name, u.password_hash, u.role_id, u.is_active,
+      SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.password_hash, u.role_id, u.is_active,
              u.last_login, u.created_at, u.updated_at,
-             r.name as role_name, r.description as role_description, r.level as role_level
+             r.name as role_name, r.description as role_description, r.level as role_level,
+             r.permissions_json
       FROM users u
       LEFT JOIN user_roles r ON u.role_id = r.id
-      WHERE u.username = '${username}'
-    `);
+      WHERE u.username = ? OR u.email = ?
+    `, [username, username]);
 
     if (!result[0] || result[0].values.length === 0) return null;
 
@@ -7809,6 +8624,8 @@ export const getUserByUsername = (username: string): any | null => {
  * Actualizar usuario
  */
 export const updateUser = (id: number, updates: {
+  email?: string;
+  full_name?: string;
   display_name?: string;
   role_id?: number;
   is_active?: boolean;
@@ -7820,6 +8637,14 @@ export const updateUser = (id: number, updates: {
     const setParts: string[] = [];
     const values: any[] = [];
 
+    if (updates.email !== undefined) {
+      setParts.push('email = ?');
+      values.push(updates.email);
+    }
+    if (updates.full_name !== undefined) {
+      setParts.push('full_name = ?');
+      values.push(updates.full_name);
+    }
     if (updates.display_name !== undefined) {
       setParts.push('display_name = ?');
       values.push(updates.display_name);

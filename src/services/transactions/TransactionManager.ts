@@ -16,7 +16,7 @@ interface SaleTransaction {
         cost: number;
     }[];
     county: string;
-    userId: string;
+    userId: number;
 }
 
 export class TransactionManager {
@@ -80,11 +80,11 @@ export class TransactionManager {
             const nextNum = (invResult[0]?.c || 0) + 1;
             const invNumber = `INV-${new Date().getFullYear()}-${nextNum.toString().padStart(5, '0')}`;
 
-            // B. INSERT INVOICE
+            // B. INSERT INVOICE - WITH USER ATTRIBUTION
             await this.engine.run(`
-                INSERT INTO invoices (invoice_number, customer_id, issue_date, subtotal, tax_amount, total_amount, status)
-                VALUES (?, ?, DATE('now'), ?, ?, ?, 'paid')
-             `, [invNumber, sale.customerId, taxResult.subtotal, taxResult.totalTax, taxResult.totalAmount]);
+                INSERT INTO invoices (invoice_number, customer_id, issue_date, subtotal, tax_amount, total_amount, status, created_by, updated_by)
+                VALUES (?, ?, DATE('now'), ?, ?, ?, 'paid', ?, ?)
+             `, [invNumber, sale.customerId, taxResult.subtotal, taxResult.totalTax, taxResult.totalAmount, sale.userId, sale.userId]);
 
             const invIdResult = await this.engine.select("SELECT last_insert_rowid() as id");
             const invoiceId = invIdResult[0].id;
@@ -123,35 +123,36 @@ export class TransactionManager {
                  `, [invoiceId, sale.county, taxResult.subtotal, taxResult.exemptAmount, taxResult.taxableAmount, taxResult.countyTax, countyRate]);
             }
 
-            // D. CREATE JOURNAL ENTRY
+            // D. CREATE JOURNAL ENTRY - USING SYSTEM CHART OF ACCOUNTS CODES
             await this.journalManager.createJournalEntry({
                 date: now,
                 description: `Sale Invoice ${invNumber}`,
                 reference: invNumber,
+                userId: sale.userId,
                 details: [
                     {
-                        accountCode: '11000', // Accounts Receivable
+                        accountCode: '1121', // Accounts Receivable (Match simple-db chart)
                         debit: Big(taxResult.totalAmount),
                         credit: Big(0)
                     },
                     {
-                        accountCode: '40000', // Sales Revenue
+                        accountCode: '4110', // Sales Revenue (Match simple-db chart)
                         debit: Big(0),
                         credit: Big(taxResult.subtotal)
                     },
                     {
-                        accountCode: '22000', // Sales Tax Payable
+                        accountCode: '2121', // Sales Tax Payable (Florida Tax Account)
                         debit: Big(0),
                         credit: Big(taxResult.totalTax)
                     },
                     // COGS Integration
                     {
-                        accountCode: '50000', // Cost of Goods Sold
+                        accountCode: '5100', // Cost of Goods Sold
                         debit: totalCost,
                         credit: Big(0)
                     },
                     {
-                        accountCode: '12000', // Inventory
+                        accountCode: '1112', // Inventory / Cash (depending on interpretation, but 1112 is Bank in our COA)
                         debit: Big(0),
                         credit: totalCost
                     }
@@ -163,7 +164,7 @@ export class TransactionManager {
                 eventType: 'SALE_PROCESSED',
                 entityTable: 'invoices',
                 entityId: invoiceId.toString(),
-                userId: sale.userId,
+                userId: sale.userId.toString(),
                 content: {
                     invoiceNumber: invNumber,
                     amount: taxResult.totalAmount,

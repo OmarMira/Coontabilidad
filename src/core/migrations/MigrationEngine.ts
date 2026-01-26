@@ -8,6 +8,7 @@ import { SystemSchemaMigration } from './list/006_system_schema';
 import { CurrencyFixAndFiscalMigration } from './list/007_currency_fix_and_fiscal';
 import { HistoricalDataFixMigration } from './list/008_historical_data_fix';
 import { PerformanceIndicesMigration } from './list/009_performance_indices';
+import { MultiUserSchemaMigration } from './list/010_multi_user_schema';
 
 export interface Migration {
     version: number;
@@ -27,7 +28,8 @@ export class MigrationEngine {
         SystemSchemaMigration,
         CurrencyFixAndFiscalMigration,
         new HistoricalDataFixMigration(),
-        new PerformanceIndicesMigration()
+        new PerformanceIndicesMigration(),
+        MultiUserSchemaMigration
     ];
 
     private constructor() { }

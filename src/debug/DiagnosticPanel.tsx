@@ -49,7 +49,7 @@ export const DiagnosticPanel: React.FC = () => {
             await invoiceService.createInvoice({
                 customerId,
                 county: 'Miami-Dade',
-                userId: 'TEST_AGENT',
+                userId: 1,
                 lines: [{
                     productId,
                     description: 'Test Widget',
@@ -70,8 +70,8 @@ export const DiagnosticPanel: React.FC = () => {
             const taxTx = await engine.select("SELECT * FROM tax_transactions WHERE invoice_id = ? ORDER BY id ASC", [lastInv.id]);
 
             // Get Journal
-            const journal = await engine.select("SELECT * FROM journal_entries WHERE description LIKE ?", [`%${lastInv.invoice_number}%`]);
-            const journalLines = await engine.select("SELECT * FROM journal_details WHERE journal_id = ?", [journal[0].id]);
+            const journal = await engine.select("SELECT * FROM journal_entries WHERE reference = ?", [lastInv.invoice_number]);
+            const journalLines = await engine.select("SELECT * FROM journal_details WHERE journal_entry_id = ?", [journal[0].id]);
 
             // Get Audit Chain (Last 2 for continuity )
             const audits = await engine.select("SELECT * FROM audit_chain ORDER BY id DESC LIMIT 2");
@@ -86,7 +86,7 @@ export const DiagnosticPanel: React.FC = () => {
             let auditContinuity = false;
             if (currentAudit) {
                 if (prevAudit) {
-                    auditContinuity = (currentAudit.previous_hash === prevAudit.chain_hash);
+                    auditContinuity = (currentAudit.previous_hash === prevAudit.current_hash);
                 } else {
                     auditContinuity = (currentAudit.previous_hash === 'GENESIS_HASH');
                 }

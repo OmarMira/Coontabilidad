@@ -6,10 +6,13 @@ import type { User as DBUser } from '../types/user.types';
 interface User {
     id: number;
     username: string;
+    email: string;
+    full_name: string;
     display_name: string;
     role: string;
     role_id: number;
     role_level?: number;
+    permissions?: Record<string, string[]>;
     googleId?: string;
     picture?: string;
 }
@@ -28,6 +31,7 @@ interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
     refreshUser: () => Promise<void>;
+    hasPermission: (module: string, action: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,10 +59,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const demoUser: User = {
                     id: 999,
                     username: 'demo',
-                    display_name: 'Usuario Demo (Bypass)',
+                    email: 'demo@accountexpress.com',
+                    full_name: 'Usuario de Demostración',
+                    display_name: 'Demo User',
                     role: 'admin',
                     role_id: 1,
-                    role_level: 100
+                    role_level: 100,
+                    permissions: {
+                        dashboard: ["view", "export"],
+                        customers: ["view", "create", "edit", "delete", "export"],
+                        suppliers: ["view", "create", "edit", "delete"],
+                        products: ["view", "create", "edit", "delete", "manage_inventory"],
+                        sales: ["view_invoices", "create_invoice", "edit_invoice", "cancel_invoice", "view_reports"],
+                        purchases: ["view_bills", "create_bill", "edit_bill", "pay_bill"],
+                        accounting: ["view_chart_of_accounts", "create_journal", "edit_journal", "view_reports", "close_period"],
+                        reports: ["view_financial", "view_tax", "view_inventory", "export_all"],
+                        settings: ["view_company", "edit_company", "manage_users", "manage_roles", "system_settings"]
+                    }
                 };
                 setUser(demoUser);
                 localStorage.setItem('accountexpress_user', JSON.stringify(demoUser));
@@ -76,10 +93,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const userData: User = {
                     id: dbUser.id,
                     username: dbUser.username,
+                    email: dbUser.email,
+                    full_name: dbUser.full_name,
                     display_name: dbUser.display_name,
                     role: dbUser.role_name || 'user',
                     role_id: dbUser.role_id,
-                    role_level: dbUser.role_level
+                    role_level: dbUser.role_level,
+                    permissions: (dbUser as any).permissions_json ? JSON.parse((dbUser as any).permissions_json) : {}
                 };
 
                 setUser(userData);
@@ -106,10 +126,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const userData: User = {
                     id: existingUser.id,
                     username: existingUser.username,
+                    email: existingUser.email,
+                    full_name: existingUser.full_name,
                     display_name: existingUser.display_name,
                     role: existingUser.role_name || 'user',
                     role_id: existingUser.role_id,
                     role_level: existingUser.role_level,
+                    permissions: (existingUser as any).permissions_json ? JSON.parse((existingUser as any).permissions_json) : {},
                     googleId: googleUser.sub,
                     picture: googleUser.picture
                 };
@@ -130,6 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // Crear usuario nuevo
                 const result = await createUser({
                     username: googleUser.email,
+                    email: googleUser.email,
+                    full_name: googleUser.name,
                     password: `google_${googleUser.sub}_${Date.now()}`, // Password aleatorio (no se usará)
                     display_name: googleUser.name,
                     role_id: viewerRole.id
@@ -139,10 +164,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const userData: User = {
                         id: result.userId,
                         username: googleUser.email,
+                        email: googleUser.email,
+                        full_name: googleUser.name,
                         display_name: googleUser.name,
                         role: viewerRole.name,
                         role_id: viewerRole.id,
                         role_level: viewerRole.level,
+                        permissions: viewerRole.permissions_json ? JSON.parse(viewerRole.permissions_json) : {},
                         googleId: googleUser.sub,
                         picture: googleUser.picture
                     };
@@ -177,10 +205,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const userData: User = {
                     id: dbUser.id,
                     username: dbUser.username,
+                    email: dbUser.email,
+                    full_name: dbUser.full_name,
                     display_name: dbUser.display_name,
                     role: dbUser.role_name || 'user',
                     role_id: dbUser.role_id,
                     role_level: dbUser.role_level,
+                    permissions: (dbUser as any).permissions_json ? JSON.parse((dbUser as any).permissions_json) : {},
                     googleId: user.googleId,
                     picture: user.picture
                 };
@@ -192,6 +223,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const hasPermission = (module: string, action: string): boolean => {
+        if (!user || !user.permissions) return false;
+        if (user.role === 'admin') return true;
+
+        const modulePerms = user.permissions[module];
+        if (!modulePerms) return false;
+
+        return modulePerms.includes(action);
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -199,7 +240,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             loginWithGoogle,
             logout,
             isAuthenticated: !!user,
-            refreshUser
+            refreshUser,
+            hasPermission
         }}>
             {children}
         </AuthContext.Provider>

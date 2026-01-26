@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, DollarSign, FileText, Search, Filter, Plus, Check, X } from 'lucide-react';
-import { Invoice, Customer, getPaymentMethods, PaymentMethod } from '../database/simple-db';
+import { useAuth } from '../contexts/AuthContext';
+import { Invoice, Customer, getPaymentMethods, PaymentMethod, createPayment, Payment } from '../database/simple-db';
 
 interface CustomerPayment {
   id: number;
@@ -14,6 +15,9 @@ interface CustomerPayment {
   created_at: string;
 }
 
+// Helper to cast/transform string to valid PaymentMethodType if needed or just use 'as any' for now
+// to avoid strict type issues with the dropdown string value.}
+
 interface CustomerPaymentsProps {
   invoices: Invoice[];
   customers: Customer[];
@@ -25,6 +29,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
   customers,
   onPaymentCreated
 }) => {
+  const { user } = useAuth();
   const [payments, setPayments] = useState<CustomerPayment[]>([]);
   const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -52,7 +57,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
     try {
       const methods = getPaymentMethods();
       setPaymentMethods(methods);
-      
+
       // Si hay métodos disponibles, seleccionar el primero por defecto
       if (methods.length > 0 && !paymentForm.payment_method) {
         setPaymentForm(prev => ({ ...prev, payment_method: methods[0].method_name }));
@@ -64,7 +69,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
 
   const loadPendingInvoices = () => {
     // Filtrar facturas pendientes (asumiendo que las pagadas tienen status 'paid')
-    const pending = invoices.filter(invoice => 
+    const pending = invoices.filter(invoice =>
       invoice.status !== 'paid'
     );
     setPendingInvoices(pending);
@@ -85,12 +90,12 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
   const filteredInvoices = pendingInvoices.filter(invoice => {
     const customerName = getCustomerName(invoice.customer_id).toLowerCase();
     const matchesSearch = customerName.includes(searchTerm.toLowerCase()) ||
-                         invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (filterStatus === 'all') return matchesSearch;
     if (filterStatus === 'pending') return matchesSearch && invoice.status !== 'paid';
     if (filterStatus === 'paid') return matchesSearch && invoice.status === 'paid';
-    
+
     return matchesSearch;
   });
 
@@ -100,8 +105,26 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
 
     setIsLoading(true);
     try {
+      // Map form data to database Payment interface
+      const paymentData: Partial<Payment> = {
+        customer_id: selectedInvoice.customer_id,
+        invoice_id: selectedInvoice.id,
+        amount: parseFloat(paymentForm.amount),
+        payment_date: paymentForm.payment_date,
+        payment_method: paymentForm.payment_method as any, // Cast string to union type
+        reference_number: paymentForm.reference,
+        notes: paymentForm.notes
+      };
+
+      const result = createPayment(paymentData, user?.id || 1); // TODO: Get real userId from context
+
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+
+      // Update local state with the created payment structure
       const payment: CustomerPayment = {
-        id: Date.now(), // En producción sería generado por la DB
+        id: result.paymentId || Date.now(),
         invoice_id: selectedInvoice.id,
         customer_id: selectedInvoice.customer_id,
         amount: parseFloat(paymentForm.amount),
@@ -112,9 +135,6 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
         created_at: new Date().toISOString()
       };
 
-      // Aquí iría la lógica para guardar en la base de datos
-      // await createCustomerPayment(payment);
-      
       // Actualizar el estado de la factura
       // await updateInvoice(selectedInvoice.id, { payment_status: 'paid' });
 
@@ -191,7 +211,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
         <div className="px-6 py-4 border-b border-gray-700">
           <h3 className="text-lg font-medium text-white">Facturas Pendientes de Pago</h3>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-700">
             <thead className="bg-gray-900">
@@ -221,7 +241,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
                 const daysOverdue = Math.floor(
                   (new Date().getTime() - new Date(invoice.issue_date).getTime()) / (1000 * 60 * 60 * 24)
                 );
-                
+
                 return (
                   <tr key={invoice.id} className="hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -246,13 +266,12 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        daysOverdue > 30 
-                          ? 'bg-red-100 text-red-800'
-                          : daysOverdue > 0
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
-                      }`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${daysOverdue > 30
+                        ? 'bg-red-100 text-red-800'
+                        : daysOverdue > 0
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                        }`}>
                         {daysOverdue > 0 ? `${daysOverdue} días` : 'Al día'}
                       </span>
                     </td>
@@ -270,13 +289,13 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
               })}
             </tbody>
           </table>
-          
+
           {filteredInvoices.length === 0 && (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-white">No hay facturas</h3>
               <p className="mt-1 text-sm text-gray-300">
-                {filterStatus === 'pending' 
+                {filterStatus === 'pending'
                   ? 'No hay facturas pendientes de pago'
                   : 'No se encontraron facturas con los filtros aplicados'
                 }

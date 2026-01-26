@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, DollarSign, FileText, Search, Filter, Plus, Check, X, Building2 } from 'lucide-react';
-import { Bill, Supplier, getPaymentMethods, PaymentMethod } from '../database/simple-db';
+import { useAuth } from '../contexts/AuthContext';
+import { Bill, Supplier, getPaymentMethods, PaymentMethod, addPayment } from '../database/simple-db';
 
 interface SupplierPayment {
   id: number;
@@ -25,6 +26,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
   suppliers,
   onPaymentCreated
 }) => {
+  const { user } = useAuth();
   const [payments, setPayments] = useState<SupplierPayment[]>([]);
   const [pendingBills, setPendingBills] = useState<Bill[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -52,7 +54,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
     try {
       const methods = getPaymentMethods();
       setPaymentMethods(methods);
-      
+
       // Si hay métodos disponibles, seleccionar el primero por defecto
       if (methods.length > 0 && !paymentForm.payment_method) {
         setPaymentForm(prev => ({ ...prev, payment_method: methods[0].method_name }));
@@ -64,7 +66,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
   const loadPendingBills = () => {
     // Filtrar facturas pendientes (asumiendo que las pagadas tienen status 'paid')
-    const pending = bills.filter(bill => 
+    const pending = bills.filter(bill =>
       bill.status !== 'paid'
     );
     setPendingBills(pending);
@@ -85,12 +87,12 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
   const filteredBills = pendingBills.filter(bill => {
     const supplierName = getSupplierName(bill.supplier_id).toLowerCase();
     const matchesSearch = supplierName.includes(searchTerm.toLowerCase()) ||
-                         bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (filterStatus === 'all') return matchesSearch;
     if (filterStatus === 'pending') return matchesSearch && bill.status !== 'paid';
     if (filterStatus === 'paid') return matchesSearch && bill.status === 'paid';
-    
+
     return matchesSearch;
   });
 
@@ -100,8 +102,26 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
     setIsLoading(true);
     try {
+      // Map form data to database SupplierPayment interface
+      const paymentData: Partial<any> = {
+        supplier_id: selectedBill.supplier_id,
+        bill_id: selectedBill.id,
+        amount: parseFloat(paymentForm.amount),
+        payment_date: paymentForm.payment_date,
+        payment_method: paymentForm.payment_method as any,
+        reference_number: paymentForm.reference,
+        notes: paymentForm.notes
+      };
+
+      const result = addPayment(paymentData, user?.id || 1);
+
+      if (!result.success) {
+        throw new Error(result.message);
+      }
+
+      // Update local state with the created payment
       const payment: SupplierPayment = {
-        id: Date.now(), // En producción sería generado por la DB
+        id: result.paymentId || Date.now(),
         bill_id: selectedBill.id,
         supplier_id: selectedBill.supplier_id,
         amount: parseFloat(paymentForm.amount),
@@ -112,9 +132,6 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
         created_at: new Date().toISOString()
       };
 
-      // Aquí iría la lógica para guardar en la base de datos
-      // await createSupplierPayment(payment);
-      
       // Actualizar el estado de la factura
       // await updateBill(selectedBill.id, { payment_status: 'paid' });
 
@@ -200,7 +217,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
         <div className="px-6 py-4 border-b border-gray-700">
           <h3 className="text-lg font-medium text-white">Facturas Pendientes de Pago</h3>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-700">
             <thead className="bg-gray-700">
@@ -228,7 +245,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
             <tbody className="bg-gray-800 divide-y divide-gray-700">
               {filteredBills.map((bill) => {
                 const daysUntilDue = calculateDaysUntilDue(bill.issue_date);
-                
+
                 return (
                   <tr key={bill.id} className="hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -256,14 +273,13 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        daysUntilDue < 0 
-                          ? 'bg-red-100 text-red-800'
-                          : daysUntilDue <= 7
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
-                      }`}>
-                        {daysUntilDue < 0 
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${daysUntilDue < 0
+                        ? 'bg-red-100 text-red-800'
+                        : daysUntilDue <= 7
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                        }`}>
+                        {daysUntilDue < 0
                           ? `Vencida ${Math.abs(daysUntilDue)} días`
                           : daysUntilDue === 0
                             ? 'Vence hoy'
@@ -285,13 +301,13 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
               })}
             </tbody>
           </table>
-          
+
           {filteredBills.length === 0 && (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-white">No hay facturas</h3>
               <p className="mt-1 text-sm text-gray-300">
-                {filterStatus === 'pending' 
+                {filterStatus === 'pending'
                   ? 'No hay facturas pendientes de pago'
                   : 'No se encontraron facturas con los filtros aplicados'
                 }

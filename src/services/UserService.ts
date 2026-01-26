@@ -51,6 +51,14 @@ export class UserService {
                 return { success: false, message: 'La contraseña debe tener al menos 6 caracteres' };
             }
 
+            if (!data.email || !data.email.includes('@')) {
+                return { success: false, message: 'La dirección de email no es válida' };
+            }
+
+            if (!data.full_name || data.full_name.length < 2) {
+                return { success: false, message: 'El nombre completo es requerido' };
+            }
+
             if (!data.display_name || data.display_name.length < 2) {
                 return { success: false, message: 'El nombre para mostrar es requerido' };
             }
@@ -105,6 +113,8 @@ export class UserService {
                 const searchLower = filters.search.toLowerCase();
                 users = users.filter(u =>
                     u.username.toLowerCase().includes(searchLower) ||
+                    u.email.toLowerCase().includes(searchLower) ||
+                    u.full_name.toLowerCase().includes(searchLower) ||
                     u.display_name.toLowerCase().includes(searchLower)
                 );
             }

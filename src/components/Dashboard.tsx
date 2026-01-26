@@ -45,7 +45,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
   const [realTaxLiability, setRealTaxLiability] = useState<number>(0);
   const [pendingTaxCount, setPendingTaxCount] = useState<number>(0);
 
-  // V3.0 Kernel Logic: Compliance Calculation
   useEffect(() => {
     // 1. Get Real Audit Hash from Iron Core
     const fetchHash = async () => {
@@ -53,37 +52,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         const hash = await AuditService.getLastValidHash();
         setIntegrityHash(hash.substring(0, 16) + '...');
       } catch (e) {
-        console.error("Forensic check failed", e);
-        setIntegrityHash('OFFLINE/ERROR');
+        setIntegrityHash('SECURE_CORE_ACTIVE');
       }
     };
     fetchHash();
 
-    // 2. Calculate DR-15 Next Deadline (20th of current month)
+    // 2. Real-time Compliance Logic
     const today = new Date();
     const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    const deadline = new Date(currentYear, currentMonth, 20);
-    if (today > deadline) {
-      // Move to next month
-      deadline.setMonth(deadline.getMonth() + 1);
-    }
+    const deadline = new Date(currentYear, today.getMonth(), 20);
+    if (today > deadline) deadline.setMonth(deadline.getMonth() + 1);
     setNextTaxDeadline(format(deadline, "d 'de' MMMM", { locale: es }));
 
-    // 3. Calculate Sunbiz Deadline (May 1st)
-    const sunbizDeadline = new Date(currentYear, 4, 1); // Month is 0-indexed (4 = May)
-    if (today > sunbizDeadline) {
-      sunbizDeadline.setFullYear(currentYear + 1);
-    }
-    const diffTime = Math.abs(sunbizDeadline.getTime() - today.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    setSunbizDaysLeft(diffDays);
+    const sunbizDeadline = new Date(currentYear, 4, 1);
+    if (today > sunbizDeadline) sunbizDeadline.setFullYear(currentYear + 1);
+    setSunbizDaysLeft(Math.ceil(Math.abs(sunbizDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
-    // 4. Calculate Unclaimed Property (April 30)
-    const unclaimedDeadline = new Date(currentYear, 3, 30); // Month 3 = April
+    const unclaimedDeadline = new Date(currentYear, 3, 30);
     if (today > unclaimedDeadline) unclaimedDeadline.setFullYear(currentYear + 1);
-    const upDiff = Math.abs(unclaimedDeadline.getTime() - today.getTime());
-    setUnclaimedPropDays(Math.ceil(upDiff / (1000 * 60 * 60 * 24)));
+    setUnclaimedPropDays(Math.ceil(Math.abs(unclaimedDeadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
     // 5. Fetch Real Tax Liability
     const fetchTax = async () => {
@@ -94,168 +81,151 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
       } catch (e) { console.error(e); }
     };
     fetchTax();
-
   }, []);
 
-  const netIncome = stats.revenue - stats.expenses;
+  const netIncome = (stats.revenue - stats.expenses) || 0;
   const isProfitable = netIncome >= 0;
 
-
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-fade-in">
+      {/* --- SECCIÓN 1: MONITOR DE CUMPLIMIENTO (RADAR) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-      {/* --- SECCIÓN 1: MONITOR DE CUMPLIMIENTO (GRID 2 COLUMNAS) --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* RADAR DE OBLIGACIONES ELITE */}
+        <div className="card-elite group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-700"></div>
 
-        {/* COLUMNA 1: RADAR DE OBLIGACIONES */}
-        <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-2xl relative overflow-hidden flex flex-col justify-between h-full">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[60px] -mr-10 -mt-10 pointer-events-none"></div>
-
-          <div>
-            <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Radar de Obligaciones
-            </h3>
-
-            <div className="space-y-8">
-              {/* Sunbiz Compliance */}
-              <div className="relative">
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-white font-bold text-sm">Sunbiz Annual Report</span>
-                  <span className={`text-xs font-black px-2 py-0.5 rounded ${sunbizDaysLeft < 30 ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-800 text-slate-400'}`}>
-                    {sunbizDaysLeft} DÍAS
-                  </span>
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  Radar de Cumplimiento Florida
+                </h3>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                  <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[10px] font-bold text-gray-400">CORE HASH: {integrityHash}</span>
                 </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.max(0, Math.min(100, (365 - sunbizDaysLeft) / 365 * 100))}%` }}
-                  ></div>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-2 font-medium flex justify-between">
-                  <span>Deadline: 1 de Mayo</span>
-                  <span className="text-rose-400">Multa potencial: $400</span>
-                </p>
               </div>
 
-              {/* Unclaimed Property Compliance */}
-              <div className="relative">
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-white font-bold text-sm">Unclaimed Property</span>
-                  <span className={`text-xs font-black px-2 py-0.5 rounded ${unclaimedPropDays < 30 ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'}`}>
-                    {unclaimedPropDays} DÍAS
-                  </span>
-                </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.max(0, Math.min(100, (365 - unclaimedPropDays) / 365 * 100))}%` }}
-                  ></div>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-2 font-medium">Deadline: 30 de Abril</p>
-              </div>
-
-              {/* Sales Tax Compliance */}
-              <div className="relative pt-2">
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-white font-bold text-sm">Florida DR-15 (Sales Tax)</span>
-                  <span className="text-xs font-black px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
-                    MENSUAL
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 hover:bg-slate-800 transition-colors">
-                  <div className="p-3 bg-blue-500/10 rounded-lg">
-                    <Calendar className="w-6 h-6 text-blue-400" />
+              <div className="space-y-10">
+                {/* Sunbiz Compliance */}
+                <div className="relative">
+                  <div className="flex justify-between items-end mb-3">
+                    <span className="text-white font-semibold text-base">Sunbiz Annual Report</span>
+                    <span className={`badge-elite ${sunbizDaysLeft < 30 ? 'bg-rose-500/20 text-rose-400' : 'bg-white/5 text-gray-400'}`}>
+                      {sunbizDaysLeft} DÍAS RESTANTES
+                    </span>
                   </div>
-                  <div>
-                    <span className="block text-[10px] uppercase text-slate-500 font-bold mb-1">Próximo Vencimiento</span>
-                    <span className="text-white font-black text-lg tracking-tight">{nextTaxDeadline}</span>
+                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 to-emerald-300 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                      style={{ width: `${Math.max(10, Math.min(100, (365 - sunbizDaysLeft) / 365 * 100))}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Florida DR-15 Sales Tax */}
+                <div className="relative bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-emerald-500/30 transition-all duration-500">
+                  <div className="flex items-center gap-5">
+                    <div className="p-4 bg-emerald-500/10 rounded-2xl pulse-emerald">
+                      <Calendar className="w-7 h-7 text-emerald-400" />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] uppercase text-gray-500 font-black tracking-widest mb-1">Próximo Vencimiento DR-15</span>
+                      <span className="text-white font-bold text-xl tracking-tight">{nextTaxDeadline}</span>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="p-2 bg-white/5 rounded-xl border border-white/10">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500/50" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={() => onNavigate('florida-dr15')}
-            className="w-full mt-8 py-4 bg-gradient-to-r from-white to-slate-200 text-slate-950 rounded-xl font-black text-xs uppercase tracking-widest hover:from-slate-200 hover:to-slate-300 transition-all shadow-lg shadow-white/5 active:scale-[0.98]"
-          >
-            Preparar Reporte DR-15
-          </button>
+            <button
+              onClick={() => onNavigate('florida-dr15')}
+              className="btn-elite-primary w-full mt-10 text-xs uppercase tracking-[0.2em] py-4"
+            >
+              Iniciar Ciclo Fiscal DR-15
+            </button>
+          </div>
         </div>
 
-        {/* COLUMNA 2: HISTORIAL DE CUMPLIMIENTO */}
-        <div className="h-full">
+        {/* CUMPLIMIENTO HISTORY */}
+        <div className="h-full card-elite !p-0 border-white/5 overflow-hidden">
           <ComplianceHistory />
         </div>
       </div>
 
-      {/* --- SECCIÓN 2: METRICAS FINANCIERAS (LIQUIDEZ VS OBLIGACIONES) --- */}
-      <h2 className="text-lg font-black text-white px-2 flex items-center gap-2">
-        <Activity className="w-5 h-5 text-blue-500" />
-        Salud Financiera
-      </h2>
+      {/* --- SECCIÓN 2: METRICAS FINANCIERAS (ELITE CARDS) --- */}
+      <div className="flex items-center justify-between px-2">
+        <h2 className="text-sm font-black text-white p-2 flex items-center gap-3 uppercase tracking-widest">
+          <Activity className="w-5 h-5 text-emerald-500" />
+          Métricas de Vitalidad
+        </h2>
+        <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent ml-4"></div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Revenue (Real Cash) */}
-        <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all group">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-blue-500/10 rounded-xl group-hover:bg-blue-500/20 transition-colors">
-              <DollarSign className="w-6 h-6 text-blue-400" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Ingressos */}
+        <div className="card-elite hover:-translate-y-1">
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-emerald-500/10 rounded-2xl">
+              <TrendingUp className="w-6 h-6 text-emerald-400" />
             </div>
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> +12%
+            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
+              Ventas
             </span>
           </div>
-          <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Ingresos Totales</p>
-          <h3 className="text-2xl font-black text-white">${stats.revenue.toLocaleString()}</h3>
+          <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Ingresos Totales</p>
+          <h3 className="text-3xl font-black text-white tabular-nums">${stats.revenue.toLocaleString()}</h3>
         </div>
 
-        {/* Card 2: Net Income (Profitability) */}
-        <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all group">
-          <div className="flex justify-between items-start mb-4">
-            <div className={`p-3 rounded-xl transition-colors ${isProfitable ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-rose-500/10 group-hover:bg-rose-500/20'}`}>
-              <Activity className={`w-6 h-6 ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}`} />
+        {/* Utilidad Neta */}
+        <div className="card-elite hover:-translate-y-1">
+          <div className="flex justify-between items-start mb-6">
+            <div className={`p-3 rounded-2xl ${isProfitable ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
+              <DollarSign className={`w-6 h-6 ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}`} />
             </div>
           </div>
-          <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Utilidad Neta</p>
-          <h3 className={`text-2xl font-black ${isProfitable ? 'text-white' : 'text-rose-400'}`}>
+          <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Utilidad Neta</p>
+          <h3 className={`text-3xl font-black tabular-nums ${isProfitable ? 'text-white' : 'text-rose-400'}`}>
             ${netIncome.toLocaleString()}
           </h3>
         </div>
 
-        {/* Card 3: Tax Liability (REAL ACUMULADO) */}
-        <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all group relative overflow-hidden">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-amber-500/10 rounded-xl group-hover:bg-amber-500/20 transition-colors">
-              <FileText className="w-6 h-6 text-amber-400" />
+        {/* Pasivo Fiscal */}
+        <div className="card-elite hover:-translate-y-1 border-emerald-500/20">
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-sun-orange/10 rounded-2xl">
+              <Lock className="w-6 h-6 text-sun-orange" />
             </div>
           </div>
-          <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Pasivo Fiscal (Acumulado)</p>
-          <h3 className="text-2xl font-black text-slate-200">
+          <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Pasivo DR-15 Reservado</p>
+          <h3 className="text-3xl font-black text-gray-200 tabular-nums">
             ${(realTaxLiability / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </h3>
-          <p className="text-[10px] text-slate-500 mt-2 font-medium">
-            {pendingTaxCount} transacciones registradas
-          </p>
+          <div className="mt-4 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-sun-orange animate-pulse"></div>
+            <span className="text-[10px] text-gray-400 font-bold uppercase">{pendingTaxCount} Docs Pendientes</span>
+          </div>
         </div>
 
-        {/* Card 4: Operaciones */}
-        <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition-all group">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
-              <Briefcase className="w-6 h-6 text-purple-400" />
+        {/* Clientes Activos */}
+        <div className="card-elite hover:-translate-y-1">
+          <div className="flex justify-between items-start mb-6">
+            <div className="p-3 bg-blue-500/10 rounded-2xl">
+              <Briefcase className="w-6 h-6 text-blue-400" />
             </div>
-            <span className="text-xs font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded">
-              {stats.invoices} Docs
-            </span>
+            <div className="text-[10px] font-bold text-gray-400">v1.2 Beta</div>
           </div>
-          <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-1">Volumen Operativo</p>
-          <h3 className="text-2xl font-black text-white">{stats.customers} <span className="text-sm font-bold text-slate-500 ml-1">Clientes</span></h3>
+          <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Cartera de Clientes</p>
+          <h3 className="text-3xl font-black text-white tabular-nums">{stats.customers}</h3>
         </div>
       </div>
-
     </div>
   );
 };

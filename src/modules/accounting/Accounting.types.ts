@@ -52,7 +52,14 @@ export type AccountingPeriod = z.infer<typeof AccountingPeriodSchema>;
 export interface TrialBalanceRow {
     account_code: string;
     account_name: string;
-    debit: number;
-    credit: number;
-    net: number;
+    account_type: string;
+    normal_balance: 'debit' | 'credit';
+    previous_debit: number;
+    previous_credit: number;
+    period_debit: number;
+    period_credit: number;
+    total_debit: number;
+    total_credit: number;
+    initial_balance: number;
+    final_balance: number;
 }
