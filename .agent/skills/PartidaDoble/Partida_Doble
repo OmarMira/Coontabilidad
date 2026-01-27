@@ -1,0 +1,32 @@
+//@ts-nocheck
+/**
+ * SKILL: Accounting_Entry_Validator
+ * Objetivo: Validar el principio de partida doble antes de escribir en DB.
+ */
+export const Accounting_Entry_Validator = {
+    name: "validate_double_entry",
+    description: "Valida que el total de débitos sea igual al total de créditos.",
+    params: {
+        lines: "array" // [{account_id, debit, credit}]
+    },
+    execute(context, { lines }) {
+        if (!lines || lines.length < 2) {
+            return { valid: false, error: "Un asiento requiere al menos dos líneas." };
+        }
+
+        const totalDebit = lines.reduce((sum, line) => sum + (line.debit || 0), 0);
+        const totalCredit = lines.reduce((sum, line) => sum + (line.credit || 0), 0);
+
+        // Usamos un pequeño margen para errores de punto flotante en JS
+        const difference = Math.abs(totalDebit - totalCredit);
+        const isValid = difference < 0.001;
+
+        return {
+            valid: isValid,
+            totalDebit: parseFloat(totalDebit.toFixed(2)),
+            totalCredit: parseFloat(totalCredit.toFixed(2)),
+            difference: parseFloat(difference.toFixed(2)),
+            error: isValid ? null : "El asiento no está balanceado (Partida Doble)."
+        };
+    }
+};

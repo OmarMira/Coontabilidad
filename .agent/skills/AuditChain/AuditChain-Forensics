@@ -1,0 +1,34 @@
+//@ts-nocheck
+/**
+ * SKILL: AuditChain_Forensics
+ * Objetivo: Garantizar la inmutabilidad de los registros contables.
+ */
+export const AuditChain_Forensics = {
+    name: "verify_and_hash_entry",
+    description: "Genera un hash SHA-256 encadenado para un nuevo asiento contable.",
+    params: {
+        previousHash: "string",
+        transactionData: "object"
+    },
+    async execute(context, { previousHash, transactionData }) {
+        const encoder = new TextEncoder();
+        // Normalizamos la data para que el hash sea consistente
+        const dataStr = JSON.stringify(transactionData) + previousHash;
+        const data = encoder.encode(dataStr);
+
+        try {
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const newHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            return {
+                success: true,
+                hash: newHash,
+                timestamp: new Date().toISOString(),
+                verified: true
+            };
+        } catch (error) {
+            return { success: false, error: "Error en cálculo criptográfico: " + error.message };
+        }
+    }
+};

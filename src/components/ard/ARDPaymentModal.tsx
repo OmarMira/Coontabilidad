@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, User, FileCheck, ArrowRight, Wallet } from 'lucide-react';
-import { getCustomers, getInvoices, createPayment, updateARDDocumentStatus } from '../../database/simple-db';
+import { getCustomers, getInvoices, createPayment, updateARDDocumentStatus, Customer, Invoice } from '../../database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 
+import { ARDDocument } from '../../modules/ard/ARD.types';
+
 interface ARDPaymentModalProps {
-    document: any;
+    document: ARDDocument;
     onClose: () => void;
     onSuccess: () => void;
 }
 
 export const ARDPaymentModal: React.FC<ARDPaymentModalProps> = ({ document, onClose, onSuccess }) => {
-    const [customers, setCustomers] = useState<any[]>([]);
-    const [invoices, setInvoices] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | ''>('');
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | ''>('');
     const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -28,7 +30,7 @@ export const ARDPaymentModal: React.FC<ARDPaymentModalProps> = ({ document, onCl
             // getInvoices only accepts userId/role filters for access control
             // We filter by customerId here on the client side
             const allInvoices = getInvoices();
-            const pendingInvoices = allInvoices.filter((inv: any) =>
+            const pendingInvoices = allInvoices.filter((inv: Invoice) =>
                 inv.customer_id === Number(selectedCustomerId) && inv.status !== 'paid'
             );
             setInvoices(pendingInvoices);
@@ -122,7 +124,7 @@ export const ARDPaymentModal: React.FC<ARDPaymentModalProps> = ({ document, onCl
                                 disabled={!selectedCustomerId || invoices.length === 0}
                             >
                                 <option value="">Pago a Cuenta (Sin Factura)</option>
-                                {invoices.map(i => <option key={i.id} value={i.id} className="bg-slate-900">{i.invoice_number} - Balance: ${i.balance}</option>)}
+                                {invoices.map(i => <option key={i.id} value={i.id} className="bg-slate-900">{i.invoice_number} - Total: ${i.total_amount}</option>)}
                             </select>
                         </div>
 

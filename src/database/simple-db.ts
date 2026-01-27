@@ -6095,6 +6095,42 @@ export function deleteARDDocument(id: string): void {
   db.run('DELETE FROM ard_documents WHERE id = ?', [id]);
 }
 
+export function assignCustomerToARDDocument(documentId: string, customerId: number): void {
+  if (!db) return;
+  db.run('UPDATE ard_documents SET customer_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [customerId, documentId]);
+}
+
+export function getARDCustomerSummary(): any[] {
+  if (!db) return [];
+  try {
+    const query = `
+      SELECT 
+        c.id, 
+        c.name, 
+        COUNT(a.id) as total_docs,
+        SUM(CASE WHEN a.status = 'processed' THEN 1 ELSE 0 END) as pending_conversion,
+        SUM(CASE WHEN a.status = 'converted' THEN 1 ELSE 0 END) as total_converted,
+        SUM(a.detected_amount) as total_volume
+      FROM customers c
+      INNER JOIN ard_documents a ON c.id = a.customer_id
+      GROUP BY c.id
+      ORDER BY total_docs DESC
+    `;
+    const result = db.exec(query);
+    if (!result[0]) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(row => {
+      const obj: any = {};
+      columns.forEach((col, i) => obj[col] = row[i]);
+      return obj;
+    });
+  } catch (e) {
+    console.error('Error fetching ARD customer summary:', e);
+    return [];
+  }
+}
+
 export function checkAccountingDataAssociation(): { hasData: boolean; customers: number; suppliers: number; invoices: number; bills: number } {
   try {
     if (!db) {

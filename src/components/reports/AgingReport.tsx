@@ -93,20 +93,23 @@ export const AgingReport: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Summary Section */}
                     <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-5 gap-4">
-                        {Object.keys(data.buckets).map((key) => (
-                            <div key={key} className="card-elite !p-6 flex flex-col justify-between">
-                                <div>
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{key === 'current' ? 'CORRIENTE' : `${key} DÍAS`}</span>
-                                    <div className="text-2xl font-black text-white mt-1">{formatCurrency(data.buckets[key].amount)}</div>
+                        {['current', '1-30', '31-60', '61-90', '90+'].map((key) => {
+                            const bucket = data.buckets[key] || { amount: 0, percentage: 0 };
+                            return (
+                                <div key={key} className="card-elite !p-6 flex flex-col justify-between">
+                                    <div>
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{key === 'current' ? 'CORRIENTE' : `${key} DÍAS`}</span>
+                                        <div className="text-2xl font-black text-white mt-1">{formatCurrency(bucket.amount)}</div>
+                                    </div>
+                                    <div className="mt-4 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full ${getBucketColor(key).split(' ')[1].replace('text-', 'bg-')}`}
+                                            style={{ width: `${bucket.percentage}%` }}
+                                        ></div>
+                                    </div>
                                 </div>
-                                <div className="mt-4 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full ${getBucketColor(key).split(' ')[1].replace('text-', 'bg-')}`}
-                                        style={{ width: `${data.buckets[key].percentage}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* Table Section */}
@@ -114,7 +117,7 @@ export const AgingReport: React.FC = () => {
                         <div className="card-elite !p-0 overflow-hidden">
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
                                 <h3 className="text-table-header">Detalle de {reportType === 'receivable' ? 'Clientes' : 'Proveedores'}</h3>
-                                <span className="text-xs font-black text-white">Total: {formatCurrency(data.total)}</span>
+                                <span className="text-xs font-black text-white">Total: {formatCurrency(data.total || 0)}</span>
                             </div>
 
                             <div className="overflow-x-auto">
@@ -172,7 +175,7 @@ export const AgingReport: React.FC = () => {
                             <ReportExporter
                                 data={getExportData()}
                                 header={{
-                                    title: `Aging ${reportType === 'receivable' ? 'Accounts Receivable' : 'Accounts Payable'}`,
+                                    title: `Antigüedad de ${reportType === 'receivable' ? 'Cuentas por Cobrar' : 'Cuentas por Pagar'}`,
                                     subtitle: 'Reporte de Antigüedad Consolidado',
                                     dateRange: `Al ${new Date().toLocaleDateString()}`
                                 }}
@@ -185,7 +188,7 @@ export const AgingReport: React.FC = () => {
                                 <h3 className="text-sm font-black text-white uppercase tracking-widest">Alerta de Riesgo</h3>
                             </div>
                             <p className="text-xs text-gray-500 font-medium leading-relaxed">
-                                {data.buckets['90+'].amount > 0
+                                {data.buckets['90+']?.amount > 0
                                     ? `Urgente: Tiene ${formatCurrency(data.buckets['90+'].amount)} en la categoría de 90+ días. Se recomienda gestión de cobro inmediata.`
                                     : 'Excelente: No hay cuentas con antigüedad superior a 90 días.'
                                 }

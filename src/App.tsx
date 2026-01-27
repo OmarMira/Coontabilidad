@@ -47,6 +47,7 @@ import { BackupPanel } from './components/BackupPanel';
 import { LiveVerification } from './pages/LiveVerification';
 import { InvoiceForm } from './components/InvoiceForm';
 import { InvoiceList } from './components/InvoiceList';
+import { Toaster } from 'react-hot-toast';
 import { InvoiceDetailView } from './components/InvoiceDetailView';
 import { SupplierForm } from './components/SupplierForm';
 import { SupplierList } from './components/SupplierList';
@@ -1542,6 +1543,7 @@ function App() {
             </button>
           )}
       </div >
+      <Toaster position="top-right" />
     </ProtectedRoute>
   );
 }
