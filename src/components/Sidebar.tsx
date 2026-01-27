@@ -147,7 +147,6 @@ const menuItems: MenuItem[] = [
       { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive },
       { id: 'system-logs', label: 'Logs del Sistema', icon: Activity },
       { id: 'auditoria', label: 'Auditoría de Transacciones', icon: Search },
-      { id: 'security', label: 'Seguridad y Cifrado', icon: Lock },
       { id: 'verify', label: 'Verificación Iron Core', icon: Shield },
       { id: 'help', label: 'Centro de Ayuda', icon: HelpCircle }
     ]

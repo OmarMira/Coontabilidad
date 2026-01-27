@@ -22,7 +22,7 @@ Este proceso asegura que la contabilidad del sistema mantenga la integridad refe
    - Fórmula: `Activos = Pasivos + Patrimonio`.
    - Utiliza la función `getTrialBalanceReport(year, month)` del motor de base de datos para extraer los saldos actuales.
 
-# Referencias Técnicas
+## Referencias Técnicas
 
 - **Validador Lógico**: `src/services/accounting/DoubleEntryValidator.ts`
 - **Reportes**: `src/components/accounting/TrialBalanceReport.tsx`
