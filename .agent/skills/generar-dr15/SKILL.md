@@ -1,33 +1,32 @@
 ---
 name: generar-dr15
-description: Usa este skill cuando el usuario quiera generar, calcular o validar el reporte de impuestos de Florida (DR-15) para un periodo específico.
+description: Usa esta skill cuando el usuario quiera generar el reporte fiscal DR-15, calcular impuestos de Florida o validar tasas por condado.
 ---
 
-# Instrucciones
+# Generar Reporte Fiscal DR-15 (Florida)
 
-Este módulo permite la generación completa del reporte de impuestos sobre las ventas de Florida (DR-15). Sigue estos pasos para procesar el reporte:
+Esta skill permite generar el formulario DR-15 para la declaración de impuestos sobre las ventas en Florida. Utiliza los servicios internos del sistema para calcular las obligaciones tributarias basadas en las facturas y recibos registrados.
 
-1. **Selección del Periodo**:
-   - El sistema debe recibir el mes y año (ej: "Enero 2026").
-   - Los datos se cargan desde las tablas de transacciones fiscales.
+## Instrucciones de Uso
 
-2. **Cálculo de Totales**:
-   - Calcula **Gross Sales** (Ventas Brutas).
-   - Calcula **Taxable Sales** (Ventas Gravables).
-   - Calcula el **Tax Collected** (Impuesto Recaudado).
-   - Realiza un desglose por condado (County Breakdown) usando las tasas dinámicas (6.0%, 6.5%, 7.0%, etc.).
+1. **Identificar el Periodo Fiscal**:
+    - Determina el mes y año solicitado por el usuario (ej. "Enero 2024").
+    - Si no se especifica, asume el mes actual o pregunta al usuario.
 
-3. **Validación de Cumplimiento (DOR Compliance)**:
-   - Verifica que el FEIN de la empresa esté registrado.
-   - Valida que las sumas matemáticas coincidan con el desglose por condado.
-   - Genera un **Hash de Auditoría SHA-256** para integridad.
+2. **Ejecutar Cálculo de Impuestos**:
+    - Utiliza el módulo de reportes fiscales para agregar las ventas imponibles y exentas.
+    - Archivos clave a consultar:
+      - `src/modules/tax/FloridaTaxCalculator.ts` (Cálculo de tasas por condado)
+      - `src/services/TaxReportingService.ts` (Generación de reportes)
 
-4. **Generación de PDF**:
-   - Usa el método `dr15PDFGenerator.downloadPDF(data, companyData)` para generar el archivo final.
-   - El PDF debe incluir el encabezado oficial del Florida Department of Revenue y el desglose detallado.
+3. **Generar Documento**:
+    - Invoca la generación del PDF.
+    - El componente de UI relevante es `src/components/dr15/DR15PreparationWizard.tsx`.
 
-# Referencias Técnicas
+4. **Validación**:
+    - Verifica que las tasas aplicadas correspondan a los condados registrados (ej. Miami-Dade 7.0%).
+    - Confirma que el `Total Tax Due` coincide con la suma de los desgloses.
 
-- **Generador PDF**: `src/modules/dr15/DR15PDFGenerator.ts`
-- **UI de Tabla**: `src/components/dr15/CountyBreakdownTable.tsx`
-- **Validaciones**: `src/components/dr15/DORComplianceChecklist.tsx`
+## Comandos Relacionados
+
+- Si necesitas verificar las tasas actuales, revisa `src/database/simple-db.ts` o la tabla `florida_tax_rates`.

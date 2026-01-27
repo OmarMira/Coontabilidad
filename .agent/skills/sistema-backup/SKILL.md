@@ -1,27 +1,39 @@
 ---
 name: sistema-backup
-description: Gestiona la creación y restauración de copias de seguridad cifradas (.aex).
+description: Ejecuta copias de seguridad cifradas (.aex) o restaura la base de datos. Úsalo cuando el usuario pida "guardar todo", "hacer backup" o "restaurar".
 ---
 
-# Instrucciones
+# Sistema de Respaldo y Restauración (Iron Core)
 
-Este servicio permite la exportación e importación segura de toda la base de datos de AccountExpress usando cifrado de grado militar (Iron Core).
+Esta skill gestiona la integridad de los datos mediante copias de seguridad cifradas. El sistema utiliza el formato `.aex` (Account Express Encrypted) para asegurar la información financiera.
 
-1. **Creación de Backup (.exportToAex)**:
-   - Invoca `BackupService.createBackup()` para generar un blob JSON cifrado.
-   - El proceso exporta el estado actual de la DB, aplica cifrado AES con salt/iv y firma el archivo con un checksum HMAC.
-   - El archivo resultante tiene extensión `.aex`.
+## Capacidades
 
-2. **Restauración de Backup (.restoreFromAex)**:
-   - Invoca `BackupService.restoreBackup(jsonString)`.
-   - El sistema validará primero la integridad del archivo mediante el checksum.
-   - Si la firma es válida, procede a descifrar el blob y restaurar el archivo de base de datos directamente al sistema de archivos del navegador (OPFS).
+1. **Crear Respaldo (Backup)**:
+    - Genera un archivo `.aex` con toda la base de datos SQLite y los metadatos.
+    - Utiliza `src/services/backup/EnhancedBackupService.ts` o `src/services/BackupService.ts`.
+    - Asegura que el cifrado AES-256 se aplique correctamente antes de guardar.
 
-3. **Mantenimiento**:
-   - Siempre verifica la disponibilidad del servicio mediante `await backupService.isAvailable()` antes de iniciar una operación.
+2. **Restaurar Base de Datos**:
+    - Permite recuperar el estado del sistema desde un archivo previo.
+    - **ADVERTENCIA**: Esta es una operación destructiva para los datos actuales. Siempre sugiere crear un respaldo de emergencia antes de restaurar.
 
-# Referencias Técnicas
+## Flujo de Trabajo
 
-- **Servicio Core**: `src/services/BackupService.ts`
-- **Motor Cifrado**: `src/core/security/BasicEncryption.ts`
-- **UI de Gestión**: `src/components/BackupRestore.tsx`
+### Para Crear Backup
+
+1. Verificar que no haya transacciones activas pendientes.
+2. Invocar el método de creación de backup del servicio.
+3. Confirmar ubicación de guardado (OPFS o descarga local).
+
+### Para Restaurar
+
+1. Validar la integridad del archivo `.aex` (Checksum/Hash).
+2. Detener escrituras en la base de datos actuales.
+3. Reemplazar el archivo `accountexpress.db` en OPFS.
+4. Reiniciar la conexión a la base de datos (`initDB`).
+
+## Código Relevante
+
+- `src/services/backup/EnhancedBackupService.ts`
+- `src/components/maintenance/DatabaseMaintenance.tsx`
