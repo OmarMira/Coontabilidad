@@ -1,32 +1,35 @@
 ---
 name: generar-dr15
-description: Usa esta skill cuando el usuario quiera generar el reporte fiscal DR-15, calcular impuestos de Florida o validar tasas por condado.
+description: Usa este skill cuando el usuario pida calcular impuestos de Florida, generar el reporte DR-15 o validar tasas por condado.
 ---
 
-# Generar Reporte Fiscal DR-15 (Florida)
+# Generar Reporte Fiscal DR-15
 
-Esta skill permite generar el formulario DR-15 para la declaración de impuestos sobre las ventas en Florida. Utiliza los servicios internos del sistema para calcular las obligaciones tributarias basadas en las facturas y recibos registrados.
+Este skill permite generar el reporte mensual de impuestos sobre ventas para el estado de Florida (Formulario DR-15).
 
-## Instrucciones de Uso
+## Pasos
 
-1. **Identificar el Periodo Fiscal**:
-    - Determina el mes y año solicitado por el usuario (ej. "Enero 2024").
-    - Si no se especifica, asume el mes actual o pregunta al usuario.
+1. **Validar Tasas de Impuesto**:
+   - Verificar que la tabla `florida_tax_rates` esté poblada.
+   - Confirmar las tasas por condado (Surax) vigentes.
 
-2. **Ejecutar Cálculo de Impuestos**:
-    - Utiliza el módulo de reportes fiscales para agregar las ventas imponibles y exentas.
-    - Archivos clave a consultar:
-      - `src/modules/tax/FloridaTaxCalculator.ts` (Cálculo de tasas por condado)
-      - `src/services/TaxReportingService.ts` (Generación de reportes)
+2. **Calcular Ventas del Periodo**:
+   - Consultar todas las facturas (`invoices`) dentro del rango de fechas especificado.
+   - Separar ventas gravables de ventas exentas.
+   - Identificar el condado de cada venta (basado en la dirección del cliente o la configuración de envío).
 
-3. **Generar Documento**:
-    - Invoca la generación del PDF.
-    - El componente de UI relevante es `src/components/dr15/DR15PreparationWizard.tsx`.
+3. **Generar Estructura DR-15**:
+   - Calcular el impuesto base estatal (6%).
+   - Calcular la sobretasa discrecional del condado (Discretionary Sales Surtax).
+   - Sumarizar totales por columna del formulario DR-15.
+   - Calcular créditos o penalidades si aplican.
 
-4. **Validación**:
-    - Verifica que las tasas aplicadas correspondan a los condados registrados (ej. Miami-Dade 7.0%).
-    - Confirma que el `Total Tax Due` coincide con la suma de los desgloses.
+4. **Persistencia y Reporte**:
+   - Guardar el reporte generado en `florida_tax_reports`.
+   - Guardar el detalle por condados en `florida_tax_report_counties`.
+   - Utilizar `src/modules/dr15/DR15Generator.ts` para la lógica de negocio.
 
 ## Comandos Relacionados
 
-- Si necesitas verificar las tasas actuales, revisa `src/database/simple-db.ts` o la tabla `florida_tax_rates`.
+- Consultar tabla `florida_tax_rates`.
+- Ejecutar función `generateDR15Report(period)`.
