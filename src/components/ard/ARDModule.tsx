@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { ScanSearch, FilePlus, Database, CheckCircle2, AlertCircle, Clock, Settings, ArrowRight, RefreshCw } from 'lucide-react';
+import { ScanSearch, FilePlus, Database, CheckCircle2, AlertCircle, Clock, Settings, ArrowRight, RefreshCw, DollarSign, Users, Gem, Package, Rocket } from 'lucide-react';
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { ARDScanner } from './ARDScanner';
 import { ARDDocumentList } from './ARDDocumentList';
+import { ARDCollectionManager } from './ARDCollectionManager';
+import { ARDCustomerPanel } from './ARDCustomerPanel';
+import { ARDQualityPanel } from './ARDQualityPanel';
+import { ARDInventorySync } from './ARDInventorySync';
+import { ARDRoadmap } from './ARDRoadmap';
 import { getARDDocuments } from '../../database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 
 export const ARDModule: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'scan' | 'history' | 'setup'>('scan');
-    const [documents, setDocuments] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'scan' | 'history' | 'payments' | 'customers' | 'quality' | 'inventory' | 'roadmap'>('scan');
+    const [documents, setDocuments] = useState<ARDDocument[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const loadDocuments = async () => {
@@ -53,18 +58,48 @@ export const ARDModule: React.FC = () => {
                     <p className="text-gray-400 mt-2 font-medium">Motor inteligente de procesamiento de documentos y conversión automática.</p>
                 </div>
 
-                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 overflow-x-auto max-w-full">
                     <button
                         onClick={() => setActiveTab('scan')}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeTab === 'scan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-gray-500 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'scan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-gray-500 hover:text-white'}`}
                     >
                         <FilePlus className="w-4 h-4" /> DIGITALIZACIÓN
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-gray-500 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-gray-500 hover:text-white'}`}
                     >
                         <Database className="w-4 h-4" /> GESTIÓN GAR
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('inventory')}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'inventory' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        <Package className="w-4 h-4" /> INVENTARIO
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('payments')}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        <DollarSign className="w-4 h-4" /> COBROS
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('customers')}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        <Users className="w-4 h-4" /> CLIENTES
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('quality')}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quality' ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        <Gem className="w-4 h-4" /> CALIDAD
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('roadmap')}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'roadmap' ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        <Rocket className="w-4 h-4" /> HOJA RUTA
                     </button>
                 </div>
             </div>
@@ -94,23 +129,33 @@ export const ARDModule: React.FC = () => {
                 <div className="lg:col-span-12">
                     {activeTab === 'scan' ? (
                         <ARDScanner onDocumentProcessed={loadDocuments} />
-                    ) : (
+                    ) : activeTab === 'history' ? (
                         <ARDDocumentList documents={documents} onRefresh={loadDocuments} />
+                    ) : activeTab === 'payments' ? (
+                        <ARDCollectionManager documents={documents} onRefresh={loadDocuments} />
+                    ) : activeTab === 'customers' ? (
+                        <ARDCustomerPanel />
+                    ) : activeTab === 'inventory' ? (
+                        <ARDInventorySync documents={documents} />
+                    ) : activeTab === 'roadmap' ? (
+                        <ARDRoadmap />
+                    ) : (
+                        <ARDQualityPanel />
                     )}
                 </div>
             </div>
 
-            {/* FOOTER FASE 2 */}
+            {/* FOOTER FASE 5 */}
             <div className="p-4 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Settings className="w-4 h-4 text-indigo-400 animate-spin-slow" />
                     <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest leading-none">
-                        Módulo ARD Fase 2 (GAR) - Sistema de Gestión Operativo
+                        Módulo ARD Fase 4 (COMPLETA) - Iniciando Fase 5: Integración Multi-Módulo
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Motor OCR Listo</span>
+                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Motor AccountExpress Listo</span>
                 </div>
             </div>
         </div>

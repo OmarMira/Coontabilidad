@@ -1,17 +1,25 @@
 import React from 'react';
-import { FileText, Clock, CheckCircle2, AlertCircle, Eye, Trash2, ArrowUpRight, DollarSign } from 'lucide-react';
+import {
+    FileText, Clock, CheckCircle2, AlertCircle, Eye,
+    Trash2, ArrowUpRight, DollarSign, UserPlus, Users, FilePlus
+} from 'lucide-react';
 import { deleteARDDocument } from '../../database/simple-db';
 import { ARDPaymentModal } from './ARDPaymentModal';
 import { ARDPreviewModal } from './ARDPreviewModal';
+import { ARDAssignCustomerModal } from './ARDAssignCustomerModal';
+import { ARDSaleConversionModal } from './ARDSaleConversionModal';
+import { ARDDocument } from '../../modules/ard/ARD.types';
 
 interface ARDDocumentListProps {
-    documents: any[];
+    documents: ARDDocument[];
     onRefresh: () => void;
 }
 
 export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onRefresh }) => {
-    const [selectedToConvert, setSelectedToConvert] = React.useState<any | null>(null);
-    const [previewDocument, setPreviewDocument] = React.useState<any | null>(null);
+    const [selectedToConvert, setSelectedToConvert] = React.useState<ARDDocument | null>(null);
+    const [selectedToSale, setSelectedToSale] = React.useState<ARDDocument | null>(null);
+    const [previewDocument, setPreviewDocument] = React.useState<ARDDocument | null>(null);
+    const [assignDocumentId, setAssignDocumentId] = React.useState<string | null>(null);
 
     const handleDelete = (id: string) => {
         if (confirm('¿Desea eliminar este registro de análisis?')) {
@@ -73,8 +81,8 @@ export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onR
                                     {getStatusBadge(doc.status)}
                                 </td>
                                 <td className="px-8 py-6 text-right">
-                                    <div className="text-white font-black tabular-nums">{doc.status === 'processed' ? formatCurrency(doc.detected_amount) : '---'}</div>
-                                    {doc.detected_tax > 0 && <div className="text-[9px] font-bold text-gray-500">Tax: {formatCurrency(doc.detected_tax)}</div>}
+                                    <div className="text-white font-black tabular-nums">{doc.status === 'processed' || doc.status === 'converted' ? formatCurrency(doc.detected_amount || 0) : '---'}</div>
+                                    {(doc.detected_tax || 0) > 0 && <div className="text-[9px] font-bold text-gray-500">Tax: {formatCurrency(doc.detected_tax || 0)}</div>}
                                 </td>
                                 <td className="px-8 py-6 text-right">
                                     <div className="text-gray-400 text-xs font-medium">{doc.detected_date}</div>
@@ -88,14 +96,32 @@ export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onR
                                         >
                                             <Eye className="w-4 h-4" />
                                         </button>
+
+                                        <button
+                                            onClick={() => setAssignDocumentId(doc.id)}
+                                            className={`p-2 rounded-lg transition-all ${doc.customer_id ? 'bg-indigo-500/10 text-indigo-400' : 'text-gray-500 hover:bg-white/5 hover:text-white'}`}
+                                            title={doc.customer_id ? 'Cliente Asignado' : 'Asignar Cliente'}
+                                        >
+                                            {doc.customer_id ? <Users className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                                        </button>
+
                                         {doc.status === 'processed' && (
-                                            <button
-                                                onClick={() => setSelectedToConvert(doc)}
-                                                className="p-2 bg-indigo-500/10 hover:bg-indigo-500 text-indigo-400 hover:text-white rounded-lg transition-all"
-                                                title="Convertir a Cobro"
-                                            >
-                                                <ArrowUpRight className="w-4 h-4" />
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={() => setSelectedToSale(doc)}
+                                                    className="p-2 bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg transition-all"
+                                                    title="Convertir a Factura/Venta"
+                                                >
+                                                    <FilePlus className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setSelectedToConvert(doc)}
+                                                    className="p-2 bg-indigo-500/10 hover:bg-indigo-500 text-indigo-400 hover:text-white rounded-lg transition-all"
+                                                    title="Convertir a Cobro Directo"
+                                                >
+                                                    <ArrowUpRight className="w-4 h-4" />
+                                                </button>
+                                            </>
                                         )}
                                         <button onClick={() => handleDelete(doc.id)} className="p-2 hover:bg-rose-500/10 rounded-lg text-gray-500 hover:text-rose-400 transition-colors">
                                             <Trash2 className="w-4 h-4" />
@@ -127,10 +153,26 @@ export const ARDDocumentList: React.FC<ARDDocumentListProps> = ({ documents, onR
                 />
             )}
 
+            {selectedToSale && (
+                <ARDSaleConversionModal
+                    document={selectedToSale}
+                    onClose={() => setSelectedToSale(null)}
+                    onSuccess={onRefresh}
+                />
+            )}
+
             {previewDocument && (
                 <ARDPreviewModal
                     document={previewDocument}
                     onClose={() => setPreviewDocument(null)}
+                />
+            )}
+
+            {assignDocumentId && (
+                <ARDAssignCustomerModal
+                    documentId={assignDocumentId}
+                    onClose={() => setAssignDocumentId(null)}
+                    onSuccess={onRefresh}
                 />
             )}
         </div>

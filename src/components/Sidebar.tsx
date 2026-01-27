@@ -51,7 +51,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   {
     id: 'dashboard',
-    label: 'DASHBOARD',
+    label: 'PANEL DE CONTROL',
     icon: Home
   },
   {
@@ -62,14 +62,14 @@ const menuItems: MenuItem[] = [
       { id: 'company-data', label: 'Datos de la Empresa', icon: Building2 },
       { id: 'admin-users', label: 'Usuarios y Seguridad', icon: UserCheck },
       { id: 'role-manager', label: 'Gestión de Roles', icon: Shield },
-      { id: 'audit-trail', label: 'Trazabilidad (Audit)', icon: History, badge: 'LOG' },
+      { id: 'audit-trail', label: 'Trazabilidad (Audit)', icon: History },
       { id: 'banks', label: 'Cuentas Bancarias', icon: Building2 },
       { id: 'payment-methods', label: 'Métodos de Pago', icon: CreditCard }
     ]
   },
   {
     id: 'cuentas-pagar',
-    label: 'CTA A PAGAR',
+    label: 'Cta por Pagar',
     icon: Receipt,
     children: [
       { id: 'suppliers', label: 'Proveedores', icon: Building2 },
@@ -81,10 +81,10 @@ const menuItems: MenuItem[] = [
   },
   {
     id: 'cuentas-cobrar',
-    label: 'CTA POR COBRAR',
+    label: 'Cta por Cobrar',
     icon: TrendingUp,
     children: [
-      { id: 'ard-module', label: 'Análisis ARD', icon: ScanSearch, badge: 'PRO' },
+      { id: 'ard-module', label: 'Análisis ARD', icon: ScanSearch },
       { id: 'customers', label: 'Clientes', icon: Users },
       { id: 'invoices', label: 'Facturas de Venta', icon: FileText },
       { id: 'customer-payments', label: 'Pagos de Clientes', icon: CreditCard },
@@ -94,22 +94,22 @@ const menuItems: MenuItem[] = [
   },
   {
     id: 'libro-mayor',
-    label: 'CONTABILIDAD PRO',
+    label: 'Contabilidad',
     icon: Calculator,
     children: [
-      { id: 'reports-dashboard', label: 'Dashboard de Reportes', icon: BarChart3, badge: 'NUEVO' },
-      { id: 'ledger-hub', label: 'Libros y Auxiliares', icon: Database, isNew: true },
+      { id: 'reports-dashboard', label: 'Dashboard de Reportes', icon: BarChart3 },
+      { id: 'ledger-hub', label: 'Libros y Auxiliares', icon: Database },
       { id: 'chart-accounts', label: 'Plan de Cuentas', icon: FileText },
       { id: 'journal-entries', label: 'Asientos Contables', icon: FileText },
       { id: 'bank-reconciliation', label: 'Conciliación Bancaria', icon: FileText },
-      { id: 'bank-smart-import', label: 'AI Bank Smart Import', icon: Bot, badge: 'AI' },
+      { id: 'bank-smart-import', label: 'Importación Bancaria IA', icon: Bot },
       { id: 'general-ledger', label: 'Libro Mayor', icon: FileText },
       { id: 'trial-balance', label: 'Balance de Comprobación', icon: BarChart3 },
-      { id: 'account-ledger', label: 'Auxiliares de Cuentas', icon: PieChart, badge: 'NUEVO' },
+      { id: 'account-ledger', label: 'Auxiliares de Cuentas', icon: PieChart },
       { id: 'balance-sheet', label: 'Balance General', icon: ShieldCheck },
       { id: 'income-statement', label: 'Estado de Resultados', icon: TrendingUp },
-      { id: 'cash-flow', label: 'Flujo de Efectivo', icon: DollarSign, badge: 'NUEVO' },
-      { id: 'aging-report', label: 'Aging Report (Cuentas)', icon: Clock, badge: 'NUEVO' }
+      { id: 'cash-flow', label: 'Flujo de Efectivo', icon: DollarSign },
+      { id: 'aging-report', label: 'Reporte de Antigüedad', icon: Clock }
     ]
   },
   {

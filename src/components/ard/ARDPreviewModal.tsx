@@ -1,8 +1,13 @@
 import React from 'react';
 import { X, FileText, Info, DollarSign, Calendar, Tag, ShieldCheck, Activity } from 'lucide-react';
 
+import { ARDDocument } from '../../modules/ard/ARD.types';
+
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { ARDPDFReport } from './ARDPDFReport';
+
 interface ARDPreviewModalProps {
-    document: any;
+    document: ARDDocument;
     onClose: () => void;
 }
 
@@ -110,19 +115,19 @@ export const ARDPreviewModal: React.FC<ARDPreviewModalProps> = ({ document, onCl
                             <div className="p-6 bg-black/40 rounded-3xl border border-white/5 font-mono text-[10px] text-indigo-300 leading-relaxed max-h-48 overflow-y-auto custom-scrollbar">
                                 <div className="flex flex-col gap-2">
                                     <div className="flex justify-between border-b border-white/5 pb-1">
-                                        <span className="opacity-50 text-white">VENDOR_NAME</span>
-                                        <span>{analysis.vendor || 'DETECTING...'}</span>
+                                        <span className="opacity-50 text-white">NOMBRE_VENDEDOR</span>
+                                        <span>{analysis.vendor || 'DETECTANDO...'}</span>
                                     </div>
                                     <div className="flex justify-between border-b border-white/5 pb-1">
-                                        <span className="opacity-50 text-white">CONFIDENCE_SCORE</span>
+                                        <span className="opacity-50 text-white">PUNTAJE_CONFIANZA</span>
                                         <span>98.42%</span>
                                     </div>
                                     <div className="flex justify-between border-b border-white/5 pb-1">
-                                        <span className="opacity-50 text-white">FORENSIC_HASH</span>
+                                        <span className="opacity-50 text-white">HASH_FORENSE</span>
                                         <span className="truncate max-w-[120px] uppercase">{document.id}</span>
                                     </div>
                                     <div className="flex justify-between border-b border-white/5 pb-1">
-                                        <span className="opacity-50 text-white">OCR_ENGINE</span>
+                                        <span className="opacity-50 text-white">MOTOR_OCR</span>
                                         <span>LEO_V24_ELITE</span>
                                     </div>
                                 </div>
@@ -130,7 +135,15 @@ export const ARDPreviewModal: React.FC<ARDPreviewModalProps> = ({ document, onCl
                         </div>
                     </div>
 
-                    <div className="p-8 bg-white/[0.02] border-t border-white/5">
+                    <div className="p-8 bg-white/[0.02] border-t border-white/5 flex flex-col gap-3">
+                        <PDFDownloadLink
+                            document={<ARDPDFReport document={document} />}
+                            fileName={`Reporte_ARD_${document.id}.pdf`}
+                            className="w-full py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-black text-xs uppercase tracking-widest transition-all border border-white/10 flex items-center justify-center gap-2"
+                        >
+                            {({ loading }) => (loading ? 'Preparando PDF...' : <><Activity className="w-4 h-4 text-indigo-400" /> Descargar Reporte PDF</>)}
+                        </PDFDownloadLink>
+
                         <button
                             onClick={onClose}
                             className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-900/40"
