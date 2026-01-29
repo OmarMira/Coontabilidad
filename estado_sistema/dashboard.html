@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Express - Dashboard de Verdad Única</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .metric-sub {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .status-danger {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            color: var(--text-secondary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #334155;
+            border-radius: 9999px;
+            height: 1rem;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--success));
+            transition: width 0.5s ease-in-out;
+        }
+
+        .refresh-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        #last-updated {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Account Express</h1>
+            <div class="subtitle">Estado del Sistema en Tiempo Real</div>
+            <div id="last-updated">Cargando...</div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">Progreso Total</div>
+                <div class="metric" id="progress-text">--%</div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Estado del Build</div>
+                <div id="build-status">--</div>
+                <div class="metric-sub" id="build-time">Tiempo: --</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Calidad & Bugs</div>
+                <div class="metric" id="active-bugs">--</div>
+                <div class="metric-sub">Bugs Activos</div>
+                <div style="margin-top: 0.5rem;">Florida Compliance: <span id="florida-score">--</span>%</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top: 0;">Problemas Conocidos</h2>
+            <table id="issues-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Descripción</th>
+                        <th>Componente</th>
+                        <th>Prioridad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="4">Cargando datos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // Intenta cargar el JSON. Nota: Esto requiere que el archivo se sirva vía un servidor local
+                // o que el navegador permita acceso a archivos locales (lo cual es raro por default).
+                const response = await fetch('VERDAD_ÚNICA.json');
+                if (!response.ok) throw new Error("No se pudo cargar VERDAD_ÚNICA.json");
+
+                const data = await response.json();
+                render(data);
+            } catch (error) {
+                console.error(error);
+                // Fallback para demo si falla la carga (ej. CORS local)
+                document.getElementById('last-updated').innerText = "Error cargando JSON. Asegúrate de usar un servidor local (Live Server).";
+            }
+        }
+
+        function render(data) {
+            document.getElementById('last-updated').innerText = `Última actualización: ${new Date(data.ultima_actualizacion).toLocaleString()}`;
+
+            // Stats
+            document.getElementById('progress-text').innerText = `${data.estado_sistema.porcentaje_completado}%`;
+            document.getElementById('progress-bar').style.width = `${data.estado_sistema.porcentaje_completado}%`;
+
+            const buildStatus = document.getElementById('build-status');
+            const status = data.estado_sistema.build_status;
+            buildStatus.innerHTML = `<span class="status-badge ${status === 'exitoso' ? 'status-success' : 'status-danger'}">${status.toUpperCase()}</span>`;
+            document.getElementById('build-time').innerText = `Tiempo: ${data.estado_sistema.last_build_time}`;
+
+            document.getElementById('active-bugs').innerText = data.calidad.bugs_activos;
+            document.getElementById('florida-score').innerText = data.calidad.florida_compliance;
+
+            // Tabla
+            const tbody = document.querySelector('#issues-table tbody');
+            tbody.innerHTML = '';
+
+            data.problemas_conocidos.forEach(issue => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><code>${issue.id}</code></td>
+                    <td>${issue.descripcion}</td>
+                    <td><code>${issue.componente}</code></td>
+                    <td><span style="color: ${issue.prioridad === 'alta' ? 'var(--danger)' : 'var(--warning)'}">● ${issue.prioridad.toUpperCase()}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>
