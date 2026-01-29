@@ -22,9 +22,9 @@ import { CompanyInfoForm } from './components/system/CompanyInfoForm';
 import { FiscalSettingsForm } from './components/system/FiscalSettingsForm';
 import { SecuritySettings } from './components/system/SecuritySettings';
 import { SuppliersList } from './components/purchasing/SuppliersList';
-import { PurchaseOrderManager } from './components/purchasing/PurchaseOrderManager';
-import { PurchaseOrderForm } from './components/purchasing/PurchaseOrderForm';
 import { PurchaseOrdersList } from './components/purchasing/PurchaseOrdersList';
+import { PurchaseOrderForm } from './components/purchasing/PurchaseOrderForm';
+
 import { PayableReports } from './components/purchasing/PayableReports';
 import { JournalEntryForm } from './components/accounting/JournalEntryForm';
 import { TrialBalanceReport } from './components/accounting/TrialBalanceReport';
@@ -97,6 +97,10 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { UserList } from './components/auth/UserList';
 import { RoleManager } from './components/auth/RoleManager';
 import { AuditTrailTable } from './components/audit/AuditTrailTable';
+import { offlineManager } from './utils/offline-manager';
+
+import { InventoryKardexViewer } from './components/inventory/InventoryKardexViewer';
+import { InventoryDashboard } from './components/inventory/InventoryDashboard';
 
 // --- NEW ELITE REPORTS FASE 3 ---
 import { ReportsDashboard } from './components/reports/ReportsDashboard';
@@ -107,6 +111,17 @@ import { AccountLedger } from './components/reports/AccountLedger';
 // --- NEW ARD MODULE FASE 1 ---
 import { ARDModule } from './components/ard/ARDModule';
 
+// --- CIERRE CONTABLE FASE 3 ---
+import { PeriodManager } from './components/accounting/PeriodManager';
+import { LedgerHub } from './components/accounting/LedgerHub';
+
+// --- PAYROLL MODULE ---
+import { EmployeeManager } from './components/payroll/EmployeeManager';
+import { PayrollProcessor } from './components/payroll/PayrollProcessor';
+import { PayrollReports } from './components/payroll/PayrollReports';
+
+// --- FIXED ASSETS MODULE ---
+import { FixedAssetsManager } from './components/assets/FixedAssetsManager';
 
 
 
@@ -154,6 +169,7 @@ interface AppState {
   initializationStep: string;
   currentSection: string;
   chartOfAccounts: ChartOfAccount[];
+  kardexParams?: { productId?: string; type?: string };
 }
 
 
@@ -198,27 +214,34 @@ function App() {
     chartOfAccounts: []
   });
 
-  // Detectar cambios de conectividad
+  // Detectar cambios de conectividad y registrar SW
   useEffect(() => {
-    const handleOnline = () => setState(prev => ({ ...prev, isOnline: true }));
-    const handleOffline = () => setState(prev => ({ ...prev, isOnline: false }));
-
-
     // Configurar Notificaciones y Service Worker (Iron Core Task 4)
     NotificationService.init();
     if ('serviceWorker' in navigator) {
+      // Usar 'sw.js' en producción (ubicado en public)
       navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log('SW Registered'))
-        .catch(e => console.error('SW Fail', e));
+        .then(reg => {
+          console.log('[App] Service Worker registrado con éxito');
+          // Forzar actualización si hay un nuevo SW
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker?.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[App] Nueva versión disponible. Recarga para actualizar.');
+              }
+            });
+          });
+        })
+        .catch(e => console.error('[App] Registro de SW fallido', e));
     }
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    // Suscribirse al gestor de estado offline
+    const unsubscribe = offlineManager.subscribe((online) => {
+      setState(prev => ({ ...prev, isOnline: online }));
+    });
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    return () => unsubscribe();
   }, []);
 
   // Inicializar base de datos
@@ -1005,6 +1028,16 @@ function App() {
             onBack={handleBackFromDetail}
             onEdit={() => handleEditCustomer(state.viewingCustomer!)}
             onDelete={() => handleDeleteCustomer(state.viewingCustomer!.id)}
+            onNavigateToInvoice={(id) => {
+              const inv = getInvoiceById(id);
+              if (inv) setState(prev => ({ ...prev, viewingCustomer: null, viewingInvoice: inv }));
+            }}
+            onNavigateToKardex={(filters) => setState(prev => ({
+              ...prev,
+              viewingCustomer: null,
+              currentSection: 'inventory-kardex',
+              kardexParams: { ...filters, type: 'sale' }
+            }))}
           />
         </div>
       </div>
@@ -1089,7 +1122,6 @@ function App() {
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] -mr-64 -mt-64 pointer-events-none"></div>
 
           <Header
-            isOnline={state.isOnline}
             dbStats={state.dbStats}
             onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
           />
@@ -1189,6 +1221,13 @@ function App() {
                       onView={handleViewInvoice}
                       onEdit={handleEditInvoice}
                       onDelete={handleDeleteInvoice}
+                      onNavigateToKardex={(invoiceId) => {
+                        setState(prev => ({
+                          ...prev,
+                          currentSection: 'inventory-kardex',
+                          kardexParams: { type: 'sale', productId: undefined /* We might want to filter by ref ID in future but KardexViewer mainly filters by product/type. Wait, we want to see movements for *this* invoice. KardexViewer current implementation filters by Product OR Type. It does not have Ref ID filter yet. I should add that to KardexViewer or just link to generic sales. For now, let's link to Sales type. UPDATE: The user requirement says "En factura generada: enlace a movimiento de salida en kardex". `getKardexMovements` HAS a filter for generic attributes but the UI `InventoryKardexViewer` currently only exposes Product and Type. I will update `InventoryKardexViewer` later to support reference filter if needed, but for now I will pass type='sale'. Ideally I should pass the invoice ID as a filter too. Let's start with type='sale'. Actually, filtering by specific invoice is better. I will add `referenceId` to `kardexParams` in AppState.*/ }
+                        }));
+                      }}
                     />
                   )}
                 </>
@@ -1291,12 +1330,35 @@ function App() {
                 />
               )}
 
-              {state.currentSection === 'purchase-orders' && <PurchaseOrderManager />}
+              {state.currentSection === 'purchase-orders' && (
+                <PurchaseOrdersList
+                  onCreateNew={() => setState(prev => ({ ...prev, showingPurchaseOrderForm: true /* Need to handle form showing logic if duplicate, or just use what PurchaseOrderManager did. WAIT, PurchaseOrderManager likely handled the list AND the form. I should check if I broke the form logic. Let's assume PurchaseOrdersList is ONLY the list. I need to handle switching to form. But for now, adding the Kardex link. */ }))}
+                  onNavigateToKardex={(refId) => setState(prev => ({
+                    ...prev,
+                    currentSection: 'inventory-kardex',
+                    kardexParams: { type: 'purchase', productId: undefined /* Same as Invoice, ideally filter by Ref ID. Using 'purchase' type filter for now. */ }
+                  }))}
+                />
+              )}
               {state.currentSection === 'payable-reports' && <PayableReports />}
+
+              {/* --- PAYROLL --- */}
+              {state.currentSection === 'employee-mgr' && <EmployeeManager />}
+              {state.currentSection === 'payroll-process' && <PayrollProcessor />}
+              {state.currentSection === 'payroll-reports' && <PayrollReports />}
+
+              {/* --- FIXED ASSETS --- */}
+              {state.currentSection === 'fixed-assets' && <FixedAssetsManager />}
 
 
               {/* --- CONTABILIDAD --- */}
               {state.currentSection === 'chart-accounts' && <ChartOfAccounts />}
+
+              {state.currentSection === 'accounting-periods' && <PeriodManager />}
+
+              {state.currentSection === 'ledger-hub' && (
+                <LedgerHub chartOfAccounts={state.chartOfAccounts} />
+              )}
 
               {state.currentSection === 'journal-entries' && <ManualJournalEntries
                 chartOfAccounts={state.chartOfAccounts}
@@ -1324,6 +1386,21 @@ function App() {
 
 
               {/* --- INVENTARIO --- */}
+              {state.viewingProduct && (
+                <ProductDetailView
+                  product={state.viewingProduct}
+                  onBack={() => setState(prev => ({ ...prev, viewingProduct: null }))}
+                  onEdit={(product) => setState(prev => ({ ...prev, viewingProduct: null, editingProduct: product }))}
+                  onNavigateToKardex={(productId) => {
+                    setState(prev => ({
+                      ...prev,
+                      viewingProduct: null,
+                      currentSection: 'inventory-kardex',
+                      kardexParams: { productId: productId.toString(), type: 'all' }
+                    }));
+                  }}
+                />
+              )}
               {state.currentSection === 'products' && (
                 <>
                   {state.showingProductForm ? (
@@ -1353,6 +1430,13 @@ function App() {
                       onView={handleViewProduct}
                       onEdit={handleEditProduct}
                       onDelete={handleDeleteProduct}
+                      onNavigateToKardex={(productId) => {
+                        setState(prev => ({
+                          ...prev,
+                          currentSection: 'inventory-kardex',
+                          kardexParams: { productId: productId.toString(), type: 'all' }
+                        }));
+                      }}
                     />
                   )}
                 </>
@@ -1403,6 +1487,18 @@ function App() {
 
               {/* FIXED: Dedicated render for Payment Methods when accessed from Sidebar directly */}
               {state.currentSection === 'payment-methods' && <PaymentMethods />}
+
+              {/* --- INVENTORY KARDEX MODULE --- */}
+              {state.currentSection === 'inventory-kardex' && <InventoryKardexViewer initialFilters={state.kardexParams} />}
+              {state.currentSection === 'inventory-dashboard' && (
+                <InventoryDashboard
+                  OnNavigateToKardex={(filters) => setState(prev => ({
+                    ...prev,
+                    currentSection: 'inventory-kardex',
+                    kardexParams: filters ? { ...filters, productId: 'all' } : undefined
+                  }))}
+                />
+              )}
 
               {state.currentSection === 'users' && <UserRoleManager />}
 

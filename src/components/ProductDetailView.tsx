@@ -1,13 +1,13 @@
 import React from 'react';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Package, 
-  DollarSign, 
-  Tag, 
-  Truck, 
-  BarChart3, 
-  AlertTriangle, 
+import {
+  ArrowLeft,
+  Edit,
+  Package,
+  DollarSign,
+  Tag,
+  Truck,
+  BarChart3,
+  AlertTriangle,
   CheckCircle,
   Hash,
   Calendar,
@@ -21,12 +21,14 @@ interface ProductDetailViewProps {
   product: Product;
   onBack: () => void;
   onEdit: (product: Product) => void;
+  onNavigateToKardex?: (productId: number) => void;
 }
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   product,
   onBack,
-  onEdit
+  onEdit,
+  onNavigateToKardex
 }) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -47,7 +49,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
   const getStockStatus = () => {
     if (product.is_service) return null;
-    
+
     if (product.stock_quantity === 0) {
       return { status: 'out', label: 'Sin Stock', color: 'text-red-400', bgColor: 'bg-red-900/20', icon: AlertTriangle };
     } else if (product.stock_quantity <= product.reorder_point) {
@@ -75,13 +77,24 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             <p className="text-gray-400">SKU: {product.sku}</p>
           </div>
         </div>
-        <button
-          onClick={() => onEdit(product)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-        >
-          <Edit className="w-4 h-4" />
-          <span>Editar</span>
-        </button>
+        <div className="flex gap-2">
+          {onNavigateToKardex && !product.is_service && (
+            <button
+              onClick={() => onNavigateToKardex(product.id)}
+              className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors border border-slate-600"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Ver Kardex</span>
+            </button>
+          )}
+          <button
+            onClick={() => onEdit(product)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Editar</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -93,7 +106,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               <Package className="w-5 h-5 mr-2" />
               Información Básica
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Tipo</label>
@@ -154,7 +167,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               <DollarSign className="w-5 h-5 mr-2" />
               Precios
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Precio de Venta</label>
@@ -202,7 +215,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 <BarChart3 className="w-5 h-5 mr-2" />
                 Inventario
               </h2>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <p className="text-sm text-gray-400">Stock Actual</p>
@@ -282,11 +295,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 <Clock className="w-5 h-5 mr-2" />
                 Información del Servicio
               </h2>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Duración</label>
                 <p className="text-white">
-                  {product.service_duration} minutos 
+                  {product.service_duration} minutos
                   {product.service_duration >= 60 && (
                     <span className="text-gray-400 ml-2">
                       ({Math.floor(product.service_duration / 60)}h {product.service_duration % 60}m)
@@ -335,7 +348,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               <Calendar className="w-5 h-5 mr-2" />
               Información del Sistema
             </h3>
-            
+
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Creado</label>

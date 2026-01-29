@@ -7,5 +7,8 @@ export const PurchaseOrderManager: React.FC = () => {
 
     return view === 'list'
         ? <PurchaseOrdersList onCreateNew={() => setView('create')} />
-        : <PurchaseOrderForm />; // Add onCancel prop if Form supports it, currently it doesn't have props
+        : <PurchaseOrderForm
+            onCancel={() => setView('list')}
+            onSuccess={() => setView('list')}
+        />;
 };

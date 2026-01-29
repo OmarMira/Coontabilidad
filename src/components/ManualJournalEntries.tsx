@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Calculator, Save, X, AlertCircle, CheckCircle, FileText, Calendar } from 'lucide-react';
-import { ChartOfAccount } from '../database/simple-db';
+import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '../database/simple-db';
+import { toast } from 'react-hot-toast';
 
 interface JournalEntryLine {
   id: string;
@@ -55,9 +56,28 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
   }, [currentEntry.lines]);
 
   const loadJournalEntries = () => {
-    // En una implementación real, esto vendría de la base de datos
-    const mockEntries: ManualJournalEntry[] = [];
-    setEntries(mockEntries);
+    try {
+      const dbEntries = getJournalEntries(100);
+
+      // Mapear de JournalEntry (DB) a ManualJournalEntry (UI) si es necesario
+      // O simplemente usar el tipo de la DB. Para este componente, las entries listadas
+      // son para visualización.
+      const mappedEntries: ManualJournalEntry[] = dbEntries.map(entry => ({
+        id: entry.id,
+        date: entry.entry_date,
+        reference: entry.reference || entry.reference_number || '',
+        description: entry.description,
+        total_debits: entry.total_debit,
+        total_credits: entry.total_credit,
+        is_balanced: entry.is_balanced,
+        lines: [] // Las líneas se cargarían bajo demanda si fuera necesario, o por ahora vacías en la lista
+      }));
+
+      setEntries(mappedEntries);
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      toast.error('Error al cargar asientos contables');
+    }
   };
 
   const calculateTotals = () => {
@@ -96,7 +116,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
       lines: prev.lines.map(line => {
         if (line.id === lineId) {
           const updatedLine = { ...line, [field]: value };
-          
+
           // Si se selecciona una cuenta, actualizar código y nombre
           if (field === 'account_id') {
             const account = chartOfAccounts.find(acc => acc.id === parseInt(value));
@@ -105,14 +125,14 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
               updatedLine.account_name = account.account_name;
             }
           }
-          
+
           // Si se actualiza débito, limpiar crédito y viceversa
           if (field === 'debit' && parseFloat(value) > 0) {
             updatedLine.credit = 0;
           } else if (field === 'credit' && parseFloat(value) > 0) {
             updatedLine.debit = 0;
           }
-          
+
           return updatedLine;
         }
         return line;
@@ -166,7 +186,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const errors = validateEntry();
     if (errors.length > 0) {
       alert('Errores en el asiento:\n' + errors.join('\n'));
@@ -175,22 +195,37 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
     setIsLoading(true);
     try {
-      const entryToSave: ManualJournalEntry = {
-        ...currentEntry,
-        id: Date.now(),
-        created_at: new Date().toISOString()
+      // Mapear líneas de UI a JournalDetail de DB
+      const details: Partial<JournalDetail>[] = currentEntry.lines.map(line => ({
+        account_code: line.account_code,
+        debit_amount: line.debit,
+        credit_amount: line.credit,
+        description: line.description
+      }));
+
+      const entryData: Partial<JournalEntry> = {
+        entry_date: currentEntry.date,
+        reference: currentEntry.reference,
+        description: currentEntry.description,
+        total_debit: currentEntry.total_debits,
+        total_credit: currentEntry.total_credits,
+        is_balanced: true
       };
 
-      // Aquí iría la lógica para guardar en la base de datos
-      // await createJournalEntry(entryToSave);
+      const result = createJournalEntry(entryData, details);
 
-      setEntries(prev => [...prev, entryToSave]);
-      setShowEntryForm(false);
-      resetForm();
-      onEntryCreated();
-    } catch (error) {
+      if (result.success) {
+        toast.success(result.message);
+        loadJournalEntries();
+        setShowEntryForm(false);
+        resetForm();
+        onEntryCreated();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
       console.error('Error creating journal entry:', error);
-      alert('Error al crear el asiento contable');
+      toast.error('Error al crear el asiento contable: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -210,9 +245,9 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
   const getBalanceIndicator = () => {
     if (currentEntry.lines.length === 0) return null;
-    
+
     const difference = Math.abs(currentEntry.total_debits - currentEntry.total_credits);
-    
+
     if (currentEntry.is_balanced) {
       return (
         <div className="flex items-center text-green-600">
@@ -254,7 +289,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         <div className="px-6 py-4 border-b border-gray-700">
           <h3 className="text-lg font-medium text-white">Asientos Registrados</h3>
         </div>
-        
+
         {entries.length === 0 ? (
           <div className="text-center py-8">
             <FileText className="mx-auto h-12 w-12 text-gray-400" />

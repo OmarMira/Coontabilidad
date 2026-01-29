@@ -17,7 +17,7 @@ import {
     Calendar,
     Download
 } from 'lucide-react';
-import { InventoryMovements } from './InventoryMovements';
+import { InventoryKardexViewer } from './InventoryKardexViewer';
 import { db } from '../../database/simple-db';
 
 interface ProductData {
@@ -151,7 +151,7 @@ export const InventoryReports: React.FC = () => {
                     </div>
                 </div>
                 <PrintHeader title="Historial de Movimientos de Inventario" subtitle="Detalle cronológico de entradas y salidas de almacén" />
-                <InventoryMovements />
+                <InventoryKardexViewer />
             </div>
         );
     }

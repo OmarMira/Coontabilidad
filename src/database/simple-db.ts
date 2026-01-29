@@ -12,6 +12,923 @@ let db: initSqlJs.Database | null = null;
 
 // Exportar la instancia de db para acceso externo
 export { db };
+
+// ==========================================
+// DASHBOARD & ANALYTICS
+// ==========================================
+
+export interface MonthlySummary {
+  month: string;
+  revenue: number;
+  expenses: number;
+}
+
+// ------------------------------------------
+// PROY ROLL (NOMINA) DATA TYPES
+// ------------------------------------------
+
+export interface Employee {
+  id: number;
+  employee_number: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  hire_date: string;
+  department?: string;
+  position?: string;
+  salary_type: 'monthly' | 'hourly';
+  salary_rate: number;
+  status: 'active' | 'inactive' | 'on_leave';
+  florida_county?: string;
+}
+
+export interface PayrollPeriod {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  pay_date: string;
+  status: 'open' | 'processing' | 'closed' | 'cancelled';
+  total_gross: number;
+  total_net: number;
+}
+
+export interface PayrollEntry {
+  id: number;
+  employee_id: number;
+  period_id: number;
+  journal_entry_id?: number;
+  gross_amount: number;
+  deductions_amount: number;
+  net_amount: number;
+  status: 'draft' | 'verified' | 'paid';
+  notes?: string;
+}
+
+export interface PayrollLineItem {
+  id: number;
+  payroll_entry_id: number;
+  type: 'earning' | 'deduction';
+  category: string;
+  description: string;
+  amount: number;
+}
+
+export interface PayrollSetting {
+  id: number;
+  setting_key: string;
+  setting_value: string;
+  category: string;
+  description?: string;
+}
+
+export interface TaxBracket {
+  id?: number;
+  min_income: number;
+  max_income?: number;
+  fixed_amount: number;
+  percentage: number;
+  type?: 'monthly' | 'annual';
+}
+
+// =============================================
+// INTERFACES DE ACTIVOS FIJOS (FIXED ASSETS)
+// =============================================
+
+export interface AssetCategory {
+  id?: number;
+  name: string;
+  description?: string;
+  default_useful_life_years?: number;
+  default_depreciation_rate?: number;
+  account_code?: string;
+  depreciation_expense_account?: string;
+  accumulated_depreciation_account?: string;
+  is_active?: number;
+  created_at?: string;
+}
+
+export interface FixedAsset {
+  id?: number;
+  asset_code: string;
+  name: string;
+  description?: string;
+  category_id: number;
+  acquisition_date: string;
+  acquisition_cost: number;
+  useful_life_years: number;
+  useful_life_months: number;
+  depreciation_method: 'straight_line' | 'declining_balance' | 'units_of_production';
+  salvage_value?: number;
+  current_value?: number;
+  accumulated_depreciation?: number;
+  status: 'active' | 'disposed' | 'fully_depreciated' | 'under_maintenance';
+  location?: string;
+  serial_number?: string;
+  manufacturer?: string;
+  model?: string;
+  purchase_order?: string;
+  supplier_id?: number;
+  warranty_expiration?: string;
+  notes?: string;
+  disposal_date?: string;
+  disposal_value?: number;
+  disposal_reason?: string;
+  created_at?: string;
+  created_by?: number;
+  updated_at?: string;
+}
+
+export interface AssetDepreciation {
+  id?: number;
+  asset_id: number;
+  period_date: string;
+  depreciation_amount: number;
+  accumulated_depreciation: number;
+  net_book_value: number;
+  journal_entry_id?: number;
+  is_posted?: number;
+  created_at?: string;
+}
+
+/**
+ * Obtiene un resumen mensual de ingresos y gastos para el Dashboard
+ */
+export function getMonthlyFinancialSummary(): MonthlySummary[] {
+  if (!db) return [];
+  try {
+    const currentYear = new Date().getFullYear();
+    const res = db.exec(`
+      SELECT 
+        strftime('%m', entry_date) as month,
+        SUM(total_debit) as revenue
+      FROM journal_entries
+      WHERE strftime('%Y', entry_date) = ? AND description LIKE '%Venta%'
+      GROUP BY month
+      ORDER BY month ASC
+    `, [currentYear.toString()]);
+
+    const expenseRes = db.exec(`
+      SELECT 
+        strftime('%m', entry_date) as month,
+        SUM(total_debit) as expenses
+      FROM journal_entries
+      WHERE strftime('%Y', entry_date) = ? AND description LIKE '%Compra%'
+      GROUP BY month
+      ORDER BY month ASC
+    `, [currentYear.toString()]);
+
+    // Mapear meses 01-12
+    const summary: Record<string, MonthlySummary> = {};
+    for (let i = 1; i <= 12; i++) {
+      const m = i.toString().padStart(2, '0');
+      summary[m] = { month: m, revenue: 0, expenses: 0 };
+    }
+
+    if (res.length > 0) {
+      res[0].values.forEach(row => {
+        const m = row[0] as string;
+        summary[m].revenue = row[1] as number;
+      });
+    }
+
+    if (expenseRes.length > 0) {
+      expenseRes[0].values.forEach(row => {
+        const m = row[0] as string;
+        summary[m].expenses = row[1] as number;
+      });
+    }
+
+    return Object.values(summary);
+  } catch (e) {
+    console.error('Error fetching monthly summary:', e);
+    return [];
+  }
+}
+
+// ==========================================
+// EMPLOYEES & PAYROLL
+// ==========================================
+
+export function getEmployees(): Employee[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM employees ORDER BY last_name, first_name");
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<Employee>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching employees:', e);
+    return [];
+  }
+}
+
+export function createEmployee(empData: Partial<Employee>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO employees (
+        employee_number, first_name, last_name, email, phone, 
+        hire_date, department, position, salary_type, salary_rate, status, florida_county
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      (empData.employee_number || `EMP-${Date.now()}`) as string,
+      (empData.first_name || '') as string,
+      (empData.last_name || '') as string,
+      (empData.email || null) as string | null,
+      (empData.phone || null) as string | null,
+      (empData.hire_date || new Date().toISOString().split('T')[0]) as string,
+      (empData.department || null) as string | null,
+      (empData.position || null) as string | null,
+      (empData.salary_type || 'monthly') as string,
+      (empData.salary_rate || 0) as number,
+      (empData.status || 'active') as string,
+      (empData.florida_county || 'Miami-Dade') as string
+    ]);
+
+    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+    stmt.free();
+
+    return { success: true, message: 'Empleado registrado con éxito', id };
+  } catch (e: any) {
+    console.error('Error creating employee:', e);
+    return { success: false, message: e.message };
+  }
+}
+
+export function updateEmployee(id: number, empData: Partial<Employee>): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    db.run(`
+      UPDATE employees SET 
+        first_name = ?, last_name = ?, email = ?, phone = ?, 
+        department = ?, position = ?, salary_type = ?, salary_rate = ?, 
+        status = ?, florida_county = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      (empData.first_name || '') as string,
+      (empData.last_name || '') as string,
+      (empData.email || null) as string | null,
+      (empData.phone || null) as string | null,
+      (empData.department || null) as string | null,
+      (empData.position || null) as string | null,
+      (empData.salary_type || 'monthly') as string,
+      (empData.salary_rate || 0) as number,
+      (empData.status || 'active') as string,
+      (empData.florida_county || 'Miami-Dade') as string,
+      id
+    ]);
+    return { success: true, message: 'Empleado actualizado con éxito' };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+export function getPayrollPeriods(): PayrollPeriod[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM payroll_periods ORDER BY start_date DESC");
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<PayrollPeriod>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching payroll periods:', e);
+    return [];
+  }
+}
+
+export function getPayrollSettings(): PayrollSetting[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM payroll_settings");
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<PayrollSetting>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching payroll settings:', e);
+    return [];
+  }
+}
+
+export function updatePayrollSetting(key: string, value: string): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    db.run("UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?", [value, key]);
+    return { success: true, message: 'Configuración actualizada' };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+export function getTaxBrackets(): TaxBracket[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM tax_brackets ORDER BY min_income ASC");
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<TaxBracket>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching tax brackets:', e);
+    return [];
+  }
+}
+
+/**
+ * Crea un nuevo rango de impuesto (Tax Bracket)
+ */
+export function createTaxBracket(bracket: Partial<TaxBracket>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Validaciones básicas
+    if (bracket.min_income === undefined || bracket.min_income < 0) {
+      return { success: false, message: 'Ingreso mínimo inválido' };
+    }
+    if (bracket.fixed_amount === undefined || bracket.fixed_amount < 0) {
+      return { success: false, message: 'Cuota fija inválida' };
+    }
+    if (bracket.percentage === undefined || bracket.percentage < 0 || bracket.percentage > 1) {
+      return { success: false, message: 'Porcentaje debe estar entre 0 y 100' };
+    }
+
+    // Validar que no existan rangos solapados
+    const existing = getTaxBrackets();
+    for (const ex of existing) {
+      const newMin = bracket.min_income;
+      const newMax = bracket.max_income || Infinity;
+      const exMin = ex.min_income;
+      const exMax = ex.max_income || Infinity;
+
+      // Detectar solapamiento
+      if (
+        (newMin >= exMin && newMin < exMax) ||
+        (newMax > exMin && newMax <= exMax) ||
+        (newMin <= exMin && newMax >= exMax)
+      ) {
+        return { success: false, message: `Rango solapa con rango existente: $${exMin} - ${exMax === Infinity ? 'En adelante' : '$' + exMax}` };
+      }
+    }
+
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO tax_brackets (min_income, max_income, fixed_amount, percentage)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      bracket.min_income,
+      bracket.max_income || null,
+      bracket.fixed_amount,
+      bracket.percentage
+    ]);
+    stmt.free();
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const bracketId = result[0]?.values[0]?.[0] as number;
+
+    db.run('COMMIT');
+
+    return { success: true, message: 'Rango de impuesto creado', id: bracketId };
+  } catch (e: any) {
+    db?.run('ROLLBACK');
+    console.error('Error creating tax bracket:', e);
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Actualiza un rango de impuesto existente
+ */
+export function updateTaxBracket(id: number, bracket: Partial<TaxBracket>): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run(`
+      UPDATE tax_brackets 
+      SET min_income = ?, max_income = ?, fixed_amount = ?, percentage = ?
+      WHERE id = ?
+    `, [
+      bracket.min_income ?? 0,
+      bracket.max_income ?? null,
+      bracket.fixed_amount ?? 0,
+      bracket.percentage ?? 0,
+      id
+    ]);
+
+    return { success: true, message: 'Rango actualizado' };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Elimina un rango de impuesto
+ */
+export function deleteTaxBracket(id: number): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('DELETE FROM tax_brackets WHERE id = ?', [id]);
+    return { success: true, message: 'Rango eliminado' };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+// =============================================
+// FUNCIONES DE ACTIVOS FIJOS (FIXED ASSETS)
+// =============================================
+
+/**
+ * Obtiene todas las categorías de activos
+ */
+export function getAssetCategories(): AssetCategory[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM asset_categories WHERE is_active = 1 ORDER BY name");
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<AssetCategory>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching asset categories:', e);
+    return [];
+  }
+}
+
+/**
+ * Crea una nueva categoría de activos
+ */
+export function createAssetCategory(category: Partial<AssetCategory>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  if (!category.name) return { success: false, message: 'El nombre de la categoría es requerido' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO asset_categories (name, description, default_useful_life_years, default_depreciation_rate, account_code, depreciation_expense_account, accumulated_depreciation_account)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      category.name as string,
+      category.description ?? null,
+      category.default_useful_life_years ?? null,
+      category.default_depreciation_rate ?? null,
+      category.account_code ?? null,
+      category.depreciation_expense_account ?? null,
+      category.accumulated_depreciation_account ?? null
+    ]);
+    stmt.free();
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const categoryId = result[0]?.values[0]?.[0] as number;
+
+    db.run('COMMIT');
+    return { success: true, message: 'Categoría creada', id: categoryId };
+  } catch (e: any) {
+    db?.run('ROLLBACK');
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Obtiene todos los activos fijos
+ */
+export function getFixedAssets(status?: string): FixedAsset[] {
+  if (!db) return [];
+  try {
+    let query = "SELECT * FROM fixed_assets";
+    if (status) {
+      query += ` WHERE status = '${status}'`;
+    }
+    query += " ORDER BY acquisition_date DESC";
+
+    const res = db.exec(query);
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<FixedAsset>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching fixed assets:', e);
+    return [];
+  }
+}
+
+/**
+ * Obtiene un activo por ID con información de categoría
+ */
+export function getFixedAssetById(id: number): FixedAsset | null {
+  if (!db) return null;
+  try {
+    const res = db.exec("SELECT * FROM fixed_assets WHERE id = ?", [id]);
+    if (res.length === 0 || res[0].values.length === 0) return null;
+    return rowToEntity<FixedAsset>(res[0].columns, res[0].values[0]);
+  } catch (e) {
+    console.error('Error fetching fixed asset:', e);
+    return null;
+  }
+}
+
+/**
+ * Crea un nuevo activo fijo
+ */
+export function createFixedAsset(asset: Partial<FixedAsset>, userId: number): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Val idaciones
+    if (!asset.name) return { success: false, message: 'El nombre es requerido' };
+    if (!asset.category_id) return { success: false, message: 'La categoría es requerida' };
+    if (!asset.acquisition_cost || asset.acquisition_cost <= 0) return { success: false, message: 'El costo de adquisición debe ser mayor a 0' };
+    if (!asset.acquisition_date) return { success: false, message: 'La fecha de adquisición es requerida' };
+
+    db.run('BEGIN TRANSACTION');
+
+    // Generar código automático si no existe
+    let assetCode = asset.asset_code;
+    if (!assetCode) {
+      const category = getAssetCategoryById(asset.category_id);
+      const prefix = category?.name?.substring(0, 3).toUpperCase() || 'AST';
+      const count = db.exec("SELECT COUNT(*) as count FROM fixed_assets")[0].values[0][0] as number;
+      assetCode = `${prefix}-${String(count + 1).padStart(5, '0')}`;
+    }
+
+    const usefulLifeMonths = (asset.useful_life_years || 0) * 12;
+
+    const stmt = db.prepare(`
+      INSERT INTO fixed_assets (
+        asset_code, name, description, category_id, acquisition_date, acquisition_cost,
+        useful_life_years, useful_life_months, depreciation_method, salvage_value,
+        current_value, accumulated_depreciation, status, location, serial_number,
+        manufacturer, model, purchase_order, supplier_id, warranty_expiration, notes,
+        created_by
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      assetCode as string,
+      asset.name as string,
+      asset.description ?? null,
+      asset.category_id as number,
+      asset.acquisition_date as string,
+      asset.acquisition_cost as number,
+      asset.useful_life_years ?? 0,
+      usefulLifeMonths,
+      asset.depreciation_method ?? 'straight_line',
+      asset.salvage_value ?? 0,
+      asset.acquisition_cost as number, // current_value inicialmente igual al costo
+      0, // accumulated_depreciation
+      asset.status ?? 'active',
+      asset.location ?? null,
+      asset.serial_number ?? null,
+      asset.manufacturer ?? null,
+      asset.model ?? null,
+      asset.purchase_order ?? null,
+      asset.supplier_id ?? null,
+      asset.warranty_expiration ?? null,
+      asset.notes ?? null,
+      userId
+    ]);
+    stmt.free();
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const assetId = result[0]?.values[0]?.[0] as number;
+
+    db.run('COMMIT');
+    return { success: true, message: `Activo fijo creado: ${assetCode}`, id: assetId };
+  } catch (e: any) {
+    db?.run('ROLLBACK');
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Actualiza un activo fijo
+ */
+export function updateFixedAsset(id: number, asset: Partial<FixedAsset>): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Get original asset for required fields
+    const originalAsset = getFixedAssetById(id);
+    if (!originalAsset) return { success: false, message: 'Activo no encontrado' };
+
+    db.run(`
+      UPDATE fixed_assets SET
+        name = ?, description = ?, category_id = ?, location = ?,
+        serial_number = ?, manufacturer = ?, model = ?, purchase_order = ?,
+        supplier_id = ?, warranty_expiration = ?, notes = ?, status = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      asset.name ?? originalAsset.name,
+      asset.description ?? null,
+      asset.category_id ?? originalAsset.category_id,
+      asset.location ?? null,
+      asset.serial_number ?? null,
+      asset.manufacturer ?? null,
+      asset.model ?? null,
+      asset.purchase_order ?? null,
+      asset.supplier_id ?? null,
+      asset.warranty_expiration ?? null,
+      asset.notes ?? null,
+      asset.status ?? 'active',
+      id
+    ]);
+
+    return { success: true, message: 'Activo actualizado' };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Registra la disposición (venta/baja) de un activo
+ */
+export function disposeAsset(
+  id: number,
+  disposalDate: string,
+  disposalValue: number,
+  disposalReason: string,
+  userId: number
+): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const asset = getFixedAssetById(id);
+    if (!asset) return { success: false, message: 'Activo no encontrado' };
+
+    db.run('BEGIN TRANSACTION');
+
+    // Actualizar activo
+    db.run(`
+      UPDATE fixed_assets SET
+        status = 'disposed',
+        disposal_date = ?,
+        disposal_value = ?,
+        disposal_reason = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [disposalDate, disposalValue, disposalReason, id]);
+
+    // Calcular ganancia/pérdida
+    const netBookValue = (asset.current_value || asset.acquisition_cost) - (asset.accumulated_depreciation || 0);
+    const gainLoss = disposalValue - netBookValue;
+
+    // TODO: Crear asiento contable de disposición
+    // Débito: Efectivo (disposalValue)
+    // Débito: Depreciación Acumulada (accumulated_depreciation)
+    // Débito/Crédito: Ganancia/Pérdida en venta
+    // Crédito: Activo Fijo (acquisition_cost)
+
+    db.run('COMMIT');
+    return {
+      success: true,
+      message: `Activo dado de baja. ${gainLoss >= 0 ? 'Ganancia' : 'Pérdida'}: $${Math.abs(gainLoss).toFixed(2)}`
+    };
+  } catch (e: any) {
+    db?.run('ROLLBACK');
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Obtiene el historial de depreciaciones de un activo
+ */
+export function getAssetDepreciations(assetId: number): AssetDepreciation[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM asset_depreciations WHERE asset_id = ? ORDER BY period_date DESC", [assetId]);
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<AssetDepreciation>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching asset depreciations:', e);
+    return [];
+  }
+}
+
+/**
+ * Registra una depreciación mensual
+ */
+export function recordDepreciation(depreciation: Partial<AssetDepreciation>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  // Validate required fields
+  if (!depreciation.asset_id) return { success: false, message: 'Asset ID requerido' };
+  if (!depreciation.period_date) return { success: false, message: 'Fecha del período requerida' };
+  if (depreciation.depreciation_amount == null) return { success: false, message: 'Monto de depreciación requerido' };
+  if (depreciation.accumulated_depreciation == null) return { success: false, message: 'Depreciación acumulada requerida' };
+  if (depreciation.net_book_value == null) return { success: false, message: 'Valor neto en libros requerido' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO asset_depreciations (asset_id, period_date, depreciation_amount, accumulated_depreciation, net_book_value, is_posted)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      depreciation.asset_id as number,
+      depreciation.period_date as string,
+      depreciation.depreciation_amount as number,
+      depreciation.accumulated_depreciation as number,
+      depreciation.net_book_value as number,
+      depreciation.is_posted ?? 0
+    ]);
+    stmt.free();
+
+    // Actualizar activo con nueva depreciación acumulada
+    db.run(`
+      UPDATE fixed_assets SET
+        accumulated_depreciation = ?,
+        current_value = ?
+      WHERE id = ?
+    `, [
+      depreciation.accumulated_depreciation as number,
+      depreciation.net_book_value as number,
+      depreciation.asset_id as number
+    ]);
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const depId = result[0]?.values[0]?.[0] as number;
+
+    db.run('COMMIT');
+    return { success: true, message: 'Depreciación registrada', id: depId };
+  } catch (e: any) {
+    db?.run('ROLLBACK');
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Calcula y registra la depreciación mensual de todos los activos activos
+ */
+export function calculateMonthlyDepreciation(periodDate: string, userId: number): { success: boolean; message: string; processed: number } {
+  if (!db) return { success: false, message: 'Database not initialized', processed: 0 };
+
+  try {
+    const assets = getFixedAssets('active');
+    let processed = 0;
+
+    for (const asset of assets) {
+      if (!asset.id) continue; // Skip assets without ID
+
+      // Verificar si ya existe depreciación para este período
+      const stmt = db.prepare("SELECT id FROM asset_depreciations WHERE asset_id = ? AND period_date = ?");
+      stmt.bind([asset.id as number, periodDate]);
+      const existing = stmt.step();
+      stmt.free();
+
+      if (existing) {
+        continue; // Ya existe, skip
+      }
+
+      // Calcular depreciación mensual (método lineal)
+      if (asset.depreciation_method === 'straight_line' && asset.useful_life_months > 0) {
+        const depreciableAmount = asset.acquisition_cost - (asset.salvage_value || 0);
+        const monthlyDepreciation = depreciableAmount / asset.useful_life_months;
+        const currentAccumulated = asset.accumulated_depreciation || 0;
+        const newAccumulated = currentAccumulated + monthlyDepreciation;
+        const netBookValue = asset.acquisition_cost - newAccumulated;
+
+        // No depreciar más allá del valor de salvamento
+        if (netBookValue >= (asset.salvage_value || 0)) {
+          recordDepreciation({
+            asset_id: asset.id!,
+            period_date: periodDate,
+            depreciation_amount: monthlyDepreciation,
+            accumulated_depreciation: newAccumulated,
+            net_book_value: netBookValue
+          });
+          processed++;
+        }
+      }
+    }
+
+    return { success: true, message: `Depreciación calculada para ${processed} activos`, processed };
+  } catch (e: any) {
+    return { success: false, message: e.message, processed: 0 };
+  }
+}
+
+/**
+ * Helper: Obtiene categoría por ID
+ */
+function getAssetCategoryById(id: number): AssetCategory | null {
+  if (!db) return null;
+  try {
+    const stmt = db.prepare("SELECT * FROM asset_categories WHERE id = ?");
+    stmt.bind([id]);
+    if (!stmt.step()) {
+      stmt.free();
+      return null;
+    }
+    const result = stmt.getAsObject() as unknown as AssetCategory;
+    stmt.free();
+    return result;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function createPayrollPeriod(period: Partial<PayrollPeriod>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO payroll_periods (name, start_date, end_date, pay_date, status, total_gross, total_net)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run([
+      (period.name || '') as string,
+      (period.start_date || '') as string,
+      (period.end_date || '') as string,
+      (period.pay_date || '') as string,
+      (period.status || 'open') as string,
+      (period.total_gross || 0) as number,
+      (period.total_net || 0) as number
+    ]);
+    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+    stmt.free();
+    return { success: true, message: 'Periodo creado con éxito', id };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_name: string })[] {
+  if (!db) return [];
+  try {
+    const res = db.exec(`
+      SELECT pe.*, (e.first_name || ' ' || e.last_name) as employee_name 
+      FROM payroll_entries pe
+      JOIN employees e ON pe.employee_id = e.id
+      WHERE pe.period_id = ?
+    `, [periodId]);
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<PayrollEntry & { employee_name: string }>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching payroll entries:', e);
+    return [];
+  }
+}
+
+export function createPayrollEntry(entry: Partial<PayrollEntry>, items: Partial<PayrollLineItem>[]): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    db.run("BEGIN TRANSACTION");
+
+    const stmt = db.prepare(`
+      INSERT INTO payroll_entries (employee_id, period_id, gross_amount, deductions_amount, net_amount, status, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run([
+      (entry.employee_id) as number,
+      (entry.period_id) as number,
+      (entry.gross_amount) as number,
+      (entry.deductions_amount || 0) as number,
+      (entry.net_amount) as number,
+      (entry.status || 'draft') as string,
+      (entry.notes || null) as string | null
+    ]);
+    const entryId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+    stmt.free();
+
+    const itemStmt = db.prepare(`
+      INSERT INTO payroll_line_items (payroll_entry_id, type, category, description, amount)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    for (const item of items) {
+      itemStmt.run([
+        entryId,
+        (item.type || 'earning') as string,
+        (item.category || '') as string,
+        (item.description || '') as string,
+        (item.amount || 0) as number
+      ]);
+    }
+    itemStmt.free();
+
+    db.run("COMMIT");
+    return { success: true, message: 'Nómina procesada para empleado', id: entryId };
+  } catch (e: any) {
+    db.run("ROLLBACK");
+    return { success: false, message: e.message };
+  }
+}
+
+export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM payroll_line_items WHERE payroll_entry_id = ?", [entryId]);
+    if (res.length === 0) return [];
+    return res[0].values.map(row => rowToEntity<PayrollLineItem>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching payroll line items:', e);
+    return [];
+  }
+}
+
 let isInitialized = false;
 let opfsRoot: FileSystemDirectoryHandle | null = null;
 let dbFile: FileSystemFileHandle | null = null;
@@ -24,6 +941,159 @@ const BACKUP_INTERVAL = 30000; // 30 segundos
 
 // Roles con privilegios de ver todos los datos (Admin, Contadores, Auditores)
 export const PRIVILEGED_ROLES = ['admin', 'contador', 'auditor', 'viewer', 'accountant'];
+
+/**
+ * Mapea una fila de base de datos a una entidad tipada
+ */
+function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
+  const entity = {} as Record<string, unknown>;
+  columns.forEach((col, index) => {
+    entity[col] = row[index];
+  });
+  return entity as unknown as T;
+}
+
+// ==========================================
+// INTERFACES PARA CIERRE CONTABLE
+// ==========================================
+
+export interface FiscalYear {
+  id?: number;
+  year: number;
+  start_date: string;
+  end_date: string;
+  status: 'open' | 'closed' | 'locked';
+  created_at?: string;
+}
+
+export interface AccountingPeriod {
+  id?: number;
+  fiscal_year_id: number;
+  month: number;
+  status: 'open' | 'closing' | 'closed' | 'locked';
+  start_date: string;
+  end_date: string;
+  closed_at?: string;
+  closed_by?: number;
+}
+
+// ==========================================
+// CIERRE CONTABLE Y PERIODOS (CORE)
+// ==========================================
+
+export function getFiscalYears(): FiscalYear[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM fiscal_years ORDER BY year DESC");
+    if (res.length > 0) {
+      return res[0].values.map(row => rowToEntity<FiscalYear>(res[0].columns, row));
+    }
+  } catch (e) { console.error(e); }
+  return [];
+}
+
+export function getAccountingPeriods(fiscalYearId: number): AccountingPeriod[] {
+  if (!db) return [];
+  try {
+    const res = db.exec("SELECT * FROM accounting_periods WHERE fiscal_year_id = ? ORDER BY month ASC", [fiscalYearId]);
+    if (res.length > 0) {
+      return res[0].values.map(row => rowToEntity<AccountingPeriod>(res[0].columns, row));
+    }
+  } catch (e) { console.error(e); }
+  return [];
+}
+
+/**
+ * Verifica si una fecha específica pertenece a un periodo contable cerrado o bloqueado.
+ */
+export function isDateLocked(dateStr: string): boolean {
+  if (!db) return false;
+  try {
+    const date = new Date(dateStr).toISOString().split('T')[0];
+    const res = db.exec(`
+      SELECT p.status 
+      FROM accounting_periods p
+      JOIN fiscal_years f ON p.fiscal_year_id = f.id
+      WHERE date(?) BETWEEN date(p.start_date) AND date(p.end_date)
+      AND (p.status IN ('closed', 'locked') OR f.status IN ('closed', 'locked'))
+    `, [date]);
+
+    return res.length > 0 && res[0].values.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Realiza el cierre de un periodo contable.
+ */
+export async function closePeriod(periodId: number, userId: number): Promise<{ success: boolean; message: string }> {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const periodRes = db.exec("SELECT * FROM accounting_periods WHERE id = ?", [periodId]);
+    if (periodRes.length === 0) return { success: false, message: 'Periodo no encontrado' };
+    const period = rowToEntity<AccountingPeriod>(periodRes[0].columns, periodRes[0].values[0]);
+
+    if (period.status === 'closed' || period.status === 'locked') {
+      return { success: false, message: 'El periodo ya está cerrado' };
+    }
+
+    const tb = db.exec(`
+      SELECT SUM(debit_amount) as total_debit, SUM(credit_amount) as total_credit
+      FROM journal_details jd
+      JOIN journal_entries je ON jd.journal_entry_id = je.id
+      WHERE date(je.entry_date) BETWEEN date(?) AND date(?)
+    `, [period.start_date, period.end_date]);
+
+    const totalDebit = tb[0]?.values[0]?.[0] as number || 0;
+    const totalCredit = tb[0]?.values[0]?.[1] as number || 0;
+
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      return { success: false, message: 'No se puede cerrar: El balance no cuadra (Diferencia: ' + (totalDebit - totalCredit).toFixed(2) + ')' };
+    }
+
+    db.run(`
+      UPDATE accounting_periods 
+      SET status = 'closed', closed_at = CURRENT_TIMESTAMP, closed_by = ?
+      WHERE id = ?
+    `, [userId, periodId]);
+
+    return { success: true, message: `Periodo ${period.month} cerrado exitosamente` };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Reabre un periodo contable previamente cerrado.
+ */
+export async function reopenPeriod(periodId: number, userId: number): Promise<{ success: boolean; message: string }> {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    db.run(`
+      UPDATE accounting_periods 
+      SET status = 'open', closed_at = NULL, closed_by = NULL
+      WHERE id = ?
+    `, [periodId]);
+    return { success: true, message: 'Periodo reabierto exitosamente' };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Desbloquea un año fiscal.
+ */
+export async function unlockFiscalYear(yearId: number): Promise<{ success: boolean; message: string }> {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    db.run("UPDATE fiscal_years SET status = 'open' WHERE id = ?", [yearId]);
+    return { success: true, message: 'Año fiscal desbloqueado' };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
 
 export interface Customer {
   id: number;
@@ -99,6 +1169,14 @@ export interface Supplier {
   updated_by?: number;
   status: 'active' | 'inactive' | 'suspended';
   notes?: string;
+}
+
+export interface KardexFilters {
+  productId?: number;
+  startDate?: string;
+  endDate?: string;
+  type?: string;
+  referenceId?: number;
 }
 
 export interface Product {
@@ -273,16 +1351,7 @@ export interface JournalEntry {
   details?: JournalDetail[];
 }
 
-/**
- * Mapea una fila de base de datos a una entidad tipada
- */
-function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
-  const entity = {} as Record<string, unknown>;
-  columns.forEach((col, index) => {
-    entity[col] = row[index];
-  });
-  return entity as unknown as T;
-}
+
 
 export interface JournalDetail {
   id?: number;
@@ -491,6 +1560,7 @@ export const initDB = async (password?: string): Promise<initSqlJs.Database> => 
 
     // Crear esquema de base de datos
     await createSchema();
+    await ensureInventorySchema();
 
     // Insertar datos de ejemplo si es nueva
     if (db) {
@@ -1406,8 +2476,63 @@ const createSchema = async (): Promise<void> => {
     END;
   `);
 
-  // 5. TRIGGER auto_generate_numbers (Simulado con formateo en inserción o valores por defecto, 
-  // SQLite no tiene secuencias complejas nativas "BEFORE INSERT" para alterar NEW.value fácilmente sin extensiones)
+  // 5. TRIGGER auto_generate_numbers (Simulado con formateo en inserción o valores por defecto)
+
+  // ==========================================
+  // TABLAS SISTEMA DE COMPRAS (PRIORIDAD 1.1)
+  // ==========================================
+
+  // Tabla de Órdenes de Compra
+  db.run(`
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
+      order_number TEXT UNIQUE NOT NULL,
+      order_date DATE DEFAULT CURRENT_DATE,
+      expected_date DATE,
+      status TEXT CHECK(status IN ('draft', 'sent', 'approved', 'received', 'cancelled')) DEFAULT 'draft',
+      total_amount DECIMAL(15,2) DEFAULT 0,
+      notes TEXT,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabla de Líneas de Orden de Compra
+  db.run(`
+    CREATE TABLE IF NOT EXISTS purchase_order_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      purchase_order_id INTEGER NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+      product_id INTEGER NOT NULL REFERENCES products(id),
+      quantity INTEGER NOT NULL CHECK(quantity > 0),
+      unit_price DECIMAL(15,2) NOT NULL,
+      received_quantity INTEGER DEFAULT 0,
+      line_total DECIMAL(15,2) GENERATED ALWAYS AS (quantity * unit_price) STORED
+    )
+  `);
+
+  // Tabla de Movimientos de Inventario (Kardex)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS stock_movements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL REFERENCES products(id),
+      quantity INTEGER NOT NULL, -- Positivo (Entrada) o Negativo (Salida)
+      movement_type TEXT CHECK(movement_type IN ('purchase', 'sale', 'adjustment', 'return', 'initial')) NOT NULL,
+      reference_id INTEGER, -- ID de Invoice, PO, o Adjustment
+      reference_type TEXT CHECK(reference_type IN ('invoice', 'purchase_order', 'adjustment', 'migration')),
+      notes TEXT,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Índices para optimización
+  db.run(`CREATE INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplier_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_po_status ON purchase_orders(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_stock_product ON stock_movements(product_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_stock_date ON stock_movements(created_at)`);
+
 
   // ==========================================
   // VISTAS OPTIMIZADAS PARA DEEPSEEK RAG (FASE 1.3 NUEVA)
@@ -2936,6 +4061,12 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
       return { success: false, message: 'At least one item is required' };
     }
 
+    // Validar bloqueo de periodos
+    const issueDateStr = invoiceData.issue_date || new Date().toISOString().split('T')[0];
+    if (isDateLocked(issueDateStr)) {
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+    }
+
     // Generar número de factura si no se proporciona
     const invoiceNumber = invoiceData.invoice_number || generateInvoiceNumber();
 
@@ -3844,6 +4975,12 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
 
     if (!items || items.length === 0) {
       return { success: false, message: 'At least one item is required' };
+    }
+
+    // Validar bloqueo de periodos
+    const issueDateStr = billData.issue_date || new Date().toISOString().split('T')[0];
+    if (isDateLocked(issueDateStr)) {
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
     }
 
     // Generar número de factura si no se proporciona
@@ -4834,6 +5971,8 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
   }
 };
 
+
+
 // Crear asiento contable automático
 export const createJournalEntry = (
   entryData: Partial<JournalEntry>,
@@ -4843,6 +5982,12 @@ export const createJournalEntry = (
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
+    // Validar bloqueo de periodos
+    const entryDate = entryData.entry_date || new Date().toISOString().split('T')[0];
+    if (isDateLocked(entryDate)) {
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+    }
+
     // Validaciones críticas para integridad contable
     if (!details || details.length < 2) {
       return { success: false, message: 'Un asiento contable debe tener al menos 2 líneas' };
@@ -4875,8 +6020,6 @@ export const createJournalEntry = (
         entry_date, reference, description, total_debit, total_credit, created_by, updated_by
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-
-    const entryDate = entryData.entry_date || new Date().toISOString().split('T')[0];
 
     stmt.run([
       entryDate,
@@ -5546,6 +6689,67 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
   } catch (error) {
     console.error('Error generating income statement:', error);
     return { revenue: [], expenses: [], totalRevenue: 0, totalExpenses: 0, netIncome: 0 };
+  }
+};
+
+/**
+ * Genera el asiento de cierre de resultados (Ingresos y Gastos).
+ * Transfiere los saldos a la cuenta de Utilidades Retenidas (3130).
+ */
+export const generateClosingEntry = (fromDate: string, toDate: string, userId?: number): { success: boolean; message: string; entryId?: number } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const incomeData = generateIncomeStatement(fromDate, toDate);
+    const details: Partial<JournalDetail>[] = [];
+
+    // 1. Debitar Ingresos (Saldos acreedores -> Débito para cerrar)
+    incomeData.revenue.forEach(acc => {
+      if (Math.abs(acc.balance || 0) > 0.01) {
+        details.push({
+          account_code: acc.account_code,
+          debit_amount: Math.abs(acc.balance || 0),
+          credit_amount: 0,
+          description: `Cierre de cuenta de ingresos - Periodo ${fromDate} a ${toDate}`
+        });
+      }
+    });
+
+    // 2. Acreditar Gastos (Saldos deudores -> Crédito para cerrar)
+    incomeData.expenses.forEach(acc => {
+      if (Math.abs(acc.balance || 0) > 0.01) {
+        details.push({
+          account_code: acc.account_code,
+          debit_amount: 0,
+          credit_amount: Math.abs(acc.balance || 0),
+          description: `Cierre de cuenta de gastos - Periodo ${fromDate} a ${toDate}`
+        });
+      }
+    });
+
+    if (details.length === 0) {
+      return { success: false, message: 'No hay saldos en cuentas de resultados para cerrar en este periodo.' };
+    }
+
+    // 3. Diferencia va a Utilidades Retenidas (Equity) - 3130
+    if (Math.abs(incomeData.netIncome) > 0.01) {
+      const isProfit = incomeData.netIncome > 0;
+      details.push({
+        account_code: '3130', // Utilidades Retenidas / Del Ejercicio
+        debit_amount: isProfit ? 0 : Math.abs(incomeData.netIncome),
+        credit_amount: isProfit ? Math.abs(incomeData.netIncome) : 0,
+        description: isProfit ? 'Registro de Utilidad del Periodo' : 'Registro de Pérdida del Periodo'
+      });
+    }
+
+    return createJournalEntry({
+      entry_date: toDate,
+      reference_number: `CLOSE-${toDate.slice(0, 7)}`,
+      description: `ASIENTO DE CIERRE DE RESULTADOS: Periodo ${fromDate} a ${toDate}`
+    }, details, userId);
+
+  } catch (error: any) {
+    return { success: false, message: 'Error al generar asiento de cierre: ' + error.message };
   }
 };
 
@@ -9005,3 +10209,336 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 };
+// ==========================================
+// MÓDULO DE COMPRAS Y STOCK (CRUD)
+// ==========================================
+
+export interface PurchaseOrder {
+  id: number;
+  supplier_id: number;
+  order_number: string;
+  order_date: string;
+  expected_date?: string;
+  status: 'draft' | 'sent' | 'approved' | 'received' | 'cancelled';
+  total_amount: number;
+  notes?: string;
+  items?: PurchaseOrderItem[];
+  supplier_name?: string; // Join
+  created_at?: string;
+  created_by?: number;
+}
+
+export interface PurchaseOrderItem {
+  id?: number;
+  purchase_order_id?: number;
+  product_id: number;
+  quantity: number;
+  unit_price: number;
+  received_quantity?: number;
+  product_name?: string; // Join
+}
+
+export interface StockMovement {
+  id: number;
+  product_id: number;
+  quantity: number;
+  movement_type: 'purchase' | 'sale' | 'adjustment' | 'return' | 'initial';
+  reference_id: number;
+  reference_type: 'invoice' | 'purchase_order' | 'adjustment' | 'migration';
+  notes?: string;
+  created_at: string;
+  created_by: number;
+}
+
+export const getPurchaseOrders = (filters: { status?: string, supplier_id?: number } = {}): PurchaseOrder[] => {
+  if (!db) return [];
+  try {
+    let query = `
+      SELECT po.*, s.name as supplier_name 
+      FROM purchase_orders po
+      LEFT JOIN suppliers s ON po.supplier_id = s.id
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (filters.status) {
+      query += ` AND po.status = ?`;
+      params.push(filters.status);
+    }
+    if (filters.supplier_id) {
+      query += ` AND po.supplier_id = ?`;
+      params.push(filters.supplier_id);
+    }
+
+    query += ` ORDER BY po.created_at DESC`;
+
+    const res = db.exec(query, params);
+    if (res.length > 0 && res[0].values.length > 0) {
+      const cols = res[0].columns;
+      return res[0].values.map(row => {
+        const po: any = {};
+        cols.forEach((col, i) => po[col] = row[i]);
+        return po as PurchaseOrder;
+      });
+    }
+    return [];
+  } catch (e) {
+    logger.error('PurchaseOrders', 'get', 'Error fetching POs', e);
+    return [];
+  }
+};
+
+export const createPurchaseOrder = (order: Omit<PurchaseOrder, 'id'>): { success: boolean, id?: number, message?: string } => {
+  if (!db) return { success: false, message: 'DB not initialized' };
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    // 1. Insert header
+    db.run(`
+      INSERT INTO purchase_orders (supplier_id, order_number, order_date, expected_date, status, total_amount, notes, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      order.supplier_id,
+      order.order_number,
+      order.order_date,
+      order.expected_date || null,
+      order.status || 'draft',
+      order.total_amount,
+      order.notes || null,
+      order.created_by || 1
+    ]);
+
+    const res = db.exec('SELECT last_insert_rowid() as id');
+    const poId = res[0].values[0][0];
+
+    // 2. Insert items
+    if (order.items && order.items.length > 0) {
+      const stmt = db.prepare(`
+        INSERT INTO purchase_order_lines (purchase_order_id, product_id, quantity, unit_price)
+        VALUES (?, ?, ?, ?)
+      `);
+      for (const item of order.items) {
+        stmt.run([poId, item.product_id, item.quantity, item.unit_price]);
+      }
+      stmt.free();
+    }
+
+    logAuditEvent('purchase_orders', poId as number, 'create', null, { order_number: order.order_number }, order.created_by || 1);
+
+    db.run('COMMIT');
+    return { success: true, id: poId as number };
+  } catch (e) {
+    db.run('ROLLBACK');
+    logger.error('PurchaseOrders', 'create', 'Failed to create PO', e);
+    return { success: false, message: (e as Error).message };
+  }
+};
+
+export const receivePurchaseOrder = (poId: number, userId: number = 1): { success: boolean, message?: string } => {
+  if (!db) return { success: false, message: 'DB not initialized' };
+  try {
+    // 1. Obtener items de la orden
+    const res = db.exec(`SELECT * FROM purchase_order_lines WHERE purchase_order_id = ?`, [poId]);
+    if (res.length === 0 || res[0].values.length === 0) {
+      return { success: false, message: 'Order has no items' };
+    }
+
+    const cols = res[0].columns;
+    const items = res[0].values.map(row => {
+      const item: any = {};
+      cols.forEach((col, i) => item[col] = row[i]);
+      return item as PurchaseOrderItem;
+    });
+
+    db.run('BEGIN TRANSACTION');
+
+    // 2. Actualizar estado de la orden
+    db.run(`UPDATE purchase_orders SET status = 'received', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [poId]);
+
+    // 3. Procesar cada item: aumentar stock y registrar movimiento
+    for (const item of items) {
+      // A. Actualizar cantidad recibida en la línea (asumimos recepción total por simplicidad en v1)
+      db.run(`UPDATE purchase_order_lines SET received_quantity = ? WHERE id = ?`, [item.quantity, item.id as number]);
+
+      // B. Actualizar Maestro de Productos
+      db.run(`UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?`, [item.quantity, item.product_id]);
+
+      // C. Registrar Movimiento en Kardex
+      db.run(`
+            INSERT INTO stock_movements (product_id, quantity, movement_type, reference_id, reference_type, created_by)
+            VALUES (?, ?, 'purchase', ?, 'purchase_order', ?)
+        `, [item.product_id, item.quantity, poId, userId]);
+    }
+
+    logAuditEvent('purchase_orders', poId, 'receive', null, { status: 'received' }, userId);
+
+    db.run('COMMIT');
+    return { success: true };
+  } catch (e) {
+    db.run('ROLLBACK');
+    logger.error('PurchaseOrders', 'receive', 'Failed to receive PO', e);
+    return { success: false, message: (e as Error).message };
+  }
+};
+
+export const getStockMovements = (productId?: number): StockMovement[] => {
+  if (!db) return [];
+  try {
+    let query = "SELECT * FROM stock_movements";
+    const params: any[] = [];
+    if (productId) {
+      query += " WHERE product_id = ?";
+      params.push(productId);
+    }
+    query += " ORDER BY created_at DESC LIMIT 100";
+
+    const res = db.exec(query, params);
+    if (res.length > 0 && res[0].values.length > 0) {
+      const cols = res[0].columns;
+      return res[0].values.map(row => {
+        const sm: any = {};
+        cols.forEach((col, i) => sm[col] = row[i]);
+        return sm as StockMovement;
+      });
+    }
+    return [];
+  } catch (e) {
+    return [];
+  }
+};
+
+// Validar y asegurar esquema de inventario avanzado
+const ensureInventorySchema = async (): Promise<void> => {
+  if (!db) return;
+
+  // 1. Tabla de Ajustes de Inventario (Header)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventory_adjustments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      adjustment_number TEXT UNIQUE NOT NULL,
+      adjustment_date DATE DEFAULT CURRENT_DATE,
+      reason TEXT,
+      status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'applied', 'cancelled')),
+      notes TEXT,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 2. Tabla de Items de Ajuste
+  db.run(`
+    CREATE TABLE IF NOT EXISTS inventory_adjustment_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      adjustment_id INTEGER NOT NULL REFERENCES inventory_adjustments(id) ON DELETE CASCADE,
+      product_id INTEGER NOT NULL REFERENCES products(id),
+      quantity_adjustment INTEGER NOT NULL, -- Puede ser negativo
+      current_stock_snapshot INTEGER, -- Stock antes del ajuste
+      notes TEXT
+    )
+  `);
+
+  // 3. Trigger para ventas (Impacto automático en Kardex y Stock)
+  // Sincroniza la venta (Invoice) con el inventario
+  try {
+    db.run(`
+      CREATE TRIGGER IF NOT EXISTS decrease_stock_on_invoice
+      AFTER INSERT ON invoice_lines
+      BEGIN
+        -- 1. Reducir stock físico
+        UPDATE products
+        SET stock_quantity = stock_quantity - NEW.quantity
+        WHERE id = NEW.product_id;
+
+        -- 2. Registrar movimiento en Kardex
+        INSERT INTO stock_movements (product_id, quantity, movement_type, reference_id, reference_type, created_by)
+        VALUES (NEW.product_id, -NEW.quantity, 'sale', NEW.invoice_id, 'invoice', 1);
+      END;
+    `);
+    logger.info('Database', 'trigger_created', 'Trigger decrease_stock_on_invoice verificado');
+  } catch (e) {
+    logger.warn('Database', 'trigger_error', 'No se pudo crear trigger de inventario', e);
+  }
+};
+
+// ==========================================
+// KARDEX SYSTEM COMPONENT
+// ==========================================
+
+export interface KardexEntry extends StockMovement {
+  product_name: string;
+  product_sku: string;
+  user_name?: string;
+  formatted_date?: string;
+}
+
+export const getKardexMovements = (filters: KardexFilters = {}): KardexEntry[] => {
+  if (!db) return [];
+  try {
+    let query = `
+      SELECT 
+        sm.*, 
+        p.name as product_name, 
+        p.sku as product_sku,
+        u.display_name as user_name
+      FROM stock_movements sm
+      JOIN products p ON sm.product_id = p.id
+      LEFT JOIN users u ON sm.created_by = u.id
+      WHERE 1=1
+    `;
+
+    const params: any[] = [];
+
+    if (filters.productId) {
+      query += ` AND sm.product_id = ?`;
+      params.push(filters.productId);
+    }
+
+    if (filters.type) {
+      query += ` AND sm.movement_type = ?`;
+      params.push(filters.type);
+    }
+
+    if (filters.startDate) {
+      query += ` AND date(sm.created_at) >= date(?)`;
+      params.push(filters.startDate);
+    }
+
+    if (filters.endDate) {
+      query += ` AND date(sm.created_at) <= date(?)`;
+      params.push(filters.endDate);
+    }
+
+    if (filters.referenceId) {
+      query += ` AND sm.reference_id = ?`;
+      params.push(filters.referenceId);
+    }
+
+    // Ordenamiento: Si filtramos por producto, ASC para calcular running totals en UI.
+    // Si es vista general, DESC para ver lo último.
+    if (filters.productId) {
+      query += ` ORDER BY sm.created_at ASC`;
+    } else {
+      query += ` ORDER BY sm.created_at DESC`;
+    }
+
+    const res = db.exec(query, params);
+    if (res.length > 0 && res[0].values.length > 0) {
+      const cols = res[0].columns;
+      return res[0].values.map(row => {
+        const item: any = {};
+        cols.forEach((col, i) => item[col] = row[i]);
+        // Format date friendly
+        try {
+          item.formatted_date = new Date(item.created_at).toLocaleString();
+        } catch (e) { item.formatted_date = item.created_at; }
+        return item as KardexEntry;
+      });
+    }
+    return [];
+  } catch (e) {
+    logger.error('Kardex', 'get_movements', 'Error fetching Kardex', e);
+    return [];
+  }
+};
+

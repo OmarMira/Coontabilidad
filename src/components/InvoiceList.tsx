@@ -8,6 +8,7 @@ interface InvoiceListProps {
   onEdit: (invoice: Invoice) => void;
   onDelete: (id: number) => void;
   onAddInvoice: () => void;
+  onNavigateToKardex?: (referenceId: number) => void;
 }
 
 export const InvoiceList: React.FC<InvoiceListProps> = ({
@@ -15,7 +16,8 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
   onView,
   onEdit,
   onDelete,
-  onAddInvoice
+  onAddInvoice,
+  onNavigateToKardex
 }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,6 +198,16 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                 >
                   <Eye className="w-4 h-4" />
                 </button>
+
+                {onNavigateToKardex && (
+                  <button
+                    onClick={() => onNavigateToKardex(invoice.id)}
+                    className="p-2 text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded-lg transition-colors border border-purple-500/30"
+                    title="Ver Salidas de Inventario"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+                )}
 
                 <button
                   onClick={() => onEdit(invoice)}

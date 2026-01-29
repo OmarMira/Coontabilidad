@@ -1,0 +1,34 @@
+{
+    "ranges": [
+        {
+            "min": 1000,
+            "max": 1999,
+            "category": "Assets",
+            "normal_balance": "debit"
+        },
+        {
+            "min": 2000,
+            "max": 2999,
+            "category": "Liabilities",
+            "normal_balance": "credit"
+        },
+        {
+            "min": 3000,
+            "max": 3999,
+            "category": "Equity",
+            "normal_balance": "credit"
+        },
+        {
+            "min": 4000,
+            "max": 4999,
+            "category": "Revenue",
+            "normal_balance": "credit"
+        },
+        {
+            "min": 5000,
+            "max": 5999,
+            "category": "Expenses",
+            "normal_balance": "debit"
+        }
+    ]
+}

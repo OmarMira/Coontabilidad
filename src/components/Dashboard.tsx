@@ -11,7 +11,8 @@ import {
   TrendingDown,
   TrendingUp,
   DollarSign,
-  Briefcase
+  Briefcase,
+  Bot
 } from 'lucide-react';
 import { getCompanyLogoUrl, hasCompanyLogo } from '../utils/logoUtils';
 import { format } from 'date-fns';
@@ -20,6 +21,7 @@ import { es } from 'date-fns/locale';
 import { AuditService } from '../services/AuditService';
 import { TaxService } from '../services/TaxService';
 import { DatabaseService } from '../database/DatabaseService';
+import { getMonthlyFinancialSummary, MonthlySummary } from '../database/simple-db';
 
 import { ComplianceHistory } from './reports/ComplianceHistory';
 
@@ -44,6 +46,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
   const [unclaimedPropDays, setUnclaimedPropDays] = useState<number>(0);
   const [realTaxLiability, setRealTaxLiability] = useState<number>(0);
   const [pendingTaxCount, setPendingTaxCount] = useState<number>(0);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlySummary[]>([]);
 
   useEffect(() => {
     // 1. Get Real Audit Hash from Iron Core
@@ -81,6 +84,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
       } catch (e) { console.error(e); }
     };
     fetchTax();
+
+    // 6. Fetch Monthly Stats for Charts
+    const summary = getMonthlyFinancialSummary();
+    setMonthlyStats(summary);
   }, []);
 
   const netIncome = (stats.revenue - stats.expenses) || 0;
@@ -225,6 +232,101 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-2">Cartera de Clientes</p>
           <h3 className="text-3xl font-black text-white tabular-nums">{stats.customers}</h3>
         </div>
+      </div>
+
+      {/* --- SECCIÓN 3: ANÁLISIS DE TENDENCIAS (CHARTS) --- */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 pb-10">
+
+        {/* Gráfico de Barras: Ventas vs Compras */}
+        <div className="xl:col-span-2 card-elite min-h-[400px]">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                Tendencia Operativa {new Date().getFullYear()}
+              </h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Comparativa Mensual de Ventas vs Compras</p>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded-sm shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase">Ventas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-rose-500 rounded-sm shadow-[0_0_5px_rgba(244,63,94,0.5)]"></div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase">Compras</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-64 flex items-end justify-between gap-1 mt-12 px-4">
+            {monthlyStats.map((item, idx) => {
+              const maxVal = Math.max(...monthlyStats.map(m => Math.max(m.revenue, m.expenses))) || 1000;
+              const revHeight = (item.revenue / maxVal) * 100;
+              const expHeight = (item.expenses / maxVal) * 100;
+              const monthName = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'][idx];
+
+              return (
+                <div key={item.month} className="flex-1 flex flex-col items-center group/cell h-full justify-end">
+                  <div className="relative w-full h-full flex items-end justify-center gap-1.5 px-1 pb-4 border-b border-white/5 group-hover/cell:bg-white/[0.02] rounded-t-lg transition-all">
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-800 p-2 rounded-lg opacity-0 group-hover/cell:opacity-100 transition-opacity z-20 pointer-events-none shadow-2xl min-w-[120px]">
+                      <p className="text-[10px] font-black text-slate-500 uppercase mb-1">{monthName}</p>
+                      <p className="text-xs font-bold text-emerald-400 flex justify-between">V: <span className="tabular-nums">${item.revenue.toLocaleString()}</span></p>
+                      <p className="text-xs font-bold text-rose-400 flex justify-between">C: <span className="tabular-nums">${item.expenses.toLocaleString()}</span></p>
+                    </div>
+
+                    <div
+                      className="w-full max-w-[12px] bg-emerald-500 rounded-t-sm transition-all duration-1000 group-hover/cell:opacity-100 opacity-70 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                      style={{ height: `${Math.max(2, revHeight)}%` }}
+                    ></div>
+                    <div
+                      className="w-full max-w-[12px] bg-rose-500 rounded-t-sm transition-all duration-1000 group-hover/cell:opacity-100 opacity-70 shadow-[0_0_15px_rgba(244,63,94,0.2)]"
+                      style={{ height: `${Math.max(2, expHeight)}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-[9px] font-black text-slate-600 mt-3 group-hover/cell:text-white transition-colors">
+                    {monthName}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Acciones Rápidas (Lateral) */}
+        <div className="card-elite">
+          <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Accesos Rápidos</h3>
+          <div className="space-y-3">
+            {[
+              { id: 'invoices', label: 'Emitir Factura', icon: FileText, color: 'emerald' },
+              { id: 'journal-entries', label: 'Asiento Manual', icon: Activity, color: 'blue' },
+              { id: 'ledger-hub', label: 'Libros Contables', icon: Lock, color: 'purple' },
+              { id: 'tax-config', label: 'Ajustes Fiscales', icon: Shield, color: 'sun-orange' }
+            ].map(action => (
+              <button
+                key={action.id}
+                onClick={() => onNavigate(action.id)}
+                className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:border-white/10 transition-all group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 bg-${action.color}-500/10 rounded-xl group-hover:scale-110 transition-transform`}>
+                    <action.icon className={`w-5 h-5 text-${action.color}-400`} />
+                  </div>
+                  <span className="text-sm font-bold text-gray-200">{action.label}</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-white group-hover:translate-x-1 transition-all" />
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-8 p-6 bg-blue-600/5 rounded-3xl border border-blue-600/10 text-center">
+            <Bot className="w-10 h-10 text-blue-500 mx-auto mb-4 animate-bounce" />
+            <p className="text-xs font-bold text-blue-300 mb-2">Asistente Inteligente</p>
+            <p className="text-[10px] text-slate-500 leading-relaxed uppercase font-black">Tu IA está analizando los datos actuales...</p>
+          </div>
+        </div>
+
       </div>
     </div>
   );

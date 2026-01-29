@@ -212,6 +212,20 @@ export class DatabaseService {
        BEFORE DELETE ON journal_entries
        BEGIN
          SELECT RAISE(ABORT, 'FORENSIC ALERT: Registros contables son inmutables. Use contra-asiento.'); 
+       END;`,
+
+            // Trigger 3: Bloqueo de periodos cerrados
+            `CREATE TRIGGER IF NOT EXISTS prevent_closed_period_insert
+       BEFORE INSERT ON journal_entries
+       FOR EACH ROW
+       WHEN (EXISTS (
+           SELECT 1 FROM accounting_periods p 
+           JOIN fiscal_years f ON p.fiscal_year_id = f.id
+           WHERE date(NEW.transaction_date) BETWEEN date(p.start_date) AND date(p.end_date)
+           AND (p.status IN ('closed', 'locked') OR f.status IN ('closed', 'locked'))
+       ))
+       BEGIN
+           SELECT RAISE(ABORT, 'ACCOUNTING ALERT: El periodo contable está cerrado o bloqueado.');
        END;`
         ];
 

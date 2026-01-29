@@ -80,6 +80,24 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
+    id: 'payroll',
+    label: 'NÓMINA (PAYROLL)',
+    icon: Users,
+    children: [
+      { id: 'employee-mgr', label: 'Gestión de Empleados', icon: UserCheck },
+      { id: 'payroll-process', label: 'Procesar Nómina', icon: Calculator },
+      { id: 'payroll-reports', label: 'Reportes de Nómina', icon: BarChart3 }
+    ]
+  },
+  {
+    id: 'fixed-assets-section',
+    label: 'ACTIVOS FIJOS',
+    icon: Building2,
+    children: [
+      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package }
+    ]
+  },
+  {
     id: 'cuentas-cobrar',
     label: 'Cta por Cobrar',
     icon: TrendingUp,
@@ -98,6 +116,7 @@ const menuItems: MenuItem[] = [
     icon: Calculator,
     children: [
       { id: 'reports-dashboard', label: 'Dashboard de Reportes', icon: BarChart3 },
+      { id: 'accounting-periods', label: 'Cierres y Periodos', icon: Lock },
       { id: 'ledger-hub', label: 'Libros y Auxiliares', icon: Database },
       { id: 'chart-accounts', label: 'Plan de Cuentas', icon: FileText },
       { id: 'journal-entries', label: 'Asientos Contables', icon: FileText },
@@ -190,6 +209,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         return ['contador', 'auditor'].includes(role);
 
       case 'inventario':
+      case 'payroll':
+      case 'fixed-assets-section':
         return ['contador', 'vendedor', 'comprador', 'auditor'].includes(role);
 
       case 'herramientas':

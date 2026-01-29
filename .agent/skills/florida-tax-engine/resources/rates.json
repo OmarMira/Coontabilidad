@@ -1,0 +1,18 @@
+{
+    "MIAMI-DADE": {
+        "surtax_rate_bps": 100,
+        "name": "Miami-Dade County"
+    },
+    "BROWARD": {
+        "surtax_rate_bps": 100,
+        "name": "Broward County"
+    },
+    "ORANGE": {
+        "surtax_rate_bps": 50,
+        "name": "Orange County"
+    },
+    "HILLSBOROUGH": {
+        "surtax_rate_bps": 150,
+        "name": "Hillsborough County"
+    }
+}

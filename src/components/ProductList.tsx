@@ -22,6 +22,7 @@ interface ProductListProps {
   onView: (product: Product) => void;
   onDelete: (id: number) => void;
   onAddProduct: () => void;
+  onNavigateToKardex?: (productId: number) => void;
 }
 
 export const ProductList: React.FC<ProductListProps> = ({
@@ -29,7 +30,8 @@ export const ProductList: React.FC<ProductListProps> = ({
   onEdit,
   onView,
   onDelete,
-  onAddProduct
+  onAddProduct,
+  onNavigateToKardex
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'products' | 'services'>('all');
@@ -238,8 +240,19 @@ export const ProductList: React.FC<ProductListProps> = ({
                           <span className="text-[10px] font-black text-gray-600 uppercase">Ilimitado</span>
                         ) : (
                           <div className="space-y-2">
-                            <div className="text-white font-bold text-sm">
-                              {product.stock_quantity} <span className="text-gray-500 font-medium text-xs">{product.unit_of_measure}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="text-white font-bold text-sm">
+                                {product.stock_quantity} <span className="text-gray-500 font-medium text-xs">{product.unit_of_measure}</span>
+                              </div>
+                              {onNavigateToKardex && (
+                                <button
+                                  onClick={() => onNavigateToKardex(product.id)}
+                                  className="p-1 hover:bg-white/10 rounded transition-colors text-blue-400 group/link"
+                                  title="Ver Historial (Kardex)"
+                                >
+                                  <BarChart3 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                             {stockStatus && (
                               <span className={`badge-elite ${stockStatus.bgColor} ${stockStatus.color} border ${stockStatus.border} text-[9px]`}>

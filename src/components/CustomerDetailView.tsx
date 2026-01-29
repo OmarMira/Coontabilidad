@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  User, 
-  FileText, 
-  CreditCard, 
-  Package, 
-  ArrowLeft, 
+import {
+  User,
+  FileText,
+  CreditCard,
+  Package,
+  ArrowLeft,
   Edit,
   Phone,
   Mail,
@@ -19,12 +19,18 @@ interface CustomerDetailViewProps {
   customer: Customer;
   onBack: () => void;
   onEdit: (customer: Customer) => void;
+  onDelete?: (id: number) => void;
+  onNavigateToKardex?: (filters: { productId?: string; type?: string; referenceId?: number }) => void;
+  onNavigateToInvoice?: (invoiceId: number) => void;
 }
 
 export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   customer,
   onBack,
-  onEdit
+  onEdit,
+  onDelete,
+  onNavigateToKardex,
+  onNavigateToInvoice
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -270,7 +276,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
           Nueva Factura
         </button>
       </div>
-      
+
       <div className="bg-gray-900 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -317,7 +323,12 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button className="text-blue-400 hover:text-blue-300 mr-3">Ver</button>
+                    <button
+                      onClick={() => onNavigateToInvoice && onNavigateToInvoice(invoice.id)}
+                      className="text-blue-400 hover:text-blue-300 mr-3"
+                    >
+                      Ver
+                    </button>
                     <button className="text-green-400 hover:text-green-300">Editar</button>
                   </td>
                 </tr>
@@ -338,7 +349,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
           Registrar Pago
         </button>
       </div>
-      
+
       <div className="bg-gray-900 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -399,7 +410,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-white">Productos y Servicios Comprados</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sampleProducts.map((product) => (
           <div key={product.id} className="bg-gray-900 rounded-lg p-6">
@@ -412,8 +423,8 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
               </div>
               <Package className="w-5 h-5 text-blue-400" />
             </div>
-            
-            <div className="space-y-2">
+
+            <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-gray-400">Total compras:</span>
                 <span className="text-white font-medium">{product.totalPurchases}</span>
@@ -422,11 +433,20 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                 <span className="text-gray-400">Monto total:</span>
                 <span className="text-green-400 font-medium">${product.totalAmount.toLocaleString()}</span>
               </div>
+              {onNavigateToKardex && (
+                <button
+                  onClick={() => onNavigateToKardex({ productId: product.id.toString() })}
+                  className="w-full mt-4 flex items-center justify-center gap-2 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-xs font-bold"
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  VER HISTORIAL MOVIMIENTOS
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
-      
+
       {sampleProducts.length === 0 && (
         <div className="bg-gray-900 rounded-lg p-8 text-center">
           <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -454,7 +474,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
             )}
           </div>
         </div>
-        
+
         <button
           onClick={() => onEdit(customer)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
@@ -470,11 +490,10 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${
-              activeTab === tab.id
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${activeTab === tab.id
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}

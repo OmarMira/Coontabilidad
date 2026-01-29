@@ -1,16 +1,16 @@
 import React from 'react';
 import { Wifi, WifiOff, Database, Shield, User as UserIcon } from 'lucide-react';
+import { OnlineStatus } from './common/OnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
-  isOnline: boolean;
   dbStats: {
     customers: number;
   };
   onAssistantClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ isOnline, dbStats, onAssistantClick }) => {
+export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick }) => {
   const { user } = useAuth();
 
   return (
@@ -61,18 +61,7 @@ export const Header: React.FC<HeaderProps> = ({ isOnline, dbStats, onAssistantCl
             </div>
           )}
 
-          <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border ${isOnline
-            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
-            : 'bg-amber-500/5 border-amber-500/20 text-amber-400'
-            }`}>
-            <div className="relative">
-              {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-              <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border-2 border-slate-950 ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">
-              {isOnline ? 'Cloud Synced' : 'Offline Mode'}
-            </span>
-          </div>
+          <OnlineStatus />
         </div>
       </div>
     </header>
