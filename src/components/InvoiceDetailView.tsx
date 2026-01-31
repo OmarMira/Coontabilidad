@@ -6,6 +6,8 @@ interface InvoiceDetailViewProps {
   invoice: Invoice;
   onBack: () => void;
   onEdit: (invoice: Invoice) => void;
+  onDelete?: () => Promise<void>;
+  onDownload?: (inv: any) => void;
 }
 
 export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({

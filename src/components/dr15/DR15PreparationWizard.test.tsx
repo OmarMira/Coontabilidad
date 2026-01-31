@@ -1,5 +1,5 @@
-// @vitest-environment jsdom
-// @ts-nocheck
+﻿// @vitest-environment jsdom
+// // @ts-expect-error: Antigravity Automated Fix - Fixed check
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -69,7 +69,7 @@ describe.skip('DR15PreparationWizard', () => { // LEGACY-REFACTOR - requires jes
         });
 
         // Check if explanation is shown
-        expect(screen.getByText(/Explicación IA/i)).toBeInTheDocument();
+        expect(screen.getByText(/ExplicaciÃ³n IA/i)).toBeInTheDocument();
     });
 
     it('should show success screen after confirmation', async () => {
@@ -92,3 +92,5 @@ describe.skip('DR15PreparationWizard', () => { // LEGACY-REFACTOR - requires jes
         });
     });
 });
+
+

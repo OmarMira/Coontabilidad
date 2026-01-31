@@ -172,7 +172,7 @@ const normalizeAmount = (raw: string | number, config: NormalizationConfig): num
     const parsed = parseFloat(clean);
     if (isNaN(parsed)) return NaN;
 
-    let final = isNegative ? -Math.abs(parsed) : parsed;
+    const final = isNegative ? -Math.abs(parsed) : parsed;
 
     return Math.round(final * 100);
 };

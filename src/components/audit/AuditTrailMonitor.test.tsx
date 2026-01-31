@@ -1,6 +1,6 @@
+﻿// @vitest-environment jsdom
 // @vitest-environment jsdom
-// @vitest-environment jsdom
-// @ts-nocheck
+// // @ts-expect-error: Antigravity Automated Fix - Fixed check
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
@@ -46,3 +46,5 @@ describe.skip('AuditTrailMonitor', () => { // LEGACY-REFACTOR - requires jest-do
         expect(screen.getByText(/Verificando/i)).toBeInTheDocument();
     });
 });
+
+

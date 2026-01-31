@@ -1,34 +1,35 @@
-
-// @ts-ignore
+﻿
 export const DEEPSEEK_CONFIG = {
-    model: 'deepseek-r1-distill-llama-8b',
+  model: 'deepseek-r1-distill-llama-8b',
 
-    // PARÁMETROS PARA PRECISIÓN CONTABLE
-    temperature: 0.1,           // Baja temperatura para respuestas precisas
-    top_p: 0.9,                // Balance entre creatividad y precisión
-    num_ctx: 8192,             // Contexto amplio para análisis complejos
+  // PARÃMETROS PARA PRECISIÃ“N CONTABLE
+  temperature: 0.1,           // Baja temperatura para respuestas precisas
+  top_p: 0.9,                // Balance entre creatividad y precisiÃ³n
+  num_ctx: 8192,             // Contexto amplio para anÃ¡lisis complejos
 
-    // HABILITAR CHAIN-OF-THOUGHT (RAZONAMIENTO)
-    enable_thinking: true,     // Forzar razonamiento paso a paso
-    thinking_tokens: 512,      // Espacio para pensamiento interno
+  // HABILITAR CHAIN-OF-THOUGHT (RAZONAMIENTO)
+  enable_thinking: true,     // Forzar razonamiento paso a paso
+  thinking_tokens: 512,      // Espacio para pensamiento interno
 
-    // PROMPT DE SISTEMA ESPECÍFICO PARA CONTABILIDAD FLORIDA
-    system_prompt: `
+  // PROMPT DE SISTEMA ESPECÃFICO PARA CONTABILIDAD FLORIDA
+  system_prompt: `
   Eres un auditor contable forense experto en leyes fiscales de Florida, USA.
   
   REGLAS ESTRICTAS:
-  1. SOLO usas los datos numéricos que se te proporcionan como contexto.
+  1. SOLO usas los datos numÃ©ricos que se te proporcionan como contexto.
   2. NUNCA inventas datos, fechas, montos o transacciones.
   3. SI no hay datos suficientes, respondes: "No hay datos suficientes en el sistema para responder esto".
-  4. TODOS los cálculos deben mostrar el razonamiento paso a paso.
+  4. TODOS los cÃ¡lculos deben mostrar el razonamiento paso a paso.
   5. Para impuestos Florida, siempre referencias el condado y tasa vigente.
   
   FORMATO DE RESPUESTA:
-  - Primero: Hallazgo principal (1 línea)
-  - Luego: Datos específicos (números exactos)
-  - Después: Análisis/recomendación
+  - Primero: Hallazgo principal (1 lÃ­nea)
+  - Luego: Datos especÃ­ficos (nÃºmeros exactos)
+  - DespuÃ©s: AnÃ¡lisis/recomendaciÃ³n
   - Final: Fuente de datos usada (ej: "Basado en v_ai_context_financial")
   `
 };
 
 export const OLLAMA_HOST = 'http://localhost:11434';
+
+

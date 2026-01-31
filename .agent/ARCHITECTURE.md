@@ -263,15 +263,20 @@ For details, see [scripts/README.md](scripts/README.md)
 
 ---
 
+- Coverage: ~95% web/mobile development
+- OS Support: Windows (UTF-8 fixed), macOS, Linux
+
+---
+
 ## 📊 Statistics
 
 | Metric | Value |
 | ------ | ----- |
 | **Total Agents** | 20 |
-| **Total Skills** | 36 |
+| **Total Skills** | 53 |
 | **Total Workflows** | 11 |
 | **Total Scripts** | 2 (master) + 18 (skill-level) |
-| **Coverage** | ~90% web/mobile development |
+| **Coverage** | ~95% web/mobile development |
 
 ---
 

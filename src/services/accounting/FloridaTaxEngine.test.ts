@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { FloridaTaxEngine } from './FloridaTaxEngine';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 

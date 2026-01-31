@@ -61,7 +61,7 @@ self.addEventListener('fetch', (event) => {
         url.pathname.includes('fonts.gstatic.com')
     );
 
-    if (isStaticAsset) {
+    if (isStaticAsset && request) {
         event.respondWith(
             caches.match(request).then((cached) => {
                 return cached || fetch(request).then((response) => {
@@ -91,6 +91,7 @@ self.addEventListener('fetch', (event) => {
             })
             .catch(() => {
                 // Offline: Try to find in cache
+                if (!request) return new Response('Offline: Resource not available', { status: 503 });
                 return caches.match(request).then((cached) => {
                     if (cached) return cached;
 

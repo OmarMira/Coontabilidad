@@ -128,17 +128,17 @@ export class TransactionManager {
                 userId: sale.userId,
                 details: [
                     {
-                        accountCode: '1121', // Accounts Receivable (Match simple-db chart)
+                        accountCode: '1100', // Accounts Receivable (Match schema: 1100)
                         debit: Big(taxResult.totalAmount),
                         credit: Big(0)
                     },
                     {
-                        accountCode: '4110', // Sales Revenue (Match simple-db chart)
+                        accountCode: '4100', // Sales Revenue (Match schema: 4100)
                         debit: Big(0),
                         credit: Big(taxResult.subtotal)
                     },
                     {
-                        accountCode: '2121', // Sales Tax Payable (Florida Tax Account)
+                        accountCode: '2300', // Sales Tax Payable (Match schema: 2300)
                         debit: Big(0),
                         credit: Big(taxResult.totalTax)
                     },
@@ -149,7 +149,7 @@ export class TransactionManager {
                         credit: Big(0)
                     },
                     {
-                        accountCode: '1112', // Inventory / Cash (depending on interpretation, but 1112 is Bank in our COA)
+                        accountCode: '1200', // Inventory (Match schema: 1200)
                         debit: Big(0),
                         credit: totalCost
                     }

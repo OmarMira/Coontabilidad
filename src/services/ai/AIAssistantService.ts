@@ -1,6 +1,7 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../audit/AuditChainService';
 import { FinancialReportingService } from '../accounting/FinancialReportingService';
+import { AccountingService } from '../accounting/AccountingService';
 
 /**
  * AIAssistantService - Read-Only AI Analysis Engine
@@ -23,8 +24,10 @@ import { FinancialReportingService } from '../accounting/FinancialReportingServi
  * // Returns: { risks: [...], recommendations: [...], integrityStatus: 'VALID' }
  */
 export class AIAssistantService {
+    private db: SQLiteEngine;
     private auditChainService: AuditChainService;
     private reportingService: FinancialReportingService;
+    private accountingService: AccountingService;
     private apiKey: string;
     private readonly DAILY_LIMIT = 100;
     private readonly SYSTEM_PROMPT = `You are a Forensic Auditor and Florida Tax Consultant for AccountExpress Next-Gen.
@@ -52,6 +55,7 @@ Response format:
         this.db = db;
         this.apiKey = apiKey;
         this.auditChainService = new AuditChainService(db);
+        this.accountingService = new AccountingService(db);
         this.reportingService = new FinancialReportingService(db);
     }
 
@@ -62,7 +66,7 @@ Response format:
      */
     public async analyzeFinancialRisks(): Promise<AIAnalysisResult> {
         // Check rate limit
-        this.checkRateLimit();
+        await this.checkRateLimit();
 
         // Get read-only data views
         const context = await this.buildReadOnlyContext();
@@ -82,13 +86,13 @@ Provide:
         const aiResponse = await this.callAIAPI(prompt);
 
         // Increment usage counter
-        this.incrementUsageCounter();
+        await this.incrementUsageCounter();
 
         return {
             analysis: aiResponse,
             context,
             timestamp: new Date().toISOString(),
-            logicClock: context.logicClock
+            logicClock: (context as any).logicClock
         };
     }
 
@@ -98,13 +102,13 @@ Provide:
      * @returns Anomaly detection report
      */
     public async detectAnomalies(): Promise<AIAnalysisResult> {
-        this.checkRateLimit();
+        await this.checkRateLimit();
 
         // Verify audit chain integrity
         const integrity = await this.auditChainService.verifyIntegrity();
 
         // Get trial balance
-        const trialBalance = this.reportingService.getTrialBalance();
+        const trialBalance = await this.reportingService.getTrialBalance();
 
         // Calculate total debits and credits
         const totalDebits = trialBalance.reduce((sum, entry) => sum + entry.debit, 0);
@@ -118,7 +122,7 @@ Provide:
                 isBalanced: totalDebits === totalCredits,
                 accounts: trialBalance
             },
-            logicClock: this.auditChainService.getCurrentLogicClock()
+            logicClock: await this.auditChainService.getCurrentLogicClock()
         };
 
         const prompt = `Analyze this accounting data for anomalies:
@@ -133,13 +137,13 @@ Focus on:
 
         const aiResponse = await this.callAIAPI(prompt);
 
-        this.incrementUsageCounter();
+        await this.incrementUsageCounter();
 
         return {
             analysis: aiResponse,
             context,
             timestamp: new Date().toISOString(),
-            logicClock: context.logicClock
+            logicClock: (context as any).logicClock
         };
     }
 
@@ -149,10 +153,10 @@ Focus on:
      * @returns Tax compliance analysis
      */
     public async analyzeTaxCompliance(): Promise<AIAnalysisResult> {
-        this.checkRateLimit();
+        await this.checkRateLimit();
 
         // Get sales tax data
-        const taxData = this.db.select(`
+        const taxData = await this.db.select(`
             SELECT 
                 i.id,
                 i.invoice_number,
@@ -168,7 +172,7 @@ Focus on:
         `);
 
         // Get tax payable balance
-        const taxPayable = this.reportingService.getAccountBalance('2020'); // Sales Tax Payable
+        const taxPayable = await this.accountingService.getAccountBalance('2020'); // Sales Tax Payable
 
         const context = {
             recentInvoices: taxData.map(inv => ({
@@ -180,7 +184,7 @@ Focus on:
                 effectiveRate: inv.subtotal > 0 ? (inv.tax / inv.subtotal) : 0
             })),
             taxPayableBalance: taxPayable,
-            logicClock: this.auditChainService.getCurrentLogicClock()
+            logicClock: await this.auditChainService.getCurrentLogicClock()
         };
 
         const prompt = `Analyze Florida sales tax compliance:
@@ -196,13 +200,13 @@ Check:
 
         const aiResponse = await this.callAIAPI(prompt);
 
-        this.incrementUsageCounter();
+        await this.incrementUsageCounter();
 
         return {
             analysis: aiResponse,
             context,
             timestamp: new Date().toISOString(),
-            logicClock: context.logicClock
+            logicClock: (context as any).logicClock
         };
     }
 
@@ -234,13 +238,13 @@ Check:
      * @returns Integrity verification result
      */
     public async verifySystemIntegrity(): Promise<AIAnalysisResult> {
-        this.checkRateLimit();
+        await this.checkRateLimit();
 
         const integrity = await this.auditChainService.verifyIntegrity();
 
         const context = {
             integrityReport: integrity,
-            logicClock: this.auditChainService.getCurrentLogicClock()
+            logicClock: await this.auditChainService.getCurrentLogicClock()
         };
 
         const prompt = `Verify system integrity:
@@ -255,13 +259,13 @@ Report:
 
         const aiResponse = await this.callAIAPI(prompt);
 
-        this.incrementUsageCounter();
+        await this.incrementUsageCounter();
 
         return {
             analysis: aiResponse,
             context,
             timestamp: new Date().toISOString(),
-            logicClock: context.logicClock
+            logicClock: (context as any).logicClock
         };
     }
 
@@ -274,23 +278,24 @@ Report:
         const integrity = await this.auditChainService.verifyIntegrity();
 
         // Get trial balance
-        const trialBalance = this.reportingService.getTrialBalance();
+        const trialBalance = await this.reportingService.getTrialBalance();
 
         // Get balance sheet
-        const balanceSheet = this.reportingService.getBalanceSheet();
+        const balanceSheet = await this.reportingService.getBalanceSheet();
 
         // Get recent transactions count
-        const recentTxCount = this.db.select(`
+        const recentTxData = await this.db.select(`
             SELECT COUNT(*) as count 
             FROM journal_entries 
             WHERE status = 'POSTED' 
             AND created_at >= date('now', '-30 days')
-        `)[0].count;
+        `);
+        const recentTxCount = (recentTxData[0] as any).count;
 
         return {
             integrityStatus: integrity.valid ? 'VALID' : 'COMPROMISED',
             integrityErrors: integrity.errors,
-            logicClock: this.auditChainService.getCurrentLogicClock(),
+            logicClock: await this.auditChainService.getCurrentLogicClock(),
             trialBalance: {
                 totalDebits: trialBalance.reduce((sum, e) => sum + e.debit, 0),
                 totalCredits: trialBalance.reduce((sum, e) => sum + e.credit, 0),
@@ -346,16 +351,16 @@ To enable AI analysis, configure the API key in environment variables.`;
      * Check rate limit
      * @private
      */
-    private checkRateLimit(): void {
+    private async checkRateLimit(): Promise<void> {
         const today = new Date().toISOString().split('T')[0];
 
         // Get usage count for today
-        const usage = this.db.select(`
+        const usage = await this.db.select(`
             SELECT value FROM system_config 
             WHERE key = ?
         `, [`ai_usage_${today}`]);
 
-        const count = usage.length > 0 ? parseInt(usage[0].value) : 0;
+        const count = usage.length > 0 ? parseInt((usage[0] as any).value) : 0;
 
         if (count >= this.DAILY_LIMIT) {
             throw new Error(
@@ -369,21 +374,21 @@ To enable AI analysis, configure the API key in environment variables.`;
      * Increment usage counter
      * @private
      */
-    private incrementUsageCounter(): void {
+    private async incrementUsageCounter(): Promise<void> {
         const today = new Date().toISOString().split('T')[0];
         const key = `ai_usage_${today}`;
 
-        const usage = this.db.select(`
+        const usage = await this.db.select(`
             SELECT value FROM system_config WHERE key = ?
         `, [key]);
 
         if (usage.length > 0) {
-            const newCount = parseInt(usage[0].value) + 1;
-            this.db.run(`
+            const newCount = parseInt((usage[0] as any).value) + 1;
+            await this.db.run(`
                 UPDATE system_config SET value = ? WHERE key = ?
             `, [newCount.toString(), key]);
         } else {
-            this.db.run(`
+            await this.db.run(`
                 INSERT INTO system_config (key, value) VALUES (?, '1')
             `, [key]);
         }
@@ -392,13 +397,13 @@ To enable AI analysis, configure the API key in environment variables.`;
     /**
      * Get remaining queries for today
      */
-    public getRemainingQueries(): number {
+    public async getRemainingQueries(): Promise<number> {
         const today = new Date().toISOString().split('T')[0];
-        const usage = this.db.select(`
+        const usage = await this.db.select(`
             SELECT value FROM system_config WHERE key = ?
         `, [`ai_usage_${today}`]);
 
-        const count = usage.length > 0 ? parseInt(usage[0].value) : 0;
+        const count = usage.length > 0 ? parseInt((usage[0] as any).value) : 0;
         return Math.max(0, this.DAILY_LIMIT - count);
     }
 }

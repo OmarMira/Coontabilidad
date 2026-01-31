@@ -114,7 +114,7 @@ export class DynamicErrorBoundary extends Component<Props, State> {
 
     private resetServiceWorker = async () => {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let registration of registrations) {
+        for (const registration of registrations) {
             await registration.unregister();
         }
         alert('Service Worker desinstalado. La página se recargará.');

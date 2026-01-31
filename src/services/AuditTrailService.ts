@@ -75,9 +75,9 @@ export class AuditTrailService {
             if (!res[0]) return [];
 
             const columns = res[0].columns;
-            return res[0].values.map(row => {
+            return res[0].values.map((row: any[]) => {
                 const obj: any = {};
-                columns.forEach((col, i) => obj[col] = row[i]);
+                columns.forEach((col: string, i: number) => obj[col] = row[i]);
                 return obj as AuditEntry;
             });
         } catch (error) {

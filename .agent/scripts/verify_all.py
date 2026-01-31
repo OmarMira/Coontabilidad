@@ -25,9 +25,16 @@ Includes ALL checks:
 import sys
 import subprocess
 import argparse
+import io
 from pathlib import Path
 from typing import List, Dict, Optional
 from datetime import datetime
+
+# Force UTF-8 encoding for Windows
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # ANSI colors
 class Colors:
@@ -167,6 +174,8 @@ def run_script(name: str, script_path: Path, project_path: str, url: Optional[st
             cmd,
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             timeout=600  # 10 minute timeout for slow checks
         )
         

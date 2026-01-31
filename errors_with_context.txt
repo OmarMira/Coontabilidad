@@ -1,0 +1,477 @@
+﻿
+      2:69  warning  'Calendar' is 
+defined but never used                
+                                      
+                   
+@typescript-eslint/no-unused-vars
+      2:69  warning  'Calendar' is 
+defined but never used                
+                                      
+                   no-unused-vars
+      9:38  warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+     11:12  warning  'error' is 
+assigned a value but never used       
+                                      
+                      
+@typescript-eslint/no-unused-vars
+     11:12  warning  'error' is 
+assigned a value but never used       
+                                      
+                      no-unused-vars
+     30:8   warning  React Hook 
+useEffect has a missing dependency: 
+'loadData'. Either include it or 
+remove the dependency array  
+react-hooks/exhaustive-deps
+     38:43  warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+    133:68  warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\components\re
+ports\CashFlowStatement.tsx
+      2:54   warning  'TrendingUp' is 
+defined but never used                
+                                      
+                 
+@typescript-eslint/no-unused-vars
+      2:54   warning  'TrendingUp' is 
+defined but never used                
+                                      
+                 no-unused-vars
+      2:66   warning  'TrendingDown' 
+is defined but never used             
+                                      
+                  
+@typescript-eslint/no-unused-vars
+      2:66   warning  'TrendingDown' 
+is defined but never used             
+                                      
+                  no-unused-vars
+      8:38   warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+     33:8    warning  React Hook 
+useEffect has a missing dependency: 
+'loadData'. Either include it or 
+remove the dependency array  
+react-hooks/exhaustive-deps
+     42:21   warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+     45:48   warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+    108:156  warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+    108:164  warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+    116:73   warning  Unexpected any. 
+Specify a different type              
+                                      
+                 
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\components\re
+ports\ReportExporter.tsx
+      2:10  warning  'FileDown' is 
+defined but never used      
+@typescript-eslint/no-unused-vars
+      2:10  warning  'FileDown' is 
+defined but never used      
+no-unused-vars
+      2:50  warning  'Share2' is 
+defined but never used        
+@typescript-eslint/no-unused-vars
+      2:50  warning  'Share2' is 
+defined but never used        
+no-unused-vars
+     13:30  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     26:11  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    103:40  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\components\sy
+stem\FiscalSettingsForm.tsx
+    48:106  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    65:109  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\components\sy
+stem\UserRoleManager.tsx
+    7:19  warning  'setRoles' is 
+assigned a value but never used  
+@typescript-eslint/no-unused-vars
+    7:19  warning  'setRoles' is 
+assigned a value but never used  
+no-unused-vars
+  
+  C:\Account 
+Express\src\components\ui\alert.tsx
+    4:19  warning  'variant' is 
+assigned a value but never used  
+@typescript-eslint/no-unused-vars
+    4:19  warning  'variant' is 
+assigned a value but never used  
+no-unused-vars
+  
+  C:\Account 
+Express\src\components\ui\button.tsx
+    4:8   error    'className' is 
+missing in props validation  
+react/prop-types
+    4:40  warning  'size' is assigned 
+a value but never used   
+@typescript-eslint/no-unused-vars
+    4:40  warning  'size' is assigned 
+a value but never used   
+no-unused-vars
+  
+  C:\Account 
+Express\src\components\ui\input.tsx
+    4:8   error  'className' is 
+missing in props validation  
+react/prop-types
+>   4:19  error  'type' is missing in 
+props validation       
+react/prop-types
+  
+  C:\Account 
+Express\src\components\ui\label.tsx
+>   4:8  error  'className' is 
+missing in props validation  
+react/prop-types
+    118:37  warning  'key' is defined 
+but never used           
+@typescript-eslint/no-unused-vars
+    118:37  warning  'key' is defined 
+but never used           
+no-unused-vars
+    122:60  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    131:56  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\core\audit\Au
+ditChainService.ts
+      8:14  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     10:24  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    111:66  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\core\database
+\SQLiteEngine.ts
+      8:22  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+     10:22  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+     16:15  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+     72:36  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    101:39  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    101:75  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    103:43  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    117:39  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    135:23  warning  'row' is 
+assigned a value but never used     
+@typescript-eslint/no-unused-vars
+    135:23  warning  'row' is 
+assigned a value but never used     
+no-unused-vars
+    146:46  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    148:23  warning  'values' is 
+assigned a value but never used  
+@typescript-eslint/no-unused-vars
+    148:23  warning  'values' is 
+assigned a value but never used  
+no-unused-vars
+    158:30  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    203:47  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    203:97  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    206:52  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    228:28  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    231:30  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\core\logging\
+SystemLogger.ts
+     47:25  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    103:12  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    170:95  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    193:33  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    257:36  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    271:21  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    313:20  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    471:13  warning  'result' is 
+assigned a value but never used  
+@typescript-eslint/no-unused-vars
+    471:13  warning  'result' is 
+assigned a value but never used  
+no-unused-vars
+    492:65  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    496:64  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    500:64  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    504:65  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    508:68  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    512:69  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+    516:67  warning  Unexpected any. 
+Specify a different type     
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\core\migratio
+ns\list\007_currency_fix_and_fiscal.ts
+>   38:21  error  Empty block 
+statement  no-empty
+>   47:21  error  Empty block 
+statement  no-empty
+     5:33  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     6:37  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     7:33  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    24:31  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    28:21  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    73:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\core\workers\
+WorkerOrchestrator.ts
+      5:20  warning  Unexpected any. 
+Specify a different type          
+@typescript-eslint/no-explicit-any
+      9:20  warning  Unexpected any. 
+Specify a different type          
+@typescript-eslint/no-explicit-any
+     14:16  warning  Unexpected any. 
+Specify a different type          
+@typescript-eslint/no-explicit-any
+     20:22  warning  Unexpected any. 
+Specify a different type          
+@typescript-eslint/no-explicit-any
+     21:23  warning  Unexpected any. 
+Specify a different type          
+@typescript-eslint/no-explicit-any
+     32:41  warning  'config' is 
+defined but never used                
+@typescript-eslint/no-unused-vars
+     32:41  warning  'config' is 
+defined but never used                
+no-unused-vars
+    141:25  warning  'type' is 
+assigned a value but never used       
+  @typescript-eslint/no-unused-vars
+    141:25  warning  'type' is 
+assigned a value but never used       
+  no-unused-vars
+    166:15  warning  'now' is 
+assigned a value but never used       
+   @typescript-eslint/no-unused-vars
+    166:15  warning  'now' is 
+assigned a value but never used       
+   no-unused-vars
+    167:15  warning  'maxIdleTime' is 
+assigned a value but never used  
+@typescript-eslint/no-unused-vars
+    167:15  warning  'maxIdleTime' is 
+assigned a value but never used  
+no-unused-vars
+  
+  C:\Account 
+Express\src\data\zipCodes.ts
+    420:9  warning  'results' is 
+assigned a value but never used  
+@typescript-eslint/no-unused-vars
+    420:9  warning  'results' is 
+assigned a value but never used  
+no-unused-vars
+  
+  C:\Account Express\src\database\Data
+baseInitializer.ts
+    18:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\database\Data
+baseReconstructor.ts
+    185:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\database\Data
+baseService.ts
+      8:32  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     10:22  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    185:21  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    194:21  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    235:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    350:52  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    350:73  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    356:26  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    481:51  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+  
+  C:\Account Express\src\database\Emer
+gencyInitializer.ts
+      6:17  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     13:20  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     64:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    270:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    285:27  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+    296:46  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+>   298:21  error    Empty block 
+statement                     no-empty
+  
+  C:\Account Express\src\database\Fore
+nsicDiagnostic.ts
+      1:14  warning  'DB_NAME' is 
+defined but never used       
+@typescript-eslint/no-unused-vars
+      1:14  warning  'DB_NAME' is 
+defined but never used       
+no-unused-vars
+      9:15  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     40:79  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     46:64  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     63:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+     95:25  warning  Unexpected any. 
+Specify a different type  
+@typescript-eslint/no-explicit-any
+>   119:29  error    Empty block 
+statement                     no-empty
+
+

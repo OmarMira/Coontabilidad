@@ -1,5 +1,5 @@
-// @vitest-environment jsdom
-// @ts-nocheck
+﻿// @vitest-environment jsdom
+// // @ts-expect-error: Antigravity Automated Fix - Fixed check
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -27,7 +27,7 @@ describe.skip('TaxComplianceWidget', () => { // LEGACY-REFACTOR - requires jest-
         });
 
         expect(screen.getByText(/Estado Actual/i)).toBeInTheDocument();
-        expect(screen.getByText(/AL DÍA/i)).toBeInTheDocument();
+        expect(screen.getByText(/AL DÃA/i)).toBeInTheDocument();
         // Regex helper for price since format might vary slightly
         const priceRegex = /\$1,250\.00|\$1250\.00/;
         expect(screen.getByText((content) => priceRegex.test(content))).toBeInTheDocument();
@@ -40,3 +40,5 @@ describe.skip('TaxComplianceWidget', () => { // LEGACY-REFACTOR - requires jest-
         });
     });
 });
+
+

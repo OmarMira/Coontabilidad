@@ -14,7 +14,7 @@ import {
   BarChart3,
   Plus
 } from 'lucide-react';
-import { Product } from '../database/simple-db';
+import { Product, ProductCategory } from '../database/simple-db';
 
 interface ProductListProps {
   products: Product[];
@@ -23,6 +23,7 @@ interface ProductListProps {
   onDelete: (id: number) => void;
   onAddProduct: () => void;
   onNavigateToKardex?: (productId: number) => void;
+  categories?: ProductCategory[];
 }
 
 export const ProductList: React.FC<ProductListProps> = ({

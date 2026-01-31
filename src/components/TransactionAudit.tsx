@@ -1,5 +1,4 @@
-// @ts-nocheck
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Shield, Search, FileText, CheckCircle, Hash, User, Clock } from 'lucide-react';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { AuditChainService } from '../core/audit/AuditChainService';
@@ -56,10 +55,10 @@ export const TransactionAudit: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         <Shield className="w-8 h-8 text-blue-600" />
-                        Auditoría de Transacciones (Blockchain)
+                        AuditorÃ­a de Transacciones (Blockchain)
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">
-                        Registro inmutable de todas las operaciones financieras. Cada evento está encadenado criptográficamente.
+                        Registro inmutable de todas las operaciones financieras. Cada evento estÃ¡ encadenado criptogrÃ¡ficamente.
                     </p>
                 </div>
                 <button
@@ -69,7 +68,7 @@ export const TransactionAudit: React.FC = () => {
                         }`}
                 >
                     {verifying ? (
-                        <>Verificando Criptografía...</>
+                        <>Verificando CriptografÃ­a...</>
                     ) : integrityStatus === 'valid' ? (
                         <><CheckCircle className="w-5 h-5" /> Integridad Verificada</>
                     ) : (
@@ -95,7 +94,7 @@ export const TransactionAudit: React.FC = () => {
                             {loading ? (
                                 <tr><td colSpan={6} className="p-8 text-center text-gray-400">Cargando cadena de bloques...</td></tr>
                             ) : logs.length === 0 ? (
-                                <tr><td colSpan={6} className="p-8 text-center text-gray-400">La cadena está vacía (Genesis).</td></tr>
+                                <tr><td colSpan={6} className="p-8 text-center text-gray-400">La cadena estÃ¡ vacÃ­a (Genesis).</td></tr>
                             ) : (
                                 logs.map((log) => (
                                     <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -128,3 +127,5 @@ export const TransactionAudit: React.FC = () => {
         </div>
     );
 };
+
+

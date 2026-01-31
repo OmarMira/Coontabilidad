@@ -21,6 +21,7 @@ interface ProductDetailViewProps {
   product: Product;
   onBack: () => void;
   onEdit: (product: Product) => void;
+  onDelete?: () => Promise<void>;
   onNavigateToKardex?: (productId: number) => void;
 }
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuditChain } from './AuditChain';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { BasicEncryption } from '../../core/security/BasicEncryption';
@@ -69,7 +69,7 @@ describe('AuditChain', () => {
 
         // Let's refine the mock for this test
         const deterministicHash = (data: any) => 'hash_' + data.length;
-        // @ts-ignore
+        // @ts-expect-error: Antigravity Automated Fix
         BasicEncryption.hash.mockImplementation(async (data) => deterministicHash(data));
 
         const event1Payload = `0000000000000000000000000000000000000000000000000000000000000000|test|{}|2024-01-01|1|1`;
@@ -99,7 +99,7 @@ describe('AuditChain', () => {
 
     it('verifyChain should detect tampering', async () => {
         // Mock hash
-        // @ts-ignore
+        // @ts-expect-error: Antigravity Automated Fix
         BasicEncryption.hash.mockImplementation(async () => 'real_hash');
 
         const chain = [
@@ -124,3 +124,5 @@ describe('AuditChain', () => {
         expect(result.errors?.[0]).toContain('Integrity Fail');
     });
 });
+
+

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll, beforeEach } from '@jest/globals';
-import { AuditChainService } from '../AuditChainService';
-import { SQLiteEngine } from '../../../core/database/SQLiteEngine';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { AuditChainService } from './AuditChainService';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 
 /**
  * Unit tests for AuditChainService
@@ -21,7 +21,7 @@ describe('AuditChainService', () => {
         await db.initialize(':memory:');
 
         // Create schema
-        db.exec(`
+        await db.exec(`
             CREATE TABLE system_config (
                 key TEXT PRIMARY KEY,
                 value TEXT,
@@ -29,9 +29,9 @@ describe('AuditChainService', () => {
             )
         `);
 
-        db.exec(`INSERT INTO system_config (key, value) VALUES ('logic_clock', '0')`);
+        await db.exec(`INSERT INTO system_config (key, value) VALUES ('logic_clock', '0')`);
 
-        db.exec(`
+        await db.exec(`
             CREATE TABLE audit_chain (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -47,7 +47,7 @@ describe('AuditChainService', () => {
             )
         `);
 
-        db.exec(`
+        await db.exec(`
             CREATE TABLE ledger_lines (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 journal_entry_id TEXT NOT NULL,
@@ -61,11 +61,11 @@ describe('AuditChainService', () => {
         auditChainService = new AuditChainService(db);
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Reset logic_clock and clear audit_chain
-        db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
-        db.run(`DELETE FROM audit_chain`);
-        db.run(`DELETE FROM ledger_lines`);
+        await db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
+        await db.run(`DELETE FROM audit_chain`);
+        await db.run(`DELETE FROM ledger_lines`);
     });
 
     describe('ACCEPTANCE TEST 1: Detect Manual SQL Changes', () => {
@@ -84,7 +84,7 @@ describe('AuditChainService', () => {
             expect(integrity.valid).toBe(true);
 
             // Act: Manually modify the audit_chain record (simulate tampering)
-            db.run(`
+            await db.run(`
                 UPDATE audit_chain 
                 SET content_payload = '{"debit":20000,"credit":0,"account_code":"1020"}'
                 WHERE id = 1
@@ -108,7 +108,7 @@ describe('AuditChainService', () => {
             });
 
             // Act: Tamper with content_hash
-            db.run(`UPDATE audit_chain SET content_hash = 'fake_hash' WHERE id = 1`);
+            await db.run(`UPDATE audit_chain SET content_hash = 'fake_hash' WHERE id = 1`);
 
             // Assert
             const integrity = await auditChainService.verifyIntegrity();
@@ -145,12 +145,12 @@ describe('AuditChainService', () => {
             });
 
             // Act: Manually delete record 2 (creates gap in logic_clock)
-            db.run(`DELETE FROM audit_chain WHERE id = 2`);
+            await db.run(`DELETE FROM audit_chain WHERE id = 2`);
 
             // Assert: Should detect logic_clock gap
             const integrity = await auditChainService.verifyIntegrity();
             expect(integrity.valid).toBe(false);
-            expect(integrity.errors.some(e => e.errorType === 'LOGIC_CLOCK_GAP')).toBe(true);
+            expect(integrity.errors.some((e: any) => e.errorType === 'LOGIC_CLOCK_GAP')).toBe(true);
         });
 
         it('should verify logic_clock is sequential', async () => {
@@ -166,8 +166,8 @@ describe('AuditChainService', () => {
             }
 
             // Assert: Logic clock should be 1, 2, 3, 4, 5
-            const records = db.select('SELECT logic_clock FROM audit_chain ORDER BY id');
-            expect(records.map(r => r.logic_clock)).toEqual([1, 2, 3, 4, 5]);
+            const records = await db.select('SELECT logic_clock FROM audit_chain ORDER BY id');
+            expect(records.map((r: any) => r.logic_clock)).toEqual([1, 2, 3, 4, 5]);
 
             // Integrity should be valid
             const integrity = await auditChainService.verifyIntegrity();
@@ -203,12 +203,12 @@ describe('AuditChainService', () => {
             });
 
             // Act: Break the chain by modifying previous_hash of record 2
-            db.run(`UPDATE audit_chain SET previous_hash = 'broken_chain' WHERE id = 2`);
+            await db.run(`UPDATE audit_chain SET previous_hash = 'broken_chain' WHERE id = 2`);
 
             // Assert
             const integrity = await auditChainService.verifyIntegrity();
             expect(integrity.valid).toBe(false);
-            expect(integrity.errors.some(e => e.errorType === 'CHAIN_BREAK')).toBe(true);
+            expect(integrity.errors.some((e: any) => e.errorType === 'CHAIN_BREAK')).toBe(true);
         });
 
         it('should verify first record has GENESIS as previous_hash', async () => {
@@ -222,8 +222,8 @@ describe('AuditChainService', () => {
             });
 
             // Assert
-            const record = db.select('SELECT previous_hash FROM audit_chain WHERE id = 1');
-            expect(record[0].previous_hash).toBe('GENESIS');
+            const record = await db.select('SELECT previous_hash FROM audit_chain WHERE id = 1');
+            expect((record[0] as any).previous_hash).toBe('GENESIS');
         });
 
         it('should link each record to previous via chain_hash', async () => {
@@ -253,10 +253,10 @@ describe('AuditChainService', () => {
             });
 
             // Assert: Record 2's previous_hash should equal Record 1's chain_hash
-            const records = db.select('SELECT chain_hash, previous_hash FROM audit_chain ORDER BY id');
+            const records = await db.select('SELECT chain_hash, previous_hash FROM audit_chain ORDER BY id');
 
-            expect(records[1].previous_hash).toBe(records[0].chain_hash);
-            expect(records[2].previous_hash).toBe(records[1].chain_hash);
+            expect((records[1] as any).previous_hash).toBe((records[0] as any).chain_hash);
+            expect((records[2] as any).previous_hash).toBe((records[1] as any).chain_hash);
         });
     });
 
@@ -282,7 +282,8 @@ describe('AuditChainService', () => {
             expect(duration).toBeLessThan(10000);
 
             // Verify all records created
-            const count = db.select('SELECT COUNT(*) as count FROM audit_chain')[0].count;
+            const countResult = await db.select('SELECT COUNT(*) as count FROM audit_chain');
+            const count = (countResult[0] as any).count;
             expect(count).toBe(1000);
 
             // Verify integrity
@@ -348,7 +349,7 @@ describe('AuditChainService', () => {
             });
 
             // Act
-            const trail = auditChainService.getAuditTrail('invoices', '789');
+            const trail = await auditChainService.getAuditTrail('invoices', '789');
 
             // Assert
             expect(trail.length).toBe(2);
@@ -371,8 +372,8 @@ describe('AuditChainService', () => {
             });
 
             // Reset and create again
-            db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
-            db.run(`DELETE FROM audit_chain`);
+            await db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
+            await db.run(`DELETE FROM audit_chain`);
 
             const hash2 = await auditChainService.recordEvent({
                 eventType: 'test',

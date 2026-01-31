@@ -1,0 +1,3 @@
+﻿src/components/ProductList.tsx(26,16): error TS2304: Cannot find name 'ProductCategory'.
+src/services/audit/AuditChainService.ts(225,9): error TS2322: Type '{ id: any; created_at: any; event_type: any; entity_table: any; entity_id: any; user_id: any; payload: any; logic_clock: any; chain_hash: any; previous_hash: any; }[]' is not assignable to type 'AuditRecord[]'.
+  Type '{ id: any; created_at: any; event_type: any; entity_table: any; entity_id: any; user_id: any; payload: any; logic_clock: any; chain_hash: any; previous_hash: any; }' is missing the following properties from type 'AuditRecord': timestamp, eventType, userId, logicClock

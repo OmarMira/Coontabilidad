@@ -39,7 +39,7 @@ export class AuditChainService {
     public async recordEvent(event: AuditEvent): Promise<string> {
         return this.db.executeTransaction(async () => {
             // 1. Increment logic_clock
-            const logicClock = this.incrementLogicClock();
+            const logicClock = await this.incrementLogicClock();
 
             // 2. Prepare payload
             const contentPayload = JSON.stringify(event.payload);
@@ -48,16 +48,16 @@ export class AuditChainService {
             const contentHash = await this.sha256(`${contentPayload}|${logicClock}`);
 
             // 4. Get previous hash
-            const previous = this.db.select(
+            const previous = await this.db.select(
                 'SELECT chain_hash FROM audit_chain ORDER BY id DESC LIMIT 1'
             );
-            const previousHash = previous.length > 0 ? previous[0].chain_hash : 'GENESIS';
+            const previousHash = previous.length > 0 ? (previous[0] as any).chain_hash : 'GENESIS';
 
             // 5. Generate chain hash (SHA-256 of previous_hash + content_hash + logic_clock)
             const chainHash = await this.sha256(`${previousHash}|${contentHash}|${logicClock}`);
 
             // 6. Insert into audit_chain
-            this.db.run(`
+            await this.db.run(`
                 INSERT INTO audit_chain (
                     timestamp, event_type, entity_table, entity_id, user_id,
                     content_payload, content_hash, previous_hash, chain_hash, logic_clock
@@ -89,7 +89,7 @@ export class AuditChainService {
      * @returns Integrity report
      */
     public async verifyIntegrity(): Promise<IntegrityReport> {
-        const records = this.db.select(`
+        const records = await this.db.select(`
             SELECT id, event_type, entity_table, entity_id, content_payload,
                    content_hash, previous_hash, chain_hash, logic_clock
             FROM audit_chain
@@ -100,7 +100,8 @@ export class AuditChainService {
         let previousHash = 'GENESIS';
         let expectedLogicClock = 1;
 
-        for (const record of records) {
+        for (const recordData of records) {
+            const record = recordData as any;
             // Check 1: Logic clock sequencing
             if (record.logic_clock !== expectedLogicClock) {
                 errors.push({
@@ -171,7 +172,7 @@ export class AuditChainService {
      * @returns Integrity report for entity
      */
     public async verifyEntityIntegrity(entityTable: string, entityId: string): Promise<IntegrityReport> {
-        const records = this.db.select(`
+        const records = await this.db.select(`
             SELECT id, event_type, content_payload, content_hash, previous_hash, chain_hash, logic_clock
             FROM audit_chain
             WHERE entity_table = ? AND entity_id = ?
@@ -180,7 +181,8 @@ export class AuditChainService {
 
         const errors: IntegrityError[] = [];
 
-        for (const record of records) {
+        for (const recordData of records) {
+            const record = recordData as any;
             // Verify content hash
             const recalculatedContentHash = await this.sha256(
                 `${record.content_payload}|${record.logic_clock}`
@@ -206,21 +208,50 @@ export class AuditChainService {
     }
 
     /**
+     * Get recent records from the audit chain
+     * 
+     * @param limit - Max records to return
+     * @returns Last records in the chain
+     */
+    public async getAuditLog(limit: number = 100): Promise<any[]> {
+        const records = await this.db.select(`
+            SELECT id, timestamp as created_at, event_type, entity_table, entity_id, user_id, 
+                   content_payload as payload, logic_clock, chain_hash, previous_hash
+            FROM audit_chain
+            ORDER BY logic_clock DESC
+            LIMIT ?
+        `, [limit]);
+
+        return records.map((r: any) => ({
+            id: r.id,
+            created_at: r.created_at,
+            event_type: r.event_type,
+            entity_table: r.entity_table,
+            entity_id: r.entity_id,
+            user_id: r.user_id,
+            payload: r.payload ? JSON.parse(r.payload) : {},
+            logic_clock: r.logic_clock,
+            chain_hash: r.chain_hash,
+            previous_hash: r.previous_hash
+        }));
+    }
+
+    /**
      * Get audit trail for an entity
      * 
      * @param entityTable - Table name
      * @param entityId - Entity ID
      * @returns Audit trail records
      */
-    public getAuditTrail(entityTable: string, entityId: string): AuditRecord[] {
-        const records = this.db.select(`
+    public async getAuditTrail(entityTable: string, entityId: string): Promise<AuditRecord[]> {
+        const records = await this.db.select(`
             SELECT id, timestamp, event_type, user_id, content_payload, logic_clock
             FROM audit_chain
             WHERE entity_table = ? AND entity_id = ?
             ORDER BY logic_clock ASC
         `, [entityTable, entityId]);
 
-        return records.map(r => ({
+        return records.map((r: any) => ({
             id: r.id,
             timestamp: r.timestamp,
             eventType: r.event_type,
@@ -251,8 +282,8 @@ export class AuditChainService {
      * Increment logic_clock
      * @private
      */
-    private incrementLogicClock(): number {
-        const current = this.db.select(
+    private async incrementLogicClock(): Promise<number> {
+        const current = await this.db.select(
             'SELECT value FROM system_config WHERE key = ?',
             ['logic_clock']
         );
@@ -261,9 +292,9 @@ export class AuditChainService {
             throw new Error('logic_clock not initialized');
         }
 
-        const newClock = parseInt(current[0].value) + 1;
+        const newClock = parseInt((current[0] as any).value) + 1;
 
-        this.db.run(
+        await this.db.run(
             'UPDATE system_config SET value = ? WHERE key = ?',
             [newClock.toString(), 'logic_clock']
         );
@@ -274,13 +305,13 @@ export class AuditChainService {
     /**
      * Get current logic clock value
      */
-    public getCurrentLogicClock(): number {
-        const result = this.db.select(
+    public async getCurrentLogicClock(): Promise<number> {
+        const result = await this.db.select(
             'SELECT value FROM system_config WHERE key = ?',
             ['logic_clock']
         );
 
-        return result.length > 0 ? parseInt(result[0].value) : 0;
+        return result.length > 0 ? parseInt((result[0] as any).value) : 0;
     }
 }
 

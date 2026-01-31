@@ -1,4 +1,4 @@
-import * as SQLite from 'wa-sqlite';
+﻿import * as SQLite from 'wa-sqlite';
 // @ts-ignore
 import SQLiteFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
@@ -21,7 +21,7 @@ export class SQLiteEngine {
         if (databaseName) this.dbName = databaseName;
 
         try {
-            console.log('🔄 Initializing wa-sqlite...');
+            console.log('ðŸ”„ Initializing wa-sqlite...');
 
             // 1. Initialize SQLite3 Module
             const module = await SQLiteFactory();
@@ -46,14 +46,14 @@ export class SQLiteEngine {
             await this.exec('PRAGMA foreign_keys=ON');
             await this.exec('PRAGMA cache_size=-5000');
 
-            console.log('✅ SQLiteEngine (wa-sqlite) initialized successfully');
+            console.log('âœ… SQLiteEngine (wa-sqlite) initialized successfully');
 
             // Verify persistence
             await this.exec('CREATE TABLE IF NOT EXISTS system_check (id INTEGER PRIMARY KEY, initialized_at TEXT)');
             await this.run('INSERT INTO system_check (initialized_at) VALUES (?)', [new Date().toISOString()]);
 
         } catch (e) {
-            console.error('❌ SQLiteEngine initialization failed:', e);
+            console.error('âŒ SQLiteEngine initialization failed:', e);
             throw e;
         }
     }
@@ -267,3 +267,5 @@ export class SQLiteEngine {
         return 0;
     }
 }
+
+

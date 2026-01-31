@@ -55,10 +55,10 @@ export class BackupService {
         const dbDump = await this.exportDatabase();
 
         // 3. Export audit chain
-        const auditChain = this.db.select('SELECT * FROM audit_chain ORDER BY logic_clock');
+        const auditChain = (await this.db.select('SELECT * FROM audit_chain ORDER BY logic_clock')) as unknown as AuditChainRecord[];
 
         // 4. Get current logic_clock
-        const logicClock = this.auditChainService.getCurrentLogicClock();
+        const logicClock = await this.auditChainService.getCurrentLogicClock();
 
         // 5. Create backup payload
         const payload: BackupPayload = {
@@ -110,7 +110,7 @@ export class BackupService {
         }
 
         // 3. Verify logic_clock (prevent importing old/corrupted data)
-        const currentLogicClock = this.auditChainService.getCurrentLogicClock();
+        const currentLogicClock = await this.auditChainService.getCurrentLogicClock();
         if (payload.logicClock < currentLogicClock) {
             console.warn(
                 `⚠️ Backup is older than current database. ` +
@@ -129,23 +129,24 @@ export class BackupService {
 
             // Restore audit chain
             for (const record of payload.auditChain) {
+                const auditRecord = record as AuditChainRecord;
                 this.db.run(`
                     INSERT INTO audit_chain (
                         id, timestamp, event_type, entity_table, entity_id, user_id,
                         content_payload, content_hash, previous_hash, chain_hash, logic_clock
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
-                    record.id,
-                    record.timestamp,
-                    record.event_type,
-                    record.entity_table,
-                    record.entity_id,
-                    record.user_id,
-                    record.content_payload,
-                    record.content_hash,
-                    record.previous_hash,
-                    record.chain_hash,
-                    record.logic_clock
+                    auditRecord.id,
+                    auditRecord.timestamp,
+                    auditRecord.event_type,
+                    auditRecord.entity_table,
+                    auditRecord.entity_id,
+                    auditRecord.user_id,
+                    auditRecord.content_payload,
+                    auditRecord.content_hash,
+                    auditRecord.previous_hash,
+                    auditRecord.chain_hash,
+                    auditRecord.logic_clock
                 ]);
             }
 
@@ -332,7 +333,7 @@ export class BackupService {
             passwordBuffer,
             'PBKDF2',
             false,
-            ['deriveKey']
+            ['deriveKey'] as any[]
         );
 
         return crypto.subtle.deriveKey(
@@ -341,11 +342,11 @@ export class BackupService {
                 salt,
                 iterations: 100000,
                 hash: 'SHA-256'
-            },
+            } as any,
             baseKey,
             { name: 'AES-GCM', length: 256 },
             false,
-            ['encrypt', 'decrypt']
+            ['encrypt', 'decrypt'] as any[]
         );
     }
 
@@ -355,10 +356,12 @@ export class BackupService {
      */
     private async exportDatabase(): Promise<string> {
         // Get all tables
-        const tables = this.db.select(`
+        const tables = await this.db.select(`
             SELECT name FROM sqlite_master 
             WHERE type='table' AND name NOT LIKE 'sqlite_%'
         `);
+
+        if (!Array.isArray(tables)) return '';
 
         let dump = '';
 
@@ -366,16 +369,19 @@ export class BackupService {
             const tableName = table.name;
 
             // Get table schema
-            const schema = this.db.select(`SELECT sql FROM sqlite_master WHERE name = ?`, [tableName]);
+            const schema = await this.db.select(`SELECT sql FROM sqlite_master WHERE name = ?`, [tableName]);
             dump += `${schema[0].sql};\n\n`;
 
+
             // Get table data
-            const rows = this.db.select(`SELECT * FROM ${tableName}`);
-            for (const row of rows) {
-                const values = Object.values(row).map(v =>
-                    typeof v === 'string' ? `'${v.replace(/'/g, "''")}'` : v
-                ).join(', ');
-                dump += `INSERT INTO ${tableName} VALUES (${values});\n`;
+            const rows = await this.db.select(`SELECT * FROM ${tableName}`);
+            if (Array.isArray(rows)) {
+                for (const row of rows) {
+                    const values = Object.values(row).map(v =>
+                        typeof v === 'string' ? `'${v.replace(/'/g, "''")}'` : v
+                    ).join(', ');
+                    dump += `INSERT INTO ${tableName} VALUES (${values});\n`;
+                }
             }
 
             dump += '\n';
@@ -402,10 +408,12 @@ export class BackupService {
      * @private
      */
     private async dropAllTables(): Promise<void> {
-        const tables = this.db.select(`
+        const tables = await this.db.select(`
             SELECT name FROM sqlite_master 
             WHERE type='table' AND name NOT LIKE 'sqlite_%'
         `);
+
+        if (!Array.isArray(tables)) return;
 
         for (const table of tables) {
             this.db.exec(`DROP TABLE IF EXISTS ${table.name}`);
@@ -448,7 +456,7 @@ export interface BackupPayload {
     timestamp: string;
     logicClock: number;
     database: string;  // SQL dump
-    auditChain: any[];
+    auditChain: AuditChainRecord[];
     metadata: {
         recordCount: number;
         lastChainHash: string;
@@ -466,4 +474,18 @@ export interface RemoteDestination {
     token?: string;
     username?: string;
     password?: string;
+}
+
+export interface AuditChainRecord {
+    id: number;
+    timestamp: string;
+    event_type: string;
+    entity_table: string;
+    entity_id: number;
+    user_id: number;
+    content_payload: string;
+    content_hash: string;
+    previous_hash: string;
+    chain_hash: string;
+    logic_clock: number;
 }

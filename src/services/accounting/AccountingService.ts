@@ -45,28 +45,30 @@ export class AccountingService {
 
             // 2. Validate all accounts exist
             for (const line of entry.lines) {
-                const account = this.db.select(
+                const account = await this.db.select(
                     'SELECT code, is_active FROM chart_of_accounts WHERE code = ?',
                     [line.accountCode]
-                );
+                ) as unknown as any[];
 
                 if (account.length === 0) {
                     throw new Error(`Account ${line.accountCode} not found in chart of accounts`);
                 }
 
-                if (!account[0].is_active) {
+                const accountRow = account[0] as { is_active: boolean };
+
+                if (!accountRow.is_active) {
                     throw new Error(`Account ${line.accountCode} is inactive`);
                 }
             }
 
             // 3. Increment logic_clock
-            const logicClock = this.incrementLogicClock();
+            const logicClock = await this.incrementLogicClock();
 
             // 4. Generate UUID for journal entry
             const entryId = uuidv4();
 
             // 5. Insert journal entry
-            this.db.run(`
+            await this.db.run(`
                 INSERT INTO journal_entries (
                     id, entry_date, description, reference_type, reference_id,
                     logic_clock, status, created_by, notes
@@ -85,7 +87,7 @@ export class AccountingService {
 
             // 6. Insert ledger lines
             for (const line of entry.lines) {
-                this.db.run(`
+                await this.db.run(`
                     INSERT INTO ledger_lines (
                         journal_entry_id, account_code, debit, credit, description, logic_clock
                     ) VALUES (?, ?, ?, ?, ?, ?)
@@ -101,7 +103,7 @@ export class AccountingService {
 
             // 7. If auto-post, update posted_at
             if (entry.autoPost) {
-                this.db.run(`
+                await this.db.run(`
                     UPDATE journal_entries 
                     SET posted_at = CURRENT_TIMESTAMP, posted_by = ?
                     WHERE id = ?
@@ -119,21 +121,23 @@ export class AccountingService {
      * @param postedBy - User posting the entry
      * @throws Error if entry not found or already posted
      */
-    public postJournalEntry(entryId: string, postedBy: string): void {
-        const entry = this.db.select(
+    public async postJournalEntry(entryId: string, postedBy: string): Promise<void> {
+        const entry = await this.db.select(
             'SELECT status FROM journal_entries WHERE id = ?',
             [entryId]
-        );
+        ) as unknown as any[];
 
         if (entry.length === 0) {
             throw new Error(`Journal entry ${entryId} not found`);
         }
 
-        if (entry[0].status === 'POSTED') {
+        const entryRow = entry[0] as { status: string };
+
+        if (entryRow.status === 'POSTED') {
             throw new Error(`Journal entry ${entryId} is already posted`);
         }
 
-        this.db.run(`
+        await this.db.run(`
             UPDATE journal_entries 
             SET status = 'POSTED', posted_at = CURRENT_TIMESTAMP, posted_by = ?
             WHERE id = ?
@@ -156,23 +160,25 @@ export class AccountingService {
         createdBy: string
     ): Promise<string> {
         // Get original entry
-        const original = this.db.select(
+        const original = await this.db.select(
             'SELECT * FROM journal_entries WHERE id = ?',
             [originalEntryId]
-        );
+        ) as unknown as any[];
 
         if (original.length === 0) {
             throw new Error(`Original entry ${originalEntryId} not found`);
         }
 
+        const originalEntry = original[0] as { description: string };
+
         // Get original lines
-        const originalLines = this.db.select(
+        const originalLines = await this.db.select(
             'SELECT * FROM ledger_lines WHERE journal_entry_id = ?',
             [originalEntryId]
-        );
+        ) as unknown as any[];
 
         // Create reversal with swapped debits/credits
-        const reversalLines: JournalLine[] = originalLines.map(line => ({
+        const reversalLines: JournalLine[] = originalLines.map((line: any) => ({
             accountCode: line.account_code,
             debit: line.credit,  // Swap
             credit: line.debit,  // Swap
@@ -180,7 +186,7 @@ export class AccountingService {
         }));
 
         return this.createJournalEntry({
-            description: `REVERSAL: ${original[0].description} - ${reason}`,
+            description: `REVERSAL: ${originalEntry.description} - ${reason}`,
             lines: reversalLines,
             referenceType: 'REVERSAL',
             referenceId: originalEntryId,
@@ -265,33 +271,34 @@ export class AccountingService {
      * @param accountCode - Account code
      * @returns Balance in cents (positive = normal balance, negative = opposite)
      */
-    public getAccountBalance(accountCode: string): number {
-        const result = this.db.select(`
+    public async getAccountBalance(accountCode: string): Promise<number> {
+        const result = await this.db.select(`
             SELECT 
                 COALESCE(SUM(debit), 0) as total_debits,
                 COALESCE(SUM(credit), 0) as total_credits
             FROM ledger_lines
             WHERE account_code = ?
             AND journal_entry_id IN (SELECT id FROM journal_entries WHERE status = 'POSTED')
-        `, [accountCode]);
+        `, [accountCode]) as unknown as any[];
 
         if (result.length === 0) {
             return 0;
         }
 
-        const { total_debits, total_credits } = result[0];
+        const { total_debits, total_credits } = result[0] as { total_debits: number; total_credits: number };
 
         // Get account's normal balance
-        const account = this.db.select(
+        const account = await this.db.select(
             'SELECT normal_balance FROM chart_of_accounts WHERE code = ?',
             [accountCode]
-        );
+        ) as unknown as any[];
 
         if (account.length === 0) {
             throw new Error(`Account ${accountCode} not found`);
         }
 
-        const normalBalance = account[0].normal_balance;
+        const accountRow = account[0] as { normal_balance: string };
+        const normalBalance = accountRow.normal_balance;
 
         // Return balance according to normal balance convention
         if (normalBalance === 'DEBIT') {
@@ -306,20 +313,21 @@ export class AccountingService {
      * 
      * @returns Array of accounts with balances
      */
-    public getTrialBalance(): TrialBalanceEntry[] {
-        const accounts = this.db.select(`
+    public async getTrialBalance(): Promise<TrialBalanceEntry[]> {
+        const accounts = await this.db.select(`
             SELECT code, name, type, normal_balance
             FROM chart_of_accounts
             WHERE is_active = 1
             ORDER BY code
-        `);
+        `) as unknown as any[];
 
         const trialBalance: TrialBalanceEntry[] = [];
         let totalDebits = 0;
         let totalCredits = 0;
 
-        for (const account of accounts) {
-            const balance = this.getAccountBalance(account.code);
+        for (const accountData of accounts) {
+            const account = accountData as any;
+            const balance = await this.getAccountBalance(account.code);
 
             if (balance !== 0) {
                 const entry: TrialBalanceEntry = {
@@ -348,19 +356,20 @@ export class AccountingService {
      * Increment logic_clock
      * @private
      */
-    private incrementLogicClock(): number {
-        const current = this.db.select(
+    private async incrementLogicClock(): Promise<number> {
+        const current = await this.db.select(
             'SELECT value FROM system_config WHERE key = ?',
             ['logic_clock']
-        );
+        ) as unknown as any[];
 
         if (current.length === 0) {
             throw new Error('logic_clock not initialized');
         }
 
-        const newClock = parseInt(current[0].value) + 1;
+        const currentRow = current[0] as { value: string };
+        const newClock = parseInt(currentRow.value) + 1;
 
-        this.db.run(
+        await this.db.run(
             'UPDATE system_config SET value = ? WHERE key = ?',
             [newClock.toString(), 'logic_clock']
         );

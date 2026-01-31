@@ -173,7 +173,7 @@ const menuItems: MenuItem[] = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) => {
   const { user, logout } = useAuth();
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['dashboard']));
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Definir acceso por rol
@@ -220,13 +220,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(itemId)) {
-        newSet.delete(itemId);
+      const isAlreadyExpanded = prev.has(itemId);
+      
+      if (isAlreadyExpanded) {
+        // Si ya está expandido, lo cerramos (todos quedan cerrados)
+        return new Set();
       } else {
-        newSet.add(itemId);
+        // Si no está expandido, cerramos todos y abrimos solo este
+        return new Set([itemId]);
       }
-      return newSet;
     });
   };
 

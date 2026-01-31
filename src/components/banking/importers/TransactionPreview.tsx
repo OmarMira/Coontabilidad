@@ -19,7 +19,7 @@ export const TransactionPreview: React.FC<TransactionPreviewProps> = ({ transact
     const summary = useMemo(() => {
         let totalAmount = 0;
         let validCount = 0;
-        let errorCount = 0;
+        const errorCount = 0;
 
         transactions.forEach((t, i) => {
             if (selectedIndices.has(i)) {

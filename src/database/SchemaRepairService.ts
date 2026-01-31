@@ -9,6 +9,29 @@ export class SchemaRepairService {
         this.db = db;
     }
 
+    private async hashPassword(password: string): Promise<string> {
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', data, 'PBKDF2', false, ['deriveBits']
+            );
+            const hashBuffer = await crypto.subtle.deriveBits(
+                { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+                keyMaterial, 256
+            );
+            const hashArray = new Uint8Array(hashBuffer);
+            const combined = new Uint8Array(salt.length + hashArray.length);
+            combined.set(salt);
+            combined.set(hashArray, salt.length);
+            return btoa(String.fromCharCode(...combined));
+        } catch (e) {
+            console.error("Hashing failed", e);
+            return "";
+        }
+    }
+
     public async repairSchema(): Promise<string[]> {
         const logs: string[] = [];
         logger.info('SchemaRepair', 'start', 'Iniciando reparación de esquema...');
@@ -17,53 +40,7 @@ export class SchemaRepairService {
             // 1. REPARAR COMPANY_DATA
             const companyCols = this.getTableColumns('company_data');
 
-            if (companyCols.length > 0) {
-                // Verificar y agregar columnas faltantes según el esquema real
-                const requiredColumns = [
-                    { name: 'company_name', type: 'TEXT', default: "'Account Express Demo'" },
-                    { name: 'legal_name', type: 'TEXT', default: "'Account Express Demo'" },
-                    { name: 'tax_id', type: 'TEXT', default: "'US-DEMO-123'" },
-                    { name: 'address', type: 'TEXT', default: "''" },
-                    { name: 'city', type: 'TEXT', default: "'Miami'" },
-                    { name: 'state', type: 'TEXT', default: "'FL'" },
-                    { name: 'zip_code', type: 'TEXT', default: "'33132'" },
-                    { name: 'phone', type: 'TEXT', default: "''" },
-                    { name: 'email', type: 'TEXT', default: "'admin@accountexpress.com'" },
-                    { name: 'website', type: 'TEXT', default: "NULL" },
-                    { name: 'logo_path', type: 'TEXT', default: "NULL" },
-                    { name: 'fiscal_year_start', type: 'TEXT', default: "'01-01'" },
-                    { name: 'currency', type: 'TEXT', default: "'USD'" },
-                    { name: 'language', type: 'TEXT', default: "'es'" },
-                    { name: 'timezone', type: 'TEXT', default: "'America/New_York'" },
-                    { name: 'date_format', type: 'TEXT', default: "'MM/DD/YYYY'" },
-                    { name: 'is_active', type: 'BOOLEAN', default: "1" }
-                ];
-
-                for (const col of requiredColumns) {
-                    if (!companyCols.includes(col.name)) {
-                        this.db.run(`ALTER TABLE company_data ADD COLUMN ${col.name} ${col.type} DEFAULT ${col.default}`);
-                        logs.push(`✅ Agregada columna faltante: ${col.name}`);
-                    }
-                }
-
-                // Verificar que haya al menos un registro activo
-                const hasData = this.db.exec(`SELECT COUNT(*) as count FROM company_data WHERE is_active = 1`);
-                if (hasData.length === 0 || hasData[0].values[0][0] === 0) {
-                    // Insertar datos por defecto
-                    this.db.run(`
-                        INSERT INTO company_data (
-                            company_name, legal_name, tax_id, address, city, state, zip_code, 
-                            phone, email, fiscal_year_start, currency, language, timezone, date_format, is_active
-                        ) VALUES (
-                            'Account Express Demo Inc.', 'Account Express Demo Inc.', 'US-DEMO-123', 
-                            '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000', 
-                            'admin@accountexpress.com', '01-01', 'USD', 'es', 'America/New_York', 'MM/DD/YYYY', 1
-                        )
-                    `);
-                    logs.push("✅ Datos de empresa por defecto insertados");
-                }
-            } else {
-                // Tabla no existe, crearla con el esquema completo
+            if (companyCols.length === 0) {
                 this.db.run(`
                     CREATE TABLE IF NOT EXISTS company_data (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,14 +60,41 @@ export class SchemaRepairService {
                         language TEXT DEFAULT 'es',
                         timezone TEXT DEFAULT 'America/New_York',
                         date_format TEXT DEFAULT 'MM/DD/YYYY',
+                        sales_commission_percentage REAL DEFAULT 0,
+                        shipping_rate REAL DEFAULT 0,
+                        late_fee_percentage REAL DEFAULT 0,
+                        grace_period_days INTEGER DEFAULT 0,
                         is_active BOOLEAN DEFAULT 1,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     )
                 `);
-                logs.push("✅ Tabla company_data creada desde cero");
+                logs.push("✅ Tabla company_data creada");
+            } else {
+                // Ensure columns exist
+                const requiredColumns = [
+                    { name: 'sales_commission_percentage', type: 'REAL', default: "0" },
+                    { name: 'shipping_rate', type: 'REAL', default: "0" },
+                    { name: 'late_fee_percentage', type: 'REAL', default: "0" },
+                    { name: 'grace_period_days', type: 'INTEGER', default: "0" },
+                    { name: 'fiscal_year_start', type: 'TEXT', default: "'01-01'" },
+                    { name: 'is_active', type: 'BOOLEAN', default: "1" }
+                ];
+                for (const col of requiredColumns) {
+                    if (!companyCols.includes(col.name)) {
+                        try {
+                            this.db.run(`ALTER TABLE company_data ADD COLUMN ${col.name} ${col.type} DEFAULT ${col.default}`);
+                            logs.push(`✅ Agregada columna ${col.name} a company_data`);
+                        } catch (e) {
+                            logs.push(`⚠️ Error agregando columna ${col.name}: ${(e as Error).message}`);
+                        }
+                    }
+                }
+            }
 
-                // Insertar datos default
+            // Ensure Data Exists
+            const hasData = this.db.exec(`SELECT COUNT(*) as count FROM company_data`);
+            if (hasData.length === 0 || hasData[0].values[0][0] === 0) {
                 this.db.run(`
                     INSERT INTO company_data (
                         company_name, legal_name, tax_id, address, city, state, zip_code, 
@@ -104,288 +108,108 @@ export class SchemaRepairService {
                 logs.push("✅ Datos de empresa por defecto insertados");
             }
 
+
             // 2. VERIFICAR INTEGRIDAD DE VISTAS
             await this.syncViews(logs);
 
-            // 3. LIMPIAR REGISTROS HUÉRFANOS (FK VIOLATIONS)
+            // 3. LIMPIAR REGISTROS HUÉRFANOS
             await this.cleanOrphanedRecords(logs);
 
-            // 4. RECUPERAR TABLA PAYMENT_METHODS
+            // 4. FIX ADMIN PASSWORD & USERS
+            const userCols = this.getTableColumns('users');
+            if (userCols.length === 0) {
+                this.db.run(`
+                    CREATE TABLE IF NOT EXISTS user_roles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL UNIQUE,
+                        description TEXT,
+                        level INTEGER DEFAULT 1,
+                        permissions_json TEXT DEFAULT '{}',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+
+                this.db.run(`
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT NOT NULL UNIQUE,
+                        email TEXT UNIQUE,
+                        password_hash TEXT NOT NULL,
+                        full_name TEXT,
+                        display_name TEXT NOT NULL,
+                        role_id INTEGER,
+                        is_active BOOLEAN DEFAULT 1,
+                        last_login DATETIME,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (role_id) REFERENCES user_roles(id)
+                    )
+                `);
+
+                // Seed Roles
+                this.db.run(`
+                    INSERT INTO user_roles (name, description, level, permissions_json) VALUES 
+                    ('admin', 'Administrador del sistema', 10, '{"all": true}'),
+                    ('accountant', 'Contador', 5, '{"accounting": true, "view_all": true}'),
+                    ('user', 'Usuario estándar', 1, '{"view_own": true}'),
+                    ('viewer', 'Solo lectura', 0, '{"read_only": true}')
+                `);
+            }
+
+            const adminUser = this.db.exec("SELECT id, password_hash FROM users WHERE username = 'admin'");
+            if (adminUser.length > 0 && adminUser[0].values.length > 0) {
+                const currentHash = adminUser[0].values[0][1] as string;
+                // Check if it's the broken/junk hash or empty
+                if (!currentHash || currentHash.startsWith('U2FsdGVk')) {
+                    const newHash = await this.hashPassword('admin123');
+                    if (newHash) {
+                        this.db.run("UPDATE users SET password_hash = ? WHERE username = 'admin'", [newHash]);
+                        logs.push("✅ Contraseña de Admin reparada (admin123)");
+                    }
+                }
+            } else {
+                // Create admin if not exists
+                const newHash = await this.hashPassword('admin123');
+                if (newHash) {
+                    this.db.run(`
+                        INSERT INTO users (username, email, password_hash, full_name, display_name, role_id, is_active)
+                        VALUES 
+                        ('admin', 'admin@accountexpress.com', ?, 'System Admin', 'Admin', 1, 1)
+                     `, [newHash]);
+                    logs.push("✅ Usuario Admin recreado");
+                }
+            }
+
+            // 5. ENSURE PAYMENT METHODS
             const pmCols = this.getTableColumns('payment_methods');
             if (pmCols.length === 0) {
                 this.db.run(`
                   CREATE TABLE IF NOT EXISTS payment_methods (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    type TEXT NOT NULL,
+                    method_name TEXT NOT NULL,
+                    method_type TEXT NOT NULL,
                     is_active BOOLEAN DEFAULT 1,
-                    requires_reference BOOLEAN DEFAULT 0
+                    requires_reference BOOLEAN DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                   )
                  `);
                 this.db.run(`
-                  INSERT INTO payment_methods (name, type, is_active, requires_reference) VALUES 
+                  INSERT INTO payment_methods (method_name, method_type, is_active, requires_reference) VALUES 
                   ('Efectivo', 'cash', 1, 0),
                   ('Transferencia Bancaria', 'bank_transfer', 1, 1),
                   ('Cheque', 'check', 1, 1),
                   ('Tarjeta de Crédito', 'credit_card', 1, 1),
                   ('Zelle', 'digital', 1, 1)
                  `);
-                logs.push("✅ Tabla payment_methods restaurada");
+                logs.push("✅ Métodos de pago restaurados");
             }
 
-            // 5. SISTEMA DE CIERRE CONTABLE (PERIODOS)
-            const fyCols = this.getTableColumns('fiscal_years');
-            if (fyCols.length === 0) {
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS fiscal_years (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        year INTEGER NOT NULL UNIQUE,
-                        start_date TEXT NOT NULL,
-                        end_date TEXT NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'open',
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                `);
-
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS accounting_periods (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        fiscal_year_id INTEGER NOT NULL,
-                        month INTEGER NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'open',
-                        start_date TEXT NOT NULL,
-                        end_date TEXT NOT NULL,
-                        closed_at DATETIME,
-                        closed_by INTEGER,
-                        FOREIGN KEY (fiscal_year_id) REFERENCES fiscal_years(id),
-                        UNIQUE(fiscal_year_id, month)
-                    )
-                `);
-
-                // Inicializar año actual si no existe
-                const currentYear = new Date().getFullYear();
-                this.db.run(`
-                    INSERT INTO fiscal_years (year, start_date, end_date, status)
-                    VALUES (?, ?, ?, 'open')
-                `, [currentYear, `${currentYear}-01-01`, `${currentYear}-12-31`]);
-
-                const fyId = this.db.exec(`SELECT last_insert_rowid()`)[0].values[0][0] as number;
-
-                for (let m = 1; m <= 12; m++) {
-                    const monthStr = m.toString().padStart(2, '0');
-                    const lastDay = new Date(currentYear, m, 0).getDate();
-                    this.db.run(`
-                        INSERT INTO accounting_periods (fiscal_year_id, month, start_date, end_date, status)
-                        VALUES (?, ?, ?, ?, 'open')
-                    `, [fyId, m, `${currentYear}-${monthStr}-01`, `${currentYear}-${monthStr}-${lastDay}`]);
-                }
-
-                logs.push(`✅ Sistema de periodos iniciado para el año ${currentYear}`);
-            }
-
-            // 6. SISTEMA DE NÓMINA (PAYROLL)
-            const empCols = this.getTableColumns('employees');
-            if (empCols.length === 0) {
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS employees (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        employee_number TEXT NOT NULL UNIQUE,
-                        first_name TEXT NOT NULL,
-                        last_name TEXT NOT NULL,
-                        email TEXT,
-                        phone TEXT,
-                        hire_date TEXT NOT NULL,
-                        department TEXT,
-                        position TEXT,
-                        salary_type TEXT NOT NULL DEFAULT 'monthly',
-                        salary_rate REAL NOT NULL DEFAULT 0,
-                        status TEXT NOT NULL DEFAULT 'active',
-                        florida_county TEXT DEFAULT 'Miami-Dade',
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                `);
-
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS payroll_periods (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        start_date TEXT NOT NULL,
-                        end_date TEXT NOT NULL,
-                        pay_date TEXT NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'open',
-                        total_gross REAL DEFAULT 0,
-                        total_net REAL DEFAULT 0,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                `);
-
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS payroll_entries (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        employee_id INTEGER NOT NULL,
-                        period_id INTEGER NOT NULL,
-                        journal_entry_id INTEGER,
-                        gross_amount REAL NOT NULL,
-                        deductions_amount REAL NOT NULL DEFAULT 0,
-                        net_amount REAL NOT NULL,
-                        status TEXT NOT NULL DEFAULT 'draft',
-                        notes TEXT,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (employee_id) REFERENCES employees(id),
-                        FOREIGN KEY (period_id) REFERENCES payroll_periods(id),
-                        FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id)
-                    )
-                `);
-
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS payroll_line_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        payroll_entry_id INTEGER NOT NULL,
-                        type TEXT NOT NULL,
-                        category TEXT NOT NULL,
-                        description TEXT NOT NULL,
-                        amount REAL NOT NULL,
-                        FOREIGN KEY (payroll_entry_id) REFERENCES payroll_entries(id)
-                    )
-                `);
-
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS payroll_settings (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        setting_key TEXT NOT NULL UNIQUE,
-                        setting_value TEXT NOT NULL,
-                        category TEXT NOT NULL,
-                        description TEXT,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                `);
-
-                this.db.run(`
-                    CREATE TABLE IF NOT EXISTS tax_brackets (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        min_income REAL NOT NULL,
-                        max_income REAL,
-                        fixed_amount REAL NOT NULL DEFAULT 0,
-                        percentage REAL NOT NULL,
-                        type TEXT NOT NULL DEFAULT 'annual', -- 'monthly' or 'annual'
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                `);
-
-                // Insertar configuraciones por defecto
-                this.db.run(`
-                    INSERT OR IGNORE INTO payroll_settings (setting_key, setting_value, category, description) VALUES 
-                    ('social_security_rate', '0.062', 'deduction', 'Tasa de Seguro Social (Empleado)'),
-                    ('medicare_rate', '0.0145', 'deduction', 'Tasa de Medicare (Empleado)'),
-                    ('company_ss_rate', '0.062', 'earning', 'Tasa de Seguro Social (Patronal)'),
-                    ('company_medicare_rate', '0.0145', 'earning', 'Tasa de Medicare (Patronal)'),
-                    ('default_overtime_multiplier', '1.5', 'multiplier', 'Multiplicador por defecto para horas extras')
-                `);
-
-                logs.push("✅ Sistema de nómina (Payroll) inicializado con parámetros de cálculo");
-            }
-
-            // =============================================
-            // SISTEMA DE ACTIVOS FIJOS (FIXED ASSETS)
-            // =============================================
-
-            // Tabla de categorías de activos
-            this.db.run(`
-                    CREATE TABLE IF NOT EXISTS asset_categories (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL UNIQUE,
-                        description TEXT,
-                        default_useful_life_years INTEGER,
-                        default_depreciation_rate REAL,
-                        account_code TEXT,
-                        depreciation_expense_account TEXT,
-                        accumulated_depreciation_account TEXT,
-                        is_active INTEGER DEFAULT 1,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                `);
-
-            // Tabla principal de activos fijos
-            this.db.run(`
-                    CREATE TABLE IF NOT EXISTS fixed_assets (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        asset_code TEXT NOT NULL UNIQUE,
-                        name TEXT NOT NULL,
-                        description TEXT,
-                        category_id INTEGER NOT NULL,
-                        acquisition_date DATE NOT NULL,
-                        acquisition_cost REAL NOT NULL,
-                        useful_life_years INTEGER NOT NULL,
-                        useful_life_months INTEGER NOT NULL,
-                        depreciation_method TEXT NOT NULL DEFAULT 'straight_line',
-                        salvage_value REAL DEFAULT 0,
-                        current_value REAL,
-                        accumulated_depreciation REAL DEFAULT 0,
-                        status TEXT NOT NULL DEFAULT 'active',
-                        location TEXT,
-                        serial_number TEXT,
-                        manufacturer TEXT,
-                        model TEXT,
-                        purchase_order TEXT,
-                        supplier_id INTEGER,
-                        warranty_expiration DATE,
-                        notes TEXT,
-                        disposal_date DATE,
-                        disposal_value REAL,
-                        disposal_reason TEXT,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        created_by INTEGER,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (category_id) REFERENCES asset_categories(id),
-                        FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
-                    )
-                `);
-
-            // Tabla de depreciaciones calculadas
-            this.db.run(`
-                    CREATE TABLE IF NOT EXISTS asset_depreciations (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        asset_id INTEGER NOT NULL,
-                        period_date DATE NOT NULL,
-                        depreciation_amount REAL NOT NULL,
-                        accumulated_depreciation REAL NOT NULL,
-                        net_book_value REAL NOT NULL,
-                        journal_entry_id INTEGER,
-                        is_posted INTEGER DEFAULT 0,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (asset_id) REFERENCES fixed_assets(id),
-                        FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id),
-                        UNIQUE(asset_id, period_date)
-                    )
-                `);
-
-            // Índices para performance
-            this.db.run(`CREATE INDEX IF NOT EXISTS idx_fixed_assets_status ON fixed_assets(status)`);
-            this.db.run(`CREATE INDEX IF NOT EXISTS idx_fixed_assets_category ON fixed_assets(category_id)`);
-            this.db.run(`CREATE INDEX IF NOT EXISTS idx_asset_depreciations_asset ON asset_depreciations(asset_id)`);
-            this.db.run(`CREATE INDEX IF NOT EXISTS idx_asset_depreciations_period ON asset_depreciations(period_date)`);
-
-            // Insertar categorías por defecto
-            this.db.run(`
-                    INSERT OR IGNORE INTO asset_categories (name, description, default_useful_life_years, default_depreciation_rate, account_code, depreciation_expense_account, accumulated_depreciation_account) VALUES 
-                    ('Edificios', 'Construcciones e inmuebles', 27, 0.037, '1510', '5310', '1519'),
-                    ('Maquinaria y Equipo', 'Equipos de producción y manufactura', 7, 0.143, '1520', '5320', '1529'),
-                    ('Vehículos', 'Automóviles, camiones y transporte', 5, 0.20, '1530', '5330', '1539'),
-                    ('Mobiliario y Equipo de Oficina', 'Muebles, escritorios, sillas', 7, 0.143, '1540', '5340', '1549'),
-                    ('Equipo de Cómputo', 'Computadoras, servidores, periféricos', 3, 0.333, '1550', '5350', '1559'),
-                    ('Herramientas', 'Herramientas de trabajo', 5, 0.20, '1560', '5360', '1569'),
-                    ('Terrenos', 'Propiedades (no depreciable)', NULL, 0, '1501', NULL, NULL)
-                `);
-
-            logs.push("✅ Sistema de Activos Fijos (Fixed Assets) inicializado con categorías estándar");
-
-        } catch (error: any) {
-            logger.error('SchemaRepair', 'failed', error.message);
-            logs.push(`❌ Error crítico: ${error.message}`);
+            return logs;
+        } catch (error) {
+            logger.critical('SchemaRepair', 'failed', 'Error fatal en reparación', null, error as Error);
+            logs.push(`❌ Error crítico: ${(error as Error).message}`);
+            return logs;
         }
-
-        return logs;
     }
 
     public async syncViews(logs: string[] = []) {

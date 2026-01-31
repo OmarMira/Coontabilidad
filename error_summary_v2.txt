@@ -1,0 +1,11 @@
+﻿src/services/audit/AuditChainService.ts: 21
+src/services/ai/AIAssistantService.ts: 10
+src/components/inventory/InventoryReports.tsx: 9
+src/services/accounting/FinancialReportingService.ts: 8
+src/services/audit/AuditChainService.test.ts: 6
+src/services/accounting/AccountingService.test.ts: 6
+src/modules/backup/BackupManager.ts: 3
+src/services/AuditTrailService.ts: 1
+src/services/backup/BackupService.ts: 1
+src/database/ForensicDiagnostic.ts: 1
+src/services/accounting/FloridaTaxEngine.test.ts: 1

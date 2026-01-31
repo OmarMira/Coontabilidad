@@ -1,5 +1,5 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
-import { FloridaTaxEngine } from '../tax/FloridaTaxEngine';
+import { FloridaTaxEngine } from '../accounting/FloridaTaxEngine';
 
 /**
  * DR15ReportGenerator - Florida Sales Tax Report (DR-15)
@@ -22,6 +22,17 @@ import { FloridaTaxEngine } from '../tax/FloridaTaxEngine';
  * const report = generator.generateReport('2026-01', '2026-01-31');
  * // Returns: { totalSales: 100000, stateTax: 6000, countyTax: 500, ... }
  */
+interface ReportInvoice {
+    id: number;
+    invoice_number: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+    created_at: string;
+    county: string;
+    customer_name: string;
+}
+
 export class DR15ReportGenerator {
     private taxEngine: FloridaTaxEngine;
 
@@ -57,7 +68,7 @@ export class DR15ReportGenerator {
             AND DATE(i.created_at) >= ?
             AND DATE(i.created_at) <= ?
             ORDER BY i.created_at
-        `, [startDate, endDate]);
+        `, [startDate, endDate]) as unknown as ReportInvoice[];
 
         // Initialize counters (all in INTEGER cents)
         let totalTaxableSalesCents = 0;
@@ -105,7 +116,8 @@ export class DR15ReportGenerator {
         const totalTaxCents = totalStateTaxCents + totalCountyTaxCents;
 
         // Verify against invoice tax totals
-        const invoiceTaxTotal = invoices.reduce((sum: number, inv: any) => sum + inv.tax, 0);
+        // Verify against invoice tax totals
+        const invoiceTaxTotal = invoices.reduce((sum: number, inv: ReportInvoice) => sum + inv.tax, 0);
         const discrepancyCents = totalTaxCents - invoiceTaxTotal;
 
         return {

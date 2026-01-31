@@ -21,7 +21,7 @@ export const BankingModule: React.FC = () => {
                 const cols = res[0].columns;
                 const loadedAccounts = res[0].values.map((row: any) => {
                     const acc: any = {};
-                    cols.forEach((col, i) => acc[col] = row[i]);
+                    cols.forEach((col: string, i: number) => acc[col] = row[i]);
                     return acc as BankAccount;
                 });
                 setAccounts(loadedAccounts);
@@ -29,7 +29,7 @@ export const BankingModule: React.FC = () => {
                     setSelectedAccountId(loadedAccounts[0].id);
                 }
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("Error loading accounts", e);
         }
     }, []);
@@ -79,7 +79,7 @@ export const BankingModule: React.FC = () => {
 
             alert("Datos Demo generados: Cuenta creada, Asientos creados, Transacciones importadas.");
             window.location.reload(); // Recarga brutal para asegurar todo
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
             alert("Error generando demo data");
         }

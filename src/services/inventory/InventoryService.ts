@@ -27,8 +27,8 @@ export class InventoryService {
      * @param quantityNeeded - Quantity to check
      * @throws Error if insufficient stock or product not found
      */
-    public validateStock(productId: number, quantityNeeded: number): void {
-        const product = this.db.select(
+    public async validateStock(productId: number, quantityNeeded: number): Promise<void> {
+        const product = await this.db.select(
             'SELECT stock_quantity, name, sku FROM products WHERE id = ?',
             [productId]
         );
@@ -57,21 +57,20 @@ export class InventoryService {
      * @param logicClock - Current logic clock value
      * @throws Error if insufficient stock
      */
-    public deductStock(productId: number, quantity: number, logicClock: number): void {
+    public async deductStock(productId: number, quantity: number, logicClock: number): Promise<void> {
         // Validate first
-        this.validateStock(productId, quantity);
+        await this.validateStock(productId, quantity);
 
         // Deduct
-        this.db.run(`
+        await this.db.run(`
             UPDATE products 
             SET stock_quantity = stock_quantity - ?,
-                logic_clock = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [quantity, logicClock, productId]);
+        `, [quantity, productId]);
 
         // Record movement in inventory history
-        this.recordInventoryMovement({
+        await this.recordInventoryMovement({
             productId,
             movementType: 'sale',
             quantity: -quantity,
@@ -87,17 +86,16 @@ export class InventoryService {
      * @param quantity - Quantity to restore
      * @param logicClock - Current logic clock value
      */
-    public restoreStock(productId: number, quantity: number, logicClock: number): void {
-        this.db.run(`
+    public async restoreStock(productId: number, quantity: number, logicClock: number): Promise<void> {
+        await this.db.run(`
             UPDATE products 
             SET stock_quantity = stock_quantity + ?,
-                logic_clock = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [quantity, logicClock, productId]);
+        `, [quantity, productId]);
 
         // Record movement
-        this.recordInventoryMovement({
+        await this.recordInventoryMovement({
             productId,
             movementType: 'return',
             quantity: quantity,
@@ -112,8 +110,8 @@ export class InventoryService {
      * @param productId - Product ID
      * @returns Current stock quantity
      */
-    public getStockLevel(productId: number): number {
-        const result = this.db.select(
+    public async getStockLevel(productId: number): Promise<number> {
+        const result = await this.db.select(
             'SELECT stock_quantity FROM products WHERE id = ?',
             [productId]
         );
@@ -132,9 +130,9 @@ export class InventoryService {
      * @param quantityNeeded - Quantity needed (default: 1)
      * @returns true if sufficient stock available
      */
-    public isInStock(productId: number, quantityNeeded: number = 1): boolean {
+    public async isInStock(productId: number, quantityNeeded: number = 1): Promise<boolean> {
         try {
-            this.validateStock(productId, quantityNeeded);
+            await this.validateStock(productId, quantityNeeded);
             return true;
         } catch {
             return false;
@@ -146,29 +144,28 @@ export class InventoryService {
      * 
      * @private
      */
-    private recordInventoryMovement(movement: {
+    private async recordInventoryMovement(movement: {
         productId: number;
         movementType: 'sale' | 'return' | 'adjustment' | 'purchase';
         quantity: number;
         logicClock: number;
         reason: string;
-    }): void {
-        // Check if inventory_movements table exists
+    }): Promise<void> {
+        // Check if stock_movements table exists
         try {
-            this.db.run(`
-                INSERT INTO inventory_movements (
-                    product_id, movement_type, quantity, logic_clock, reason, created_at
-                ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            await this.db.run(`
+                INSERT INTO stock_movements (
+                    product_id, movement_type, quantity, reference_type, created_at
+                ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             `, [
                 movement.productId,
                 movement.movementType,
                 movement.quantity,
-                movement.logicClock,
                 movement.reason
             ]);
-        } catch (e) {
+        } catch (e: any) {
             // Table might not exist yet - log warning but don't fail
-            console.warn('inventory_movements table not found - movement not recorded');
+            console.warn('stock_movements table not found or insert failed - movement not recorded', e);
         }
     }
 
@@ -177,14 +174,14 @@ export class InventoryService {
      * 
      * @returns Array of products below reorder point
      */
-    public getLowStockProducts(): Array<{
+    public async getLowStockProducts(): Promise<Array<{
         id: number;
         sku: string;
         name: string;
         stockQuantity: number;
         reorderPoint: number;
-    }> {
-        const products = this.db.select(`
+    }>> {
+        const products = await this.db.select(`
             SELECT id, sku, name, stock_quantity, reorder_point
             FROM products
             WHERE stock_quantity <= reorder_point AND active = 1

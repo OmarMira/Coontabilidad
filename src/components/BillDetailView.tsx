@@ -6,6 +6,7 @@ interface BillDetailViewProps {
   bill: Bill;
   onBack: () => void;
   onEdit: (bill: Bill) => void;
+  onDelete?: () => Promise<void>;
 }
 
 export const BillDetailView: React.FC<BillDetailViewProps> = ({
@@ -80,7 +81,7 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
             <Truck className="w-5 h-5 text-orange-400" />
             Información del Proveedor
           </h2>
-          
+
           <div className="space-y-3">
             <div>
               <p className="text-gray-400 text-sm">Nombre del Proveedor</p>
@@ -88,7 +89,7 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
                 {bill.supplier?.business_name || bill.supplier?.name || 'Proveedor Desconocido'}
               </p>
             </div>
-            
+
             {bill.supplier?.email && (
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-gray-400" />
@@ -98,7 +99,7 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
                 </div>
               </div>
             )}
-            
+
             {bill.supplier?.phone && (
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-400" />
@@ -108,7 +109,7 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
                 </div>
               </div>
             )}
-            
+
             {bill.supplier?.address_line1 && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-gray-400 mt-1" />
@@ -130,13 +131,13 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
             <Calendar className="w-5 h-5 text-orange-400" />
             Detalles de la Factura
           </h2>
-          
+
           <div className="space-y-3">
             <div>
               <p className="text-gray-400 text-sm">Número de Factura</p>
               <p className="text-white font-medium">{bill.bill_number}</p>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-400 text-sm">Fecha de Emisión</p>
@@ -147,12 +148,12 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
                 <p className="text-white">{new Date(bill.due_date).toLocaleDateString()}</p>
               </div>
             </div>
-            
+
             <div>
               <p className="text-gray-400 text-sm">Creada</p>
               <p className="text-white">{new Date(bill.created_at).toLocaleString()}</p>
             </div>
-            
+
             {bill.notes && (
               <div>
                 <p className="text-gray-400 text-sm">Notas</p>
@@ -171,7 +172,7 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
             Líneas de Factura
           </h2>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-900">
@@ -225,18 +226,18 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
               <DollarSign className="w-5 h-5 text-orange-400" />
               Resumen de Factura
             </h2>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between text-gray-300">
                 <span>Subtotal:</span>
                 <span>${bill.subtotal.toFixed(2)}</span>
               </div>
-              
+
               <div className="flex justify-between text-gray-300">
                 <span>Impuestos (FL):</span>
                 <span>${bill.tax_amount.toFixed(2)}</span>
               </div>
-              
+
               <div className="border-t border-gray-700 pt-2">
                 <div className="flex justify-between text-white font-semibold text-xl">
                   <span>Total:</span>

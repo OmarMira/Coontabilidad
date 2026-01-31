@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Truck, 
-  FileText, 
-  CreditCard, 
-  Package, 
-  ArrowLeft, 
+import {
+  Truck,
+  FileText,
+  CreditCard,
+  Package,
+  ArrowLeft,
   Edit,
   Phone,
   Mail,
@@ -19,6 +19,7 @@ interface SupplierDetailViewProps {
   supplier: Supplier;
   onBack: () => void;
   onEdit: (supplier: Supplier) => void;
+  onDelete?: () => Promise<void>;
 }
 
 export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
@@ -273,7 +274,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
           Nueva Factura de Compra
         </button>
       </div>
-      
+
       <div className="bg-gray-900 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -341,7 +342,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
           Registrar Pago
         </button>
       </div>
-      
+
       <div className="bg-gray-900 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -403,7 +404,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-white">Productos y Servicios Suministrados</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sampleProducts.map((product) => (
           <div key={product.id} className="bg-gray-900 rounded-lg p-6">
@@ -416,7 +417,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
               </div>
               <Package className="w-5 h-5 text-orange-400" />
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-400">Total compras:</span>
@@ -430,7 +431,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
           </div>
         ))}
       </div>
-      
+
       {sampleProducts.length === 0 && (
         <div className="bg-gray-900 rounded-lg p-8 text-center">
           <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
@@ -458,7 +459,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
             )}
           </div>
         </div>
-        
+
         <button
           onClick={() => onEdit(supplier)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
@@ -474,11 +475,10 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${
-              activeTab === tab.id
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${activeTab === tab.id
                 ? 'bg-orange-600 text-white'
                 : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}

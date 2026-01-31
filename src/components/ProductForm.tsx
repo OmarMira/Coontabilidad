@@ -7,6 +7,7 @@ interface ProductFormProps {
   onCancel: () => void;
   initialData?: Product;
   isEditing?: boolean;
+  categories?: ProductCategory[];
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -18,7 +19,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [activeTab, setActiveTab] = useState<'basic' | 'inventory' | 'advanced'>('basic');
-  
+
   const [formData, setFormData] = useState({
     sku: initialData?.sku || '',
     name: initialData?.name || '',
@@ -96,7 +97,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -120,7 +121,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -160,11 +161,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
+              className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
                   ? 'text-blue-400 border-b-2 border-blue-400 bg-gray-700/50'
                   : 'text-gray-400 hover:text-white'
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
@@ -216,9 +216,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         type="text"
                         value={formData.sku}
                         onChange={(e) => handleInputChange('sku', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors.sku ? 'border-red-500' : 'border-gray-600'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.sku ? 'border-red-500' : 'border-gray-600'
+                          }`}
                         placeholder="Ej: PROD-001"
                       />
                     </div>
@@ -236,9 +235,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        errors.name ? 'border-red-500' : 'border-gray-600'
-                      }`}
+                      className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-600'
+                        }`}
                       placeholder="Nombre del producto"
                     />
                     {errors.name && (
@@ -300,9 +298,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         min="0"
                         value={formData.price}
                         onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors.price ? 'border-red-500' : 'border-gray-600'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.price ? 'border-red-500' : 'border-gray-600'
+                          }`}
                         placeholder="0.00"
                       />
                     </div>
@@ -324,9 +321,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                         min="0"
                         value={formData.cost || ''}
                         onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
-                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors.cost ? 'border-red-500' : 'border-gray-600'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.cost ? 'border-red-500' : 'border-gray-600'
+                          }`}
                         placeholder="0.00"
                       />
                     </div>
@@ -431,9 +427,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                           min="0"
                           value={formData.stock_quantity}
                           onChange={(e) => handleInputChange('stock_quantity', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            errors.stock_quantity ? 'border-red-500' : 'border-gray-600'
-                          }`}
+                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.stock_quantity ? 'border-red-500' : 'border-gray-600'
+                            }`}
                         />
                         {errors.stock_quantity && (
                           <p className="mt-1 text-sm text-red-400">{errors.stock_quantity}</p>
@@ -450,9 +445,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                           min="0"
                           value={formData.min_stock_level}
                           onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            errors.min_stock_level ? 'border-red-500' : 'border-gray-600'
-                          }`}
+                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.min_stock_level ? 'border-red-500' : 'border-gray-600'
+                            }`}
                         />
                         {errors.min_stock_level && (
                           <p className="mt-1 text-sm text-red-400">{errors.min_stock_level}</p>
@@ -469,9 +463,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                           min="0"
                           value={formData.max_stock_level}
                           onChange={(e) => handleInputChange('max_stock_level', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            errors.max_stock_level ? 'border-red-500' : 'border-gray-600'
-                          }`}
+                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.max_stock_level ? 'border-red-500' : 'border-gray-600'
+                            }`}
                         />
                         {errors.max_stock_level && (
                           <p className="mt-1 text-sm text-red-400">{errors.max_stock_level}</p>
@@ -488,9 +481,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                           min="0"
                           value={formData.reorder_point}
                           onChange={(e) => handleInputChange('reorder_point', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            errors.reorder_point ? 'border-red-500' : 'border-gray-600'
-                          }`}
+                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.reorder_point ? 'border-red-500' : 'border-gray-600'
+                            }`}
                         />
                         {errors.reorder_point && (
                           <p className="mt-1 text-sm text-red-400">{errors.reorder_point}</p>

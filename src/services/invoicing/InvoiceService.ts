@@ -68,7 +68,7 @@ export class InvoiceService {
                 }))
             });
             console.log('[InvoiceService] Invoice created successfully.');
-        } catch (error) {
+        } catch (error: any) {
             console.error('[InvoiceService] Transaction Failed:', error);
             throw error; // Re-throw for UI handling
         }

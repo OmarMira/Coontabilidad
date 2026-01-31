@@ -1,4 +1,4 @@
-// @ts-nocheck
+// App.tsx
 import React, { useState, useEffect } from 'react';
 import { ForensicDemoPage } from './pages/forensic/ForensicDemoPage';
 import { Plus, TrendingUp, FileText, Shield } from 'lucide-react';
@@ -14,7 +14,7 @@ import {
   getCompanyData, updateCompanyData, CompanyData,
   getProducts, createProduct, updateProduct, deleteProduct, getProductById, ProductCategory,
   getProductCategories, createProductCategory, updateProductCategory, deleteProductCategory,
-  getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount
+  getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount, db
 } from './database/simple-db';
 
 import { UserRoleManager } from './components/system/UserRoleManager';
@@ -1238,7 +1238,7 @@ function App() {
                   invoices={state.invoices}
                   customers={state.customers}
                   onPaymentCreated={() => {
-                    refreshData();
+                    loadData();
                     setState(prev => ({ ...prev, success: 'Pago de cliente registrado correctamente' }));
                     setTimeout(() => setState(prev => ({ ...prev, success: null })), 3000);
                   }}
@@ -1323,7 +1323,7 @@ function App() {
                   bills={state.bills}
                   suppliers={state.suppliers}
                   onPaymentCreated={() => {
-                    refreshData();
+                    loadData();
                     setState(prev => ({ ...prev, success: 'Pago a proveedor registrado correctamente' }));
                     setTimeout(() => setState(prev => ({ ...prev, success: null })), 3000);
                   }}
@@ -1363,7 +1363,7 @@ function App() {
               {state.currentSection === 'journal-entries' && <ManualJournalEntries
                 chartOfAccounts={state.chartOfAccounts}
                 onEntryCreated={() => {
-                  refreshData();
+                  loadData();
                   setState(prev => ({ ...prev, success: 'Asiento registrado' }));
                 }}
               />}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { AccountingService } from '../AccountingService';
-import { SQLiteEngine } from '../../../core/database/SQLiteEngine';
+import { AccountingService } from './AccountingService';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 
 /**
  * Unit tests for AccountingService
@@ -21,7 +21,7 @@ describe('AccountingService', () => {
         await db.initialize(':memory:');
 
         // Create schema (simplified for testing)
-        db.exec(`
+        await db.exec(`
             CREATE TABLE system_config (
                 key TEXT PRIMARY KEY,
                 value TEXT,
@@ -29,9 +29,9 @@ describe('AccountingService', () => {
             )
         `);
 
-        db.exec(`INSERT INTO system_config (key, value) VALUES ('logic_clock', '0')`);
+        await db.exec(`INSERT INTO system_config (key, value) VALUES ('logic_clock', '0')`);
 
-        db.exec(`
+        await db.exec(`
             CREATE TABLE chart_of_accounts (
                 code TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -44,7 +44,7 @@ describe('AccountingService', () => {
             )
         `);
 
-        db.exec(`
+        await db.exec(`
             CREATE TABLE journal_entries (
                 id TEXT PRIMARY KEY,
                 entry_date DATE NOT NULL,
@@ -60,7 +60,7 @@ describe('AccountingService', () => {
             )
         `);
 
-        db.exec(`
+        await db.exec(`
             CREATE TABLE ledger_lines (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 journal_entry_id TEXT NOT NULL,
@@ -75,7 +75,7 @@ describe('AccountingService', () => {
         `);
 
         // Create immutability triggers
-        db.exec(`
+        await db.exec(`
             CREATE TRIGGER prevent_journal_delete
             BEFORE DELETE ON journal_entries
             FOR EACH ROW
@@ -85,7 +85,7 @@ describe('AccountingService', () => {
             END
         `);
 
-        db.exec(`
+        await db.exec(`
             CREATE TRIGGER prevent_ledger_delete
             BEFORE DELETE ON ledger_lines
             FOR EACH ROW
@@ -105,7 +105,7 @@ describe('AccountingService', () => {
         ];
 
         for (const acc of accounts) {
-            db.run(`
+            await db.run(`
                 INSERT INTO chart_of_accounts (code, name, type, normal_balance, is_active)
                 VALUES (?, ?, ?, ?, 1)
             `, [acc.code, acc.name, acc.type, acc.balance]);
@@ -114,9 +114,9 @@ describe('AccountingService', () => {
         accountingService = new AccountingService(db);
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Reset logic_clock before each test
-        db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
+        await db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
     });
 
     describe('ACCEPTANCE TEST 1: $100 Sale + $7 Tax', () => {
@@ -138,11 +138,11 @@ describe('AccountingService', () => {
             });
 
             // Assert
-            const entry = db.select('SELECT * FROM journal_entries WHERE id = ?', [entryId]);
+            const entry = await db.select('SELECT * FROM journal_entries WHERE id = ?', [entryId]);
             expect(entry.length).toBe(1);
-            expect(entry[0].status).toBe('POSTED');
+            expect((entry[0] as any).status).toBe('POSTED');
 
-            const lines = db.select('SELECT * FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
+            const lines = await db.select('SELECT * FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
 
             const totalDebits = lines.reduce((sum: number, line: any) => sum + (line.debit || 0), 0);
             const totalCredits = lines.reduce((sum: number, line: any) => sum + (line.credit || 0), 0);
@@ -179,20 +179,20 @@ describe('AccountingService', () => {
             }
 
             // Get trial balance
-            const trialBalance = accountingService.getTrialBalance();
+            const trialBalance = await accountingService.getTrialBalance();
 
-            const totalDebits = trialBalance.reduce((sum, entry) => sum + entry.debit, 0);
-            const totalCredits = trialBalance.reduce((sum, entry) => sum + entry.credit, 0);
+            const totalDebits = trialBalance.reduce((sum: number, entry: any) => sum + entry.debit, 0);
+            const totalCredits = trialBalance.reduce((sum: number, entry: any) => sum + entry.credit, 0);
 
             // Critical assertion: trial balance is balanced
             expect(totalDebits).toBe(totalCredits);
 
             // Verify accounting equation: Assets = Liabilities + Equity
-            const arBalance = accountingService.getAccountBalance('1020'); // AR (asset)
-            const inventoryBalance = accountingService.getAccountBalance('1030'); // Inventory (asset)
-            const taxPayableBalance = accountingService.getAccountBalance('2020'); // Tax Payable (liability)
-            const revenueBalance = accountingService.getAccountBalance('4010'); // Revenue (equity)
-            const cogsBalance = accountingService.getAccountBalance('5010'); // COGS (expense)
+            const arBalance = await accountingService.getAccountBalance('1020'); // AR (asset)
+            const inventoryBalance = await accountingService.getAccountBalance('1030'); // Inventory (asset)
+            const taxPayableBalance = await accountingService.getAccountBalance('2020'); // Tax Payable (liability)
+            const revenueBalance = await accountingService.getAccountBalance('4010'); // Revenue (equity)
+            const cogsBalance = await accountingService.getAccountBalance('5010'); // COGS (expense)
 
             const totalAssets = arBalance + inventoryBalance;
             const totalLiabilities = taxPayableBalance;
@@ -216,9 +216,9 @@ describe('AccountingService', () => {
             });
 
             // Act & Assert: Attempt to delete should throw
-            expect(() => {
-                db.run('DELETE FROM journal_entries WHERE id = ?', [entryId]);
-            }).toThrow(/Cannot delete POSTED journal entry/);
+            await expect(async () => {
+                await db.run('DELETE FROM journal_entries WHERE id = ?', [entryId]);
+            }).rejects.toThrow(/Cannot delete POSTED journal entry/);
         });
 
         it('should throw error when attempting to DELETE ledger line from posted entry', async () => {
@@ -232,12 +232,12 @@ describe('AccountingService', () => {
                 autoPost: true
             });
 
-            const lines = db.select('SELECT id FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
+            const lines = await db.select('SELECT id FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
 
             // Act & Assert
-            expect(() => {
-                db.run('DELETE FROM ledger_lines WHERE id = ?', [lines[0].id]);
-            }).toThrow(/Cannot delete ledger line from POSTED journal entry/);
+            await expect(async () => {
+                await db.run('DELETE FROM ledger_lines WHERE id = ?', [(lines[0] as any).id]);
+            }).rejects.toThrow(/Cannot delete ledger line from POSTED journal entry/);
         });
     });
 
@@ -254,13 +254,14 @@ describe('AccountingService', () => {
             });
 
             // Assert
-            const entry = db.select('SELECT logic_clock FROM journal_entries WHERE id = ?', [entryId]);
-            const lines = db.select('SELECT logic_clock FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
+            const entry = await db.select('SELECT logic_clock FROM journal_entries WHERE id = ?', [entryId]);
+            const lines = await db.select('SELECT logic_clock FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
 
-            const entryLogicClock = entry[0].logic_clock;
+            const entryLogicClock = (entry[0] as any).logic_clock;
 
             // All ledger lines should have same logic_clock as journal entry
-            for (const line of lines) {
+            for (const lineData of lines) {
+                const line = lineData as any;
                 expect(line.logic_clock).toBe(entryLogicClock);
             }
 
@@ -327,14 +328,14 @@ describe('AccountingService', () => {
             );
 
             // Assert
-            const reversalLines = db.select(
+            const reversalLines = await db.select(
                 'SELECT * FROM ledger_lines WHERE journal_entry_id = ?',
                 [reversalId]
             );
 
             // Reversal should have swapped debits/credits
-            const arLine = reversalLines.find((l: any) => l.account_code === '1020');
-            const revenueLine = reversalLines.find((l: any) => l.account_code === '4010');
+            const arLine = reversalLines.find((l: any) => l.account_code === '1020') as any;
+            const revenueLine = reversalLines.find((l: any) => l.account_code === '4010') as any;
 
             expect(arLine.debit).toBe(0);
             expect(arLine.credit).toBe(10000); // Swapped
@@ -342,7 +343,7 @@ describe('AccountingService', () => {
             expect(revenueLine.credit).toBe(0);
 
             // Net effect should be zero
-            const arBalance = accountingService.getAccountBalance('1020');
+            const arBalance = await accountingService.getAccountBalance('1020');
             expect(arBalance).toBe(0);
         });
     });
@@ -359,7 +360,7 @@ describe('AccountingService', () => {
                 autoPost: true
             });
 
-            const balance = accountingService.getAccountBalance('1020');
+            const balance = await accountingService.getAccountBalance('1020');
             expect(balance).toBe(10000); // $100 debit balance
         });
 
@@ -374,7 +375,7 @@ describe('AccountingService', () => {
                 autoPost: true
             });
 
-            const balance = accountingService.getAccountBalance('4010');
+            const balance = await accountingService.getAccountBalance('4010');
             expect(balance).toBe(10000); // $100 credit balance
         });
     });

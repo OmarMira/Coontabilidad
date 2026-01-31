@@ -28,13 +28,13 @@ export class FinancialReportingService {
      * @param asOfDate - Date for balance sheet (default: today)
      * @returns Balance sheet data
      */
-    public getBalanceSheet(asOfDate?: string): BalanceSheet {
+    public async getBalanceSheet(asOfDate?: string): Promise<BalanceSheet> {
         const date = asOfDate || new Date().toISOString().split('T')[0];
 
         // Get all accounts by type
-        const assets = this.getAccountsByType('ASSET', date);
-        const liabilities = this.getAccountsByType('LIABILITY', date);
-        const equity = this.getAccountsByType('EQUITY', date);
+        const assets = await this.getAccountsByType('ASSET', date);
+        const liabilities = await this.getAccountsByType('LIABILITY', date);
+        const equity = await this.getAccountsByType('EQUITY', date);
 
         // Calculate totals
         const totalAssets = assets.reduce((sum, acc) => sum + acc.balance, 0);
@@ -72,12 +72,12 @@ export class FinancialReportingService {
      * @param endDate - Period end date (default: today)
      * @returns Income statement data
      */
-    public getIncomeStatement(startDate: string, endDate?: string): IncomeStatement {
+    public async getIncomeStatement(startDate: string, endDate?: string): Promise<IncomeStatement> {
         const end = endDate || new Date().toISOString().split('T')[0];
 
         // Get revenue and expense accounts for the period
-        const revenue = this.getAccountsByTypeForPeriod('REVENUE', startDate, end);
-        const expenses = this.getAccountsByTypeForPeriod('EXPENSE', startDate, end);
+        const revenue = await this.getAccountsByTypeForPeriod('REVENUE', startDate, end);
+        const expenses = await this.getAccountsByTypeForPeriod('EXPENSE', startDate, end);
 
         // Calculate totals
         const totalRevenue = revenue.reduce((sum, acc) => sum + acc.balance, 0);
@@ -108,11 +108,11 @@ export class FinancialReportingService {
      * @param endDate - End date (optional)
      * @returns General ledger entries
      */
-    public getGeneralLedger(
+    public async getGeneralLedger(
         accountCode: string,
         startDate?: string,
         endDate?: string
-    ): GeneralLedgerReport {
+    ): Promise<GeneralLedgerReport> {
         let query = `
             SELECT 
                 ll.id,
@@ -144,11 +144,11 @@ export class FinancialReportingService {
 
         query += ` ORDER BY je.entry_date, ll.logic_clock`;
 
-        const entries = this.db.select(query, params);
+        const entries = await this.db.select(query, params);
 
         // Calculate running balance
         let runningBalance = 0;
-        const ledgerEntries: GeneralLedgerEntry[] = entries.map(entry => {
+        const ledgerEntries: GeneralLedgerEntry[] = entries.map((entry: any) => {
             const debit = entry.debit || 0;
             const credit = entry.credit || 0;
             runningBalance += (debit - credit);
@@ -168,7 +168,7 @@ export class FinancialReportingService {
         });
 
         // Get account info
-        const account = this.db.select(
+        const account = await this.db.select(
             'SELECT code, name, type FROM chart_of_accounts WHERE code = ?',
             [accountCode]
         );
@@ -188,8 +188,8 @@ export class FinancialReportingService {
      * Get accounts by type (for Balance Sheet)
      * @private
      */
-    private getAccountsByType(type: string, asOfDate: string): AccountBalance[] {
-        const accounts = this.db.select(`
+    private async getAccountsByType(type: string, asOfDate: string): Promise<AccountBalance[]> {
+        const accounts = await this.db.select(`
             SELECT code, name, subtype
             FROM chart_of_accounts
             WHERE type = ? AND is_active = 1
@@ -198,8 +198,9 @@ export class FinancialReportingService {
 
         const balances: AccountBalance[] = [];
 
-        for (const account of accounts) {
-            const balance = this.accountingService.getAccountBalance(account.code);
+        for (const accountData of accounts) {
+            const account = accountData as any;
+            const balance = await this.accountingService.getAccountBalance(account.code);
 
             if (balance !== 0) {
                 balances.push({
@@ -218,12 +219,12 @@ export class FinancialReportingService {
      * Get accounts by type for a period (for Income Statement)
      * @private
      */
-    private getAccountsByTypeForPeriod(
+    private async getAccountsByTypeForPeriod(
         type: string,
         startDate: string,
         endDate: string
-    ): AccountBalance[] {
-        const accounts = this.db.select(`
+    ): Promise<AccountBalance[]> {
+        const accounts = await this.db.select(`
             SELECT code, name, subtype
             FROM chart_of_accounts
             WHERE type = ? AND is_active = 1
@@ -232,9 +233,10 @@ export class FinancialReportingService {
 
         const balances: AccountBalance[] = [];
 
-        for (const account of accounts) {
+        for (const accountData of accounts) {
+            const account = accountData as any;
             // Get balance for period
-            const result = this.db.select(`
+            const result = await this.db.select(`
                 SELECT 
                     COALESCE(SUM(ll.debit), 0) as total_debits,
                     COALESCE(SUM(ll.credit), 0) as total_credits

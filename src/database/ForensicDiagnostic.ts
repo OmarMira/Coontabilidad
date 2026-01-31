@@ -37,7 +37,7 @@ export class ForensicDatabaseDiagnostic {
         try {
             // 1. CAPTURAR ESTADO ACTUAL
             const tablesRes = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
-            const tables = tablesRes.length > 0 ? tablesRes[0].values.map(v => v[0] as string) : [];
+            const tables = tablesRes.length > 0 ? tablesRes[0].values.map((v: any[]) => v[0] as string) : [];
             report.rawState.tables = tables;
 
             // 2. VERIFICAR FK

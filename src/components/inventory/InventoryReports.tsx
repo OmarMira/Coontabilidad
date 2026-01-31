@@ -74,9 +74,9 @@ export const InventoryReports: React.FC = () => {
                 const result = db?.exec("SELECT id, sku, name, stock_quantity, cost, price FROM products WHERE active = 1");
                 if (result && result[0]) {
                     const columns = result[0].columns;
-                    const items = result[0].values.map(row => {
+                    const items = result[0].values.map((row: any[]) => {
                         const obj: any = {};
-                        columns.forEach((col, i) => obj[col] = row[i]);
+                        columns.forEach((col: string, i: number) => obj[col] = row[i]);
                         return obj;
                     });
                     setData(items);
@@ -85,9 +85,9 @@ export const InventoryReports: React.FC = () => {
                 const result = db?.exec("SELECT id, sku, name, stock_quantity, reorder_point FROM products WHERE stock_quantity <= reorder_point AND active = 1");
                 if (result && result[0]) {
                     const columns = result[0].columns;
-                    const items = result[0].values.map(row => {
+                    const items = result[0].values.map((row: any[]) => {
                         const obj: any = {};
-                        columns.forEach((col, i) => obj[col] = row[i]);
+                        columns.forEach((col: string, i: number) => obj[col] = row[i]);
                         return obj;
                     });
                     setData(items);
@@ -104,9 +104,9 @@ export const InventoryReports: React.FC = () => {
 
                 if (result && result[0]) {
                     const columns = result[0].columns;
-                    const items = result[0].values.map(row => {
+                    const items = result[0].values.map((row: any[]) => {
                         const obj: any = {};
-                        columns.forEach((col, i) => obj[col] = row[i]);
+                        columns.forEach((col: string, i: number) => obj[col] = row[i]);
                         const expiry = new Date(obj.expiry_date);
                         const today = new Date();
                         const diffTime = expiry.getTime() - today.getTime();

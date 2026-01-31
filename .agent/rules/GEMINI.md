@@ -18,6 +18,7 @@ Agent activated → Check frontmatter "skills:" → Read SKILL.md (INDEX) → Re
 
 - **Selective Reading:** DO NOT read ALL files in a skill folder. Read `SKILL.md` first, then only read sections matching the user's request.
 - **Rule Priority:** P0 (GEMINI.md) > P1 (Agent .md) > P2 (SKILL.md). All rules are binding.
+- **Folder Integrity:** EVERY skill folder MUST have a `SKILL.md`. DO NOT store non-agent files (binaries, producción) in `.agent/`.
 
 ### 2. Enforcement Protocol
 

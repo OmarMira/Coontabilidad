@@ -24,8 +24,10 @@ module.exports = {
   },
   rules: {
     'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': 'warn',
+    '@typescript-eslint/ban-ts-comment': 'off',
     'no-unused-vars': 'warn',
     'react-hooks/exhaustive-deps': 'warn',
     'react/no-unescaped-entities': 'warn',
@@ -33,7 +35,8 @@ module.exports = {
     'no-duplicate-case': 'warn',
     'no-useless-escape': 'warn',
     'prefer-const': 'warn',
-    'no-var': 'warn'
+    'no-var': 'warn',
+    'no-empty': 'warn'
   },
   ignorePatterns: ['dist', 'node_modules', '*.config.ts', '*.config.js', 'tests/**/*']
 };

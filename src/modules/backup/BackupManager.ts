@@ -1,4 +1,4 @@
-import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+﻿import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { BasicEncryption } from '../../core/security/BasicEncryption';
 import { BackupCompressor } from './compression/BackupCompressor';
 import { BackupMetadataSchema, type BackupOptions, type BackupFileContainer } from './BackupMetadata.types';
@@ -57,7 +57,7 @@ export class BackupManager {
 
         for (const table of tablesToBackup) {
             try {
-                const rows = this.engine.select(`SELECT * FROM ${table}`);
+                const rows = await this.engine.select(`SELECT * FROM ${table}`);
                 dbDump[table] = rows;
                 totalRecords += rows.length;
             } catch (e) {
@@ -85,8 +85,8 @@ export class BackupManager {
         // 5. Get Last Audit Hash
         // Assuming AuditChain has getLastHash exposed or we query it. 
         // We already have audit_chain table in dump, but for metadata we want the latest.
-        const lastAudit = this.engine.select('SELECT current_hash FROM audit_chain ORDER BY id DESC LIMIT 1');
-        const auditHash = lastAudit[0]?.current_hash || 'GENESIS';
+        const lastAudit = await this.engine.select('SELECT current_hash FROM audit_chain ORDER BY id DESC LIMIT 1');
+        const auditHash = (lastAudit[0] as any)?.current_hash || 'GENESIS';
 
         // 6. Build Metadata
         const metadata = {
@@ -108,7 +108,7 @@ export class BackupManager {
         await this.auditChain.addEvent('backup_created', { checksum, size: validMetadata.sizeCompressed });
 
         // Insert into backup_versions
-        this.engine.run(`
+        await this.engine.run(`
         INSERT INTO backup_versions (version, created_at, checksum, audit_hash, size_bytes, description)
         VALUES (?, ?, ?, ?, ?, ?)
     `, [validMetadata.version, validMetadata.createdAt, checksum, auditHash, validMetadata.sizeCompressed, validMetadata.description]);
@@ -145,7 +145,7 @@ export class BackupManager {
                 // WARNING: Destructive.
                 // Assuming 'DELETE FROM table'
                 try {
-                    this.engine.exec(`DELETE FROM ${table}`);
+                    await (this.engine as any).exec(`DELETE FROM ${table}`);
 
                     if (rows.length > 0) {
                         const keys = Object.keys(rows[0]);
@@ -155,7 +155,7 @@ export class BackupManager {
 
                         // Optimized batch insert if engine supported it, else loop
                         for (const row of rows) {
-                            this.engine.run(`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`, Object.values(row));
+                            await this.engine.run(`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`, Object.values(row));
                         }
                     }
                 } catch (e) {
@@ -171,3 +171,5 @@ export class BackupManager {
         return true;
     }
 }
+
+

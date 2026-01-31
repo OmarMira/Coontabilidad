@@ -143,6 +143,33 @@ export class AuditChainService {
         });
     }
 
+    /**
+     * Get recent audit log entries
+     * @param limit Max entries to return
+     */
+    async getAuditLog(limit: number = 50): Promise<any[]> {
+        const records = await this.engine.select(`
+            SELECT id, event_type, entity_table, entity_id, user_id, 
+                   content_payload, chain_hash, previous_hash,
+                   datetime(created_at, 'localtime') as created_at
+            FROM audit_chain
+            ORDER BY id DESC
+            LIMIT ?
+        `, [limit]);
+
+        return records.map((r: any) => ({
+            id: r.id,
+            event_type: r.event_type,
+            entity_table: r.entity_table,
+            entity_id: r.entity_id,
+            user_id: r.user_id,
+            payload: r.content_payload ? JSON.parse(r.content_payload) : {},
+            chain_hash: r.chain_hash,
+            previous_hash: r.previous_hash,
+            created_at: r.created_at || new Date().toISOString()
+        }));
+    }
+
     terminate() {
         this.worker.terminate();
     }
