@@ -1,0 +1,435 @@
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import { AuditChainService } from '../audit/AuditChainService';
+import { FinancialReportingService } from '../accounting/FinancialReportingService';
+
+/**
+ * AIAssistantService - Read-Only AI Analysis Engine
+ * 
+ * SECURITY CONSTRAINTS:
+ * - NO direct database write access (read-only views only)
+ * - NO SQL generation (only predefined queries)
+ * - Rate limiting (100 queries per day)
+ * - Context includes logic_clock for data integrity verification
+ * 
+ * PERSONA: Forensic Auditor & Florida Tax Consultant
+ * - Detects anomalies in AuditChain
+ * - Validates double-entry bookkeeping
+ * - Analyzes Florida tax compliance
+ * - Identifies financial risks
+ * 
+ * @example
+ * const ai = new AIAssistantService(db, apiKey);
+ * const analysis = await ai.analyzeFinancialRisks();
+ * // Returns: { risks: [...], recommendations: [...], integrityStatus: 'VALID' }
+ */
+export class AIAssistantService {
+    private auditChainService: AuditChainService;
+    private reportingService: FinancialReportingService;
+    private apiKey: string;
+    private readonly DAILY_LIMIT = 100;
+    private readonly SYSTEM_PROMPT = `You are a Forensic Auditor and Florida Tax Consultant for AccountExpress Next-Gen.
+
+Your responsibilities:
+1. Detect anomalies in the audit chain (hash mismatches, logic_clock gaps)
+2. Validate double-entry bookkeeping (debits = credits)
+3. Analyze Florida sales tax compliance (6% state + county surtax, $5,000 cap)
+4. Identify financial risks and provide actionable recommendations
+
+CRITICAL CONSTRAINTS:
+- You have READ-ONLY access to financial data
+- You CANNOT modify any database records
+- You CANNOT execute SQL queries
+- All data is provided as JSON summaries
+- Always verify the logic_clock to ensure data integrity
+
+Response format:
+- Be concise and actionable
+- Highlight critical issues first
+- Provide specific recommendations
+- Reference logic_clock for data freshness`;
+
+    constructor(db: SQLiteEngine, apiKey: string) {
+        this.db = db;
+        this.apiKey = apiKey;
+        this.auditChainService = new AuditChainService(db);
+        this.reportingService = new FinancialReportingService(db);
+    }
+
+    /**
+     * Analyze financial risks
+     * 
+     * @returns Risk analysis with recommendations
+     */
+    public async analyzeFinancialRisks(): Promise<AIAnalysisResult> {
+        // Check rate limit
+        this.checkRateLimit();
+
+        // Get read-only data views
+        const context = await this.buildReadOnlyContext();
+
+        // Call AI API
+        const prompt = `Analyze the following financial data for risks and anomalies:
+
+${JSON.stringify(context, null, 2)}
+
+Provide:
+1. Critical risks (if any)
+2. Audit chain integrity status
+3. Double-entry balance verification
+4. Florida tax compliance check
+5. Actionable recommendations`;
+
+        const aiResponse = await this.callAIAPI(prompt);
+
+        // Increment usage counter
+        this.incrementUsageCounter();
+
+        return {
+            analysis: aiResponse,
+            context,
+            timestamp: new Date().toISOString(),
+            logicClock: context.logicClock
+        };
+    }
+
+    /**
+     * Detect accounting anomalies
+     * 
+     * @returns Anomaly detection report
+     */
+    public async detectAnomalies(): Promise<AIAnalysisResult> {
+        this.checkRateLimit();
+
+        // Verify audit chain integrity
+        const integrity = await this.auditChainService.verifyIntegrity();
+
+        // Get trial balance
+        const trialBalance = this.reportingService.getTrialBalance();
+
+        // Calculate total debits and credits
+        const totalDebits = trialBalance.reduce((sum, entry) => sum + entry.debit, 0);
+        const totalCredits = trialBalance.reduce((sum, entry) => sum + entry.credit, 0);
+
+        const context = {
+            integrityReport: integrity,
+            trialBalance: {
+                totalDebits,
+                totalCredits,
+                isBalanced: totalDebits === totalCredits,
+                accounts: trialBalance
+            },
+            logicClock: this.auditChainService.getCurrentLogicClock()
+        };
+
+        const prompt = `Analyze this accounting data for anomalies:
+
+${JSON.stringify(context, null, 2)}
+
+Focus on:
+1. Audit chain integrity (any hash mismatches or gaps?)
+2. Trial balance (debits = credits?)
+3. Unusual account balances
+4. Logic clock consistency`;
+
+        const aiResponse = await this.callAIAPI(prompt);
+
+        this.incrementUsageCounter();
+
+        return {
+            analysis: aiResponse,
+            context,
+            timestamp: new Date().toISOString(),
+            logicClock: context.logicClock
+        };
+    }
+
+    /**
+     * Analyze Florida tax compliance
+     * 
+     * @returns Tax compliance analysis
+     */
+    public async analyzeTaxCompliance(): Promise<AIAnalysisResult> {
+        this.checkRateLimit();
+
+        // Get sales tax data
+        const taxData = this.db.select(`
+            SELECT 
+                i.id,
+                i.invoice_number,
+                i.subtotal,
+                i.tax,
+                i.total,
+                c.county
+            FROM invoices i
+            JOIN customers c ON i.customer_id = c.id
+            WHERE i.status = 'posted'
+            ORDER BY i.created_at DESC
+            LIMIT 100
+        `);
+
+        // Get tax payable balance
+        const taxPayable = this.reportingService.getAccountBalance('2020'); // Sales Tax Payable
+
+        const context = {
+            recentInvoices: taxData.map(inv => ({
+                invoiceNumber: inv.invoice_number,
+                subtotalCents: inv.subtotal,
+                taxCents: inv.tax,
+                totalCents: inv.total,
+                county: inv.county,
+                effectiveRate: inv.subtotal > 0 ? (inv.tax / inv.subtotal) : 0
+            })),
+            taxPayableBalance: taxPayable,
+            logicClock: this.auditChainService.getCurrentLogicClock()
+        };
+
+        const prompt = `Analyze Florida sales tax compliance:
+
+${JSON.stringify(context, null, 2)}
+
+Check:
+1. Are tax rates correct? (6% state + county surtax)
+2. Is the $5,000 surtax cap applied correctly?
+3. Are there any unusual effective tax rates?
+4. Is the tax payable balance reasonable?
+5. Any compliance risks?`;
+
+        const aiResponse = await this.callAIAPI(prompt);
+
+        this.incrementUsageCounter();
+
+        return {
+            analysis: aiResponse,
+            context,
+            timestamp: new Date().toISOString(),
+            logicClock: context.logicClock
+        };
+    }
+
+    /**
+     * Quick command handler
+     * 
+     * @param command - Command string (e.g., "/analizar riesgos")
+     * @returns Command result
+     */
+    public async executeCommand(command: string): Promise<AIAnalysisResult> {
+        const cmd = command.toLowerCase().trim();
+
+        if (cmd.includes('riesgo') || cmd.includes('risk')) {
+            return this.analyzeFinancialRisks();
+        } else if (cmd.includes('fiscal') || cmd.includes('tax')) {
+            return this.analyzeTaxCompliance();
+        } else if (cmd.includes('integridad') || cmd.includes('integrity')) {
+            return this.verifySystemIntegrity();
+        } else if (cmd.includes('anomal')) {
+            return this.detectAnomalies();
+        } else {
+            throw new Error(`Unknown command: ${command}`);
+        }
+    }
+
+    /**
+     * Verify system integrity (quick check)
+     * 
+     * @returns Integrity verification result
+     */
+    public async verifySystemIntegrity(): Promise<AIAnalysisResult> {
+        this.checkRateLimit();
+
+        const integrity = await this.auditChainService.verifyIntegrity();
+
+        const context = {
+            integrityReport: integrity,
+            logicClock: this.auditChainService.getCurrentLogicClock()
+        };
+
+        const prompt = `Verify system integrity:
+
+${JSON.stringify(context, null, 2)}
+
+Report:
+1. Is the audit chain valid?
+2. Are there any hash mismatches?
+3. Are there any logic_clock gaps?
+4. Overall integrity status`;
+
+        const aiResponse = await this.callAIAPI(prompt);
+
+        this.incrementUsageCounter();
+
+        return {
+            analysis: aiResponse,
+            context,
+            timestamp: new Date().toISOString(),
+            logicClock: context.logicClock
+        };
+    }
+
+    /**
+     * Build read-only context for AI
+     * @private
+     */
+    private async buildReadOnlyContext(): Promise<ReadOnlyContext> {
+        // Get integrity status
+        const integrity = await this.auditChainService.verifyIntegrity();
+
+        // Get trial balance
+        const trialBalance = this.reportingService.getTrialBalance();
+
+        // Get balance sheet
+        const balanceSheet = this.reportingService.getBalanceSheet();
+
+        // Get recent transactions count
+        const recentTxCount = this.db.select(`
+            SELECT COUNT(*) as count 
+            FROM journal_entries 
+            WHERE status = 'POSTED' 
+            AND created_at >= date('now', '-30 days')
+        `)[0].count;
+
+        return {
+            integrityStatus: integrity.valid ? 'VALID' : 'COMPROMISED',
+            integrityErrors: integrity.errors,
+            logicClock: this.auditChainService.getCurrentLogicClock(),
+            trialBalance: {
+                totalDebits: trialBalance.reduce((sum, e) => sum + e.debit, 0),
+                totalCredits: trialBalance.reduce((sum, e) => sum + e.credit, 0),
+                isBalanced: trialBalance.reduce((sum, e) => sum + e.debit, 0) ===
+                    trialBalance.reduce((sum, e) => sum + e.credit, 0)
+            },
+            balanceSheet: {
+                totalAssets: balanceSheet.assets.total,
+                totalLiabilities: balanceSheet.liabilities.total,
+                totalEquity: balanceSheet.equity.total,
+                isBalanced: balanceSheet.isBalanced
+            },
+            recentActivity: {
+                last30DaysTransactions: recentTxCount
+            }
+        };
+    }
+
+    /**
+     * Call AI API (placeholder - integrate with actual AI service)
+     * @private
+     */
+    private async callAIAPI(prompt: string): Promise<string> {
+        // TODO: Integrate with actual AI service (OpenAI, Anthropic, etc.)
+        // For now, return a mock response
+
+        // In production, this would be:
+        // const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        //     method: 'POST',
+        //     headers: {
+        //         'Authorization': `Bearer ${this.apiKey}`,
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify({
+        //         model: 'gpt-4',
+        //         messages: [
+        //             { role: 'system', content: this.SYSTEM_PROMPT },
+        //             { role: 'user', content: prompt }
+        //         ]
+        //     })
+        // });
+
+        return `[AI Analysis - Mock Response]
+This is a placeholder response. In production, this would call the actual AI API.
+
+Prompt received:
+${prompt.substring(0, 200)}...
+
+To enable AI analysis, configure the API key in environment variables.`;
+    }
+
+    /**
+     * Check rate limit
+     * @private
+     */
+    private checkRateLimit(): void {
+        const today = new Date().toISOString().split('T')[0];
+
+        // Get usage count for today
+        const usage = this.db.select(`
+            SELECT value FROM system_config 
+            WHERE key = ?
+        `, [`ai_usage_${today}`]);
+
+        const count = usage.length > 0 ? parseInt(usage[0].value) : 0;
+
+        if (count >= this.DAILY_LIMIT) {
+            throw new Error(
+                `Daily AI query limit reached (${this.DAILY_LIMIT}). ` +
+                `Limit resets at midnight.`
+            );
+        }
+    }
+
+    /**
+     * Increment usage counter
+     * @private
+     */
+    private incrementUsageCounter(): void {
+        const today = new Date().toISOString().split('T')[0];
+        const key = `ai_usage_${today}`;
+
+        const usage = this.db.select(`
+            SELECT value FROM system_config WHERE key = ?
+        `, [key]);
+
+        if (usage.length > 0) {
+            const newCount = parseInt(usage[0].value) + 1;
+            this.db.run(`
+                UPDATE system_config SET value = ? WHERE key = ?
+            `, [newCount.toString(), key]);
+        } else {
+            this.db.run(`
+                INSERT INTO system_config (key, value) VALUES (?, '1')
+            `, [key]);
+        }
+    }
+
+    /**
+     * Get remaining queries for today
+     */
+    public getRemainingQueries(): number {
+        const today = new Date().toISOString().split('T')[0];
+        const usage = this.db.select(`
+            SELECT value FROM system_config WHERE key = ?
+        `, [`ai_usage_${today}`]);
+
+        const count = usage.length > 0 ? parseInt(usage[0].value) : 0;
+        return Math.max(0, this.DAILY_LIMIT - count);
+    }
+}
+
+// ==========================================
+// TYPE DEFINITIONS
+// ==========================================
+
+export interface AIAnalysisResult {
+    analysis: string;
+    context: any;
+    timestamp: string;
+    logicClock: number;
+}
+
+export interface ReadOnlyContext {
+    integrityStatus: 'VALID' | 'COMPROMISED';
+    integrityErrors: any[];
+    logicClock: number;
+    trialBalance: {
+        totalDebits: number;
+        totalCredits: number;
+        isBalanced: boolean;
+    };
+    balanceSheet: {
+        totalAssets: number;
+        totalLiabilities: number;
+        totalEquity: number;
+        isBalanced: boolean;
+    };
+    recentActivity: {
+        last30DaysTransactions: number;
+    };
+}

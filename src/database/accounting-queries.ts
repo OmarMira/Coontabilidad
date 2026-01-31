@@ -46,7 +46,7 @@ export async function getAccountBalances(): Promise<AccountBalance[]> {
         const res = db.exec(query);
         if (!res.length) return [];
 
-        return res[0].values.map(row => ({
+        return res[0].values.map((row: any) => ({
             account_code: row[0] as string,
             account_name: row[1] as string,
             account_type: (row[2] as string).toLowerCase() as any,
@@ -80,7 +80,7 @@ export async function getIncomeStatement(): Promise<IncomeStatement> {
         let expenses = 0;
 
         if (res.length) {
-            res[0].values.forEach(row => {
+            res[0].values.forEach((row: any) => {
                 const type = row[0] as string;
                 const amount = Number(row[1]) || 0;
                 if (type === 'revenue') revenue = amount;
@@ -231,7 +231,7 @@ export async function getLowStockProducts(): Promise<{ name: string; stock: numb
     try {
         const res = db.exec(query);
         if (!res.length) return [];
-        return res[0].values.map(row => ({ name: row[0] as string, stock: Number(row[1]), min: Number(row[2]) }));
+        return res[0].values.map((row: any) => ({ name: row[0] as string, stock: Number(row[1]), min: Number(row[2]) }));
     } catch (error) {
         return [];
     }
@@ -263,7 +263,7 @@ export async function getTaxByCounty(): Promise<{ county: string; total: number 
     try {
         const res = db.exec(query);
         if (!res.length) return [];
-        return res[0].values.map(row => ({ county: row[0] as string, total: Number(row[1]) }));
+        return res[0].values.map((row: any) => ({ county: row[0] as string, total: Number(row[1]) }));
     } catch (error) {
         return [];
     }
@@ -409,7 +409,7 @@ export async function getDetailedTrialBalance(periodStart: string, periodEnd: st
         const res = db.exec(query, [periodStart, periodStart, periodStart, periodEnd, periodStart, periodEnd]);
         if (!res.length) return [];
 
-        return res[0].values.map(row => ({
+        return res[0].values.map((row: any) => ({
             account_code: row[0],
             account_name: row[1],
             account_type: row[2],
@@ -448,7 +448,7 @@ export async function getAccountMovements(accountCode: string, start: string, en
     try {
         const res = db.exec(query, [accountCode, start, end]);
         if (!res.length) return [];
-        return res[0].values.map(row => ({
+        return res[0].values.map((row: any) => ({
             date: row[0],
             reference: row[1],
             description: row[3] || row[2],

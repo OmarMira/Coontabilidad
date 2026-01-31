@@ -80,24 +80,6 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    id: 'payroll',
-    label: 'NÓMINA (PAYROLL)',
-    icon: Users,
-    children: [
-      { id: 'employee-mgr', label: 'Gestión de Empleados', icon: UserCheck },
-      { id: 'payroll-process', label: 'Procesar Nómina', icon: Calculator },
-      { id: 'payroll-reports', label: 'Reportes de Nómina', icon: BarChart3 }
-    ]
-  },
-  {
-    id: 'fixed-assets-section',
-    label: 'ACTIVOS FIJOS',
-    icon: Building2,
-    children: [
-      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package }
-    ]
-  },
-  {
     id: 'cuentas-cobrar',
     label: 'Cta por Cobrar',
     icon: TrendingUp,
@@ -128,7 +110,19 @@ const menuItems: MenuItem[] = [
       { id: 'balance-sheet', label: 'Balance General', icon: ShieldCheck },
       { id: 'income-statement', label: 'Estado de Resultados', icon: TrendingUp },
       { id: 'cash-flow', label: 'Flujo de Efectivo', icon: DollarSign },
-      { id: 'aging-report', label: 'Reporte de Antigüedad', icon: Clock }
+      { id: 'aging-report', label: 'Reporte de Antigüedad', icon: Clock },
+      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package } // MOVIDO AQUÍ
+    ]
+  },
+  // SECCIONES MOVIDAS FUERA DE CONTABILIDAD (SOLICITUD USUARIO)
+  {
+    id: 'payroll',
+    label: 'NÓMINA (PAYROLL)',
+    icon: Users,
+    children: [
+      { id: 'employee-mgr', label: 'Gestión de Empleados', icon: UserCheck },
+      { id: 'payroll-process', label: 'Procesar Nómina', icon: Calculator },
+      { id: 'payroll-reports', label: 'Reportes de Nómina', icon: BarChart3 }
     ]
   },
   {
@@ -225,14 +219,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
   const filteredMenuItems = menuItems.filter(item => hasAccess(item.id));
 
   const toggleExpanded = (itemId: string) => {
-    const isAlreadyExpanded = expandedItems.has(itemId);
-    // Para comportamiento tipo acordeón: si no estaba expandido, cerramos todo y abrimos solo el nuevo
-    // Si ya estaba expandido, simplemente lo cerramos
-    if (isAlreadyExpanded) {
-      setExpandedItems(new Set());
-    } else {
-      setExpandedItems(new Set([itemId]));
-    }
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
   };
 
   const handleItemClick = (item: MenuItem) => {

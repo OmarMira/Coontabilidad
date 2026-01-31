@@ -9,24 +9,24 @@ export class HistoricalDataFixMigration implements Migration {
 
     async up(engine: SQLiteEngine): Promise<void> {
         // 0. ENSURE SCHEMA (Fix missing operation column from previous versions)
-        const columns = engine.select("PRAGMA table_info(audit_chain)");
+        const columns = await engine.select("PRAGMA table_info(audit_chain)");
         const colNames = columns.map((c: any) => c.name);
 
         if (!colNames.includes('operation')) {
             console.log('[Migration 008] Adding missing column: operation');
-            engine.run("ALTER TABLE audit_chain ADD COLUMN operation TEXT DEFAULT 'INSERT'");
+            await engine.run("ALTER TABLE audit_chain ADD COLUMN operation TEXT DEFAULT 'INSERT'");
         }
         if (!colNames.includes('created_at')) {
             console.log('[Migration 008] Adding missing column: created_at');
-            engine.run("ALTER TABLE audit_chain ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP");
+            await engine.run("ALTER TABLE audit_chain ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP");
         }
         if (!colNames.includes('created_by')) {
             console.log('[Migration 008] Adding missing column: created_by');
-            engine.run("ALTER TABLE audit_chain ADD COLUMN created_by INTEGER DEFAULT 1");
+            await engine.run("ALTER TABLE audit_chain ADD COLUMN created_by INTEGER DEFAULT 1");
         }
 
         // 1. Fetch all journal entries
-        const allEntries = engine.select("SELECT id, total_debit, total_credit, description, entry_date FROM journal_entries");
+        const allEntries = await engine.select("SELECT id, total_debit, total_credit, description, entry_date FROM journal_entries");
 
         // 2. BACKFILL LINES
         for (const je of allEntries) {
@@ -36,29 +36,29 @@ export class HistoricalDataFixMigration implements Migration {
             const desc = je.description;
 
             // Check if lines exist in Forensic Table
-            const linesRes = engine.select("SELECT COUNT(*) as count FROM journal_entry_lines WHERE journal_entry_id = ?", [id]);
+            const linesRes = await engine.select("SELECT COUNT(*) as count FROM journal_entry_lines WHERE journal_entry_id = ?", [id]);
             const lineCount = linesRes[0].count;
 
             if (lineCount === 0) {
                 // Check legacy journal_details
-                const detailsRes = engine.select("SELECT account_code, debit_amount, credit_amount, description FROM journal_details WHERE journal_entry_id = ?", [id]);
+                const detailsRes = await engine.select("SELECT account_code, debit_amount, credit_amount, description FROM journal_details WHERE journal_entry_id = ?", [id]);
 
                 if (detailsRes.length > 0) {
                     // Backfill from legacy
                     for (const d of detailsRes) {
                         const d_desc = d.description || desc;
-                        engine.run(
+                        await engine.run(
                             "INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, ?, ?, ?, ?)",
                             [id, d.account_code, d.debit_amount, d.credit_amount, d_desc]
                         );
                     }
                 } else {
                     // Create Dummy Lines (Correction)
-                    engine.run(
+                    await engine.run(
                         "INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, '9999', ?, 0, ?)",
                         [id, debit, desc + ' (Correction)']
                     );
-                    engine.run(
+                    await engine.run(
                         "INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, '9999', 0, ?, ?)",
                         [id, credit, desc + ' (Correction)']
                     );
@@ -67,7 +67,7 @@ export class HistoricalDataFixMigration implements Migration {
         }
 
         // 3. REPAIR AUDIT CHAIN (Full Re-hash)
-        const nodes = engine.select("SELECT id, table_name, record_id, operation, created_at, created_by FROM audit_chain ORDER BY id ASC");
+        const nodes = await engine.select("SELECT id, table_name, record_id, operation, created_at, created_by FROM audit_chain ORDER BY id ASC");
 
         if (nodes.length === 0) return;
 
@@ -78,11 +78,11 @@ export class HistoricalDataFixMigration implements Migration {
             let dataHash = '';
 
             if (node.table_name === 'journal_entries') {
-                const jeRes = engine.select("SELECT id, total_debit, total_credit FROM journal_entries WHERE id = ?", [node.record_id]);
+                const jeRes = await engine.select("SELECT id, total_debit, total_credit FROM journal_entries WHERE id = ?", [node.record_id]);
                 if (jeRes.length > 0) {
                     const je = jeRes[0];
                     // Fetch Lines
-                    const lRes = engine.select("SELECT account_code, debit, credit, description FROM journal_entry_lines WHERE journal_entry_id = ?", [node.record_id]);
+                    const lRes = await engine.select("SELECT account_code, debit, credit, description FROM journal_entry_lines WHERE journal_entry_id = ?", [node.record_id]);
                     const items = lRes.map(v => ({
                         account_code: v.account_code,
                         debit: v.debit,
@@ -100,12 +100,12 @@ export class HistoricalDataFixMigration implements Migration {
                 } else {
                     // Record deleted or missing
                     // Fallback to existing hash to avoid breaking chain if record is gone
-                    const existing = engine.select("SELECT data_hash FROM audit_chain WHERE id = ?", [auditId]);
+                    const existing = await engine.select("SELECT data_hash FROM audit_chain WHERE id = ?", [auditId]);
                     dataHash = existing[0]?.data_hash || 'MISSING';
                 }
             } else {
                 // Preserve existing data_hash for non-journal_entries
-                const existing = engine.select("SELECT data_hash FROM audit_chain WHERE id = ?", [auditId]);
+                const existing = await engine.select("SELECT data_hash FROM audit_chain WHERE id = ?", [auditId]);
                 dataHash = existing[0]?.data_hash || '';
             }
 
@@ -115,7 +115,7 @@ export class HistoricalDataFixMigration implements Migration {
             const currentHash = await BasicEncryption.hash(new TextEncoder().encode(sealPayload));
 
             // Update Node
-            engine.run(
+            await engine.run(
                 "UPDATE audit_chain SET previous_hash = ?, data_hash = ?, current_hash = ? WHERE id = ?",
                 [lastHash, dataHash, currentHash, auditId]
             );

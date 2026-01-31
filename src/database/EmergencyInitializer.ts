@@ -293,7 +293,7 @@ export class EmergencyDatabaseInitializer {
         try {
             const res = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
             if (res.length > 0) {
-                return res[0].values.map(v => v[0] as string);
+                return res[0].values.map((v: any) => v[0] as string);
             }
         } catch (e) { }
         return [];

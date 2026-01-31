@@ -1,4 +1,3 @@
-// import initSqlJs from 'sql.js';
 import initSqlJs from 'sql.js';
 import { BasicEncryption } from '../core/security/BasicEncryption';
 import { logger } from '../core/logging/SystemLogger';
@@ -7,11 +6,15 @@ import { DatabaseInitializer } from './DatabaseInitializer';
 import { DatabaseService } from './DatabaseService';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { MigrationEngine } from '../core/migrations/MigrationEngine';
+import { verifyRoles } from '../utils/verifyRoles';
+import { MassiveSeeder } from './seeding/MassiveSeeder';
 
-let db: initSqlJs.Database | null = null;
+// Instancia global de la base de datos (any para compatibilidad con sql.js)
+let db: any = null;
 
 // Exportar la instancia de db para acceso externo
 export { db };
+export const getDB = () => db;
 
 // ==========================================
 // DASHBOARD & ANALYTICS
@@ -187,14 +190,14 @@ export function getMonthlyFinancialSummary(): MonthlySummary[] {
     }
 
     if (res.length > 0) {
-      res[0].values.forEach(row => {
+      res[0].values.forEach((row: any) => {
         const m = row[0] as string;
         summary[m].revenue = row[1] as number;
       });
     }
 
     if (expenseRes.length > 0) {
-      expenseRes[0].values.forEach(row => {
+      expenseRes[0].values.forEach((row: any) => {
         const m = row[0] as string;
         summary[m].expenses = row[1] as number;
       });
@@ -216,7 +219,7 @@ export function getEmployees(): Employee[] {
   try {
     const res = db.exec("SELECT * FROM employees ORDER BY last_name, first_name");
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<Employee>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<Employee>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching employees:', e);
     return [];
@@ -291,7 +294,7 @@ export function getPayrollPeriods(): PayrollPeriod[] {
   try {
     const res = db.exec("SELECT * FROM payroll_periods ORDER BY start_date DESC");
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<PayrollPeriod>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollPeriod>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching payroll periods:', e);
     return [];
@@ -303,7 +306,7 @@ export function getPayrollSettings(): PayrollSetting[] {
   try {
     const res = db.exec("SELECT * FROM payroll_settings");
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<PayrollSetting>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollSetting>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching payroll settings:', e);
     return [];
@@ -325,7 +328,7 @@ export function getTaxBrackets(): TaxBracket[] {
   try {
     const res = db.exec("SELECT * FROM tax_brackets ORDER BY min_income ASC");
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<TaxBracket>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<TaxBracket>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching tax brackets:', e);
     return [];
@@ -447,7 +450,7 @@ export function getAssetCategories(): AssetCategory[] {
   try {
     const res = db.exec("SELECT * FROM asset_categories WHERE is_active = 1 ORDER BY name");
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<AssetCategory>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<AssetCategory>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching asset categories:', e);
     return [];
@@ -506,7 +509,7 @@ export function getFixedAssets(status?: string): FixedAsset[] {
 
     const res = db.exec(query);
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<FixedAsset>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<FixedAsset>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching fixed assets:', e);
     return [];
@@ -700,7 +703,7 @@ export function getAssetDepreciations(assetId: number): AssetDepreciation[] {
   try {
     const res = db.exec("SELECT * FROM asset_depreciations WHERE asset_id = ? ORDER BY period_date DESC", [assetId]);
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<AssetDepreciation>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<AssetDepreciation>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching asset depreciations:', e);
     return [];
@@ -866,7 +869,7 @@ export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_
       WHERE pe.period_id = ?
     `, [periodId]);
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<PayrollEntry & { employee_name: string }>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollEntry & { employee_name: string }>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching payroll entries:', e);
     return [];
@@ -922,7 +925,7 @@ export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
   try {
     const res = db.exec("SELECT * FROM payroll_line_items WHERE payroll_entry_id = ?", [entryId]);
     if (res.length === 0) return [];
-    return res[0].values.map(row => rowToEntity<PayrollLineItem>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollLineItem>(res[0].columns, row));
   } catch (e) {
     console.error('Error fetching payroll line items:', e);
     return [];
@@ -934,6 +937,50 @@ let opfsRoot: FileSystemDirectoryHandle | null = null;
 let dbFile: FileSystemFileHandle | null = null;
 let encryptionEnabled = false;
 let currentPassword: string | null = null;
+
+// Comprimir datos para localStorage
+const compressData = async (data: Uint8Array): Promise<string> => {
+  let dataBuffer: ArrayBuffer;
+  if (data.buffer instanceof ArrayBuffer) {
+    dataBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+  } else {
+    const tempArray = new Uint8Array(data.length);
+    tempArray.set(data);
+    dataBuffer = tempArray.buffer;
+  }
+  return await BasicEncryption.compressData(new Uint8Array(dataBuffer));
+};
+
+// Cargar desde localStorage
+const loadFromLocalStorage = async (): Promise<Uint8Array | null> => {
+  try {
+    const stored = localStorage.getItem('accountexpress-db');
+    const isEncrypted = localStorage.getItem('accountexpress-encrypted') === 'true';
+
+    if (!stored) return null;
+
+    let decoded = atob(stored);
+    let data = new Uint8Array(decoded.split('').map(char => char.charCodeAt(0)));
+
+    if (isEncrypted && encryptionEnabled && currentPassword) {
+      try {
+        const { salt, iv, encrypted } = BasicEncryption.separateEncryptedData(data);
+        const decryptedData = await BasicEncryption.decrypt(encrypted, salt, iv, currentPassword);
+        const tempArray = new Uint8Array(decryptedData.length);
+        tempArray.set(decryptedData);
+        data = tempArray;
+        console.log('Database decrypted from localStorage');
+      } catch (error) {
+        console.error('Failed to decrypt from localStorage:', error);
+        return null;
+      }
+    }
+    return data;
+  } catch (error) {
+    console.error('Error loading from localStorage:', error);
+    return null;
+  }
+};
 
 // Configuración de persistencia
 export const DB_NAME = 'accountexpress.db';
@@ -986,7 +1033,7 @@ export function getFiscalYears(): FiscalYear[] {
   try {
     const res = db.exec("SELECT * FROM fiscal_years ORDER BY year DESC");
     if (res.length > 0) {
-      return res[0].values.map(row => rowToEntity<FiscalYear>(res[0].columns, row));
+      return res[0].values.map((row: any) => rowToEntity<FiscalYear>(res[0].columns, row));
     }
   } catch (e) { console.error(e); }
   return [];
@@ -997,7 +1044,7 @@ export function getAccountingPeriods(fiscalYearId: number): AccountingPeriod[] {
   try {
     const res = db.exec("SELECT * FROM accounting_periods WHERE fiscal_year_id = ? ORDER BY month ASC", [fiscalYearId]);
     if (res.length > 0) {
-      return res[0].values.map(row => rowToEntity<AccountingPeriod>(res[0].columns, row));
+      return res[0].values.map((row: any) => rowToEntity<AccountingPeriod>(res[0].columns, row));
     }
   } catch (e) { console.error(e); }
   return [];
@@ -1468,724 +1515,403 @@ export interface UserSession {
   created_at?: string;
 }
 
-export const initDB = async (password?: string): Promise<initSqlJs.Database> => {
+export const initDB = async (password?: string): Promise<any> => {
   if (isInitialized && db) {
     return db;
   }
 
   try {
-    logger.info('Database', 'init_start', 'Iniciando inicialización de base de datos SQLite con OPFS');
+    logger.info('Database', 'init_start', 'Iniciando inicialización de base de datos SQLite');
 
     // Configurar cifrado si se proporciona contraseña
     if (password && BasicEncryption.isSupported()) {
       encryptionEnabled = true;
       currentPassword = password;
       logger.info('Database', 'encryption_enabled', 'Cifrado habilitado con Web Crypto API');
-    } else if (password) {
-      logger.warn('Database', 'encryption_fallback', 'Web Crypto API no soportado, cifrado deshabilitado');
     }
 
-    // Inicializar sql.js usando dynamic import
-    const initSqlJs = (await import('sql.js')).default;
+    // Inicializar sql.js
     const SQL = await initSqlJs({
       locateFile: (file: string) => `/${file}`
     });
 
-    logger.info('Database', 'sqljs_loaded', 'SQL.js cargado correctamente');
+    logger.info('Database', 'sqljs_loaded', 'SQL.js cargado y base de datos inicializada');
 
-    // Intentar usar OPFS para persistencia real
-    let dbData: Uint8Array | null = null;
+    // Cargar datos existentes
+    const dbData = await loadFromLocalStorage();
 
-    try {
-      // Verificar soporte OPFS
-      if (typeof navigator !== 'undefined' && navigator.storage && 'getDirectory' in navigator.storage) {
-        logger.info('Database', 'opfs_supported', 'OPFS soportado, usando almacenamiento persistente');
-        opfsRoot = await navigator.storage.getDirectory();
-
-        try {
-          // Intentar cargar base de datos existente
-          dbFile = await opfsRoot.getFileHandle(DB_NAME);
-          const file = await dbFile.getFile();
-          let fileData = new Uint8Array(await file.arrayBuffer());
-
-          // Descifrar si está habilitado el cifrado
-          if (encryptionEnabled && currentPassword && fileData.length > 28) {
-            try {
-              const { salt, iv, encrypted } = BasicEncryption.separateEncryptedData(fileData);
-              dbData = await BasicEncryption.decrypt(encrypted, salt, iv, currentPassword);
-              logger.info('Database', 'decrypt_success', `Base de datos descifrada correctamente: ${dbData.length} bytes`);
-            } catch (error) {
-              logger.error('Database', 'decrypt_failed', 'Error al descifrar base de datos', { error: error instanceof Error ? error.message : 'Unknown error' }, error as Error);
-              throw new Error('Invalid password or corrupted database');
-            }
-          } else {
-            dbData = fileData;
-            logger.info('Database', 'load_success', `Base de datos cargada: ${dbData.length} bytes`);
-          }
-        } catch (error) {
-          // Base de datos no existe, se creará nueva
-          logger.info('Database', 'new_database', 'Base de datos no encontrada, creando nueva');
-        }
-      } else {
-        logger.warn('Database', 'opfs_not_supported', 'OPFS no soportado, usando localStorage como fallback');
-        // Intentar cargar desde localStorage
-        dbData = await loadFromLocalStorage();
-      }
-    } catch (error) {
-      logger.error('Database', 'opfs_init_failed', 'Error en inicialización OPFS, usando almacenamiento en memoria', { error: error instanceof Error ? error.message : 'Unknown error' }, error as Error);
+    if (!db) {
+      db = new SQL.Database(dbData || undefined);
     }
 
-    // Crear instancia de base de datos
-    db = new SQL.Database(dbData) as any;
-    logger.info('Database', 'instance_created', 'Instancia de base de datos creada');
+    // Ejecutar inicialización de esquema
+    await initializeSchema(db);
 
-    // Configurar SQLite para mejor rendimiento
-    if (db) {
-      db.run('PRAGMA journal_mode=WAL');
-      db.run('PRAGMA synchronous=NORMAL');
-      db.run('PRAGMA cache_size=10000');
-      db.run('PRAGMA foreign_keys=ON');
-      logger.info('Database', 'pragma_configured', 'Configuración PRAGMA aplicada para optimización');
-    }
-
-    // Inicializar logger con la base de datos
-    if (db) {
-      logger.initialize(db);
-    }
-
-    // NUEVO: Inicialización robusta con manejo de FK
-    if (db) {
-      await DatabaseInitializer.initializeWithFix(db);
-    }
-
-    // Crear esquema de base de datos
-    await createSchema();
-    await ensureInventorySchema();
-
-    // Insertar datos de ejemplo si es nueva
-    if (db) {
-      // 1. Insertar tasas de impuesto iniciales si no existen (Independiente)
-      const taxResult = db.exec("SELECT COUNT(*) as count FROM florida_tax_rates");
-      const taxCount = taxResult[0]?.values[0]?.[0] as number || 0;
-      if (taxCount === 0) {
-        logger.info('Database', 'insert_tax_rates', 'Insertando tasas de impuesto iniciales');
-        await insertInitialTaxRates();
-      }
-
-      // 2. Insertar plan de cuentas inicial si no existe (Requerido para Journal Entries)
-      const accountResult = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
-      const accountCount = accountResult[0]?.values[0]?.[0] as number || 0;
-      if (accountCount === 0) {
-        logger.info('Database', 'insert_chart_accounts', 'Insertando plan de cuentas inicial');
-        await insertInitialChartOfAccounts();
-      }
-
-      // 3. Insertar categorías de productos iniciales si no existen
-      const categoryResult = db.exec("SELECT COUNT(*) as count FROM product_categories");
-      const categoryCount = categoryResult[0]?.values[0]?.[0] as number || 0;
-      if (categoryCount === 0) {
-        logger.info('Database', 'insert_product_categories', 'Insertando categorías de productos iniciales');
-        await insertInitialProductCategories();
-      }
-
-      // 4. Insertar productos iniciales si no existen
-      const productResult = db.exec("SELECT COUNT(*) as count FROM products");
-      const productCount = productResult[0]?.values[0]?.[0] as number || 0;
-      if (productCount === 0) {
-        logger.info('Database', 'insert_products', 'Insertando productos iniciales');
-        await insertInitialProducts();
-      }
-
-      // 5. Insertar roles y usuarios del sistema si no existen (CRÍTICO para login)
-      await seedUsersAndRoles();
-
-      // 5.1 Migración de Propiedad de Datos (Validation Step 1)
-      await migrateDataOwnership();
-
-      // 6. Insertar datos de ejemplo transaccionales (Clientes, Facturas, Asientos)
-      const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
-      const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-      if (customerCount === 0) {
-        logger.info('Database', 'insert_sample_data', 'Insertando datos de ejemplo transaccionales');
-        await insertSampleData();
-      }
-
-      // Inicializar datos de empresa si no existen
-      initializeCompanyData();
-
-      // Inicializar y crear vistas de solo lectura para IA
-      try {
-        const viewManagerInstance = new ViewManager(db);
-        await viewManagerInstance.createAllViews();
-        logger.info('Database', 'views_created', 'Vistas de solo lectura para IA inicializadas correctamente');
-      } catch (error) {
-        logger.error('Database', 'views_failed', 'Error al inicializar vistas de solo lectura', { error });
-      }
-
-      // NUEVO: Verificación profunda de datos transaccionales para el asistente IA
-      if (db) {
-        const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
-        const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
-
-        const journalResult = db.exec("SELECT COUNT(*) as count FROM journal_entries");
-        const journalCount = journalResult[0]?.values[0]?.[0] as number || 0;
-
-        if (invoiceCount === 0 || journalCount === 0) {
-          logger.info('Database', 'massive_data_injection', 'Tablas transaccionales vacías, inyectando datos masivos para IA');
-          await insertMassiveSampleData();
-        }
-      }
-    }
-
-    // --- INYECCIÓN NÚCLEO FORENSE (IRON CORE) ---
-    if (db) {
-      // 1. Inicializar Forense (SIN TRIGGERS para permitir migración de corrección monetaria)
-      DatabaseService.setDB(db);
-      await DatabaseService.initializeForensicLayer(true);
-
-      // 2. Ejecutar Migraciones (Task 5.1: Floats -> Cents)
-      const engine = new SQLiteEngine();
-      engine.setDB(db);
-      await MigrationEngine.getInstance().migrate(engine);
-
-      // 3. Instalar Triggers Anti-Tamper (Ahora que los datos están limpios)
-      await DatabaseService.createForensicTriggers();
-    }
-    // ---------------------------------------------
-
-    // Configurar auto-save
+    // Configurar servicios adicionales
     setupAutoSave();
 
+    return db;
+  } catch (error) {
+    logger.error('Database', 'init_failed', 'Error fatal en inicialización', { error });
+    throw error;
+  } finally {
     isInitialized = true;
-    logger.info('Database', 'init_complete', 'Base de datos inicializada correctamente con persistencia (Modo Forense)');
-    return db!;
-  } catch (error) {
-    logger.critical('Database', 'init_failed', `Error crítico en inicialización de base de datos: ${error instanceof Error ? error.message : 'Unknown error'}`, null, error as Error);
-    throw new Error(`Database initialization failed: ${error}`);
   }
 };
 
-/**
-* Inyecta un conjunto masivo de datos para pruebas reales del Asistente IA
-*/
-const insertMassiveSampleData = async (): Promise<void> => {
-  if (!db) return;
-
-  try {
-    db.run('BEGIN TRANSACTION');
-
-    // 1. Clientes Adicionales (Total: 8)
-    db.run(`
-    INSERT INTO customers (name, business_name, email, phone, city, state, florida_county, credit_limit, status) VALUES 
-    ('Sarah Miller', 'Miller Design Studio', 'sarah@miller.com', '305-555-0001', 'Miami', 'FL', 'Miami-Dade', 10000.00, 'active'),
-    ('David Chen', 'Tech Hub Orlando', 'david@techhub.com', '407-555-0002', 'Orlando', 'FL', 'Orange', 15000.00, 'active'),
-    ('Elena Rossi', 'Rossi Catering', 'elena@rossi.com', '813-555-0003', 'Tampa', 'FL', 'Hillsborough', 5000.00, 'active'),
-    ('Frank Wright', 'Wright Architecture', 'frank@wright.com', '904-555-0004', 'Jacksonville', 'FL', 'Duval', 20000.00, 'active'),
-    ('Grace Lee', 'Glory Retail', 'grace@glory.com', '954-555-0005', 'Fort Lauderdale', 'FL', 'Broward', 8000.00, 'active')
-  `);
-
-    // 2. Proveedores Adicionales (Ya hay 5 en insertSampleData, añadimos coherencia)
-    // No hace falta más proveedores, con 5 es suficiente (Tech Solutions, Office Supplies, FBS, Global Logistics, Janitorial Experts)
-
-    // 3. Productos Adicionales (Total: 15)
-    db.run(`
-    INSERT INTO products (sku, name, description, price, cost, category_id, stock_quantity, min_stock_level, is_service, active) VALUES 
-    ('PROD-005', 'Monitor Dell 27"', 'UltraSharp 4K Monitor', 450.00, 300.00, 3, 15, 5, 0, 1),
-    ('PROD-006', 'Teclado Mecánico', 'RGB Mechanical Keyboard', 120.00, 65.00, 3, 25, 10, 0, 1),
-    ('PROD-007', 'Mouse Inalámbrico', 'Ergonomic Wireless Mouse', 60.00, 32.00, 3, 40, 15, 0, 1),
-    ('PROD-008', 'Escritorio Oficina', 'L-Shaped Office Desk', 350.00, 210.00, 4, 8, 2, 0, 1),
-    ('PROD-009', 'Silla Ergonómica', 'Premium Mesh Office Chair', 250.00, 145.00, 4, 12, 3, 0, 1),
-    ('SERV-005', 'Mantenimiento Red', 'Servicio de mantenimiento mensual de red', 250.00, 50.00, 5, 0, 0, 1, 1),
-    ('SERV-006', 'Backup en la Nube', 'Suscripción mensual backup cloud', 45.00, 10.00, 2, 0, 0, 1, 1)
-  `);
-
-    // 4. Facturas de Venta e Items (Total: 18 facturas)
-    for (let i = 1; i <= 15; i++) {
-      const customerId = (i % 8) + 1;
-      const productId = (i % 9) + 1;
-      const qty = (i % 5) + 1;
-      const unitPrice = 100 + (i * 10);
-      const subtotal = qty * unitPrice;
-      const tax = subtotal * 0.07;
-      const total = subtotal + tax;
-      const date = `2024-01-${i.toString().padStart(2, '0')}`;
-      const status = i % 5 === 0 ? 'overdue' : (i % 3 === 0 ? 'sent' : 'paid');
-      const dueDate = i % 5 === 0 ? '2023-12-01' : date;
-
-      db.run(`
-        INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) 
-        VALUES ('INV-2024-${i.toString().padStart(3, '0')}', ${customerId}, '${date}', '${dueDate}', ${subtotal}, ${tax}, ${total}, '${status}')
-      `);
-
-      db.run(`
-        INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, line_total)
-        VALUES (last_insert_rowid(), ${productId}, 'Venta de prueba ${i}', ${qty}, ${unitPrice}, ${subtotal})
-      `);
-    }
-
-    // 5. Facturas de Compra (Bills) (Total: 12 facturas)
-    for (let i = 1; i <= 8; i++) {
-      const supplierId = (i % 5) + 1;
-      const amount = 300 + (i * 95.25);
-      const tax = amount * 0.07;
-      const total = amount + tax;
-      const date = `2024-01-${(i + 2).toString().padStart(2, '0')}`;
-      const status = 'paid';
-      db.run(`
-      INSERT INTO bills (bill_number, supplier_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) 
-      VALUES ('BILL-2024-${i.toString().padStart(3, '0')}', ${supplierId}, '${date}', '${date}', ${amount}, ${tax}, ${total}, '${status}')
-    `);
-    }
-
-    // 6. Asientos Contables Coherentes (Journal Entries)
-    // Primero asegurar que las cuentas existen (Inyección directa por seguridad)
-    db.run(`INSERT OR IGNORE INTO chart_of_accounts (account_code, account_name, account_type, normal_balance, is_active) VALUES 
-    ('1121', 'Cuentas por Cobrar - Clientes', 'asset', 'debit', 1),
-    ('4110', 'Ingresos por Ventas', 'revenue', 'credit', 1),
-    ('2121', 'Impuesto sobre Ventas Florida', 'liability', 'credit', 1),
-    ('5240', 'Gastos Profesionales', 'expense', 'debit', 1),
-    ('3100', 'Capital Social', 'equity', 'credit', 1)
-  `);
-
-    // Apertura (100k)
-    db.run(`INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES ('2024-01-01', 'APER-01', 'Apertura ejercicio 2024', 100000, 100000)`);
-    db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (last_insert_rowid(), '1112', 100000, 0), (last_insert_rowid(), '3100', 0, 100000)`);
-
-    // Registro de Venta Grande (10k)
-    db.run(`INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES ('2024-01-05', 'SALE-01', 'Venta corporativa masiva', 10700, 10700)`);
-    db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (last_insert_rowid(), '1121', 10700, 0), (last_insert_rowid(), '4110', 0, 10000), (last_insert_rowid(), '2121', 0, 700)`);
-
-    // Registro de Gasto Grande (5k)
-    db.run(`INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES ('2024-01-10', 'EXP-01', 'Servicios legales anuales', 5350, 5350)`);
-    db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (last_insert_rowid(), '5240', 5000, 0), (last_insert_rowid(), '2121', 350, 0), (last_insert_rowid(), '1112', 0, 5350)`);
-
-    db.run('COMMIT');
-    logger.info('Database', 'massive_data_success', 'Datos inyectados correctamente');
-  } catch (error) {
-    db.run('ROLLBACK');
-    logger.error('Database', 'massive_data_failed', 'Error inyectando datos masivos', {}, error as Error);
-  }
-};
-
-// Crear esquema de base de datos
-const createSchema = async (): Promise<void> => {
-  if (!db) return;
-
-  // Tabla del plan de cuentas (CRITICAL - DOCUMENTO TÉCNICO OFICIAL)
+const initializeSchema = async (db: any) => {
   db.run(`
-    CREATE TABLE IF NOT EXISTS chart_of_accounts (
-      account_code TEXT PRIMARY KEY,
-      account_name TEXT NOT NULL,
-      account_type TEXT NOT NULL CHECK(account_type IN ('asset', 'liability', 'equity', 'revenue', 'expense')),
-      normal_balance TEXT NOT NULL CHECK(normal_balance IN ('debit', 'credit')),
-      parent_account TEXT REFERENCES chart_of_accounts(account_code),
-      is_active BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1
-    )
-  `);
-
-  // Tabla de clientes con campos completos para Florida
-  db.run(`
-    CREATE TABLE IF NOT EXISTS customers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      -- Información personal
-      name TEXT NOT NULL,
-      business_name TEXT,
-      document_type TEXT DEFAULT 'SSN' CHECK(document_type IN ('SSN', 'EIN', 'ITIN', 'PASSPORT')),
-      document_number TEXT,
-      business_type TEXT,
-      
-      -- Datos de contacto
-      email TEXT,
-      email_secondary TEXT,
-      phone TEXT,
-      phone_secondary TEXT,
-      
-      -- Dirección
-      address_line1 TEXT,
-      address_line2 TEXT,
-      city TEXT DEFAULT 'Miami',
-      state TEXT DEFAULT 'FL',
-      zip_code TEXT,
-      florida_county TEXT DEFAULT 'Miami-Dade',
-      
-      -- Datos comerciales
-      credit_limit DECIMAL(12,2) DEFAULT 0.00,
-      payment_terms INTEGER DEFAULT 30,
-      tax_exempt BOOLEAN DEFAULT 0,
-      tax_id TEXT,
-      assigned_salesperson TEXT,
-      
-      -- Metadatos
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1
-    )
-  `);
-
-  // Tabla de proveedores (suppliers) - REQUERIDA PARA productos
-  db.run(`
-    CREATE TABLE IF NOT EXISTS suppliers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      business_name TEXT,
-      document_type TEXT DEFAULT 'EIN' CHECK(document_type IN ('SSN', 'EIN', 'ITIN', 'PASSPORT')),
-      document_number TEXT,
-      business_type TEXT,
-      email TEXT,
-      email_secondary TEXT,
-      phone TEXT,
-      phone_secondary TEXT,
-      address_line1 TEXT,
-      address_line2 TEXT,
-      city TEXT DEFAULT 'Miami',
-      state TEXT DEFAULT 'FL',
-      zip_code TEXT,
-      florida_county TEXT DEFAULT 'Miami-Dade',
-      credit_limit DECIMAL(12,2) DEFAULT 0.00,
-      payment_terms INTEGER DEFAULT 30,
-      tax_exempt BOOLEAN DEFAULT 0,
-      tax_id TEXT,
-      assigned_buyer TEXT,
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1
-    )
+    CREATE TABLE IF NOT EXISTS suppliers(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  business_name TEXT,
+  document_type TEXT DEFAULT 'EIN' CHECK(document_type IN('SSN', 'EIN', 'ITIN', 'PASSPORT')),
+  document_number TEXT,
+  business_type TEXT,
+  email TEXT,
+  email_secondary TEXT,
+  phone TEXT,
+  phone_secondary TEXT,
+  address_line1 TEXT,
+  address_line2 TEXT,
+  city TEXT DEFAULT 'Miami',
+  state TEXT DEFAULT 'FL',
+  zip_code TEXT,
+  florida_county TEXT DEFAULT 'Miami-Dade',
+  credit_limit DECIMAL(12, 2) DEFAULT 0.00,
+  payment_terms INTEGER DEFAULT 30,
+  tax_exempt BOOLEAN DEFAULT 0,
+  tax_id TEXT,
+  assigned_buyer TEXT,
+  status TEXT DEFAULT 'active' CHECK(status IN('active', 'inactive', 'suspended')),
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_by INTEGER REFERENCES users(id) DEFAULT 1,
+  updated_by INTEGER REFERENCES users(id) DEFAULT 1
+)
   `);
 
   // Tabla de categorías de productos
   db.run(`
-    CREATE TABLE IF NOT EXISTS product_categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      description TEXT,
-      parent_id INTEGER,
-      tax_rate DECIMAL(5,2) DEFAULT 0.00,
-      active BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
-      FOREIGN KEY (parent_id) REFERENCES product_categories(id)
-    )
+    CREATE TABLE IF NOT EXISTS product_categories(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    parent_id INTEGER,
+    tax_rate DECIMAL(5, 2) DEFAULT 0.00,
+    active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    FOREIGN KEY(parent_id) REFERENCES product_categories(id)
+  )
   `);
 
   // Tabla de productos expandida
   db.run(`
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sku TEXT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
-      description TEXT,
-      price DECIMAL(10,2) NOT NULL DEFAULT 0,
-      cost DECIMAL(10,2) DEFAULT 0,
-      category_id INTEGER,
-      unit_of_measure TEXT DEFAULT 'unidad',
-      taxable BOOLEAN DEFAULT 1,
-      tax_rate DECIMAL(5,2),
-      stock_quantity INTEGER DEFAULT 0,
-      min_stock_level INTEGER DEFAULT 0,
-      max_stock_level INTEGER DEFAULT 100,
-      reorder_point INTEGER DEFAULT 10,
-      supplier_id INTEGER,
-      barcode TEXT,
-      image_path TEXT,
-      weight DECIMAL(8,2),
-      dimensions TEXT,
-      is_service BOOLEAN DEFAULT 0,
-      service_duration INTEGER, -- minutos
-      warranty_period INTEGER, -- días
+    CREATE TABLE IF NOT EXISTS products(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sku TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    cost DECIMAL(10, 2) DEFAULT 0,
+    category_id INTEGER,
+    unit_of_measure TEXT DEFAULT 'unidad',
+    taxable BOOLEAN DEFAULT 1,
+    tax_rate DECIMAL(5, 2),
+    stock_quantity INTEGER DEFAULT 0,
+    min_stock_level INTEGER DEFAULT 0,
+    max_stock_level INTEGER DEFAULT 100,
+    reorder_point INTEGER DEFAULT 10,
+    supplier_id INTEGER,
+    barcode TEXT,
+    image_path TEXT,
+    weight DECIMAL(8, 2),
+    dimensions TEXT,
+    is_service BOOLEAN DEFAULT 0,
+    service_duration INTEGER, --minutos
+      warranty_period INTEGER, --días
       notes TEXT,
-      active BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
-      FOREIGN KEY (category_id) REFERENCES product_categories(id),
-      FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
-    )
+    active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    FOREIGN KEY(category_id) REFERENCES product_categories(id),
+    FOREIGN KEY(supplier_id) REFERENCES suppliers(id)
+  )
   `);
 
   // Tabla de facturas
   db.run(`
-    CREATE TABLE IF NOT EXISTS invoices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_number TEXT UNIQUE NOT NULL,
-      customer_id INTEGER NOT NULL,
-      issue_date DATE DEFAULT CURRENT_DATE,
-      due_date DATE,
-      subtotal DECIMAL(12,2) DEFAULT 0.00,
-      tax_amount DECIMAL(12,2) DEFAULT 0.00,
-      total_amount DECIMAL(12,2) DEFAULT 0.00,
-      status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'sent', 'paid', 'overdue', 'cancelled')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
-      FOREIGN KEY (customer_id) REFERENCES customers (id)
-    )
+    CREATE TABLE IF NOT EXISTS invoices(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_number TEXT UNIQUE NOT NULL,
+    customer_id INTEGER NOT NULL,
+    issue_date DATE DEFAULT CURRENT_DATE,
+    due_date DATE,
+    subtotal DECIMAL(12, 2) DEFAULT 0.00,
+    tax_amount DECIMAL(12, 2) DEFAULT 0.00,
+    total_amount DECIMAL(12, 2) DEFAULT 0.00,
+    status TEXT DEFAULT 'draft' CHECK(status IN('draft', 'sent', 'paid', 'overdue', 'cancelled')),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    FOREIGN KEY(customer_id) REFERENCES customers(id)
+  )
   `);
 
   // Tabla de líneas de factura
   db.run(`
-    CREATE TABLE IF NOT EXISTS invoice_lines (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_id INTEGER NOT NULL,
-      product_id INTEGER,
-      description TEXT NOT NULL,
-      quantity DECIMAL(10,3) DEFAULT 1.000,
-      unit_price DECIMAL(10,2) DEFAULT 0.00,
-      line_total DECIMAL(12,2) DEFAULT 0.00,
-      taxable BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (invoice_id) REFERENCES invoices (id),
-      FOREIGN KEY (product_id) REFERENCES products (id)
-    )
+    CREATE TABLE IF NOT EXISTS invoice_lines(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER NOT NULL,
+    product_id INTEGER,
+    description TEXT NOT NULL,
+    quantity DECIMAL(10, 3) DEFAULT 1.000,
+    unit_price DECIMAL(10, 2) DEFAULT 0.00,
+    line_total DECIMAL(12, 2) DEFAULT 0.00,
+    taxable BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(invoice_id) REFERENCES invoices(id),
+    FOREIGN KEY(product_id) REFERENCES products(id)
+  )
   `);
 
   // Tabla de pagos
   db.run(`
-    CREATE TABLE IF NOT EXISTS payments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_id INTEGER NOT NULL,
-      invoice_id INTEGER,
-      payment_number TEXT UNIQUE NOT NULL,
-      payment_date DATE DEFAULT CURRENT_DATE,
-      amount DECIMAL(12,2) NOT NULL,
-      payment_method TEXT DEFAULT 'cash' CHECK(payment_method IN ('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
-      reference_number TEXT,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER DEFAULT 1,
-      FOREIGN KEY (customer_id) REFERENCES customers (id),
-      FOREIGN KEY (invoice_id) REFERENCES invoices (id)
-    )
+    CREATE TABLE IF NOT EXISTS payments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL,
+    invoice_id INTEGER,
+    payment_number TEXT UNIQUE NOT NULL,
+    payment_date DATE DEFAULT CURRENT_DATE,
+    amount DECIMAL(12, 2) NOT NULL,
+    payment_method TEXT DEFAULT 'cash' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    reference_number TEXT,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER DEFAULT 1,
+    FOREIGN KEY(customer_id) REFERENCES customers(id),
+    FOREIGN KEY(invoice_id) REFERENCES invoices(id)
+  )
   `);
 
   // Tabla de configuración de impuestos Florida
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_rates (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      county_name TEXT UNIQUE NOT NULL,
-      state_rate DECIMAL(5,4) DEFAULT 0.06,
-      county_rate DECIMAL(5,4) DEFAULT 0.0,
-      total_rate DECIMAL(5,4) DEFAULT 0.06,
-      effective_date DATE DEFAULT CURRENT_DATE,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS florida_tax_rates(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    county_name TEXT UNIQUE NOT NULL,
+    state_rate DECIMAL(5, 4) DEFAULT 0.06,
+    county_rate DECIMAL(5, 4) DEFAULT 0.0,
+    total_rate DECIMAL(5, 4) DEFAULT 0.06,
+    effective_date DATE DEFAULT CURRENT_DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
 
   // Tabla de facturas de compra (bills)
   db.run(`
-    CREATE TABLE IF NOT EXISTS bills (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      bill_number TEXT UNIQUE NOT NULL,
-      supplier_id INTEGER NOT NULL,
-      issue_date DATE DEFAULT CURRENT_DATE,
-      due_date DATE,
-      subtotal DECIMAL(12,2) DEFAULT 0.00,
-      tax_amount DECIMAL(12,2) DEFAULT 0.00,
-      total_amount DECIMAL(12,2) DEFAULT 0.00,
-      status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'received', 'approved', 'paid', 'overdue', 'cancelled')),
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers (id)
-    )
+    CREATE TABLE IF NOT EXISTS bills(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bill_number TEXT UNIQUE NOT NULL,
+    supplier_id INTEGER NOT NULL,
+    issue_date DATE DEFAULT CURRENT_DATE,
+    due_date DATE,
+    subtotal DECIMAL(12, 2) DEFAULT 0.00,
+    tax_amount DECIMAL(12, 2) DEFAULT 0.00,
+    total_amount DECIMAL(12, 2) DEFAULT 0.00,
+    status TEXT DEFAULT 'draft' CHECK(status IN('draft', 'received', 'approved', 'paid', 'overdue', 'cancelled')),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    FOREIGN KEY(supplier_id) REFERENCES suppliers(id)
+  )
   `);
 
   // Tabla de líneas de factura de compra (bill_lines)
   db.run(`
-    CREATE TABLE IF NOT EXISTS bill_lines (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      bill_id INTEGER NOT NULL,
-      product_id INTEGER,
-      description TEXT NOT NULL,
-      quantity DECIMAL(10,3) DEFAULT 1.000,
-      unit_price DECIMAL(10,2) DEFAULT 0.00,
-      line_total DECIMAL(12,2) DEFAULT 0.00,
-      taxable BOOLEAN DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (bill_id) REFERENCES bills (id),
-      FOREIGN KEY (product_id) REFERENCES products (id)
-    )
+    CREATE TABLE IF NOT EXISTS bill_lines(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bill_id INTEGER NOT NULL,
+    product_id INTEGER,
+    description TEXT NOT NULL,
+    quantity DECIMAL(10, 3) DEFAULT 1.000,
+    unit_price DECIMAL(10, 2) DEFAULT 0.00,
+    line_total DECIMAL(12, 2) DEFAULT 0.00,
+    taxable BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(bill_id) REFERENCES bills(id),
+    FOREIGN KEY(product_id) REFERENCES products(id)
+  )
   `);
 
   // Tabla de pagos a proveedores (supplier_payments)
   db.run(`
-    CREATE TABLE IF NOT EXISTS supplier_payments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      supplier_id INTEGER NOT NULL,
-      bill_id INTEGER,
-      payment_number TEXT UNIQUE NOT NULL,
-      payment_date DATE DEFAULT CURRENT_DATE,
-      amount DECIMAL(12,2) NOT NULL,
-      payment_method TEXT DEFAULT 'check' CHECK(payment_method IN ('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
-      reference_number TEXT,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (supplier_id) REFERENCES suppliers (id),
-      FOREIGN KEY (bill_id) REFERENCES bills (id)
-    )
+    CREATE TABLE IF NOT EXISTS supplier_payments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    supplier_id INTEGER NOT NULL,
+    bill_id INTEGER,
+    payment_number TEXT UNIQUE NOT NULL,
+    payment_date DATE DEFAULT CURRENT_DATE,
+    amount DECIMAL(12, 2) NOT NULL,
+    payment_method TEXT DEFAULT 'check' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    reference_number TEXT,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(supplier_id) REFERENCES suppliers(id),
+    FOREIGN KEY(bill_id) REFERENCES bills(id)
+  )
   `);
 
   // Tabla de auditoría con hash de integridad
   db.run(`
-    CREATE TABLE IF NOT EXISTS audit_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      table_name TEXT NOT NULL,
-      record_id INTEGER NOT NULL,
-      action TEXT NOT NULL CHECK(action IN ('INSERT', 'UPDATE', 'DELETE')),
-      old_values TEXT,
-      new_values TEXT,
-      user_id INTEGER DEFAULT 1,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      audit_hash TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS audit_log(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name TEXT NOT NULL,
+    record_id INTEGER NOT NULL,
+    action TEXT NOT NULL CHECK(action IN('INSERT', 'UPDATE', 'DELETE')),
+    old_values TEXT,
+    new_values TEXT,
+    user_id INTEGER DEFAULT 1,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    audit_hash TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Nueva tabla de trazabilidad general
   db.run(`
-    CREATE TABLE IF NOT EXISTS audit_trail (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER REFERENCES users(id),
-      action TEXT NOT NULL,
-      entity_type TEXT,
-      entity_id TEXT,
-      old_value TEXT,
-      new_value TEXT,
-      ip_address TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS audit_trail(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    action TEXT NOT NULL,
+    entity_type TEXT,
+    entity_id TEXT,
+    old_value TEXT,
+    new_value TEXT,
+    ip_address TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Tabla de datos de la empresa
   db.run(`
-    CREATE TABLE IF NOT EXISTS company_data (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      company_name TEXT NOT NULL,
-      legal_name TEXT NOT NULL,
-      tax_id TEXT NOT NULL, -- EIN o Tax ID
+    CREATE TABLE IF NOT EXISTS company_data(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_name TEXT NOT NULL,
+    legal_name TEXT NOT NULL,
+    tax_id TEXT NOT NULL, --EIN o Tax ID
       address TEXT NOT NULL,
-      city TEXT NOT NULL,
-      state TEXT NOT NULL DEFAULT 'FL',
-      zip_code TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      email TEXT NOT NULL,
-      website TEXT,
-      logo_path TEXT,
-      fiscal_year_start TEXT DEFAULT '01-01', -- MM-DD format
+    city TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT 'FL',
+    zip_code TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT NOT NULL,
+    website TEXT,
+    logo_path TEXT,
+    fiscal_year_start TEXT DEFAULT '01-01', --MM - DD format
       currency TEXT DEFAULT 'USD',
-      language TEXT DEFAULT 'es',
-      timezone TEXT DEFAULT 'America/New_York',
-      -- Configuraciones financieras
-      sales_commission_rate DECIMAL(10,2) DEFAULT 0.00,
-      sales_commission_percentage DECIMAL(5,2) DEFAULT 0.00,
-      discount_amount DECIMAL(10,2) DEFAULT 50.00,
-      discount_percentage DECIMAL(5,2) DEFAULT 0.00,
-      shipping_rate DECIMAL(10,2) DEFAULT 0.00,
-      shipping_percentage DECIMAL(5,2) DEFAULT 0.00,
-      reposition_policy_days INTEGER DEFAULT 32,
-      late_fee_amount DECIMAL(10,2) DEFAULT 0.00,
-      late_fee_percentage DECIMAL(5,2) DEFAULT 0.00,
-      annual_interest_rate DECIMAL(5,2) DEFAULT 0.00,
-      grace_period_days INTEGER DEFAULT 0,
-      documentation_cost DECIMAL(10,2) DEFAULT 0.00,
-      other_costs DECIMAL(10,2) DEFAULT 0.00,
-      chart_of_accounts_name TEXT DEFAULT 'Plan de Cuenta Ejemplo',
-      date_format TEXT DEFAULT 'MM/DD/AAAA',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      is_active BOOLEAN DEFAULT 1
-    )
+    language TEXT DEFAULT 'es',
+    timezone TEXT DEFAULT 'America/New_York',
+    --Configuraciones financieras
+      sales_commission_rate DECIMAL(10, 2) DEFAULT 0.00,
+    sales_commission_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) DEFAULT 50.00,
+    discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    shipping_rate DECIMAL(10, 2) DEFAULT 0.00,
+    shipping_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    reposition_policy_days INTEGER DEFAULT 32,
+    late_fee_amount DECIMAL(10, 2) DEFAULT 0.00,
+    late_fee_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    annual_interest_rate DECIMAL(5, 2) DEFAULT 0.00,
+    grace_period_days INTEGER DEFAULT 0,
+    documentation_cost DECIMAL(10, 2) DEFAULT 0.00,
+    other_costs DECIMAL(10, 2) DEFAULT 0.00,
+    chart_of_accounts_name TEXT DEFAULT 'Plan de Cuenta Ejemplo',
+    date_format TEXT DEFAULT 'MM/DD/AAAA',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT 1
+  )
   `);
 
   // Tabla de cuentas bancarias
   db.run(`
-    CREATE TABLE IF NOT EXISTS bank_accounts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      account_name TEXT NOT NULL,
-      bank_name TEXT NOT NULL,
-      account_number TEXT NOT NULL,
-      account_type TEXT DEFAULT 'checking' CHECK(account_type IN ('checking', 'savings', 'credit', 'other')),
-      routing_number TEXT,
-      balance DECIMAL(12,2) DEFAULT 0.00,
-      currency TEXT DEFAULT 'USD',
-      is_active BOOLEAN DEFAULT 1,
-      notes TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS bank_accounts(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_name TEXT NOT NULL,
+    bank_name TEXT NOT NULL,
+    account_number TEXT NOT NULL,
+    account_type TEXT DEFAULT 'checking' CHECK(account_type IN('checking', 'savings', 'credit', 'other')),
+    routing_number TEXT,
+    balance DECIMAL(12, 2) DEFAULT 0.00,
+    currency TEXT DEFAULT 'USD',
+    is_active BOOLEAN DEFAULT 1,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Tabla de transacciones bancarias importadas (Conciliación)
   db.run(`
-    CREATE TABLE IF NOT EXISTS bank_transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      bank_account_id INTEGER NOT NULL REFERENCES bank_accounts(id),
-      transaction_date DATE NOT NULL,
-      description TEXT NOT NULL,
-      amount DECIMAL(12,2) NOT NULL,
-      reference_number TEXT,
-      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'matched', 'ignored')),
-      match_confidence DECIMAL(5,2),
-      matched_journal_entry_id INTEGER REFERENCES journal_entries(id),
-      import_batch_id TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS bank_transactions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bank_account_id INTEGER NOT NULL REFERENCES bank_accounts(id),
+    transaction_date DATE NOT NULL,
+    description TEXT NOT NULL,
+    amount DECIMAL(12, 2) NOT NULL,
+    reference_number TEXT,
+    status TEXT DEFAULT 'pending' CHECK(status IN('pending', 'matched', 'ignored')),
+    match_confidence DECIMAL(5, 2),
+    matched_journal_entry_id INTEGER REFERENCES journal_entries(id),
+    import_batch_id TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Tabla de métodos de pago
   db.run(`
-    CREATE TABLE IF NOT EXISTS payment_methods (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      method_name TEXT UNIQUE NOT NULL,
-      method_type TEXT CHECK(method_type IN ('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
-      is_active BOOLEAN DEFAULT 1,
-      requires_reference BOOLEAN DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS payment_methods(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    method_name TEXT UNIQUE NOT NULL,
+    method_type TEXT CHECK(method_type IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    is_active BOOLEAN DEFAULT 1,
+    requires_reference BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Tabla de logs del sistema
   db.run(`
-    CREATE TABLE IF NOT EXISTS system_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      level TEXT CHECK(level IN ('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')) NOT NULL,
-      module TEXT NOT NULL,
-      action TEXT NOT NULL,
-      message TEXT NOT NULL,
-      user_id INTEGER DEFAULT 1,
-      ip_address TEXT,
-      user_agent TEXT,
-      data TEXT,
-      stack_trace TEXT,
-      resolved BOOLEAN DEFAULT FALSE,
-      resolved_at DATETIME,
-      resolved_by INTEGER,
-      session_id TEXT
-    )
+    CREATE TABLE IF NOT EXISTS system_logs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    level TEXT CHECK(level IN('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')) NOT NULL,
+    module TEXT NOT NULL,
+    action TEXT NOT NULL,
+    message TEXT NOT NULL,
+    user_id INTEGER DEFAULT 1,
+    ip_address TEXT,
+    user_agent TEXT,
+    data TEXT,
+    stack_trace TEXT,
+    resolved BOOLEAN DEFAULT FALSE,
+    resolved_at DATETIME,
+    resolved_by INTEGER,
+    session_id TEXT
+  )
   `);
 
-  // Índices para optimizar consultas de logs
-  db.run(`CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON system_logs (timestamp DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_logs_level ON system_logs (level)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_logs_module ON system_logs (module)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_logs_resolved ON system_logs (resolved)`);
+  // Old triggers code.
 
   // ==========================================
   // TABLAS PARA PLAN DE CUENTAS Y DOBLE ENTRADA
@@ -2193,76 +1919,76 @@ const createSchema = async (): Promise<void> => {
 
   // Tabla de asientos contables (journal entries)
   db.run(`
-    CREATE TABLE IF NOT EXISTS journal_entries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      entry_date DATE NOT NULL,
-      reference TEXT,
-      description TEXT,
-      total_debit DECIMAL(15,2) NOT NULL CHECK(total_debit >= 0),
-      total_credit DECIMAL(15,2) NOT NULL CHECK(total_credit >= 0),
-      is_balanced BOOLEAN GENERATED ALWAYS AS (total_debit = total_credit) STORED,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
-      verified_by INTEGER REFERENCES users(id),
-      verified_at DATETIME
-    )
+    CREATE TABLE IF NOT EXISTS journal_entries(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_date DATE NOT NULL,
+    reference TEXT,
+    description TEXT,
+    total_debit DECIMAL(15, 2) NOT NULL CHECK(total_debit >= 0),
+    total_credit DECIMAL(15, 2) NOT NULL CHECK(total_credit >= 0),
+    is_balanced BOOLEAN GENERATED ALWAYS AS(total_debit = total_credit) STORED,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    verified_by INTEGER REFERENCES users(id),
+    verified_at DATETIME
+  )
   `);
 
   // Tabla de detalles de asientos contables
   db.run(`
-    CREATE TABLE IF NOT EXISTS journal_details (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      journal_entry_id INTEGER NOT NULL REFERENCES journal_entries(id),
-      account_code TEXT NOT NULL REFERENCES chart_of_accounts(account_code),
-      debit_amount DECIMAL(15,2) DEFAULT 0,
-      credit_amount DECIMAL(15,2) DEFAULT 0,
-      description TEXT,
-      CHECK((debit_amount = 0 AND credit_amount > 0) OR (credit_amount = 0 AND debit_amount > 0))
+    CREATE TABLE IF NOT EXISTS journal_details(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    journal_entry_id INTEGER NOT NULL REFERENCES journal_entries(id),
+    account_code TEXT NOT NULL REFERENCES chart_of_accounts(account_code),
+    debit_amount DECIMAL(15, 2) DEFAULT 0,
+    credit_amount DECIMAL(15, 2) DEFAULT 0,
+    description TEXT,
+    CHECK((debit_amount = 0 AND credit_amount > 0) OR(credit_amount = 0 AND debit_amount > 0))
     )
-  `);
+`);
 
   // Tabla para reportes Florida DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_reports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      period TEXT NOT NULL UNIQUE, -- "2024-Q1"
-      total_taxable_sales DECIMAL(15,2) DEFAULT 0,
-      total_tax_collected DECIMAL(15,2) DEFAULT 0,
-      exempt_sales DECIMAL(15,2) DEFAULT 0,
-      net_tax_due DECIMAL(15,2) DEFAULT 0,
-      due_date DATE,
-      filed_by INTEGER,
-      filed_at DATETIME,
-      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'filed', 'paid', 'late')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS florida_tax_reports(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  period TEXT NOT NULL UNIQUE, -- "2024-Q1"
+      total_taxable_sales DECIMAL(15, 2) DEFAULT 0,
+  total_tax_collected DECIMAL(15, 2) DEFAULT 0,
+  exempt_sales DECIMAL(15, 2) DEFAULT 0,
+  net_tax_due DECIMAL(15, 2) DEFAULT 0,
+  due_date DATE,
+  filed_by INTEGER,
+  filed_at DATETIME,
+  status TEXT DEFAULT 'pending' CHECK(status IN('pending', 'filed', 'paid', 'late')),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
   `);
 
   // Tabla de desglose por condado para DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_report_counties (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      report_id INTEGER NOT NULL REFERENCES florida_tax_reports(id),
-      county_name TEXT NOT NULL,
-      tax_rate DECIMAL(5,4) NOT NULL,
-      taxable_amount DECIMAL(15,2) DEFAULT 0,
-      tax_amount DECIMAL(15,2) DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS florida_tax_report_counties(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL REFERENCES florida_tax_reports(id),
+    county_name TEXT NOT NULL,
+    tax_rate DECIMAL(5, 4) NOT NULL,
+    taxable_amount DECIMAL(15, 2) DEFAULT 0,
+    tax_amount DECIMAL(15, 2) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Tabla de ajustes para DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_report_adjustments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      report_id INTEGER NOT NULL REFERENCES florida_tax_reports(id),
-      description TEXT NOT NULL,
-      amount DECIMAL(15,2) NOT NULL,
-      adjustment_type TEXT CHECK(adjustment_type IN ('credit', 'debit')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS florida_tax_report_adjustments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_id INTEGER NOT NULL REFERENCES florida_tax_reports(id),
+    description TEXT NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    adjustment_type TEXT CHECK(adjustment_type IN('credit', 'debit')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // ==========================================
@@ -2272,10 +1998,10 @@ const createSchema = async (): Promise<void> => {
   // Vista de resumen financiero para IA - ORDEN N°1 CORREGIDA
   db.run(`
     CREATE VIEW IF NOT EXISTS financial_summary AS
-    SELECT 
-      'balance_general' as reporte,
-      COUNT(CASE WHEN account_type = 'asset' THEN 1 END) as total_activos,
-      COUNT(CASE WHEN account_type IN ('liability', 'equity') THEN 1 END) as total_pasivos_patrimonio
+SELECT
+'balance_general' as reporte,
+  COUNT(CASE WHEN account_type = 'asset' THEN 1 END) as total_activos,
+  COUNT(CASE WHEN account_type IN('liability', 'equity') THEN 1 END) as total_pasivos_patrimonio
     FROM chart_of_accounts 
     WHERE is_active = 1
   `);
@@ -2283,11 +2009,11 @@ const createSchema = async (): Promise<void> => {
   // Vista de resumen de inventario para IA
   db.run(`
     CREATE VIEW IF NOT EXISTS inventory_summary AS
-    SELECT 
-      'productos' as tipo,
-      COUNT(*) as total_productos,
-      SUM(CASE WHEN stock_quantity <= min_stock_level THEN 1 ELSE 0 END) as productos_bajo_stock,
-      SUM(stock_quantity) as stock_total
+SELECT
+'productos' as tipo,
+  COUNT(*) as total_productos,
+  SUM(CASE WHEN stock_quantity <= min_stock_level THEN 1 ELSE 0 END) as productos_bajo_stock,
+  SUM(stock_quantity) as stock_total
     FROM products
     WHERE active = 1
   `);
@@ -2295,11 +2021,11 @@ const createSchema = async (): Promise<void> => {
   // Vista de resumen de impuestos Florida para IA - ORDEN N°1
   db.run(`
     CREATE VIEW IF NOT EXISTS tax_summary_florida AS
-    SELECT 
-      t.county_name as county,
-      COUNT(i.id) as facturas,
-      SUM(i.total_amount) as base_imponible,
-      SUM(i.tax_amount) as impuesto_calculado
+SELECT
+t.county_name as county,
+  COUNT(i.id) as facturas,
+  SUM(i.total_amount) as base_imponible,
+  SUM(i.tax_amount) as impuesto_calculado
     FROM invoices i
     JOIN customers c ON i.customer_id = c.id
     JOIN florida_tax_rates t ON c.florida_county = t.county_name
@@ -2310,11 +2036,11 @@ const createSchema = async (): Promise<void> => {
   // Vista de resumen de auditoría para IA
   db.run(`
     CREATE VIEW IF NOT EXISTS audit_summary AS
-    SELECT 
-      table_name,
-      COUNT(*) as total_operaciones,
-      MAX(timestamp) as ultima_operacion,
-      COUNT(DISTINCT user_id) as usuarios_activos
+SELECT
+table_name,
+  COUNT(*) as total_operaciones,
+  MAX(timestamp) as ultima_operacion,
+  COUNT(DISTINCT user_id) as usuarios_activos
     FROM audit_log
     WHERE timestamp >= date('now', '-30 days')
     GROUP BY table_name
@@ -2332,38 +2058,38 @@ const createSchema = async (): Promise<void> => {
   // VISTA "TODO EN UNO" SOLICITADA
   db.run(`
     CREATE VIEW IF NOT EXISTS datos_sistema AS
-    SELECT 
-      (SELECT COUNT(*) FROM customers) as total_clientes,
-      (SELECT GROUP_CONCAT(name, ', ') FROM (SELECT name FROM customers LIMIT 5)) as lista_clientes,
-      (SELECT COUNT(*) FROM invoices) as facturas_venta,
+SELECT
+  (SELECT COUNT(*) FROM customers) as total_clientes,
+  (SELECT GROUP_CONCAT(name, ', ') FROM(SELECT name FROM customers LIMIT 5)) as lista_clientes,
+    (SELECT COUNT(*) FROM invoices) as facturas_venta,
       (SELECT COUNT(*) FROM bills) as facturas_compra,
-      (SELECT MAX(total_amount) FROM invoices) as mayor_venta_monto,
-      (SELECT invoice_number FROM invoices ORDER BY total_amount DESC LIMIT 1) as mayor_venta_numero,
-      (SELECT COUNT(*) FROM suppliers) as total_proveedores,
-      (SELECT IFNULL(SUM(stock_quantity * price), 0) FROM products) as valor_inventario
-  `);
+        (SELECT MAX(total_amount) FROM invoices) as mayor_venta_monto,
+          (SELECT invoice_number FROM invoices ORDER BY total_amount DESC LIMIT 1) as mayor_venta_numero,
+            (SELECT COUNT(*) FROM suppliers) as total_proveedores,
+              (SELECT IFNULL(SUM(stock_quantity * price), 0) FROM products) as valor_inventario
+                `);
 
   // Vista de alertas para IA
   db.run(`
     CREATE VIEW IF NOT EXISTS alerts_summary AS
-    SELECT 
-      'facturas_vencidas' as tipo_alerta,
-      COUNT(*) as cantidad,
-      'high' as prioridad
+SELECT
+'facturas_vencidas' as tipo_alerta,
+  COUNT(*) as cantidad,
+  'high' as prioridad
     FROM invoices 
     WHERE status = 'overdue'
     UNION ALL
-    SELECT 
-      'stock_bajo' as tipo_alerta,
-      COUNT(*) as cantidad,
-      'medium' as prioridad
+SELECT
+'stock_bajo' as tipo_alerta,
+  COUNT(*) as cantidad,
+  'medium' as prioridad
     FROM products 
     WHERE stock_quantity <= min_stock_level AND active = 1
     UNION ALL
-    SELECT 
-      'clientes_inactivos' as tipo_alerta,
-      COUNT(*) as cantidad,
-      'low' as prioridad
+SELECT
+'clientes_inactivos' as tipo_alerta,
+  COUNT(*) as cantidad,
+  'low' as prioridad
     FROM customers 
     WHERE status = 'inactive'
   `);
@@ -2374,19 +2100,19 @@ const createSchema = async (): Promise<void> => {
 
   // Tabla de historial de conversaciones IA
   db.run(`
-    CREATE TABLE IF NOT EXISTS ai_conversations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      query TEXT NOT NULL,
-      response TEXT NOT NULL,
-      intent TEXT,
-      data_points_used INTEGER DEFAULT 0,
-      tokens_used INTEGER DEFAULT 0,
-      processing_time INTEGER,
-      model_used TEXT,
-      was_fallback BOOLEAN DEFAULT 0,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS ai_conversations(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    query TEXT NOT NULL,
+    response TEXT NOT NULL,
+    intent TEXT,
+    data_points_used INTEGER DEFAULT 0,
+    tokens_used INTEGER DEFAULT 0,
+    processing_time INTEGER,
+    model_used TEXT,
+    was_fallback BOOLEAN DEFAULT 0,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // ==========================================
@@ -2395,54 +2121,54 @@ const createSchema = async (): Promise<void> => {
 
   // Tabla de ajustes manuales de inventario
   db.run(`
-    CREATE TABLE IF NOT EXISTS inventory_adjustments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      product_id INTEGER NOT NULL,
-      quantity_delta INTEGER NOT NULL,
-      reason TEXT NOT NULL,
-      adjusted_by INTEGER DEFAULT 1,
-      adjusted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (product_id) REFERENCES products(id),
-      CHECK(quantity_delta != 0)
-    )
+    CREATE TABLE IF NOT EXISTS inventory_adjustments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL,
+    quantity_delta INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    adjusted_by INTEGER DEFAULT 1,
+    adjusted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(product_id) REFERENCES products(id),
+    CHECK(quantity_delta != 0)
+  )
   `);
 
   // Tabla de envíos fiscales DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS dr15_submissions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      period_year INTEGER NOT NULL,
-      period_month INTEGER NOT NULL,
-      total_tax_collected DECIMAL(15,2) DEFAULT 0,
-      total_taxable_sales DECIMAL(15,2) DEFAULT 0,
-      status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'submitted', 'accepted', 'rejected')),
-      submission_date DATETIME,
-      confirmation_number TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(period_year, period_month)
-    )
+    CREATE TABLE IF NOT EXISTS dr15_submissions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    period_year INTEGER NOT NULL,
+    period_month INTEGER NOT NULL,
+    total_tax_collected DECIMAL(15, 2) DEFAULT 0,
+    total_taxable_sales DECIMAL(15, 2) DEFAULT 0,
+    status TEXT DEFAULT 'draft' CHECK(status IN('draft', 'submitted', 'accepted', 'rejected')),
+    submission_date DATETIME,
+    confirmation_number TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(period_year, period_month)
+  )
   `);
 
   // ==========================================
   // TABLAS MÓDULO ARD (Análisis de Recibos)
   // ==========================================
   db.run(`
-    CREATE TABLE IF NOT EXISTS ard_documents (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      type TEXT CHECK(type IN ('invoice_in', 'receipt', 'check', 'other')),
-      status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'analyzing', 'processed', 'converted', 'error')),
-      file_size INTEGER,
-      customer_id INTEGER REFERENCES customers(id),
-      detected_amount DECIMAL(15,2),
-      detected_tax DECIMAL(15,2),
-      detected_date DATE,
-      raw_analysis TEXT, -- Almacena el JSON crudo del motor OCR/IA
+    CREATE TABLE IF NOT EXISTS ard_documents(
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT CHECK(type IN('invoice_in', 'receipt', 'check', 'other')),
+    status TEXT DEFAULT 'pending' CHECK(status IN('pending', 'analyzing', 'processed', 'converted', 'error')),
+    file_size INTEGER,
+    customer_id INTEGER REFERENCES customers(id),
+    detected_amount DECIMAL(15, 2),
+    detected_tax DECIMAL(15, 2),
+    detected_date DATE,
+    raw_analysis TEXT, --Almacena el JSON crudo del motor OCR / IA
       created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // ==========================================
@@ -2455,26 +2181,26 @@ const createSchema = async (): Promise<void> => {
   db.run(`
     CREATE TRIGGER IF NOT EXISTS update_invoice_totals_after_insert
     AFTER INSERT ON invoice_lines
-    BEGIN
-      UPDATE invoices 
-      SET 
-        subtotal = (SELECT SUM(line_total) FROM invoice_lines WHERE invoice_id = NEW.invoice_id),
-        tax_amount = (SELECT SUM(CASE WHEN taxable = 1 THEN line_total * 0.07 ELSE 0 END) FROM invoice_lines WHERE invoice_id = NEW.invoice_id),
-        total_amount = (SELECT SUM(line_total + (CASE WHEN taxable = 1 THEN line_total * 0.07 ELSE 0 END)) FROM invoice_lines WHERE invoice_id = NEW.invoice_id)
+BEGIN
+      UPDATE invoices
+SET
+subtotal = (SELECT SUM(line_total) FROM invoice_lines WHERE invoice_id = NEW.invoice_id),
+tax_amount = (SELECT SUM(CASE WHEN taxable = 1 THEN line_total * 0.07 ELSE 0 END) FROM invoice_lines WHERE invoice_id = NEW.invoice_id),
+total_amount = (SELECT SUM(line_total + (CASE WHEN taxable = 1 THEN line_total * 0.07 ELSE 0 END)) FROM invoice_lines WHERE invoice_id = NEW.invoice_id)
       WHERE id = NEW.invoice_id;
-    END;
-  `);
+END;
+`);
 
   // 2. TRIGGER update_inventory_on_sale (Simplificado para SQLite)
   db.run(`
     CREATE TRIGGER IF NOT EXISTS decrease_stock_on_invoice
     AFTER INSERT ON invoice_lines
-    BEGIN
+BEGIN
       UPDATE products
       SET stock_quantity = stock_quantity - NEW.quantity
       WHERE id = NEW.product_id AND is_service = 0;
-    END;
-  `);
+END;
+`);
 
   // 5. TRIGGER auto_generate_numbers (Simulado con formateo en inserción o valores por defecto)
 
@@ -2484,47 +2210,47 @@ const createSchema = async (): Promise<void> => {
 
   // Tabla de Órdenes de Compra
   db.run(`
-    CREATE TABLE IF NOT EXISTS purchase_orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
-      order_number TEXT UNIQUE NOT NULL,
-      order_date DATE DEFAULT CURRENT_DATE,
-      expected_date DATE,
-      status TEXT CHECK(status IN ('draft', 'sent', 'approved', 'received', 'cancelled')) DEFAULT 'draft',
-      total_amount DECIMAL(15,2) DEFAULT 0,
-      notes TEXT,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS purchase_orders(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
+  order_number TEXT UNIQUE NOT NULL,
+  order_date DATE DEFAULT CURRENT_DATE,
+  expected_date DATE,
+  status TEXT CHECK(status IN('draft', 'sent', 'approved', 'received', 'cancelled')) DEFAULT 'draft',
+  total_amount DECIMAL(15, 2) DEFAULT 0,
+  notes TEXT,
+  created_by INTEGER REFERENCES users(id) DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
   `);
 
   // Tabla de Líneas de Orden de Compra
   db.run(`
-    CREATE TABLE IF NOT EXISTS purchase_order_lines (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      purchase_order_id INTEGER NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
-      product_id INTEGER NOT NULL REFERENCES products(id),
-      quantity INTEGER NOT NULL CHECK(quantity > 0),
-      unit_price DECIMAL(15,2) NOT NULL,
-      received_quantity INTEGER DEFAULT 0,
-      line_total DECIMAL(15,2) GENERATED ALWAYS AS (quantity * unit_price) STORED
-    )
+    CREATE TABLE IF NOT EXISTS purchase_order_lines(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    purchase_order_id INTEGER NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL CHECK(quantity > 0),
+    unit_price DECIMAL(15, 2) NOT NULL,
+    received_quantity INTEGER DEFAULT 0,
+    line_total DECIMAL(15, 2) GENERATED ALWAYS AS(quantity * unit_price) STORED
+  )
   `);
 
   // Tabla de Movimientos de Inventario (Kardex)
   db.run(`
-    CREATE TABLE IF NOT EXISTS stock_movements (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      product_id INTEGER NOT NULL REFERENCES products(id),
-      quantity INTEGER NOT NULL, -- Positivo (Entrada) o Negativo (Salida)
-      movement_type TEXT CHECK(movement_type IN ('purchase', 'sale', 'adjustment', 'return', 'initial')) NOT NULL,
-      reference_id INTEGER, -- ID de Invoice, PO, o Adjustment
-      reference_type TEXT CHECK(reference_type IN ('invoice', 'purchase_order', 'adjustment', 'migration')),
-      notes TEXT,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS stock_movements(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL, --Positivo(Entrada) o Negativo(Salida)
+      movement_type TEXT CHECK(movement_type IN('purchase', 'sale', 'adjustment', 'return', 'initial')) NOT NULL,
+    reference_id INTEGER, --ID de Invoice, PO, o Adjustment
+      reference_type TEXT CHECK(reference_type IN('invoice', 'purchase_order', 'adjustment', 'migration')),
+    notes TEXT,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Índices para optimización
@@ -2540,17 +2266,17 @@ const createSchema = async (): Promise<void> => {
 
   db.run(`
     CREATE VIEW IF NOT EXISTS v_ai_context_invoices AS
-    SELECT 
-        'INVOICE_DATA' as data_type,
-        i.id,
-        i.invoice_number as number,
-        i.issue_date as date,
-        c.name as customer_name,
-        i.total_amount as total,
-        i.tax_amount,
-        json_object(
-            'status', i.status,
-            'items_count', (SELECT COUNT(*) FROM invoice_lines WHERE invoice_id = i.id)
+SELECT
+'INVOICE_DATA' as data_type,
+  i.id,
+  i.invoice_number as number,
+  i.issue_date as date,
+  c.name as customer_name,
+  i.total_amount as total,
+  i.tax_amount,
+  json_object(
+    'status', i.status,
+    'items_count', (SELECT COUNT(*) FROM invoice_lines WHERE invoice_id = i.id)
         ) as metadata
     FROM invoices i
     JOIN customers c ON i.customer_id = c.id
@@ -2558,42 +2284,42 @@ const createSchema = async (): Promise<void> => {
 
   db.run(`
     CREATE VIEW IF NOT EXISTS v_ai_context_financial AS
-    SELECT 
-        'FINANCIAL_SNAPSHOT' as data_type,
-        date('now') as snapshot_date,
-        (SELECT SUM(total_amount) FROM invoices WHERE status = 'paid') as total_revenue,
-        (SELECT SUM(total_amount) FROM bills WHERE status = 'paid') as total_expenses,
-        ((SELECT IFNULL(SUM(total_amount), 0) FROM invoices WHERE status = 'paid') - (SELECT IFNULL(SUM(total_amount), 0) FROM bills WHERE status = 'paid')) as net_profit,
+SELECT
+'FINANCIAL_SNAPSHOT' as data_type,
+  date('now') as snapshot_date,
+  (SELECT SUM(total_amount) FROM invoices WHERE status = 'paid') as total_revenue,
+    (SELECT SUM(total_amount) FROM bills WHERE status = 'paid') as total_expenses,
+      ((SELECT IFNULL(SUM(total_amount), 0) FROM invoices WHERE status = 'paid') - (SELECT IFNULL(SUM(total_amount), 0) FROM bills WHERE status = 'paid')) as net_profit,
         (SELECT SUM(tax_amount) FROM invoices WHERE status = 'paid') as tax_liability,
-        (SELECT SUM(balance) FROM bank_accounts) as cash_balance
-  `);
+          (SELECT SUM(balance) FROM bank_accounts) as cash_balance
+            `);
 
   // Tabla de auditoría específica para IA
   db.run(`
-    CREATE TABLE IF NOT EXISTS ai_audit_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      action TEXT NOT NULL,
-      query TEXT,
-      security_validation TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS ai_audit_log(
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER NOT NULL,
+              action TEXT NOT NULL,
+              query TEXT,
+              security_validation TEXT,
+              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
   `);
 
   // Tabla de Cadena de Auditoría Inmutable (Forensic Grade)
   db.run(`
-    CREATE TABLE IF NOT EXISTS audit_chain (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      table_name TEXT NOT NULL,
-      record_id INTEGER NOT NULL,
-      action TEXT NOT NULL,
-      old_value TEXT,
-      new_value TEXT,
-      user_id INTEGER,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      previous_hash TEXT,
-      current_hash TEXT
-    )
+    CREATE TABLE IF NOT EXISTS audit_chain(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    table_name TEXT NOT NULL,
+    record_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    user_id INTEGER,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    previous_hash TEXT,
+    current_hash TEXT
+  )
   `);
 
   // ==========================================
@@ -2602,33 +2328,33 @@ const createSchema = async (): Promise<void> => {
 
   // Tabla de roles de usuario
   db.run(`
-    CREATE TABLE IF NOT EXISTS user_roles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      description TEXT,
-      level INTEGER DEFAULT 0,
-      permissions_json TEXT DEFAULT '{}',
-      is_system_role BOOLEAN DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS user_roles(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    level INTEGER DEFAULT 0,
+    permissions_json TEXT DEFAULT '{}',
+    is_system_role BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // Tabla de usuarios del sistema
   db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      full_name TEXT NOT NULL,
-      display_name TEXT NOT NULL,
-      password_hash TEXT NOT NULL,
-      role_id INTEGER NOT NULL,
-      is_active BOOLEAN DEFAULT 1,
-      last_login DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (role_id) REFERENCES user_roles(id)
-    )
+    CREATE TABLE IF NOT EXISTS users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    display_name TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    role_id INTEGER NOT NULL,
+    is_active BOOLEAN DEFAULT 1,
+    last_login DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(role_id) REFERENCES user_roles(id)
+  )
   `);
 
   // --- MIGRACIONES EN CALIENTE (Para bases de datos existentes) ---
@@ -2670,392 +2396,415 @@ const createSchema = async (): Promise<void> => {
     db.run(`CREATE INDEX IF NOT EXISTS idx_suppliers_created_by ON suppliers(created_by)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_bills_created_by ON bills(created_by)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_payments_created_by ON payments(created_by)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log (user_id)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_trail_user_id ON audit_trail (user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_trail_user_id ON audit_trail(user_id)`);
   } catch (e) { }
 
   logger.info('Database', 'schema_updated', 'Tablas de Gestión de Usuarios verificadas y actualizadas');
-};
 
-// Insertar roles y usuarios iniciales (Idempotente)
-const seedUsersAndRoles = async (): Promise<void> => {
-  if (!db) return;
+  // Insertar roles y usuarios iniciales (Idempotente)
+  const seedUsersAndRoles = async (): Promise<void> => {
+    if (!db) return;
 
-  try {
-    // 1. Roles
-    const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
-    const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
+    try {
+      // 1. Roles
+      const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
+      const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
 
-    if (roleCount === 0) {
-      db.run(`
-        INSERT INTO user_roles (name, description, level) VALUES 
-        ('admin', 'Administrador del sistema con acceso completo', 100),
-        ('contador', 'Contador con acceso a módulos contables y reportes', 80),
-        ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
-        ('comprador', 'Comprador con acceso a proveedores y compras', 40),
-        ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
-        ('viewer', 'Usuario de consulta básica', 10)
-      `);
-      logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
-    }
+      if (roleCount === 0) {
+        db.run(`
+        INSERT INTO user_roles(name, description, level) VALUES
+  ('admin', 'Administrador del sistema con acceso completo', 100),
+  ('contador', 'Contador con acceso a módulos contables y reportes', 80),
+  ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
+  ('comprador', 'Comprador con acceso a proveedores y compras', 40),
+  ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
+  ('viewer', 'Usuario de consulta básica', 10)
+    `);
+        logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
+      }
 
-    // 2. Usuarios
-    const usersToVerify = [
-      { username: 'admin', email: 'admin@empresa.com', display_name: 'Administrador Principal', password: 'admin123', role: 'admin' },
-      { username: 'demo', email: 'demo@empresa.com', display_name: 'Usuario Demo', password: 'demo123', role: 'admin' },
-      { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Vendedor Test', password: 'vendedor123', role: 'vendedor' },
-      { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Contador Test', password: 'contador123', role: 'contador' },
-      { username: 'auditor1', email: 'auditor1@empresa.com', display_name: 'Auditor Test', password: 'auditor123', role: 'auditor' }
-    ];
+      // 2. Usuarios
+      const usersToVerify = [
+        { username: 'admin', email: 'admin@empresa.com', display_name: 'Administrador Principal', password: 'admin123', role: 'admin' },
+        { username: 'demo', email: 'demo@empresa.com', display_name: 'Usuario Demo', password: 'demo123', role: 'admin' },
+        { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Vendedor Test', password: 'vendedor123', role: 'vendedor' },
+        { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Contador Test', password: 'contador123', role: 'contador' },
+        { username: 'auditor1', email: 'auditor1@empresa.com', display_name: 'Auditor Test', password: 'auditor123', role: 'auditor' }
+      ];
 
-    const rolesResult = db.exec("SELECT id, name FROM user_roles");
-    const roleMap: Record<string, number> = {};
-    rolesResult[0]?.values.forEach(row => {
-      roleMap[row[1] as string] = row[0] as number;
-    });
+      const rolesResult = db.exec("SELECT id, name FROM user_roles");
+      const roleMap: Record<string, number> = {};
+      rolesResult[0]?.values.forEach((row: any) => {
+        roleMap[row[1] as string] = row[0] as number;
+      });
 
-    for (const sysUser of usersToVerify) {
-      try {
-        const existing = db.exec(`SELECT id FROM users WHERE username = ?`, [sysUser.username]);
-        if (!existing[0] || existing[0].values.length === 0) {
-          const hash = await hashPassword(sysUser.password);
-          const roleId = roleMap[sysUser.role] || 1;
+      for (const sysUser of usersToVerify) {
+        try {
+          const existing = db.exec(`SELECT id FROM users WHERE username = ? `, [sysUser.username]);
+          if (!existing[0] || existing[0].values.length === 0) {
+            const hash = await hashPassword(sysUser.password);
+            const roleId = roleMap[sysUser.role] || 1;
 
-          db.run(`
-            INSERT INTO users (username, email, display_name, password_hash, role_id, is_active) 
-            VALUES (?, ?, ?, ?, ?, 1)
+            db.run(`
+            INSERT INTO users(username, email, display_name, password_hash, role_id, is_active)
+VALUES(?, ?, ?, ?, ?, 1)
           `, [sysUser.username, sysUser.email, sysUser.display_name, hash, roleId]);
 
-          logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} (${sysUser.email}) creado correctamente`);
-        } else {
-          // Asegurarse de que esté activo y resetear password a default en este ambiente demo
-          const hash = await hashPassword(sysUser.password);
-          db.run(`UPDATE users SET is_active = 1, password_hash = ? WHERE username = ?`, [hash, sysUser.username]);
+            logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} (${sysUser.email}) creado correctamente`);
+          } else {
+            // Asegurarse de que esté activo y resetear password a default en este ambiente demo
+            const hash = await hashPassword(sysUser.password);
+            db.run(`UPDATE users SET is_active = 1, password_hash = ? WHERE username = ? `, [hash, sysUser.username]);
+          }
+        } catch (userErr) {
+          logger.error('Database', 'seed_user_failed', `Error al procesar usuario ${sysUser.username} `, { error: userErr });
         }
-      } catch (userErr) {
-        logger.error('Database', 'seed_user_failed', `Error al procesar usuario ${sysUser.username}`, { error: userErr });
       }
+
+      // 3. ACTUALIZACIÓN FORZADA DE NIVELES (Fuera del loop)
+      // 3. ACTUALIZACIÓN FORZADA DE NIVELES
+      db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
+      db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
+      db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
+      db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
+      db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
+      db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
+      logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados y actualizados');
+
+    } catch (error) {
+      logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
     }
+  };
 
-    // 3. ACTUALIZACIÓN FORZADA DE NIVELES (Fuera del loop)
-    // 3. ACTUALIZACIÓN FORZADA DE NIVELES
-    db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
-    db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
-    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
-    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
-    db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
-    db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
-    logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados y actualizados');
+  /**
+   * Migra la propiedad de datos existentes al usuario Admin (ID 1)
+   * Cumple con el Paso 1 del Plan de Validación Multi-Usuario
+   */
+  const migrateDataOwnership = async (): Promise<void> => {
+    if (!db) return;
 
-  } catch (error) {
-    logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
-  }
-};
+    try {
+      const tablesToCheck = [
+        'customers', 'suppliers', 'products', 'invoices', 'bills',
+        'payments', 'supplier_payments', 'chart_of_accounts', 'journal_entries'
+      ];
 
-/**
- * Migra la propiedad de datos existentes al usuario Admin (ID 1)
- * Cumple con el Paso 1 del Plan de Validación Multi-Usuario
- */
-const migrateDataOwnership = async (): Promise<void> => {
-  if (!db) return;
+      // Asegurar ID de admin es 1 (buscamos por username por seguridad)
+      const adminRes = db.exec("SELECT id FROM users WHERE username = 'admin'");
+      const adminId = (adminRes[0]?.values[0]?.[0] as number) || 1;
 
-  try {
-    const tablesToCheck = [
-      'customers', 'suppliers', 'products', 'invoices', 'bills',
-      'payments', 'supplier_payments', 'chart_of_accounts', 'journal_entries'
-    ];
+      let totalMigrated = 0;
 
-    // Asegurar ID de admin es 1 (buscamos por username por seguridad)
-    const adminRes = db.exec("SELECT id FROM users WHERE username = 'admin'");
-    const adminId = (adminRes[0]?.values[0]?.[0] as number) || 1;
+      for (const table of tablesToCheck) {
+        try {
+          // Verificar si tabla existe
+          const tableExists = db.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = '${table}'`);
+          if (tableExists.length === 0 || tableExists[0].values.length === 0) continue;
 
-    let totalMigrated = 0;
+          // Verificar si tiene columna created_by
+          const colInfo = db.exec(`PRAGMA table_info(${table})`);
+          const hasCreatedBy = colInfo[0]?.values.some((col: any) => col[1] === 'created_by');
 
-    for (const table of tablesToCheck) {
-      try {
-        // Verificar si tabla existe
-        const tableExists = db.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='${table}'`);
-        if (tableExists.length === 0 || tableExists[0].values.length === 0) continue;
+          if (hasCreatedBy) {
+            db.run(`UPDATE ${table} SET created_by = ? WHERE created_by IS NULL OR created_by = 0`, [adminId]);
+            db.run(`UPDATE ${table} SET updated_by = ? WHERE updated_by IS NULL OR updated_by = 0`, [adminId]);
 
-        // Verificar si tiene columna created_by
-        const colInfo = db.exec(`PRAGMA table_info(${table})`);
-        const hasCreatedBy = colInfo[0]?.values.some(col => col[1] === 'created_by');
-
-        if (hasCreatedBy) {
-          db.run(`UPDATE ${table} SET created_by = ? WHERE created_by IS NULL OR created_by = 0`, [adminId]);
-          db.run(`UPDATE ${table} SET updated_by = ? WHERE updated_by IS NULL OR updated_by = 0`, [adminId]);
-
-          // Count changes? Sql.js doesn't return affected rows easily in basic exec without using changes()
-          const changes = db.exec("SELECT changes()");
-          totalMigrated += (changes[0]?.values[0]?.[0] as number) || 0;
+            // Count changes? Sql.js doesn't return affected rows easily in basic exec without using changes()
+            const changes = db.exec("SELECT changes()");
+            totalMigrated += (changes[0]?.values[0]?.[0] as number) || 0;
+          }
+        } catch (e) {
+          // Ignorar errores de tablas/columnas faltantes en esta etapa soft
+          // console.warn(`Skipping migration for ${ table }: `, e);
         }
-      } catch (e) {
-        // Ignorar errores de tablas/columnas faltantes en esta etapa soft
-        // console.warn(`Skipping migration for ${table}:`, e);
       }
+
+      if (totalMigrated > 0) {
+        logger.info('Database', 'migration_ownership', `Migrados ${totalMigrated} registros huérfanos a Admin ID ${adminId} `);
+      }
+
+    } catch (error) {
+      logger.error('Database', 'migration_ownership_failed', 'Error migrando propiedad de datos', { error });
     }
+  };
 
-    if (totalMigrated > 0) {
-      logger.info('Database', 'migration_ownership', `Migrados ${totalMigrated} registros huérfanos a Admin ID ${adminId}`);
-    }
+  // Insertar datos de ejemplo
+  const insertSampleData = async (): Promise<void> => {
+    if (!db) return;
 
-  } catch (error) {
-    logger.error('Database', 'migration_ownership_failed', 'Error migrando propiedad de datos', { error });
-  }
-};
+    // ============================================
+    // ORDEN SEGURO: Desactivar FKs durante seeding
+    // ============================================
+    db.run(`PRAGMA foreign_keys = OFF`);
 
-// Insertar datos de ejemplo
-const insertSampleData = async (): Promise<void> => {
-  if (!db) return;
+    try {
+      // PASO 1: Tablas maestras SIN dependencias
+      // -----------------------------------------
 
-  // ============================================
-  // ORDEN SEGURO: Desactivar FKs durante seeding
-  // ============================================
-  db.run(`PRAGMA foreign_keys = OFF`);
-
-  try {
-    // PASO 1: Tablas maestras SIN dependencias
-    // -----------------------------------------
-
-    // 1.1 Métodos de Pago (Sin FK)
-    db.run(`
-      INSERT INTO payment_methods (name, type, is_active, requires_reference) VALUES 
-      ('Efectivo', 'cash', 1, 0),
-      ('Transferencia Bancaria', 'bank_transfer', 1, 1),
-      ('Cheque', 'check', 1, 1),
-      ('Tarjeta de Crédito', 'credit_card', 1, 1),
-      ('Zelle', 'digital', 1, 1)
+      // 1.1 Métodos de Pago (Sin FK)
+      db.run(`
+      INSERT INTO payment_methods(name, type, is_active, requires_reference) VALUES
+  ('Efectivo', 'cash', 1, 0),
+  ('Transferencia Bancaria', 'bank_transfer', 1, 1),
+  ('Cheque', 'check', 1, 1),
+  ('Tarjeta de Crédito', 'credit_card', 1, 1),
+  ('Zelle', 'digital', 1, 1)
     `);
 
-    // 1.2 Datos de la Empresa (Sin FK)
-    db.run(`
-      INSERT INTO company_data (
-        company_name, legal_name, address, city, state, zip_code, phone, email, tax_id, 
-        fiscal_year_start, currency, timezone, date_format, is_active
-      ) VALUES (
-        'Account Express Demo Inc.', 'Account Express Demo Inc.', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000', 
-        'admin@accountexpress.com', 'US-DEMO-123', 
-        '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
-      )
-    `);
-
-    // PASO 2: Tablas con FK (después de maestras)
-    // --------------------------------------------
-
-    // Clientes de ejemplo con datos completos
-    db.run(`
-    INSERT INTO customers (
-      name, business_name, document_type, document_number, business_type,
-      email, phone, address_line1, city, state, zip_code, florida_county,
-      credit_limit, payment_terms, assigned_salesperson
-    ) VALUES 
-    (
-      'John Smith', 'Acme Corp LLC', 'EIN', '12-3456789', 'Technology Services',
-      'john@acmecorp.com', '(305) 555-0123', '1234 Biscayne Blvd', 'Miami', 'FL', '33132', 'Miami-Dade',
-      50000.00, 30, 'Ana García'
-    ),
-    (
-      'Maria Rodriguez', 'Florida Tech Solutions Inc', 'EIN', '98-7654321', 'Software Development',
-      'maria@fltech.com', '(407) 555-0456', '5678 Orange Ave', 'Orlando', 'FL', '32801', 'Orange',
-      25000.00, 15, 'Carlos López'
-    ),
-    (
-      'Robert Johnson', 'Sunshine Retail Group', 'EIN', '45-6789012', 'Retail',
-      'robert@sunshine.com', '(813) 555-0789', '9012 Tampa Bay Blvd', 'Tampa', 'FL', '33602', 'Hillsborough',
-      75000.00, 45, 'Ana García'
+      // 1.2 Datos de la Empresa (Sin FK)
+      db.run(`
+      INSERT INTO company_data(
+      company_name, legal_name, address, city, state, zip_code, phone, email, tax_id,
+      fiscal_year_start, currency, timezone, date_format, is_active
+    ) VALUES(
+      'Account Express Demo Inc.', 'Account Express Demo Inc.', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000',
+      'admin@accountexpress.com', 'US-DEMO-123',
+      '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
     )
-  `);
+      `);
 
-    // Los productos ya se insertan en insertInitialProducts
+      // PASO 2: Tablas con FK (después de maestras)
+      // --------------------------------------------
 
-    // Facturas de ejemplo
-    db.run(`
-    INSERT INTO invoices (invoice_number, customer_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES 
-    ('INV-2024-001', 1, '2024-01-15', '2024-02-14', 1500.00, 105.00, 1605.00, 'paid'),
-    ('INV-2024-002', 2, '2024-01-20', '2024-02-04', 299.99, 19.50, 319.49, 'sent'),
-    ('INV-2024-003', 3, '2024-01-25', '2024-03-10', 2500.00, 175.00, 2675.00, 'draft')
-  `);
+      // Clientes de ejemplo con datos completos
+      db.run(`
+    INSERT INTO customers(
+        name, business_name, document_type, document_number, business_type,
+        email, phone, address_line1, city, state, zip_code, florida_county,
+        credit_limit, payment_terms, assigned_salesperson
+      ) VALUES
+        (
+          'John Smith', 'Acme Corp LLC', 'EIN', '12-3456789', 'Technology Services',
+          'john@acmecorp.com', '(305) 555-0123', '1234 Biscayne Blvd', 'Miami', 'FL', '33132', 'Miami-Dade',
+          50000.00, 30, 'Ana García'
+        ),
+        (
+          'Maria Rodriguez', 'Florida Tech Solutions Inc', 'EIN', '98-7654321', 'Software Development',
+          'maria@fltech.com', '(407) 555-0456', '5678 Orange Ave', 'Orlando', 'FL', '32801', 'Orange',
+          25000.00, 15, 'Carlos López'
+        ),
+        (
+          'Robert Johnson', 'Sunshine Retail Group', 'EIN', '45-6789012', 'Retail',
+          'robert@sunshine.com', '(813) 555-0789', '9012 Tampa Bay Blvd', 'Tampa', 'FL', '33602', 'Hillsborough',
+          75000.00, 45, 'Ana García'
+        )
+          `);
 
-    // Líneas de factura de ejemplo
-    db.run(`
-    INSERT INTO invoice_lines (invoice_id, product_id, description, quantity, unit_price, line_total) VALUES 
-    (1, 1, 'Consultoría Contable - 10 horas', 10.000, 150.00, 1500.00),
-    (2, 2, 'Software License - Anual', 1.000, 299.99, 299.99),
-    (3, 3, 'Auditoría Fiscal Completa', 5.000, 500.00, 2500.00)
-  `);
+      // Los productos ya se insertan en insertInitialProducts
 
-    // Pagos de ejemplo
-    db.run(`
-    INSERT INTO payments (customer_id, invoice_id, payment_number, payment_date, amount, payment_method, reference_number) VALUES 
-    (1, 1, 'PAY-2024-001', '2024-02-10', 1605.00, 'bank_transfer', 'TXN-789456123'),
-    (2, NULL, 'PAY-2024-002', '2024-01-25', 500.00, 'check', 'CHK-001234')
-  `);
+      // Facturas de ejemplo
+      db.run(`
+    INSERT INTO invoices(invoice_number, customer_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES
+  ('INV-2024-001', 1, '2024-01-15', '2024-02-14', 1500.00, 105.00, 1605.00, 'paid'),
+  ('INV-2024-002', 2, '2024-01-20', '2024-02-04', 299.99, 19.50, 319.49, 'sent'),
+  ('INV-2024-003', 3, '2024-01-25', '2024-03-10', 2500.00, 175.00, 2675.00, 'draft')
+    `);
 
-    // Tasas de impuestos para condados principales (REPARACIÓN: Dedup)
+      // Líneas de factura de ejemplo
+      db.run(`
+    INSERT INTO invoice_lines(invoice_id, product_id, description, quantity, unit_price, line_total) VALUES
+  (1, 1, 'Consultoría Contable - 10 horas', 10.000, 150.00, 1500.00),
+  (2, 2, 'Software License - Anual', 1.000, 299.99, 299.99),
+  (3, 3, 'Auditoría Fiscal Completa', 5.000, 500.00, 2500.00)
+    `);
 
-    // 1. Limpieza de duplicados existentes
-    db.run(`DELETE FROM florida_tax_rates WHERE id NOT IN (SELECT MIN(id) FROM florida_tax_rates GROUP BY county_name)`);
+      // Pagos de ejemplo
+      db.run(`
+    INSERT INTO payments(customer_id, invoice_id, payment_number, payment_date, amount, payment_method, reference_number) VALUES
+  (1, 1, 'PAY-2024-001', '2024-02-10', 1605.00, 'bank_transfer', 'TXN-789456123'),
+  (2, NULL, 'PAY-2024-002', '2024-01-25', 500.00, 'check', 'CHK-001234')
+    `);
 
-    // 2. Asegurar unicidad futura
-    db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_florida_county ON florida_tax_rates(county_name)`);
+      // Tasas de impuestos para condados principales (REPARACIÓN: Dedup)
 
-    // 3. Insertar solo si no existen
-    db.run(`
-    INSERT OR IGNORE INTO florida_tax_rates (county_name, county_rate, total_rate) VALUES 
-    ('Miami-Dade', 0.01, 0.07),
-    ('Orange', 0.005, 0.065),
-    ('Hillsborough', 0.0075, 0.0675),
-    ('Broward', 0.01, 0.07),
-    ('Palm Beach', 0.01, 0.07)
-  `);
+      // 1. Limpieza de duplicados existentes
+      db.run(`DELETE FROM florida_tax_rates WHERE id NOT IN(SELECT MIN(id) FROM florida_tax_rates GROUP BY county_name)`);
 
-    // Proveedores de ejemplo
-    db.run(`
-    INSERT INTO suppliers (
+      // 2. Asegurar unicidad futura
+      db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_florida_county ON florida_tax_rates(county_name)`);
+
+      // 3. Insertar solo si no existen
+      db.run(`
+    INSERT OR IGNORE INTO florida_tax_rates(county_name, county_rate, total_rate) VALUES
+  ('Miami-Dade', 0.01, 0.07),
+  ('Orange', 0.005, 0.065),
+  ('Hillsborough', 0.0075, 0.0675),
+  ('Broward', 0.01, 0.07),
+  ('Palm Beach', 0.01, 0.07)
+    `);
+
+      // Proveedores de ejemplo
+      db.run(`
+    INSERT INTO suppliers(
       name, business_name, document_type, document_number, business_type,
       email, phone, address_line1, city, state, zip_code, florida_county,
       credit_limit, payment_terms, assigned_buyer
-    ) VALUES 
-    (
-      'Tech Solutions Inc', 'Tech Solutions Incorporated', 'EIN', '87-6543210', 'Technology Supplier',
-      'contact@techsolutions.com', '(305) 555-1001', '2500 NW 87th Ave', 'Miami', 'FL', '33172', 'Miami-Dade',
-      100000.00, 30, 'Carlos López'
-    ),
-    (
-      'Office Supplies Pro', 'Office Supplies Pro LLC', 'EIN', '76-5432109', 'Office Equipment',
-      'sales@officesupplies.com', '(407) 555-2002', '1800 Colonial Dr', 'Orlando', 'FL', '32804', 'Orange',
-      50000.00, 15, 'Ana García'
-    ),
-    (
-      'Florida Business Services', 'FBS Corp', 'EIN', '65-4321098', 'Professional Services',
-      'info@flbusiness.com', '(813) 555-3003', '4200 W Kennedy Blvd', 'Tampa', 'FL', '33609', 'Hillsborough',
-      75000.00, 45, 'María Rodríguez'
-    ),
-    (
-      'Global Logistics', 'Global Logistics Florida', 'EIN', '54-3210987', 'Logistics',
-      'ops@globallogistics.com', '(305) 555-4004', '1000 Port Blvd', 'Miami', 'FL', '33132', 'Miami-Dade',
-      120000.00, 30, 'Carlos López'
-    ),
-    (
-      'Janitorial Experts', 'Janitorial Experts LLC', 'EIN', '43-2109876', 'Cleaning',
-      'service@janitorial.com', '(407) 555-5005', '500 International Dr', 'Orlando', 'FL', '32819', 'Orange',
-      5000.00, 7, 'Ana García'
-    )
-  `);
+    ) VALUES
+      (
+        'Tech Solutions Inc', 'Tech Solutions Incorporated', 'EIN', '87-6543210', 'Technology Supplier',
+        'contact@techsolutions.com', '(305) 555-1001', '2500 NW 87th Ave', 'Miami', 'FL', '33172', 'Miami-Dade',
+        100000.00, 30, 'Carlos López'
+      ),
+      (
+        'Office Supplies Pro', 'Office Supplies Pro LLC', 'EIN', '76-5432109', 'Office Equipment',
+        'sales@officesupplies.com', '(407) 555-2002', '1800 Colonial Dr', 'Orlando', 'FL', '32804', 'Orange',
+        50000.00, 15, 'Ana García'
+      ),
+      (
+        'Florida Business Services', 'FBS Corp', 'EIN', '65-4321098', 'Professional Services',
+        'info@flbusiness.com', '(813) 555-3003', '4200 W Kennedy Blvd', 'Tampa', 'FL', '33609', 'Hillsborough',
+        75000.00, 45, 'María Rodríguez'
+      ),
+      (
+        'Global Logistics', 'Global Logistics Florida', 'EIN', '54-3210987', 'Logistics',
+        'ops@globallogistics.com', '(305) 555-4004', '1000 Port Blvd', 'Miami', 'FL', '33132', 'Miami-Dade',
+        120000.00, 30, 'Carlos López'
+      ),
+      (
+        'Janitorial Experts', 'Janitorial Experts LLC', 'EIN', '43-2109876', 'Cleaning',
+        'service@janitorial.com', '(407) 555-5005', '500 International Dr', 'Orlando', 'FL', '32819', 'Orange',
+        5000.00, 7, 'Ana García'
+      )
+        `);
 
-    // Facturas de compra de ejemplo
+      // Facturas de compra de ejemplo
+      db.run(`
+    INSERT INTO bills(bill_number, supplier_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES
+  ('BILL-2024-001', 1, '2024-01-10', '2024-02-09', 2000.00, 140.00, 2140.00, 'approved'),
+  ('BILL-2024-002', 2, '2024-01-15', '2024-01-30', 850.00, 55.25, 905.25, 'received'),
+  ('BILL-2024-003', 3, '2024-01-20', '2024-03-05', 1500.00, 105.00, 1605.00, 'paid'),
+  ('BILL-2024-004', 4, '2024-01-22', '2024-02-21', 500.00, 35.00, 535.00, 'approved')
+    `);
+
+      // Líneas de factura de compra de ejemplo
+      db.run(`
+    INSERT INTO bill_lines(bill_id, product_id, description, quantity, unit_price, line_total) VALUES
+  (1, 2, 'Software Licenses - Bulk Purchase', 10.000, 200.00, 2000.00),
+  (2, 4, 'Office Equipment Setup', 5.000, 170.00, 850.00),
+  (3, 1, 'Professional Consulting Services', 10.000, 150.00, 1500.00),
+  (4, 3, 'Shipping Fees', 1.000, 500.00, 500.00)
+    `);
+
+      // Asientos Contables de ejemplo (Journal Entries)
+      db.run(`
+    INSERT INTO journal_entries(entry_date, reference, description, total_debit, total_credit) VALUES
+  ('2024-01-01', 'OB-2024', 'Asiento de Apertura', 100000.00, 100000.00),
+  ('2024-01-15', 'INV-2024-001', 'Venta a John Smith', 1605.00, 1605.00),
+  ('2024-01-20', 'BILL-2024-003', 'Pago a Florida Business Services', 1605.00, 1605.00)
+    `);
+
+      // Detalles de Asientos Contables (Journal Details)
+      // 1. Apertura: Caja (1112) Debit 100k, Capital (3110) Credit 100k
+      // 2. Venta: Cuentas por Cobrar (1121) Debit 1605, Ventas (4110) Credit 1500, Tax Payable (2121) Credit 105
+      // 3. Compra: Gastos Profesionales (5240) Debit 1500, Tax Credit (1121?) Debit 105, Cash (1112) Credit 1605
+      db.run(`
+    INSERT INTO journal_details(journal_entry_id, account_code, debit_amount, credit_amount, description) VALUES
+  (1, '1112', 100000.00, 0, 'Apertura de banco'),
+  (1, '3110', 0, 100000.00, 'Aporte de capital'),
+  (2, '1121', 1605.00, 0, 'Saldo deudor cliente'),
+  (2, '4110', 0, 1500.00, 'Venta de productos'),
+  (2, '2121', 0, 105.00, 'Impuesto ventas Florida'),
+  (3, '5240', 1500.00, 0, 'Servicios profesionales recibidos'),
+  (3, '2121', 105.00, 0, 'Crédito fiscal Florida'),
+  (3, '1112', 0, 1605.00, 'Pago en efectivo/banco')
+    `);
+
+      console.log('Sample data and Journal Entries inserted successfully');
+    } catch (error) {
+      console.error('Error inserting sample data:', error);
+      throw error;
+    } finally {
+      // PASO 3: Reactivar Foreign Keys
+      // -------------------------------
+      db.run(`PRAGMA foreign_keys = ON`);
+      console.log('✅ Foreign Keys reactivadas - Base de datos segura');
+    }
+  };
+
+  // Insertar categorías de productos iniciales
+  const insertInitialProductCategories = async (): Promise<void> => {
+    if (!db) return;
+
     db.run(`
-    INSERT INTO bills (bill_number, supplier_id, issue_date, due_date, subtotal, tax_amount, total_amount, status) VALUES 
-    ('BILL-2024-001', 1, '2024-01-10', '2024-02-09', 2000.00, 140.00, 2140.00, 'approved'),
-    ('BILL-2024-002', 2, '2024-01-15', '2024-01-30', 850.00, 55.25, 905.25, 'received'),
-    ('BILL-2024-003', 3, '2024-01-20', '2024-03-05', 1500.00, 105.00, 1605.00, 'paid'),
-    ('BILL-2024-004', 4, '2024-01-22', '2024-02-21', 500.00, 35.00, 535.00, 'approved')
-  `);
+    INSERT INTO product_categories(name, description, tax_rate, active, created_at, updated_at) VALUES
+  ('Servicios Profesionales', 'Servicios de consultoría, asesoría y profesionales', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('Software y Licencias', 'Software, aplicaciones y licencias digitales', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('Hardware y Equipos', 'Equipos de cómputo, hardware y tecnología', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('Suministros de Oficina', 'Materiales, suministros y artículos de oficina', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('Servicios de Mantenimiento', 'Servicios de mantenimiento y soporte técnico', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `);
 
-    // Líneas de factura de compra de ejemplo
+    console.log('Initial product categories inserted successfully');
+  };
+
+  // Insertar productos iniciales
+  const insertInitialProducts = async (): Promise<void> => {
+    if (!db) return;
+
     db.run(`
-    INSERT INTO bill_lines (bill_id, product_id, description, quantity, unit_price, line_total) VALUES 
-    (1, 2, 'Software Licenses - Bulk Purchase', 10.000, 200.00, 2000.00),
-    (2, 4, 'Office Equipment Setup', 5.000, 170.00, 850.00),
-    (3, 1, 'Professional Consulting Services', 10.000, 150.00, 1500.00),
-    (4, 3, 'Shipping Fees', 1.000, 500.00, 500.00)
-  `);
-
-    // Asientos Contables de ejemplo (Journal Entries)
-    db.run(`
-    INSERT INTO journal_entries (entry_date, reference, description, total_debit, total_credit) VALUES 
-    ('2024-01-01', 'OB-2024', 'Asiento de Apertura', 100000.00, 100000.00),
-    ('2024-01-15', 'INV-2024-001', 'Venta a John Smith', 1605.00, 1605.00),
-    ('2024-01-20', 'BILL-2024-003', 'Pago a Florida Business Services', 1605.00, 1605.00)
-  `);
-
-    // Detalles de Asientos Contables (Journal Details)
-    // 1. Apertura: Caja (1112) Debit 100k, Capital (3110) Credit 100k
-    // 2. Venta: Cuentas por Cobrar (1121) Debit 1605, Ventas (4110) Credit 1500, Tax Payable (2121) Credit 105
-    // 3. Compra: Gastos Profesionales (5240) Debit 1500, Tax Credit (1121?) Debit 105, Cash (1112) Credit 1605
-    db.run(`
-    INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount, description) VALUES 
-    (1, '1112', 100000.00, 0, 'Apertura de banco'),
-    (1, '3110', 0, 100000.00, 'Aporte de capital'),
-    (2, '1121', 1605.00, 0, 'Saldo deudor cliente'),
-    (2, '4110', 0, 1500.00, 'Venta de productos'),
-    (2, '2121', 0, 105.00, 'Impuesto ventas Florida'),
-    (3, '5240', 1500.00, 0, 'Servicios profesionales recibidos'),
-    (3, '2121', 105.00, 0, 'Crédito fiscal Florida'),
-    (3, '1112', 0, 1605.00, 'Pago en efectivo/banco')
-  `);
-
-    console.log('Sample data and Journal Entries inserted successfully');
-  } catch (error) {
-    console.error('Error inserting sample data:', error);
-    throw error;
-  } finally {
-    // PASO 3: Reactivar Foreign Keys
-    // -------------------------------
-    db.run(`PRAGMA foreign_keys = ON`);
-    console.log('✅ Foreign Keys reactivadas - Base de datos segura');
-  }
-};
-
-// Insertar categorías de productos iniciales
-const insertInitialProductCategories = async (): Promise<void> => {
-  if (!db) return;
-
-  db.run(`
-    INSERT INTO product_categories (name, description, tax_rate, active, created_at, updated_at) VALUES 
-    ('Servicios Profesionales', 'Servicios de consultoría, asesoría y profesionales', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Software y Licencias', 'Software, aplicaciones y licencias digitales', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Hardware y Equipos', 'Equipos de cómputo, hardware y tecnología', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Suministros de Oficina', 'Materiales, suministros y artículos de oficina', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Servicios de Mantenimiento', 'Servicios de mantenimiento y soporte técnico', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `);
-
-  console.log('Initial product categories inserted successfully');
-};
-
-// Insertar productos iniciales
-const insertInitialProducts = async (): Promise<void> => {
-  if (!db) return;
-
-  db.run(`
-    INSERT INTO products (
+    INSERT INTO products(
       sku, name, description, price, cost, category_id, unit_of_measure,
       taxable, stock_quantity, min_stock_level, max_stock_level, reorder_point,
       is_service, active, created_at, updated_at
-    ) VALUES 
-    ('SERV-001', 'Consultoría Contable', 'Servicios de consultoría contable y fiscal para empresas en Florida', 150.00, 75.00, 1, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('SERV-002', 'Auditoría Fiscal', 'Servicios de auditoría y cumplimiento fiscal completo', 500.00, 250.00, 1, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('SERV-003', 'Preparación de Impuestos', 'Preparación y presentación de declaraciones de impuestos', 200.00, 100.00, 1, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-001', 'Licencia Software Contable', 'Licencia anual de software contable profesional', 299.99, 150.00, 2, 'unidad', 1, 50, 10, 100, 20, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-002', 'Configuración Hardware', 'Configuración e instalación de hardware contable', 199.99, 100.00, 3, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-003', 'Papel Bond A4', 'Resma de papel bond tamaño carta para impresión', 12.99, 8.50, 4, 'resma', 1, 100, 20, 200, 30, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('PROD-004', 'Tóner Impresora HP', 'Cartucho de tóner para impresoras HP LaserJet', 89.99, 55.00, 4, 'unidad', 1, 25, 5, 50, 10, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('SERV-004', 'Soporte Técnico', 'Servicios de soporte técnico y mantenimiento de sistemas', 120.00, 60.00, 5, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `);
+    ) VALUES
+      ('SERV-001', 'Consultoría Contable', 'Servicios de consultoría contable y fiscal para empresas en Florida', 150.00, 75.00, 1, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('SERV-002', 'Auditoría Fiscal', 'Servicios de auditoría y cumplimiento fiscal completo', 500.00, 250.00, 1, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('SERV-003', 'Preparación de Impuestos', 'Preparación y presentación de declaraciones de impuestos', 200.00, 100.00, 1, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('PROD-001', 'Licencia Software Contable', 'Licencia anual de software contable profesional', 299.99, 150.00, 2, 'unidad', 1, 50, 10, 100, 20, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('PROD-002', 'Configuración Hardware', 'Configuración e instalación de hardware contable', 199.99, 100.00, 3, 'servicio', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('PROD-003', 'Papel Bond A4', 'Resma de papel bond tamaño carta para impresión', 12.99, 8.50, 4, 'resma', 1, 100, 20, 200, 30, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('PROD-004', 'Tóner Impresora HP', 'Cartucho de tóner para impresoras HP LaserJet', 89.99, 55.00, 4, 'unidad', 1, 25, 5, 50, 10, 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('SERV-004', 'Soporte Técnico', 'Servicios de soporte técnico y mantenimiento de sistemas', 120.00, 60.00, 5, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `);
 
-  console.log('Initial products inserted successfully');
+    console.log('Initial products inserted successfully');
+  };
+
+  const insertInitialTaxRates = async (): Promise<void> => {
+    if (!db) return;
+
+    db.run(`
+    INSERT INTO florida_tax_rates(county_name, state_rate, county_rate, total_rate) VALUES
+  ('Miami-Dade', 0.06, 0.005, 0.065),
+  ('Broward', 0.06, 0.00, 0.06),
+  ('Palm Beach', 0.06, 0.00, 0.06),
+  ('Orange', 0.06, 0.005, 0.065),
+  ('Hillsborough', 0.06, 0.005, 0.065),
+  ('Monroe', 0.06, 0.015, 0.075),
+  ('Duval', 0.06, 0.0075, 0.0675),
+  ('Pinellas', 0.06, 0.01, 0.07),
+  ('Lee', 0.06, 0.01, 0.07)
+    `);
+
+    console.log('Initial tax rates inserted successfully (2026 rates)');
+  };
+
+  // Ejecutar procesos de inicialización/seeding
+  await seedUsersAndRoles();
+  await migrateDataOwnership();
+
+  // Verificar si ya existen categorías antes de insertar
+  const catCount = db.exec("SELECT COUNT(*) FROM product_categories")[0]?.values[0]?.[0] || 0;
+  if (catCount === 0) {
+    await insertInitialProductCategories();
+  }
+
+  // Verificar si ya existen productos antes de insertar
+  const prodCount = db.exec("SELECT COUNT(*) FROM products")[0]?.values[0]?.[0] || 0;
+  if (prodCount === 0) {
+    await insertInitialProducts();
+  }
+
+  // Verificar si ya existen tasas antes de insertar
+  const taxCount = db.exec("SELECT COUNT(*) FROM florida_tax_rates")[0]?.values[0]?.[0] || 0;
+  if (taxCount === 0) {
+    await insertInitialTaxRates();
+  }
+
+  logger.info('Database', 'initialization_complete', 'Esquema y datos iniciales verificados');
 };
 
-const insertInitialTaxRates = async (): Promise<void> => {
-  if (!db) return;
-
-  db.run(`
-    INSERT INTO florida_tax_rates (county_name, state_rate, county_rate, total_rate) VALUES
-    ('Miami-Dade', 0.06, 0.005, 0.065),
-    ('Broward', 0.06, 0.00, 0.06),
-    ('Palm Beach', 0.06, 0.00, 0.06),
-    ('Orange', 0.06, 0.005, 0.065),
-    ('Hillsborough', 0.06, 0.005, 0.065),
-    ('Monroe', 0.06, 0.015, 0.075),
-    ('Duval', 0.06, 0.0075, 0.0675),
-    ('Pinellas', 0.06, 0.01, 0.07),
-    ('Lee', 0.06, 0.01, 0.07)
-  `);
-
-  console.log('Initial tax rates inserted successfully (2026 rates)');
-};
-
-// Configurar auto-save
 const setupAutoSave = (): void => {
   if (!db) return;
 
@@ -3097,7 +2846,7 @@ export const saveDatabase = async (): Promise<void> => {
 
     if (opfsRoot && dbFile) {
       // Guardar en OPFS - ensure proper ArrayBuffer type
-      const writable = await dbFile.createWritable();
+      const writable = await (dbFile as any).createWritable();
       // Convert to proper ArrayBuffer if it's a SharedArrayBuffer
       let dataBuffer: ArrayBuffer;
       if (data.buffer instanceof ArrayBuffer) {
@@ -3123,54 +2872,7 @@ export const saveDatabase = async (): Promise<void> => {
   }
 };
 
-// Comprimir datos para localStorage
-const compressData = async (data: Uint8Array): Promise<string> => {
-  // Ensure proper ArrayBuffer type for compression
-  let dataBuffer: ArrayBuffer;
-  if (data.buffer instanceof ArrayBuffer) {
-    dataBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-  } else {
-    // Handle SharedArrayBuffer case
-    const tempArray = new Uint8Array(data.length);
-    tempArray.set(data);
-    dataBuffer = tempArray.buffer;
-  }
-  return await BasicEncryption.compressData(new Uint8Array(dataBuffer));
-};
 
-// Cargar desde localStorage
-const loadFromLocalStorage = async (): Promise<Uint8Array | null> => {
-  try {
-    const stored = localStorage.getItem('accountexpress-db');
-    const isEncrypted = localStorage.getItem('accountexpress-encrypted') === 'true';
-
-    if (!stored) return null;
-
-    let decoded = atob(stored);
-    let data = new Uint8Array(decoded.split('').map(char => char.charCodeAt(0)));
-
-    // Descifrar si es necesario
-    if (isEncrypted && encryptionEnabled && currentPassword) {
-      try {
-        const { salt, iv, encrypted } = BasicEncryption.separateEncryptedData(data);
-        const decryptedData = await BasicEncryption.decrypt(encrypted, salt, iv, currentPassword);
-        // Ensure proper ArrayBuffer type
-        const tempArray = new Uint8Array(decryptedData.length);
-        tempArray.set(decryptedData);
-        data = tempArray;
-        console.log('Database decrypted from localStorage');
-      } catch (error) {
-        console.error('Failed to decrypt from localStorage:', error);
-        return null;
-      }
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error loading from localStorage:', error);
-    return null;
-  }
-};
 
 // Verificar si el cifrado está habilitado
 export const isEncryptionEnabled = (): boolean => {
@@ -3266,13 +2968,13 @@ export const addCustomer = async (customerData: Partial<Customer>, userId?: numb
     db.run('BEGIN TRANSACTION');
 
     const stmt = db.prepare(`
-      INSERT INTO customers (
-        name, business_name, document_type, document_number, business_type,
-        email, email_secondary, phone, phone_secondary,
-        address_line1, address_line2, city, state, zip_code, florida_county,
-        credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-        status, notes, updated_at, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
+      INSERT INTO customers(
+      name, business_name, document_type, document_number, business_type,
+      email, email_secondary, phone, phone_secondary,
+      address_line1, address_line2, city, state, zip_code, florida_county,
+      credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
+      status, notes, updated_at, created_by, updated_by
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
     `);
 
     const values = [
@@ -3318,7 +3020,7 @@ export const addCustomer = async (customerData: Partial<Customer>, userId?: numb
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    logger.info('CustomerModule', 'add_customer_success', `Cliente agregado exitosamente con ID: ${insertId}`, {
+    logger.info('CustomerModule', 'add_customer_success', `Cliente agregado exitosamente con ID: ${insertId} `, {
       customerId: insertId,
       customerName: customerData.name,
       customerEmail: customerData.email
@@ -3327,7 +3029,7 @@ export const addCustomer = async (customerData: Partial<Customer>, userId?: numb
     return insertId;
 
   } catch (error) {
-    logger.error('CustomerModule', 'add_customer_failed', `Error al agregar cliente: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+    logger.error('CustomerModule', 'add_customer_failed', `Error al agregar cliente: ${error instanceof Error ? error.message : 'Unknown error'} `, {
       customerData: { name: customerData.name, email: customerData.email }
     }, error as Error);
     db?.run('ROLLBACK');
@@ -3347,12 +3049,12 @@ export const getCustomers = (filters?: { userId?: number, role?: string }): Cust
 
   try {
     let query = `
-      SELECT 
-        id, name, business_name, document_type, document_number, business_type,
-        email, email_secondary, phone, phone_secondary,
-        address_line1, address_line2, city, state, zip_code, florida_county,
-        credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-        status, notes, created_at, updated_at
+SELECT
+id, name, business_name, document_type, document_number, business_type,
+  email, email_secondary, phone, phone_secondary,
+  address_line1, address_line2, city, state, zip_code, florida_county,
+  credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
+  status, notes, created_at, updated_at
       FROM customers 
     `;
 
@@ -3367,7 +3069,7 @@ export const getCustomers = (filters?: { userId?: number, role?: string }): Cust
     // Let's assume 'viewer' sees all for now, but 'sales'/'purchasing' are restricted.
 
     if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE created_by = ?`;
+      query += ` WHERE created_by = ? `;
       params.push(filters.userId);
     }
 
@@ -3436,15 +3138,15 @@ export const getCustomerById = (id: number): Customer | null => {
 
   try {
     const result = db.exec(`
-      SELECT 
-        id, name, business_name, document_type, document_number, business_type,
-        email, email_secondary, phone, phone_secondary,
-        address_line1, address_line2, city, state, zip_code, florida_county,
-        credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-        status, notes, created_at, updated_at
+SELECT
+id, name, business_name, document_type, document_number, business_type,
+  email, email_secondary, phone, phone_secondary,
+  address_line1, address_line2, city, state, zip_code, florida_county,
+  credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
+  status, notes, created_at, updated_at
       FROM customers 
       WHERE id = ${id}
-    `);
+`);
 
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
       const columns = result[0].columns;
@@ -3481,12 +3183,12 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>, user
     const stmt = db.prepare(`
       UPDATE customers 
       SET name = ?, business_name = ?, document_type = ?, document_number = ?, business_type = ?,
-          email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
-          address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
-          credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_salesperson = ?,
-          status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-      WHERE id = ?
-    `);
+  email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
+  address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
+  credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_salesperson = ?,
+  status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
+    WHERE id = ?
+      `);
 
     const values = [
       customerData.name || oldCustomer.name,
@@ -3538,7 +3240,7 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>, user
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error updating customer:', error);
-    return { success: false, message: `Error al actualizar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'}` };
+    return { success: false, message: `Error al actualizar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
   }
 };
 
@@ -3550,26 +3252,26 @@ export const canDeleteCustomer = (customerId: number): { canDelete: boolean; rea
     // Verificar si tiene facturas
     const invoiceCheck = db.exec(`
       SELECT COUNT(*) as count FROM invoices WHERE customer_id = ${customerId}
-    `);
+`);
     const invoiceCount = invoiceCheck[0]?.values[0]?.[0] as number || 0;
 
     if (invoiceCount > 0) {
       return {
         canDelete: false,
-        reason: `El cliente tiene ${invoiceCount} factura(s) asociada(s). No se puede eliminar.`
+        reason: `El cliente tiene ${invoiceCount} factura(s) asociada(s).No se puede eliminar.`
       };
     }
 
     // Verificar si tiene pagos
     const paymentCheck = db.exec(`
       SELECT COUNT(*) as count FROM payments WHERE customer_id = ${customerId}
-    `);
+`);
     const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
 
     if (paymentCount > 0) {
       return {
         canDelete: false,
-        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s). No se puede eliminar.`
+        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
       };
     }
 
@@ -3624,7 +3326,7 @@ export const deleteCustomer = (id: number, userId?: number): { success: boolean;
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error deleting customer:', error);
-    return { success: false, message: `Error al eliminar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'}` };
+    return { success: false, message: `Error al eliminar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
   }
 };
 
@@ -3713,7 +3415,7 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
         SELECT audit_hash FROM audit_log 
         ORDER BY id DESC 
         LIMIT 1
-      `);
+  `);
       previousHash = lastHashResult?.[0]?.values?.[0]?.[0] as string || '0';
     } else {
       previousHash = auditData.previousHash;
@@ -3760,11 +3462,11 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
     const auditHash = await generateAuditHash(auditData);
 
     const stmt = db.prepare(`
-      INSERT INTO audit_log (
-        table_name, record_id, action, old_values, new_values, 
-        user_id, timestamp, audit_hash
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_log(
+    table_name, record_id, action, old_values, new_values,
+    user_id, timestamp, audit_hash
+  )
+VALUES(?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
@@ -3780,7 +3482,7 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
 
     stmt.free();
 
-    logger.info('AuditSystem', 'log_event', `Audit event logged: ${action} on ${tableName} ID ${recordId}`, {
+    logger.info('AuditSystem', 'log_event', `Audit event logged: ${action} on ${tableName} ID ${recordId} `, {
       tableName,
       recordId,
       action,
@@ -3797,10 +3499,10 @@ export const getAuditLog = (limit: number = 100): Array<Record<string, any>> => 
 
   try {
     const stmt = db.prepare(`
-      SELECT * FROM audit_log 
-      ORDER BY timestamp DESC 
-      LIMIT ?
-    `);
+SELECT * FROM audit_log 
+      ORDER BY timestamp DESC
+LIMIT ?
+  `);
 
     const result = stmt.getAsObject([limit]);
     stmt.free();
@@ -3830,7 +3532,7 @@ export const getDatabaseInfo = () => {
 
     for (const table of tables) {
       try {
-        const result = db.exec(`SELECT COUNT(*) as count FROM ${table}`);
+        const result = db.exec(`SELECT COUNT(*) as count FROM ${table} `);
         info.tables[table] = result[0]?.values[0]?.[0] as number || 0;
       } catch (error) {
         info.tables[table] = 0;
@@ -3905,11 +3607,11 @@ export const generateInvoiceNumber = (): string => {
     const result = db.exec("SELECT COUNT(*) as count FROM invoices");
     const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
     const year = new Date().getFullYear();
-    return `INV-${year}-${count.toString().padStart(4, '0')}`;
+    return `INV - ${year} -${count.toString().padStart(4, '0')} `;
   } catch (error) {
     console.error('Error generating invoice number:', error);
     const timestamp = Date.now().toString().slice(-6);
-    return `INV-${new Date().getFullYear()}-${timestamp}`;
+    return `INV - ${new Date().getFullYear()} -${timestamp} `;
   }
 };
 
@@ -3920,18 +3622,18 @@ export const getInvoices = (filters?: { userId?: number, role?: string }): Invoi
 
   try {
     let query = `
-      SELECT 
-        i.*,
-        c.name as customer_name,
-        c.business_name as customer_business_name,
-        c.email as customer_email
+SELECT
+i.*,
+  c.name as customer_name,
+  c.business_name as customer_business_name,
+  c.email as customer_email
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id = c.id
-    `;
+  `;
 
     const params: any[] = [];
     if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE i.created_by = ?`;
+      query += ` WHERE i.created_by = ? `;
       params.push(filters.userId);
     }
 
@@ -3971,20 +3673,20 @@ export const getInvoiceById = (id: number): Invoice | null => {
   try {
     // Obtener factura principal
     const invoiceResult = db.exec(`
-      SELECT 
-        i.*,
-        c.name as customer_name,
-        c.business_name as customer_business_name,
-        c.email as customer_email,
-        c.phone as customer_phone,
-        c.address_line1 as customer_address,
-        c.city as customer_city,
-        c.state as customer_state,
-        c.zip_code as customer_zip
+SELECT
+i.*,
+  c.name as customer_name,
+  c.business_name as customer_business_name,
+  c.email as customer_email,
+  c.phone as customer_phone,
+  c.address_line1 as customer_address,
+  c.city as customer_city,
+  c.state as customer_state,
+  c.zip_code as customer_zip
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id = c.id
       WHERE i.id = ?
-    `, [id]);
+  `, [id]);
 
     if (!invoiceResult[0] || invoiceResult[0].values.length === 0) return null;
 
@@ -3992,7 +3694,7 @@ export const getInvoiceById = (id: number): Invoice | null => {
     const columns = invoiceResult[0].columns;
 
     const invoice: any = {};
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       invoice[col] = invoiceRow[index];
     });
 
@@ -4010,22 +3712,22 @@ export const getInvoiceById = (id: number): Invoice | null => {
 
     // Obtener líneas de factura
     const itemsResult = db.exec(`
-      SELECT 
-        il.*,
-        p.name as product_name,
-        p.sku as product_sku
+      SELECT
+il.*,
+  p.name as product_name,
+  p.sku as product_sku
       FROM invoice_lines il
       LEFT JOIN products p ON il.product_id = p.id
       WHERE il.invoice_id = ?
-      ORDER BY il.id
+  ORDER BY il.id
     `, [id]);
 
     invoice.items = [];
     if (itemsResult[0]) {
       const itemColumns = itemsResult[0].columns;
-      itemsResult[0].values.forEach(itemRow => {
+      itemsResult[0].values.forEach((itemRow: any) => {
         const item: any = {};
-        itemColumns.forEach((col, index) => {
+        itemColumns.forEach((col: any, index: any) => {
           item[col] = itemRow[index];
         });
 
@@ -4090,12 +3792,12 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
 
     // Insertar factura principal
     const stmt = db.prepare(`
-      INSERT INTO invoices (
-        invoice_number, customer_id, issue_date, due_date, 
-        subtotal, tax_amount, total_amount, status, notes,
-        created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+      INSERT INTO invoices(
+      invoice_number, customer_id, issue_date, due_date,
+      subtotal, tax_amount, total_amount, status, notes,
+      created_by, updated_by
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
     const issueDate = invoiceData.issue_date || new Date().toISOString().split('T')[0];
     const dueDate = invoiceData.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -4118,9 +3820,9 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
 
     // Insertar líneas de factura
     const itemStmt = db.prepare(`
-      INSERT INTO invoice_lines (
+      INSERT INTO invoice_lines(
         invoice_id, product_id, description, quantity, unit_price, line_total, taxable
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ) VALUES(?, ?, ?, ?, ?, ?, ?)
     `);
 
     items.forEach(item => {
@@ -4213,7 +3915,7 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
       updateValues.push(userId || 1);
       updateValues.push(id);
 
-      const updateQuery = `UPDATE invoices SET ${updateFields.join(', ')} WHERE id = ?`;
+      const updateQuery = `UPDATE invoices SET ${updateFields.join(', ')} WHERE id = ? `;
       db.exec(updateQuery, updateValues);
     }
 
@@ -4227,10 +3929,10 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
       let taxAmount = 0;
 
       const itemStmt = db.prepare(`
-        INSERT INTO invoice_lines (
-          invoice_id, product_id, description, quantity, unit_price, line_total, taxable
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
+        INSERT INTO invoice_lines(
+        invoice_id, product_id, description, quantity, unit_price, line_total, taxable
+      ) VALUES(?, ?, ?, ?, ?, ?, ?)
+        `);
 
       // Obtener condado para recálculo de impuestos
       const invoice = getInvoiceById(id);
@@ -4259,9 +3961,9 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
       const total = subtotal + taxAmount;
       db.exec(`
         UPDATE invoices 
-        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? 
-        WHERE id = ?
-      `, [subtotal, taxAmount, total, userId || 1, id]);
+        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
+  WHERE id = ?
+    `, [subtotal, taxAmount, total, userId || 1, id]);
     }
 
     // Registrar en auditoría
@@ -4323,16 +4025,16 @@ export const getActiveProducts = (): Product[] => {
       SELECT * FROM products 
       WHERE active = 1 
       ORDER BY name
-    `);
+  `);
 
     if (!result[0]) return [];
 
     const products: Product[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const product: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         product[col] = row[index];
       });
       products.push(product as Product);
@@ -4352,10 +4054,10 @@ export const getFloridaTaxRate = (county: string): number => {
   try {
     const result = db.exec(`
       SELECT total_rate FROM florida_tax_rates 
-      WHERE county_name = ? 
-      ORDER BY effective_date DESC 
+      WHERE county_name = ?
+  ORDER BY effective_date DESC 
       LIMIT 1
-    `, [county]);
+  `, [county]);
 
     if (result && result.length > 0 && result[0].values.length > 0) {
       return Number(result[0].values[0][0]) || 0.06;
@@ -4456,13 +4158,13 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
     db.run('BEGIN TRANSACTION');
 
     const stmt = db.prepare(`
-      INSERT INTO suppliers (
-        name, business_name, document_type, document_number, business_type,
-        email, email_secondary, phone, phone_secondary,
-        address_line1, address_line2, city, state, zip_code, florida_county,
-        credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
-        status, notes, updated_at, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
+      INSERT INTO suppliers(
+    name, business_name, document_type, document_number, business_type,
+    email, email_secondary, phone, phone_secondary,
+    address_line1, address_line2, city, state, zip_code, florida_county,
+    credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
+    status, notes, updated_at, created_by, updated_by
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
     `);
 
     const values = [
@@ -4511,7 +4213,7 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier added with ID: ${insertId}`);
+    console.log(`Supplier added with ID: ${insertId} `);
     return insertId;
 
   } catch (error) {
@@ -4534,18 +4236,18 @@ export const getSuppliers = (filters?: { userId?: number, role?: string }): Supp
 
   try {
     let query = `
-      SELECT 
-        id, name, business_name, document_type, document_number, business_type,
-        email, email_secondary, phone, phone_secondary,
-        address_line1, address_line2, city, state, zip_code, florida_county,
-        credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
-        status, notes, created_at, updated_at
+SELECT
+id, name, business_name, document_type, document_number, business_type,
+  email, email_secondary, phone, phone_secondary,
+  address_line1, address_line2, city, state, zip_code, florida_county,
+  credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
+  status, notes, created_at, updated_at
       FROM suppliers 
     `;
 
     const params: any[] = [];
     if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE created_by = ?`;
+      query += ` WHERE created_by = ? `;
       params.push(filters.userId);
     }
 
@@ -4615,15 +4317,15 @@ export const getSupplierById = (id: number): Supplier | null => {
 
   try {
     const result = db.exec(`
-      SELECT 
-        id, name, business_name, document_type, document_number, business_type,
-        email, email_secondary, phone, phone_secondary,
-        address_line1, address_line2, city, state, zip_code, florida_county,
-        credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
-        status, notes, created_at, updated_at
+SELECT
+id, name, business_name, document_type, document_number, business_type,
+  email, email_secondary, phone, phone_secondary,
+  address_line1, address_line2, city, state, zip_code, florida_county,
+  credit_limit, payment_terms, tax_exempt, tax_id, assigned_buyer,
+  status, notes, created_at, updated_at
       FROM suppliers 
       WHERE id = ${id}
-    `);
+`);
 
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
       const columns = result[0].columns;
@@ -4661,12 +4363,12 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>, user
     const stmt = db.prepare(`
       UPDATE suppliers 
       SET name = ?, business_name = ?, document_type = ?, document_number = ?, business_type = ?,
-          email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
-          address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
-          credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_buyer = ?,
-          status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-      WHERE id = ?
-    `);
+  email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
+  address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
+  credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_buyer = ?,
+  status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
+    WHERE id = ?
+      `);
 
     const values = [
       supplierData.name || oldSupplier.name,
@@ -4718,7 +4420,7 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>, user
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error updating supplier:', error);
-    return { success: false, message: `Error al actualizar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'}` };
+    return { success: false, message: `Error al actualizar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
   }
 };
 
@@ -4730,26 +4432,26 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; rea
     // Verificar si tiene facturas de compra
     const billCheck = db.exec(`
       SELECT COUNT(*) as count FROM bills WHERE supplier_id = ${supplierId}
-    `);
+`);
     const billCount = billCheck[0]?.values[0]?.[0] as number || 0;
 
     if (billCount > 0) {
       return {
         canDelete: false,
-        reason: `El proveedor tiene ${billCount} factura(s) de compra asociada(s). No se puede eliminar.`
+        reason: `El proveedor tiene ${billCount} factura(s) de compra asociada(s).No se puede eliminar.`
       };
     }
 
     // Verificar si tiene pagos
     const paymentCheck = db.exec(`
       SELECT COUNT(*) as count FROM supplier_payments WHERE supplier_id = ${supplierId}
-    `);
+`);
     const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
 
     if (paymentCount > 0) {
       return {
         canDelete: false,
-        reason: `El proveedor tiene ${paymentCount} pago(s) registrado(s). No se puede eliminar.`
+        reason: `El proveedor tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
       };
     }
 
@@ -4805,7 +4507,7 @@ export const deleteSupplier = (id: number, userId?: number): { success: boolean;
   } catch (error) {
     db?.run('ROLLBACK');
     console.error('Error deleting supplier:', error);
-    return { success: false, message: `Error al eliminar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'}` };
+    return { success: false, message: `Error al eliminar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
   }
 };
 
@@ -4821,11 +4523,11 @@ export const generateBillNumber = (): string => {
     const result = db.exec("SELECT COUNT(*) as count FROM bills");
     const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
     const year = new Date().getFullYear();
-    return `BILL-${year}-${count.toString().padStart(4, '0')}`;
+    return `BILL - ${year} -${count.toString().padStart(4, '0')} `;
   } catch (error) {
     console.error('Error generating bill number:', error);
     const timestamp = Date.now().toString().slice(-6);
-    return `BILL-${new Date().getFullYear()}-${timestamp}`;
+    return `BILL - ${new Date().getFullYear()} -${timestamp} `;
   }
 };
 
@@ -4836,18 +4538,18 @@ export const getBills = (filters?: { userId?: number, role?: string }): Bill[] =
 
   try {
     let query = `
-      SELECT 
-        b.*,
-        s.name as supplier_name,
-        s.business_name as supplier_business_name,
-        s.email as supplier_email
+SELECT
+b.*,
+  s.name as supplier_name,
+  s.business_name as supplier_business_name,
+  s.email as supplier_email
       FROM bills b
       LEFT JOIN suppliers s ON b.supplier_id = s.id
-    `;
+  `;
 
     const params: any[] = [];
     if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE b.created_by = ?`;
+      query += ` WHERE b.created_by = ? `;
       params.push(filters.userId);
     }
 
@@ -4887,20 +4589,20 @@ export const getBillById = (id: number): Bill | null => {
   try {
     // Obtener factura principal
     const billResult = db.exec(`
-      SELECT 
-        b.*,
-        s.name as supplier_name,
-        s.business_name as supplier_business_name,
-        s.email as supplier_email,
-        s.phone as supplier_phone,
-        s.address_line1 as supplier_address,
-        s.city as supplier_city,
-        s.state as supplier_state,
-        s.zip_code as supplier_zip
+SELECT
+b.*,
+  s.name as supplier_name,
+  s.business_name as supplier_business_name,
+  s.email as supplier_email,
+  s.phone as supplier_phone,
+  s.address_line1 as supplier_address,
+  s.city as supplier_city,
+  s.state as supplier_state,
+  s.zip_code as supplier_zip
       FROM bills b
       LEFT JOIN suppliers s ON b.supplier_id = s.id
       WHERE b.id = ?
-    `, [id]);
+  `, [id]);
 
     if (!billResult[0] || billResult[0].values.length === 0) return null;
 
@@ -4908,7 +4610,7 @@ export const getBillById = (id: number): Bill | null => {
     const columns = billResult[0].columns;
 
     const bill: any = {};
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       bill[col] = billRow[index];
     });
 
@@ -4926,22 +4628,22 @@ export const getBillById = (id: number): Bill | null => {
 
     // Obtener líneas de factura
     const itemsResult = db.exec(`
-      SELECT 
-        bl.*,
-        p.name as product_name,
-        p.sku as product_sku
+      SELECT
+bl.*,
+  p.name as product_name,
+  p.sku as product_sku
       FROM bill_lines bl
       LEFT JOIN products p ON bl.product_id = p.id
       WHERE bl.bill_id = ?
-      ORDER BY bl.id
+  ORDER BY bl.id
     `, [id]);
 
     bill.items = [];
     if (itemsResult[0]) {
       const itemColumns = itemsResult[0].columns;
-      itemsResult[0].values.forEach(itemRow => {
+      itemsResult[0].values.forEach((itemRow: any) => {
         const item: any = {};
-        itemColumns.forEach((col, index) => {
+        itemColumns.forEach((col: any, index: any) => {
           item[col] = itemRow[index];
         });
 
@@ -5006,12 +4708,12 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
 
     // Insertar factura principal
     const stmt = db.prepare(`
-      INSERT INTO bills (
-        bill_number, supplier_id, issue_date, due_date, 
-        subtotal, tax_amount, total_amount, status, notes,
-        created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+      INSERT INTO bills(
+      bill_number, supplier_id, issue_date, due_date,
+      subtotal, tax_amount, total_amount, status, notes,
+      created_by, updated_by
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
     const issueDate = billData.issue_date || new Date().toISOString().split('T')[0];
     const dueDate = billData.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -5034,9 +4736,9 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
 
     // Insertar líneas de factura
     const itemStmt = db.prepare(`
-      INSERT INTO bill_lines (
+      INSERT INTO bill_lines(
         bill_id, product_id, description, quantity, unit_price, line_total, taxable
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ) VALUES(?, ?, ?, ?, ?, ?, ?)
     `);
 
     items.forEach(item => {
@@ -5178,7 +4880,7 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
       updateValues.push(userId || 1);
       updateValues.push(id);
 
-      const updateQuery = `UPDATE bills SET ${updateFields.join(', ')} WHERE id = ?`;
+      const updateQuery = `UPDATE bills SET ${updateFields.join(', ')} WHERE id = ? `;
       db.exec(updateQuery, updateValues);
     }
 
@@ -5196,10 +4898,10 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
       let taxAmount = 0;
 
       const itemStmt = db.prepare(`
-        INSERT INTO bill_lines (
-          bill_id, product_id, description, quantity, unit_price, line_total, taxable
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
+        INSERT INTO bill_lines(
+        bill_id, product_id, description, quantity, unit_price, line_total, taxable
+      ) VALUES(?, ?, ?, ?, ?, ?, ?)
+        `);
 
       items.forEach(item => {
         const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
@@ -5225,9 +4927,9 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
       const total = subtotal + taxAmount;
       db.exec(`
         UPDATE bills 
-        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? 
-        WHERE id = ?
-      `, [subtotal, taxAmount, total, userId || 1, id]);
+        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
+  WHERE id = ?
+    `, [subtotal, taxAmount, total, userId || 1, id]);
     }
 
     // Registrar en auditoría
@@ -5269,13 +4971,13 @@ export const deleteBill = (id: number, userId?: number): { success: boolean; mes
     // Verificar si tiene pagos asociados
     const paymentCheck = db.exec(`
       SELECT COUNT(*) as count FROM supplier_payments WHERE bill_id = ${id}
-    `);
+`);
     const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
 
     if (paymentCount > 0) {
       return {
         success: false,
-        message: `La factura tiene ${paymentCount} pago(s) asociado(s). No se puede eliminar.`
+        message: `La factura tiene ${paymentCount} pago(s) asociado(s).No se puede eliminar.`
       };
     }
 
@@ -5324,7 +5026,7 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
-    logger.info('ChartOfAccounts', 'create_start', `Creando cuenta: ${accountData.account_code} - ${accountData.account_name}`);
+    logger.info('ChartOfAccounts', 'create_start', `Creando cuenta: ${accountData.account_code} - ${accountData.account_name} `);
 
     // Validaciones básicas
     if (!accountData.account_code || !accountData.account_name || !accountData.account_type) {
@@ -5332,14 +5034,14 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
     }
 
     // Verificar que el código no exista
-    const existingAccount = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ?`, [accountData.account_code]);
+    const existingAccount = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ? `, [accountData.account_code]);
     if (existingAccount[0] && existingAccount[0].values.length > 0) {
       return { success: false, message: `El código de cuenta ${accountData.account_code} ya existe` };
     }
 
     // Verificar que la cuenta padre exista si se especifica
     if (accountData.parent_account) {
-      const parentExists = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ?`, [accountData.parent_account]);
+      const parentExists = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ? `, [accountData.parent_account]);
       if (!parentExists[0] || parentExists[0].values.length === 0) {
         return { success: false, message: `La cuenta padre ${accountData.parent_account} no existe` };
       }
@@ -5348,10 +5050,10 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
     db.run('BEGIN TRANSACTION');
 
     const stmt = db.prepare(`
-      INSERT INTO chart_of_accounts (
-        account_code, account_name, account_type, normal_balance, parent_account,
-        is_active, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO chart_of_accounts(
+  account_code, account_name, account_type, normal_balance, parent_account,
+  is_active, created_by, updated_by
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
@@ -5391,7 +5093,7 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
 
   } catch (error) {
     db?.run('ROLLBACK');
-    logger.error('ChartOfAccounts', 'create_failed', `Error al crear cuenta: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+    logger.error('ChartOfAccounts', 'create_failed', `Error al crear cuenta: ${error instanceof Error ? error.message : 'Unknown error'} `, {
       accountData: { code: accountData.account_code, name: accountData.account_name }
     }, error as Error);
     return {
@@ -5407,12 +5109,12 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
 
   try {
     const result = db.exec(`
-      SELECT 
-        id, account_code, account_name, account_type, normal_balance, 
-        parent_account, is_active, created_at, updated_at, created_by, updated_by
+SELECT
+id, account_code, account_name, account_type, normal_balance,
+  parent_account, is_active, created_at, updated_at, created_by, updated_by
       FROM chart_of_accounts 
       WHERE account_code = ?
-    `, [accountCode]);
+  `, [accountCode]);
 
     if (!result[0] || result[0].values.length === 0) return null;
 
@@ -5420,7 +5122,7 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
     const row = result[0].values[0];
 
     const account: any = {};
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       account[col] = row[index];
     });
 
@@ -5429,7 +5131,7 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
     return account as ChartOfAccount;
 
   } catch (error) {
-    logger.error('ChartOfAccounts', 'get_by_code_failed', `Error al obtener cuenta ${accountCode}`, { accountCode }, error as Error);
+    logger.error('ChartOfAccounts', 'get_by_code_failed', `Error al obtener cuenta ${accountCode} `, { accountCode }, error as Error);
     return null;
   }
 };
@@ -5445,16 +5147,16 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
       return { success: false, message: 'Cuenta no encontrada' };
     }
 
-    logger.info('ChartOfAccounts', 'update_start', `Actualizando cuenta: ${accountCode}`);
+    logger.info('ChartOfAccounts', 'update_start', `Actualizando cuenta: ${accountCode} `);
 
     db.run('BEGIN TRANSACTION');
 
     const stmt = db.prepare(`
       UPDATE chart_of_accounts 
-      SET account_name = ?, account_type = ?, normal_balance = ?, 
-          parent_account = ?, is_active = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
+      SET account_name = ?, account_type = ?, normal_balance = ?,
+  parent_account = ?, is_active = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
       WHERE account_code = ?
-    `);
+  `);
 
     stmt.run([
       accountData.account_name || currentAccount.account_name,
@@ -5487,7 +5189,7 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 
   } catch (error) {
     db?.run('ROLLBACK');
-    logger.error('ChartOfAccounts', 'update_failed', `Error al actualizar cuenta ${accountCode}`, { accountCode }, error as Error);
+    logger.error('ChartOfAccounts', 'update_failed', `Error al actualizar cuenta ${accountCode} `, { accountCode }, error as Error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error al actualizar la cuenta'
@@ -5506,27 +5208,27 @@ export const deleteChartOfAccount = (accountCode: string, userId?: number): { su
       return { success: false, message: 'Cuenta no encontrada' };
     }
 
-    logger.info('ChartOfAccounts', 'delete_start', `Eliminando cuenta: ${accountCode}`);
+    logger.info('ChartOfAccounts', 'delete_start', `Eliminando cuenta: ${accountCode} `);
 
     // Verificar que no tenga cuentas hijas
-    const childrenCheck = db.exec(`SELECT COUNT(*) as count FROM chart_of_accounts WHERE parent_account = ?`, [accountCode]);
+    const childrenCheck = db.exec(`SELECT COUNT(*) as count FROM chart_of_accounts WHERE parent_account = ? `, [accountCode]);
     const childrenCount = childrenCheck[0]?.values[0]?.[0] as number || 0;
 
     if (childrenCount > 0) {
       return {
         success: false,
-        message: `La cuenta tiene ${childrenCount} cuenta(s) hija(s). No se puede eliminar.`
+        message: `La cuenta tiene ${childrenCount} cuenta(s) hija(s).No se puede eliminar.`
       };
     }
 
     // Verificar que no tenga movimientos en journal_details
-    const movementsCheck = db.exec(`SELECT COUNT(*) as count FROM journal_details WHERE account_code = ?`, [accountCode]);
+    const movementsCheck = db.exec(`SELECT COUNT(*) as count FROM journal_details WHERE account_code = ? `, [accountCode]);
     const movementsCount = movementsCheck[0]?.values[0]?.[0] as number || 0;
 
     if (movementsCount > 0) {
       return {
         success: false,
-        message: `La cuenta tiene ${movementsCount} movimiento(s) contable(s). No se puede eliminar.`
+        message: `La cuenta tiene ${movementsCount} movimiento(s) contable(s).No se puede eliminar.`
       };
     }
 
@@ -5555,7 +5257,7 @@ export const deleteChartOfAccount = (accountCode: string, userId?: number): { su
 
   } catch (error) {
     db?.run('ROLLBACK');
-    logger.error('ChartOfAccounts', 'delete_failed', `Error al eliminar cuenta ${accountCode}`, { accountCode }, error as Error);
+    logger.error('ChartOfAccounts', 'delete_failed', `Error al eliminar cuenta ${accountCode} `, { accountCode }, error as Error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error al eliminar la cuenta'
@@ -5582,10 +5284,10 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
     db.run('BEGIN TRANSACTION');
 
     const stmt = db.prepare(`
-      INSERT INTO chart_of_accounts (
-        account_code, account_name, account_type, normal_balance, parent_account,
-        is_active, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO chart_of_accounts(
+    account_code, account_name, account_type, normal_balance, parent_account,
+    is_active, created_by, updated_by
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     // Insertar cuentas iniciales (definidas en ChartOfAccounts.tsx)
@@ -5666,8 +5368,8 @@ export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors
     logger.info('AuditSystem', 'verify_integrity_start', 'Iniciando verificación de integridad de auditoría');
 
     const result = db.exec(`
-      SELECT id, table_name, record_id, action, old_values, new_values, 
-             user_id, timestamp, audit_hash
+      SELECT id, table_name, record_id, action, old_values, new_values,
+  user_id, timestamp, audit_hash
       FROM audit_log 
       ORDER BY id ASC
     `);
@@ -5701,7 +5403,7 @@ export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors
       });
 
       if (expectedHash !== storedHash) {
-        errors.push(`Record ID ${id}: Hash mismatch. Expected: ${expectedHash.substring(0, 8)}..., Found: ${storedHash?.toString().substring(0, 8)}...`);
+        errors.push(`Record ID ${id}: Hash mismatch.Expected: ${expectedHash.substring(0, 8)}..., Found: ${storedHash?.toString().substring(0, 8)}...`);
       }
 
       previousHash = storedHash as string;
@@ -5725,7 +5427,7 @@ export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors
     logger.error('AuditSystem', 'verify_integrity_failed', 'Error al verificar integridad de auditoría', null, error as Error);
     return {
       isValid: false,
-      errors: [`Verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
+      errors: [`Verification failed: ${error instanceof Error ? error.message : 'Unknown error'} `],
       totalRecords: 0
     };
   }
@@ -5748,11 +5450,11 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
       FROM audit_log 
       GROUP BY table_name 
       ORDER BY count DESC
-    `);
+  `);
 
     const byTable: Record<string, number> = {};
     if (tableResult[0]) {
-      tableResult[0].values.forEach(row => {
+      tableResult[0].values.forEach((row: any) => {
         byTable[row[0] as string] = row[1] as number;
       });
     }
@@ -5763,11 +5465,11 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
       FROM audit_log 
       GROUP BY action 
       ORDER BY count DESC
-    `);
+  `);
 
     const byAction: Record<string, number> = {};
     if (actionResult[0]) {
-      actionResult[0].values.forEach(row => {
+      actionResult[0].values.forEach((row: any) => {
         byAction[row[0] as string] = row[1] as number;
       });
     }
@@ -5777,7 +5479,7 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
       SELECT timestamp FROM audit_log 
       ORDER BY id DESC 
       LIMIT 1
-    `);
+  `);
     const lastRecord = lastResult[0]?.values[0]?.[0] as string || 'N/A';
 
     return {
@@ -5803,22 +5505,22 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
 
   try {
     const result = db.exec(`
-      SELECT 
-        account_code, account_name, account_type, normal_balance, parent_account,
-        is_active, created_at, updated_at, created_by, updated_by
+SELECT
+account_code, account_name, account_type, normal_balance, parent_account,
+  is_active, created_at, updated_at, created_by, updated_by
       FROM chart_of_accounts 
       WHERE is_active = 1
       ORDER BY account_code
-    `);
+  `);
 
     if (!result[0]) return [];
 
     const accounts: ChartOfAccount[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const account: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         account[col] = row[index];
       });
 
@@ -5841,14 +5543,14 @@ export const getAccountBalance = (accountCode: string): number => {
 
   try {
     const result = db.exec(`
-      SELECT 
-        coa.normal_balance,
-        COALESCE(SUM(jd.debit_amount), 0) as total_debits,
-        COALESCE(SUM(jd.credit_amount), 0) as total_credits
+SELECT
+coa.normal_balance,
+  COALESCE(SUM(jd.debit_amount), 0) as total_debits,
+  COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
       LEFT JOIN journal_details jd ON coa.account_code = jd.account_code
       WHERE coa.account_code = ?
-      GROUP BY coa.account_code, coa.normal_balance
+  GROUP BY coa.account_code, coa.normal_balance
     `, [accountCode]);
 
     if (!result[0] || result[0].values.length === 0) return 0;
@@ -5887,33 +5589,33 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
     // Verificar que las tablas de contabilidad existan
     const tablesResult = db.exec(`
       SELECT name FROM sqlite_master 
-      WHERE type='table' AND name IN ('chart_of_accounts', 'journal_entries', 'journal_details')
+      WHERE type = 'table' AND name IN('chart_of_accounts', 'journal_entries', 'journal_details')
       ORDER BY name
     `);
 
-    const existingTables = tablesResult[0]?.values.map(row => row[0]) || [];
-    logger.info('AccountingDiagnosis', 'tables_check', `Tablas encontradas: ${existingTables.join(', ')}`);
+    const existingTables = tablesResult[0]?.values.map((row: any) => row[0]) || [];
+    logger.info('AccountingDiagnosis', 'tables_check', `Tablas encontradas: ${existingTables.join(', ')} `);
 
     // Verificar que el plan de cuentas tenga datos
     const accountsResult = db.exec('SELECT COUNT(*) as count FROM chart_of_accounts');
     const accountCount = accountsResult[0]?.values[0]?.[0] as number || 0;
-    logger.info('AccountingDiagnosis', 'accounts_count', `Cuentas en el plan: ${accountCount}`);
+    logger.info('AccountingDiagnosis', 'accounts_count', `Cuentas en el plan: ${accountCount} `);
 
     // Verificar estructura de algunas cuentas principales
     const mainAccountsResult = db.exec(`
       SELECT account_code, account_name, account_type 
       FROM chart_of_accounts 
-      WHERE account_code IN ('1000', '2000', '3000', '4000', '5000')
+      WHERE account_code IN('1000', '2000', '3000', '4000', '5000')
       ORDER BY account_code
     `);
 
     const mainAccounts = mainAccountsResult[0]?.values || [];
-    logger.info('AccountingDiagnosis', 'main_accounts', `Cuentas principales: ${mainAccounts.length}`);
+    logger.info('AccountingDiagnosis', 'main_accounts', `Cuentas principales: ${mainAccounts.length} `);
 
     // Verificar integridad de asientos contables
     const journalResult = db.exec('SELECT COUNT(*) as count FROM journal_entries');
     const journalCount = journalResult[0]?.values[0]?.[0] as number || 0;
-    logger.info('AccountingDiagnosis', 'journal_entries', `Asientos contables: ${journalCount}`);
+    logger.info('AccountingDiagnosis', 'journal_entries', `Asientos contables: ${journalCount} `);
 
     const diagnosis = {
       tablesExist: existingTables.length === 3,
@@ -5965,7 +5667,7 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
     logger.critical('AccountingDiagnosis', 'diagnosis_failed', 'Error crítico en diagnóstico', null, error as Error);
     return {
       success: false,
-      message: `Error en diagnóstico: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      message: `Error en diagnóstico: ${error instanceof Error ? error.message : 'Unknown error'} `,
       details: { error: error instanceof Error ? error.stack : 'Unknown error' }
     };
   }
@@ -6007,7 +5709,7 @@ export const createJournalEntry = (
     const diff = Math.abs(totalDebits - totalCredits);
     if (diff > 0.01) {
       // Lanzar error duro para prevenir persistencia
-      const msg = `VIOLACIÓN DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}. Débitos: $${totalDebits.toFixed(2)}, Créditos: $${totalCredits.toFixed(2)}`;
+      const msg = `VIOLACIÓN DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}.Débitos: $${totalDebits.toFixed(2)}, Créditos: $${totalCredits.toFixed(2)} `;
       console.error(msg);
       throw new Error(msg); // Stop execution immediately
     }
@@ -6016,10 +5718,10 @@ export const createJournalEntry = (
 
     // Insertar asiento principal
     const stmt = db.prepare(`
-      INSERT INTO journal_entries (
-        entry_date, reference, description, total_debit, total_credit, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
+      INSERT INTO journal_entries(
+      entry_date, reference, description, total_debit, total_credit, created_by, updated_by
+    ) VALUES(?, ?, ?, ?, ?, ?, ?)
+      `);
 
     stmt.run([
       entryDate,
@@ -6036,16 +5738,16 @@ export const createJournalEntry = (
 
     // Insertar detalles del asiento
     const detailStmt = db.prepare(`
-      INSERT INTO journal_details (
+      INSERT INTO journal_details(
         journal_entry_id, account_code, debit_amount, credit_amount, description
-      ) VALUES (?, ?, ?, ?, ?)
+      ) VALUES(?, ?, ?, ?, ?)
     `);
 
     details.forEach(detail => {
       // Validar que la cuenta exista
       if (!db) throw new Error('Database not initialized');
 
-      const accountExists = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ?`, [detail.account_code || '']);
+      const accountExists = db.exec(`SELECT account_code FROM chart_of_accounts WHERE account_code = ? `, [detail.account_code || '']);
       if (!accountExists[0] || accountExists[0].values.length === 0) {
         throw new Error(`La cuenta ${detail.account_code || 'undefined'} no existe en el plan de cuentas`);
       }
@@ -6077,7 +5779,7 @@ export const createJournalEntry = (
 
     return {
       success: true,
-      message: `Asiento contable creado correctamente (ID: ${entryId})`,
+      message: `Asiento contable creado correctamente(ID: ${entryId})`,
       entryId
     };
 
@@ -6097,20 +5799,20 @@ export const getJournalEntries = (limit: number = 50, filters?: { userId?: numbe
 
   try {
     let query = `
-      SELECT 
-        id, entry_date, reference, description, total_debit, total_credit, 
-        is_balanced, created_at, created_by, verified_by, verified_at
+SELECT
+id, entry_date, reference, description, total_debit, total_credit,
+  is_balanced, created_at, created_by, verified_by, verified_at
       FROM journal_entries 
     `;
 
     const params: any[] = [];
 
     if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE created_by = ?`;
+      query += ` WHERE created_by = ? `;
       params.push(filters.userId);
     }
 
-    query += ` ORDER BY entry_date DESC, id DESC LIMIT ?`;
+    query += ` ORDER BY entry_date DESC, id DESC LIMIT ? `;
     params.push(limit);
 
     const result = db.exec(query, params);
@@ -6120,9 +5822,9 @@ export const getJournalEntries = (limit: number = 50, filters?: { userId?: numbe
     const entries: JournalEntry[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const entry: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         entry[col] = row[index];
       });
 
@@ -6145,14 +5847,14 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
 
   try {
     const result = db.exec(`
-      SELECT 
-        jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount, 
-        jd.credit_amount, jd.description,
-        coa.account_name, coa.account_type, coa.normal_balance
+      SELECT
+jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount,
+  jd.credit_amount, jd.description,
+  coa.account_name, coa.account_type, coa.normal_balance
       FROM journal_details jd
       JOIN chart_of_accounts coa ON jd.account_code = coa.account_code
       WHERE jd.journal_entry_id = ?
-      ORDER BY jd.id
+  ORDER BY jd.id
     `, [entryId]);
 
     if (!result[0]) return [];
@@ -6160,9 +5862,9 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
     const details: JournalDetail[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const detail: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         detail[col] = row[index];
       });
 
@@ -6200,14 +5902,14 @@ export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { 
       account_code: '1121',
       debit_amount: invoice.total_amount,
       credit_amount: 0,
-      description: `Factura ${invoice.invoice_number} - ${invoice.customer.name}`
+      description: `Factura ${invoice.invoice_number} - ${invoice.customer.name} `
     },
     // Crédito: Ventas
     {
       account_code: '4110',
       debit_amount: 0,
       credit_amount: invoice.subtotal,
-      description: `Venta - Factura ${invoice.invoice_number}`
+      description: `Venta - Factura ${invoice.invoice_number} `
     }
   ];
 
@@ -6217,14 +5919,14 @@ export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { 
       account_code: '2121',
       debit_amount: 0,
       credit_amount: invoice.tax_amount,
-      description: `Impuesto Florida - Factura ${invoice.invoice_number}`
+      description: `Impuesto Florida - Factura ${invoice.invoice_number} `
     });
   }
 
   return createJournalEntry({
     entry_date: invoice.issue_date,
-    reference_number: `INV-${invoice.invoice_number}`,
-    description: `Venta a ${invoice.customer.name} - Factura ${invoice.invoice_number}`
+    reference_number: `INV - ${invoice.invoice_number} `,
+    description: `Venta a ${invoice.customer.name} - Factura ${invoice.invoice_number} `
   }, details, userId);
 };
 
@@ -6240,14 +5942,14 @@ export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { suc
       account_code: '5200',
       debit_amount: bill.subtotal,
       credit_amount: 0,
-      description: `Compra - Factura ${bill.bill_number}`
+      description: `Compra - Factura ${bill.bill_number} `
     },
     // Crédito: Cuentas por Pagar
     {
       account_code: '2111',
       debit_amount: 0,
       credit_amount: bill.total_amount,
-      description: `Factura ${bill.bill_number} - ${bill.supplier.name}`
+      description: `Factura ${bill.bill_number} - ${bill.supplier.name} `
     }
   ];
 
@@ -6257,14 +5959,14 @@ export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { suc
       account_code: '5510',
       debit_amount: bill.tax_amount,
       credit_amount: 0,
-      description: `Impuesto Florida - Factura ${bill.bill_number}`
+      description: `Impuesto Florida - Factura ${bill.bill_number} `
     });
   }
 
   return createJournalEntry({
     entry_date: bill.issue_date,
-    reference_number: `BILL-${bill.bill_number}`,
-    description: `Compra a ${bill.supplier.name} - Factura ${bill.bill_number}`
+    reference_number: `BILL - ${bill.bill_number} `,
+    description: `Compra a ${bill.supplier.name} - Factura ${bill.bill_number} `
   }, details, userId);
 };
 
@@ -6276,21 +5978,21 @@ export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: 
       account_code: payment.payment_method === 'cash' ? '1111' : '1112',
       debit_amount: payment.amount,
       credit_amount: 0,
-      description: `Pago recibido ${payment.payment_number} - ${customer.name}`
+      description: `Pago recibido ${payment.payment_number} - ${customer.name} `
     },
     // Crédito: Cuentas por Cobrar
     {
       account_code: '1121',
       debit_amount: 0,
       credit_amount: payment.amount,
-      description: `Pago ${payment.payment_number} - ${customer.name}`
+      description: `Pago ${payment.payment_number} - ${customer.name} `
     }
   ];
 
   return createJournalEntry({
     entry_date: payment.payment_date,
-    reference_number: `PAY-${payment.payment_number}`,
-    description: `Pago recibido de ${customer.name} - ${payment.payment_number}`
+    reference_number: `PAY - ${payment.payment_number} `,
+    description: `Pago recibido de ${customer.name} - ${payment.payment_number} `
   }, details, userId);
 };
 
@@ -6303,9 +6005,9 @@ export const generatePaymentNumber = (): string => {
   try {
     const result = db.exec("SELECT COUNT(*) as count FROM payments");
     const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
-    return `PAY-C-${new Date().getFullYear()}-${count.toString().padStart(4, '0')}`;
+    return `PAY - C - ${new Date().getFullYear()} -${count.toString().padStart(4, '0')} `;
   } catch (error) {
-    return `PAY-C-${Date.now()}`;
+    return `PAY - C - ${Date.now()} `;
   }
 };
 
@@ -6314,9 +6016,9 @@ export const generateSupplierPaymentNumber = (): string => {
   try {
     const result = db.exec("SELECT COUNT(*) as count FROM supplier_payments");
     const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
-    return `PAY-S-${new Date().getFullYear()}-${count.toString().padStart(4, '0')}`;
+    return `PAY - S - ${new Date().getFullYear()} -${count.toString().padStart(4, '0')} `;
   } catch (error) {
-    return `PAY-S-${Date.now()}`;
+    return `PAY - S - ${Date.now()} `;
   }
 };
 
@@ -6339,10 +6041,10 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
 
     // 3. Insertar pago
     db.run(`
-      INSERT INTO payments (
-        customer_id, invoice_id, payment_number, payment_date, amount, 
-        payment_method, reference_number, notes, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO payments(
+    customer_id, invoice_id, payment_number, payment_date, amount,
+    payment_method, reference_number, notes, created_by
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       paymentData.customer_id,
       paymentData.invoice_id || null,
@@ -6361,12 +6063,12 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
     // 4. Actualizar estado de factura (si aplica)
     if (paymentData.invoice_id) {
       // Obtener total de la factura
-      const invoiceResult = db.exec(`SELECT total_amount FROM invoices WHERE id = ${paymentData.invoice_id}`);
+      const invoiceResult = db.exec(`SELECT total_amount FROM invoices WHERE id = ${paymentData.invoice_id} `);
       if (invoiceResult.length > 0 && invoiceResult[0].values.length > 0) {
         const totalAmount = invoiceResult[0].values[0][0] as number;
 
         // Obtener pagos previos de esta factura (incluyendo este)
-        const paymentsResult = db.exec(`SELECT SUM(amount) FROM payments WHERE invoice_id = ${paymentData.invoice_id}`);
+        const paymentsResult = db.exec(`SELECT SUM(amount) FROM payments WHERE invoice_id = ${paymentData.invoice_id} `);
         const totalPaid = paymentsResult[0]?.values[0]?.[0] as number || 0;
 
         let newStatus = 'partial';
@@ -6375,7 +6077,7 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
           newStatus = 'paid';
         }
 
-        db.run(`UPDATE invoices SET status = ? WHERE id = ?`, [newStatus, paymentData.invoice_id]);
+        db.run(`UPDATE invoices SET status = ? WHERE id = ? `, [newStatus, paymentData.invoice_id]);
       }
     }
 
@@ -6423,21 +6125,21 @@ export const generatePaymentSentJournalEntry = (payment: SupplierPayment, suppli
       account_code: '2111', // Cuentas por Pagar - Proveedores
       debit_amount: payment.amount,
       credit_amount: 0,
-      description: `Pago a proveedor ${supplier.name} - ${payment.payment_number}`
+      description: `Pago a proveedor ${supplier.name} - ${payment.payment_number} `
     },
     // Crédito: Efectivo/Banco (Disminuye activo)
     {
       account_code: payment.payment_method === 'cash' ? '1111' : '1112',
       debit_amount: 0,
       credit_amount: payment.amount,
-      description: `Pago realizado ${payment.payment_number} - ${supplier.name}`
+      description: `Pago realizado ${payment.payment_number} - ${supplier.name} `
     }
   ];
 
   return createJournalEntry({
     entry_date: payment.payment_date,
-    reference_number: `PAY-${payment.payment_number}`,
-    description: `Pago a ${supplier.name} - ${payment.payment_number}`
+    reference_number: `PAY - ${payment.payment_number} `,
+    description: `Pago a ${supplier.name} - ${payment.payment_number} `
   }, details, userId);
 };
 
@@ -6463,10 +6165,10 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
     // En createSchema linea 954 se crea supplier_payments. Confío en que existe.
 
     db.run(`
-      INSERT INTO supplier_payments (
-        supplier_id, bill_id, payment_number, payment_date, amount, 
-        payment_method, reference_number, notes, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO supplier_payments(
+    supplier_id, bill_id, payment_number, payment_date, amount,
+    payment_method, reference_number, notes, created_by
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       paymentData.supplier_id,
       paymentData.bill_id || null,
@@ -6484,11 +6186,11 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
 
     // 4. Actualizar estado de factura de compra (si aplica)
     if (paymentData.bill_id) {
-      const billResult = db.exec(`SELECT total_amount FROM bills WHERE id = ${paymentData.bill_id}`);
+      const billResult = db.exec(`SELECT total_amount FROM bills WHERE id = ${paymentData.bill_id} `);
       if (billResult.length > 0 && billResult[0].values.length > 0) {
         const totalAmount = billResult[0].values[0][0] as number;
 
-        const paymentsResult = db.exec(`SELECT SUM(amount) FROM supplier_payments WHERE bill_id = ${paymentData.bill_id}`);
+        const paymentsResult = db.exec(`SELECT SUM(amount) FROM supplier_payments WHERE bill_id = ${paymentData.bill_id} `);
         const totalPaid = paymentsResult[0]?.values[0]?.[0] as number || 0;
 
         let newStatus = 'partial';
@@ -6496,7 +6198,7 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
           newStatus = 'paid';
         }
 
-        db.run(`UPDATE bills SET status = ? WHERE id = ?`, [newStatus, paymentData.bill_id]);
+        db.run(`UPDATE bills SET status = ? WHERE id = ? `, [newStatus, paymentData.bill_id]);
       }
     }
 
@@ -6551,19 +6253,19 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
     const dateFilter = asOfDate ? `AND je.entry_date <= '${asOfDate}'` : '';
 
     const result = db.exec(`
-      SELECT 
-        coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
-        COALESCE(SUM(jd.debit_amount), 0) as total_debits,
-        COALESCE(SUM(jd.credit_amount), 0) as total_credits
+SELECT
+coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
+  COALESCE(SUM(jd.debit_amount), 0) as total_debits,
+  COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
       LEFT JOIN journal_details jd ON coa.account_code = jd.account_code
       LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
-      WHERE coa.account_type IN ('asset', 'liability', 'equity') 
+      WHERE coa.account_type IN('asset', 'liability', 'equity') 
         AND coa.is_active = 1 
         ${dateFilter}
       GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
-    `);
+  `);
 
     if (!result[0]) return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesEquity: 0, isBalanced: false };
 
@@ -6575,9 +6277,9 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
 
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const account: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         account[col] = row[index];
       });
 
@@ -6627,17 +6329,17 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
 
   try {
     const result = db.exec(`
-      SELECT 
-        coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
-        COALESCE(SUM(jd.debit_amount), 0) as total_debits,
-        COALESCE(SUM(jd.credit_amount), 0) as total_credits
+SELECT
+coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
+  COALESCE(SUM(jd.debit_amount), 0) as total_debits,
+  COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
       LEFT JOIN journal_details jd ON coa.account_code = jd.account_code
       LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
-      WHERE coa.account_type IN ('revenue', 'expense') 
+      WHERE coa.account_type IN('revenue', 'expense') 
         AND coa.is_active = 1 
         AND je.entry_date BETWEEN ? AND ?
-      GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
+  GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
     `, [fromDate, toDate]);
 
@@ -6650,9 +6352,9 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
 
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const account: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         account[col] = row[index];
       });
 
@@ -6710,7 +6412,7 @@ export const generateClosingEntry = (fromDate: string, toDate: string, userId?: 
           account_code: acc.account_code,
           debit_amount: Math.abs(acc.balance || 0),
           credit_amount: 0,
-          description: `Cierre de cuenta de ingresos - Periodo ${fromDate} a ${toDate}`
+          description: `Cierre de cuenta de ingresos - Periodo ${fromDate} a ${toDate} `
         });
       }
     });
@@ -6722,7 +6424,7 @@ export const generateClosingEntry = (fromDate: string, toDate: string, userId?: 
           account_code: acc.account_code,
           debit_amount: 0,
           credit_amount: Math.abs(acc.balance || 0),
-          description: `Cierre de cuenta de gastos - Periodo ${fromDate} a ${toDate}`
+          description: `Cierre de cuenta de gastos - Periodo ${fromDate} a ${toDate} `
         });
       }
     });
@@ -6744,8 +6446,8 @@ export const generateClosingEntry = (fromDate: string, toDate: string, userId?: 
 
     return createJournalEntry({
       entry_date: toDate,
-      reference_number: `CLOSE-${toDate.slice(0, 7)}`,
-      description: `ASIENTO DE CIERRE DE RESULTADOS: Periodo ${fromDate} a ${toDate}`
+      reference_number: `CLOSE - ${toDate.slice(0, 7)} `,
+      description: `ASIENTO DE CIERRE DE RESULTADOS: Periodo ${fromDate} a ${toDate} `
     }, details, userId);
 
   } catch (error: any) {
@@ -6885,14 +6587,14 @@ export const getAgingReport = (type: 'receivable' | 'payable'): {
     const entityIdField = type === 'receivable' ? 'customer_id' : 'supplier_id';
 
     const result = db.exec(`
-      SELECT 
-        e.name,
-        t.total_amount,
-        t.due_date,
-        (julianday('now') - julianday(t.due_date)) as days_overdue
+SELECT
+e.name,
+  t.total_amount,
+  t.due_date,
+  (julianday('now') - julianday(t.due_date)) as days_overdue
       FROM ${table} t
       JOIN ${entityTable} e ON t.${entityIdField} = e.id
-      WHERE t.status IN ('pending', 'partial', 'overdue')
+      WHERE t.status IN('pending', 'partial', 'overdue')
     `);
 
     if (!result[0]) return { total: 0, buckets: {}, details: [] };
@@ -6909,7 +6611,7 @@ export const getAgingReport = (type: 'receivable' | 'payable'): {
     const details: any[] = [];
 
     const columns = result[0].columns;
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const name = row[0] as string;
       const amount = Number(row[1]) || 0;
       const days = Math.floor(Number(row[3]) || 0);
@@ -6954,21 +6656,21 @@ export const getAccountLedger = (accountCode: string, fromDate: string, toDate: 
 
   try {
     // 1. Obtener info de la cuenta
-    const accResult = db.exec(`SELECT * FROM chart_of_accounts WHERE account_code = ?`, [accountCode]);
+    const accResult = db.exec(`SELECT * FROM chart_of_accounts WHERE account_code = ? `, [accountCode]);
     if (!accResult[0]) return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
 
     const account: any = {};
-    accResult[0].columns.forEach((col, i) => account[col] = accResult[0].values[0][i]);
+    accResult[0].columns.forEach((col: any, i: any) => account[col] = accResult[0].values[0][i]);
 
     // 2. Calcular saldo inicial (antes de fromDate)
     const startBalResult = db.exec(`
-      SELECT 
-        COALESCE(SUM(debit_amount), 0) as debits,
-        COALESCE(SUM(credit_amount), 0) as credits
+      SELECT
+COALESCE(SUM(debit_amount), 0) as debits,
+  COALESCE(SUM(credit_amount), 0) as credits
       FROM journal_details jd
       JOIN journal_entries je ON jd.journal_entry_id = je.id
       WHERE jd.account_code = ? AND je.entry_date < ?
-    `, [accountCode, fromDate]);
+  `, [accountCode, fromDate]);
 
     const startDebits = Number(startBalResult[0].values[0][0]);
     const startCredits = Number(startBalResult[0].values[0][1]);
@@ -6976,17 +6678,17 @@ export const getAccountLedger = (accountCode: string, fromDate: string, toDate: 
 
     // 3. Obtener transacciones en el periodo
     const txResult = db.exec(`
-      SELECT 
-        je.entry_date,
-        je.reference,
-        jd.description,
-        jd.debit_amount,
-        jd.credit_amount,
-        je.id as journal_id
+      SELECT
+je.entry_date,
+  je.reference,
+  jd.description,
+  jd.debit_amount,
+  jd.credit_amount,
+  je.id as journal_id
       FROM journal_details jd
       JOIN journal_entries je ON jd.journal_entry_id = je.id
       WHERE jd.account_code = ? AND je.entry_date BETWEEN ? AND ?
-      ORDER BY je.entry_date ASC, je.id ASC
+  ORDER BY je.entry_date ASC, je.id ASC
     `, [accountCode, fromDate, toDate]);
 
     const transactions: any[] = [];
@@ -6996,9 +6698,9 @@ export const getAccountLedger = (accountCode: string, fromDate: string, toDate: 
 
     if (txResult[0]) {
       const cols = txResult[0].columns;
-      txResult[0].values.forEach(row => {
+      txResult[0].values.forEach((row: any) => {
         const tx: any = {};
-        cols.forEach((col, i) => tx[col] = row[i]);
+        cols.forEach((col: any, i: any) => tx[col] = row[i]);
 
         totalDebit += tx.debit_amount;
         totalCredit += tx.credit_amount;
@@ -7038,7 +6740,7 @@ export function getCompanyData(): CompanyData | null {
     }
 
     const result = db.exec(`
-      SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
+SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
     `);
 
     if (result.length === 0 || result[0].values.length === 0) {
@@ -7132,39 +6834,39 @@ export function updateCompanyData(companyData: Partial<CompanyData>): { success:
     // Ejecutar actualización
     const stmt = db.prepare(`
       UPDATE company_data SET
-        company_name = ?,
-        legal_name = ?,
-        tax_id = ?,
-        address = ?,
-        city = ?,
-        state = ?,
-        zip_code = ?,
-        phone = ?,
-        email = ?,
-        website = ?,
-        logo_path = ?,
-        fiscal_year_start = ?,
-        currency = ?,
-        language = ?,
-        timezone = ?,
-        sales_commission_rate = ?,
-        sales_commission_percentage = ?,
-        discount_amount = ?,
-        discount_percentage = ?,
-        shipping_rate = ?,
-        shipping_percentage = ?,
-        reposition_policy_days = ?,
-        late_fee_amount = ?,
-        late_fee_percentage = ?,
-        annual_interest_rate = ?,
-        grace_period_days = ?,
-        documentation_cost = ?,
-        other_costs = ?,
-        chart_of_accounts_name = ?,
-        date_format = ?,
-        updated_at = ?
-      WHERE id = ? AND is_active = 1
-    `);
+company_name = ?,
+  legal_name = ?,
+  tax_id = ?,
+  address = ?,
+  city = ?,
+  state = ?,
+  zip_code = ?,
+  phone = ?,
+  email = ?,
+  website = ?,
+  logo_path = ?,
+  fiscal_year_start = ?,
+  currency = ?,
+  language = ?,
+  timezone = ?,
+  sales_commission_rate = ?,
+  sales_commission_percentage = ?,
+  discount_amount = ?,
+  discount_percentage = ?,
+  shipping_rate = ?,
+  shipping_percentage = ?,
+  reposition_policy_days = ?,
+  late_fee_amount = ?,
+  late_fee_percentage = ?,
+  annual_interest_rate = ?,
+  grace_period_days = ?,
+  documentation_cost = ?,
+  other_costs = ?,
+  chart_of_accounts_name = ?,
+  date_format = ?,
+  updated_at = ?
+    WHERE id = ? AND is_active = 1
+      `);
 
     stmt.run([
       updateData.company_name,
@@ -7227,7 +6929,7 @@ export function updateCompanyData(companyData: Partial<CompanyData>): { success:
     logger.error('CompanyData', 'update_failed', 'Error al actualizar datos de empresa', null, error as Error);
     return {
       success: false,
-      message: `Error al actualizar datos de empresa: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al actualizar datos de empresa: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -7243,9 +6945,9 @@ export function getARDDocuments(): any[] {
     if (!result[0]) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const doc: any = {};
-      columns.forEach((col, i) => doc[col] = row[i]);
+      columns.forEach((col: any, i: any) => doc[col] = row[i]);
       return doc;
     });
   } catch (e) {
@@ -7258,9 +6960,9 @@ export function saveARDDocument(doc: any): { success: boolean; id: string } {
   if (!db) return { success: false, id: '' };
   try {
     db.run(`
-      INSERT INTO ard_documents (id, name, type, status, file_size, detected_amount, detected_tax, detected_date, raw_analysis)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
+      INSERT INTO ard_documents(id, name, type, status, file_size, detected_amount, detected_tax, detected_date, raw_analysis)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, [
       doc.id, doc.name, doc.type, doc.status, doc.fileSize,
       doc.detectedAmount || 0, doc.detectedTax || 0,
       doc.detectedDate || new Date().toISOString().split('T')[0],
@@ -7279,13 +6981,13 @@ export function updateARDDocumentStatus(id: string, status: string, results?: an
     if (results) {
       db.run(`
         UPDATE ard_documents 
-        SET status = ?, 
-            detected_amount = ?, 
-            detected_tax = ?, 
-            raw_analysis = ?,
-            updated_at = CURRENT_TIMESTAMP
+        SET status = ?,
+  detected_amount = ?,
+  detected_tax = ?,
+  raw_analysis = ?,
+  updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `, [status, results.amount, results.tax, JSON.stringify(results), id]);
+  `, [status, results.amount, results.tax, JSON.stringify(results), id]);
     } else {
       db.run('UPDATE ard_documents SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, id]);
     }
@@ -7308,25 +7010,25 @@ export function getARDCustomerSummary(): any[] {
   if (!db) return [];
   try {
     const query = `
-      SELECT 
-        c.id, 
-        c.name, 
-        COUNT(a.id) as total_docs,
-        SUM(CASE WHEN a.status = 'processed' THEN 1 ELSE 0 END) as pending_conversion,
-        SUM(CASE WHEN a.status = 'converted' THEN 1 ELSE 0 END) as total_converted,
-        SUM(a.detected_amount) as total_volume
+      SELECT
+c.id,
+  c.name,
+  COUNT(a.id) as total_docs,
+  SUM(CASE WHEN a.status = 'processed' THEN 1 ELSE 0 END) as pending_conversion,
+  SUM(CASE WHEN a.status = 'converted' THEN 1 ELSE 0 END) as total_converted,
+  SUM(a.detected_amount) as total_volume
       FROM customers c
       INNER JOIN ard_documents a ON c.id = a.customer_id
       GROUP BY c.id
       ORDER BY total_docs DESC
-    `;
+  `;
     const result = db.exec(query);
     if (!result[0]) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const obj: any = {};
-      columns.forEach((col, i) => obj[col] = row[i]);
+      columns.forEach((col: any, i: any) => obj[col] = row[i]);
       return obj;
     });
   } catch (e) {
@@ -7416,16 +7118,16 @@ export function initializeCompanyData(): void {
     };
 
     const stmt = db.prepare(`
-      INSERT INTO company_data (
-        company_name, legal_name, tax_id, address, city, state, zip_code,
-        phone, email, website, logo_path, fiscal_year_start, currency,
-        language, timezone, sales_commission_rate, sales_commission_percentage,
-        discount_amount, discount_percentage, shipping_rate, shipping_percentage,
-        reposition_policy_days, late_fee_amount, late_fee_percentage,
-        annual_interest_rate, grace_period_days, documentation_cost,
-        other_costs, chart_of_accounts_name, date_format,
-        created_at, updated_at, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO company_data(
+    company_name, legal_name, tax_id, address, city, state, zip_code,
+    phone, email, website, logo_path, fiscal_year_start, currency,
+    language, timezone, sales_commission_rate, sales_commission_percentage,
+    discount_amount, discount_percentage, shipping_rate, shipping_percentage,
+    reposition_policy_days, late_fee_amount, late_fee_percentage,
+    annual_interest_rate, grace_period_days, documentation_cost,
+    other_costs, chart_of_accounts_name, date_format,
+    created_at, updated_at, is_active
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
@@ -7484,14 +7186,14 @@ export function getProductCategories(): ProductCategory[] {
     }
 
     const result = db.exec(`
-      SELECT 
-        c.*,
-        p.name as parent_name
+SELECT
+c.*,
+  p.name as parent_name
       FROM product_categories c
       LEFT JOIN product_categories p ON c.parent_id = p.id
       WHERE c.active = 1
       ORDER BY c.name
-    `);
+  `);
 
     if (result.length === 0) {
       logger.info('ProductCategories', 'get_empty', 'No se encontraron categorías');
@@ -7501,10 +7203,10 @@ export function getProductCategories(): ProductCategory[] {
     const categories: ProductCategory[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const category: any = {};
 
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         category[col] = row[index];
       });
 
@@ -7537,16 +7239,16 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
     const existingResult = db.exec(`
       SELECT id FROM product_categories 
       WHERE LOWER(name) = LOWER(?) AND active = 1
-    `, [categoryData.name.trim()]);
+  `, [categoryData.name.trim()]);
 
     if (existingResult.length > 0 && existingResult[0].values.length > 0) {
       return { success: false, message: 'Ya existe una categoría con ese nombre' };
     }
 
     const stmt = db.prepare(`
-      INSERT INTO product_categories (
-        name, description, parent_id, tax_rate, active, created_at, updated_at, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO product_categories(
+    name, description, parent_id, tax_rate, active, created_at, updated_at, created_by, updated_by
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = new Date().toISOString();
@@ -7582,7 +7284,7 @@ export function createProductCategory(categoryData: Omit<ProductCategory, 'id' |
     logger.error('ProductCategories', 'create_failed', 'Error al crear categoría', categoryData, error as Error);
     return {
       success: false,
-      message: `Error al crear categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al crear categoría: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -7603,15 +7305,15 @@ export function updateProductCategory(id: number, categoryData: Partial<ProductC
 
     const stmt = db.prepare(`
       UPDATE product_categories SET
-        name = COALESCE(?, name),
-        description = COALESCE(?, description),
-        parent_id = COALESCE(?, parent_id),
-        tax_rate = COALESCE(?, tax_rate),
-        active = COALESCE(?, active),
-        updated_at = ?,
-        updated_by = ?
-      WHERE id = ?
-    `);
+name = COALESCE(?, name),
+  description = COALESCE(?, description),
+  parent_id = COALESCE(?, parent_id),
+  tax_rate = COALESCE(?, tax_rate),
+  active = COALESCE(?, active),
+  updated_at = ?,
+  updated_by = ?
+    WHERE id = ?
+      `);
 
     stmt.run([
       categoryData.name || null,
@@ -7638,7 +7340,7 @@ export function updateProductCategory(id: number, categoryData: Partial<ProductC
     logger.error('ProductCategories', 'update_failed', 'Error al actualizar categoría', { id, ...categoryData }, error as Error);
     return {
       success: false,
-      message: `Error al actualizar categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al actualizar categoría: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -7694,7 +7396,7 @@ export function deleteProductCategory(id: number, userId?: number): { success: b
     logger.error('ProductCategories', 'delete_failed', 'Error al eliminar categoría', { id }, error as Error);
     return {
       success: false,
-      message: `Error al eliminar categoría: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al eliminar categoría: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -7712,16 +7414,16 @@ export function getProducts(): Product[] {
     }
 
     const result = db.exec(`
-      SELECT 
-        p.*,
-        c.name as category_name,
-        s.name as supplier_name
+SELECT
+p.*,
+  c.name as category_name,
+  s.name as supplier_name
       FROM products p
       LEFT JOIN product_categories c ON p.category_id = c.id
       LEFT JOIN suppliers s ON p.supplier_id = s.id
       WHERE p.active = 1
       ORDER BY p.name
-    `);
+  `);
 
     if (result.length === 0) {
       logger.info('Products', 'get_empty', 'No se encontraron productos');
@@ -7731,10 +7433,10 @@ export function getProducts(): Product[] {
     const products: Product[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const product: any = {};
 
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         if (col === 'category_name' && row[index]) {
           product.category = { name: row[index] as string } as ProductCategory;
         } else if (col === 'supplier_name' && row[index]) {
@@ -7781,20 +7483,20 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
     const existingResult = db.exec(`
       SELECT id FROM products 
       WHERE LOWER(sku) = LOWER(?) AND active = 1
-    `, [productData.sku.trim()]);
+  `, [productData.sku.trim()]);
 
     if (existingResult.length > 0 && existingResult[0].values.length > 0) {
       return { success: false, message: 'Ya existe un producto con ese SKU' };
     }
 
     const stmt = db.prepare(`
-      INSERT INTO products (
-        sku, name, description, price, cost, category_id, unit_of_measure,
-        taxable, tax_rate, stock_quantity, min_stock_level, max_stock_level,
-        reorder_point, supplier_id, barcode, image_path, weight, dimensions,
-        is_service, service_duration, warranty_period, notes, active,
-        created_at, updated_at, created_by, updated_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products(
+    sku, name, description, price, cost, category_id, unit_of_measure,
+    taxable, tax_rate, stock_quantity, min_stock_level, max_stock_level,
+    reorder_point, supplier_id, barcode, image_path, weight, dimensions,
+    is_service, service_duration, warranty_period, notes, active,
+    created_at, updated_at, created_by, updated_by
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const now = new Date().toISOString();
@@ -7848,7 +7550,7 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
     logger.error('Products', 'create_failed', 'Error al crear producto', productData, error as Error);
     return {
       success: false,
-      message: `Error al crear producto: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al crear producto: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -7872,7 +7574,7 @@ export function updateProduct(id: number, productData: Partial<Product>, userId?
       const existingResult = db.exec(`
         SELECT id FROM products 
         WHERE LOWER(sku) = LOWER(?) AND id != ? AND active = 1
-      `, [productData.sku.trim(), id]);
+  `, [productData.sku.trim(), id]);
 
       if (existingResult.length > 0 && existingResult[0].values.length > 0) {
         return { success: false, message: 'Ya existe otro producto con ese SKU' };
@@ -7881,33 +7583,33 @@ export function updateProduct(id: number, productData: Partial<Product>, userId?
 
     const stmt = db.prepare(`
       UPDATE products SET
-        sku = COALESCE(?, sku),
-        name = COALESCE(?, name),
-        description = COALESCE(?, description),
-        price = COALESCE(?, price),
-        cost = COALESCE(?, cost),
-        category_id = COALESCE(?, category_id),
-        unit_of_measure = COALESCE(?, unit_of_measure),
-        taxable = COALESCE(?, taxable),
-        tax_rate = COALESCE(?, tax_rate),
-        stock_quantity = COALESCE(?, stock_quantity),
-        min_stock_level = COALESCE(?, min_stock_level),
-        max_stock_level = COALESCE(?, max_stock_level),
-        reorder_point = COALESCE(?, reorder_point),
-        supplier_id = COALESCE(?, supplier_id),
-        barcode = COALESCE(?, barcode),
-        image_path = COALESCE(?, image_path),
-        weight = COALESCE(?, weight),
-        dimensions = COALESCE(?, dimensions),
-        is_service = COALESCE(?, is_service),
-        service_duration = COALESCE(?, service_duration),
-        warranty_period = COALESCE(?, warranty_period),
-        notes = COALESCE(?, notes),
-        active = COALESCE(?, active),
-        updated_at = ?,
-        updated_by = ?
-      WHERE id = ?
-    `);
+sku = COALESCE(?, sku),
+  name = COALESCE(?, name),
+  description = COALESCE(?, description),
+  price = COALESCE(?, price),
+  cost = COALESCE(?, cost),
+  category_id = COALESCE(?, category_id),
+  unit_of_measure = COALESCE(?, unit_of_measure),
+  taxable = COALESCE(?, taxable),
+  tax_rate = COALESCE(?, tax_rate),
+  stock_quantity = COALESCE(?, stock_quantity),
+  min_stock_level = COALESCE(?, min_stock_level),
+  max_stock_level = COALESCE(?, max_stock_level),
+  reorder_point = COALESCE(?, reorder_point),
+  supplier_id = COALESCE(?, supplier_id),
+  barcode = COALESCE(?, barcode),
+  image_path = COALESCE(?, image_path),
+  weight = COALESCE(?, weight),
+  dimensions = COALESCE(?, dimensions),
+  is_service = COALESCE(?, is_service),
+  service_duration = COALESCE(?, service_duration),
+  warranty_period = COALESCE(?, warranty_period),
+  notes = COALESCE(?, notes),
+  active = COALESCE(?, active),
+  updated_at = ?,
+  updated_by = ?
+    WHERE id = ?
+      `);
 
     stmt.run([
       productData.sku || null,
@@ -7952,7 +7654,7 @@ export function updateProduct(id: number, productData: Partial<Product>, userId?
     logger.error('Products', 'update_failed', 'Error al actualizar producto', { id, ...productData }, error as Error);
     return {
       success: false,
-      message: `Error al actualizar producto: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al actualizar producto: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8008,7 +7710,7 @@ export function deleteProduct(id: number, userId?: number): { success: boolean; 
     logger.error('Products', 'delete_failed', 'Error al eliminar producto', { id }, error as Error);
     return {
       success: false,
-      message: `Error al eliminar producto: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al eliminar producto: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8018,15 +7720,15 @@ export function getProductById(id: number): Product | null {
     if (!db) return null;
 
     const result = db.exec(`
-      SELECT 
-        p.*,
-        c.name as category_name,
-        s.name as supplier_name
+SELECT
+p.*,
+  c.name as category_name,
+  s.name as supplier_name
       FROM products p
       LEFT JOIN product_categories c ON p.category_id = c.id
       LEFT JOIN suppliers s ON p.supplier_id = s.id
       WHERE p.id = ?
-    `, [id]);
+  `, [id]);
 
     if (result.length === 0 || result[0].values.length === 0) {
       return null;
@@ -8036,7 +7738,7 @@ export function getProductById(id: number): Product | null {
     const columns = result[0].columns;
     const product: any = {};
 
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       if (col === 'category_name' && row[index]) {
         product.category = { name: row[index] as string } as ProductCategory;
       } else if (col === 'supplier_name' && row[index]) {
@@ -8095,14 +7797,14 @@ export function updateProductStock(productId: number, quantity: number, operatio
 
     return {
       success: true,
-      message: `Stock actualizado. Nuevo stock: ${newStock}`
+      message: `Stock actualizado.Nuevo stock: ${newStock} `
     };
 
   } catch (error) {
     logger.error('Products', 'update_stock_failed', 'Error al actualizar stock', { productId, quantity, operation }, error as Error);
     return {
       success: false,
-      message: `Error al actualizar stock: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al actualizar stock: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8116,10 +7818,10 @@ export function getProductsLowStock(): Product[] {
     }
 
     const result = db.exec(`
-      SELECT 
-        p.*,
-        c.name as category_name,
-        s.name as supplier_name
+SELECT
+p.*,
+  c.name as category_name,
+  s.name as supplier_name
       FROM products p
       LEFT JOIN product_categories c ON p.category_id = c.id
       LEFT JOIN suppliers s ON p.supplier_id = s.id
@@ -8127,7 +7829,7 @@ export function getProductsLowStock(): Product[] {
         AND p.is_service = 0 
         AND p.stock_quantity <= p.reorder_point
       ORDER BY p.stock_quantity ASC
-    `);
+  `);
 
     if (result.length === 0) {
       return [];
@@ -8136,10 +7838,10 @@ export function getProductsLowStock(): Product[] {
     const products: Product[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const product: any = {};
 
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         if (col === 'category_name' && row[index]) {
           product.category = { name: row[index] as string } as ProductCategory;
         } else if (col === 'supplier_name' && row[index]) {
@@ -8183,17 +7885,17 @@ export function calculateFloridaDR15Report(period: string): FloridaDR15Report | 
 
     // Obtener todas las facturas del período
     const invoicesResult = db.exec(`
-      SELECT 
-        i.id,
-        i.subtotal,
-        i.tax_amount,
-        i.total_amount,
-        c.florida_county,
-        c.tax_exempt
+SELECT
+i.id,
+  i.subtotal,
+  i.tax_amount,
+  i.total_amount,
+  c.florida_county,
+  c.tax_exempt
       FROM invoices i
       JOIN customers c ON i.customer_id = c.id
       WHERE i.issue_date >= ? AND i.issue_date <= ?
-      AND i.status IN ('sent', 'paid')
+  AND i.status IN('sent', 'paid')
     `, [startDate, endDate]);
 
     if (invoicesResult.length === 0 || invoicesResult[0].values.length === 0) {
@@ -8207,7 +7909,7 @@ export function calculateFloridaDR15Report(period: string): FloridaDR15Report | 
     const countyBreakdown: { [county: string]: { rate: number; taxableAmount: number; taxAmount: number } } = {};
 
     // Procesar cada factura
-    invoicesResult[0].values.forEach(row => {
+    invoicesResult[0].values.forEach((row: any) => {
       const subtotal = Number(row[1]) || 0;
       const taxAmount = Number(row[2]) || 0;
       const county = row[4] as string || 'Miami-Dade';
@@ -8281,18 +7983,18 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
     // Verificar si ya existe un reporte para este período
     const existingResult = db.exec(`
       SELECT id FROM florida_tax_reports WHERE period = ?
-    `, [report.period]);
+  `, [report.period]);
 
     if (existingResult.length > 0 && existingResult[0].values.length > 0) {
-      return { success: false, message: `Ya existe un reporte para el período ${report.period}` };
+      return { success: false, message: `Ya existe un reporte para el período ${report.period} ` };
     }
 
     // Insertar reporte principal
     const insertResult = db.exec(`
-      INSERT INTO florida_tax_reports (
-        period, total_taxable_sales, total_tax_collected, exempt_sales, 
-        net_tax_due, due_date, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO florida_tax_reports(
+    period, total_taxable_sales, total_tax_collected, exempt_sales,
+    net_tax_due, due_date, status
+  ) VALUES(?, ?, ?, ?, ?, ?, ?)
     `, [
       report.period,
       report.totalTaxableSales,
@@ -8309,19 +8011,19 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
     // Insertar desglose por condado
     report.countyBreakdown.forEach(county => {
       db!.exec(`
-        INSERT INTO florida_tax_report_counties (
-          report_id, county_name, tax_rate, taxable_amount, tax_amount
-        ) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO florida_tax_report_counties(
+      report_id, county_name, tax_rate, taxable_amount, tax_amount
+    ) VALUES(?, ?, ?, ?, ?)
       `, [reportId, county.county, county.rate, county.taxableAmount, county.taxAmount]);
     });
 
     // Insertar ajustes si existen
     report.adjustments.forEach(adjustment => {
       db!.exec(`
-        INSERT INTO florida_tax_report_adjustments (
-          report_id, description, amount, type
-        ) VALUES (?, ?, ?, ?)
-      `, [reportId, adjustment.description, adjustment.amount, adjustment.type]);
+        INSERT INTO florida_tax_report_adjustments(
+        report_id, description, amount, type
+      ) VALUES(?, ?, ?, ?)
+        `, [reportId, adjustment.description, adjustment.amount, adjustment.type]);
     });
 
     // Registrar en auditoría
@@ -8332,8 +8034,8 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
     };
 
     db.exec(`
-      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
     `, [
       'florida_tax_reports',
       reportId,
@@ -8350,7 +8052,7 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
 
     return {
       success: true,
-      message: `Reporte DR-15 para ${report.period} guardado correctamente`,
+      message: `Reporte DR - 15 para ${report.period} guardado correctamente`,
       id: reportId
     };
 
@@ -8358,7 +8060,7 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
     logger.error('DR15', 'save_failed', 'Error al guardar reporte DR-15', { period: report.period }, error as Error);
     return {
       success: false,
-      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8376,12 +8078,12 @@ export function getDR15Reports(): FloridaDR15Report[] {
     logger.info('DR15', 'get_reports_start', 'Obteniendo reportes DR-15');
 
     const reportsResult = db.exec(`
-      SELECT 
-        id, period, total_taxable_sales, total_tax_collected, exempt_sales,
-        net_tax_due, due_date, status, filed_by, filed_at
+SELECT
+id, period, total_taxable_sales, total_tax_collected, exempt_sales,
+  net_tax_due, due_date, status, filed_by, filed_at
       FROM florida_tax_reports
       ORDER BY period DESC
-    `);
+  `);
 
     if (reportsResult.length === 0 || reportsResult[0].values.length === 0) {
       logger.info('DR15', 'get_reports_empty', 'No hay reportes DR-15 guardados');
@@ -8399,10 +8101,10 @@ export function getDR15Reports(): FloridaDR15Report[] {
         SELECT county_name, tax_rate, taxable_amount, tax_amount
         FROM florida_tax_report_counties
         WHERE report_id = ?
-      `, [reportId]);
+  `, [reportId]);
 
       const countyBreakdown = countiesResult.length > 0 ?
-        countiesResult[0].values.map(countyRow => ({
+        countiesResult[0].values.map((countyRow: any) => ({
           county: countyRow[0] as string,
           rate: Number(countyRow[1]),
           taxableAmount: Number(countyRow[2]),
@@ -8414,10 +8116,10 @@ export function getDR15Reports(): FloridaDR15Report[] {
         SELECT description, amount, type
         FROM florida_tax_report_adjustments
         WHERE report_id = ?
-      `, [reportId]);
+  `, [reportId]);
 
       const adjustments = adjustmentsResult.length > 0 ?
-        adjustmentsResult[0].values.map(adjRow => ({
+        adjustmentsResult[0].values.map((adjRow: any) => ({
           description: adjRow[0] as string,
           amount: Number(adjRow[1]),
           type: adjRow[2] as 'credit' | 'debit'
@@ -8459,7 +8161,7 @@ export function getAllFloridaTaxRates(): { id: number; county: string; stateRate
     if (result.length === 0 || result[0].values.length === 0) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => rowToEntity<any>(columns, row as initSqlJs.SqlValue[]));
+    return result[0].values.map((row: any) => rowToEntity<any>(columns, row as initSqlJs.SqlValue[]));
   } catch (error) {
     console.error('Error getting all tax rates:', error);
     return [];
@@ -8481,20 +8183,20 @@ export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { su
       UPDATE florida_tax_reports 
       SET status = 'filed', filed_by = ?, filed_at = CURRENT_TIMESTAMP
       WHERE period = ?
-    `, [filedBy, period]);
+  `, [filedBy, period]);
 
     logger.info('DR15', 'mark_filed_success', 'Reporte marcado como presentado', { period });
 
     return {
       success: true,
-      message: `Reporte DR-15 para ${period} marcado como presentado`
+      message: `Reporte DR - 15 para ${period} marcado como presentado`
     };
 
   } catch (error) {
     logger.error('DR15', 'mark_filed_failed', 'Error al marcar reporte como presentado', { period }, error as Error);
     return {
       success: false,
-      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8516,15 +8218,15 @@ function parsePeriod(period: string): { startDate: string; endDate: string } {
     const endMonth = quarterNum * 3;
 
     return {
-      startDate: `${yearNum}-${startMonth.toString().padStart(2, '0')}-01`,
-      endDate: `${yearNum}-${endMonth.toString().padStart(2, '0')}-${getLastDayOfMonth(yearNum, endMonth)}`
+      startDate: `${yearNum} -${startMonth.toString().padStart(2, '0')}-01`,
+      endDate: `${yearNum} -${endMonth.toString().padStart(2, '0')} -${getLastDayOfMonth(yearNum, endMonth)} `
     };
   } else {
     // Período mensual (ej: "2024-01")
     const month = parseInt(quarter);
     return {
-      startDate: `${yearNum}-${month.toString().padStart(2, '0')}-01`,
-      endDate: `${yearNum}-${month.toString().padStart(2, '0')}-${getLastDayOfMonth(yearNum, month)}`
+      startDate: `${yearNum} -${month.toString().padStart(2, '0')}-01`,
+      endDate: `${yearNum} -${month.toString().padStart(2, '0')} -${getLastDayOfMonth(yearNum, month)} `
     };
   }
 }
@@ -8580,7 +8282,7 @@ export function getAvailableDR15Periods(): string[] {
   // Generar últimos 8 trimestres
   for (let year = currentYear - 1; year <= currentYear; year++) {
     for (let quarter = 1; quarter <= 4; quarter++) {
-      const period = `${year}-Q${quarter}`;
+      const period = `${year} -Q${quarter} `;
       const { endDate } = parsePeriod(period);
 
       // Solo incluir períodos que ya han terminado
@@ -8614,7 +8316,7 @@ export function getPaymentMethods(): PaymentMethod[] {
       FROM payment_methods
       WHERE is_active = 1
       ORDER BY method_name ASC
-    `);
+  `);
 
     if (result.length === 0) {
       logger.info('PaymentMethods', 'get_empty', 'No hay métodos de pago');
@@ -8624,9 +8326,9 @@ export function getPaymentMethods(): PaymentMethod[] {
     const paymentMethods: PaymentMethod[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const paymentMethod: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         paymentMethod[col] = row[index];
       });
       paymentMethods.push(paymentMethod as PaymentMethod);
@@ -8657,7 +8359,7 @@ export function getAllPaymentMethods(): PaymentMethod[] {
       SELECT id, method_name, method_type, is_active, requires_reference, created_at
       FROM payment_methods
       ORDER BY method_name ASC
-    `);
+  `);
 
     if (result.length === 0) {
       logger.info('PaymentMethods', 'get_all_empty', 'No hay métodos de pago');
@@ -8667,9 +8369,9 @@ export function getAllPaymentMethods(): PaymentMethod[] {
     const paymentMethods: PaymentMethod[] = [];
     const columns = result[0].columns;
 
-    result[0].values.forEach(row => {
+    result[0].values.forEach((row: any) => {
       const paymentMethod: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         paymentMethod[col] = row[index];
       });
       paymentMethods.push(paymentMethod as PaymentMethod);
@@ -8698,7 +8400,7 @@ export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'crea
     // Verificar que no exista un método con el mismo nombre
     const existingResult = db.exec(`
       SELECT id FROM payment_methods WHERE method_name = ?
-    `, [methodData.method_name]);
+  `, [methodData.method_name]);
 
     if (existingResult.length > 0 && existingResult[0].values.length > 0) {
       return { success: false, message: `Ya existe un método de pago con el nombre "${methodData.method_name}"` };
@@ -8706,9 +8408,9 @@ export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'crea
 
     // Insertar nuevo método de pago
     db.exec(`
-      INSERT INTO payment_methods (method_name, method_type, is_active, requires_reference)
-      VALUES (?, ?, ?, ?)
-    `, [
+      INSERT INTO payment_methods(method_name, method_type, is_active, requires_reference)
+VALUES(?, ?, ?, ?)
+  `, [
       methodData.method_name,
       methodData.method_type,
       methodData.is_active ? 1 : 0,
@@ -8726,8 +8428,8 @@ export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'crea
     };
 
     db.exec(`
-      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
     `, [
       'payment_methods',
       newId,
@@ -8752,7 +8454,7 @@ export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'crea
     logger.error('PaymentMethods', 'create_failed', 'Error al crear método de pago', methodData, error as Error);
     return {
       success: false,
-      message: `Error al crear método de pago: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al crear método de pago: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8771,7 +8473,7 @@ export function updatePaymentMethod(id: number, methodData: Partial<PaymentMetho
     // Verificar que el método existe
     const existingResult = db.exec(`
       SELECT id, method_name FROM payment_methods WHERE id = ?
-    `, [id]);
+  `, [id]);
 
     if (existingResult.length === 0 || existingResult[0].values.length === 0) {
       return { success: false, message: 'Método de pago no encontrado' };
@@ -8783,7 +8485,7 @@ export function updatePaymentMethod(id: number, methodData: Partial<PaymentMetho
     if (methodData.method_name && methodData.method_name !== currentName) {
       const duplicateResult = db.exec(`
         SELECT id FROM payment_methods WHERE method_name = ? AND id != ?
-      `, [methodData.method_name, id]);
+  `, [methodData.method_name, id]);
 
       if (duplicateResult.length > 0 && duplicateResult[0].values.length > 0) {
         return { success: false, message: `Ya existe un método de pago con el nombre "${methodData.method_name}"` };
@@ -8825,12 +8527,12 @@ export function updatePaymentMethod(id: number, methodData: Partial<PaymentMetho
       UPDATE payment_methods 
       SET ${updateFields.join(', ')}
       WHERE id = ?
-    `, updateValues);
+  `, updateValues);
 
     // Registrar en auditoría
     db.exec(`
-      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
     `, [
       'payment_methods',
       id,
@@ -8851,7 +8553,7 @@ export function updatePaymentMethod(id: number, methodData: Partial<PaymentMetho
     logger.error('PaymentMethods', 'update_failed', 'Error al actualizar método de pago', { id, ...methodData }, error as Error);
     return {
       success: false,
-      message: `Error al actualizar método de pago: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al actualizar método de pago: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8870,7 +8572,7 @@ export function deletePaymentMethod(id: number): { success: boolean; message: st
     // Verificar que el método existe
     const existingResult = db.exec(`
       SELECT id, method_name FROM payment_methods WHERE id = ?
-    `, [id]);
+  `, [id]);
 
     if (existingResult.length === 0 || existingResult[0].values.length === 0) {
       return { success: false, message: 'Método de pago no encontrado' };
@@ -8880,12 +8582,12 @@ export function deletePaymentMethod(id: number): { success: boolean; message: st
 
     // Verificar si el método está siendo usado en pagos
     const usageResult = db.exec(`
-      SELECT COUNT(*) as count FROM (
-        SELECT 1 FROM payments WHERE payment_method = ?
-        UNION ALL
+      SELECT COUNT(*) as count FROM(
+    SELECT 1 FROM payments WHERE payment_method = ?
+      UNION ALL
         SELECT 1 FROM supplier_payments WHERE payment_method = ?
       )
-    `, [methodName.toLowerCase().replace(' ', '_'), methodName.toLowerCase().replace(' ', '_')]);
+  `, [methodName.toLowerCase().replace(' ', '_'), methodName.toLowerCase().replace(' ', '_')]);
 
     const usageCount = usageResult[0].values[0][0] as number;
 
@@ -8895,24 +8597,24 @@ export function deletePaymentMethod(id: number): { success: boolean; message: st
         UPDATE payment_methods 
         SET is_active = 0
         WHERE id = ?
-      `, [id]);
+  `, [id]);
 
       logger.info('PaymentMethods', 'delete_soft', 'Método de pago marcado como inactivo (en uso)', { id, methodName });
 
       return {
         success: true,
-        message: `Método de pago "${methodName}" desactivado (estaba en uso en ${usageCount} transacciones)`
+        message: `Método de pago "${methodName}" desactivado(estaba en uso en ${usageCount} transacciones)`
       };
     } else {
       // Si no está en uso, eliminar completamente
       db.exec(`
         DELETE FROM payment_methods WHERE id = ?
-      `, [id]);
+  `, [id]);
 
       // Registrar en auditoría
       db.exec(`
-        INSERT INTO audit_log (table_name, record_id, action, old_values, user_id, audit_hash)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO audit_log(table_name, record_id, action, old_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
       `, [
         'payment_methods',
         id,
@@ -8934,7 +8636,7 @@ export function deletePaymentMethod(id: number): { success: boolean; message: st
     logger.error('PaymentMethods', 'delete_failed', 'Error al eliminar método de pago', { id }, error as Error);
     return {
       success: false,
-      message: `Error al eliminar método de pago: ${error instanceof Error ? error.message : 'Error desconocido'}`
+      message: `Error al eliminar método de pago: ${error instanceof Error ? error.message : 'Error desconocido'} `
     };
   }
 }
@@ -8955,7 +8657,7 @@ export function getPaymentMethodById(id: number): PaymentMethod | null {
       SELECT id, method_name, method_type, is_active, requires_reference, created_at
       FROM payment_methods
       WHERE id = ?
-    `, [id]);
+  `, [id]);
 
     if (result.length === 0 || result[0].values.length === 0) {
       logger.warn('PaymentMethods', 'get_by_id_not_found', 'Método de pago no encontrado', { id });
@@ -8966,7 +8668,7 @@ export function getPaymentMethodById(id: number): PaymentMethod | null {
     const columns = result[0].columns;
 
     const paymentMethod: any = {};
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       paymentMethod[col] = row[index];
     });
 
@@ -8991,7 +8693,7 @@ export function canDeletePaymentMethod(id: number): { canDelete: boolean; reason
     // Verificar que el método existe
     const existingResult = db.exec(`
       SELECT method_name FROM payment_methods WHERE id = ?
-    `, [id]);
+  `, [id]);
 
     if (existingResult.length === 0 || existingResult[0].values.length === 0) {
       return { canDelete: false, reason: 'Método de pago no encontrado' };
@@ -9001,9 +8703,9 @@ export function canDeletePaymentMethod(id: number): { canDelete: boolean; reason
 
     // Verificar si está siendo usado
     const usageResult = db.exec(`
-      SELECT COUNT(*) as count FROM (
-        SELECT 1 FROM payments WHERE payment_method = ?
-        UNION ALL
+      SELECT COUNT(*) as count FROM(
+    SELECT 1 FROM payments WHERE payment_method = ?
+      UNION ALL
         SELECT 1 FROM supplier_payments WHERE payment_method = ?
       )
     `, [methodName.toLowerCase().replace(' ', '_'), methodName.toLowerCase().replace(' ', '_')]);
@@ -9013,7 +8715,7 @@ export function canDeletePaymentMethod(id: number): { canDelete: boolean; reason
     if (usageCount > 0) {
       return {
         canDelete: false,
-        reason: `El método de pago está siendo usado en ${usageCount} transacciones. Solo se puede desactivar.`
+        reason: `El método de pago está siendo usado en ${usageCount} transacciones.Solo se puede desactivar.`
       };
     }
 
@@ -9045,9 +8747,9 @@ export function getBankAccounts(): BankAccount[] {
     }
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const account: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         account[col] = row[index];
       });
       return account as BankAccount;
@@ -9075,7 +8777,7 @@ export function getBankAccountById(id: number): BankAccount | null {
     const columns = result[0].columns;
     const account: any = {};
 
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       account[col] = row[index];
     });
 
@@ -9094,11 +8796,11 @@ export function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>):
 
   try {
     const stmt = db.prepare(`
-      INSERT INTO bank_accounts (
-        account_name, bank_name, account_number, account_type, 
+      INSERT INTO bank_accounts(
+        account_name, bank_name, account_number, account_type,
         routing_number, balance, currency, is_active, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+      ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
     stmt.run([
       data.account_name,
@@ -9117,8 +8819,8 @@ export function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>):
 
     // Auditoría
     db.exec(`
-      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
     `, [
       'bank_accounts',
       id,
@@ -9164,14 +8866,14 @@ export function updateBankAccount(id: number, data: Partial<BankAccount>): { suc
 
     updateValues.push(id);
 
-    const stmt = db.prepare(`UPDATE bank_accounts SET ${updateFields.join(', ')} WHERE id = ?`);
+    const stmt = db.prepare(`UPDATE bank_accounts SET ${updateFields.join(', ')} WHERE id = ? `);
     stmt.run(updateValues);
 
     // Auditoría
     db.exec(`
-      INSERT INTO audit_log (table_name, record_id, action, new_values, user_id, audit_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [
+      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
+  `, [
       'bank_accounts',
       id,
       'UPDATE',
@@ -9208,9 +8910,9 @@ export function deleteBankAccount(id: number): { success: boolean; message: stri
 
     // Auditoría
     db.exec(`
-      INSERT INTO audit_log (table_name, record_id, action, old_values, user_id, audit_hash)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [
+      INSERT INTO audit_log(table_name, record_id, action, old_values, user_id, audit_hash)
+VALUES(?, ?, ?, ?, ?, ?)
+  `, [
       'bank_accounts',
       id,
       'DELETE', // Marcamos como DELETE en auditoría aunque sea soft delete para indicar la intención
@@ -9245,9 +8947,9 @@ export function getInventoryMovements(): any[] {
     }
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const obj: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         obj[col] = row[index];
       });
       return obj;
@@ -9281,20 +8983,20 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
   if (!db) return [];
 
   try {
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const startDate = `${year} -${String(month).padStart(2, '0')}-01`;
     const nextMonth = new Date(year, month, 0);
     const endDate = nextMonth.toISOString().split('T')[0];
 
     const query = `
-      SELECT 
-        ca.account_code,
-        ca.account_name,
-        ca.account_type,
-        ca.normal_balance,
-        COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as prev_debit,
-        COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as prev_credit,
-        COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
-        COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
+SELECT
+ca.account_code,
+  ca.account_name,
+  ca.account_type,
+  ca.normal_balance,
+  COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as prev_debit,
+  COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as prev_credit,
+  COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
+  COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
       FROM chart_of_accounts ca
       LEFT JOIN journal_details jd ON ca.account_code = jd.account_code
       LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
@@ -9302,13 +9004,13 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
       GROUP BY ca.account_code, ca.account_name, ca.account_type, ca.normal_balance
       HAVING prev_debit != 0 OR prev_credit != 0 OR period_debit != 0 OR period_credit != 0
       ORDER BY ca.account_code ASC
-    `;
+  `;
 
     const result = db.exec(query, [startDate, startDate, startDate, endDate, startDate, endDate]);
 
     if (!result.length || !result[0].values.length) return [];
 
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const account_code = String(row[0]);
       const account_name = String(row[1]);
       const account_type = String(row[2]);
@@ -9360,22 +9062,22 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
 export function getAccountMovementsDetails(accountCode: string, startDate: string, endDate: string) {
   if (!db) return [];
   const query = `
-      SELECT 
-          je.entry_date as date,
-          je.reference,
-          je.description as entry_desc,
-          jd.description as line_desc,
-          jd.debit_amount as debit,
-          jd.credit_amount as credit
+SELECT
+je.entry_date as date,
+  je.reference,
+  je.description as entry_desc,
+  jd.description as line_desc,
+  jd.debit_amount as debit,
+  jd.credit_amount as credit
       FROM journal_details jd
       JOIN journal_entries je ON jd.journal_entry_id = je.id
       WHERE jd.account_code = ? AND je.entry_date BETWEEN ? AND ?
-      ORDER BY je.entry_date ASC, je.id ASC
+  ORDER BY je.entry_date ASC, je.id ASC
   `;
   try {
     const res = db.exec(query, [accountCode, startDate, endDate]);
     if (!res.length) return [];
-    return res[0].values.map(row => ({
+    return res[0].values.map((row: any) => ({
       date: row[0],
       reference: row[1],
       description: row[3] || row[2],
@@ -9393,8 +9095,8 @@ export function validateAccountingIntegrity(): { isValid: boolean; errors: strin
 
   const res = db.exec("SELECT id, entry_date, description, total_debit, total_credit FROM journal_entries WHERE ABS(total_debit - total_credit) > 0.001");
   if (res.length && res[0].values.length > 0) {
-    res[0].values.forEach(row => {
-      errors.push(`Asiento #${row[0]} (${row[1]}) descuadrado por $${Math.abs(Number(row[3]) - Number(row[4])).toFixed(2)}`);
+    res[0].values.forEach((row: any) => {
+      errors.push(`Asiento #${row[0]} (${row[1]}) descuadrado por $${Math.abs(Number(row[3]) - Number(row[4])).toFixed(2)} `);
     });
   }
 
@@ -9418,18 +9120,18 @@ export function getIncomeStatementReport(startDate: string, endDate: string): In
 
   try {
     const query = `
-      SELECT 
-        ca.account_code,
-        ca.account_name,
-        ca.account_type,
-        SUM(jd.debit_amount) as total_debit,
-        SUM(jd.credit_amount) as total_credit
+SELECT
+ca.account_code,
+  ca.account_name,
+  ca.account_type,
+  SUM(jd.debit_amount) as total_debit,
+  SUM(jd.credit_amount) as total_credit
       FROM chart_of_accounts ca
       JOIN journal_details jd ON ca.account_code = jd.account_code
       JOIN journal_entries je ON jd.journal_entry_id = je.id
-      WHERE 
-        je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
-        (LOWER(ca.account_type) = 'revenue' OR LOWER(ca.account_type) = 'expense')
+WHERE
+je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
+  (LOWER(ca.account_type) = 'revenue' OR LOWER(ca.account_type) = 'expense')
       GROUP BY ca.account_code, ca.account_name, ca.account_type
       ORDER BY ca.account_code ASC
     `;
@@ -9438,9 +9140,9 @@ export function getIncomeStatementReport(startDate: string, endDate: string): In
     if (!result.length || !result[0].values.length) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const r: any = {};
-      columns.forEach((col, i) => r[col] = row[i]);
+      columns.forEach((col: any, i: any) => r[col] = row[i]);
 
       const type = String(r.account_type).toLowerCase();
       const debit = Number(r.total_debit);
@@ -9486,13 +9188,13 @@ export const insertBankTransactions = (
     let count = 0;
 
     // Generar batch ID único
-    const batchId = `BATCH-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const batchId = `BATCH - ${Date.now()} -${Math.floor(Math.random() * 1000)} `;
 
     const stmt = db.prepare(`
-      INSERT INTO bank_transactions (
-        bank_account_id, transaction_date, description, amount, reference_number, 
-        status, import_batch_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO bank_transactions(
+    bank_account_id, transaction_date, description, amount, reference_number,
+    status, import_batch_id
+  ) VALUES(?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const txn of transactions) {
@@ -9516,7 +9218,7 @@ export const insertBankTransactions = (
   } catch (error) {
     db.run('ROLLBACK');
     logger.error('Database', 'import_bank_txn_failed', 'Error importing bank transactions', { error });
-    return { success: false, message: `Error importing transactions: ${error instanceof Error ? error.message : 'Unknown error'}`, importedCount: 0 };
+    return { success: false, message: `Error importing transactions: ${error instanceof Error ? error.message : 'Unknown error'} `, importedCount: 0 };
   }
 };
 
@@ -9526,7 +9228,7 @@ export const getBankTransactions = (
 ): BankTransaction[] => {
   if (!db) return [];
   try {
-    let query = `SELECT * FROM bank_transactions WHERE bank_account_id = ${accountId}`;
+    let query = `SELECT * FROM bank_transactions WHERE bank_account_id = ${accountId} `;
     if (status) {
       query += ` AND status = '${status}'`;
     }
@@ -9536,7 +9238,7 @@ export const getBankTransactions = (
     if (!result.length || !result[0].values.length) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => rowToEntity<BankTransaction>(columns, row));
+    return result[0].values.map((row: any) => rowToEntity<BankTransaction>(columns, row));
   } catch (error) {
     logger.error('Database', 'get_bank_txn_failed', 'Error getting bank entries', { accountId }, error as Error);
     return [];
@@ -9569,7 +9271,7 @@ export const findPotentialMatches = (transaction: BankTransaction): MatchCandida
 
     // 3. Ejecutar búsqueda indexable
     const query = `
-      SELECT * FROM journal_entries 
+SELECT * FROM journal_entries 
       WHERE ABS(total_debit - ${targetAmount}) < ${tolerance}
       AND entry_date BETWEEN '${minDateStr}' AND '${maxDateStr}'
       ORDER BY entry_date ASC
@@ -9579,7 +9281,7 @@ export const findPotentialMatches = (transaction: BankTransaction): MatchCandida
     if (!result.length || !result[0].values.length) return [];
 
     const columns = result[0].columns;
-    const entries = result[0].values.map(row => rowToEntity<JournalEntry>(columns, row));
+    const entries = result[0].values.map((row: any) => rowToEntity<JournalEntry>(columns, row));
 
     const candidates: MatchCandidate[] = [];
 
@@ -9608,7 +9310,7 @@ export const findPotentialMatches = (transaction: BankTransaction): MatchCandida
       } else {
         confidence = 0.50;
         matchType = 'amount_only';
-        reason = `Monto coincide, fecha distante (${diffDays} días)`;
+        reason = `Monto coincide, fecha distante(${diffDays} días)`;
       }
 
       // Buscar detalles para enriquecer contexto (si es posible)
@@ -9637,7 +9339,7 @@ export const confirmMatch = (bankTransactionId: number, journalEntryId: number):
     db.run('BEGIN TRANSACTION');
 
     // 1. Verificar estado actual
-    const txCheck = db.exec(`SELECT status, amount FROM bank_transactions WHERE id = ${bankTransactionId}`);
+    const txCheck = db.exec(`SELECT status, amount FROM bank_transactions WHERE id = ${bankTransactionId} `);
     if (!txCheck[0] || !txCheck[0].values.length) {
       throw new Error('Transacción bancaria no encontrada');
     }
@@ -9652,7 +9354,7 @@ export const confirmMatch = (bankTransactionId: number, journalEntryId: number):
       UPDATE bank_transactions 
       SET status = 'matched', matched_journal_entry_id = ?, match_confidence = 1.0
       WHERE id = ?
-    `, [journalEntryId, bankTransactionId]);
+  `, [journalEntryId, bankTransactionId]);
 
     // 3. Insertar en Audit Chain (Inmutabilidad)
     const timestamp = new Date().toISOString();
@@ -9660,8 +9362,8 @@ export const confirmMatch = (bankTransactionId: number, journalEntryId: number):
     const auditHash = generateSimpleHash(auditData); // Placeholder for real crypto hash
 
     db.run(`
-      INSERT INTO audit_chain (table_name, record_id, action, old_value, new_value, user_id, timestamp, current_hash)
-      VALUES ('bank_transactions', ?, 'MATCH', 'pending', 'matched', 1, ?, ?)
+      INSERT INTO audit_chain(table_name, record_id, action, old_value, new_value, user_id, timestamp, current_hash)
+VALUES('bank_transactions', ?, 'MATCH', 'pending', 'matched', 1, ?, ?)
     `, [bankTransactionId, timestamp, auditHash]);
 
     db.run('COMMIT');
@@ -9684,7 +9386,7 @@ export const unmatchTransaction = (bankTransactionId: number): { success: boolea
     db.run('BEGIN TRANSACTION');
 
     // 1. Obtener datos anteriores para auditoría
-    const txCheck = db.exec(`SELECT matched_journal_entry_id FROM bank_transactions WHERE id = ${bankTransactionId}`);
+    const txCheck = db.exec(`SELECT matched_journal_entry_id FROM bank_transactions WHERE id = ${bankTransactionId} `);
     if (!txCheck[0] || !txCheck[0].values.length) throw new Error('Transacción no encontrada');
 
     const previousMatchId = txCheck[0].values[0][0];
@@ -9694,7 +9396,7 @@ export const unmatchTransaction = (bankTransactionId: number): { success: boolea
       UPDATE bank_transactions 
       SET status = 'pending', matched_journal_entry_id = NULL, match_confidence = NULL
       WHERE id = ?
-    `, [bankTransactionId]);
+  `, [bankTransactionId]);
 
     // 3. Registrar en Audit Chain
     const timestamp = new Date().toISOString();
@@ -9702,8 +9404,8 @@ export const unmatchTransaction = (bankTransactionId: number): { success: boolea
     const auditHash = generateSimpleHash(auditData);
 
     db.run(`
-      INSERT INTO audit_chain (table_name, record_id, action, old_value, new_value, user_id, timestamp, current_hash)
-      VALUES ('bank_transactions', ?, 'UNMATCH', 'matched', 'pending', 1, ?, ?)
+      INSERT INTO audit_chain(table_name, record_id, action, old_value, new_value, user_id, timestamp, current_hash)
+VALUES('bank_transactions', ?, 'UNMATCH', 'matched', 'pending', 1, ?, ?)
     `, [bankTransactionId, timestamp, auditHash]);
 
     db.run('COMMIT');
@@ -9719,7 +9421,7 @@ export const unmatchTransaction = (bankTransactionId: number): { success: boolea
 export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void> => {
   try {
     if (opfsRoot) {
-      const fileHandle = await opfsRoot.getFileHandle(DB_NAME, { create: true });
+      const fileHandle = await (opfsRoot as any).getFileHandle(DB_NAME, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(data as any);
       await writable.close();
@@ -9843,7 +9545,7 @@ export const createUser = async (userData: {
   try {
     // Validar que el username o email no exista
     const emailToCheck = userData.email || userData.username;
-    const existing = db.exec(`SELECT id FROM users WHERE username = ? OR email = ?`, [userData.username, emailToCheck]);
+    const existing = db.exec(`SELECT id FROM users WHERE username = ? OR email = ? `, [userData.username, emailToCheck]);
     if (existing[0]?.values.length > 0) {
       return { success: false, message: 'El nombre de usuario o email ya existe' };
     }
@@ -9853,8 +9555,8 @@ export const createUser = async (userData: {
 
     // Insertar usuario
     db.run(`
-      INSERT INTO users (username, email, full_name, display_name, password_hash, role_id, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, 1)
+      INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active)
+VALUES(?, ?, ?, ?, ?, ?, 1)
     `, [
       userData.username,
       userData.email || userData.username,
@@ -9867,7 +9569,7 @@ export const createUser = async (userData: {
     const result = db.exec('SELECT last_insert_rowid() as id');
     const userId = result[0]?.values[0]?.[0] as number;
 
-    logger.info('Users', 'user_created', `Usuario creado: ${userData.username}`, { userId });
+    logger.info('Users', 'user_created', `Usuario creado: ${userData.username} `, { userId });
 
     return { success: true, message: 'Usuario creado correctamente', userId };
   } catch (error) {
@@ -9884,13 +9586,13 @@ export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
 
   try {
     let query = `
-      SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.role_id, u.is_active, 
-             u.last_login, u.created_at, u.updated_at,
-             r.name as role_name, r.description as role_description, r.level as role_level,
-             r.permissions_json
+      SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.role_id, u.is_active,
+  u.last_login, u.created_at, u.updated_at,
+  r.name as role_name, r.description as role_description, r.level as role_level,
+  r.permissions_json
       FROM users u
       LEFT JOIN user_roles r ON u.role_id = r.id
-    `;
+  `;
 
     if (filters?.activeOnly) {
       query += ' WHERE u.is_active = 1';
@@ -9902,9 +9604,9 @@ export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
     if (!result[0]) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const user: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         user[col] = row[index];
       });
       return user;
@@ -9924,20 +9626,20 @@ export const getUserByUsername = (username: string): any | null => {
   try {
     const result = db.exec(`
       SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.password_hash, u.role_id, u.is_active,
-             u.last_login, u.created_at, u.updated_at,
-             r.name as role_name, r.description as role_description, r.level as role_level,
-             r.permissions_json
+  u.last_login, u.created_at, u.updated_at,
+  r.name as role_name, r.description as role_description, r.level as role_level,
+  r.permissions_json
       FROM users u
       LEFT JOIN user_roles r ON u.role_id = r.id
       WHERE u.username = ? OR u.email = ?
-    `, [username, username]);
+  `, [username, username]);
 
     if (!result[0] || result[0].values.length === 0) return null;
 
     const columns = result[0].columns;
     const row = result[0].values[0];
     const user: any = {};
-    columns.forEach((col, index) => {
+    columns.forEach((col: any, index: any) => {
       user[col] = row[index];
     });
 
@@ -9998,9 +9700,9 @@ export const updateUser = (id: number, updates: {
 
     values.push(id);
 
-    db.run(`UPDATE users SET ${setParts.join(', ')} WHERE id = ?`, values);
+    db.run(`UPDATE users SET ${setParts.join(', ')} WHERE id = ? `, values);
 
-    logger.info('Users', 'user_updated', `Usuario actualizado: ${id}`, { updates });
+    logger.info('Users', 'user_updated', `Usuario actualizado: ${id} `, { updates });
 
     return { success: true, message: 'Usuario actualizado correctamente' };
   } catch (error) {
@@ -10018,7 +9720,7 @@ export const deactivateUser = (id: number): { success: boolean; message: string 
   try {
     db.run('UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
 
-    logger.info('Users', 'user_deactivated', `Usuario desactivado: ${id}`);
+    logger.info('Users', 'user_deactivated', `Usuario desactivado: ${id} `);
 
     return { success: true, message: 'Usuario desactivado correctamente' };
   } catch (error) {
@@ -10038,9 +9740,9 @@ export const getUserRoles = (): any[] => {
     if (!result[0]) return [];
 
     const columns = result[0].columns;
-    return result[0].values.map(row => {
+    return result[0].values.map((row: any) => {
       const role: any = {};
-      columns.forEach((col, index) => {
+      columns.forEach((col: any, index: any) => {
         role[col] = row[index];
       });
       return role;
@@ -10062,7 +9764,7 @@ export const updateUserPassword = async (id: number, newPassword: string): Promi
 
     db.run('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, id]);
 
-    logger.info('Users', 'password_updated', `Contraseña actualizada para usuario: ${id}`);
+    logger.info('Users', 'password_updated', `Contraseña actualizada para usuario: ${id} `);
 
     return { success: true, message: 'Contraseña actualizada correctamente' };
   } catch (error) {
@@ -10096,14 +9798,14 @@ export const createUserRole = (roleData: {
 
     // Insertar rol
     db.run(`
-      INSERT INTO user_roles (name, description, level)
-      VALUES (?, ?, ?)
+      INSERT INTO user_roles(name, description, level)
+VALUES(?, ?, ?)
     `, [roleData.name, roleData.description, roleData.level]);
 
     const result = db.exec('SELECT last_insert_rowid() as id');
     const roleId = result[0]?.values[0]?.[0] as number;
 
-    logger.info('Roles', 'role_created', `Rol creado: ${roleData.name}`, { roleId });
+    logger.info('Roles', 'role_created', `Rol creado: ${roleData.name} `, { roleId });
 
     return { success: true, message: 'Rol creado correctamente', roleId };
   } catch (error) {
@@ -10124,14 +9826,14 @@ export const updateUserRole = (id: number, updates: {
 
   try {
     // Verificar que el rol existe
-    const roleCheck = db.exec(`SELECT id FROM user_roles WHERE id = ${id}`);
+    const roleCheck = db.exec(`SELECT id FROM user_roles WHERE id = ${id} `);
     if (!roleCheck[0] || roleCheck[0].values.length === 0) {
       return { success: false, message: 'Rol no encontrado' };
     }
 
     // Si se está cambiando el nombre, verificar que no exista otro con ese nombre
     if (updates.name) {
-      const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${updates.name}' AND id != ${id}`);
+      const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${updates.name}' AND id != ${id} `);
       if (existing[0]?.values.length > 0) {
         return { success: false, message: 'Ya existe otro rol con ese nombre' };
       }
@@ -10159,9 +9861,9 @@ export const updateUserRole = (id: number, updates: {
 
     values.push(id);
 
-    db.run(`UPDATE user_roles SET ${setParts.join(', ')} WHERE id = ?`, values);
+    db.run(`UPDATE user_roles SET ${setParts.join(', ')} WHERE id = ? `, values);
 
-    logger.info('Roles', 'role_updated', `Rol actualizado: ${id}`, { updates });
+    logger.info('Roles', 'role_updated', `Rol actualizado: ${id} `, { updates });
 
     return { success: true, message: 'Rol actualizado correctamente' };
   } catch (error) {
@@ -10178,7 +9880,7 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
 
   try {
     // Verificar que el rol existe
-    const roleCheck = db.exec(`SELECT name FROM user_roles WHERE id = ${id}`);
+    const roleCheck = db.exec(`SELECT name FROM user_roles WHERE id = ${id} `);
     if (!roleCheck[0] || roleCheck[0].values.length === 0) {
       return { success: false, message: 'Rol no encontrado' };
     }
@@ -10191,7 +9893,7 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
     }
 
     // Verificar que no haya usuarios con este rol
-    const usersWithRole = db.exec(`SELECT COUNT(*) as count FROM users WHERE role_id = ${id}`);
+    const usersWithRole = db.exec(`SELECT COUNT(*) as count FROM users WHERE role_id = ${id} `);
     const userCount = usersWithRole[0]?.values[0]?.[0] as number || 0;
 
     if (userCount > 0) {
@@ -10201,7 +9903,7 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
     // Eliminar rol
     db.run('DELETE FROM user_roles WHERE id = ?', [id]);
 
-    logger.info('Roles', 'role_deleted', `Rol eliminado: ${roleName}`, { id });
+    logger.info('Roles', 'role_deleted', `Rol eliminado: ${roleName} `, { id });
 
     return { success: true, message: 'Rol eliminado correctamente' };
   } catch (error) {
@@ -10257,16 +9959,16 @@ export const getPurchaseOrders = (filters: { status?: string, supplier_id?: numb
       SELECT po.*, s.name as supplier_name 
       FROM purchase_orders po
       LEFT JOIN suppliers s ON po.supplier_id = s.id
-      WHERE 1=1
-    `;
+      WHERE 1 = 1
+  `;
     const params: any[] = [];
 
     if (filters.status) {
-      query += ` AND po.status = ?`;
+      query += ` AND po.status = ? `;
       params.push(filters.status);
     }
     if (filters.supplier_id) {
-      query += ` AND po.supplier_id = ?`;
+      query += ` AND po.supplier_id = ? `;
       params.push(filters.supplier_id);
     }
 
@@ -10275,9 +9977,9 @@ export const getPurchaseOrders = (filters: { status?: string, supplier_id?: numb
     const res = db.exec(query, params);
     if (res.length > 0 && res[0].values.length > 0) {
       const cols = res[0].columns;
-      return res[0].values.map(row => {
+      return res[0].values.map((row: any) => {
         const po: any = {};
-        cols.forEach((col, i) => po[col] = row[i]);
+        cols.forEach((col: any, i: any) => po[col] = row[i]);
         return po as PurchaseOrder;
       });
     }
@@ -10295,9 +9997,9 @@ export const createPurchaseOrder = (order: Omit<PurchaseOrder, 'id'>): { success
 
     // 1. Insert header
     db.run(`
-      INSERT INTO purchase_orders (supplier_id, order_number, order_date, expected_date, status, total_amount, notes, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
+      INSERT INTO purchase_orders(supplier_id, order_number, order_date, expected_date, status, total_amount, notes, created_by)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+  `, [
       order.supplier_id,
       order.order_number,
       order.order_date,
@@ -10314,8 +10016,8 @@ export const createPurchaseOrder = (order: Omit<PurchaseOrder, 'id'>): { success
     // 2. Insert items
     if (order.items && order.items.length > 0) {
       const stmt = db.prepare(`
-        INSERT INTO purchase_order_lines (purchase_order_id, product_id, quantity, unit_price)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO purchase_order_lines(purchase_order_id, product_id, quantity, unit_price)
+VALUES(?, ?, ?, ?)
       `);
       for (const item of order.items) {
         stmt.run([poId, item.product_id, item.quantity, item.unit_price]);
@@ -10338,36 +10040,36 @@ export const receivePurchaseOrder = (poId: number, userId: number = 1): { succes
   if (!db) return { success: false, message: 'DB not initialized' };
   try {
     // 1. Obtener items de la orden
-    const res = db.exec(`SELECT * FROM purchase_order_lines WHERE purchase_order_id = ?`, [poId]);
+    const res = db.exec(`SELECT * FROM purchase_order_lines WHERE purchase_order_id = ? `, [poId]);
     if (res.length === 0 || res[0].values.length === 0) {
       return { success: false, message: 'Order has no items' };
     }
 
     const cols = res[0].columns;
-    const items = res[0].values.map(row => {
+    const items = res[0].values.map((row: any) => {
       const item: any = {};
-      cols.forEach((col, i) => item[col] = row[i]);
+      cols.forEach((col: any, i: any) => item[col] = row[i]);
       return item as PurchaseOrderItem;
     });
 
     db.run('BEGIN TRANSACTION');
 
     // 2. Actualizar estado de la orden
-    db.run(`UPDATE purchase_orders SET status = 'received', updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [poId]);
+    db.run(`UPDATE purchase_orders SET status = 'received', updated_at = CURRENT_TIMESTAMP WHERE id = ? `, [poId]);
 
     // 3. Procesar cada item: aumentar stock y registrar movimiento
     for (const item of items) {
       // A. Actualizar cantidad recibida en la línea (asumimos recepción total por simplicidad en v1)
-      db.run(`UPDATE purchase_order_lines SET received_quantity = ? WHERE id = ?`, [item.quantity, item.id as number]);
+      db.run(`UPDATE purchase_order_lines SET received_quantity = ? WHERE id = ? `, [item.quantity, item.id as number]);
 
       // B. Actualizar Maestro de Productos
-      db.run(`UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?`, [item.quantity, item.product_id]);
+      db.run(`UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ? `, [item.quantity, item.product_id]);
 
       // C. Registrar Movimiento en Kardex
       db.run(`
-            INSERT INTO stock_movements (product_id, quantity, movement_type, reference_id, reference_type, created_by)
-            VALUES (?, ?, 'purchase', ?, 'purchase_order', ?)
-        `, [item.product_id, item.quantity, poId, userId]);
+            INSERT INTO stock_movements(product_id, quantity, movement_type, reference_id, reference_type, created_by)
+VALUES(?, ?, 'purchase', ?, 'purchase_order', ?)
+  `, [item.product_id, item.quantity, poId, userId]);
     }
 
     logAuditEvent('purchase_orders', poId, 'receive', null, { status: 'received' }, userId);
@@ -10395,9 +10097,9 @@ export const getStockMovements = (productId?: number): StockMovement[] => {
     const res = db.exec(query, params);
     if (res.length > 0 && res[0].values.length > 0) {
       const cols = res[0].columns;
-      return res[0].values.map(row => {
+      return res[0].values.map((row: any) => {
         const sm: any = {};
-        cols.forEach((col, i) => sm[col] = row[i]);
+        cols.forEach((col: any, i: any) => sm[col] = row[i]);
         return sm as StockMovement;
       });
     }
@@ -10413,29 +10115,29 @@ const ensureInventorySchema = async (): Promise<void> => {
 
   // 1. Tabla de Ajustes de Inventario (Header)
   db.run(`
-    CREATE TABLE IF NOT EXISTS inventory_adjustments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      adjustment_number TEXT UNIQUE NOT NULL,
-      adjustment_date DATE DEFAULT CURRENT_DATE,
-      reason TEXT,
-      status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'applied', 'cancelled')),
-      notes TEXT,
-      created_by INTEGER REFERENCES users(id) DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+    CREATE TABLE IF NOT EXISTS inventory_adjustments(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    adjustment_number TEXT UNIQUE NOT NULL,
+    adjustment_date DATE DEFAULT CURRENT_DATE,
+    reason TEXT,
+    status TEXT DEFAULT 'draft' CHECK(status IN('draft', 'applied', 'cancelled')),
+    notes TEXT,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
   `);
 
   // 2. Tabla de Items de Ajuste
   db.run(`
-    CREATE TABLE IF NOT EXISTS inventory_adjustment_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      adjustment_id INTEGER NOT NULL REFERENCES inventory_adjustments(id) ON DELETE CASCADE,
-      product_id INTEGER NOT NULL REFERENCES products(id),
-      quantity_adjustment INTEGER NOT NULL, -- Puede ser negativo
-      current_stock_snapshot INTEGER, -- Stock antes del ajuste
+    CREATE TABLE IF NOT EXISTS inventory_adjustment_items(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    adjustment_id INTEGER NOT NULL REFERENCES inventory_adjustments(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity_adjustment INTEGER NOT NULL, --Puede ser negativo
+      current_stock_snapshot INTEGER, --Stock antes del ajuste
       notes TEXT
-    )
+  )
   `);
 
   // 3. Trigger para ventas (Impacto automático en Kardex y Stock)
@@ -10444,17 +10146,17 @@ const ensureInventorySchema = async (): Promise<void> => {
     db.run(`
       CREATE TRIGGER IF NOT EXISTS decrease_stock_on_invoice
       AFTER INSERT ON invoice_lines
-      BEGIN
-        -- 1. Reducir stock físico
+BEGIN
+--1. Reducir stock físico
         UPDATE products
         SET stock_quantity = stock_quantity - NEW.quantity
         WHERE id = NEW.product_id;
 
-        -- 2. Registrar movimiento en Kardex
-        INSERT INTO stock_movements (product_id, quantity, movement_type, reference_id, reference_type, created_by)
-        VALUES (NEW.product_id, -NEW.quantity, 'sale', NEW.invoice_id, 'invoice', 1);
-      END;
-    `);
+--2. Registrar movimiento en Kardex
+        INSERT INTO stock_movements(product_id, quantity, movement_type, reference_id, reference_type, created_by)
+VALUES(NEW.product_id, -NEW.quantity, 'sale', NEW.invoice_id, 'invoice', 1);
+END;
+`);
     logger.info('Database', 'trigger_created', 'Trigger decrease_stock_on_invoice verificado');
   } catch (e) {
     logger.warn('Database', 'trigger_error', 'No se pudo crear trigger de inventario', e);
@@ -10476,26 +10178,26 @@ export const getKardexMovements = (filters: KardexFilters = {}): KardexEntry[] =
   if (!db) return [];
   try {
     let query = `
-      SELECT 
-        sm.*, 
-        p.name as product_name, 
-        p.sku as product_sku,
-        u.display_name as user_name
+SELECT
+sm.*,
+  p.name as product_name,
+  p.sku as product_sku,
+  u.display_name as user_name
       FROM stock_movements sm
       JOIN products p ON sm.product_id = p.id
       LEFT JOIN users u ON sm.created_by = u.id
-      WHERE 1=1
-    `;
+      WHERE 1 = 1
+  `;
 
     const params: any[] = [];
 
     if (filters.productId) {
-      query += ` AND sm.product_id = ?`;
+      query += ` AND sm.product_id = ? `;
       params.push(filters.productId);
     }
 
     if (filters.type) {
-      query += ` AND sm.movement_type = ?`;
+      query += ` AND sm.movement_type = ? `;
       params.push(filters.type);
     }
 
@@ -10510,7 +10212,7 @@ export const getKardexMovements = (filters: KardexFilters = {}): KardexEntry[] =
     }
 
     if (filters.referenceId) {
-      query += ` AND sm.reference_id = ?`;
+      query += ` AND sm.reference_id = ? `;
       params.push(filters.referenceId);
     }
 
@@ -10525,9 +10227,9 @@ export const getKardexMovements = (filters: KardexFilters = {}): KardexEntry[] =
     const res = db.exec(query, params);
     if (res.length > 0 && res[0].values.length > 0) {
       const cols = res[0].columns;
-      return res[0].values.map(row => {
+      return res[0].values.map((row: any) => {
         const item: any = {};
-        cols.forEach((col, i) => item[col] = row[i]);
+        cols.forEach((col: any, i: any) => item[col] = row[i]);
         // Format date friendly
         try {
           item.formatted_date = new Date(item.created_at).toLocaleString();

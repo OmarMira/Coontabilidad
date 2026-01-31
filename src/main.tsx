@@ -11,6 +11,7 @@ import { logger } from '@/utils/logger';
 import { exhaustiveAuthDiagnostic } from '@/utils/forceInitDB';
 import './index.css';
 import './styles/error-recovery.css';
+import './auto-diagnosis'; // Auto-diagnóstico de usuarios
 
 async function executeNuclearRepair() {
   try {

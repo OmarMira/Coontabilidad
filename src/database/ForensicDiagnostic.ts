@@ -43,7 +43,7 @@ export class ForensicDatabaseDiagnostic {
             // 2. VERIFICAR FK
             const fkCheck = db.exec('PRAGMA foreign_key_check;');
             if (fkCheck.length > 0) {
-                const violations = fkCheck[0].values.map(row => `Violation in table ${row[0]}, rowid ${row[1]}, target ${row[2]}`);
+                const violations = fkCheck[0].values.map((row: any) => `Violation in table ${row[0]}, rowid ${row[1]}, target ${row[2]}`);
                 report.errors.push(...violations);
             }
 

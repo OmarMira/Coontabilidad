@@ -19,7 +19,7 @@ export const BankingModule: React.FC = () => {
             const res = db.exec("SELECT * FROM bank_accounts WHERE is_active = 1");
             if (res.length > 0 && res[0].values.length > 0) {
                 const cols = res[0].columns;
-                const loadedAccounts = res[0].values.map(row => {
+                const loadedAccounts = res[0].values.map((row: any) => {
                     const acc: any = {};
                     cols.forEach((col, i) => acc[col] = row[i]);
                     return acc as BankAccount;

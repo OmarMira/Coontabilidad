@@ -30,15 +30,12 @@ export class TransactionManager {
         this.engine = engine;
         this.auditService = new AuditChainService(engine);
         this.inventoryManager = new InventoryManager(engine);
-        this.taxEngine = new FloridaTaxEngine([]); // Initialize empty, load on demand
+        this.taxEngine = new FloridaTaxEngine(engine);
         this.journalManager = new JournalManager(engine);
     }
 
     private async ensureTaxRatesLoaded(): Promise<void> {
-        const rates = await this.engine.select("SELECT county_name as county, state_rate as stateRate, county_rate as discretionaryRate FROM florida_tax_rates");
-        if (rates && rates.length > 0) {
-            this.taxEngine = new FloridaTaxEngine(rates as FloridaTaxRate[]);
-        }
+        await this.taxEngine.loadRates();
     }
 
     async processSale(sale: SaleTransaction): Promise<void> {

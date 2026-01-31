@@ -1,71 +1,186 @@
-import initSqlJs from 'sql.js';
+import * as SQLite from 'wa-sqlite';
+// @ts-ignore
+import SQLiteFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
+// @ts-ignore
+import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
 
 export class SQLiteEngine {
-    private db: initSqlJs.Database | null = null;
-    private dbName: string;
+    private sqlite3: any = null;
+    private db: number | null = null;
+    private sqlJsDB: any = null;
+    private dbName: string = 'accountexpress_v2.db';
 
-    constructor() {
-        this.dbName = 'accountexpress.db';
-    }
+    constructor() { }
 
-    public setDB(db: initSqlJs.Database): void {
-        this.db = db;
-        console.log('✅ SQLiteEngine: External DB injected');
+    // Permitir usar una instancia de sql.js para compatibilidad con simple-db
+    setDB(db: any) {
+        this.sqlJsDB = db;
     }
 
     async initialize(databaseName?: string): Promise<void> {
         if (databaseName) this.dbName = databaseName;
 
-        // 1. Verificar compatibilidad OPFS
-        if (!('storage' in navigator && navigator.storage && 'getDirectory' in navigator.storage)) {
-            console.warn('OPFS not supported or not in secure context. Persistence might not work.');
-        }
-
         try {
-            // 2. Inicializar SQLite con sql.js
-            const SQL = await (initSqlJs as any).default({
-                locateFile: (file: string) => `/${file}`
-            });
+            console.log('🔄 Initializing wa-sqlite...');
 
-            // 3. Crear base de datos
-            this.db = new SQL.Database();
+            // 1. Initialize SQLite3 Module
+            const module = await SQLiteFactory();
+            this.sqlite3 = SQLite.Factory(module);
 
-            // 4. Configurar SQLite para mejor rendimiento
-            this.exec('PRAGMA journal_mode=WAL');
-            this.exec('PRAGMA synchronous=NORMAL');
-            this.exec('PRAGMA foreign_keys=ON');
-            this.exec('PRAGMA busy_timeout=5000');
-            this.exec('PRAGMA cache_size=-10000');
+            // 2. Register Persistent VFS (IDB Batch Atomic for Main Thread compatibility)
+            const vfs = new IDBBatchAtomicVFS(this.dbName);
+            // @ts-ignore
+            this.sqlite3.vfs_register(vfs, true);
 
-            console.log('✅ SQLiteEngine initialized');
+            // 3. Open Database
+            // @ts-ignore
+            this.db = await this.sqlite3.open_v2(
+                this.dbName,
+                SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_CREATE,
+                this.dbName
+            );
+
+            // 4. Initialize Database Settings
+            await this.exec('PRAGMA journal_mode=DELETE'); // IDB often prefers DELETE or MEMORY, WAL can be tricky without OPFS
+            await this.exec('PRAGMA synchronous=NORMAL');
+            await this.exec('PRAGMA foreign_keys=ON');
+            await this.exec('PRAGMA cache_size=-5000');
+
+            console.log('✅ SQLiteEngine (wa-sqlite) initialized successfully');
+
+            // Verify persistence
+            await this.exec('CREATE TABLE IF NOT EXISTS system_check (id INTEGER PRIMARY KEY, initialized_at TEXT)');
+            await this.run('INSERT INTO system_check (initialized_at) VALUES (?)', [new Date().toISOString()]);
+
         } catch (e) {
-            console.error('SQLite initialization failed', e);
+            console.error('❌ SQLiteEngine initialization failed:', e);
             throw e;
         }
     }
 
-    // Ejecutar SQL raw (DDL)
-    exec(sql: string): void {
-        if (!this.db) throw new Error('DB not initialized');
-        this.db.run(sql);
-    }
-
-    // Ejecutar con parámetros (Insert, Update)
-    run(sql: string, params: (string | number | boolean | null | Uint8Array)[] = []): void {
-        if (!this.db) throw new Error('DB not initialized');
-        this.db.run(sql, params as initSqlJs.SqlValue[]);
-    }
-
-    // Consultar (Select)
-    select(sql: string, params: (string | number | boolean | null | Uint8Array)[] = []): Record<string, any>[] {
-        if (!this.db) throw new Error('DB not initialized');
-        const stmt = this.db.prepare(sql);
-        stmt.bind(params as initSqlJs.SqlValue[]);
-        const results: Record<string, any>[] = [];
-        while (stmt.step()) {
-            results.push(stmt.getAsObject());
+    // Execute raw SQL (DDL) - Async
+    async exec(sql: string): Promise<void> {
+        if (this.sqlJsDB) {
+            this.sqlJsDB.run(sql);
+            return;
         }
-        stmt.free();
+        if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
+        await this.sqlite3.exec(this.db, sql);
+    }
+
+    // Run with parameters - Async
+    async run(sql: string, params: any[] = []): Promise<void> {
+        if (this.sqlJsDB) {
+            this.sqlJsDB.run(sql, params);
+            return;
+        }
+        if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
+
+        let stmt: number | undefined;
+        try {
+            // @ts-ignore
+            stmt = await this.sqlite3.prepare_v2(this.db, sql);
+            if (!stmt) throw new Error('Failed to prepare statement');
+
+            // Bind parameters
+            if (params.length > 0) {
+                // @ts-ignore
+                this.sqlite3.bind_collection(stmt, params);
+            }
+
+            // Execute
+            // @ts-ignore
+            await this.sqlite3.step(stmt);
+        } finally {
+            // @ts-ignore
+            if (stmt) await this.sqlite3.finalize(stmt);
+        }
+    }
+
+    // Select with parameters - Async
+    async select(sql: string, params: any[] = []): Promise<Record<string, any>[]> {
+        if (this.sqlJsDB) {
+            const results: Record<string, any>[] = [];
+            const stmt = this.sqlJsDB.prepare(sql);
+            try {
+                stmt.bind(params);
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+            } finally {
+                stmt.free();
+            }
+            return results;
+        }
+        if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
+
+        const results: Record<string, any>[] = [];
+        let stmt: number | undefined;
+
+        try {
+            // @ts-ignore
+            stmt = await this.sqlite3.prepare_v2(this.db, sql);
+            if (!stmt) throw new Error('Failed to prepare statement');
+
+            // Bind parameters
+            // @ts-ignore
+            if (params.length > 0) {
+                // @ts-ignore
+                this.sqlite3.bind_collection(stmt, params);
+            }
+
+            // Step through results
+            while (await this.sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
+                // @ts-ignore
+                const row = this.sqlite3.row_collection(stmt); // Returns array or object? usually array?
+                // wa-sqlite row_collection returns an array of values if not configured otherwise, or object if columns?
+                // Actually helper is needed to map columns.
+
+                // Manual column mapping:
+                const columns = [];
+                const colCount = this.sqlite3.column_count(stmt);
+                for (let i = 0; i < colCount; i++) {
+                    columns.push(this.sqlite3.column_name(stmt, i));
+                }
+
+                const rowObj: Record<string, any> = {};
+                // @ts-ignore
+                const values = this.sqlite3.row_collection(stmt); // Wait, row_collection maps to object? Check docs.
+                // Inspecting IDBBatchAtomicVFS example or standard usage:
+                // Usually one iterates columns and calls column_text/int/double.
+                // But row_collection is a convenience method in high level API? No, likely not in core.
+                // Let's rely on manual extraction for safety.
+
+                // Re-implementation of reliable row extraction:
+                for (let i = 0; i < colCount; i++) {
+                    const colName = this.sqlite3.column_name(stmt, i);
+                    const type = this.sqlite3.column_type(stmt, i);
+                    let val: any;
+                    switch (type) {
+                        case SQLite.SQLITE_INTEGER:
+                        case SQLite.SQLITE_FLOAT:
+                            val = this.sqlite3.column_number(stmt, i);
+                            break;
+                        case SQLite.SQLITE_TEXT:
+                            val = this.sqlite3.column_text(stmt, i);
+                            break;
+                        case SQLite.SQLITE_BLOB:
+                            val = this.sqlite3.column_blob(stmt, i);
+                            break;
+                        case SQLite.SQLITE_NULL:
+                            val = null;
+                            break;
+                        default:
+                            val = this.sqlite3.column_text(stmt, i);
+                    }
+                    rowObj[colName] = val;
+                }
+                results.push(rowObj);
+            }
+        } finally {
+            // @ts-ignore
+            if (stmt) await this.sqlite3.finalize(stmt);
+        }
         return results;
     }
 
@@ -73,13 +188,82 @@ export class SQLiteEngine {
         if (!this.db) throw new Error('Database not initialized');
 
         try {
-            this.db.run('BEGIN IMMEDIATE TRANSACTION');
+            await this.exec('BEGIN IMMEDIATE TRANSACTION');
+            // @ts-ignore
             const result = await operation();
-            this.db.run('COMMIT');
+            await this.exec('COMMIT');
             return result;
         } catch (error) {
-            this.db.run('ROLLBACK');
+            await this.exec('ROLLBACK');
             throw error;
         }
+    }
+
+    // Compatibility with sql.js return format: [{ columns: [...], values: [...] }] (Async)
+    async execCompatible(sql: string, params: any[] = []): Promise<{ columns: string[], values: any[][] }[]> {
+        if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
+
+        const result: { columns: string[], values: any[][] } = { columns: [], values: [] };
+        let stmt: number | undefined;
+
+        try {
+            // @ts-ignore
+            stmt = await this.sqlite3.prepare_v2(this.db, sql);
+            if (!stmt) throw new Error('Failed to prepare statement');
+
+            // @ts-ignore
+            if (params.length > 0) {
+                // @ts-ignore
+                this.sqlite3.bind_collection(stmt, params);
+            }
+
+            // Get columns
+            const colCount = this.sqlite3.column_count(stmt);
+            for (let i = 0; i < colCount; i++) {
+                result.columns.push(this.sqlite3.column_name(stmt, i));
+            }
+
+            // Get values
+            while (await this.sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
+                const row: any[] = [];
+                for (let i = 0; i < colCount; i++) {
+                    const type = this.sqlite3.column_type(stmt, i);
+                    let val: any;
+                    switch (type) {
+                        case SQLite.SQLITE_INTEGER:
+                        case SQLite.SQLITE_FLOAT:
+                            val = this.sqlite3.column_number(stmt, i);
+                            break;
+                        case SQLite.SQLITE_TEXT:
+                            val = this.sqlite3.column_text(stmt, i);
+                            break;
+                        case SQLite.SQLITE_BLOB:
+                            val = this.sqlite3.column_blob(stmt, i);
+                            break;
+                        default:
+                            val = this.sqlite3.column_text(stmt, i);
+                    }
+                    row.push(val);
+                }
+                result.values.push(row);
+            }
+        } finally {
+            // @ts-ignore
+            if (stmt) await this.sqlite3.finalize(stmt);
+        }
+
+        return result.values.length > 0 || result.columns.length > 0 ? [result] : [];
+    }
+
+    async close(): Promise<void> {
+        if (this.sqlite3 && this.db) {
+            await this.sqlite3.close(this.db);
+            this.db = null;
+        }
+    }
+
+    async getDatabaseSize(): Promise<number> {
+        // Implementation for later
+        return 0;
     }
 }
