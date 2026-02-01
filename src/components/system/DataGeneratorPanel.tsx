@@ -13,8 +13,7 @@ export const DataGeneratorPanel: React.FC = () => {
     bills: 50,
     quotes: 30,
     employees: 15,
-    bankAccounts: 5,
-    fixedAssets: 20
+    bankAccounts: 5
   });
 
   const handleGenerate = async () => {
@@ -184,18 +183,6 @@ export const DataGeneratorPanel: React.FC = () => {
               max="50"
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Activos Fijos</label>
-            <input
-              type="number"
-              value={config.fixedAssets}
-              onChange={(e) => setConfig({ ...config, fixedAssets: Number(e.target.value) })}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-              min="1"
-              max="1000"
-            />
-          </div>
         </div>
 
         {/* Botones */}
@@ -274,7 +261,7 @@ export const DataGeneratorPanel: React.FC = () => {
             <p className="text-orange-300 font-semibold mb-1">Advertencia</p>
             <p className="text-orange-200/80 text-sm">
               Esta herramienta genera datos de prueba masivos. Los datos generados incluyen:
-              clientes, proveedores, productos, facturas, cotizaciones, empleados, activos fijos,
+              clientes, proveedores, productos, facturas, cotizaciones, empleados,
               movimientos de inventario, asientos contables y más. Use "Limpiar Todo" para eliminar
               todos los datos de prueba cuando termine.
             </p>
