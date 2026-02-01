@@ -46,7 +46,42 @@ export class DR15PDFGenerator {
      * Genera un PDF del reporte DR-15 utilizando Web Workers para evitar congelamiento de UI
      */
     async generatePDFAsync(data: DR15Data, companyData: CompanyData): Promise<Blob> {
-        return this.orchestrator.executeTask<Blob>('PDF_GENERATION' as WorkerType, { data, companyData });
+        try {
+            const result = await this.orchestrator.executeTask<any>('REPORTS' as WorkerType, {
+                type: 'dr15-pdf',
+                data: {
+                    period: data.period,
+                    taxpayerInfo: {
+                        fein: companyData.fein || 'N/A',
+                        period: data.period,
+                        name: companyData.name
+                    },
+                    countySummary: data.countyBreakdown || [],
+                    totals: {
+                        sales: data.grossSales,
+                        tax: data.totalTaxDue
+                    },
+                    verification: {
+                        generatedAt: new Date().toISOString(),
+                        checksum: data.auditHash || 'N/A'
+                    }
+                },
+                options: {
+                    filename: `DR15_${data.period.replace('/', '-')}.pdf`
+                }
+            });
+
+            if (!result.success) {
+                throw new Error(result.error || 'Error generando PDF');
+            }
+
+            // Convertir ArrayBuffer de vuelta a Blob
+            return new Blob([result.data.pdf], { type: 'application/pdf' });
+
+        } catch (error: any) {
+            console.error('Error en DR15PDFGenerator:', error);
+            throw new Error(`Error generando PDF DR-15: ${error.message}`);
+        }
     }
 
     /**

@@ -85,7 +85,7 @@ export const DR15PDFDocument: React.FC<DR15PDFProps> = ({ report }) => {
                         </View>
                     ))}
                 </View>
-                <Text style={{ fontSize: 8, color: '#666', marginTop: 5, fontStyle: 'italic' }}>* Discretionary Sales Surtax calculated based on county rates.</Text>
+                <Text style={{ fontSize: 8, color: '#666', marginTop: '5px', fontStyle: 'italic' }}>* Discretionary Sales Surtax calculated based on county rates.</Text>
 
                 {/* Totales y Pago */}
                 <View style={styles.totalsBox}>
@@ -93,7 +93,7 @@ export const DR15PDFDocument: React.FC<DR15PDFProps> = ({ report }) => {
                         <Text style={{ fontSize: 10 }}>Total Gross Sales:</Text>
                         <Text style={{ fontSize: 10 }}>{CurrencyUtils.format(report.totals.sales)}</Text>
                     </View>
-                    <View style={[styles.totalRow, { marginTop: 10, borderTop: '1px solid #ddd', paddingTop: 5 }]}>
+                    <View style={[styles.totalRow, { marginTop: '10px', borderTop: '1px solid #ddd', paddingTop: '5px' }]}>
                         <Text style={styles.totalLabel}>TOTAL TAX DUE:</Text>
                         <Text style={styles.totalValue}>{CurrencyUtils.format(report.totals.tax)}</Text>
                     </View>

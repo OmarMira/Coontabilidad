@@ -94,8 +94,8 @@ export const VerifyIronCore: React.FC = () => {
             background: '#0a0a0a', color: '#00ff00', padding: 40, fontFamily: 'monospace',
             whiteSpace: 'pre-wrap', zIndex: 9999, overflow: 'auto', fontSize: '14px'
         }}>
-            <h1 style={{ borderBottom: '1px solid #333', paddingBottom: 20 }}>🛡️ IRON CORE DIAGNOSTIC v1.0</h1>
-            {logs.map((l, i) => <div key={i} style={{ marginBottom: 5 }}>{l}</div>)}
+            <h1 style={{ borderBottom: '1px solid #333', paddingBottom: '20px' }}>🛡️ IRON CORE DIAGNOSTIC v1.0</h1>
+            {logs.map((l, i) => <div key={i} style={{ marginBottom: '5px' }}>{l}</div>)}
         </div>
     );
 };

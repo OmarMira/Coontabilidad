@@ -49,6 +49,7 @@ export class AuditChainService {
 
             // 2. Prepare payload (Optimize storage with Delta if possible)
             let finalPayload = event.payload;
+            let isDelta = false;
 
             // Intento de optimización Delta solo para UPDATES
             if (event.eventType.toUpperCase().includes('UPDATE') || event.eventType.toUpperCase().includes('EDIT')) {
@@ -62,27 +63,22 @@ export class AuditChainService {
                 if (previousRecord.length > 0) {
                     try {
                         const oldData = JSON.parse((previousRecord[0] as any).content_payload);
-                        // Import dinámico o función local para evitar dependencia circular estricta si fuera el caso,
-                        // pero aquí asumimos que AuditService es accesible o copiamos la lógica simple.
-                        // Para reducir riesgos en este archivo crítico, implementamos la lógica diff aquí mismo.
-
-                        const delta: any = {};
-                        let hasChanges = false;
-                        for (const key in event.payload) {
-                            if (JSON.stringify(oldData[key]) !== JSON.stringify(event.payload[key])) {
-                                delta[key] = event.payload[key];
-                                hasChanges = true;
-                            }
-                        }
-
-                        // Solo si detectamos cambios específicos guardamos el delta, 
-                        // de lo contrario guardamos todo por seguridad (o si es estructura diferente)
-                        if (hasChanges && Object.keys(delta).length < Object.keys(event.payload).length) {
-                            finalPayload = { _is_delta: true, ...delta };
+                        
+                        // Crear delta más eficiente
+                        const delta = this.createDelta(oldData, event.payload);
+                        
+                        // Solo usar delta si es significativamente más pequeño
+                        const deltaSize = JSON.stringify(delta).length;
+                        const fullSize = JSON.stringify(event.payload).length;
+                        
+                        if (deltaSize < fullSize * 0.7) { // Solo si el delta es 30% más pequeño
+                            finalPayload = { _is_delta: true, _delta_version: 1, ...delta };
+                            isDelta = true;
                         }
 
                     } catch (e) {
                         // Si falla el parseo o diff, guardamos payload original
+                        console.warn('Error creating delta, using full payload:', e);
                     }
                 }
             }
@@ -357,6 +353,102 @@ export class AuditChainService {
         );
 
         return result.length > 0 ? parseInt((result[0] as any).value) : 0;
+    }
+
+    /**
+     * Crear delta eficiente entre dos objetos
+     * Solo incluye campos que cambiaron
+     */
+    private createDelta(oldData: any, newData: any): any {
+        const delta: any = {};
+        
+        // Detectar cambios en campos existentes
+        for (const key in newData) {
+            if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
+                delta[key] = {
+                    old: oldData[key],
+                    new: newData[key]
+                };
+            }
+        }
+        
+        // Detectar campos eliminados
+        for (const key in oldData) {
+            if (!(key in newData)) {
+                delta[key] = {
+                    old: oldData[key],
+                    new: null,
+                    _deleted: true
+                };
+            }
+        }
+        
+        return delta;
+    }
+
+    /**
+     * Reconstruir objeto completo desde delta
+     */
+    public async reconstructFromDelta(entityTable: string, entityId: string, targetLogicClock?: number): Promise<any> {
+        const records = await this.db.select(
+            `SELECT content_payload, logic_clock FROM audit_chain 
+             WHERE entity_table = ? AND entity_id = ? 
+             ${targetLogicClock ? 'AND logic_clock <= ?' : ''}
+             ORDER BY logic_clock ASC`,
+            targetLogicClock ? [entityTable, entityId, targetLogicClock] : [entityTable, entityId]
+        );
+
+        let reconstructed: any = {};
+
+        for (const record of records) {
+            const payload = JSON.parse((record as any).content_payload);
+            
+            if (payload._is_delta) {
+                // Aplicar delta
+                for (const key in payload) {
+                    if (key.startsWith('_')) continue; // Skip metadata
+                    
+                    if (payload[key]._deleted) {
+                        delete reconstructed[key];
+                    } else {
+                        reconstructed[key] = payload[key].new;
+                    }
+                }
+            } else {
+                // Payload completo, reemplazar todo
+                reconstructed = { ...payload };
+            }
+        }
+
+        return reconstructed;
+    }
+
+    /**
+     * Obtener estadísticas de compresión delta
+     */
+    public async getDeltaCompressionStats(): Promise<{
+        totalRecords: number;
+        deltaRecords: number;
+        compressionRatio: number;
+        spaceSaved: number;
+    }> {
+        const stats = await this.db.select(`
+            SELECT 
+                COUNT(*) as total_records,
+                SUM(CASE WHEN content_payload LIKE '%"_is_delta":true%' THEN 1 ELSE 0 END) as delta_records,
+                SUM(LENGTH(content_payload)) as total_size
+            FROM audit_chain
+        `);
+
+        const result = stats[0] as any;
+        const compressionRatio = result.delta_records / result.total_records;
+        
+        return {
+            totalRecords: result.total_records,
+            deltaRecords: result.delta_records,
+            compressionRatio: compressionRatio,
+            spaceSaved: Math.round(compressionRatio * 30) // Estimación de 30% de ahorro promedio
+        };
     }
 }
 

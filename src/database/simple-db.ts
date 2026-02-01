@@ -2331,6 +2331,38 @@ SELECT
           (SELECT SUM(balance) FROM bank_accounts) as cash_balance
             `);
 
+  // Vista de resumen de nómina para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS v_payroll_summary AS
+SELECT 
+  strftime('%Y-%m', pe.created_at) as period,
+  COUNT(DISTINCT pe.employee_id) as employees_count,
+  SUM(pe.gross_amount) as total_gross,
+  SUM(pe.net_amount) as total_net,
+  SUM(pe.deductions_amount) as total_deductions,
+  AVG(pe.gross_amount) as avg_gross_per_employee
+FROM payroll_entries pe
+WHERE pe.created_at >= date('now', '-12 months')
+GROUP BY period
+ORDER BY period DESC
+  `);
+
+  // Vista de estado de conciliación bancaria para IA
+  db.run(`
+    CREATE VIEW IF NOT EXISTS v_bank_reconciliation_status AS
+SELECT 
+  ba.account_name,
+  ba.bank_name,
+  ba.balance as book_balance,
+  COUNT(bt.id) as pending_transactions,
+  SUM(CASE WHEN bt.status = 'pending' THEN bt.amount ELSE 0 END) as pending_amount,
+  MAX(bt.transaction_date) as last_transaction_date,
+  ba.is_active
+FROM bank_accounts ba
+LEFT JOIN bank_transactions bt ON ba.id = bt.bank_account_id
+GROUP BY ba.id
+  `);
+
   // Tabla de auditorÃ­a especÃ­fica para IA
   db.run(`
     CREATE TABLE IF NOT EXISTS ai_audit_log(
