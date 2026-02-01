@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Database, Trash2, Play, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { generateMassiveTestData, clearAllTestData } from '@/database/seeding/MassiveDataGenerator';
+import { initDB } from '@/database/simple-db';
+import { DatabaseService } from '@/database/DatabaseService';
 
 export const DataGeneratorPanel: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -25,6 +27,10 @@ export const DataGeneratorPanel: React.FC = () => {
     setResult(null);
 
     try {
+      // Ensure database is initialized
+      const db = await initDB();
+      DatabaseService.setDB(db);
+      
       const result = await generateMassiveTestData(config);
       setResult(result);
       
@@ -57,6 +63,10 @@ export const DataGeneratorPanel: React.FC = () => {
     setResult(null);
 
     try {
+      // Ensure database is initialized
+      const db = await initDB();
+      DatabaseService.setDB(db);
+      
       const result = clearAllTestData();
       setResult(result);
       
