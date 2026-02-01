@@ -67,4 +67,25 @@ export class AuditService {
         if (result.length > 0) return result[0].current_hash;
         return 'GENESIS_BLOCK'; // Estado inicial
     }
+
+    /**
+     * Calcula la diferencia (delta) entre dos objetos para almacenamiento eficiente
+     */
+    static computeDelta(oldData: any, newData: any): any {
+        const delta: any = {};
+
+        // Si uno es nulo y el otro no, es un cambio total
+        if (!oldData && newData) return newData;
+        if (oldData && !newData) return null;
+        if (!oldData && !newData) return {};
+
+        // Recorrer llaves del nuevo objeto
+        for (const key in newData) {
+            if (JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])) {
+                delta[key] = newData[key];
+            }
+        }
+
+        return delta;
+    }
 }

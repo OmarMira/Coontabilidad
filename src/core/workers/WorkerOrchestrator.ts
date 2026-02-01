@@ -1,4 +1,4 @@
-export type WorkerType = 'ENCRYPTION' | 'DATABASE' | 'ACCOUNTING';
+export type WorkerType = 'ENCRYPTION' | 'DATABASE' | 'ACCOUNTING' | 'PDF_GENERATION' | 'CSV_PROCESSING';
 
 export interface WorkerConfig {
     name?: string;
@@ -57,6 +57,20 @@ export class WorkerOrchestrator {
                 worker = new Worker(new URL('../../workers/accounting.worker.ts', import.meta.url), {
                     type: 'module',
                     name: `${workerId}-accounting`
+                });
+                break;
+
+            case 'PDF_GENERATION':
+                worker = new Worker(new URL('../../workers/pdf.worker.ts', import.meta.url), {
+                    type: 'module',
+                    name: `${workerId}-pdf`
+                });
+                break;
+
+            case 'CSV_PROCESSING':
+                worker = new Worker(new URL('../../workers/csv.worker.ts', import.meta.url), {
+                    type: 'module',
+                    name: `${workerId}-csv`
                 });
                 break;
 

@@ -193,6 +193,75 @@ export class ViewManager {
         `,
                 description: 'Ranking de productos más vendidos por recaudación',
                 accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_payroll_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_payroll_summary AS
+          SELECT 
+              strftime('%Y-%m', payment_date) as month,
+              COUNT(DISTINCT employee_id) as employees_paid,
+              SUM(gross_pay) as total_gross_pay,
+              SUM(net_pay) as total_net_pay,
+              SUM(tax_withheld) as total_taxes_withheld
+          FROM payroll_runs
+          GROUP BY month
+          ORDER BY month DESC;
+        `,
+                description: 'Resumen mensual de nómina',
+                accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_bank_reconciliation_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_bank_reconciliation_summary AS
+          SELECT 
+              ba.bank_name,
+              ba.account_number,
+              MAX(br.statement_date) as last_reconciliation,
+              br.statement_balance,
+              br.book_balance,
+              (br.statement_balance - br.book_balance) as difference,
+              br.status
+          FROM bank_accounts ba
+          LEFT JOIN bank_reconciliations br ON ba.id = br.bank_account_id
+          GROUP BY ba.id;
+        `,
+                description: 'Estado de conciliaciones bancarias por cuenta',
+                accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_inventory_movements_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_inventory_movements_summary AS
+          SELECT 
+              p.name as product_name,
+              im.type as movement_type,
+              SUM(im.quantity) as total_quantity,
+              COUNT(*) as movement_count,
+              MAX(im.created_at) as last_movement
+          FROM inventory_movements im
+          JOIN products p ON im.product_id = p.id
+          WHERE im.created_at >= date('now', '-30 days')
+          GROUP BY p.id, im.type;
+        `,
+                description: 'Resumen de movimientos de inventario (últimos 30 días)',
+                accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_purchase_orders_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_purchase_orders_summary AS
+          SELECT 
+              status,
+              COUNT(*) as count,
+              SUM(total_amount) as total_value
+          FROM purchase_orders
+          WHERE created_at >= date('now', '-90 days')
+          GROUP BY status;
+        `,
+                description: 'Resumen de órdenes de compra (últimos 90 días)',
+                accessLevel: 'ai_readonly'
             }
         ];
     }

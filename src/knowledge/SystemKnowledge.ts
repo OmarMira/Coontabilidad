@@ -397,6 +397,28 @@ export const ACCOUNTING_KNOWLEDGE = {
             dueDate: 'Día 20 del mes siguiente al período',
             filingPeriods: ['Mensual', 'Trimestral', 'Anual']
         }
+    },
+
+    // Nuevos módulos
+    payroll: {
+        description: 'Gestión de nómina y pagos a empleados',
+        keyConcepts: ['Salario Bruto', 'Retenciones', 'Salario Neto'],
+        view: 'v_payroll_summary'
+    },
+    banking: {
+        description: 'Conciliación bancaria y gestión de cuentas',
+        keyConcepts: ['Libro Mayor', 'Estado de Cuenta', 'Conciliación'],
+        view: 'v_bank_reconciliation_summary'
+    },
+    inventory: {
+        description: 'Control de stock y movimientos',
+        keyConcepts: ['FIFO', 'LIFO', 'Costo Promedio', 'Kardex'],
+        view: 'v_inventory_movements_summary'
+    },
+    purchasing: {
+        description: 'Gestión de compras y proveedores',
+        keyConcepts: ['Órdenes de Compra', 'Cuentas por Pagar', 'Recepción de Bienes'],
+        view: 'v_purchase_orders_summary'
     }
 };
 

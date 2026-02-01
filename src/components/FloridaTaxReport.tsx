@@ -9,12 +9,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Download, 
-  Calendar, 
-  DollarSign, 
-  MapPin, 
+import {
+  FileText,
+  Download,
+  Calendar,
+  DollarSign,
+  MapPin,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -24,13 +24,13 @@ import {
   Plus,
   RefreshCw
 } from 'lucide-react';
-import { 
-  calculateFloridaDR15Report, 
-  saveDR15Report, 
-  getDR15Reports, 
+import {
+  calculateFloridaDR15Report,
+  saveDR15Report,
+  getDR15Reports,
   markDR15ReportAsFiled,
   getAvailableDR15Periods,
-  FloridaDR15Report 
+  FloridaDR15Report
 } from '../database/simple-db';
 import { getFloridaCountyNames } from '../data/floridaCounties';
 import { logger } from '../core/logging/SystemLogger';
@@ -109,13 +109,13 @@ export const FloridaTaxReport: React.FC = () => {
     setError(null);
 
     try {
-      logger.info('FloridaTaxReport', 'calculate_start', 'Calculando reporte DR-15', { 
+      logger.info('FloridaTaxReport', 'calculate_start', 'Calculando reporte DR-15', {
         period: selectedPeriod,
-        county: selectedCounty 
+        county: selectedCounty
       });
-      
+
       const report = calculateFloridaDR15Report(selectedPeriod);
-      
+
       if (!report) {
         setError('No se pudo calcular el reporte. Verifique que existan facturas para el período.');
         return;
@@ -126,7 +126,7 @@ export const FloridaTaxReport: React.FC = () => {
         report.countyBreakdown = report.countyBreakdown.filter(
           county => county.county === selectedCounty
         );
-        
+
         // Recalcular totales para el condado específico
         report.totalTaxableSales = report.countyBreakdown.reduce(
           (sum, county) => sum + county.taxableAmount, 0
@@ -139,19 +139,19 @@ export const FloridaTaxReport: React.FC = () => {
 
       setCurrentReport(report);
       setViewMode('view');
-      
+
       logger.info('FloridaTaxReport', 'calculate_success', 'Reporte calculado correctamente', {
         county: selectedCounty,
         totalSales: report.totalTaxableSales,
         totalTax: report.totalTaxCollected
       });
-      
+
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
       setError(`Error al calcular reporte: ${errorMsg}`);
-      logger.error('FloridaTaxReport', 'calculate_error', 'Error en cálculo', { 
+      logger.error('FloridaTaxReport', 'calculate_error', 'Error en cálculo', {
         period: selectedPeriod,
-        county: selectedCounty 
+        county: selectedCounty
       }, error as Error);
     } finally {
       setIsCalculating(false);
@@ -166,7 +166,7 @@ export const FloridaTaxReport: React.FC = () => {
 
     try {
       const result = saveDR15Report(currentReport);
-      
+
       if (result.success) {
         setSuccess(result.message);
         loadReports();
@@ -186,7 +186,7 @@ export const FloridaTaxReport: React.FC = () => {
   const markAsFiled = async (period: string) => {
     try {
       const result = markDR15ReportAsFiled(period);
-      
+
       if (result.success) {
         setSuccess(result.message);
         loadReports();
@@ -239,6 +239,19 @@ export const FloridaTaxReport: React.FC = () => {
     }).format(date);
   };
 
+  /* 
+   * Configuración de Worker Orchestrator para procesamiento off-main-thread
+   */
+  // Lazy load del orchestrator solo cuando se necesite
+  const [orchestrator, setOrchestrator] = useState<any>(null);
+
+  useEffect(() => {
+    // Cargar dinámicamente el orchestrator
+    import('../core/workers/WorkerOrchestrator').then(module => {
+      setOrchestrator(new module.WorkerOrchestrator());
+    });
+  }, []);
+
   const exportToCSV = async () => {
     if (!currentReport) {
       setError('No hay reporte para exportar');
@@ -253,7 +266,10 @@ export const FloridaTaxReport: React.FC = () => {
         counties: currentReport.countyBreakdown.length
       });
 
-      // Crear encabezados CSV
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `reporte_dr15_${currentReport.period}_${timestamp}.csv`;
+
+      // Preparar datos para el worker
       const headers = [
         'Período',
         'Condado',
@@ -264,7 +280,6 @@ export const FloridaTaxReport: React.FC = () => {
         'Impuesto Neto a Pagar ($)'
       ];
 
-      // Crear filas de datos
       const rows = currentReport.countyBreakdown.map(county => [
         currentReport.period,
         county.county,
@@ -286,34 +301,47 @@ export const FloridaTaxReport: React.FC = () => {
         currentReport.netTaxDue.toFixed(2)
       ]);
 
-      // Convertir a formato CSV
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
+      if (orchestrator) {
+        // Usar Worker para generar CSV si está disponible
+        const result = await orchestrator.executeTask('CSV_PROCESSING', {
+          headers,
+          rows,
+          filename
+        });
 
-      // Crear y descargar archivo
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      
-      const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `reporte_dr15_${currentReport.period}_${timestamp}.csv`;
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+        // Descargar el blob recibido del worker
+        const url = URL.createObjectURL(result.blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-      setSuccess(`Reporte exportado como ${filename}`);
-      
-      logger.info('FloridaTaxReport', 'csv_export_success', 'CSV exportado exitosamente', {
-        filename,
-        rows: rows.length,
-        size: blob.size
-      });
+        setSuccess(`Reporte exportado como ${filename} (vía Worker)`);
+      } else {
+        // Fallback a generación síncrona si worker no está listo
+        const csvContent = [
+          headers.join(','),
+          ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        setSuccess(`Reporte exportado como ${filename}`);
+      }
+
+      logger.info('FloridaTaxReport', 'csv_export_success', 'CSV exportado exitosamente');
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
@@ -439,7 +467,7 @@ export const FloridaTaxReport: React.FC = () => {
             <MapPin className="w-5 h-5 mr-2 text-blue-400" />
             Desglose por Condado de Florida
           </h3>
-          
+
           {currentReport.countyBreakdown.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -492,8 +520,8 @@ export const FloridaTaxReport: React.FC = () => {
               <p className="text-gray-400 text-sm">Estado</p>
               <p className={`capitalize ${getStatusColor(currentReport.status)}`}>
                 {currentReport.status === 'pending' ? 'Pendiente' :
-                 currentReport.status === 'filed' ? 'Presentado' :
-                 currentReport.status === 'paid' ? 'Pagado' : 'Vencido'}
+                  currentReport.status === 'filed' ? 'Presentado' :
+                    currentReport.status === 'paid' ? 'Pagado' : 'Vencido'}
               </p>
             </div>
             <div>
@@ -526,7 +554,7 @@ export const FloridaTaxReport: React.FC = () => {
         {/* Formulario de Cálculo */}
         <div className="bg-gray-800 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Período y Condado</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
@@ -674,8 +702,8 @@ export const FloridaTaxReport: React.FC = () => {
                         {getStatusIcon(report.status)}
                         <span className={`text-sm capitalize ${getStatusColor(report.status)}`}>
                           {report.status === 'pending' ? 'Pendiente' :
-                           report.status === 'filed' ? 'Presentado' :
-                           report.status === 'paid' ? 'Pagado' : 'Vencido'}
+                            report.status === 'filed' ? 'Presentado' :
+                              report.status === 'paid' ? 'Pagado' : 'Vencido'}
                         </span>
                       </div>
                     </td>
@@ -694,7 +722,7 @@ export const FloridaTaxReport: React.FC = () => {
                         >
                           <Eye className="w-4 h-4 text-gray-400" />
                         </button>
-                        
+
                         {report.status === 'pending' && (
                           <button
                             onClick={() => markAsFiled(report.period)}
@@ -704,7 +732,7 @@ export const FloridaTaxReport: React.FC = () => {
                             <CheckCircle className="w-4 h-4 text-green-400" />
                           </button>
                         )}
-                        
+
                         <button
                           onClick={() => {
                             setCurrentReport(report);
@@ -746,8 +774,8 @@ export const FloridaTaxReport: React.FC = () => {
           <div>
             <h4 className="text-yellow-300 font-medium mb-1">Aviso Legal</h4>
             <p className="text-yellow-200 text-sm">
-              Los reportes DR-15 generados por este sistema son para uso informativo. 
-              Siempre verifique los cálculos y consulte con un contador certificado antes de presentar 
+              Los reportes DR-15 generados por este sistema son para uso informativo.
+              Siempre verifique los cálculos y consulte con un contador certificado antes de presentar
               reportes oficiales al Departamento de Ingresos de Florida.
             </p>
           </div>

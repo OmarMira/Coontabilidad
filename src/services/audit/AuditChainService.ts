@@ -36,13 +36,58 @@ export class AuditChainService {
      * @param event - Event data to record
      * @returns Chain hash of the new record
      */
+    /**
+     * Record an event in the audit chain
+     * 
+     * @param event - Event data to record
+     * @returns Chain hash of the new record
+     */
     public async recordEvent(event: AuditEvent): Promise<string> {
         return this.db.executeTransaction(async () => {
             // 1. Increment logic_clock
             const logicClock = await this.incrementLogicClock();
 
-            // 2. Prepare payload
-            const contentPayload = JSON.stringify(event.payload);
+            // 2. Prepare payload (Optimize storage with Delta if possible)
+            let finalPayload = event.payload;
+
+            // Intento de optimización Delta solo para UPDATES
+            if (event.eventType.toUpperCase().includes('UPDATE') || event.eventType.toUpperCase().includes('EDIT')) {
+                const previousRecord = await this.db.select(
+                    `SELECT content_payload FROM audit_chain 
+                     WHERE entity_table = ? AND entity_id = ? 
+                     ORDER BY logic_clock DESC LIMIT 1`,
+                    [event.entityTable, event.entityId]
+                );
+
+                if (previousRecord.length > 0) {
+                    try {
+                        const oldData = JSON.parse((previousRecord[0] as any).content_payload);
+                        // Import dinámico o función local para evitar dependencia circular estricta si fuera el caso,
+                        // pero aquí asumimos que AuditService es accesible o copiamos la lógica simple.
+                        // Para reducir riesgos en este archivo crítico, implementamos la lógica diff aquí mismo.
+
+                        const delta: any = {};
+                        let hasChanges = false;
+                        for (const key in event.payload) {
+                            if (JSON.stringify(oldData[key]) !== JSON.stringify(event.payload[key])) {
+                                delta[key] = event.payload[key];
+                                hasChanges = true;
+                            }
+                        }
+
+                        // Solo si detectamos cambios específicos guardamos el delta, 
+                        // de lo contrario guardamos todo por seguridad (o si es estructura diferente)
+                        if (hasChanges && Object.keys(delta).length < Object.keys(event.payload).length) {
+                            finalPayload = { _is_delta: true, ...delta };
+                        }
+
+                    } catch (e) {
+                        // Si falla el parseo o diff, guardamos payload original
+                    }
+                }
+            }
+
+            const contentPayload = JSON.stringify(finalPayload);
 
             // 3. Generate content hash (SHA-256 of payload + logic_clock)
             const contentHash = await this.sha256(`${contentPayload}|${logicClock}`);
