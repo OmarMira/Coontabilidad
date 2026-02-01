@@ -265,6 +265,109 @@ export class ViewManager {
         `,
                 description: 'Resumen de órdenes de compra (últimos 90 días)',
                 accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_quotes_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_quotes_summary AS
+          SELECT 
+              q.status,
+              COUNT(*) as quote_count,
+              SUM(q.total_amount) as total_value,
+              AVG(q.total_amount) as avg_value,
+              COUNT(CASE WHEN q.status = 'converted' THEN 1 END) as converted_count,
+              ROUND(CAST(COUNT(CASE WHEN q.status = 'converted' THEN 1 END) AS FLOAT) / COUNT(*) * 100, 2) as conversion_rate
+          FROM quotes q
+          WHERE q.created_at >= date('now', '-90 days')
+          GROUP BY q.status;
+        `,
+                description: 'Resumen de cotizaciones con tasa de conversión (últimos 90 días)',
+                accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_sales_funnel_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_sales_funnel_summary AS
+          SELECT 
+              'Quotes' as stage,
+              COUNT(*) as count,
+              SUM(total_amount) as value,
+              1 as stage_order
+          FROM quotes
+          WHERE created_at >= date('now', '-90 days')
+          UNION ALL
+          SELECT 
+              'Accepted Quotes' as stage,
+              COUNT(*) as count,
+              SUM(total_amount) as value,
+              2 as stage_order
+          FROM quotes
+          WHERE status = 'accepted' AND created_at >= date('now', '-90 days')
+          UNION ALL
+          SELECT 
+              'Converted to Invoices' as stage,
+              COUNT(*) as count,
+              SUM(total_amount) as value,
+              3 as stage_order
+          FROM quotes
+          WHERE status = 'converted' AND created_at >= date('now', '-90 days')
+          ORDER BY stage_order;
+        `,
+                description: 'Embudo de ventas desde cotizaciones hasta facturas',
+                accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_inventory_turnover',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_inventory_turnover AS
+          SELECT 
+              p.id as product_id,
+              p.name as product_name,
+              p.sku,
+              pc.name as category,
+              COALESCE(SUM(CASE WHEN im.type = 'sale' THEN im.quantity ELSE 0 END), 0) as units_sold,
+              COALESCE(SUM(CASE WHEN im.type = 'purchase' THEN im.quantity ELSE 0 END), 0) as units_purchased,
+              p.stock_quantity as current_stock,
+              CASE 
+                  WHEN p.stock_quantity > 0 THEN 
+                      ROUND(CAST(SUM(CASE WHEN im.type = 'sale' THEN im.quantity ELSE 0 END) AS FLOAT) / p.stock_quantity, 2)
+                  ELSE 0 
+              END as turnover_ratio,
+              CASE 
+                  WHEN SUM(CASE WHEN im.type = 'sale' THEN im.quantity ELSE 0 END) > 0 THEN
+                      ROUND(365.0 / (CAST(SUM(CASE WHEN im.type = 'sale' THEN im.quantity ELSE 0 END) AS FLOAT) / 
+                      NULLIF(p.stock_quantity, 0)), 1)
+                  ELSE 999
+              END as days_to_sell,
+              p.price * p.stock_quantity as inventory_value
+          FROM products p
+          LEFT JOIN product_categories pc ON p.category_id = pc.id
+          LEFT JOIN inventory_movements im ON p.id = im.product_id 
+              AND im.created_at >= date('now', '-365 days')
+          WHERE p.active = 1
+          GROUP BY p.id, p.name, p.sku, pc.name, p.stock_quantity, p.price
+          HAVING units_sold > 0 OR current_stock > 0
+          ORDER BY turnover_ratio DESC;
+        `,
+                description: 'Análisis de rotación de inventario con métricas ABC',
+                accessLevel: 'ai_readonly'
+            },
+            {
+                name: 'v_inventory_health_summary',
+                sql: `
+          CREATE VIEW IF NOT EXISTS v_inventory_health_summary AS
+          SELECT 
+              COUNT(*) as total_products,
+              SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock,
+              SUM(CASE WHEN stock_quantity > 0 AND stock_quantity <= reorder_level THEN 1 ELSE 0 END) as low_stock,
+              SUM(CASE WHEN stock_quantity > reorder_level * 3 THEN 1 ELSE 0 END) as overstock,
+              SUM(stock_quantity * price) as total_inventory_value,
+              AVG(stock_quantity) as avg_stock_level
+          FROM products
+          WHERE active = 1;
+        `,
+                description: 'Resumen de salud del inventario',
+                accessLevel: 'ai_readonly'
             }
         ];
     }

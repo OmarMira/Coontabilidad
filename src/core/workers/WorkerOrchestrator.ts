@@ -1,4 +1,4 @@
-export type WorkerType = 'ENCRYPTION' | 'DATABASE' | 'ACCOUNTING' | 'PDF_GENERATION' | 'CSV_PROCESSING' | 'REPORTS' | 'PAYROLL' | 'RECONCILIATION';
+export type WorkerType = 'ENCRYPTION' | 'DATABASE' | 'ACCOUNTING' | 'PDF_GENERATION' | 'CSV_PROCESSING' | 'REPORTS' | 'PAYROLL' | 'RECONCILIATION' | 'QUOTES_PROCESSING' | 'INVENTORY_ANALYSIS';
 
 export interface WorkerConfig {
     name?: string;
@@ -92,6 +92,20 @@ export class WorkerOrchestrator {
                 worker = new Worker(new URL('../../workers/reconciliation.worker.ts', import.meta.url), {
                     type: 'module',
                     name: `${workerId}-reconciliation`
+                });
+                break;
+
+            case 'QUOTES_PROCESSING':
+                worker = new Worker(new URL('../../workers/quotes.worker.ts', import.meta.url), {
+                    type: 'module',
+                    name: `${workerId}-quotes`
+                });
+                break;
+
+            case 'INVENTORY_ANALYSIS':
+                worker = new Worker(new URL('../../workers/inventory-analysis.worker.ts', import.meta.url), {
+                    type: 'module',
+                    name: `${workerId}-inventory-analysis`
                 });
                 break;
 

@@ -1348,6 +1348,45 @@ export interface Payment {
   created_at: string;
 }
 
+// ==========================================
+// QUOTES (COTIZACIONES) INTERFACES
+// ==========================================
+
+export interface Quote {
+  id: number;
+  quote_number: string;
+  customer_id: number;
+  customer?: Customer;
+  issue_date: string;
+  expiration_date: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
+  converted_to_invoice_id?: number;
+  notes?: string;
+  terms?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: number;
+  updated_by?: number;
+  items?: QuoteLine[];
+}
+
+export interface QuoteLine {
+  id: number;
+  quote_id: number;
+  product_id?: number;
+  product?: Product;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  discount_percentage?: number;
+  line_total: number;
+  taxable: boolean;
+  created_at: string;
+}
+
 export interface SupplierPayment {
   id: number;
   supplier_id: number;
@@ -1798,6 +1837,52 @@ const initializeSchema = async (db: any) => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(supplier_id) REFERENCES suppliers(id),
     FOREIGN KEY(bill_id) REFERENCES bills(id)
+  )
+  `);
+
+  // ==========================================
+  // TABLAS DE COTIZACIONES (QUOTES)
+  // ==========================================
+
+  // Tabla de cotizaciones (quotes)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS quotes(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quote_number TEXT UNIQUE NOT NULL,
+    customer_id INTEGER NOT NULL,
+    issue_date DATE DEFAULT CURRENT_DATE,
+    expiration_date DATE,
+    subtotal DECIMAL(12, 2) DEFAULT 0.00,
+    tax_amount DECIMAL(12, 2) DEFAULT 0.00,
+    total_amount DECIMAL(12, 2) DEFAULT 0.00,
+    status TEXT DEFAULT 'draft' CHECK(status IN('draft', 'sent', 'accepted', 'rejected', 'expired', 'converted')),
+    converted_to_invoice_id INTEGER,
+    notes TEXT,
+    terms TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    FOREIGN KEY(customer_id) REFERENCES customers(id),
+    FOREIGN KEY(converted_to_invoice_id) REFERENCES invoices(id)
+  )
+  `);
+
+  // Tabla de líneas de cotización (quote_lines)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS quote_lines(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quote_id INTEGER NOT NULL,
+    product_id INTEGER,
+    description TEXT NOT NULL,
+    quantity DECIMAL(10, 3) DEFAULT 1.000,
+    unit_price DECIMAL(10, 2) DEFAULT 0.00,
+    discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    line_total DECIMAL(12, 2) DEFAULT 0.00,
+    taxable BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(quote_id) REFERENCES quotes(id) ON DELETE CASCADE,
+    FOREIGN KEY(product_id) REFERENCES products(id)
   )
   `);
 
@@ -4394,6 +4479,475 @@ export const getStatsWithInvoices = () => {
     return { customers: 0, invoices: 0, revenue: 0 };
   }
 };
+
+// ==========================================
+// FUNCIONES CRUD PARA PROVEEDORES
+// ==========================================
+
+// ==========================================
+// FUNCIONES CRUD PARA COTIZACIONES (QUOTES)
+// ==========================================
+
+/**
+ * Obtiene todas las cotizaciones con filtros opcionales
+ */
+export const getQuotes = (filters?: { userId?: number; role?: string; status?: string }): Quote[] => {
+  if (!db) return [];
+
+  try {
+    let query = `
+      SELECT q.*, c.name as customer_name, c.florida_county
+      FROM quotes q
+      LEFT JOIN customers c ON q.customer_id = c.id
+      WHERE 1=1
+    `;
+
+    const params: any[] = [];
+
+    // Filtro por usuario y rol
+    if (filters?.userId && filters?.role !== 'admin' && filters?.role !== 'auditor') {
+      query += ' AND q.created_by = ?';
+      params.push(filters.userId);
+    }
+
+    // Filtro por estado
+    if (filters?.status) {
+      query += ' AND q.status = ?';
+      params.push(filters.status);
+    }
+
+    query += ' ORDER BY q.created_at DESC';
+
+    const result = db.exec(query, params);
+    if (!result[0]) return [];
+
+    return result[0].values.map((row: any) => rowToEntity<Quote>(result[0].columns, row));
+  } catch (error) {
+    console.error('Error getting quotes:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene una cotización por ID con sus líneas
+ */
+export const getQuoteById = (id: number): Quote | null => {
+  if (!db) return null;
+
+  try {
+    const quoteResult = db.exec(`
+      SELECT q.*, c.name as customer_name, c.florida_county
+      FROM quotes q
+      LEFT JOIN customers c ON q.customer_id = c.id
+      WHERE q.id = ?
+    `, [id]);
+
+    if (!quoteResult[0] || quoteResult[0].values.length === 0) return null;
+
+    const quote = rowToEntity<Quote>(quoteResult[0].columns, quoteResult[0].values[0]);
+
+    // Obtener líneas de cotización
+    const linesResult = db.exec(`
+      SELECT ql.*, p.name as product_name, p.sku
+      FROM quote_lines ql
+      LEFT JOIN products p ON ql.product_id = p.id
+      WHERE ql.quote_id = ?
+    `, [id]);
+
+    if (linesResult[0]) {
+      quote.items = linesResult[0].values.map((row: any) => 
+        rowToEntity<QuoteLine>(linesResult[0].columns, row)
+      );
+    }
+
+    return quote;
+  } catch (error) {
+    console.error('Error getting quote by ID:', error);
+    return null;
+  }
+};
+
+/**
+ * Crea una nueva cotización
+ */
+export const createQuote = (
+  quoteData: Partial<Quote>, 
+  items: Partial<QuoteLine>[], 
+  userId?: number
+): { success: boolean; message: string; quoteId?: number } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Validaciones
+    if (!quoteData.customer_id) {
+      return { success: false, message: 'Customer ID is required' };
+    }
+
+    if (!items || items.length === 0) {
+      return { success: false, message: 'At least one item is required' };
+    }
+
+    // Generar número de cotización
+    const quoteNumber = quoteData.quote_number || generateQuoteNumber();
+
+    // Obtener condado del cliente para cálculo de impuestos
+    const customer = getCustomerById(quoteData.customer_id);
+    const county = customer?.florida_county || 'Miami-Dade';
+
+    // Calcular totales
+    let subtotal = 0;
+    let taxAmount = 0;
+
+    items.forEach(item => {
+      const discount = (item.discount_percentage || 0) / 100;
+      const lineTotal = (item.quantity || 1) * (item.unit_price || 0) * (1 - discount);
+      subtotal += lineTotal;
+      if (item.taxable) {
+        taxAmount += lineTotal * getFloridaTaxRate(county);
+      }
+    });
+
+    const total = subtotal + taxAmount;
+
+    // Insertar cotización
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO quotes(
+        quote_number, customer_id, issue_date, expiration_date,
+        subtotal, tax_amount, total_amount, status, notes, terms,
+        created_by, updated_by
+      ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const issueDate = quoteData.issue_date || new Date().toISOString().split('T')[0];
+    const expirationDate = quoteData.expiration_date || 
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    stmt.run([
+      quoteNumber,
+      quoteData.customer_id,
+      issueDate,
+      expirationDate,
+      subtotal,
+      taxAmount,
+      total,
+      quoteData.status || 'draft',
+      quoteData.notes || '',
+      quoteData.terms || '',
+      userId || 1,
+      userId || 1
+    ]);
+
+    const quoteId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+    stmt.free();
+
+    // Insertar líneas de cotización
+    const itemStmt = db.prepare(`
+      INSERT INTO quote_lines(
+        quote_id, product_id, description, quantity, unit_price, 
+        discount_percentage, line_total, taxable
+      ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    items.forEach(item => {
+      const discount = (item.discount_percentage || 0) / 100;
+      const lineTotal = (item.quantity || 1) * (item.unit_price || 0) * (1 - discount);
+      itemStmt.run([
+        quoteId,
+        item.product_id || null,
+        item.description || '',
+        item.quantity || 1,
+        item.unit_price || 0,
+        item.discount_percentage || 0,
+        lineTotal,
+        item.taxable ? 1 : 0
+      ]);
+    });
+    itemStmt.free();
+
+    db.run('COMMIT');
+
+    // Registrar en auditoría
+    logAuditAction('quotes', quoteId, 'INSERT', null, {
+      quote_number: quoteNumber,
+      customer_id: quoteData.customer_id,
+      total_amount: total,
+      status: quoteData.status || 'draft'
+    }, userId);
+
+    return {
+      success: true,
+      message: `Cotización ${quoteNumber} creada exitosamente`,
+      quoteId
+    };
+
+  } catch (error) {
+    db?.run('ROLLBACK');
+    console.error('Error creating quote:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error creating quote'
+    };
+  }
+};
+
+/**
+ * Actualiza una cotización existente
+ */
+export const updateQuote = (
+  id: number, 
+  quoteData: Partial<Quote>, 
+  items?: Partial<QuoteLine>[], 
+  userId?: number
+): { success: boolean; message: string } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const currentQuote = getQuoteById(id);
+    if (!currentQuote) {
+      return { success: false, message: 'Quote not found' };
+    }
+
+    // No permitir editar cotizaciones convertidas
+    if (currentQuote.status === 'converted') {
+      return { success: false, message: 'Cannot edit converted quotes' };
+    }
+
+    db.run('BEGIN TRANSACTION');
+
+    // Actualizar cotización principal
+    const updateFields = [];
+    const updateValues = [];
+
+    if (quoteData.issue_date !== undefined) {
+      updateFields.push('issue_date = ?');
+      updateValues.push(quoteData.issue_date);
+    }
+
+    if (quoteData.expiration_date !== undefined) {
+      updateFields.push('expiration_date = ?');
+      updateValues.push(quoteData.expiration_date);
+    }
+
+    if (quoteData.status !== undefined) {
+      updateFields.push('status = ?');
+      updateValues.push(quoteData.status);
+    }
+
+    if (quoteData.notes !== undefined) {
+      updateFields.push('notes = ?');
+      updateValues.push(quoteData.notes);
+    }
+
+    if (quoteData.terms !== undefined) {
+      updateFields.push('terms = ?');
+      updateValues.push(quoteData.terms);
+    }
+
+    if (updateFields.length > 0) {
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      updateFields.push('updated_by = ?');
+      updateValues.push(userId || 1);
+      updateValues.push(id);
+
+      const updateQuery = `UPDATE quotes SET ${updateFields.join(', ')} WHERE id = ?`;
+      db.run(updateQuery, updateValues);
+    }
+
+    // Si se proporcionan items, actualizar líneas
+    if (items) {
+      // Eliminar líneas existentes
+      db.run('DELETE FROM quote_lines WHERE quote_id = ?', [id]);
+
+      // Recalcular totales
+      let subtotal = 0;
+      let taxAmount = 0;
+
+      const quote = getQuoteById(id);
+      const county = quote?.customer?.florida_county || 'Miami-Dade';
+      const taxRate = getFloridaTaxRate(county);
+
+      const itemStmt = db.prepare(`
+        INSERT INTO quote_lines(
+          quote_id, product_id, description, quantity, unit_price,
+          discount_percentage, line_total, taxable
+        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      items.forEach(item => {
+        const discount = (item.discount_percentage || 0) / 100;
+        const lineTotal = (item.quantity || 1) * (item.unit_price || 0) * (1 - discount);
+        subtotal += lineTotal;
+        if (item.taxable) {
+          taxAmount += lineTotal * taxRate;
+        }
+
+        itemStmt.run([
+          id,
+          item.product_id || null,
+          item.description || '',
+          item.quantity || 1,
+          item.unit_price || 0,
+          item.discount_percentage || 0,
+          lineTotal,
+          item.taxable ? 1 : 0
+        ]);
+      });
+      itemStmt.free();
+
+      const total = subtotal + taxAmount;
+
+      // Actualizar totales
+      db.run(`
+        UPDATE quotes 
+        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [subtotal, taxAmount, total, id]);
+    }
+
+    db.run('COMMIT');
+
+    // Registrar en auditoría
+    logAuditAction('quotes', id, 'UPDATE', currentQuote, quoteData, userId);
+
+    return { success: true, message: 'Cotización actualizada exitosamente' };
+
+  } catch (error) {
+    db?.run('ROLLBACK');
+    console.error('Error updating quote:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error updating quote'
+    };
+  }
+};
+
+/**
+ * Elimina una cotización
+ */
+export const deleteQuote = (id: number, userId?: number): { success: boolean; message: string } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const quote = getQuoteById(id);
+    if (!quote) {
+      return { success: false, message: 'Quote not found' };
+    }
+
+    // No permitir eliminar cotizaciones convertidas
+    if (quote.status === 'converted') {
+      return { success: false, message: 'Cannot delete converted quotes' };
+    }
+
+    db.run('BEGIN TRANSACTION');
+
+    // Eliminar líneas primero
+    db.run('DELETE FROM quote_lines WHERE quote_id = ?', [id]);
+
+    // Eliminar cotización
+    db.run('DELETE FROM quotes WHERE id = ?', [id]);
+
+    db.run('COMMIT');
+
+    // Registrar en auditoría
+    logAuditAction('quotes', id, 'DELETE', quote, null, userId);
+
+    return { success: true, message: 'Cotización eliminada exitosamente' };
+
+  } catch (error) {
+    db?.run('ROLLBACK');
+    console.error('Error deleting quote:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error deleting quote'
+    };
+  }
+};
+
+/**
+ * Convierte una cotización en factura
+ */
+export const convertQuoteToInvoice = (
+  quoteId: number, 
+  userId?: number
+): { success: boolean; message: string; invoiceId?: number } => {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    const quote = getQuoteById(quoteId);
+    if (!quote) {
+      return { success: false, message: 'Quote not found' };
+    }
+
+    if (quote.status === 'converted') {
+      return { success: false, message: 'Quote already converted' };
+    }
+
+    if (quote.status !== 'accepted') {
+      return { success: false, message: 'Only accepted quotes can be converted' };
+    }
+
+    // Crear factura desde cotización
+    const invoiceData: Partial<Invoice> = {
+      customer_id: quote.customer_id,
+      issue_date: new Date().toISOString().split('T')[0],
+      due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      status: 'draft',
+      notes: `Convertida desde cotización ${quote.quote_number}`
+    };
+
+    const invoiceItems: Partial<InvoiceItem>[] = (quote.items || []).map(item => ({
+      product_id: item.product_id,
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      taxable: item.taxable
+    }));
+
+    const result = createInvoice(invoiceData, invoiceItems, userId);
+
+    if (result.success && result.invoiceId) {
+      // Actualizar cotización como convertida
+      db.run(`
+        UPDATE quotes 
+        SET status = 'converted', converted_to_invoice_id = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [result.invoiceId, quoteId]);
+
+      return {
+        success: true,
+        message: `Cotización convertida a factura exitosamente`,
+        invoiceId: result.invoiceId
+      };
+    }
+
+    return result;
+
+  } catch (error) {
+    console.error('Error converting quote to invoice:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error converting quote'
+    };
+  }
+};
+
+/**
+ * Genera número de cotización automático
+ */
+function generateQuoteNumber(): string {
+  if (!db) return `QT-${Date.now()}`;
+
+  try {
+    const result = db.exec("SELECT COUNT(*) as count FROM quotes");
+    const count = result[0]?.values[0]?.[0] as number || 0;
+    const year = new Date().getFullYear();
+    return `QT-${year}-${String(count + 1).padStart(5, '0')}`;
+  } catch (error) {
+    return `QT-${Date.now()}`;
+  }
+}
 
 // ==========================================
 // FUNCIONES CRUD PARA PROVEEDORES

@@ -14,7 +14,8 @@ import {
   getCompanyData, updateCompanyData, CompanyData,
   getProducts, createProduct, updateProduct, deleteProduct, getProductById, ProductCategory,
   getProductCategories, createProductCategory, updateProductCategory, deleteProductCategory,
-  getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount, db
+  getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount, db,
+  getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
 } from './database/simple-db';
 
 import { UserRoleManager } from './components/system/UserRoleManager';
@@ -35,6 +36,8 @@ import { InventoryReports } from './components/inventory/InventoryReports';
 import { LocationsManager } from './components/inventory/LocationsManager';
 import { DR15PreparationWizard } from './components/dr15/DR15PreparationWizard';
 import { QuotesList, ReceivableReports } from './components/invoices/ARComponents';
+import { QuoteForm } from './components/quotes/QuoteForm';
+import { QuoteDetailView } from './components/quotes/QuoteDetailView';
 import { TaxCalendar, TaxReports } from './components/dr15/TaxComponents';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -139,6 +142,7 @@ interface AppState {
   products: Product[];
   productCategories: ProductCategory[];
   bankAccounts: BankAccount[];
+  quotes: Quote[];
   dbStats: {
     customers: number;
     invoices: number;
@@ -160,12 +164,15 @@ interface AppState {
   editingProduct: Product | null;
   viewingProduct: Product | null;
   editingProductCategory: ProductCategory | null;
+  editingQuote: Quote | null;
+  viewingQuote: Quote | null;
   showingBillForm: boolean;
   showingSupplierForm: boolean;
   showingCustomerForm: boolean;
   showingInvoiceForm: boolean;
   showingProductForm: boolean;
   showingProductCategoryForm: boolean;
+  showingQuoteForm: boolean;
   editingBankAccount: BankAccount | null;
   showingBankAccountForm: boolean;
   initializationStep: string;
@@ -188,6 +195,7 @@ function App() {
     products: [],
     productCategories: [],
     bankAccounts: [],
+    quotes: [],
     dbStats: { customers: 0, invoices: 0, revenue: 0, suppliers: 0, bills: 0, expenses: 0 },
     error: null,
     success: null,
@@ -202,12 +210,15 @@ function App() {
     editingProduct: null,
     viewingProduct: null,
     editingProductCategory: null,
+    editingQuote: null,
+    viewingQuote: null,
     showingBillForm: false,
     showingSupplierForm: false,
     showingCustomerForm: false,
     showingInvoiceForm: false,
     showingProductForm: false,
     showingProductCategoryForm: false,
+    showingQuoteForm: false,
     editingBankAccount: null,
     showingBankAccountForm: false,
     initializationStep: 'Iniciando...',
@@ -327,6 +338,7 @@ function App() {
       const productCategories = getProductCategories();
       const bankAccounts = getBankAccounts();
       const chartOfAccounts = getChartOfAccounts();
+      const quotes = getQuotes(filters);
       const stats = getStatsWithSuppliers(filters);
 
       setState(prev => ({
@@ -339,6 +351,7 @@ function App() {
         productCategories,
         bankAccounts,
         chartOfAccounts,
+        quotes,
         dbStats: stats
       }));
 
@@ -938,6 +951,101 @@ function App() {
   };
 
   // ==========================================
+  // FUNCIONES PARA COTIZACIONES (QUOTES)
+  // ==========================================
+
+  const handleCreateQuote = async (quoteData: Partial<Quote>, items: Partial<QuoteLine>[]) => {
+    try {
+      const result = createQuote(quoteData, items, user?.id);
+      if (result.success) {
+        await loadData();
+        setState(prev => ({ ...prev, showingQuoteForm: false }));
+        showSuccess(result.message);
+      } else {
+        showError(result.message);
+      }
+    } catch (error) {
+      console.error('Error creating quote:', error);
+      showError(`Error al crear la cotización: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  };
+
+  const handleViewQuote = (quote: Quote) => {
+    const fullQuote = getQuoteById(quote.id);
+    if (fullQuote) {
+      setState(prev => ({ ...prev, viewingQuote: fullQuote }));
+    }
+  };
+
+  const handleEditQuote = (quote: Quote) => {
+    const fullQuote = getQuoteById(quote.id);
+    if (fullQuote) {
+      setState(prev => ({ ...prev, editingQuote: fullQuote }));
+    }
+  };
+
+  const handleUpdateQuote = async (quoteData: Partial<Quote>, items?: Partial<QuoteLine>[]) => {
+    if (!state.editingQuote) return;
+
+    try {
+      const result = updateQuote(state.editingQuote.id, quoteData, items, user?.id);
+      if (result.success) {
+        await loadData();
+        setState(prev => ({ ...prev, editingQuote: null }));
+        showSuccess(result.message);
+      } else {
+        showError(result.message);
+      }
+    } catch (error) {
+      console.error('Error updating quote:', error);
+      showError('Error al actualizar la cotización');
+    }
+  };
+
+  const handleDeleteQuote = async (id: number) => {
+    try {
+      if (!window.confirm('¿Estás seguro de eliminar esta cotización?')) {
+        return;
+      }
+
+      const result = deleteQuote(id, user?.id);
+      if (result.success) {
+        await loadData();
+        showSuccess(result.message);
+      } else {
+        showError(result.message);
+      }
+    } catch (error) {
+      console.error('Error deleting quote:', error);
+      showError('Error al eliminar la cotización');
+    }
+  };
+
+  const handleConvertQuoteToInvoice = async (quoteId: number) => {
+    try {
+      const result = convertQuoteToInvoice(quoteId, user?.id);
+      if (result.success) {
+        await loadData();
+        setState(prev => ({ ...prev, viewingQuote: null }));
+        showSuccess(`${result.message}. Factura #${result.invoiceId} creada.`);
+      } else {
+        showError(result.message);
+      }
+    } catch (error) {
+      console.error('Error converting quote:', error);
+      showError('Error al convertir la cotización');
+    }
+  };
+
+  const handleCancelQuoteEdit = () => {
+    setState(prev => ({ ...prev, editingQuote: null, showingQuoteForm: false }));
+  };
+
+  const handleBackFromQuoteDetail = () => {
+    setState(prev => ({ ...prev, viewingQuote: null }));
+  };
+
+  // ==========================================
   // FUNCIONES PARA CUENTAS BANCARIAS
   // ==========================================
 
@@ -1115,6 +1223,22 @@ function App() {
     );
   }
 
+  // Vista de detalle de cotización
+  if (state.viewingQuote) {
+    return (
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
+        <div className="flex-1 overflow-auto">
+          <QuoteDetailView
+            quote={state.viewingQuote}
+            onClose={handleBackFromQuoteDetail}
+            onConvert={handleConvertQuoteToInvoice}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-slate-950 overflow-hidden">
@@ -1249,7 +1373,50 @@ function App() {
 
               {state.currentSection === 'ard-module' && <ARDModule />}
 
-              {state.currentSection === 'quotes' && <QuotesList />}
+              {state.currentSection === 'quotes' && (
+                <>
+                  {state.showingQuoteForm ? (
+                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                      <QuoteForm
+                        onSave={handleCreateQuote}
+                        onCancel={() => setState(prev => ({ ...prev, showingQuoteForm: false }))}
+                        customers={state.customers}
+                        products={state.products}
+                      />
+                    </div>
+                  ) : state.editingQuote ? (
+                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                      <QuoteForm
+                        quote={state.editingQuote}
+                        onSave={handleUpdateQuote}
+                        onCancel={handleCancelQuoteEdit}
+                        customers={state.customers}
+                        products={state.products}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-3xl font-bold text-white">Cotizaciones</h2>
+                        <button
+                          onClick={() => setState(prev => ({ ...prev, showingQuoteForm: true }))}
+                          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        >
+                          <Plus className="w-5 h-5" />
+                          Nueva Cotización
+                        </button>
+                      </div>
+                      <QuotesList
+                        quotes={state.quotes}
+                        onView={handleViewQuote}
+                        onEdit={handleEditQuote}
+                        onDelete={handleDeleteQuote}
+                        onConvert={handleConvertQuoteToInvoice}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
               {state.currentSection === 'receivable-reports' && <ReceivableReports />}
 
 
