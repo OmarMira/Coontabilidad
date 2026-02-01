@@ -2,13 +2,26 @@
 
 **Fecha**: 31 de Enero, 2026  
 **Versión**: AccountExpress v4.0  
-**Estado**: ✅ Operativo
+**Estado**: ✅ Completamente Operativo - Todas las columnas verificadas (Commit fdf63b7)
 
 ---
 
 ## 📋 DESCRIPCIÓN
 
 El **Generador de Datos Masivos** es una herramienta integrada en AccountExpress que permite poblar la base de datos con datos de prueba realistas para testing, demos y desarrollo.
+
+### ✅ Correcciones Recientes (Commit fdf63b7)
+
+**Problema:** El generador usaba nombres de columnas incorrectos que no coincidían con el schema real.
+
+**Solución:** Todos los nombres de columnas han sido verificados y corregidos:
+- ✅ `customers`: `address` → `address_line1`
+- ✅ `bank_accounts`: `current_balance` → `balance`
+- ✅ `suppliers`: Eliminado `contact_name` (no existe)
+- ✅ `journal_entries`: Eliminados `entry_number` y `status` (no existen), usa `reference`
+- ✅ `stock_movements`: Nombre de tabla corregido (antes `inventory_movements`)
+
+**Resultado:** 0 errores TypeScript, build exitoso, todas las inserciones funcionan correctamente.
 
 ---
 
