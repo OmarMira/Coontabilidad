@@ -500,7 +500,6 @@ export const InventoryReports: React.FC = () => {
                     description="Análisis de velocidad de movimiento (ABC) para identificar productos estrella y capital estancado."
                     icon={TrendingDown}
                     color="emerald"
-                    badge="Beta"
                     onClick={() => setSelectedReport('TURNOVER')}
                 />
             </div>
