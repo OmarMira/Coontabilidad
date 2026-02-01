@@ -2274,6 +2274,22 @@ END;
   )
   `);
 
+  // Tabla de Ubicaciones/Almacenes (Locations)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS locations(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    code TEXT UNIQUE NOT NULL,
+    address TEXT,
+    description TEXT,
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1
+  )
+  `);
+
   // Ãndices para optimizaciÃ³n
   db.run(`CREATE INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplier_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_po_status ON purchase_orders(status)`);
@@ -2821,6 +2837,15 @@ VALUES(?, ?, ?, ?, ?, 1)
   const taxCount = db.exec("SELECT COUNT(*) FROM florida_tax_rates")[0]?.values[0]?.[0] || 0;
   if (taxCount === 0) {
     await insertInitialTaxRates();
+  }
+
+  // Verificar si ya existen ubicaciones antes de insertar
+  const locationCount = db.exec("SELECT COUNT(*) FROM locations")[0]?.values[0]?.[0] || 0;
+  if (locationCount === 0) {
+    const locationResult = createInitialLocations();
+    if (locationResult.success) {
+      logger.info('Database', 'locations_seeded', locationResult.message);
+    }
   }
 
   logger.info('Database', 'initialization_complete', 'Esquema y datos iniciales verificados');
@@ -10265,3 +10290,354 @@ sm.*,
   }
 };
 
+
+// ==========================================
+// FUNCIONES CRUD PARA SISTEMA DE INVENTARIO
+// ==========================================
+
+/**
+ * Crear un nuevo movimiento de inventario
+ */
+export function createInventoryMovement(movementData: {
+  product_id: number;
+  quantity: number;
+  movement_type: 'purchase' | 'sale' | 'adjustment' | 'return' | 'initial';
+  reference_id?: number;
+  reference_type?: 'invoice' | 'purchase_order' | 'adjustment' | 'migration';
+  notes?: string;
+  created_by?: number;
+}): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO stock_movements(
+        product_id, quantity, movement_type, reference_id, reference_type, notes, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      movementData.product_id,
+      movementData.quantity,
+      movementData.movement_type,
+      movementData.reference_id || null,
+      movementData.reference_type || null,
+      movementData.notes || null,
+      movementData.created_by || 1
+    ]);
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const movementId = result[0]?.values[0]?.[0] as number;
+
+    // Actualizar stock del producto
+    if (movementData.movement_type === 'purchase' || movementData.movement_type === 'return') {
+      // Entrada de inventario
+      db.run('UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?', 
+        [movementData.quantity, movementData.product_id]);
+    } else if (movementData.movement_type === 'sale' || movementData.movement_type === 'adjustment') {
+      // Salida de inventario
+      db.run('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?', 
+        [Math.abs(movementData.quantity), movementData.product_id]);
+    }
+
+    stmt.free();
+    db.run('COMMIT');
+
+    logger.info('Inventory', 'movement_created', `Movimiento de inventario creado: ${movementId}`, { movementData });
+    return { success: true, message: 'Movimiento de inventario creado exitosamente', id: movementId };
+
+  } catch (error: any) {
+    db?.run('ROLLBACK');
+    logger.error('Inventory', 'movement_create_failed', 'Error al crear movimiento de inventario', { error: error.message });
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Obtener movimientos de inventario con filtros
+ */
+export function getInventoryMovementsWithFilters(filters: {
+  productId?: number;
+  movementType?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+} = {}): any[] {
+  if (!db) return [];
+
+  try {
+    let query = `
+      SELECT 
+        sm.*,
+        p.name as product_name,
+        p.sku as product_sku,
+        u.display_name as created_by_name
+      FROM stock_movements sm
+      JOIN products p ON sm.product_id = p.id
+      LEFT JOIN users u ON sm.created_by = u.id
+      WHERE 1=1
+    `;
+
+    const params: any[] = [];
+
+    if (filters.productId) {
+      query += ' AND sm.product_id = ?';
+      params.push(filters.productId);
+    }
+
+    if (filters.movementType) {
+      query += ' AND sm.movement_type = ?';
+      params.push(filters.movementType);
+    }
+
+    if (filters.startDate) {
+      query += ' AND date(sm.created_at) >= date(?)';
+      params.push(filters.startDate);
+    }
+
+    if (filters.endDate) {
+      query += ' AND date(sm.created_at) <= date(?)';
+      params.push(filters.endDate);
+    }
+
+    query += ' ORDER BY sm.created_at DESC';
+
+    if (filters.limit) {
+      query += ' LIMIT ?';
+      params.push(filters.limit);
+    }
+
+    const res = db.exec(query, params);
+    if (res.length === 0) return [];
+
+    return res[0].values.map((row: any) => rowToEntity<any>(res[0].columns, row));
+  } catch (error) {
+    logger.error('Inventory', 'get_movements_failed', 'Error al obtener movimientos de inventario', { error });
+    return [];
+  }
+}
+
+/**
+ * Crear una nueva ubicación/almacén
+ */
+export function createLocation(locationData: {
+  name: string;
+  code: string;
+  address?: string;
+  description?: string;
+  is_active?: boolean;
+  created_by?: number;
+}): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Verificar que el código no exista
+    const existingLocation = db.exec('SELECT id FROM locations WHERE code = ?', [locationData.code]);
+    if (existingLocation[0] && existingLocation[0].values.length > 0) {
+      return { success: false, message: `El código de ubicación ${locationData.code} ya existe` };
+    }
+
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO locations(name, code, address, description, is_active, created_by, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run([
+      locationData.name,
+      locationData.code,
+      locationData.address || null,
+      locationData.description || null,
+      locationData.is_active !== false ? 1 : 0,
+      locationData.created_by || 1,
+      locationData.created_by || 1
+    ]);
+
+    const result = db.exec('SELECT last_insert_rowid() as id');
+    const locationId = result[0]?.values[0]?.[0] as number;
+
+    stmt.free();
+    db.run('COMMIT');
+
+    logger.info('Inventory', 'location_created', `Ubicación creada: ${locationId}`, { locationData });
+    return { success: true, message: 'Ubicación creada exitosamente', id: locationId };
+
+  } catch (error: any) {
+    db?.run('ROLLBACK');
+    logger.error('Inventory', 'location_create_failed', 'Error al crear ubicación', { error: error.message });
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Obtener todas las ubicaciones
+ */
+export function getLocations(activeOnly: boolean = true): any[] {
+  if (!db) return [];
+
+  try {
+    let query = 'SELECT * FROM locations';
+    const params: any[] = [];
+
+    if (activeOnly) {
+      query += ' WHERE is_active = 1';
+    }
+
+    query += ' ORDER BY name ASC';
+
+    const res = db.exec(query, params);
+    if (res.length === 0) return [];
+
+    return res[0].values.map((row: any) => rowToEntity<any>(res[0].columns, row));
+  } catch (error) {
+    logger.error('Inventory', 'get_locations_failed', 'Error al obtener ubicaciones', { error });
+    return [];
+  }
+}
+
+/**
+ * Actualizar una ubicación
+ */
+export function updateLocation(id: number, locationData: {
+  name?: string;
+  code?: string;
+  address?: string;
+  description?: string;
+  is_active?: boolean;
+  updated_by?: number;
+}): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Verificar que la ubicación existe
+    const existingLocation = db.exec('SELECT id FROM locations WHERE id = ?', [id]);
+    if (!existingLocation[0] || existingLocation[0].values.length === 0) {
+      return { success: false, message: 'Ubicación no encontrada' };
+    }
+
+    // Si se está cambiando el código, verificar que no exista
+    if (locationData.code) {
+      const codeExists = db.exec('SELECT id FROM locations WHERE code = ? AND id != ?', [locationData.code, id]);
+      if (codeExists[0] && codeExists[0].values.length > 0) {
+        return { success: false, message: `El código ${locationData.code} ya está en uso` };
+      }
+    }
+
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (locationData.name !== undefined) {
+      updates.push('name = ?');
+      params.push(locationData.name);
+    }
+
+    if (locationData.code !== undefined) {
+      updates.push('code = ?');
+      params.push(locationData.code);
+    }
+
+    if (locationData.address !== undefined) {
+      updates.push('address = ?');
+      params.push(locationData.address);
+    }
+
+    if (locationData.description !== undefined) {
+      updates.push('description = ?');
+      params.push(locationData.description);
+    }
+
+    if (locationData.is_active !== undefined) {
+      updates.push('is_active = ?');
+      params.push(locationData.is_active ? 1 : 0);
+    }
+
+    updates.push('updated_by = ?', 'updated_at = CURRENT_TIMESTAMP');
+    params.push(locationData.updated_by || 1);
+
+    params.push(id);
+
+    db.run(`UPDATE locations SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    logger.info('Inventory', 'location_updated', `Ubicación actualizada: ${id}`, { locationData });
+    return { success: true, message: 'Ubicación actualizada exitosamente' };
+
+  } catch (error: any) {
+    logger.error('Inventory', 'location_update_failed', 'Error al actualizar ubicación', { error: error.message });
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Eliminar una ubicación
+ */
+export function deleteLocation(id: number, userId: number = 1): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Verificar que la ubicación existe
+    const existingLocation = db.exec('SELECT id, name FROM locations WHERE id = ?', [id]);
+    if (!existingLocation[0] || existingLocation[0].values.length === 0) {
+      return { success: false, message: 'Ubicación no encontrada' };
+    }
+
+    const locationName = existingLocation[0].values[0][1] as string;
+
+    // En lugar de eliminar físicamente, marcar como inactiva
+    db.run('UPDATE locations SET is_active = 0, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [userId, id]);
+
+    logger.info('Inventory', 'location_deleted', `Ubicación desactivada: ${id} - ${locationName}`, { userId });
+    return { success: true, message: `Ubicación "${locationName}" desactivada exitosamente` };
+
+  } catch (error: any) {
+    logger.error('Inventory', 'location_delete_failed', 'Error al eliminar ubicación', { error: error.message });
+    return { success: false, message: error.message };
+  }
+}
+
+/**
+ * Crear datos iniciales de ubicaciones
+ */
+export function createInitialLocations(): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+
+  try {
+    // Verificar si ya existen ubicaciones
+    const existingLocations = db.exec('SELECT COUNT(*) as count FROM locations');
+    const locationCount = existingLocations[0]?.values[0]?.[0] as number || 0;
+
+    if (locationCount > 0) {
+      return { success: true, message: 'Las ubicaciones ya existen' };
+    }
+
+    const initialLocations = [
+      { name: 'Almacén Principal', code: 'ALM-001', address: 'Bodega Central', description: 'Almacén principal de la empresa' },
+      { name: 'Tienda', code: 'TDA-001', address: 'Local comercial', description: 'Área de ventas al público' },
+      { name: 'Oficina', code: 'OFC-001', address: 'Área administrativa', description: 'Suministros de oficina' }
+    ];
+
+    db.run('BEGIN TRANSACTION');
+
+    const stmt = db.prepare(`
+      INSERT INTO locations(name, code, address, description, is_active, created_by, updated_by)
+      VALUES (?, ?, ?, ?, 1, 1, 1)
+    `);
+
+    initialLocations.forEach(location => {
+      stmt.run([location.name, location.code, location.address, location.description]);
+    });
+
+    stmt.free();
+    db.run('COMMIT');
+
+    logger.info('Inventory', 'initial_locations_created', `Ubicaciones iniciales creadas: ${initialLocations.length}`);
+    return { success: true, message: `${initialLocations.length} ubicaciones iniciales creadas exitosamente` };
+
+  } catch (error: any) {
+    db?.run('ROLLBACK');
+    logger.error('Inventory', 'initial_locations_failed', 'Error al crear ubicaciones iniciales', { error: error.message });
+    return { success: false, message: error.message };
+  }
+}
