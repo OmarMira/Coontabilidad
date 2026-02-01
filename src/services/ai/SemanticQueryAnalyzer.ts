@@ -1,5 +1,21 @@
 
-import { pipeline } from '@xenova/transformers';
+// Lazy import with error handling
+let pipelineModule: any = null;
+let pipelineLoadError: Error | null = null;
+
+async function loadPipeline() {
+    if (pipelineModule) return pipelineModule;
+    if (pipelineLoadError) throw pipelineLoadError;
+    
+    try {
+        const module = await import('@xenova/transformers');
+        pipelineModule = module.pipeline;
+        return pipelineModule;
+    } catch (error) {
+        pipelineLoadError = error as Error;
+        throw error;
+    }
+}
 
 export interface SemanticMatch {
     key: string;
@@ -19,6 +35,7 @@ export class SemanticQueryAnalyzer {
     private embedder: any = null;
     private isInitializing: boolean = false;
     private modelLoaded: boolean = false;
+    private initializationFailed: boolean = false;
 
     private readonly INTENT_EMBEDDINGS: Record<string, number[][]> = {};
     private readonly ENTITY_EMBEDDINGS: Record<string, number[][]> = {};
@@ -59,27 +76,45 @@ export class SemanticQueryAnalyzer {
     static async getInstance(): Promise<SemanticQueryAnalyzer> {
         if (!this.instance) {
             this.instance = new SemanticQueryAnalyzer();
-            await this.instance.initialize();
+            // Don't await - let it initialize in background
+            this.instance.initialize().catch(() => {
+                // Silently fail - will use fallback mode
+            });
         }
         return this.instance;
     }
 
     async initialize() {
-        if (this.modelLoaded || this.isInitializing) return;
+        if (this.modelLoaded || this.isInitializing || this.initializationFailed) return;
         this.isInitializing = true;
         try {
-            this.embedder = await pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2', {
+            // Try to load the pipeline function first
+            const pipeline = await loadPipeline();
+            
+            // Try to load the model with timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Model loading timeout')), 10000)
+            );
+            
+            const modelPromise = pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2', {
                 quantized: true
             });
+            
+            this.embedder = await Promise.race([modelPromise, timeoutPromise]);
             this.modelLoaded = true;
+            
             for (const [key, seeds] of Object.entries(this.INTENT_SEEDS)) {
                 this.INTENT_EMBEDDINGS[key] = await Promise.all(seeds.map(s => this.getEmbedding(s)));
             }
             for (const [key, seeds] of Object.entries(this.ENTITY_SEEDS)) {
                 this.ENTITY_EMBEDDINGS[key] = await Promise.all(seeds.map(s => this.getEmbedding(s)));
             }
+            console.log('✅ AI model loaded successfully');
         } catch (error) {
+            console.warn('⚠️ AI model loading failed, using keyword-based fallback mode');
             this.modelLoaded = false;
+            this.embedder = null;
+            this.initializationFailed = true;
         } finally {
             this.isInitializing = false;
         }
