@@ -122,6 +122,48 @@ export const InventoryReports: React.FC = () => {
                         { sku: 'CHEM-99', name: 'Alcohol Isopropílico', batch_number: 'LOT-XP-14', expiry_date: '2024-01-20', quantity: 55, days_left: 21 },
                     ]);
                 }
+            } else if (selectedReport === 'TURNOVER') {
+                // Análisis ABC de rotación de inventario
+                const result = db?.exec(`
+                    SELECT 
+                        p.id,
+                        p.sku,
+                        p.name,
+                        p.stock_quantity,
+                        p.cost,
+                        p.price,
+                        COALESCE(SUM(CASE WHEN sm.movement_type = 'sale' THEN ABS(sm.quantity) ELSE 0 END), 0) as total_sold,
+                        COALESCE(COUNT(CASE WHEN sm.movement_type = 'sale' THEN 1 END), 0) as sale_count
+                    FROM products p
+                    LEFT JOIN stock_movements sm ON p.id = sm.product_id
+                    WHERE p.active = 1
+                    GROUP BY p.id
+                    ORDER BY total_sold DESC
+                `);
+
+                if (result && result[0]) {
+                    const columns = result[0].columns;
+                    const items = result[0].values.map((row: any[]) => {
+                        const obj: any = {};
+                        columns.forEach((col: string, i: number) => obj[col] = row[i]);
+                        
+                        // Calcular clasificación ABC
+                        const totalSold = obj.total_sold || 0;
+                        if (totalSold > 50) obj.classification = 'A';
+                        else if (totalSold > 20) obj.classification = 'B';
+                        else obj.classification = 'C';
+                        
+                        // Calcular tasa de rotación (ventas / stock)
+                        obj.turnover_rate = obj.stock_quantity > 0 
+                            ? (totalSold / obj.stock_quantity).toFixed(2)
+                            : '0.00';
+                        
+                        return obj;
+                    });
+                    setData(items);
+                } else {
+                    setData([]);
+                }
             }
         } catch (e) {
             console.error(e);
@@ -276,6 +318,83 @@ export const InventoryReports: React.FC = () => {
         );
     }
 
+    if (selectedReport === 'TURNOVER') {
+        const classA = data.filter(item => item.classification === 'A');
+        const classB = data.filter(item => item.classification === 'B');
+        const classC = data.filter(item => item.classification === 'C');
+        
+        return (
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                <div className="flex items-center justify-between no-print">
+                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver
+                    </Button>
+                    <Button onClick={handlePrint} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
+                        <Printer className="w-4 h-4 mr-2" /> Imprimir Análisis
+                    </Button>
+                </div>
+
+                <PrintHeader title="Análisis de Rotación de Inventario (ABC)" subtitle="Clasificación de productos por velocidad de movimiento y valor estratégico" />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 no-print">
+                    <StatCard title="Clase A (Estrella)" value={classA.length} icon={TrendingUp} color="emerald" />
+                    <StatCard title="Clase B (Medio)" value={classB.length} icon={TrendingDown} color="blue" />
+                    <StatCard title="Clase C (Lento)" value={classC.length} icon={AlertTriangle} color="rose" />
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
+                            <tr>
+                                <th className="px-6 py-5">SKU / Producto</th>
+                                <th className="px-6 py-5 text-right">Stock</th>
+                                <th className="px-6 py-5 text-right">Vendido</th>
+                                <th className="px-6 py-5 text-right">Tasa Rotación</th>
+                                <th className="px-6 py-5 text-center">Clasificación</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/50">
+                            {data.map((item) => (
+                                <tr key={item.id} className="hover:bg-slate-800/30 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-mono font-black text-emerald-500 uppercase tracking-tighter mb-1">{item.sku}</span>
+                                            <span className="text-white font-bold">{item.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right font-mono text-slate-300">{item.stock_quantity}</td>
+                                    <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold">{item.total_sold}</td>
+                                    <td className="px-6 py-4 text-right font-mono text-white font-black">{item.turnover_rate}x</td>
+                                    <td className="px-6 py-4 text-center">
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${
+                                            item.classification === 'A' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                                            item.classification === 'B' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                            'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                        }`}>
+                                            Clase {item.classification}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 no-print">
+                    <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+                        <FileBarChart className="w-5 h-5 text-emerald-400" />
+                        Interpretación del Análisis ABC
+                    </h3>
+                    <div className="space-y-2 text-sm text-slate-400">
+                        <p><span className="text-emerald-400 font-bold">Clase A:</span> Productos estrella con alta rotación (&gt;50 ventas). Requieren reposición frecuente.</p>
+                        <p><span className="text-blue-400 font-bold">Clase B:</span> Productos de rotación media (20-50 ventas). Monitoreo regular.</p>
+                        <p><span className="text-rose-400 font-bold">Clase C:</span> Productos de baja rotación (&lt;20 ventas). Evaluar descontinuación o promoción.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (selectedReport === 'EXPIRING') {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
@@ -382,7 +501,7 @@ export const InventoryReports: React.FC = () => {
                     icon={TrendingDown}
                     color="emerald"
                     badge="Beta"
-                    onClick={() => { }}
+                    onClick={() => setSelectedReport('TURNOVER')}
                 />
             </div>
         </div>
