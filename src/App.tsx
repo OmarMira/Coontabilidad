@@ -1,6 +1,5 @@
 // App.tsx
-import React, { useState, useEffect } from 'react';
-import { ForensicDemoPage } from './pages/forensic/ForensicDemoPage';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Plus, TrendingUp, FileText, Shield } from 'lucide-react';
 import {
   initDB, addCustomer, getCustomers, updateCustomer, deleteCustomer, canDeleteCustomer, getStatsWithSuppliers, isDatabaseReady, Customer,
@@ -18,6 +17,43 @@ import {
   getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
 } from './database/simple-db';
 
+// Core components (always loaded)
+import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
+import { LoadingSpinner } from './components/LoadingSpinner';
+import { Dashboard } from './components/Dashboard';
+import { Toaster } from 'react-hot-toast';
+import { CheckCircle, XCircle, Brain } from 'lucide-react';
+import { logger } from './core/logging/SystemLogger';
+import { useAuth } from './contexts/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { offlineManager } from './utils/offline-manager';
+
+// Lazy loaded components (heavy modules)
+const ARDModule = lazy(() => import('./components/ard/ARDModule').then(m => ({ default: m.ARDModule })));
+const ReportsDashboard = lazy(() => import('./components/reports/ReportsDashboard').then(m => ({ default: m.ReportsDashboard })));
+const PayrollProcessor = lazy(() => import('./components/payroll/PayrollProcessor').then(m => ({ default: m.PayrollProcessor })));
+const PayrollEntryList = lazy(() => import('./components/payroll/PayrollEntryList').then(m => ({ default: m.PayrollEntryList })));
+const PayrollReports = lazy(() => import('./components/payroll/PayrollReports').then(m => ({ default: m.PayrollReports })));
+const PayrollSettings = lazy(() => import('./components/payroll/PayrollSettings').then(m => ({ default: m.PayrollSettings })));
+const EmployeeManager = lazy(() => import('./components/payroll/EmployeeManager').then(m => ({ default: m.EmployeeManager })));
+const BankReconciliation = lazy(() => import('./components/banking/BankReconciliation').then(m => ({ default: m.BankReconciliation })));
+const DiscrepancyAnalysis = lazy(() => import('./components/banking/DiscrepancyAnalysis').then(m => ({ default: m.DiscrepancyAnalysis })));
+const DR15PreparationWizard = lazy(() => import('./components/dr15/DR15PreparationWizard').then(m => ({ default: m.DR15PreparationWizard })));
+const InventoryReports = lazy(() => import('./components/inventory/InventoryReports').then(m => ({ default: m.InventoryReports })));
+const InventoryMovements = lazy(() => import('./components/inventory/InventoryMovements').then(m => ({ default: m.InventoryMovements })));
+const InventoryAdjustments = lazy(() => import('./components/inventory/InventoryAdjustments').then(m => ({ default: m.InventoryAdjustments })));
+const InventoryDashboard = lazy(() => import('./components/inventory/InventoryDashboard').then(m => ({ default: m.InventoryDashboard })));
+const InventoryKardexViewer = lazy(() => import('./components/inventory/InventoryKardexViewer').then(m => ({ default: m.InventoryKardexViewer })));
+const LocationsManager = lazy(() => import('./components/inventory/LocationsManager').then(m => ({ default: m.LocationsManager })));
+const CashFlowStatement = lazy(() => import('./components/reports/CashFlowStatement').then(m => ({ default: m.CashFlowStatement })));
+const AgingReport = lazy(() => import('./components/reports/AgingReport').then(m => ({ default: m.AgingReport })));
+const AccountLedger = lazy(() => import('./components/reports/AccountLedger').then(m => ({ default: m.AccountLedger })));
+const ForensicDemoPage = lazy(() => import('./pages/forensic/ForensicDemoPage').then(m => ({ default: m.ForensicDemoPage })));
+const UnifiedAssistant = lazy(() => import('./components/ai/UnifiedAssistant').then(m => ({ default: m.UnifiedAssistant })));
+const DataGeneratorPanel = lazy(() => import('./components/system/DataGeneratorPanel').then(m => ({ default: m.DataGeneratorPanel })));
+
+// Regular imports (lighter components)
 import { UserRoleManager } from './components/system/UserRoleManager';
 import { CompanyInfoForm } from './components/system/CompanyInfoForm';
 import { FiscalSettingsForm } from './components/system/FiscalSettingsForm';
@@ -25,33 +61,18 @@ import { SecuritySettings } from './components/system/SecuritySettings';
 import { SuppliersList } from './components/purchasing/SuppliersList';
 import { PurchaseOrdersList } from './components/purchasing/PurchaseOrdersList';
 import { PurchaseOrderForm } from './components/purchasing/PurchaseOrderForm';
-
 import { PayableReports } from './components/purchasing/PayableReports';
 import { JournalEntryForm } from './components/accounting/JournalEntryForm';
 import { TrialBalanceReport } from './components/accounting/TrialBalanceReport';
 import { FinancialStatements } from './components/accounting/FinancialStatements';
-import { InventoryMovements } from './components/inventory/InventoryMovements';
-import { InventoryAdjustments } from './components/inventory/InventoryAdjustments';
-import { InventoryReports } from './components/inventory/InventoryReports';
-import { LocationsManager } from './components/inventory/LocationsManager';
-import { DR15PreparationWizard } from './components/dr15/DR15PreparationWizard';
 import { QuotesList, ReceivableReports } from './components/invoices/ARComponents';
 import { QuoteForm } from './components/quotes/QuoteForm';
 import { QuoteDetailView } from './components/quotes/QuoteDetailView';
 import { TaxCalendar, TaxReports } from './components/dr15/TaxComponents';
-import { DataGeneratorPanel } from './components/system/DataGeneratorPanel';
-import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
-import { LoadingSpinner } from './components/LoadingSpinner';
-import { CustomerFormAdvanced } from './components/CustomerFormAdvanced';
-import { CustomerDetailView } from './components/CustomerDetailView';
-import { CustomerList } from './components/CustomerList';
-import { Dashboard } from './components/Dashboard';
 import { BackupPanel } from './components/BackupPanel';
 import { LiveVerification } from './pages/LiveVerification';
 import { InvoiceForm } from './components/InvoiceForm';
 import { InvoiceList } from './components/InvoiceList';
-import { Toaster } from 'react-hot-toast';
 import { InvoiceDetailView } from './components/InvoiceDetailView';
 import { SupplierForm } from './components/SupplierForm';
 import { SupplierList } from './components/SupplierList';
@@ -59,15 +80,11 @@ import { SupplierDetailView } from './components/SupplierDetailView';
 import { BillForm } from './components/BillForm';
 import { BillList } from './components/BillList';
 import { BillDetailView } from './components/BillDetailView';
-import { CheckCircle, XCircle, Brain } from 'lucide-react';
-import { logger } from './core/logging/SystemLogger';
 import { SystemLogs } from './components/SystemLogs';
 import { ChartOfAccounts } from './components/ChartOfAccounts';
 import { AccountingDiagnosis } from './components/AccountingDiagnosis';
 import { JournalEntryTest } from './components/JournalEntryTest';
 import { BankingModule } from './components/banking/BankingModule';
-import { BankReconciliation } from './components/banking/BankReconciliation';
-import { DiscrepancyAnalysis } from './components/banking/DiscrepancyAnalysis';
 import { CustomerPayments } from './components/CustomerPayments';
 import { SupplierPayments } from './components/SupplierPayments';
 import { ProductForm } from './components/ProductForm';
@@ -79,7 +96,6 @@ import { CompanyDataForm } from './components/CompanyDataForm';
 import { PaymentMethods } from './components/PaymentMethods';
 import { BackupRestore } from './components/BackupRestore';
 import { TransactionAudit } from './components/TransactionAudit';
-// ... existing imports ...
 import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
 import { SalesInvoiceForm } from './components/SalesInvoiceForm';
@@ -88,7 +104,6 @@ import { ManualJournalEntries } from './components/ManualJournalEntries';
 import { GeneralLedger } from './components/GeneralLedger';
 import { IncomeStatement } from './components/accounting/IncomeStatement';
 import { ModulePlaceholder } from './components/ModulePlaceholder';
-import { UnifiedAssistant } from './components/ai/UnifiedAssistant';
 import { TaxRates } from './components/TaxRates';
 import { DiagnosticPanel } from './debug/DiagnosticPanel';
 import { BalanceSheet } from './components/BalanceSheet';
@@ -98,33 +113,21 @@ import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
 import { NotificationService } from './services/NotificationService';
-import { useAuth } from './contexts/AuthContext';
-import ProtectedRoute from './components/auth/ProtectedRoute';
 import { UserList } from './components/auth/UserList';
 import { RoleManager } from './components/auth/RoleManager';
 import { AuditTrailTable } from './components/audit/AuditTrailTable';
-import { offlineManager } from './utils/offline-manager';
-
-import { InventoryKardexViewer } from './components/inventory/InventoryKardexViewer';
-import { InventoryDashboard } from './components/inventory/InventoryDashboard';
-
-// --- NEW ELITE REPORTS FASE 3 ---
-import { ReportsDashboard } from './components/reports/ReportsDashboard';
-import { CashFlowStatement } from './components/reports/CashFlowStatement';
-import { AgingReport } from './components/reports/AgingReport';
-import { AccountLedger } from './components/reports/AccountLedger';
-
-// --- NEW ARD MODULE FASE 1 ---
-import { ARDModule } from './components/ard/ARDModule';
+import { CustomerFormAdvanced } from './components/CustomerFormAdvanced';
+import { CustomerDetailView } from './components/CustomerDetailView';
+import { CustomerList } from './components/CustomerList';
 
 // --- CIERRE CONTABLE FASE 3 ---
 import { PeriodManager } from './components/accounting/PeriodManager';
 import { LedgerHub } from './components/accounting/LedgerHub';
 
-// --- PAYROLL MODULE ---
-import { EmployeeManager } from './components/payroll/EmployeeManager';
-import { PayrollProcessor } from './components/payroll/PayrollProcessor';
-import { PayrollReports } from './components/payroll/PayrollReports';
+// --- PAYROLL MODULE (Lazy loaded above) ---
+// import { EmployeeManager } from './components/payroll/EmployeeManager';
+// import { PayrollProcessor } from './components/payroll/PayrollProcessor';
+// import { PayrollReports } from './components/payroll/PayrollReports';
 
 // --- FIXED ASSETS MODULE ---
 import { FixedAssetsManager } from './components/assets/FixedAssetsManager';
@@ -1372,7 +1375,11 @@ function App() {
                 />
               )}
 
-              {state.currentSection === 'ard-module' && <ARDModule />}
+              {state.currentSection === 'ard-module' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ARDModule />
+                </Suspense>
+              )}
 
               {state.currentSection === 'quotes' && (
                 <>
@@ -1513,9 +1520,21 @@ function App() {
               {state.currentSection === 'payable-reports' && <PayableReports />}
 
               {/* --- PAYROLL --- */}
-              {state.currentSection === 'employee-mgr' && <EmployeeManager />}
-              {state.currentSection === 'payroll-process' && <PayrollProcessor />}
-              {state.currentSection === 'payroll-reports' && <PayrollReports />}
+              {state.currentSection === 'employee-mgr' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <EmployeeManager />
+                </Suspense>
+              )}
+              {state.currentSection === 'payroll-process' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PayrollProcessor />
+                </Suspense>
+              )}
+              {state.currentSection === 'payroll-reports' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PayrollReports />
+                </Suspense>
+              )}
 
               {/* --- FIXED ASSETS --- */}
               {state.currentSection === 'fixed-assets' && <FixedAssetsManager />}
@@ -1545,14 +1564,30 @@ function App() {
 
               {/* --- NEW ELITE REPORTS FASE 3 --- */}
               {state.currentSection === 'reports-dashboard' && (
-                <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+                </Suspense>
               )}
               {state.currentSection === 'financial-reports' && (
-                <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+                </Suspense>
               )}
-              {state.currentSection === 'cash-flow' && <CashFlowStatement />}
-              {state.currentSection === 'aging-report' && <AgingReport />}
-              {state.currentSection === 'account-ledger' && <AccountLedger />}
+              {state.currentSection === 'cash-flow' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <CashFlowStatement />
+                </Suspense>
+              )}
+              {state.currentSection === 'aging-report' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <AgingReport />
+                </Suspense>
+              )}
+              {state.currentSection === 'account-ledger' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <AccountLedger />
+                </Suspense>
+              )}
 
 
               {/* --- INVENTARIO --- */}
@@ -1642,10 +1677,26 @@ function App() {
                 </>
               )}
 
-              {state.currentSection === 'inventory-movements' && <InventoryMovements />}
-              {state.currentSection === 'inventory-adjustments' && <InventoryAdjustments />}
-              {state.currentSection === 'inventory-reports' && <InventoryReports />}
-              {state.currentSection === 'locations' && <LocationsManager />}
+              {state.currentSection === 'inventory-movements' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <InventoryMovements />
+                </Suspense>
+              )}
+              {state.currentSection === 'inventory-adjustments' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <InventoryAdjustments />
+                </Suspense>
+              )}
+              {state.currentSection === 'inventory-reports' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <InventoryReports />
+                </Suspense>
+              )}
+              {state.currentSection === 'locations' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <LocationsManager />
+                </Suspense>
+              )}
 
 
               {/* --- ARCHIVO / CONFIG / HERRAMIENTAS --- */}
@@ -1659,15 +1710,21 @@ function App() {
               {state.currentSection === 'payment-methods' && <PaymentMethods />}
 
               {/* --- INVENTORY KARDEX MODULE --- */}
-              {state.currentSection === 'inventory-kardex' && <InventoryKardexViewer initialFilters={state.kardexParams} />}
+              {state.currentSection === 'inventory-kardex' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <InventoryKardexViewer initialFilters={state.kardexParams} />
+                </Suspense>
+              )}
               {state.currentSection === 'inventory-dashboard' && (
-                <InventoryDashboard
-                  OnNavigateToKardex={(filters) => setState(prev => ({
-                    ...prev,
-                    currentSection: 'inventory-kardex',
-                    kardexParams: filters ? { ...filters, productId: 'all' } : undefined
-                  }))}
-                />
+                <Suspense fallback={<LoadingSpinner />}>
+                  <InventoryDashboard
+                    OnNavigateToKardex={(filters) => setState(prev => ({
+                      ...prev,
+                      currentSection: 'inventory-kardex',
+                      kardexParams: filters ? { ...filters, productId: 'all' } : undefined
+                    }))}
+                  />
+                </Suspense>
               )}
 
               {state.currentSection === 'users' && <UserRoleManager />}
@@ -1711,8 +1768,16 @@ function App() {
 
 
 
-              {state.currentSection === 'bank-reconciliation' && <BankReconciliation />}
-              {state.currentSection === 'discrepancy-analysis' && <DiscrepancyAnalysis />}
+              {state.currentSection === 'bank-reconciliation' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <BankReconciliation />
+                </Suspense>
+              )}
+              {state.currentSection === 'discrepancy-analysis' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <DiscrepancyAnalysis />
+                </Suspense>
+              )}
               {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
 
               {/* --- IMPUESTOS FLORIDA --- */}
@@ -1721,10 +1786,18 @@ function App() {
               {state.currentSection === 'help' && <HelpCenter />}
 
               {/* --- GENERADOR DE DATOS DE PRUEBA --- */}
-              {state.currentSection === 'data-generator' && <DataGeneratorPanel />}
+              {state.currentSection === 'data-generator' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <DataGeneratorPanel />
+                </Suspense>
+              )}
 
               {/* FIXED: Render FloridaTaxReport correctly */}
-              {state.currentSection === 'florida-dr15' && <DR15PreparationWizard />}
+              {state.currentSection === 'florida-dr15' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <DR15PreparationWizard />
+                </Suspense>
+              )}
 
               {/* FIXED: Render TaxRates component */}
               {state.currentSection === 'tax-rates' && <TaxRates />}
