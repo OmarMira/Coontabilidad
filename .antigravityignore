@@ -1,0 +1,92 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Test output files
+*_output.txt
+*_check*.txt
+build_*.txt
+type-check-*.txt
+eslint_*.txt
+tsc_*.txt
+test_*.txt
+checklist_*.txt
+error_*.txt
+lint_*.txt
+tests_*.txt
+test_run.txt
+audit_*.txt
+view_*.txt
+worker_*.txt
+implementation_*.txt
+diagnostic*.txt
+top_errors.txt
+errors_with_context.txt
+error_summary*.txt
+
+# Environment files
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Large binary files
+*.wasm
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Documentation that's too large
+ESTADO_ACTUAL.md
+systematic_diagnosis_report.md
+typescript_full_analysis.txt
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+.eslintcache
+.stylelintcache

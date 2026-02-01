@@ -156,6 +156,7 @@ const menuItems: MenuItem[] = [
     label: 'HERRAMIENTAS',
     icon: HelpCircle,
     children: [
+      { id: 'data-generator', label: 'Generador de Datos', icon: Database },
       { id: 'accounting-diagnosis', label: 'Diagnóstico Contable', icon: Activity },
       { id: 'journal-entry-test', label: 'Pruebas de Asientos', icon: FileText },
       { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive },

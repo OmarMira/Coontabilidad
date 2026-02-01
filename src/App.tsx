@@ -39,6 +39,7 @@ import { QuotesList, ReceivableReports } from './components/invoices/ARComponent
 import { QuoteForm } from './components/quotes/QuoteForm';
 import { QuoteDetailView } from './components/quotes/QuoteDetailView';
 import { TaxCalendar, TaxReports } from './components/dr15/TaxComponents';
+import { DataGeneratorPanel } from './components/system/DataGeneratorPanel';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { LoadingSpinner } from './components/LoadingSpinner';
@@ -1718,6 +1719,9 @@ function App() {
               {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
 
               {state.currentSection === 'help' && <HelpCenter />}
+
+              {/* --- GENERADOR DE DATOS DE PRUEBA --- */}
+              {state.currentSection === 'data-generator' && <DataGeneratorPanel />}
 
               {/* FIXED: Render FloridaTaxReport correctly */}
               {state.currentSection === 'florida-dr15' && <DR15PreparationWizard />}
