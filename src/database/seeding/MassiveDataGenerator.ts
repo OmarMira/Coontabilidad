@@ -10,7 +10,6 @@ interface GeneratorConfig {
   quotes: number;
   employees: number;
   bankAccounts: number;
-  fixedAssets: number;
 }
 
 const DEFAULT_CONFIG: GeneratorConfig = {
@@ -21,8 +20,7 @@ const DEFAULT_CONFIG: GeneratorConfig = {
   bills: 50,
   quotes: 30,
   employees: 15,
-  bankAccounts: 5,
-  fixedAssets: 20
+  bankAccounts: 5
 };
 
 // Datos de ejemplo realistas
@@ -139,7 +137,6 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       quotes: 0,
       employees: 0,
       bankAccounts: 0,
-      fixedAssets: 0,
       journalEntries: 0,
       payments: 0
     };
@@ -592,70 +589,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       stats.employees++;
     }
 
-    // 10. Generar Activos Fijos
-    console.log('🏢 Generando activos fijos...');
-    const assetTypes = [
-      { name: 'Computers', life: 3, rate: 0.33 },
-      { name: 'Furniture', life: 7, rate: 0.14 },
-      { name: 'Vehicles', life: 5, rate: 0.20 },
-      { name: 'Equipment', life: 5, rate: 0.20 },
-      { name: 'Buildings', life: 39, rate: 0.026 }
-    ];
-    
-    // Crear categorías de activos
-    const assetCategoryIds: number[] = [];
-    for (const assetType of assetTypes) {
-      const stmt = db.prepare(`
-        INSERT INTO asset_categories (
-          name, description, default_useful_life_years, default_depreciation_rate
-        ) VALUES (?, ?, ?, ?)
-      `);
-      stmt.run([
-        assetType.name,
-        `Categoría de ${assetType.name}`,
-        assetType.life,
-        assetType.rate
-      ]);
-      const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-      assetCategoryIds.push(id);
-      stmt.free();
-    }
-    
-    for (let i = 0; i < cfg.fixedAssets; i++) {
-      const categoryId = randomElement(assetCategoryIds);
-      const categoryRes = db.exec("SELECT name, default_useful_life_years FROM asset_categories WHERE id = ?", [categoryId]);
-      const categoryName = categoryRes[0]?.values[0]?.[0] as string;
-      const usefulLife = categoryRes[0]?.values[0]?.[1] as number;
-      
-      const acquisitionDate = randomDate(new Date('2020-01-01'), new Date('2025-12-31'));
-      const acquisitionCost = randomFloat(1000, 50000);
-      const salvageValue = acquisitionCost * 0.1;
-      
-      const stmt = db.prepare(`
-        INSERT INTO fixed_assets (
-          asset_code, name, description, category_id, acquisition_date,
-          acquisition_cost, useful_life_years, useful_life_months,
-          depreciation_method, salvage_value, current_value,
-          accumulated_depreciation, status, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'straight_line', ?, ?, 0, 'active', 1)
-      `);
-      stmt.run([
-        `${categoryName.substring(0, 3).toUpperCase()}-${String(i + 1).padStart(5, '0')}`,
-        `${categoryName} Asset ${i + 1}`,
-        `Descripción del activo ${i + 1}`,
-        categoryId,
-        acquisitionDate,
-        acquisitionCost,
-        usefulLife,
-        usefulLife * 12,
-        salvageValue,
-        acquisitionCost
-      ]);
-      stmt.free();
-      stats.fixedAssets++;
-    }
-
-    // 11. Generar Movimientos de Inventario
+    // 10. Generar Movimientos de Inventario
     console.log('📦 Generando movimientos de inventario...');
     let inventoryMovements = 0;
     
@@ -710,7 +644,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       inventoryMovements++;
     }
 
-    // 12. Generar Asientos Contables de Ejemplo
+    // 11. Generar Asientos Contables de Ejemplo
     console.log('📊 Generando asientos contables...');
     
     for (let i = 0; i < 50; i++) {
@@ -793,7 +727,6 @@ export function clearAllTestData(): { success: boolean; message: string } {
       'bill_lines', 'supplier_payments', 'bills',
       'quote_lines', 'quotes',
       'stock_movements',
-      'asset_depreciations', 'fixed_assets', 'asset_categories',
       'payroll_line_items', 'payroll_entries', 'payroll_periods', 'employees',
       'reconciliation_matches', 'reconciliation_statements',
       'products', 'product_categories',
