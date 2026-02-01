@@ -1628,6 +1628,42 @@ export const initDB = async (password?: string): Promise<any> => {
 };
 
 const initializeSchema = async (db: any) => {
+  // Tabla de clientes
+  db.run(`
+    CREATE TABLE IF NOT EXISTS customers(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    business_name TEXT,
+    document_type TEXT DEFAULT 'SSN' CHECK(document_type IN('SSN', 'EIN', 'ITIN', 'PASSPORT')),
+    document_number TEXT,
+    business_type TEXT,
+    email TEXT,
+    email_secondary TEXT,
+    phone TEXT,
+    phone_secondary TEXT,
+    address_line1 TEXT,
+    address_line2 TEXT,
+    city TEXT DEFAULT 'Miami',
+    state TEXT DEFAULT 'FL',
+    zip_code TEXT,
+    florida_county TEXT DEFAULT 'Miami-Dade',
+    credit_limit DECIMAL(12, 2) DEFAULT 0.00,
+    payment_terms INTEGER DEFAULT 30,
+    tax_id TEXT,
+    tax_exempt BOOLEAN DEFAULT 0,
+    discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    preferred_payment_method TEXT,
+    website TEXT,
+    notes TEXT,
+    status TEXT DEFAULT 'active' CHECK(status IN('active', 'inactive', 'suspended')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1
+  )
+  `);
+
+  // Tabla de proveedores
   db.run(`
     CREATE TABLE IF NOT EXISTS suppliers(
   id INTEGER PRIMARY KEY AUTOINCREMENT,

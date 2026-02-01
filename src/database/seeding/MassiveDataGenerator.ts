@@ -199,7 +199,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       
       const stmt = db.prepare(`
         INSERT INTO customers (
-          name, email, phone, address, city, state, zip_code,
+          name, email, phone, address_line1, city, state, zip_code,
           florida_county, tax_id, status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
       `);
@@ -223,17 +223,18 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
     for (let i = 0; i < cfg.suppliers; i++) {
       const companyName = generateCompanyName();
       const addr = generateAddress();
+      const contactFirstName = randomElement(FIRST_NAMES);
+      const contactLastName = randomElement(LAST_NAMES);
       
       const stmt = db.prepare(`
         INSERT INTO suppliers (
-          name, contact_name, email, phone, address, city, state, 
+          name, email, phone, address_line1, city, state, 
           zip_code, tax_id, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
       `);
       stmt.run([
         companyName,
-        `${randomElement(FIRST_NAMES)} ${randomElement(LAST_NAMES)}`,
-        generateEmail('contact', companyName.replace(/\s/g, ''), 'supplier.com'),
+        generateEmail(contactFirstName, contactLastName, 'supplier.com'),
         generatePhone(),
         addr.address, addr.city, addr.state, addr.zip,
         `${randomInt(10, 99)}-${randomInt(1000000, 9999999)}`
@@ -252,7 +253,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const stmt = db.prepare(`
         INSERT INTO bank_accounts (
           bank_name, account_name, account_number, account_type,
-          currency, current_balance, is_active
+          currency, balance, is_active
         ) VALUES (?, ?, ?, ?, 'USD', ?, 1)
       `);
       stmt.run([
@@ -661,10 +662,10 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const date = randomDate(startDate, endDate);
       
       const stmt = db.prepare(`
-        INSERT INTO inventory_movements (
-          product_id, type, quantity, reference_type, reference_id,
+        INSERT INTO stock_movements (
+          product_id, quantity, movement_type, reference_type, reference_id,
           notes, created_at
-        ) VALUES (?, 'purchase', ?, 'bill', ?, 'Compra de inventario', ?)
+        ) VALUES (?, ?, 'purchase', 'purchase_order', ?, 'Compra de inventario', ?)
       `);
       stmt.run([productId, quantity, randomInt(1, cfg.bills), date]);
       stmt.free();
@@ -674,14 +675,14 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
     // Movimientos de salida (ventas)
     for (let i = 0; i < 100; i++) {
       const productId = randomElement(productIds);
-      const quantity = randomInt(1, 20);
+      const quantity = -randomInt(1, 20); // Negativo para salidas
       const date = randomDate(startDate, endDate);
       
       const stmt = db.prepare(`
-        INSERT INTO inventory_movements (
-          product_id, type, quantity, reference_type, reference_id,
+        INSERT INTO stock_movements (
+          product_id, quantity, movement_type, reference_type, reference_id,
           notes, created_at
-        ) VALUES (?, 'sale', ?, 'invoice', ?, 'Venta de producto', ?)
+        ) VALUES (?, ?, 'sale', 'invoice', ?, 'Venta de producto', ?)
       `);
       stmt.run([productId, quantity, randomInt(1, cfg.invoices), date]);
       stmt.free();
@@ -695,10 +696,10 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const date = randomDate(startDate, endDate);
       
       const stmt = db.prepare(`
-        INSERT INTO inventory_movements (
-          product_id, type, quantity, reference_type, reference_id,
+        INSERT INTO stock_movements (
+          product_id, quantity, movement_type, reference_type, reference_id,
           notes, created_at
-        ) VALUES (?, 'adjustment', ?, 'adjustment', 0, 'Ajuste de inventario', ?)
+        ) VALUES (?, ?, 'adjustment', 'adjustment', 0, 'Ajuste de inventario', ?)
       `);
       stmt.run([productId, quantity, date]);
       stmt.free();
@@ -714,13 +715,13 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       
       const journalStmt = db.prepare(`
         INSERT INTO journal_entries (
-          entry_number, entry_date, description, total_debit, total_credit,
-          status, created_by
-        ) VALUES (?, ?, ?, ?, ?, 'posted', 1)
+          entry_date, reference, description, total_debit, total_credit,
+          created_by
+        ) VALUES (?, ?, ?, ?, ?, 1)
       `);
       journalStmt.run([
-        `JE-${new Date(entryDate).getFullYear()}-${String(i + 1).padStart(5, '0')}`,
         entryDate,
+        `JE-${new Date(entryDate).getFullYear()}-${String(i + 1).padStart(5, '0')}`,
         `Asiento contable ${i + 1}`,
         amount,
         amount
@@ -787,7 +788,7 @@ export function clearAllTestData(): { success: boolean; message: string } {
       'invoice_lines', 'payments', 'invoices',
       'bill_lines', 'supplier_payments', 'bills',
       'quote_lines', 'quotes',
-      'inventory_movements',
+      'stock_movements',
       'asset_depreciations', 'fixed_assets', 'asset_categories',
       'payroll_line_items', 'payroll_entries', 'payroll_periods', 'employees',
       'reconciliation_matches', 'reconciliation_statements',
