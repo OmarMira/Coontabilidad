@@ -1823,22 +1823,24 @@ function App() {
               {/* --- ASISTENTE IA (Classic Mode if needed, currently unused via Sidebar) --- */}
               {state.currentSection === 'ai-assistant' && (
                 <div className="h-[calc(100vh-140px)]">
-                  <UnifiedAssistant
-                    isOpen={true}
-                    onClose={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
-                    stats={state.dbStats}
-                    transactionCount={state.invoices.length + state.bills.length}
-                    auditStatus={{
-                      healthy: true,
-                      lastEvent: new Date().toISOString(),
-                      integrityScore: 100
-                    }}
-                    complianceMetrics={{
-                      taxCompliance: 100,
-                      dr15Status: 'Al día',
-                      pendingForms: 0
-                    }}
-                  />
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <UnifiedAssistant
+                      isOpen={true}
+                      onClose={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
+                      stats={state.dbStats}
+                      transactionCount={state.invoices.length + state.bills.length}
+                      auditStatus={{
+                        healthy: true,
+                        lastEvent: new Date().toISOString(),
+                        integrityScore: 100
+                      }}
+                      complianceMetrics={{
+                        taxCompliance: 100,
+                        dr15Status: 'Al día',
+                        pendingForms: 0
+                      }}
+                    />
+                  </Suspense>
                 </div>
               )}
 
@@ -1851,22 +1853,24 @@ function App() {
         {state.showAssistant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="w-full max-w-4xl h-[90vh] bg-gray-900 rounded-2xl shadow-2xl relative overflow-hidden">
-              <UnifiedAssistant
-                isOpen={true}
-                onClose={() => setState(prev => ({ ...prev, showAssistant: false }))}
-                stats={state.dbStats}
-                transactionCount={state.invoices.length + state.bills.length}
-                auditStatus={{
-                  healthy: true,
-                  lastEvent: new Date().toISOString(),
-                  integrityScore: 100
-                }}
-                complianceMetrics={{
-                  taxCompliance: 100,
-                  dr15Status: 'Al día',
-                  pendingForms: 0
-                }}
-              />
+              <Suspense fallback={<LoadingSpinner />}>
+                <UnifiedAssistant
+                  isOpen={true}
+                  onClose={() => setState(prev => ({ ...prev, showAssistant: false }))}
+                  stats={state.dbStats}
+                  transactionCount={state.invoices.length + state.bills.length}
+                  auditStatus={{
+                    healthy: true,
+                    lastEvent: new Date().toISOString(),
+                    integrityScore: 100
+                  }}
+                  complianceMetrics={{
+                    taxCompliance: 100,
+                    dr15Status: 'Al día',
+                    pendingForms: 0
+                  }}
+                />
+              </Suspense>
             </div>
           </div>
         )}
