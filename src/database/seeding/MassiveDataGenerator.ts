@@ -173,7 +173,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const stmt = db.prepare(`
         INSERT INTO products (
           sku, name, description, category_id, price, cost, 
-          stock_quantity, reorder_level, active
+          stock_quantity, reorder_point, active
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
       `);
       stmt.run([
