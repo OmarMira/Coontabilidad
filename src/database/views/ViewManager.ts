@@ -217,15 +217,18 @@ export class ViewManager {
           CREATE VIEW IF NOT EXISTS v_bank_reconciliation_summary AS
           SELECT 
               ba.bank_name,
+              ba.account_name,
               ba.account_number,
-              MAX(br.statement_date) as last_reconciliation,
-              br.statement_balance,
-              br.book_balance,
-              (br.statement_balance - br.book_balance) as difference,
-              br.status
+              COUNT(rs.id) as total_reconciliations,
+              COUNT(CASE WHEN rs.status = 'pending' THEN 1 END) as pending_reconciliations,
+              COUNT(CASE WHEN rs.status = 'reconciled' THEN 1 END) as completed_reconciliations,
+              MAX(rs.statement_date) as last_reconciliation_date,
+              SUM(CASE WHEN rs.status = 'pending' THEN ABS(rs.difference) ELSE 0 END) as total_pending_difference,
+              AVG(CASE WHEN rs.status = 'reconciled' THEN ABS(rs.difference) ELSE NULL END) as avg_reconciliation_difference
           FROM bank_accounts ba
-          LEFT JOIN bank_reconciliations br ON ba.id = br.bank_account_id
-          GROUP BY ba.id;
+          LEFT JOIN reconciliation_statements rs ON ba.id = rs.bank_account_id
+          WHERE ba.is_active = 1
+          GROUP BY ba.id, ba.bank_name, ba.account_name, ba.account_number;
         `,
                 description: 'Estado de conciliaciones bancarias por cuenta',
                 accessLevel: 'ai_readonly'

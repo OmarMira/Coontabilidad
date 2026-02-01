@@ -103,6 +103,7 @@ const menuItems: MenuItem[] = [
       { id: 'chart-accounts', label: 'Plan de Cuentas', icon: FileText },
       { id: 'journal-entries', label: 'Asientos Contables', icon: FileText },
       { id: 'bank-reconciliation', label: 'Conciliación Bancaria', icon: FileText },
+      { id: 'discrepancy-analysis', label: 'Análisis de Discrepancias', icon: BarChart3 },
       { id: 'bank-smart-import', label: 'Importación Bancaria IA', icon: Bot },
       { id: 'general-ledger', label: 'Libro Mayor', icon: FileText },
       { id: 'trial-balance', label: 'Balance de Comprobación', icon: BarChart3 },

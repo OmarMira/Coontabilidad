@@ -62,6 +62,8 @@ import { ChartOfAccounts } from './components/ChartOfAccounts';
 import { AccountingDiagnosis } from './components/AccountingDiagnosis';
 import { JournalEntryTest } from './components/JournalEntryTest';
 import { BankingModule } from './components/banking/BankingModule';
+import { BankReconciliation } from './components/banking/BankReconciliation';
+import { DiscrepancyAnalysis } from './components/banking/DiscrepancyAnalysis';
 import { CustomerPayments } from './components/CustomerPayments';
 import { SupplierPayments } from './components/SupplierPayments';
 import { ProductForm } from './components/ProductForm';
@@ -1541,7 +1543,8 @@ function App() {
 
 
 
-              {state.currentSection === 'bank-reconciliation' && <BankingModule />}
+              {state.currentSection === 'bank-reconciliation' && <BankReconciliation />}
+              {state.currentSection === 'discrepancy-analysis' && <DiscrepancyAnalysis />}
               {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
 
               {/* --- IMPUESTOS FLORIDA --- */}

@@ -1484,6 +1484,32 @@ export interface BankTransaction {
   created_at: string;
 }
 
+export interface ReconciliationStatement {
+  id: number;
+  bank_account_id: number;
+  statement_date: string;
+  statement_balance: number;
+  system_balance: number;
+  difference: number;
+  status: 'pending' | 'in_progress' | 'reconciled' | 'discrepancy';
+  reconciled_at?: string;
+  reconciled_by?: number;
+  notes?: string;
+  created_at: string;
+}
+
+export interface ReconciliationMatch {
+  id: number;
+  statement_id: number;
+  bank_transaction_id: number;
+  journal_entry_id?: number;
+  match_confidence: number;
+  match_type: 'automatic' | 'manual' | 'suggested';
+  matched_at: string;
+  matched_by?: number;
+  notes?: string;
+}
+
 export interface PaymentMethod {
   id: number;
   method_name: string;
@@ -1890,6 +1916,133 @@ const initializeSchema = async (db: any) => {
     is_active BOOLEAN DEFAULT 1,
     requires_reference BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // ==========================================
+  // TABLAS DE CONCILIACIÓN BANCARIA
+  // ==========================================
+
+  // Tabla de estados de conciliación
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reconciliation_statements(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bank_account_id INTEGER NOT NULL REFERENCES bank_accounts(id),
+    statement_date DATE NOT NULL,
+    statement_balance DECIMAL(12,2) NOT NULL,
+    system_balance DECIMAL(12,2) NOT NULL,
+    difference DECIMAL(12,2) GENERATED ALWAYS AS (statement_balance - system_balance),
+    status TEXT CHECK(status IN ('pending', 'in_progress', 'reconciled', 'discrepancy')) DEFAULT 'pending',
+    reconciled_at DATETIME,
+    reconciled_by INTEGER REFERENCES users(id),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(bank_account_id, statement_date)
+  )
+  `);
+
+  // Tabla de matches de conciliación
+  db.run(`
+    CREATE TABLE IF NOT EXISTS reconciliation_matches(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    statement_id INTEGER NOT NULL REFERENCES reconciliation_statements(id),
+    bank_transaction_id INTEGER NOT NULL REFERENCES bank_transactions(id),
+    journal_entry_id INTEGER REFERENCES journal_entries(id),
+    match_confidence DECIMAL(3,2) DEFAULT 1.0,
+    match_type TEXT CHECK(match_type IN ('automatic', 'manual', 'suggested')) DEFAULT 'manual',
+    matched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    matched_by INTEGER REFERENCES users(id),
+    notes TEXT,
+    UNIQUE(bank_transaction_id, journal_entry_id)
+  )
+  `);
+
+  // ==========================================
+  // TABLAS DE NÓMINA (PAYROLL)
+  // ==========================================
+
+  // Tabla de empleados
+  db.run(`
+    CREATE TABLE IF NOT EXISTS employees(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_number TEXT UNIQUE NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    hire_date DATE NOT NULL,
+    department TEXT,
+    position TEXT,
+    salary_type TEXT DEFAULT 'monthly' CHECK(salary_type IN('monthly', 'hourly')),
+    salary_rate DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    status TEXT DEFAULT 'active' CHECK(status IN('active', 'inactive', 'on_leave')),
+    florida_county TEXT DEFAULT 'Miami-Dade',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1
+  )
+  `);
+
+  // Tabla de períodos de nómina
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payroll_periods(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    pay_date DATE NOT NULL,
+    status TEXT DEFAULT 'open' CHECK(status IN('open', 'processing', 'closed', 'cancelled')),
+    total_gross DECIMAL(12, 2) DEFAULT 0,
+    total_net DECIMAL(12, 2) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1
+  )
+  `);
+
+  // Tabla de entradas de nómina
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payroll_entries(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id),
+    period_id INTEGER NOT NULL REFERENCES payroll_periods(id),
+    journal_entry_id INTEGER REFERENCES journal_entries(id),
+    gross_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    deductions_amount DECIMAL(12, 2) DEFAULT 0,
+    net_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    status TEXT DEFAULT 'draft' CHECK(status IN('draft', 'verified', 'paid')),
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(employee_id, period_id)
+  )
+  `);
+
+  // Tabla de líneas de nómina (conceptos)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payroll_line_items(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    payroll_entry_id INTEGER NOT NULL REFERENCES payroll_entries(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK(type IN('earning', 'deduction')),
+    category TEXT NOT NULL,
+    description TEXT NOT NULL,
+    amount DECIMAL(12, 2) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // Tabla de configuraciones de nómina
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payroll_settings(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    setting_key TEXT UNIQUE NOT NULL,
+    setting_value TEXT NOT NULL,
+    category TEXT DEFAULT 'general',
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
   `);
 
@@ -2849,6 +3002,28 @@ VALUES(?, ?, ?, ?, ?, 1)
     console.log('Initial tax rates inserted successfully (2026 rates)');
   };
 
+  // Insertar configuraciones iniciales de nómina
+  const insertInitialPayrollSettings = async (): Promise<void> => {
+    if (!db) return;
+
+    try {
+      db.run(`
+        INSERT INTO payroll_settings(setting_key, setting_value, category, description) VALUES
+        ('federal_tax_rate', '0.15', 'taxes', 'Tasa de impuesto federal por defecto'),
+        ('state_tax_rate', '0.00', 'taxes', 'Tasa de impuesto estatal Florida (sin impuesto estatal)'),
+        ('fica_tax_rate', '0.062', 'taxes', 'Tasa FICA (Social Security)'),
+        ('medicare_tax_rate', '0.0145', 'taxes', 'Tasa Medicare'),
+        ('pay_frequency', 'monthly', 'general', 'Frecuencia de pago por defecto'),
+        ('overtime_rate', '1.5', 'general', 'Multiplicador para horas extras'),
+        ('company_name', 'Account Express Demo Inc.', 'general', 'Nombre de la empresa para reportes'),
+        ('ein_number', 'XX-XXXXXXX', 'general', 'Número de identificación del empleador')
+      `);
+      console.log('Initial payroll settings inserted successfully');
+    } catch (e) {
+      console.error('Error inserting payroll settings:', e);
+    }
+  };
+
   // Ejecutar procesos de inicializaciÃ³n/seeding
   await seedUsersAndRoles();
   await migrateDataOwnership();
@@ -2878,6 +3053,12 @@ VALUES(?, ?, ?, ?, ?, 1)
     if (locationResult.success) {
       logger.info('Database', 'locations_seeded', locationResult.message);
     }
+  }
+
+  // Verificar si ya existen configuraciones de nómina antes de insertar
+  const payrollSettingsCount = db.exec("SELECT COUNT(*) FROM payroll_settings")[0]?.values[0]?.[0] || 0;
+  if (payrollSettingsCount === 0) {
+    await insertInitialPayrollSettings();
   }
 
   logger.info('Database', 'initialization_complete', 'Esquema y datos iniciales verificados');
@@ -9005,6 +9186,247 @@ VALUES(?, ?, ?, ?, ?, ?)
     logger.error('BankAccounts', 'delete_failed', 'Error al eliminar cuenta bancaria', { id }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
+}
+
+// ==========================================
+// FUNCIONES DE CONCILIACIÓN BANCARIA
+// ==========================================
+
+/**
+ * Obtiene todos los estados de conciliación
+ */
+export function getReconciliationStatements(accountId?: number): ReconciliationStatement[] {
+  if (!db) return [];
+  try {
+    let query = "SELECT * FROM reconciliation_statements";
+    const params: any[] = [];
+    
+    if (accountId) {
+      query += " WHERE bank_account_id = ?";
+      params.push(accountId);
+    }
+    
+    query += " ORDER BY statement_date DESC";
+    
+    const res = db.exec(query, params);
+    if (res.length === 0) return [];
+    return res[0].values.map((row: any) => rowToEntity<ReconciliationStatement>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching reconciliation statements:', e);
+    return [];
+  }
+}
+
+/**
+ * Crea un nuevo estado de conciliación
+ */
+export function createReconciliationStatement(data: Omit<ReconciliationStatement, 'id' | 'created_at' | 'difference'>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO reconciliation_statements (bank_account_id, statement_date, statement_balance, system_balance, status, notes)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run([
+      data.bank_account_id,
+      data.statement_date,
+      data.statement_balance,
+      data.system_balance,
+      data.status || 'pending',
+      data.notes || null
+    ]);
+    
+    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+    stmt.free();
+    
+    return { success: true, message: 'Estado de conciliación creado', id };
+  } catch (e: any) {
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Obtiene transacciones bancarias no conciliadas
+ */
+export function getUnreconciledTransactions(accountId: number): BankTransaction[] {
+  if (!db) return [];
+  try {
+    const res = db.exec(`
+      SELECT bt.* FROM bank_transactions bt
+      LEFT JOIN reconciliation_matches rm ON bt.id = rm.bank_transaction_id
+      WHERE bt.bank_account_id = ? AND rm.id IS NULL AND bt.status = 'pending'
+      ORDER BY bt.transaction_date DESC
+    `, [accountId]);
+    
+    if (res.length === 0) return [];
+    return res[0].values.map((row: any) => rowToEntity<BankTransaction>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching unreconciled transactions:', e);
+    return [];
+  }
+}
+
+/**
+ * Busca asientos contables similares para matching
+ */
+export function findSimilarJournalEntries(transaction: BankTransaction): JournalEntry[] {
+  if (!db) return [];
+  try {
+    // Buscar por monto exacto y fecha cercana (±3 días)
+    const res = db.exec(`
+      SELECT je.* FROM journal_entries je
+      WHERE ABS(je.total_debit - ?) < 0.01 
+      AND ABS(JULIANDAY(je.entry_date) - JULIANDAY(?)) <= 3
+      AND je.id NOT IN (
+        SELECT COALESCE(rm.journal_entry_id, 0) FROM reconciliation_matches rm WHERE rm.journal_entry_id IS NOT NULL
+      )
+      ORDER BY ABS(JULIANDAY(je.entry_date) - JULIANDAY(?)) ASC
+      LIMIT 5
+    `, [Math.abs(transaction.amount), transaction.transaction_date, transaction.transaction_date]);
+    
+    if (res.length === 0) return [];
+    return res[0].values.map((row: any) => rowToEntity<JournalEntry>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error finding similar journal entries:', e);
+    return [];
+  }
+}
+
+/**
+ * Crea un match de conciliación
+ */
+export function createReconciliationMatch(data: Omit<ReconciliationMatch, 'id' | 'matched_at'>): { success: boolean; message: string; id?: number } {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  
+  try {
+    db.run("BEGIN TRANSACTION");
+    
+    const stmt = db.prepare(`
+      INSERT INTO reconciliation_matches (statement_id, bank_transaction_id, journal_entry_id, match_confidence, match_type, matched_by, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run([
+      data.statement_id,
+      data.bank_transaction_id,
+      data.journal_entry_id || null,
+      data.match_confidence,
+      data.match_type || 'manual',
+      data.matched_by || null,
+      data.notes || null
+    ]);
+    
+    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+    stmt.free();
+    
+    // Actualizar estado de la transacción bancaria
+    db.run("UPDATE bank_transactions SET status = 'matched' WHERE id = ?", [data.bank_transaction_id]);
+    
+    db.run("COMMIT");
+    return { success: true, message: 'Match de conciliación creado', id };
+  } catch (e: any) {
+    db.run("ROLLBACK");
+    return { success: false, message: e.message };
+  }
+}
+
+/**
+ * Auto-matching inteligente de transacciones
+ */
+export function autoMatchTransactions(statementId: number): { success: boolean; message: string; matchesFound: number } {
+  if (!db) return { success: false, message: 'Database not initialized', matchesFound: 0 };
+  
+  try {
+    // Obtener el statement
+    const statementRes = db.exec("SELECT * FROM reconciliation_statements WHERE id = ?", [statementId]);
+    if (statementRes.length === 0) {
+      return { success: false, message: 'Statement no encontrado', matchesFound: 0 };
+    }
+    
+    const statement = rowToEntity<ReconciliationStatement>(statementRes[0].columns, statementRes[0].values[0]);
+    
+    // Obtener transacciones no conciliadas
+    const transactions = getUnreconciledTransactions(statement.bank_account_id);
+    let matchesFound = 0;
+    
+    for (const transaction of transactions) {
+      const similarEntries = findSimilarJournalEntries(transaction);
+      
+      if (similarEntries.length > 0) {
+        const bestMatch = similarEntries[0];
+        const confidence = calculateMatchConfidence(transaction, bestMatch);
+        
+        if (confidence >= 0.8) { // Solo auto-match con alta confianza
+          const result = createReconciliationMatch({
+            statement_id: statementId,
+            bank_transaction_id: transaction.id,
+            journal_entry_id: bestMatch.id,
+            match_confidence: confidence,
+            match_type: 'automatic',
+            matched_by: undefined
+          });
+          
+          if (result.success) {
+            matchesFound++;
+          }
+        }
+      }
+    }
+    
+    return { success: true, message: `${matchesFound} matches automáticos creados`, matchesFound };
+  } catch (e: any) {
+    return { success: false, message: e.message, matchesFound: 0 };
+  }
+}
+
+/**
+ * Calcula la confianza de un match
+ */
+function calculateMatchConfidence(transaction: BankTransaction, entry: JournalEntry): number {
+  let confidence = 0;
+  
+  // Mismo monto: +40%
+  if (Math.abs(Math.abs(transaction.amount) - entry.total_debit) < 0.01) {
+    confidence += 0.4;
+  }
+  
+  // Fecha cercana: +30% (máximo si es el mismo día)
+  const daysDiff = Math.abs(new Date(transaction.transaction_date).getTime() - new Date(entry.entry_date).getTime()) / (1000 * 60 * 60 * 24);
+  if (daysDiff <= 3) {
+    confidence += 0.3 * (1 - daysDiff / 3);
+  }
+  
+  // Descripción similar: +20%
+  if (transaction.description && entry.description) {
+    const similarity = calculateStringSimilarity(transaction.description.toLowerCase(), entry.description.toLowerCase());
+    confidence += 0.2 * similarity;
+  }
+  
+  // Referencia similar: +10%
+  if (transaction.reference_number && entry.reference_number && transaction.reference_number === entry.reference_number) {
+    confidence += 0.1;
+  }
+  
+  return Math.min(confidence, 1.0);
+}
+
+/**
+ * Calcula similitud entre strings (algoritmo simple)
+ */
+function calculateStringSimilarity(str1: string, str2: string): number {
+  const words1 = str1.split(/\s+/);
+  const words2 = str2.split(/\s+/);
+  
+  let matches = 0;
+  for (const word1 of words1) {
+    if (word1.length > 2 && words2.some(word2 => word2.includes(word1) || word1.includes(word2))) {
+      matches++;
+    }
+  }
+  
+  return matches / Math.max(words1.length, words2.length);
 }
 
 /**
