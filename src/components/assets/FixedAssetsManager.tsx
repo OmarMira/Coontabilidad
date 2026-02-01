@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { 
-  Package, 
-  Plus, 
-  TrendingDown, 
-  DollarSign, 
+import {
+  Package,
+  Plus,
+  TrendingDown,
+  DollarSign,
   Calendar,
   AlertTriangle,
   Play,
@@ -16,6 +16,9 @@ import {
 import { db } from '@/database/simple-db';
 import { getFixedAssetsController } from '@/services/accounting/fixed-assets';
 import type { FixedAsset, AssetCategory } from '@/services/accounting/fixed-assets';
+import { AssetForm } from './AssetForm';
+import { AssetDetailView } from './AssetDetailView';
+import { AssetDisposalForm } from './AssetDisposalForm';
 
 /**
  * FixedAssetsManager
@@ -40,6 +43,10 @@ export const FixedAssetsManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'assets' | 'categories' | 'reports'>('assets');
+  const [showAssetForm, setShowAssetForm] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);
+  const [viewingAsset, setViewingAsset] = useState<FixedAsset | null>(null);
+  const [disposingAsset, setDisposingAsset] = useState<FixedAsset | null>(null);
 
   useEffect(() => {
     loadData();
@@ -51,7 +58,7 @@ export const FixedAssetsManager: React.FC = () => {
       setError(null);
 
       const controller = getFixedAssetsController(db);
-      
+
       // Load assets and categories
       const [assetsData, categoriesData, summaryData] = await Promise.all([
         controller.getAllAssets(),
@@ -78,11 +85,11 @@ export const FixedAssetsManager: React.FC = () => {
 
       const controller = getFixedAssetsController(db);
       const now = new Date();
-      
+
       const result = await controller.runDepreciationBatch(now);
-      
+
       setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: $${(result.total_depreciation_amount / 100).toFixed(2)}`);
-      
+
       // Reload data
       await loadData();
 
@@ -95,6 +102,25 @@ export const FixedAssetsManager: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // View asset detail
+  if (viewingAsset) {
+    return (
+      <AssetDetailView
+        asset={viewingAsset}
+        onBack={() => setViewingAsset(null)}
+        onEdit={(asset) => {
+          setViewingAsset(null);
+          setEditingAsset(asset);
+          setShowAssetForm(true);
+        }}
+        onDispose={(asset) => {
+          setViewingAsset(null);
+          setDisposingAsset(asset);
+        }}
+      />
+    );
+  }
 
   if (loading && assets.length === 0) {
     return (
@@ -128,7 +154,10 @@ export const FixedAssetsManager: React.FC = () => {
             Ejecutar Depreciación
           </Button>
           <Button
-            onClick={() => {/* TODO: Open asset form */}}
+            onClick={() => {
+              setEditingAsset(null);
+              setShowAssetForm(true);
+            }}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -220,33 +249,30 @@ export const FixedAssetsManager: React.FC = () => {
       <div className="flex gap-2 border-b border-slate-800">
         <button
           onClick={() => setActiveTab('assets')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'assets'
+          className={`px-4 py-2 font-medium transition-colors ${activeTab === 'assets'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <Package className="w-4 h-4 inline mr-2" />
           Activos
         </button>
         <button
           onClick={() => setActiveTab('categories')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'categories'
+          className={`px-4 py-2 font-medium transition-colors ${activeTab === 'categories'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <Settings className="w-4 h-4 inline mr-2" />
           Categorías
         </button>
         <button
           onClick={() => setActiveTab('reports')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            activeTab === 'reports'
+          className={`px-4 py-2 font-medium transition-colors ${activeTab === 'reports'
               ? 'text-blue-400 border-b-2 border-blue-400'
               : 'text-slate-400 hover:text-white'
-          }`}
+            }`}
         >
           <FileText className="w-4 h-4 inline mr-2" />
           Reportes
@@ -265,7 +291,13 @@ export const FixedAssetsManager: React.FC = () => {
                 <div className="text-center py-12">
                   <Package className="w-16 h-16 text-slate-700 mx-auto mb-4" />
                   <p className="text-slate-400 mb-4">No hay activos fijos registrados</p>
-                  <Button onClick={() => {/* TODO: Open form */}} className="bg-blue-600 hover:bg-blue-700">
+                  <Button
+                    onClick={() => {
+                      setEditingAsset(null);
+                      setShowAssetForm(true);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Agregar Primer Activo
                   </Button>
@@ -286,7 +318,11 @@ export const FixedAssetsManager: React.FC = () => {
                     </thead>
                     <tbody>
                       {assets.map((asset) => (
-                        <tr key={asset.id} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+                        <tr 
+                          key={asset.id} 
+                          onClick={() => setViewingAsset(asset)}
+                          className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-pointer"
+                        >
                           <td className="py-3 px-4 text-sm font-mono text-blue-400">{asset.asset_tag}</td>
                           <td className="py-3 px-4 text-sm">{asset.asset_name}</td>
                           <td className="py-3 px-4 text-sm text-slate-400">
@@ -302,11 +338,10 @@ export const FixedAssetsManager: React.FC = () => {
                             ${((asset.net_book_value || 0) / 100).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              asset.status === 'ACTIVE' ? 'bg-green-900/30 text-green-400' :
-                              asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
-                              'bg-slate-700 text-slate-400'
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${asset.status === 'ACTIVE' ? 'bg-green-900/30 text-green-400' :
+                                asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
+                                  'bg-slate-700 text-slate-400'
+                              }`}>
                               {asset.status}
                             </span>
                           </td>
@@ -334,9 +369,8 @@ export const FixedAssetsManager: React.FC = () => {
                         <h3 className="font-medium text-white">{category.name}</h3>
                         <p className="text-xs text-slate-500 font-mono">{category.code}</p>
                       </div>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        category.is_active ? 'bg-green-900/30 text-green-400' : 'bg-slate-700 text-slate-400'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs ${category.is_active ? 'bg-green-900/30 text-green-400' : 'bg-slate-700 text-slate-400'
+                        }`}>
                         {category.is_active ? 'Activa' : 'Inactiva'}
                       </span>
                     </div>
@@ -388,6 +422,31 @@ export const FixedAssetsManager: React.FC = () => {
           </Card>
         )}
       </div>
+
+      {/* Asset Form Modal */}
+      {showAssetForm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <AssetForm
+                asset={editingAsset}
+                onSave={async () => {
+                  setShowAssetForm(false);
+                  setEditingAsset(null);
+                  await loadData();
+                  setSuccess(editingAsset ? 'Asset updated successfully' : 'Asset created successfully');
+                  setTimeout(() => setSuccess(null), 3000);
+                }}
+                onCancel={() => {
+                  setShowAssetForm(false);
+                  setEditingAsset(null);
+                }}
+                db={db}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

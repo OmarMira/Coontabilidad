@@ -1,59 +1,177 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Building2, Calendar, DollarSign, Info } from 'lucide-react';
-import { FixedAsset, AssetCategory } from '../../database/simple-db';
+import { X, Save, Building2, Calendar, DollarSign, Info, AlertCircle, TrendingDown, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
+import { getFixedAssetsController } from '../../controllers/FixedAssetsController';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import type { AssetCategory } from '../../services/accounting/AssetCategoryService';
+import type { AssetPurchaseData, FixedAsset } from '../../services/accounting/FixedAssetService';
 
 interface AssetFormProps {
     asset: FixedAsset | null;
-    categories: AssetCategory[];
-    onSave: (asset: Partial<FixedAsset>) => void;
+    onSave: () => void;
     onCancel: () => void;
+    db: SQLiteEngine;
 }
 
-export const AssetForm: React.FC<AssetFormProps> = ({ asset, categories, onSave, onCancel }) => {
-    const [formData, setFormData] = useState<Partial<FixedAsset>>({
-        asset_code: '',
-        name: '',
+export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, db }) => {
+    const [categories, setCategories] = useState<AssetCategory[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<AssetCategory | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string>('');
+
+    // Form data in dollars (UI) - will convert to cents for backend
+    const [formData, setFormData] = useState({
+        asset_name: '',
         description: '',
         category_id: 0,
-        acquisition_date: new Date().toISOString().split('T')[0],
-        acquisition_cost: 0,
-        useful_life_years: 0,
-        salvage_value: 0,
-        depreciation_method: 'straight_line',
-        status: 'active',
-        location: '',
-        serial_number: '',
-        manufacturer: '',
-        model: '',
-        purchase_order: '',
-        warranty_expiration: '',
-        notes: ''
+        purchase_date: new Date().toISOString().split('T')[0],
+        purchase_cost_dollars: 0,
+        salvage_value_dollars: 0,
+        useful_life_months: 0,
+        depreciation_method: 'STRAIGHT_LINE' as 'STRAIGHT_LINE' | 'DECLINING_BALANCE_200',
+        activate_immediately: false,
+        payment_method: 'CASH' as 'CASH' | 'PAYABLE'
     });
 
+    // Load categories on mount
+    useEffect(() => {
+        loadCategories();
+    }, []);
+
+    // Load asset data if editing
     useEffect(() => {
         if (asset) {
-            setFormData(asset);
+            setFormData({
+                asset_name: asset.asset_name,
+                description: asset.description || '',
+                category_id: asset.category_id,
+                purchase_date: asset.purchase_date,
+                purchase_cost_dollars: asset.purchase_cost / 100,
+                salvage_value_dollars: asset.salvage_value / 100,
+                useful_life_months: asset.useful_life_months,
+                depreciation_method: asset.depreciation_method,
+                activate_immediately: false,
+                payment_method: 'CASH'
+            });
         }
     }, [asset]);
 
-    const handleChange = (field: keyof FixedAsset, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+    // Auto-fill defaults when category changes
+    useEffect(() => {
+        if (formData.category_id && !asset) {
+            const category = categories.find(c => c.id === formData.category_id);
+            if (category) {
+                setSelectedCategory(category);
+                setFormData(prev => ({
+                    ...prev,
+                    useful_life_months: category.default_useful_life_months,
+                    depreciation_method: category.default_depreciation_method,
+                    salvage_value_dollars: (prev.purchase_cost_dollars * category.default_salvage_value_percent) / 100
+                }));
+            }
+        }
+    }, [formData.category_id, categories, asset]);
+
+    const loadCategories = async () => {
+        try {
+            const controller = getFixedAssetsController(db);
+            const cats = await controller.getActiveCategories();
+            setCategories(cats);
+        } catch (err: any) {
+            setError('Error loading categories: ' + err.message);
+        }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const validateForm = (): boolean => {
+        if (!formData.asset_name.trim()) {
+            setError('Asset name is required');
+            return false;
+        }
+
+        if (!formData.category_id) {
+            setError('Please select a category');
+            return false;
+        }
+
+        if (formData.purchase_cost_dollars <= 0) {
+            setError('Purchase cost must be greater than zero');
+            return false;
+        }
+
+        if (formData.salvage_value_dollars >= formData.purchase_cost_dollars) {
+            setError('Salvage value must be less than purchase cost');
+            return false;
+        }
+
+        if (formData.useful_life_months <= 0) {
+            setError('Useful life must be greater than zero');
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
 
-        // Calcular useful_life_months
-        const updatedData = {
-            ...formData,
-            useful_life_months: (formData.useful_life_years || 0) * 12
-        };
+        if (!validateForm()) return;
 
-        onSave(updatedData);
+        setLoading(true);
+        try {
+            const controller = getFixedAssetsController(db);
+
+            // Convert dollars to cents
+            const purchaseData: AssetPurchaseData = {
+                asset_name: formData.asset_name,
+                description: formData.description,
+                category_id: formData.category_id,
+                purchase_date: formData.purchase_date,
+                purchase_cost: Math.round(formData.purchase_cost_dollars * 100),
+                salvage_value: Math.round(formData.salvage_value_dollars * 100),
+                useful_life_months: formData.useful_life_months,
+                depreciation_method: formData.depreciation_method,
+                activate_immediately: formData.activate_immediately,
+                payment_method: formData.payment_method
+            };
+
+            if (asset) {
+                // Update existing asset
+                await controller.updateAsset(asset.id, purchaseData);
+            } else {
+                // Create new asset
+                await controller.purchaseAsset(purchaseData, 1); // TODO: Get user ID from context
+            }
+
+            onSave();
+        } catch (err: any) {
+            setError(err.message || 'Failed to save asset');
+        } finally {
+            setLoading(false);
+        }
     };
 
+    const handleChange = (field: keyof typeof formData, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        setError(''); // Clear error when user changes input
+    };
+
+    // Calculate preview of monthly depreciation
+    const calculatePreviewDepreciation = (): number => {
+        const depreciableBase = formData.purchase_cost_dollars - formData.salvage_value_dollars;
+        if (formData.useful_life_months <= 0) return 0;
+
+        if (formData.depreciation_method === 'STRAIGHT_LINE') {
+            return depreciableBase / formData.useful_life_months;
+        } else {
+            // Declining balance 200% - first month
+            const rate = 2 / formData.useful_life_months;
+            return formData.purchase_cost_dollars * rate;
+        }
+    };
+
+    const monthlyDepreciation = calculatePreviewDepreciation();
     const isEdit = !!asset?.id;
 
     return (
@@ -63,10 +181,10 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, categories, onSave,
                 <div>
                     <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
                         <Building2 className="w-8 h-8 text-indigo-500" />
-                        {isEdit ? 'Editar Activo Fijo' : 'Nuevo Activo Fijo'}
+                        {isEdit ? 'Edit Fixed Asset' : 'New Fixed Asset'}
                     </h2>
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-                        {isEdit ? `Código: ${asset.asset_code}` : 'Formulario de Adquisición'}
+                        {isEdit ? `Asset Tag: ${asset.asset_tag}` : 'Purchase & Setup'}
                     </p>
                 </div>
                 <button
@@ -77,76 +195,94 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, categories, onSave,
                 </button>
             </div>
 
+            {/* Error Alert */}
+            {error && (
+                <div className="bg-rose-500/10 border border-rose-500/50 rounded-xl p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-rose-200 text-sm">{error}</p>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Information */}
                 <Card className="bg-slate-900 border-slate-800">
                     <CardContent className="p-6 space-y-4">
                         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
                             <Info className="w-5 h-5 text-indigo-400" />
-                            Información Básica
+                            Basic Information
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Name */}
+                            {/* Asset Name */}
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Nombre del Activo <span className="text-rose-500">*</span>
+                                    Asset Name <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     required
-                                    value={formData.name}
-                                    onChange={(e) => handleChange('name', e.target.value)}
+                                    value={formData.asset_name}
+                                    onChange={(e) => handleChange('asset_name', e.target.value)}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                    placeholder="Ej: Computadora Dell Latitude 5520"
-                                />
-                            </div>
-
-                            {/* Asset Code */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Código <span className="text-slate-600">(Auto si vacío)</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.asset_code}
-                                    onChange={(e) => handleChange('asset_code', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
-                                    placeholder="EQU-00001"
+                                    placeholder="E.g: Dell Latitude 5520 Laptop"
                                 />
                             </div>
 
                             {/* Category */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Categoría <span className="text-rose-500">*</span>
+                                    Category <span className="text-rose-500">*</span>
                                 </label>
                                 <select
                                     required
                                     value={formData.category_id || ''}
                                     onChange={(e) => handleChange('category_id', parseInt(e.target.value))}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
+                                    disabled={isEdit} // Can't change category after creation
                                 >
-                                    <option value="">Seleccionar categoría</option>
+                                    <option value="">Select category</option>
                                     {categories.map(cat => (
                                         <option key={cat.id} value={cat.id}>
-                                            {cat.name} {cat.default_useful_life_years && `(${cat.default_useful_life_years} años)`}
+                                            {cat.name} ({cat.default_useful_life_months / 12} years)
                                         </option>
                                     ))}
                                 </select>
+                                {selectedCategory && !isEdit && (
+                                    <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
+                                        <CheckCircle className="w-3 h-3" />
+                                        Auto-filled: {selectedCategory.default_useful_life_months} months, {selectedCategory.default_depreciation_method.replace('_', ' ')}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Purchase Date */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                    Purchase Date <span className="text-rose-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                                    <input
+                                        type="date"
+                                        required
+                                        value={formData.purchase_date}
+                                        onChange={(e) => handleChange('purchase_date', e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
                             </div>
 
                             {/* Description */}
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Descripción
+                                    Description
                                 </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => handleChange('description', e.target.value)}
                                     rows={2}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none resize-none"
-                                    placeholder="Detalles adicionales del activo..."
+                                    placeholder="Additional details about the asset..."
                                 />
                             </div>
                         </div>
@@ -158,65 +294,34 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, categories, onSave,
                     <CardContent className="p-6 space-y-4">
                         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-emerald-400" />
-                            Información Financiera
+                            Financial Details
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Acquisition Date */}
+                            {/* Purchase Cost */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Fecha de Adquisición <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={formData.acquisition_date}
-                                    onChange={(e) => handleChange('acquisition_date', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                />
-                            </div>
-
-                            {/* Acquisition Cost */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Costo de Adquisición <span className="text-rose-500">*</span>
+                                    Purchase Cost <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
                                     <input
                                         type="number"
                                         required
-                                        min="0"
+                                        min="0.01"
                                         step="0.01"
-                                        value={formData.acquisition_cost}
-                                        onChange={(e) => handleChange('acquisition_cost', parseFloat(e.target.value))}
+                                        value={formData.purchase_cost_dollars || ''}
+                                        onChange={(e) => handleChange('purchase_cost_dollars', parseFloat(e.target.value) || 0)}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
                                         placeholder="0.00"
                                     />
                                 </div>
                             </div>
 
-                            {/* Useful Life Years */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Vida Útil (Años) <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="1"
-                                    max="50"
-                                    value={formData.useful_life_years}
-                                    onChange={(e) => handleChange('useful_life_years', parseInt(e.target.value))}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
-                                    placeholder="5"
-                                />
-                            </div>
-
                             {/* Salvage Value */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Valor de Salvamento
+                                    Salvage Value
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
@@ -224,138 +329,133 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, categories, onSave,
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        value={formData.salvage_value}
-                                        onChange={(e) => handleChange('salvage_value', parseFloat(e.target.value))}
+                                        value={formData.salvage_value_dollars || ''}
+                                        onChange={(e) => handleChange('salvage_value_dollars', parseFloat(e.target.value) || 0)}
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
                                         placeholder="0.00"
                                     />
                                 </div>
                             </div>
 
-                            {/* Depreciation Method */}
-                            <div className="md:col-span-2">
+                            {/* Useful Life */}
+                            <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Método de Depreciación
+                                    Useful Life (Months) <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    required
+                                    min="1"
+                                    value={formData.useful_life_months || ''}
+                                    onChange={(e) => handleChange('useful_life_months', parseInt(e.target.value) || 0)}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
+                                    placeholder="60"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {formData.useful_life_months > 0 && `≈ ${(formData.useful_life_months / 12).toFixed(1)} years`}
+                                </p>
+                            </div>
+
+                            {/* Depreciation Method */}
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                    Depreciation Method
                                 </label>
                                 <select
                                     value={formData.depreciation_method}
                                     onChange={(e) => handleChange('depreciation_method', e.target.value)}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
+                                    disabled={isEdit && asset?.status !== 'PENDING'} // Locked after activation (IRS compliance)
                                 >
-                                    <option value="straight_line">Línea Recta (Recomendado)</option>
-                                    <option value="declining_balance">Saldo Decreciente</option>
-                                    <option value="units_of_production">Unidades de Producción</option>
+                                    <option value="STRAIGHT_LINE">Straight-Line (Recommended)</option>
+                                    <option value="DECLINING_BALANCE_200">Declining Balance 200%</option>
                                 </select>
+                                {isEdit && asset?.status !== 'PENDING' && (
+                                    <p className="text-xs text-amber-400 mt-1">🔒 Locked (IRS compliance)</p>
+                                )}
                             </div>
+
+                            {/* Payment Method (only for new assets) */}
+                            {!isEdit && (
+                                <div className="md:col-span-2">
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                                        Payment Method
+                                    </label>
+                                    <div className="flex gap-4">
+                                        <label className="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 flex-1">
+                                            <input
+                                                type="radio"
+                                                value="CASH"
+                                                checked={formData.payment_method === 'CASH'}
+                                                onChange={(e) => handleChange('payment_method', 'CASH')}
+                                                className="text-indigo-500"
+                                            />
+                                            <span className="text-white font-bold">Cash (DR 1000)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 flex-1">
+                                            <input
+                                                type="radio"
+                                                value="PAYABLE"
+                                                checked={formData.payment_method === 'PAYABLE'}
+                                                onChange={(e) => handleChange('payment_method', 'PAYABLE')}
+                                                className="text-indigo-500"
+                                            />
+                                            <span className="text-white font-bold">Accounts Payable (DR 2000)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Depreciation Preview */}
+                        {monthlyDepreciation > 0 && (
+                            <div className="mt-6 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <TrendingDown className="w-4 h-4 text-indigo-400" />
+                                    <h4 className="text-sm font-black text-indigo-300">Depreciation Preview</h4>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Monthly</p>
+                                        <p className="text-lg font-black text-white">${monthlyDepreciation.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Annual</p>
+                                        <p className="text-lg font-black text-white">${(monthlyDepreciation * 12).toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Method</p>
+                                        <p className="text-sm font-bold text-indigo-300">
+                                            {formData.depreciation_method === 'STRAIGHT_LINE' ? 'Linear' : 'Accelerated'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                {/* Additional Details */}
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6 space-y-4">
-                        <h3 className="text-lg font-black text-white mb-4">Detalles Adicionales</h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Location */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Ubicación
-                                </label>
+                {/* Activation Option (only for new assets) */}
+                {!isEdit && (
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardContent className="p-6">
+                            <label className="flex items-start gap-3 cursor-pointer">
                                 <input
-                                    type="text"
-                                    value={formData.location}
-                                    onChange={(e) => handleChange('location', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                    placeholder="Ej: Oficina 201"
+                                    type="checkbox"
+                                    checked={formData.activate_immediately}
+                                    onChange={(e) => handleChange('activate_immediately', e.target.checked)}
+                                    className="mt-1"
                                 />
-                            </div>
-
-                            {/* Serial Number */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Número de Serie
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.serial_number}
-                                    onChange={(e) => handleChange('serial_number', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
-                                    placeholder="S/N: ABC123XYZ"
-                                />
-                            </div>
-
-                            {/* Manufacturer */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Fabricante
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.manufacturer}
-                                    onChange={(e) => handleChange('manufacturer', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                    placeholder="Ej: Dell"
-                                />
-                            </div>
-
-                            {/* Model */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Modelo
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.model}
-                                    onChange={(e) => handleChange('model', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                    placeholder="Ej: Latitude 5520"
-                                />
-                            </div>
-
-                            {/* Purchase Order */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Orden de Compra
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.purchase_order}
-                                    onChange={(e) => handleChange('purchase_order', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:border-indigo-500 outline-none"
-                                    placeholder="PO-2026-001"
-                                />
-                            </div>
-
-                            {/* Warranty Expiration */}
-                            <div>
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Vencimiento de Garantía
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formData.warranty_expiration}
-                                    onChange={(e) => handleChange('warranty_expiration', e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                />
-                            </div>
-
-                            {/* Notes */}
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Notas
-                                </label>
-                                <textarea
-                                    value={formData.notes}
-                                    onChange={(e) => handleChange('notes', e.target.value)}
-                                    rows={3}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none resize-none"
-                                    placeholder="Información adicional, historial de mantenimiento, etc..."
-                                />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                                <div>
+                                    <p className="text-white font-bold">Activate asset immediately</p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        If checked, depreciation will start next month. Otherwise, asset will remain in PENDING status until manually activated.
+                                    </p>
+                                </div>
+                            </label>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-4">
@@ -364,15 +464,17 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, categories, onSave,
                         onClick={onCancel}
                         variant="outline"
                         className="border-slate-800 text-slate-400 hover:text-white px-8 py-6 rounded-2xl font-bold"
+                        disabled={loading}
                     >
-                        Cancelar
+                        Cancel
                     </Button>
                     <Button
                         type="submit"
                         className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-6 rounded-2xl font-black shadow-xl shadow-indigo-900/20"
+                        disabled={loading}
                     >
                         <Save className="w-4 h-4 mr-2" />
-                        {isEdit ? 'Actualizar Activo' : 'Crear Activo'}
+                        {loading ? 'Saving...' : isEdit ? 'Update Asset' : 'Create Asset'}
                     </Button>
                 </div>
             </form>
