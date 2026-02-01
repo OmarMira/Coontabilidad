@@ -1,413 +1,393 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Building2,
-    Plus,
-    Search,
-    Filter,
-    Package,
-    Edit,
-    Trash2,
-    Calendar,
-    DollarSign,
-    TrendingDown,
-    Info,
-    ChevronRight,
-    CheckCircle2,
-    XCircle
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { 
+  Package, 
+  Plus, 
+  TrendingDown, 
+  DollarSign, 
+  Calendar,
+  AlertTriangle,
+  Play,
+  FileText,
+  Settings
 } from 'lucide-react';
-import {
-    FixedAsset,
-    AssetCategory,
-    getFixedAssets,
-    getAssetCategories,
-    createFixedAsset,
-    updateFixedAsset,
-    calculateMonthlyDepreciation
-} from '../../database/simple-db';
-import { toast } from 'react-hot-toast';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { useAuth } from '../../contexts/AuthContext';
-import { AssetForm } from './AssetForm';
-import { AssetDetailView } from './AssetDetailView';
+import { db } from '@/database/simple-db';
+import { getFixedAssetsController } from '@/services/accounting/fixed-assets';
+import type { FixedAsset, AssetCategory } from '@/services/accounting/fixed-assets';
 
-type ViewMode = 'list' | 'form' | 'detail';
-
+/**
+ * FixedAssetsManager
+ * 
+ * Main dashboard for Fixed Assets module with:
+ * - Asset summary KPIs
+ * - Asset list with filters
+ * - Quick actions (Add Asset, Run Depreciation, Reports)
+ * - Category management
+ */
 export const FixedAssetsManager: React.FC = () => {
-    const { user } = useAuth();
-    const [assets, setAssets] = useState<FixedAsset[]>([]);
-    const [categories, setCategories] = useState<AssetCategory[]>([]);
-    const [filteredAssets, setFilteredAssets] = useState<FixedAsset[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [assets, setAssets] = useState<FixedAsset[]>([]);
+  const [categories, setCategories] = useState<AssetCategory[]>([]);
+  const [summary, setSummary] = useState({
+    total_assets: 0,
+    active_assets: 0,
+    total_cost: 0,
+    total_depreciation: 0,
+    net_book_value: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'assets' | 'categories' | 'reports'>('assets');
 
-    const [viewMode, setViewMode] = useState<ViewMode>('list');
-    const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null);
-    const [isProcessingDepreciation, setIsProcessingDepreciation] = useState(false);
+  useEffect(() => {
+    loadData();
+  }, []);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    useEffect(() => {
-        applyFilters();
-    }, [assets, searchTerm, filterStatus, filterCategory]);
+      const controller = getFixedAssetsController(db);
+      
+      // Load assets and categories
+      const [assetsData, categoriesData, summaryData] = await Promise.all([
+        controller.getAllAssets(),
+        controller.getCategories(),
+        controller.getAssetSummary()
+      ]);
 
-    const loadData = () => {
-        const allAssets = getFixedAssets();
-        setAssets(allAssets);
-        setCategories(getAssetCategories());
-    };
+      setAssets(assetsData);
+      setCategories(categoriesData);
+      setSummary(summaryData);
 
-    const applyFilters = () => {
-        let filtered = [...assets];
-
-        // Filtro por búsqueda
-        if (searchTerm) {
-            filtered = filtered.filter(a =>
-                a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                a.asset_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (a.serial_number && a.serial_number.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-        }
-
-        // Filtro por estado
-        if (filterStatus !== 'all') {
-            filtered = filtered.filter(a => a.status === filterStatus);
-        }
-
-        // Filtro por categoría
-        if (filterCategory !== 'all') {
-            filtered = filtered.filter(a => a.category_id === parseInt(filterCategory));
-        }
-
-        setFilteredAssets(filtered);
-    };
-
-    const handleCreateAsset = () => {
-        setSelectedAsset(null);
-        setViewMode('form');
-    };
-
-    const handleEditAsset = (asset: FixedAsset) => {
-        setSelectedAsset(asset);
-        setViewMode('form');
-    };
-
-    const handleViewAsset = (asset: FixedAsset) => {
-        setSelectedAsset(asset);
-        setViewMode('detail');
-    };
-
-    const handleSaveAsset = (assetData: Partial<FixedAsset>) => {
-        if (!user) return;
-
-        if (selectedAsset?.id) {
-            // Actualizar
-            const res = updateFixedAsset(selectedAsset.id, assetData);
-            if (res.success) {
-                toast.success('Activo actualizado');
-                loadData();
-                setViewMode('list');
-            } else {
-                toast.error(res.message);
-            }
-        } else {
-            // Crear nuevo
-            const res = createFixedAsset(assetData, user.id);
-            if (res.success) {
-                toast.success(res.message);
-                loadData();
-                setViewMode('list');
-            } else {
-                toast.error(res.message);
-            }
-        }
-    };
-
-    const handleCalculateDepreciation = async () => {
-        if (!user) return;
-        setIsProcessingDepreciation(true);
-
-        // Usar el primer día del mes actual
-        const today = new Date();
-        const periodDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-
-        const res = calculateMonthlyDepreciation(periodDate, user.id);
-        setIsProcessingDepreciation(false);
-
-        if (res.success) {
-            toast.success(res.message);
-            loadData();
-        } else {
-            toast.error(res.message);
-        }
-    };
-
-    const getCategoryName = (categoryId: number) => {
-        const cat = categories.find(c => c.id === categoryId);
-        return cat?.name || 'Sin categoría';
-    };
-
-    const getStatusBadge = (status: string) => {
-        const badges = {
-            active: { label: 'Activo', color: 'emerald' },
-            disposed: { label: 'Dado de Baja', color: 'red' },
-            fully_depreciated: { label: 'Depreciado 100%', color: 'amber' },
-            under_maintenance: { label: 'En Mantenimiento', color: 'blue' }
-        };
-        const badge = badges[status as keyof typeof badges] || { label: status, color: 'slate' };
-
-        return (
-            <span className={`px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg bg-${badge.color}-500/10 border border-${badge.color}-500/20 text-${badge.color}-400`}>
-                {badge.label}
-            </span>
-        );
-    };
-
-    // Calcular métricas
-    const totalValue = assets.reduce((sum, a) => sum + (a.current_value || a.acquisition_cost), 0);
-    const totalDepreciation = assets.reduce((sum, a) => sum + (a.accumulated_depreciation || 0), 0);
-    const netBookValue = totalValue - totalDepreciation;
-    const activeAssets = assets.filter(a => a.status === 'active').length;
-
-    if (viewMode === 'form') {
-        return (
-            <AssetForm
-                asset={selectedAsset}
-                categories={categories}
-                onSave={handleSaveAsset}
-                onCancel={() => setViewMode('list')}
-            />
-        );
+    } catch (err) {
+      console.error('Error loading fixed assets:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar activos fijos');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (viewMode === 'detail' && selectedAsset) {
-        return (
-            <AssetDetailView
-                asset={selectedAsset}
-                category={categories.find(c => c.id === selectedAsset.category_id)}
-                onEdit={() => setViewMode('form')}
-                onBack={() => setViewMode('list')}
-            />
-        );
+  const handleRunDepreciation = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const controller = getFixedAssetsController(db);
+      const now = new Date();
+      
+      const result = await controller.runDepreciationBatch(now);
+      
+      setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: $${(result.total_depreciation_amount / 100).toFixed(2)}`);
+      
+      // Reload data
+      await loadData();
+
+      setTimeout(() => setSuccess(null), 5000);
+
+    } catch (err) {
+      console.error('Error running depreciation:', err);
+      setError(err instanceof Error ? err.message : 'Error al procesar depreciación');
+    } finally {
+      setLoading(false);
     }
+  };
 
+  if (loading && assets.length === 0) {
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
-                        <Building2 className="w-8 h-8 text-indigo-500" />
-                        Activos Fijos
-                    </h2>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-                        Gestión de Propiedades, Planta y Equipo
-                    </p>
-                </div>
-
-                <div className="flex gap-2">
-                    <Button
-                        onClick={handleCalculateDepreciation}
-                        disabled={isProcessingDepreciation || activeAssets === 0}
-                        variant="outline"
-                        className="border-slate-800 text-slate-400 hover:text-white font-bold"
-                    >
-                        <TrendingDown className="w-4 h-4 mr-2" />
-                        {isProcessingDepreciation ? 'Calculando...' : 'Calcular Depreciación'}
-                    </Button>
-                    <Button
-                        onClick={handleCreateAsset}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-black"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nuevo Activo
-                    </Button>
-                </div>
-            </div>
-
-            {/* Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Activos</span>
-                            <Package className="w-5 h-5 text-blue-400" />
-                        </div>
-                        <p className="text-3xl font-black text-white">{assets.length}</p>
-                        <p className="text-xs text-emerald-400 font-bold mt-1">{activeAssets} activos</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Valor Original</span>
-                            <DollarSign className="w-5 h-5 text-indigo-400" />
-                        </div>
-                        <p className="text-3xl font-black text-white">${totalValue.toLocaleString()}</p>
-                        <p className="text-xs text-slate-500 font-bold mt-1">Costo de adquisición</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Depreciación Acumulada</span>
-                            <TrendingDown className="w-5 h-5 text-rose-400" />
-                        </div>
-                        <p className="text-3xl font-black text-rose-400">-${totalDepreciation.toLocaleString()}</p>
-                        <p className="text-xs text-slate-500 font-bold mt-1">Total depreciado</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-slate-900 border-slate-800 border-t-4 border-emerald-500">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Valor en Libros</span>
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                        </div>
-                        <p className="text-3xl font-black text-emerald-400">${netBookValue.toLocaleString()}</p>
-                        <p className="text-xs text-slate-500 font-bold mt-1">Valor neto actual</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Filters and Search */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        {/* Search */}
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                            <input
-                                type="text"
-                                placeholder="Buscar por nombre, código o serie..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-600 focus:border-indigo-500 outline-none"
-                            />
-                        </div>
-
-                        {/* Filter by Status */}
-                        <div className="relative">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-8 py-3 text-white focus:border-indigo-500 outline-none appearance-none"
-                            >
-                                <option value="all">Todos los estados</option>
-                                <option value="active">Activos</option>
-                                <option value="disposed">Dados de baja</option>
-                                <option value="fully_depreciated">Depreciados 100%</option>
-                                <option value="under_maintenance">En mantenimiento</option>
-                            </select>
-                        </div>
-
-                        {/* Filter by Category */}
-                        <div className="relative">
-                            <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                            <select
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                                className="bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-8 py-3 text-white focus:border-indigo-500 outline-none appearance-none"
-                            >
-                                <option value="all">Todas las categorías</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Assets Table */}
-            <Card className="bg-slate-900 border-slate-800">
-                <CardContent className="p-0">
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-950 text-slate-500 font-black uppercase tracking-widest text-[9px]">
-                            <tr>
-                                <th className="px-6 py-4 text-left">Código / Nombre</th>
-                                <th className="px-6 py-4 text-left">Categoría</th>
-                                <th className="px-6 py-4 text-right">Costo Adquisición</th>
-                                <th className="px-6 py-4 text-right">Depreciación</th>
-                                <th className="px-6 py-4 text-right">Valor Neto</th>
-                                <th className="px-6 py-4 text-center">Estado</th>
-                                <th className="px-6 py-4 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800">
-                            {filteredAssets.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Package className="w-12 h-12 text-slate-700" />
-                                            <p className="text-slate-600 font-bold">
-                                                {searchTerm || filterStatus !== 'all' || filterCategory !== 'all'
-                                                    ? 'No se encontraron activos con los filtros aplicados'
-                                                    : 'No hay activos registrados. Haz clic en "Nuevo Activo" para comenzar.'}
-                                            </p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredAssets.map(asset => {
-                                    const netValue = (asset.current_value || asset.acquisition_cost) - (asset.accumulated_depreciation || 0);
-
-                                    return (
-                                        <tr key={asset.id} className="hover:bg-white/[0.01] transition-all">
-                                            <td className="px-6 py-4">
-                                                <div>
-                                                    <p className="text-blue-400 font-mono text-xs mb-1">{asset.asset_code}</p>
-                                                    <p className="text-white font-bold">{asset.name}</p>
-                                                    {asset.serial_number && (
-                                                        <p className="text-[10px] text-slate-600 font-mono mt-1">S/N: {asset.serial_number}</p>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-slate-400 text-xs">{getCategoryName(asset.category_id)}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-mono text-white">
-                                                ${asset.acquisition_cost.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-mono text-rose-400">
-                                                -${(asset.accumulated_depreciation || 0).toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold">
-                                                ${netValue.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                {getStatusBadge(asset.status)}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleViewAsset(asset)}
-                                                        className="p-2 hover:bg-blue-500/10 text-blue-400 rounded-lg transition-all"
-                                                    >
-                                                        <Info className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleEditAsset(asset)}
-                                                        className="p-2 hover:bg-indigo-500/10 text-indigo-400 rounded-lg transition-all"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </CardContent>
-            </Card>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Cargando activos fijos...</p>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+            <Package className="w-8 h-8 text-blue-400" />
+            Gestión de Activos Fijos
+          </h1>
+          <p className="text-slate-400 mt-1">Administración y depreciación de activos</p>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            onClick={handleRunDepreciation}
+            disabled={loading || assets.length === 0}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Play className="w-4 h-4 mr-2" />
+            Ejecutar Depreciación
+          </Button>
+          <Button
+            onClick={() => {/* TODO: Open asset form */}}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Activo
+          </Button>
+        </div>
+      </div>
+
+      {/* Alerts */}
+      {error && (
+        <Alert className="bg-red-950/20 border-red-900/50 text-red-200">
+          <AlertTriangle className="w-4 h-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert className="bg-green-950/20 border-green-900/50 text-green-200">
+          <AlertTitle>Éxito</AlertTitle>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Costo Total
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-400 font-mono">
+              ${(summary.total_cost / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Costo de adquisición</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+              <TrendingDown className="w-4 h-4" />
+              Depreciación Acumulada
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-400 font-mono">
+              ${(summary.total_depreciation / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Total depreciado</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Valor en Libros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-400 font-mono">
+              ${(summary.net_book_value / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">Valor neto actual</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Activos Activos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-200">
+              {summary.active_assets}
+            </div>
+            <p className="text-xs text-slate-500 mt-1">En depreciación</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-slate-800">
+        <button
+          onClick={() => setActiveTab('assets')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'assets'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Package className="w-4 h-4 inline mr-2" />
+          Activos
+        </button>
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'categories'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Settings className="w-4 h-4 inline mr-2" />
+          Categorías
+        </button>
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'reports'
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <FileText className="w-4 h-4 inline mr-2" />
+          Reportes
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === 'assets' && (
+          <Card className="bg-slate-900 border-slate-800 text-white">
+            <CardHeader>
+              <CardTitle>Lista de Activos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {assets.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                  <p className="text-slate-400 mb-4">No hay activos fijos registrados</p>
+                  <Button onClick={() => {/* TODO: Open form */}} className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Primer Activo
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-800">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Tag</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Nombre</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Categoría</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Costo</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Depreciación</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Valor Neto</th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-slate-400">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assets.map((asset) => (
+                        <tr key={asset.id} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+                          <td className="py-3 px-4 text-sm font-mono text-blue-400">{asset.asset_tag}</td>
+                          <td className="py-3 px-4 text-sm">{asset.asset_name}</td>
+                          <td className="py-3 px-4 text-sm text-slate-400">
+                            {categories.find(c => c.id === asset.category_id)?.name || 'N/A'}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-right font-mono">
+                            ${(asset.purchase_cost / 100).toFixed(2)}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-right font-mono text-amber-400">
+                            ${(asset.total_accumulated_depreciation / 100).toFixed(2)}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-right font-mono text-green-400">
+                            ${((asset.net_book_value || 0) / 100).toFixed(2)}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              asset.status === 'ACTIVE' ? 'bg-green-900/30 text-green-400' :
+                              asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
+                              'bg-slate-700 text-slate-400'
+                            }`}>
+                              {asset.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'categories' && (
+          <Card className="bg-slate-900 border-slate-800 text-white">
+            <CardHeader>
+              <CardTitle>Categorías de Activos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {categories.map((category) => (
+                  <div key={category.id} className="p-4 border border-slate-800 rounded-lg hover:border-blue-500/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-medium text-white">{category.name}</h3>
+                        <p className="text-xs text-slate-500 font-mono">{category.code}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        category.is_active ? 'bg-green-900/30 text-green-400' : 'bg-slate-700 text-slate-400'
+                      }`}>
+                        {category.is_active ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Método:</span>
+                        <span className="text-slate-200">{category.default_depreciation_method}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Vida Útil:</span>
+                        <span className="text-slate-200">{category.default_useful_life_months} meses</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Cuenta Activo:</span>
+                        <span className="text-slate-200 font-mono">{category.gl_asset_account}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'reports' && (
+          <Card className="bg-slate-900 border-slate-800 text-white">
+            <CardHeader>
+              <CardTitle>Reportes de Activos Fijos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left">
+                  <FileText className="w-8 h-8 text-blue-400 mb-3" />
+                  <h3 className="font-medium text-white mb-1">Registro de Activos</h3>
+                  <p className="text-sm text-slate-400">Lista completa con valores actuales</p>
+                </button>
+                <button className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left">
+                  <Calendar className="w-8 h-8 text-amber-400 mb-3" />
+                  <h3 className="font-medium text-white mb-1">Calendario de Depreciación</h3>
+                  <p className="text-sm text-slate-400">Proyección mensual de gastos</p>
+                </button>
+                <button className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left">
+                  <TrendingDown className="w-8 h-8 text-green-400 mb-3" />
+                  <h3 className="font-medium text-white mb-1">Resumen de Disposiciones</h3>
+                  <p className="text-sm text-slate-400">Activos vendidos o dados de baja</p>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 };
