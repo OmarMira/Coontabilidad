@@ -256,11 +256,15 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
           currency, balance, is_active
         ) VALUES (?, ?, ?, ?, 'USD', ?, 1)
       `);
+      const accountTypes = ['checking', 'savings', 'other'];
+      const accountType = randomElement(accountTypes);
+      const accountLabel = accountType === 'checking' ? 'Checking' : accountType === 'savings' ? 'Savings' : 'Business';
+      
       stmt.run([
         randomElement(banks),
-        `${randomElement(['Checking', 'Savings', 'Business'])} Account ${i + 1}`,
+        `${accountLabel} Account ${i + 1}`,
         `${randomInt(1000000000, 9999999999)}`,
-        randomElement(['checking', 'savings', 'business']),
+        accountType,
         randomFloat(10000, 500000)
       ]);
       const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
