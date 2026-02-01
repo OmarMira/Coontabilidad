@@ -125,6 +125,14 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
   try {
     console.log('🚀 Iniciando generación de datos masivos...');
     
+    // CRÍTICO: Verificar que exista el plan de cuentas antes de generar asientos contables
+    const accountsCheck = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
+    const accountCount = accountsCheck[0]?.values[0]?.[0] as number || 0;
+    
+    if (accountCount === 0) {
+      console.warn('⚠️ Plan de cuentas vacío. Los asientos contables no se generarán.');
+    }
+    
     db.run('BEGIN TRANSACTION');
 
     const stats = {
@@ -644,48 +652,52 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       inventoryMovements++;
     }
 
-    // 11. Generar Asientos Contables de Ejemplo
-    console.log('📊 Generando asientos contables...');
-    
-    for (let i = 0; i < 50; i++) {
-      const entryDate = randomDate(startDate, endDate);
-      const amount = randomFloat(100, 10000);
+    // 11. Generar Asientos Contables de Ejemplo (solo si existe plan de cuentas)
+    if (accountCount > 0) {
+      console.log('📊 Generando asientos contables...');
       
-      const journalStmt = db.prepare(`
-        INSERT INTO journal_entries (
-          entry_date, reference, description, total_debit, total_credit,
-          created_by
-        ) VALUES (?, ?, ?, ?, ?, 1)
-      `);
-      journalStmt.run([
-        entryDate,
-        `JE-${new Date(entryDate).getFullYear()}-${String(i + 1).padStart(5, '0')}`,
-        `Asiento contable ${i + 1}`,
-        amount,
-        amount
-      ]);
-      const journalId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-      journalStmt.free();
-      
-      // Débito
-      const debitStmt = db.prepare(`
-        INSERT INTO journal_details (
-          journal_entry_id, account_code, description, debit_amount, credit_amount
-        ) VALUES (?, ?, ?, ?, 0)
-      `);
-      debitStmt.run([journalId, '1110', 'Débito', amount]);
-      debitStmt.free();
-      
-      // Crédito
-      const creditStmt = db.prepare(`
-        INSERT INTO journal_details (
-          journal_entry_id, account_code, description, debit_amount, credit_amount
-        ) VALUES (?, ?, ?, 0, ?)
-      `);
-      creditStmt.run([journalId, '4110', 'Crédito', amount]);
-      creditStmt.free();
-      
-      stats.journalEntries++;
+      for (let i = 0; i < 50; i++) {
+        const entryDate = randomDate(startDate, endDate);
+        const amount = randomFloat(100, 10000);
+        
+        const journalStmt = db.prepare(`
+          INSERT INTO journal_entries (
+            entry_date, reference, description, total_debit, total_credit,
+            created_by
+          ) VALUES (?, ?, ?, ?, ?, 1)
+        `);
+        journalStmt.run([
+          entryDate,
+          `JE-${new Date(entryDate).getFullYear()}-${String(i + 1).padStart(5, '0')}`,
+          `Asiento contable ${i + 1}`,
+          amount,
+          amount
+        ]);
+        const journalId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
+        journalStmt.free();
+        
+        // Débito
+        const debitStmt = db.prepare(`
+          INSERT INTO journal_details (
+            journal_entry_id, account_code, description, debit_amount, credit_amount
+          ) VALUES (?, ?, ?, ?, 0)
+        `);
+        debitStmt.run([journalId, '1110', 'Débito', amount]);
+        debitStmt.free();
+        
+        // Crédito
+        const creditStmt = db.prepare(`
+          INSERT INTO journal_details (
+            journal_entry_id, account_code, description, debit_amount, credit_amount
+          ) VALUES (?, ?, ?, 0, ?)
+        `);
+        creditStmt.run([journalId, '4110', 'Crédito', amount]);
+        creditStmt.free();
+        
+        stats.journalEntries++;
+      }
+    } else {
+      console.log('⏭️ Saltando generación de asientos contables (plan de cuentas vacío)');
     }
 
     db.run('COMMIT');
