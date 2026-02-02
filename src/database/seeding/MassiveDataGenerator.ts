@@ -1,5 +1,5 @@
 // MassiveDataGenerator.ts - Generador de datos masivos para testing
-import { db } from '../simple-db';
+import { getDB } from '../simple-db';
 
 interface GeneratorConfig {
   customers: number;
@@ -117,22 +117,23 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
   stats: any;
 }> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
-  
+  const db = getDB();
+
   if (!db) {
     return { success: false, message: 'Database not initialized', stats: {} };
   }
 
   try {
     console.log('🚀 Iniciando generación de datos masivos...');
-    
+
     // CRÍTICO: Verificar que exista el plan de cuentas antes de generar asientos contables
     const accountsCheck = db.exec("SELECT COUNT(*) as count FROM chart_of_accounts");
     const accountCount = accountsCheck[0]?.values[0]?.[0] as number || 0;
-    
+
     if (accountCount === 0) {
       console.warn('⚠️ Plan de cuentas vacío. Los asientos contables no se generarán.');
     }
-    
+
     db.run('BEGIN TRANSACTION');
 
     const stats = {
@@ -174,7 +175,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const price = randomFloat(10, 5000);
       const cost = price * randomFloat(0.4, 0.7);
       const stock = randomInt(0, 500);
-      
+
       const stmt = db.prepare(`
         INSERT INTO products (
           sku, name, description, category_id, price, cost, 
@@ -201,7 +202,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const name = isCompany ? generateCompanyName() : `${firstName} ${lastName}`;
       const addr = generateAddress();
       const county = randomElement(FLORIDA_COUNTIES);
-      
+
       const stmt = db.prepare(`
         INSERT INTO customers (
           name, email, phone, address_line1, city, state, zip_code,
@@ -230,7 +231,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const addr = generateAddress();
       const contactFirstName = randomElement(FIRST_NAMES);
       const contactLastName = randomElement(LAST_NAMES);
-      
+
       const stmt = db.prepare(`
         INSERT INTO suppliers (
           name, email, phone, address_line1, city, state, 
@@ -264,7 +265,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const accountTypes = ['checking', 'savings', 'other'];
       const accountType = randomElement(accountTypes);
       const accountLabel = accountType === 'checking' ? 'Checking' : accountType === 'savings' ? 'Savings' : 'Business';
-      
+
       stmt.run([
         randomElement(banks),
         `${accountLabel} Account ${i + 1}`,
@@ -282,35 +283,35 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
     console.log('📄 Generando facturas de venta...');
     const startDate = new Date('2024-01-01');
     const endDate = new Date('2026-01-31');
-    
+
     for (let i = 0; i < cfg.invoices; i++) {
       const customerId = randomElement(customerIds);
       const issueDate = randomDate(startDate, endDate);
       const dueDate = new Date(issueDate);
       dueDate.setDate(dueDate.getDate() + 30);
-      
+
       // Obtener condado del cliente para impuestos
       const customerRes = db.exec("SELECT florida_county FROM customers WHERE id = ?", [customerId]);
       const county = customerRes[0]?.values[0]?.[0] as string || 'Miami-Dade';
       const taxRateRes = db.exec("SELECT total_rate FROM florida_tax_rates WHERE county_name = ?", [county]);
       const taxRate = taxRateRes[0]?.values[0]?.[0] as number || 0.07;
-      
+
       // Generar líneas de factura
       const numItems = randomInt(1, 5);
       let subtotal = 0;
       const items: any[] = [];
-      
+
       for (let j = 0; j < numItems; j++) {
         const productId = randomElement(productIds);
         const productRes = db.exec("SELECT name, price FROM products WHERE id = ?", [productId]);
         const productName = productRes[0]?.values[0]?.[0] as string;
         const productPrice = productRes[0]?.values[0]?.[1] as number;
-        
+
         const quantity = randomInt(1, 10);
         const unitPrice = productPrice * randomFloat(0.9, 1.1); // Variación de precio
         const lineTotal = quantity * unitPrice;
         subtotal += lineTotal;
-        
+
         items.push({
           productId,
           description: productName,
@@ -320,11 +321,11 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
           taxable: true
         });
       }
-      
+
       const taxAmount = subtotal * taxRate;
       const total = subtotal + taxAmount;
       const status = randomElement(['draft', 'sent', 'paid', 'paid', 'paid']); // Más pagadas
-      
+
       // Insertar factura
       const invoiceStmt = db.prepare(`
         INSERT INTO invoices (
@@ -344,7 +345,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       ]);
       const invoiceId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
       invoiceStmt.free();
-      
+
       // Insertar líneas
       for (const item of items) {
         const lineStmt = db.prepare(`
@@ -358,7 +359,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         ]);
         lineStmt.free();
       }
-      
+
       // Si está pagada, crear pago
       if (status === 'paid') {
         const paymentStmt = db.prepare(`
@@ -379,35 +380,35 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         paymentStmt.free();
         stats.payments++;
       }
-      
+
       stats.invoices++;
     }
 
     // 7. Generar Facturas de Compra (Bills)
     console.log('📋 Generando facturas de compra...');
-    
+
     for (let i = 0; i < cfg.bills; i++) {
       const supplierId = randomElement(supplierIds);
       const issueDate = randomDate(startDate, endDate);
       const dueDate = new Date(issueDate);
       dueDate.setDate(dueDate.getDate() + 45);
-      
+
       // Generar líneas de factura
       const numItems = randomInt(1, 5);
       let subtotal = 0;
       const items: any[] = [];
-      
+
       for (let j = 0; j < numItems; j++) {
         const productId = randomElement(productIds);
         const productRes = db.exec("SELECT name, cost FROM products WHERE id = ?", [productId]);
         const productName = productRes[0]?.values[0]?.[0] as string;
         const productCost = productRes[0]?.values[0]?.[1] as number;
-        
+
         const quantity = randomInt(5, 50);
         const unitPrice = productCost * randomFloat(0.95, 1.05);
         const lineTotal = quantity * unitPrice;
         subtotal += lineTotal;
-        
+
         items.push({
           productId,
           description: productName,
@@ -416,11 +417,11 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
           lineTotal
         });
       }
-      
+
       const taxAmount = subtotal * 0.07;
       const total = subtotal + taxAmount;
       const status = randomElement(['received', 'approved', 'paid', 'paid']);
-      
+
       // Insertar factura de compra
       const billStmt = db.prepare(`
         INSERT INTO bills (
@@ -440,7 +441,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       ]);
       const billId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
       billStmt.free();
-      
+
       // Insertar líneas
       for (const item of items) {
         const lineStmt = db.prepare(`
@@ -454,7 +455,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         ]);
         lineStmt.free();
       }
-      
+
       // Si está pagada, crear pago a proveedor
       if (status === 'paid') {
         const paymentStmt = db.prepare(`
@@ -475,40 +476,40 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         paymentStmt.free();
         stats.payments++;
       }
-      
+
       stats.bills++;
     }
 
     // 8. Generar Cotizaciones (Quotes)
     console.log('💼 Generando cotizaciones...');
-    
+
     for (let i = 0; i < cfg.quotes; i++) {
       const customerId = randomElement(customerIds);
       const issueDate = randomDate(startDate, endDate);
       const expirationDate = new Date(issueDate);
       expirationDate.setDate(expirationDate.getDate() + 30);
-      
+
       const customerRes = db.exec("SELECT florida_county FROM customers WHERE id = ?", [customerId]);
       const county = customerRes[0]?.values[0]?.[0] as string || 'Miami-Dade';
       const taxRateRes = db.exec("SELECT total_rate FROM florida_tax_rates WHERE county_name = ?", [county]);
       const taxRate = taxRateRes[0]?.values[0]?.[0] as number || 0.07;
-      
+
       const numItems = randomInt(1, 4);
       let subtotal = 0;
       const items: any[] = [];
-      
+
       for (let j = 0; j < numItems; j++) {
         const productId = randomElement(productIds);
         const productRes = db.exec("SELECT name, price FROM products WHERE id = ?", [productId]);
         const productName = productRes[0]?.values[0]?.[0] as string;
         const productPrice = productRes[0]?.values[0]?.[1] as number;
-        
+
         const quantity = randomInt(1, 10);
         const unitPrice = productPrice;
         const discount = randomElement([0, 0, 0, 5, 10, 15]); // Mayoría sin descuento
         const lineTotal = quantity * unitPrice * (1 - discount / 100);
         subtotal += lineTotal;
-        
+
         items.push({
           productId,
           description: productName,
@@ -518,11 +519,11 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
           lineTotal
         });
       }
-      
+
       const taxAmount = subtotal * taxRate;
       const total = subtotal + taxAmount;
       const status = randomElement(['draft', 'sent', 'sent', 'accepted', 'rejected', 'expired']);
-      
+
       const quoteStmt = db.prepare(`
         INSERT INTO quotes (
           quote_number, customer_id, issue_date, expiration_date,
@@ -542,7 +543,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       ]);
       const quoteId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
       quoteStmt.free();
-      
+
       for (const item of items) {
         const lineStmt = db.prepare(`
           INSERT INTO quote_lines (
@@ -556,7 +557,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         ]);
         lineStmt.free();
       }
-      
+
       stats.quotes++;
     }
 
@@ -565,12 +566,12 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
     const employeeIds: number[] = [];
     const departments = ['Sales', 'Accounting', 'IT', 'HR', 'Operations', 'Management'];
     const positions = ['Manager', 'Specialist', 'Analyst', 'Coordinator', 'Assistant', 'Director'];
-    
+
     for (let i = 0; i < cfg.employees; i++) {
       const firstName = randomElement(FIRST_NAMES);
       const lastName = randomElement(LAST_NAMES);
       const hireDate = randomDate(new Date('2020-01-01'), new Date('2025-12-31'));
-      
+
       const stmt = db.prepare(`
         INSERT INTO employees (
           employee_number, first_name, last_name, email, phone,
@@ -600,13 +601,13 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
     // 10. Generar Movimientos de Inventario
     console.log('📦 Generando movimientos de inventario...');
     let inventoryMovements = 0;
-    
+
     // Movimientos de entrada (compras)
     for (let i = 0; i < 100; i++) {
       const productId = randomElement(productIds);
       const quantity = randomInt(10, 100);
       const date = randomDate(startDate, endDate);
-      
+
       const stmt = db.prepare(`
         INSERT INTO stock_movements (
           product_id, quantity, movement_type, reference_type, reference_id,
@@ -617,13 +618,13 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       stmt.free();
       inventoryMovements++;
     }
-    
+
     // Movimientos de salida (ventas)
     for (let i = 0; i < 100; i++) {
       const productId = randomElement(productIds);
       const quantity = -randomInt(1, 20); // Negativo para salidas
       const date = randomDate(startDate, endDate);
-      
+
       const stmt = db.prepare(`
         INSERT INTO stock_movements (
           product_id, quantity, movement_type, reference_type, reference_id,
@@ -634,13 +635,13 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       stmt.free();
       inventoryMovements++;
     }
-    
+
     // Ajustes de inventario
     for (let i = 0; i < 30; i++) {
       const productId = randomElement(productIds);
       const quantity = randomInt(-10, 10);
       const date = randomDate(startDate, endDate);
-      
+
       const stmt = db.prepare(`
         INSERT INTO stock_movements (
           product_id, quantity, movement_type, reference_type, reference_id,
@@ -655,11 +656,11 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
     // 11. Generar Asientos Contables de Ejemplo (solo si existe plan de cuentas)
     if (accountCount > 0) {
       console.log('📊 Generando asientos contables...');
-      
+
       for (let i = 0; i < 50; i++) {
         const entryDate = randomDate(startDate, endDate);
         const amount = randomFloat(100, 10000);
-        
+
         const journalStmt = db.prepare(`
           INSERT INTO journal_entries (
             entry_date, reference, description, total_debit, total_credit,
@@ -675,7 +676,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         ]);
         const journalId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
         journalStmt.free();
-        
+
         // Débito
         const debitStmt = db.prepare(`
           INSERT INTO journal_details (
@@ -684,7 +685,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         `);
         debitStmt.run([journalId, '1110', 'Débito', amount]);
         debitStmt.free();
-        
+
         // Crédito
         const creditStmt = db.prepare(`
           INSERT INTO journal_details (
@@ -693,7 +694,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
         `);
         creditStmt.run([journalId, '4110', 'Crédito', amount]);
         creditStmt.free();
-        
+
         stats.journalEntries++;
       }
     } else {
@@ -727,6 +728,7 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
  * Limpia todos los datos de prueba (CUIDADO!)
  */
 export function clearAllTestData(): { success: boolean; message: string } {
+  const db = getDB();
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
