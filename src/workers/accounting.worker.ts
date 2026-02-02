@@ -346,10 +346,12 @@ function isFirstMonthPartial(purchaseDate: Date, periodDate: Date): boolean {
 }
 
 // Handle errors gracefully
-self.onerror = (error: ErrorEvent) => {
+self.onerror = (event: string | Event) => {
+    const error = typeof event === 'string' ? event : (event as ErrorEvent).message || 'Unknown worker error';
     console.error('Accounting worker error:', error);
     self.postMessage({
         type: 'ERROR',
-        error: error.message || 'Unknown worker error'
+        error
     });
 };
+
