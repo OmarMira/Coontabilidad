@@ -1651,6 +1651,7 @@ const initializeSchema = async (db: any) => {
     payment_terms INTEGER DEFAULT 30,
     tax_id TEXT,
     tax_exempt BOOLEAN DEFAULT 0,
+    assigned_salesperson TEXT,
     discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
     preferred_payment_method TEXT,
     website TEXT,

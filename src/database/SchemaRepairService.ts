@@ -112,8 +112,21 @@ export class SchemaRepairService {
             // 2. VERIFICAR INTEGRIDAD DE VISTAS
             await this.syncViews(logs);
 
-            // 3. LIMPIAR REGISTROS HUÉRFANOS
-            await this.cleanOrphanedRecords(logs);
+            // 2.5. REPARAR TABLA CUSTOMERS - Agregar columna assigned_salesperson si falta
+            const customerCols = this.getTableColumns('customers');
+            if (customerCols.length > 0 && !customerCols.includes('assigned_salesperson')) {
+                try {
+                    this.db.run(`ALTER TABLE customers ADD COLUMN assigned_salesperson TEXT`);
+                    logs.push("✅ Agregada columna assigned_salesperson a customers");
+                } catch (e) {
+                    logs.push(`⚠️ Error agregando columna assigned_salesperson: ${(e as Error).message}`);
+                }
+            }
+
+            // 3. LIMPIAR REGISTROS HUÉRFANOS - DESHABILITADO TEMPORALMENTE
+            // NOTA: Esta función es demasiado agresiva y elimina datos iniciales válidos
+            // await this.cleanOrphanedRecords(logs);
+            logs.push("⏭️ Limpieza de registros huérfanos deshabilitada (previene eliminación de datos iniciales)");
 
             // 4. FIX ADMIN PASSWORD & USERS
             const userCols = this.getTableColumns('users');

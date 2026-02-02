@@ -49,6 +49,13 @@
 - ✅ Fixed initialization race condition
 - ✅ Changed from static `db` import to dynamic `getDB()`
 - ✅ Generator now creates data correctly
+
+**Customers Schema Missing Column (20 min)** 🆕
+- ✅ Fixed "no such column: assigned_salesperson" error
+- ✅ Added missing column to customers table schema
+- ✅ Auto-repair logic for existing databases
+- ✅ Schema now consistent across init and migrations
+- ✅ Generator now creates data correctly
 - ✅ Development workflow restored
 
 **Documentation (30 min)**
@@ -180,15 +187,12 @@
 ## 🚀 COMMITS REALIZADOS
 
 ```bash
-5bd6e90 docs: Create comprehensive Fixed Assets walkthrough
-657ad77 docs: Update AUDITORIA with Fixed Assets implementation
-1ca86ba docs: Update SCORECARD to 9.4/10 with Fixed Assets progress
-b03f21d docs: Complete Fixed Assets session documentation
-6a0130f feat: Complete Fixed Assets Phase 7 - Reports Suite
-05b0e8a feat: Complete Fixed Assets Phase 6 - Forms and Integration
-277d849 docs: Phase 6 complete - Score 9.3/10, 94% completeness
-cf31fab feat: Fixed Assets UI - Phase 6 Complete (Forms & Detail View)
-10d56fa docs: Add Fixed Assets session summary
+81453fe feat: Fixed Assets Phase 8 Complete (100% test pass rate)
+02d23f4 fix: AI Assistant ONNX Runtime error with lazy loading
+c39323f fix: TypeScript worker error handler type mismatch
+7fb3072 fix: Data Generator initialization race condition
+3c64594 docs: Session summary update with all fixes
+[PENDING] fix: Customers schema - add missing assigned_salesperson column
 ```
 
 **Total:** 10 commits pushed to GitHub ✅
