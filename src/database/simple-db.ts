@@ -6140,33 +6140,145 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
   ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    // Insertar cuentas iniciales (definidas en ChartOfAccounts.tsx)
+    // Plan de Cuentas Completo - US GAAP para Florida
     const initialAccounts = [
-      // ACTIVOS
+      // ========== 1000 - ACTIVOS ==========
       { account_code: '1000', account_name: 'ACTIVOS', account_type: 'asset', normal_balance: 'debit', parent_account: null, is_active: true },
+      
+      // 1100 - Activos Corrientes
       { account_code: '1100', account_name: 'Activos Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
       { account_code: '1110', account_name: 'Efectivo y Equivalentes', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
       { account_code: '1111', account_name: 'Caja Chica', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
       { account_code: '1112', account_name: 'Cuenta Corriente - Bank of America', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1113', account_name: 'Cuenta de Ahorros', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1114', account_name: 'Cuenta Payroll', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      
+      { account_code: '1120', account_name: 'Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1121', account_name: 'Cuentas por Cobrar - Clientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
+      { account_code: '1122', account_name: 'Provisión para Cuentas Incobrables', account_type: 'asset', normal_balance: 'credit', parent_account: '1120', is_active: true },
+      { account_code: '1123', account_name: 'Otras Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
+      
+      { account_code: '1130', account_name: 'Inventario', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1131', account_name: 'Inventario - Productos Terminados', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1132', account_name: 'Inventario - Materias Primas', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1133', account_name: 'Inventario - Productos en Proceso', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      
+      { account_code: '1140', account_name: 'Gastos Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1141', account_name: 'Seguros Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
+      { account_code: '1142', account_name: 'Alquileres Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
+      
+      // 1200 - Activos No Corrientes
+      { account_code: '1200', account_name: 'Activos No Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
+      { account_code: '1210', account_name: 'Propiedad, Planta y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
+      { account_code: '1211', account_name: 'Terrenos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1212', account_name: 'Edificios', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1213', account_name: 'Depreciación Acumulada - Edificios', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1214', account_name: 'Maquinaria y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1215', account_name: 'Depreciación Acumulada - Maquinaria', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1216', account_name: 'Vehículos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1217', account_name: 'Depreciación Acumulada - Vehículos', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1218', account_name: 'Mobiliario y Equipo de Oficina', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1219', account_name: 'Depreciación Acumulada - Mobiliario', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      
+      { account_code: '1220', account_name: 'Activos Intangibles', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
+      { account_code: '1221', account_name: 'Goodwill', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1222', account_name: 'Patentes y Marcas', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1223', account_name: 'Software', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1224', account_name: 'Amortización Acumulada - Intangibles', account_type: 'asset', normal_balance: 'credit', parent_account: '1220', is_active: true },
 
-      // PASIVOS
+      // ========== 2000 - PASIVOS ==========
       { account_code: '2000', account_name: 'PASIVOS', account_type: 'liability', normal_balance: 'credit', parent_account: null, is_active: true },
+      
+      // 2100 - Pasivos Corrientes
       { account_code: '2100', account_name: 'Pasivos Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
       { account_code: '2110', account_name: 'Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2111', account_name: 'Cuentas por Pagar - Proveedores', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
+      { account_code: '2112', account_name: 'Otras Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
+      
+      { account_code: '2120', account_name: 'Impuestos por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2121', account_name: 'Impuesto sobre Ventas por Pagar (Sales Tax)', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2122', account_name: 'Impuesto Federal por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2123', account_name: 'Impuesto Estatal FL por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2124', account_name: 'Payroll Taxes por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      
+      { account_code: '2130', account_name: 'Nómina por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2131', account_name: 'Sueldos y Salarios por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
+      { account_code: '2132', account_name: 'Retenciones por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
+      
+      { account_code: '2140', account_name: 'Préstamos a Corto Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2141', account_name: 'Línea de Crédito', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
+      { account_code: '2142', account_name: 'Porción Corriente de Deuda a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
+      
+      // 2200 - Pasivos No Corrientes
+      { account_code: '2200', account_name: 'Pasivos No Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
+      { account_code: '2210', account_name: 'Préstamos a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2200', is_active: true },
+      { account_code: '2211', account_name: 'Hipotecas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
+      { account_code: '2212', account_name: 'Préstamos Bancarios a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
 
-      // PATRIMONIO
+      // ========== 3000 - PATRIMONIO ==========
       { account_code: '3000', account_name: 'PATRIMONIO', account_type: 'equity', normal_balance: 'credit', parent_account: null, is_active: true },
       { account_code: '3100', account_name: 'Capital Social', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
+      { account_code: '3110', account_name: 'Common Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
+      { account_code: '3120', account_name: 'Preferred Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
+      { account_code: '3200', account_name: 'Utilidades Retenidas', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
+      { account_code: '3210', account_name: 'Utilidades del Ejercicio Actual', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
+      { account_code: '3220', account_name: 'Utilidades de Ejercicios Anteriores', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
+      { account_code: '3300', account_name: 'Dividendos', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
+      { account_code: '3400', account_name: 'Owner\'s Draw', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
 
-      // INGRESOS
+      // ========== 4000 - INGRESOS ==========
       { account_code: '4000', account_name: 'INGRESOS', account_type: 'revenue', normal_balance: 'credit', parent_account: null, is_active: true },
       { account_code: '4100', account_name: 'Ingresos Operacionales', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
-      { account_code: '4110', account_name: 'Ventas', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4110', account_name: 'Ventas de Productos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4120', account_name: 'Ventas de Servicios', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4130', account_name: 'Devoluciones y Descuentos sobre Ventas', account_type: 'revenue', normal_balance: 'debit', parent_account: '4100', is_active: true },
+      { account_code: '4200', account_name: 'Otros Ingresos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
+      { account_code: '4210', account_name: 'Ingresos por Intereses', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4220', account_name: 'Ganancia en Venta de Activos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4230', account_name: 'Ingresos Diversos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
 
-      // GASTOS
-      { account_code: '5000', account_name: 'GASTOS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
-      { account_code: '5100', account_name: 'Costo de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
-      { account_code: '5200', account_name: 'Gastos Operacionales', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true }
+      // ========== 5000 - COSTO DE VENTAS ==========
+      { account_code: '5000', account_name: 'COSTO DE VENTAS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '5100', account_name: 'Costo de Productos Vendidos', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
+      { account_code: '5110', account_name: 'Compras de Mercancía', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
+      { account_code: '5120', account_name: 'Fletes y Acarreos', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
+      { account_code: '5200', account_name: 'Costo de Servicios', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
+      { account_code: '5210', account_name: 'Mano de Obra Directa', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
+      { account_code: '5220', account_name: 'Materiales Directos', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
+
+      // ========== 6000 - GASTOS OPERACIONALES ==========
+      { account_code: '6000', account_name: 'GASTOS OPERACIONALES', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
+      
+      // 6100 - Gastos de Ventas
+      { account_code: '6100', account_name: 'Gastos de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6110', account_name: 'Sueldos - Personal de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6120', account_name: 'Comisiones de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6130', account_name: 'Publicidad y Marketing', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6140', account_name: 'Gastos de Viaje - Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      
+      // 6200 - Gastos Administrativos
+      { account_code: '6200', account_name: 'Gastos Administrativos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6210', account_name: 'Sueldos - Personal Administrativo', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6220', account_name: 'Alquiler de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6230', account_name: 'Servicios Públicos', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6240', account_name: 'Teléfono e Internet', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6250', account_name: 'Suministros de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6260', account_name: 'Seguros', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6270', account_name: 'Honorarios Profesionales', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6280', account_name: 'Depreciación y Amortización', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6290', account_name: 'Gastos de Mantenimiento', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      
+      // 6300 - Gastos Financieros
+      { account_code: '6300', account_name: 'Gastos Financieros', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6310', account_name: 'Intereses sobre Préstamos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6320', account_name: 'Comisiones Bancarias', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6330', account_name: 'Pérdida en Venta de Activos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      
+      // 6400 - Impuestos
+      { account_code: '6400', account_name: 'Impuestos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6410', account_name: 'Impuesto sobre la Renta', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
+      { account_code: '6420', account_name: 'Impuestos Locales y Estatales', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
+      { account_code: '6430', account_name: 'Property Tax', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true }
     ];
 
     initialAccounts.forEach(account => {
