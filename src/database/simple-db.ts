@@ -3183,6 +3183,17 @@ VALUES(?, ?, ?, ?, ?, 1)
     await insertInitialPayrollSettings();
   }
 
+  // Verificar si ya existe plan de cuentas antes de insertar
+  const chartCount = db.exec("SELECT COUNT(*) FROM chart_of_accounts")[0]?.values[0]?.[0] || 0;
+  if (chartCount === 0) {
+    const chartResult = await insertInitialChartOfAccounts();
+    if (chartResult.success) {
+      logger.info('Database', 'chart_seeded', chartResult.message);
+    } else {
+      logger.error('Database', 'chart_seed_failed', chartResult.message);
+    }
+  }
+
   logger.info('Database', 'initialization_complete', 'Esquema y datos iniciales verificados');
 };
 
