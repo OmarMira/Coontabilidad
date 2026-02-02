@@ -10,6 +10,7 @@ import { HistoricalDataFixMigration } from './list/008_historical_data_fix';
 import { PerformanceIndicesMigration } from './list/009_performance_indices';
 import { MultiUserSchemaMigration } from './list/010_multi_user_schema';
 import { FixedAssetsSchema } from './list/011_fixed_assets_schema';
+import { BudgetsSchema } from './list/012_budgets_schema';
 
 export interface Migration {
     version: number;
@@ -31,7 +32,8 @@ export class MigrationEngine {
         new HistoricalDataFixMigration(),
         new PerformanceIndicesMigration(),
         MultiUserSchemaMigration,
-        FixedAssetsSchema
+        FixedAssetsSchema,
+        BudgetsSchema
     ];
 
     private constructor() { }

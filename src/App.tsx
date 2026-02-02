@@ -51,7 +51,6 @@ const AgingReport = lazy(() => import('./components/reports/AgingReport').then(m
 const AccountLedger = lazy(() => import('./components/reports/AccountLedger').then(m => ({ default: m.AccountLedger })));
 const ForensicDemoPage = lazy(() => import('./pages/forensic/ForensicDemoPage').then(m => ({ default: m.ForensicDemoPage })));
 const UnifiedAssistant = lazy(() => import('./components/ai/UnifiedAssistant').then(m => ({ default: m.UnifiedAssistant })));
-const DataGeneratorPanel = lazy(() => import('./components/system/DataGeneratorPanel').then(m => ({ default: m.DataGeneratorPanel })));
 
 // Regular imports (lighter components)
 import { UserRoleManager } from './components/system/UserRoleManager';
@@ -132,6 +131,8 @@ import { LedgerHub } from './components/accounting/LedgerHub';
 // --- FIXED ASSETS MODULE ---
 import { FixedAssetsManager } from './components/assets/FixedAssetsManager';
 
+// --- BUDGETS MODULE ---
+import { BudgetManager } from './components/budgets/BudgetManager';
 
 
 // 1. Add to AppState
@@ -1539,6 +1540,8 @@ function App() {
               {/* --- FIXED ASSETS --- */}
               {state.currentSection === 'fixed-assets' && <FixedAssetsManager />}
 
+              {/* --- BUDGETS --- */}
+              {state.currentSection === 'budgets' && <BudgetManager />}
 
               {/* --- CONTABILIDAD --- */}
               {state.currentSection === 'chart-accounts' && <ChartOfAccounts />}
@@ -1784,13 +1787,6 @@ function App() {
               {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
 
               {state.currentSection === 'help' && <HelpCenter />}
-
-              {/* --- GENERADOR DE DATOS DE PRUEBA --- */}
-              {state.currentSection === 'data-generator' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <DataGeneratorPanel />
-                </Suspense>
-              )}
 
               {/* FIXED: Render FloridaTaxReport correctly */}
               {state.currentSection === 'florida-dr15' && (

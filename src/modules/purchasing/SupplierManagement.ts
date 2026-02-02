@@ -30,22 +30,34 @@ export class SupplierManagement {
     }
 
     async getAllSuppliers(): Promise<Supplier[]> {
-        const query = `SELECT id, name, business_name, email, phone, tax_id, payment_terms, CASE WHEN status='active' THEN 1 ELSE 0 END as active FROM suppliers`;
+        const query = `
+            SELECT id, name, business_name, document_type, document_number,
+                   email, email_secondary, phone, phone_secondary,
+                   address_line1, address_line2, city, state, zip_code,
+                   florida_county, credit_limit, payment_terms, tax_exempt,
+                   tax_id, assigned_buyer, status, notes,
+                   created_at, updated_at, created_by, updated_by
+            FROM suppliers 
+            WHERE status = 'active'
+            ORDER BY name ASC
+        `;
         const rows = await this.engine.select(query);
-        // Map active boolean properly if SQLite returns 1/0
-        return rows.map((r: any) => ({
-            ...r,
-            active: Boolean(r.active)
-        }));
+        return rows as Supplier[];
     }
 
     async getSupplierById(id: number): Promise<Supplier | null> {
-        const query = `SELECT id, name, business_name, email, phone, tax_id, payment_terms, CASE WHEN status='active' THEN 1 ELSE 0 END as active FROM suppliers WHERE id = ?`;
+        const query = `
+            SELECT id, name, business_name, document_type, document_number,
+                   email, email_secondary, phone, phone_secondary,
+                   address_line1, address_line2, city, state, zip_code,
+                   florida_county, credit_limit, payment_terms, tax_exempt,
+                   tax_id, assigned_buyer, status, notes,
+                   created_at, updated_at, created_by, updated_by
+            FROM suppliers 
+            WHERE id = ?
+        `;
         const rows = await this.engine.select(query, [id]);
         if (rows.length === 0) return null;
-        return {
-            ...(rows[0] as any),
-            active: Boolean(rows[0].active)
-        } as Supplier;
+        return rows[0] as Supplier;
     }
 }

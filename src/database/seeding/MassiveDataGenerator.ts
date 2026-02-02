@@ -231,18 +231,28 @@ export async function generateMassiveTestData(config: Partial<GeneratorConfig> =
       const addr = generateAddress();
       const contactFirstName = randomElement(FIRST_NAMES);
       const contactLastName = randomElement(LAST_NAMES);
+      const county = randomElement(FLORIDA_COUNTIES);
+      const docType = randomElement(['EIN', 'SSN', 'ITIN'] as const);
 
       const stmt = db.prepare(`
         INSERT INTO suppliers (
-          name, email, phone, address_line1, city, state, 
-          zip_code, tax_id, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+          name, business_name, document_type, document_number,
+          email, phone, address_line1, city, state, 
+          zip_code, florida_county, tax_id, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
       `);
       stmt.run([
         companyName,
+        `${companyName} LLC`,
+        docType,
+        `${randomInt(10, 99)}-${randomInt(1000000, 9999999)}`,
         generateEmail(contactFirstName, contactLastName, 'supplier.com'),
         generatePhone(),
-        addr.address, addr.city, addr.state, addr.zip,
+        addr.address,
+        addr.city,
+        addr.state,
+        addr.zip,
+        county,
         `${randomInt(10, 99)}-${randomInt(1000000, 9999999)}`
       ]);
       const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;

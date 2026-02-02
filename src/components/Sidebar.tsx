@@ -112,13 +112,14 @@ const menuItems: MenuItem[] = [
       { id: 'income-statement', label: 'Estado de Resultados', icon: TrendingUp },
       { id: 'cash-flow', label: 'Flujo de Efectivo', icon: DollarSign },
       { id: 'aging-report', label: 'Reporte de Antigüedad', icon: Clock },
-      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package } // MOVIDO AQUÍ
+      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package }, // MOVIDO AQUÍ
+      { id: 'budgets', label: 'Presupuestos', icon: BarChart3 }
     ]
   },
   // SECCIONES MOVIDAS FUERA DE CONTABILIDAD (SOLICITUD USUARIO)
   {
     id: 'payroll',
-    label: 'NÓMINA (PAYROLL)',
+    label: 'NÓMINA',
     icon: Users,
     children: [
       { id: 'employee-mgr', label: 'Gestión de Empleados', icon: UserCheck },
@@ -156,7 +157,6 @@ const menuItems: MenuItem[] = [
     label: 'HERRAMIENTAS',
     icon: HelpCircle,
     children: [
-      { id: 'data-generator', label: 'Generador de Datos', icon: Database },
       { id: 'accounting-diagnosis', label: 'Diagnóstico Contable', icon: Activity },
       { id: 'journal-entry-test', label: 'Pruebas de Asientos', icon: FileText },
       { id: 'backups', label: 'Respaldos y Restauración', icon: HardDrive },
