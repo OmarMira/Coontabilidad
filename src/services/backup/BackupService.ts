@@ -2,6 +2,7 @@ import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../audit/AuditChainService';
 import { ExponentialBackoff } from '../../core/resilience/ExponentialBackoff';
 import { ProductionLogger } from '../../core/logging/ProductionLogger';
+import { timestampService, TimestampResponse } from '../../core/timestamping/TimestampService';
 
 /**
  * BackupService - Versatile Multi-Destination Backup System
@@ -87,17 +88,47 @@ export class BackupService {
             // 6. Encrypt with AES-256-GCM
             const encrypted = await this.encrypt(JSON.stringify(payload), password);
 
+            // 7. Obtain RFC 3161 timestamp from FreeTSA
+            let rfc3161Timestamp: TimestampResponse | undefined;
+            try {
+                const encoder = new TextEncoder();
+                const dataToTimestamp = encoder.encode(encrypted);
+                
+                rfc3161Timestamp = await timestampService.getTimestamp({
+                    data: dataToTimestamp.buffer,
+                    hashAlgorithm: 'SHA-256',
+                    nonce: true,
+                    certReq: true
+                });
+
+                ProductionLogger.info('BackupService', 'RFC 3161 timestamp obtained', {
+                    timestamp: rfc3161Timestamp.timestamp,
+                    serialNumber: rfc3161Timestamp.serialNumber,
+                    tsaName: rfc3161Timestamp.tsaName
+                });
+            } catch (timestampError) {
+                ProductionLogger.error(
+                    'BackupService',
+                    'Failed to obtain RFC 3161 timestamp',
+                    timestampError as Error
+                );
+                // Continue without timestamp (degraded mode)
+                // En producción enterprise, esto debería ser un error fatal
+            }
+
             const backup: EncryptedBackup = {
                 filename: `backup-${new Date().toISOString().split('T')[0]}.aex`,
                 data: encrypted,
                 size: encrypted.length,
                 timestamp: payload.timestamp,
-                logicClock
+                logicClock,
+                rfc3161Timestamp
             };
 
             ProductionLogger.info('BackupService', 'Backup created successfully', {
                 size: backup.size,
-                logicClock: backup.logicClock
+                logicClock: backup.logicClock,
+                hasRFC3161: !!rfc3161Timestamp
             });
 
             return backup;
@@ -105,15 +136,20 @@ export class BackupService {
     }
 
     /**
-     * Restore from encrypted backup with exponential backoff
+     * Restore from encrypted backup with exponential backoff and RFC 3161 verification
      * 
      * ATOMIC: All-or-nothing restoration
      * 
      * @param encryptedData - Encrypted backup data
      * @param password - User password for decryption
+     * @param rfc3161Token - Optional RFC 3161 timestamp token for verification
      * @throws Error if integrity check fails or decryption fails
      */
-    public async restoreBackup(encryptedData: string, password: string): Promise<void> {
+    public async restoreBackup(
+        encryptedData: string,
+        password: string,
+        rfc3161Token?: string
+    ): Promise<void> {
         const backoff = new ExponentialBackoff({
             maxRetries: 3,
             baseDelay: 1000,
@@ -123,7 +159,50 @@ export class BackupService {
         return await backoff.execute(async () => {
             ProductionLogger.info('BackupService', 'Restoring backup');
 
-            // 1. Decrypt
+            // 1. Verify RFC 3161 timestamp if provided
+            if (rfc3161Token) {
+                try {
+                    const encoder = new TextEncoder();
+                    const dataToVerify = encoder.encode(encryptedData);
+                    
+                    const verification = await timestampService.verifyTimestamp(
+                        rfc3161Token,
+                        dataToVerify.buffer
+                    );
+
+                    if (!verification.valid) {
+                        ProductionLogger.error(
+                            'BackupService',
+                            'RFC 3161 timestamp verification failed',
+                            undefined,
+                            { errors: verification.errors }
+                        );
+                        throw new Error(
+                            `Timestamp verification failed: ${verification.errors.join(', ')}`
+                        );
+                    }
+
+                    ProductionLogger.info('BackupService', 'RFC 3161 timestamp verified', {
+                        timestamp: verification.timestamp,
+                        serialNumber: verification.serialNumber,
+                        tsaName: verification.tsaName
+                    });
+                } catch (timestampError) {
+                    ProductionLogger.error(
+                        'BackupService',
+                        'RFC 3161 timestamp verification error',
+                        timestampError as Error
+                    );
+                    throw timestampError;
+                }
+            } else {
+                ProductionLogger.warn(
+                    'BackupService',
+                    'Restoring backup without RFC 3161 timestamp verification'
+                );
+            }
+
+            // 2. Decrypt
             let payload: BackupPayload;
             try {
                 const decrypted = await this.decrypt(encryptedData, password);
@@ -132,12 +211,12 @@ export class BackupService {
                 throw new Error('Decryption failed. Invalid password or corrupted backup.');
             }
 
-            // 2. Verify backup integrity
+            // 3. Verify backup integrity
             if (!payload.version || !payload.database || !payload.auditChain) {
                 throw new Error('Invalid backup format. Backup may be corrupted.');
             }
 
-            // 3. Verify logic_clock (prevent importing old/corrupted data)
+            // 4. Verify logic_clock (prevent importing old/corrupted data)
             const currentLogicClock = await this.auditChainService.getCurrentLogicClock();
             if (payload.logicClock < currentLogicClock) {
                 ProductionLogger.warn(
@@ -522,6 +601,7 @@ export interface EncryptedBackup {
     size: number;
     timestamp: string;
     logicClock: number;
+    rfc3161Timestamp?: TimestampResponse; // RFC 3161 timestamp token
 }
 
 export interface BackupPayload {
