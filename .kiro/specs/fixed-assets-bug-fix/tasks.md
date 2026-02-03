@@ -6,7 +6,7 @@ Plan de implementación para corregir el bug crítico en Fixed Assets donde `Fix
 
 ## Tasks
 
-- [ ] 1. Actualizar simple-db.ts para exportar SQLiteEngine
+- [x] 1. Actualizar simple-db.ts para exportar SQLiteEngine
   - Agregar exportación de `dbEngine: SQLiteEngine | null`
   - Agregar función `getDBEngine(): SQLiteEngine`
   - Inicializar `dbEngine` en `initDB()` envolviendo la instancia de sql.js
@@ -14,7 +14,7 @@ Plan de implementación para corregir el bug crítico en Fixed Assets donde `Fix
   - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ] 2. Actualizar FixedAssetsController para aceptar ambos tipos
-  - [ ] 2.1 Modificar constructor para aceptar `db: any | SQLiteEngine`
+  - [-] 2.1 Modificar constructor para aceptar `db: any | SQLiteEngine`
     - Agregar lógica de conversión: si es `any`, crear `new SQLiteEngine(db)`
     - Pasar instancia de SQLiteEngine a todos los servicios
     - _Requirements: 4.1, 4.2_

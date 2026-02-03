@@ -13,9 +13,26 @@ import AuditTrailService from '../services/AuditTrailService';
 // Instancia global de la base de datos (any para compatibilidad con sql.js)
 let db: any = null;
 
+// Instancia global de SQLiteEngine (wrapper tipado sobre sql.js)
+let dbEngine: SQLiteEngine | null = null;
+
 // Exportar la instancia de db para acceso externo
 export { db };
 export const getDB = () => db;
+
+// Exportar la instancia de dbEngine para servicios tipados
+export { dbEngine };
+
+/**
+ * Obtiene la instancia de SQLiteEngine
+ * @throws Error si la base de datos no ha sido inicializada
+ */
+export const getDBEngine = (): SQLiteEngine => {
+  if (!dbEngine) {
+    throw new Error('Database engine not initialized. Call initDB() first.');
+  }
+  return dbEngine;
+};
 
 // ==========================================
 // DASHBOARD & ANALYTICS
@@ -1684,6 +1701,10 @@ export const initDB = async (password?: string): Promise<any> => {
     if (!db) {
       db = new SQL.Database(dbData || undefined);
     }
+
+    // Crear instancia de SQLiteEngine envolviendo la instancia de sql.js
+    dbEngine = new SQLiteEngine(db);
+    logger.info('Database', 'engine_created', 'SQLiteEngine wrapper creado exitosamente');
 
     // Ejecutar inicialización de esquema
     await initializeSchema(db);
