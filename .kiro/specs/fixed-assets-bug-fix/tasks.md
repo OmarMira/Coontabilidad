@@ -14,12 +14,12 @@ Plan de implementación para corregir el bug crítico en Fixed Assets donde `Fix
   - _Requirements: 1.1, 1.2, 1.3_
 
 - [ ] 2. Actualizar FixedAssetsController para aceptar ambos tipos
-  - [-] 2.1 Modificar constructor para aceptar `db: any | SQLiteEngine`
+  - [x] 2.1 Modificar constructor para aceptar `db: any | SQLiteEngine`
     - Agregar lógica de conversión: si es `any`, crear `new SQLiteEngine(db)`
     - Pasar instancia de SQLiteEngine a todos los servicios
     - _Requirements: 4.1, 4.2_
 
-  - [ ] 2.2 Actualizar función `getFixedAssetsController()`
+  - [x] 2.2 Actualizar función `getFixedAssetsController()`
     - Modificar firma para aceptar `db: any | SQLiteEngine`
     - Mantener patrón singleton
     - _Requirements: 4.1, 4.3_

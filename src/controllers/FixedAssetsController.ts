@@ -23,12 +23,16 @@ export class FixedAssetsController {
     private assetService: FixedAssetService;
     private depreciationService: DepreciationService;
     private disposalService: AssetDisposalService;
+    private db: SQLiteEngine;
 
-    constructor(private db: SQLiteEngine) {
-        this.categoryService = new AssetCategoryService(db);
-        this.assetService = new FixedAssetService(db);
-        this.depreciationService = new DepreciationService(db);
-        this.disposalService = new AssetDisposalService(db);
+    constructor(db: any | SQLiteEngine) {
+        // Convertir a SQLiteEngine si es necesario (compatibilidad con sql.js raw)
+        this.db = db instanceof SQLiteEngine ? db : new SQLiteEngine(db);
+        
+        this.categoryService = new AssetCategoryService(this.db);
+        this.assetService = new FixedAssetService(this.db);
+        this.depreciationService = new DepreciationService(this.db);
+        this.disposalService = new AssetDisposalService(this.db);
     }
 
     // ==========================================
@@ -260,7 +264,8 @@ export class FixedAssetsController {
  */
 let fixedAssetsControllerInstance: FixedAssetsController | null = null;
 
-export function getFixedAssetsController(db: SQLiteEngine): FixedAssetsController {
+export function getFixedAssetsController(db: any | SQLiteEngine): FixedAssetsController {
+    // Resetear singleton si db cambió o no existe
     if (!fixedAssetsControllerInstance) {
         fixedAssetsControllerInstance = new FixedAssetsController(db);
     }

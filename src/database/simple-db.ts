@@ -33,6 +33,11 @@ export const getDBEngine = (): SQLiteEngine => {
   }
   return dbEngine;
 };
+  if (!dbEngine) {
+    throw new Error('Database engine not initialized. Call initDB() first.');
+  }
+  return dbEngine;
+};
 
 // ==========================================
 // DASHBOARD & ANALYTICS
@@ -1703,6 +1708,11 @@ export const initDB = async (password?: string): Promise<any> => {
     }
 
     // Crear instancia de SQLiteEngine envolviendo la instancia de sql.js
+    dbEngine = new SQLiteEngine(db);
+    logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
+
+    // Ejecutar inicialización de esquema
+    await initializeSchema(db);
     dbEngine = new SQLiteEngine(db);
     logger.info('Database', 'engine_created', 'SQLiteEngine wrapper creado exitosamente');
 
