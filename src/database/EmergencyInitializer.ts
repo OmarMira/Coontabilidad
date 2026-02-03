@@ -97,15 +97,6 @@ export class EmergencyDatabaseInitializer {
         name TEXT UNIQUE NOT NULL,
         permissions TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`,
-
-            `CREATE TABLE IF NOT EXISTS florida_tax_config (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        county TEXT UNIQUE NOT NULL,
-        tax_rate REAL NOT NULL CHECK(tax_rate >= 0 AND tax_rate <= 0.1),
-        effective_from DATE NOT NULL,
-        effective_until DATE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`
         ]);
 

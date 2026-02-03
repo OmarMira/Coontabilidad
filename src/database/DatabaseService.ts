@@ -111,20 +111,7 @@ export class DatabaseService {
       );
     `);
 
-        // 2. Tabla: FLORIDA TAX CONFIG
-        DatabaseService.dbInstance.run(`
-      CREATE TABLE IF NOT EXISTS florida_tax_config (
-        county_code TEXT PRIMARY KEY,
-        county_name TEXT NOT NULL,
-        base_rate INTEGER NOT NULL, 
-        surtax_rate INTEGER DEFAULT 0,
-        effective_date TEXT NOT NULL,
-        expiry_date TEXT,
-        is_active BOOLEAN DEFAULT 1
-      );
-    `);
-
-        // 3. Tabla: TAX TRANSACTIONS
+        // 2. Tabla: TAX TRANSACTIONS
         DatabaseService.dbInstance.run(`
       CREATE TABLE IF NOT EXISTS tax_transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -240,108 +227,9 @@ export class DatabaseService {
     }
 
     private static async populateFloridaTaxConfig() {
-        try {
-            const countCheck = DatabaseService.dbInstance.exec("SELECT count(*) as c FROM florida_tax_config");
-            const currentCount = countCheck[0].values[0][0];
-
-            // Si ya tenemos los 67 condados, asumimos que está bien
-            if (currentCount === 67) return;
-
-            // Si tenemos menos (ej: 50 del paso anterior), limpiamos y repoblamos completo
-            if (currentCount > 0) {
-                logger.warn("DatabaseService", "repopulating_tax", `Detectados ${currentCount} condados. Actualizando a lista completa de 67.`);
-                DatabaseService.dbInstance.run("DELETE FROM florida_tax_config");
-            }
-        } catch (e) {
-            return;
-        }
-
-        // Lista OFICIAL 67 Condados Florida (Tasas 2025-2026)
-        const counties = [
-            ['ALACHUA', 'Alachua', 600, 150],
-            ['BAKER', 'Baker', 600, 100],
-            ['BAY', 'Bay', 600, 100],
-            ['BRADFORD', 'Bradford', 600, 100],
-            ['BREVARD', 'Brevard', 600, 100],
-            ['BROWARD', 'Broward', 600, 100],
-            ['CALHOUN', 'Calhoun', 600, 150],
-            ['CHARLOTTE', 'Charlotte', 600, 100],
-            ['CITRUS', 'Citrus', 600, 0],
-            ['CLAY', 'Clay', 600, 150],
-            ['COLLIER', 'Collier', 600, 0],
-            ['COLUMBIA', 'Columbia', 600, 150],
-            ['DESOTO', 'DeSoto', 600, 150],
-            ['DIXIE', 'Dixie', 600, 100],
-            ['DUVAL', 'Duval', 600, 150],
-            ['ESCAMBIA', 'Escambia', 600, 150],
-            ['FLAGLER', 'Flagler', 600, 100],
-            ['FRANKLIN', 'Franklin', 600, 150],
-            ['GADSDEN', 'Gadsden', 600, 150],
-            ['GILCHRIST', 'Gilchrist', 600, 100],
-            ['GLADES', 'Glades', 600, 100],
-            ['GULF', 'Gulf', 600, 100],
-            ['HAMILTON', 'Hamilton', 600, 200], // 2% total surtax
-            ['HARDEE', 'Hardee', 600, 100],
-            ['HENDRY', 'Hendry', 600, 150],
-            ['HERNANDO', 'Hernando', 600, 150],
-            ['HIGHLANDS', 'Highlands', 600, 100],
-            ['HILLSBOROUGH', 'Hillsborough', 600, 150],
-            ['HOLMES', 'Holmes', 600, 150],
-            ['INDIAN-RIVER', 'Indian River', 600, 50],
-            ['JACKSON', 'Jackson', 600, 150],
-            ['JEFFERSON', 'Jefferson', 600, 100],
-            ['LAFAYETTE', 'Lafayette', 600, 100],
-            ['LAKE', 'Lake', 600, 100],
-            ['LEE', 'Lee', 600, 50],
-            ['LEON', 'Leon', 600, 150],
-            ['LEVY', 'Levy', 600, 100],
-            ['LIBERTY', 'Liberty', 600, 150],
-            ['MADISON', 'Madison', 600, 150],
-            ['MANATEE', 'Manatee', 600, 50],
-            ['MARION', 'Marion', 600, 150],
-            ['MARTIN', 'Martin', 600, 50],
-            ['MIAMI-DADE', 'Miami-Dade', 600, 100],
-            ['MONROE', 'Monroe', 600, 150],
-            ['NASSAU', 'Nassau', 600, 100],
-            ['OKALOOSA', 'Okaloosa', 600, 150],
-            ['OKEECHOBEE', 'Okeechobee', 600, 100],
-            ['ORANGE', 'Orange', 600, 50],
-            ['OSCEOLA', 'Osceola', 600, 150],
-            ['PALM-BEACH', 'Palm Beach', 600, 100],
-            ['PASCO', 'Pasco', 600, 150],
-            ['PINELLAS', 'Pinellas', 600, 100],
-            ['POLK', 'Polk', 600, 150],
-            ['PUTNAM', 'Putnam', 600, 150],
-            ['ST-JOHNS', 'St. Johns', 600, 50],
-            ['ST-LUCIE', 'St. Lucie', 600, 50],
-            ['SANTA-ROSA', 'Santa Rosa', 600, 100],
-            ['SARASOTA', 'Sarasota', 600, 100],
-            ['SEMINOLE', 'Seminole', 600, 100],
-            ['SUMTER', 'Sumter', 600, 100],
-            ['SUWANNEE', 'Suwannee', 600, 150],
-            ['TAYLOR', 'Taylor', 600, 150],
-            ['UNION', 'Union', 600, 100],
-            ['VOLUSIA', 'Volusia', 600, 50],
-            ['WAKULLA', 'Wakulla', 600, 100],
-            ['WALTON', 'Walton', 600, 150],
-            ['WASHINGTON', 'Washington', 600, 150]
-        ];
-
-        const effectiveDate = new Date().toISOString();
-
-        try {
-            DatabaseService.dbInstance.run("BEGIN TRANSACTION");
-            const stmt = DatabaseService.dbInstance.prepare("INSERT INTO florida_tax_config (county_code, county_name, base_rate, surtax_rate, effective_date) VALUES (?, ?, ?, ?, ?)");
-            for (const c of counties) {
-                stmt.run([c[0], c[1], c[2], c[3], effectiveDate]);
-            }
-            stmt.free();
-            DatabaseService.dbInstance.run("COMMIT");
-            logger.info('DatabaseService', 'tax_config_populated', `Se han poblado ${counties.length} condados de Florida.`);
-        } catch (error) {
-            DatabaseService.dbInstance.run("ROLLBACK");
-            logger.error("DatabaseService", "populate_failed", "Error poblando condados", null, error as Error);
-        }
+        // REMOVED: florida_tax_config table creation moved to initializeSchema() in simple-db.ts
+        // The table is now called florida_tax_rates and is populated there
+        logger.info('DatabaseService', 'tax_config_skipped', 'Florida tax rates are managed by initializeSchema()');
     }
 
     /**
