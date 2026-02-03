@@ -11,6 +11,7 @@ import { PerformanceIndicesMigration } from './list/009_performance_indices';
 import { MultiUserSchemaMigration } from './list/010_multi_user_schema';
 import { FixedAssetsSchema } from './list/011_fixed_assets_schema';
 import { BudgetsSchema } from './list/012_budgets_schema';
+import { TaxTransactionsMigration } from './list/013_tax_transactions';
 
 export interface Migration {
     version: number;
@@ -33,7 +34,8 @@ export class MigrationEngine {
         new PerformanceIndicesMigration(),
         MultiUserSchemaMigration,
         FixedAssetsSchema,
-        BudgetsSchema
+        BudgetsSchema,
+        TaxTransactionsMigration
     ];
 
     private constructor() { }

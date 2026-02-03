@@ -39,6 +39,9 @@
     "src",
     "vite-env.d.ts"
   ],
+  "exclude": [
+    "mcp-server.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.node.json"
