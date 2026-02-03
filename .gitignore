@@ -56,3 +56,10 @@ ehthumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Build/Test output logs (organized in .logs/)
+.logs/
+*_output.txt
+*_check*.txt
+type_check_*.txt
+error_*.txt
