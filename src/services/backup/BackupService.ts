@@ -3,6 +3,7 @@ import { AuditChainService } from '../audit/AuditChainService';
 import { ExponentialBackoff } from '../../core/resilience/ExponentialBackoff';
 import { ProductionLogger } from '../../core/logging/ProductionLogger';
 import { timestampService, TimestampResponse } from '../../core/timestamping/TimestampService';
+import { metricsCollector, MetricCategory } from '../../core/monitoring/MetricsCollector';
 
 /**
  * BackupService - Versatile Multi-Destination Backup System
@@ -45,78 +46,102 @@ export class BackupService {
      * @returns Encrypted backup data
      */
     public async createBackup(password: string): Promise<EncryptedBackup> {
+        const startTime = Date.now();
         const backoff = new ExponentialBackoff({
             maxRetries: 3,
             baseDelay: 1000,
             maxDelay: 8000
         });
 
-        return await backoff.execute(async () => {
-            ProductionLogger.info('BackupService', 'Creating backup');
+        try {
+            return await backoff.execute(async () => {
+                ProductionLogger.info('BackupService', 'Creating backup');
 
-            // 1. Verify audit chain integrity before backup
-            const integrity = await this.auditChainService.verifyIntegrity();
-            if (!integrity.valid) {
-                throw new Error(
-                    `Cannot create backup: Audit chain integrity compromised. ` +
-                    `${integrity.errors.length} errors detected.`
-                );
-            }
-
-            // 2. Export database (SQLite dump)
-            const dbDump = await this.exportDatabase();
-
-            // 3. Export audit chain
-            const auditChain = (await this.db.select('SELECT * FROM audit_chain ORDER BY logic_clock')) as unknown as AuditChainRecord[];
-
-            // 4. Get current logic_clock
-            const logicClock = await this.auditChainService.getCurrentLogicClock();
-
-            // 5. Create backup payload
-            const payload: BackupPayload = {
-                version: '1.0',
-                timestamp: new Date().toISOString(),
-                logicClock,
-                database: dbDump,
-                auditChain,
-                metadata: {
-                    recordCount: auditChain.length,
-                    lastChainHash: integrity.lastChainHash
+                // 1. Verify audit chain integrity before backup
+                const integrity = await this.auditChainService.verifyIntegrity();
+                if (!integrity.valid) {
+                    throw new Error(
+                        `Cannot create backup: Audit chain integrity compromised. ` +
+                        `${integrity.errors.length} errors detected.`
+                    );
                 }
-            };
 
-            // 6. Encrypt with AES-256-GCM
-            const encrypted = await this.encrypt(JSON.stringify(payload), password);
+                // 2. Export database (SQLite dump)
+                const dbDump = await this.exportDatabase();
 
-            // 7. Obtain RFC 3161 timestamp from FreeTSA
-            let rfc3161Timestamp: TimestampResponse | undefined;
-            try {
-                const encoder = new TextEncoder();
-                const dataToTimestamp = encoder.encode(encrypted);
-                
-                rfc3161Timestamp = await timestampService.getTimestamp({
-                    data: dataToTimestamp.buffer,
-                    hashAlgorithm: 'SHA-256',
-                    nonce: true,
-                    certReq: true
-                });
+                // 3. Export audit chain
+                const auditChain = (await this.db.select('SELECT * FROM audit_chain ORDER BY logic_clock')) as unknown as AuditChainRecord[];
 
-                ProductionLogger.info('BackupService', 'RFC 3161 timestamp obtained', {
-                    timestamp: rfc3161Timestamp.timestamp,
-                    serialNumber: rfc3161Timestamp.serialNumber,
-                    tsaName: rfc3161Timestamp.tsaName
-                });
-            } catch (timestampError) {
-                ProductionLogger.error(
-                    'BackupService',
-                    'Failed to obtain RFC 3161 timestamp',
-                    timestampError as Error
-                );
-                // Continue without timestamp (degraded mode)
-                // En producción enterprise, esto debería ser un error fatal
-            }
+                // 4. Get current logic_clock
+                const logicClock = await this.auditChainService.getCurrentLogicClock();
 
-            const backup: EncryptedBackup = {
+                // 5. Create backup payload
+                const payload: BackupPayload = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    logicClock,
+                    database: dbDump,
+                    auditChain,
+                    metadata: {
+                        recordCount: auditChain.length,
+                        lastChainHash: integrity.lastChainHash
+                    }
+                };
+
+                // 6. Encrypt with AES-256-GCM
+                const encrypted = await this.encrypt(JSON.stringify(payload), password);
+
+                // 7. Obtain RFC 3161 timestamp from FreeTSA
+                let rfc3161Timestamp: TimestampResponse | undefined;
+                try {
+                    const encoder = new TextEncoder();
+                    const dataToTimestamp = encoder.encode(encrypted);
+                    
+                    rfc3161Timestamp = await timestampService.getTimestamp({
+                        data: dataToTimestamp.buffer,
+                        hashAlgorithm: 'SHA-256',
+                        nonce: true,
+                        certReq: true
+                    });
+
+                    ProductionLogger.info('BackupService', 'RFC 3161 timestamp obtained', {
+                        timestamp: rfc3161Timestamp.timestamp,
+                        serialNumber: rfc3161Timestamp.serialNumber,
+                        tsaName: rfc3161Timestamp.tsaName
+                    });
+
+                    // Record timestamp metric
+                    metricsCollector.recordMetric({
+                        category: MetricCategory.TIMESTAMP,
+                        operation: 'rfc3161_timestamp',
+                        status: 'success',
+                        metadata: {
+                            serialNumber: rfc3161Timestamp.serialNumber,
+                            tsaName: rfc3161Timestamp.tsaName
+                        }
+                    });
+                } catch (timestampError) {
+                    ProductionLogger.error(
+                        'BackupService',
+                        'Failed to obtain RFC 3161 timestamp',
+                        timestampError as Error
+                    );
+
+                    // Record timestamp failure metric
+                    metricsCollector.recordMetric({
+                        category: MetricCategory.TIMESTAMP,
+                        operation: 'rfc3161_timestamp',
+                        status: 'failure',
+                        metadata: {
+                            error: (timestampError as Error).message
+                        }
+                    });
+
+                    // Continue without timestamp (degraded mode)
+                    // En producción enterprise, esto debería ser un error fatal
+                }
+
+                const backup: EncryptedBackup = {
                 filename: `backup-${new Date().toISOString().split('T')[0]}.aex`,
                 data: encrypted,
                 size: encrypted.length,
@@ -125,14 +150,47 @@ export class BackupService {
                 rfc3161Timestamp
             };
 
+            const duration = Date.now() - startTime;
+
             ProductionLogger.info('BackupService', 'Backup created successfully', {
                 size: backup.size,
                 logicClock: backup.logicClock,
-                hasRFC3161: !!rfc3161Timestamp
+                hasRFC3161: !!rfc3161Timestamp,
+                duration
+            });
+
+            // Record backup success metric
+            metricsCollector.recordMetric({
+                category: MetricCategory.BACKUP,
+                operation: 'create_backup',
+                status: 'success',
+                duration,
+                value: backup.size,
+                metadata: {
+                    logicClock: backup.logicClock,
+                    hasRFC3161: !!rfc3161Timestamp,
+                    recordCount: payload.metadata.recordCount
+                }
             });
 
             return backup;
         }, 'BackupService.createBackup');
+        } catch (error) {
+            const duration = Date.now() - startTime;
+
+            // Record backup failure metric
+            metricsCollector.recordMetric({
+                category: MetricCategory.BACKUP,
+                operation: 'create_backup',
+                status: 'failure',
+                duration,
+                metadata: {
+                    error: (error as Error).message
+                }
+            });
+
+            throw error;
+        }
     }
 
     /**

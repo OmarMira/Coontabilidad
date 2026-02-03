@@ -11,6 +11,7 @@
  */
 
 import { ProductionLogger } from '../logging/ProductionLogger';
+import { metricsCollector, MetricCategory } from '../monitoring/MetricsCollector';
 
 export interface BackoffConfig {
     maxRetries: number;
@@ -90,6 +91,17 @@ export class ExponentialBackoff {
                         `Operation succeeded after ${attempt} retries`,
                         { context, attempt, totalDelay: this.metrics.totalDelay }
                     );
+
+                    // Record retry success metric
+                    metricsCollector.recordMetric({
+                        category: MetricCategory.RETRY,
+                        operation: context,
+                        status: 'success',
+                        value: attempt,
+                        metadata: {
+                            totalDelay: this.metrics.totalDelay
+                        }
+                    });
                 }
 
                 return result;
@@ -117,6 +129,18 @@ export class ExponentialBackoff {
                             isLastAttempt
                         }
                     );
+
+                    // Record retry failure metric
+                    metricsCollector.recordMetric({
+                        category: MetricCategory.RETRY,
+                        operation: context,
+                        status: 'failure',
+                        value: attempt + 1,
+                        metadata: {
+                            totalDelay: this.metrics.totalDelay,
+                            error: lastError.message
+                        }
+                    });
 
                     throw lastError;
                 }
