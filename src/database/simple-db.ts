@@ -1702,8 +1702,9 @@ export const initDB = async (password?: string): Promise<any> => {
       db = new SQL.Database(dbData || undefined);
     }
 
-    // Crear instancia de SQLiteEngine envolviendo la instancia de sql.js
-    dbEngine = new SQLiteEngine(db);
+    // Crear instancia de SQLiteEngine y configurarla con la instancia de sql.js
+    dbEngine = new SQLiteEngine();
+    dbEngine.setDB(db);
     logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
 
     // Ejecutar inicialización de esquema

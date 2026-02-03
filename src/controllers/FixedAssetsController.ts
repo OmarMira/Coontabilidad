@@ -27,7 +27,12 @@ export class FixedAssetsController {
 
     constructor(db: any | SQLiteEngine) {
         // Convertir a SQLiteEngine si es necesario (compatibilidad con sql.js raw)
-        this.db = db instanceof SQLiteEngine ? db : new SQLiteEngine(db);
+        if (db instanceof SQLiteEngine) {
+            this.db = db;
+        } else {
+            this.db = new SQLiteEngine();
+            this.db.setDB(db);
+        }
         
         this.categoryService = new AssetCategoryService(this.db);
         this.assetService = new FixedAssetService(this.db);
