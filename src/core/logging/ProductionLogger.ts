@@ -165,8 +165,18 @@ class ProductionLoggerClass {
         try {
             // Lazy import para evitar circular dependencies
             const { logger: systemLogger } = await import('./SystemLogger');
+            
+            // Map ProductionLogger LogLevel to SystemLogger LogLevel
+            const levelMap: Record<number, 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'CRITICAL'> = {
+                [LogLevel.DEBUG]: 'DEBUG',
+                [LogLevel.INFO]: 'INFO',
+                [LogLevel.WARN]: 'WARN',
+                [LogLevel.ERROR]: 'ERROR',
+                [LogLevel.CRITICAL]: 'CRITICAL'
+            };
+            
             await systemLogger.log(
-                'System',
+                levelMap[context.level],
                 'critical_event',
                 context.message,
                 context.data
