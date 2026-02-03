@@ -108,6 +108,11 @@ export default defineConfig({
     },
     // Enable minification with esbuild (faster and more compatible)
     minify: 'esbuild',
+    // Strip console.log and console.warn in production (OWASP A03:2021 compliance)
+    esbuild: {
+      drop: import.meta.env?.MODE === 'production' ? ['console', 'debugger'] : [],
+      pure: import.meta.env?.MODE === 'production' ? ['console.log', 'console.warn'] : []
+    },
     // Improve CSS code splitting
     cssCodeSplit: true,
     // Source maps only for errors
