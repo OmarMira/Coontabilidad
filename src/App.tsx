@@ -16,6 +16,7 @@ import {
   getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount, db,
   getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
 } from './database/simple-db';
+import { DatabaseService } from './database/DatabaseService';
 
 // Core components (always loaded)
 import { Header } from './components/Header';
@@ -278,7 +279,10 @@ function App() {
         setState(prev => ({ ...prev, initializationStep: 'Configurando SQLite...' }));
 
         // Inicializar sin contraseña primero para simplificar
-        await initDB();
+        const db = await initDB();
+        
+        // CRITICAL: Set DatabaseService instance
+        DatabaseService.setDB(db);
 
         setState(prev => ({ ...prev, initializationStep: 'Cargando datos...' }));
 
