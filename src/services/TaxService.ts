@@ -35,8 +35,8 @@ export class TaxService {
 
         // 2. Consultar Configuración Fiscal
         const configResult = await DatabaseService.executeQuery(
-            "SELECT * FROM florida_tax_config WHERE county_code = ?",
-            [countyCode.toUpperCase()]
+            "SELECT * FROM florida_tax_rates WHERE county_name = ?",
+            [countyCode]
         );
 
         if (configResult.length === 0) {

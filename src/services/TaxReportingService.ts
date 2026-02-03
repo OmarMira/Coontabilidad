@@ -129,11 +129,11 @@ export class TaxReportingService {
         outdatedRates: boolean;
     }> {
         // 1. Check Count
-        const rows = await DatabaseService.executeQuery("SELECT county_code FROM florida_tax_config");
+        const rows = await DatabaseService.executeQuery("SELECT county_name FROM florida_tax_rates");
         const count = rows.length;
 
         // 2. Check Rates (Base Rate must be 6% = 600)
-        const badRatesRes = await DatabaseService.executeQuery("SELECT count(*) as c FROM florida_tax_config WHERE base_rate != 600");
+        const badRatesRes = await DatabaseService.executeQuery("SELECT count(*) as c FROM florida_tax_rates WHERE state_rate != 0.06");
         const hasBadRates = badRatesRes[0]?.c > 0;
 
         const missing: string[] = [];

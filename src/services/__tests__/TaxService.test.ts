@@ -43,7 +43,7 @@ describe('TaxService Logic', () => {
         expect(result.taxAmount).toBe(700);
         expect(result.totalRate).toBe(700);
         expect(DatabaseService.executeQuery).toHaveBeenCalledWith(
-            expect.stringContaining('SELECT * FROM florida_tax_config'),
+            expect.stringContaining('SELECT * FROM florida_tax_rates'),
             ['MIAMI-DADE']
         );
     });

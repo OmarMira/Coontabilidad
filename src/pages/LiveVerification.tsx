@@ -21,7 +21,7 @@ export const LiveVerification: React.FC = () => {
 
         // 1. County Count
         try {
-            const res = await DatabaseService.executeQuery("SELECT COUNT(*) as c FROM florida_tax_config");
+            const res = await DatabaseService.executeQuery("SELECT COUNT(*) as c FROM florida_tax_rates");
             const count = res[0]?.c;
             addResult("1. Florida Counties Count", `${count} (Expected: 67)`, count === 67 ? 'pass' : 'fail');
         } catch (e: any) {

@@ -114,7 +114,7 @@ describe('Regulatory & Forensic Integration Test (L1/L3)', () => {
         const month = 1; // Jan
         const year = 2026;
 
-        const config = await DatabaseService.executeQuery("SELECT * FROM florida_tax_config WHERE county_name LIKE 'Miami%'");
+        const config = await DatabaseService.executeQuery("SELECT * FROM florida_tax_rates WHERE county_name LIKE 'Miami%'");
         expect(config.length).toBeGreaterThan(0);
         const miamiCode = config[0].county_code;
 

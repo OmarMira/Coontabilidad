@@ -45,7 +45,7 @@ export const VerifyIronCore: React.FC = () => {
                 // 3. Condados
                 log("\n3. Contando Condados...");
                 try {
-                    const count = await DatabaseService.executeQuery("SELECT COUNT(*) as c FROM florida_tax_config");
+                    const count = await DatabaseService.executeQuery("SELECT COUNT(*) as c FROM florida_tax_rates");
                     const num = count[0]?.c;
                     log(`Condados encontrados: ${num}`);
                     if (num >= 50) log("✅ POBLACIÓN EXITOSA (>50)");
