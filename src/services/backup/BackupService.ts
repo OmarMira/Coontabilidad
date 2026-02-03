@@ -1,5 +1,7 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../audit/AuditChainService';
+import { ExponentialBackoff } from '../../core/resilience/ExponentialBackoff';
+import { ProductionLogger } from '../../core/logging/ProductionLogger';
 
 /**
  * BackupService - Versatile Multi-Destination Backup System
@@ -36,57 +38,74 @@ export class BackupService {
     }
 
     /**
-     * Create encrypted backup (.aex file)
+     * Create encrypted backup (.aex file) with exponential backoff
      * 
      * @param password - User password for encryption
      * @returns Encrypted backup data
      */
     public async createBackup(password: string): Promise<EncryptedBackup> {
-        // 1. Verify audit chain integrity before backup
-        const integrity = await this.auditChainService.verifyIntegrity();
-        if (!integrity.valid) {
-            throw new Error(
-                `Cannot create backup: Audit chain integrity compromised. ` +
-                `${integrity.errors.length} errors detected.`
-            );
-        }
+        const backoff = new ExponentialBackoff({
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 8000
+        });
 
-        // 2. Export database (SQLite dump)
-        const dbDump = await this.exportDatabase();
+        return await backoff.execute(async () => {
+            ProductionLogger.info('BackupService', 'Creating backup');
 
-        // 3. Export audit chain
-        const auditChain = (await this.db.select('SELECT * FROM audit_chain ORDER BY logic_clock')) as unknown as AuditChainRecord[];
-
-        // 4. Get current logic_clock
-        const logicClock = await this.auditChainService.getCurrentLogicClock();
-
-        // 5. Create backup payload
-        const payload: BackupPayload = {
-            version: '1.0',
-            timestamp: new Date().toISOString(),
-            logicClock,
-            database: dbDump,
-            auditChain,
-            metadata: {
-                recordCount: auditChain.length,
-                lastChainHash: integrity.lastChainHash
+            // 1. Verify audit chain integrity before backup
+            const integrity = await this.auditChainService.verifyIntegrity();
+            if (!integrity.valid) {
+                throw new Error(
+                    `Cannot create backup: Audit chain integrity compromised. ` +
+                    `${integrity.errors.length} errors detected.`
+                );
             }
-        };
 
-        // 6. Encrypt with AES-256-GCM
-        const encrypted = await this.encrypt(JSON.stringify(payload), password);
+            // 2. Export database (SQLite dump)
+            const dbDump = await this.exportDatabase();
 
-        return {
-            filename: `backup-${new Date().toISOString().split('T')[0]}.aex`,
-            data: encrypted,
-            size: encrypted.length,
-            timestamp: payload.timestamp,
-            logicClock
-        };
+            // 3. Export audit chain
+            const auditChain = (await this.db.select('SELECT * FROM audit_chain ORDER BY logic_clock')) as unknown as AuditChainRecord[];
+
+            // 4. Get current logic_clock
+            const logicClock = await this.auditChainService.getCurrentLogicClock();
+
+            // 5. Create backup payload
+            const payload: BackupPayload = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                logicClock,
+                database: dbDump,
+                auditChain,
+                metadata: {
+                    recordCount: auditChain.length,
+                    lastChainHash: integrity.lastChainHash
+                }
+            };
+
+            // 6. Encrypt with AES-256-GCM
+            const encrypted = await this.encrypt(JSON.stringify(payload), password);
+
+            const backup: EncryptedBackup = {
+                filename: `backup-${new Date().toISOString().split('T')[0]}.aex`,
+                data: encrypted,
+                size: encrypted.length,
+                timestamp: payload.timestamp,
+                logicClock
+            };
+
+            ProductionLogger.info('BackupService', 'Backup created successfully', {
+                size: backup.size,
+                logicClock: backup.logicClock
+            });
+
+            return backup;
+        }, 'BackupService.createBackup');
     }
 
     /**
-     * Restore from encrypted backup
+     * Restore from encrypted backup with exponential backoff
      * 
      * ATOMIC: All-or-nothing restoration
      * 
@@ -95,162 +114,216 @@ export class BackupService {
      * @throws Error if integrity check fails or decryption fails
      */
     public async restoreBackup(encryptedData: string, password: string): Promise<void> {
-        // 1. Decrypt
-        let payload: BackupPayload;
-        try {
-            const decrypted = await this.decrypt(encryptedData, password);
-            payload = JSON.parse(decrypted);
-        } catch (e) {
-            throw new Error('Decryption failed. Invalid password or corrupted backup.');
-        }
-
-        // 2. Verify backup integrity
-        if (!payload.version || !payload.database || !payload.auditChain) {
-            throw new Error('Invalid backup format. Backup may be corrupted.');
-        }
-
-        // 3. Verify logic_clock (prevent importing old/corrupted data)
-        const currentLogicClock = await this.auditChainService.getCurrentLogicClock();
-        if (payload.logicClock < currentLogicClock) {
-            console.warn(
-                `⚠️ Backup is older than current database. ` +
-                `Backup logic_clock: ${payload.logicClock}, Current: ${currentLogicClock}`
-            );
-            // Allow restoration but warn user
-        }
-
-        // 4. ATOMIC RESTORATION (transaction)
-        await this.db.executeTransaction(async () => {
-            // Drop all tables
-            await this.dropAllTables();
-
-            // Restore database from dump
-            await this.importDatabase(payload.database);
-
-            // Restore audit chain
-            for (const record of payload.auditChain) {
-                const auditRecord = record as AuditChainRecord;
-                this.db.run(`
-                    INSERT INTO audit_chain (
-                        id, timestamp, event_type, entity_table, entity_id, user_id,
-                        content_payload, content_hash, previous_hash, chain_hash, logic_clock
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `, [
-                    auditRecord.id,
-                    auditRecord.timestamp,
-                    auditRecord.event_type,
-                    auditRecord.entity_table,
-                    auditRecord.entity_id,
-                    auditRecord.user_id,
-                    auditRecord.content_payload,
-                    auditRecord.content_hash,
-                    auditRecord.previous_hash,
-                    auditRecord.chain_hash,
-                    auditRecord.logic_clock
-                ]);
-            }
-
-            // Update logic_clock in system_config
-            this.db.run(
-                'UPDATE system_config SET value = ? WHERE key = ?',
-                [payload.logicClock.toString(), 'logic_clock']
-            );
+        const backoff = new ExponentialBackoff({
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 8000
         });
 
-        // 5. Verify integrity after restoration
-        const postRestoreIntegrity = await this.auditChainService.verifyIntegrity();
-        if (!postRestoreIntegrity.valid) {
-            throw new Error(
-                `Restoration failed integrity check. Database may be corrupted. ` +
-                `${postRestoreIntegrity.errors.length} errors detected.`
-            );
-        }
+        return await backoff.execute(async () => {
+            ProductionLogger.info('BackupService', 'Restoring backup');
+
+            // 1. Decrypt
+            let payload: BackupPayload;
+            try {
+                const decrypted = await this.decrypt(encryptedData, password);
+                payload = JSON.parse(decrypted);
+            } catch (e) {
+                throw new Error('Decryption failed. Invalid password or corrupted backup.');
+            }
+
+            // 2. Verify backup integrity
+            if (!payload.version || !payload.database || !payload.auditChain) {
+                throw new Error('Invalid backup format. Backup may be corrupted.');
+            }
+
+            // 3. Verify logic_clock (prevent importing old/corrupted data)
+            const currentLogicClock = await this.auditChainService.getCurrentLogicClock();
+            if (payload.logicClock < currentLogicClock) {
+                ProductionLogger.warn(
+                    'BackupService',
+                    'Backup is older than current database',
+                    {
+                        backupLogicClock: payload.logicClock,
+                        currentLogicClock
+                    }
+                );
+                // Allow restoration but warn user
+            }
+
+            // 4. ATOMIC RESTORATION (transaction)
+            await this.db.executeTransaction(async () => {
+                // Drop all tables
+                await this.dropAllTables();
+
+                // Restore database from dump
+                await this.importDatabase(payload.database);
+
+                // Restore audit chain
+                for (const record of payload.auditChain) {
+                    const auditRecord = record as AuditChainRecord;
+                    this.db.run(`
+                        INSERT INTO audit_chain (
+                            id, timestamp, event_type, entity_table, entity_id, user_id,
+                            content_payload, content_hash, previous_hash, chain_hash, logic_clock
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    `, [
+                        auditRecord.id,
+                        auditRecord.timestamp,
+                        auditRecord.event_type,
+                        auditRecord.entity_table,
+                        auditRecord.entity_id,
+                        auditRecord.user_id,
+                        auditRecord.content_payload,
+                        auditRecord.content_hash,
+                        auditRecord.previous_hash,
+                        auditRecord.chain_hash,
+                        auditRecord.logic_clock
+                    ]);
+                }
+
+                // Update logic_clock in system_config
+                this.db.run(
+                    'UPDATE system_config SET value = ? WHERE key = ?',
+                    [payload.logicClock.toString(), 'logic_clock']
+                );
+            });
+
+            // 5. Verify integrity after restoration
+            const postRestoreIntegrity = await this.auditChainService.verifyIntegrity();
+            if (!postRestoreIntegrity.valid) {
+                throw new Error(
+                    `Restoration failed integrity check. Database may be corrupted. ` +
+                    `${postRestoreIntegrity.errors.length} errors detected.`
+                );
+            }
+
+            ProductionLogger.info('BackupService', 'Backup restored successfully', {
+                logicClock: payload.logicClock
+            });
+        }, 'BackupService.restoreBackup');
     }
 
     /**
-     * Save backup to local disk (File System Access API)
+     * Save backup to local disk (File System Access API) with exponential backoff
      * 
      * @param backup - Encrypted backup
      * @param filename - Filename (optional)
      */
     public async saveToLocal(backup: EncryptedBackup, filename?: string): Promise<void> {
-        const fname = filename || backup.filename;
+        const backoff = new ExponentialBackoff({
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 8000
+        });
 
-        // Use File System Access API (modern browsers)
-        if ('showSaveFilePicker' in window) {
-            try {
-                const handle = await (window as any).showSaveFilePicker({
-                    suggestedName: fname,
-                    types: [{
-                        description: 'AccountExpress Backup',
-                        accept: { 'application/octet-stream': ['.aex'] }
-                    }]
-                });
+        return await backoff.execute(async () => {
+            const fname = filename || backup.filename;
 
-                const writable = await handle.createWritable();
-                await writable.write(backup.data);
-                await writable.close();
-            } catch (e) {
-                // User cancelled or API not available
-                console.error('Failed to save file:', e);
-                throw new Error('Failed to save backup to local disk');
+            // Use File System Access API (modern browsers)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await (window as any).showSaveFilePicker({
+                        suggestedName: fname,
+                        types: [{
+                            description: 'AccountExpress Backup',
+                            accept: { 'application/octet-stream': ['.aex'] }
+                        }]
+                    });
+
+                    const writable = await handle.createWritable();
+                    await writable.write(backup.data);
+                    await writable.close();
+
+                    ProductionLogger.info('BackupService', 'Backup saved to local disk', { filename: fname });
+                } catch (e) {
+                    // User cancelled or API not available
+                    ProductionLogger.error('BackupService', 'Failed to save file', e as Error);
+                    throw new Error('Failed to save backup to local disk');
+                }
+            } else {
+                // Fallback: Download via blob
+                const blob = new Blob([backup.data], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fname;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                ProductionLogger.info('BackupService', 'Backup downloaded via fallback', { filename: fname });
             }
-        } else {
-            // Fallback: Download via blob
-            const blob = new Blob([backup.data], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fname;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
+        }, 'BackupService.saveToLocal');
     }
 
     /**
-     * Upload backup to cloud storage (Google Drive, AWS S3, etc.)
+     * Upload backup to cloud storage (Google Drive, AWS S3, etc.) with exponential backoff
      * 
      * @param backup - Encrypted backup
      * @param destination - Cloud destination config
      */
     public async saveToCloud(backup: EncryptedBackup, destination: CloudDestination): Promise<void> {
-        switch (destination.provider) {
-            case 'google-drive':
-                await this.uploadToGoogleDrive(backup, destination);
-                break;
-            case 'aws-s3':
-                await this.uploadToS3(backup, destination);
-                break;
-            default:
-                throw new Error(`Unsupported cloud provider: ${destination.provider}`);
-        }
+        const backoff = new ExponentialBackoff({
+            maxRetries: 5,
+            baseDelay: 2000,
+            maxDelay: 32000
+        });
+
+        return await backoff.execute(async () => {
+            ProductionLogger.info('BackupService', 'Uploading to cloud', { provider: destination.provider });
+
+            switch (destination.provider) {
+                case 'google-drive':
+                    await this.uploadToGoogleDrive(backup, destination);
+                    break;
+                case 'aws-s3':
+                    await this.uploadToS3(backup, destination);
+                    break;
+                default:
+                    throw new Error(`Unsupported cloud provider: ${destination.provider}`);
+            }
+
+            ProductionLogger.info('BackupService', 'Cloud upload successful', { provider: destination.provider });
+        }, 'BackupService.saveToCloud');
     }
 
     /**
-     * Send backup to remote server (SFTP, REST API)
+     * Send backup to remote server (SFTP, REST API) with exponential backoff
      * 
      * @param backup - Encrypted backup
      * @param destination - Remote server config
      */
     public async saveToRemoteServer(backup: EncryptedBackup, destination: RemoteDestination): Promise<void> {
-        if (destination.protocol === 'rest') {
-            // Send via HTTP POST
-            const response = await fetch(destination.url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/octet-stream',
-                    'Authorization': `Bearer ${destination.token}`
-                },
-                body: backup.data
-            });
+        const backoff = new ExponentialBackoff({
+            maxRetries: 5,
+            baseDelay: 2000,
+            maxDelay: 32000
+        });
 
-            if (!response.ok) {
-                throw new Error(`Failed to upload to remote server: ${response.statusText}`);
+        return await backoff.execute(async () => {
+            ProductionLogger.info('BackupService', 'Uploading to remote server', { protocol: destination.protocol });
+
+            if (destination.protocol === 'rest') {
+                // Send via HTTP POST
+                const response = await fetch(destination.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/octet-stream',
+                        'Authorization': `Bearer ${destination.token}`
+                    },
+                    body: backup.data
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to upload to remote server: ${response.statusText}`);
+                }
+
+                ProductionLogger.info('BackupService', 'Remote upload successful');
+            } else if (destination.protocol === 'sftp') {
+                // SFTP upload (requires server-side proxy or browser extension)
+                throw new Error('SFTP upload requires server-side implementation');
             }
-        } else if (destination.protocol === 'sftp') {
-            // SFTP upload (requires server-side proxy or browser extension)
-            throw new Error('SFTP upload requires server-side implementation');
-        }
+        }, 'BackupService.saveToRemoteServer');
     }
 
     /**

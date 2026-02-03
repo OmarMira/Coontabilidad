@@ -1,5 +1,7 @@
 // Servicio de autocompletado de direcciones usando API gratuita de Nominatim (OpenStreetMap)
 import { ZIP_CODE_DATABASE, ZipCodeData, searchAddresses as searchZipCodes, findByZipCode } from '../data/zipCodes';
+import { ExponentialBackoff } from '../core/resilience/ExponentialBackoff';
+import { ProductionLogger } from '../core/logging/ProductionLogger';
 
 export interface AddressSuggestion {
   id: string;
@@ -42,20 +44,20 @@ class AddressService {
   async searchAddresses(query: string): Promise<AddressSuggestion[]> {
     if (!query || query.length < 2) return [];
 
-    console.log('🔍 Searching addresses for:', query);
+    ProductionLogger.debug('AddressService', 'Searching addresses', { query });
 
     // Verificar cache
     const cacheKey = query.toLowerCase().trim();
     if (this.cache.has(cacheKey)) {
-      console.log('📋 Returning cached results');
+      ProductionLogger.debug('AddressService', 'Returning cached results');
       return this.cache.get(cacheKey)!;
     }
 
     try {
       // Buscar en datos locales primero (siempre rápido)
-      console.log('🏠 Searching local data...');
+      ProductionLogger.debug('AddressService', 'Searching local data');
       const localResults = searchZipCodes(query);
-      console.log('🏠 Local results found:', localResults.length);
+      ProductionLogger.debug('AddressService', 'Local results found', { count: localResults.length });
       
       const localSuggestions: AddressSuggestion[] = localResults.slice(0, 6).map((item, index) => ({
         id: `local-${item.zipCode}-${index}`,
@@ -69,7 +71,7 @@ class AddressService {
 
       // Para queries cortas (2-3 caracteres), devolver solo resultados locales para mejor rendimiento
       if (query.length <= 3) {
-        console.log('✅ Returning local results for short query:', localSuggestions.length);
+        ProductionLogger.debug('AddressService', 'Returning local results for short query', { count: localSuggestions.length });
         if (localSuggestions.length > 0) {
           this.cache.set(cacheKey, localSuggestions);
         }
@@ -79,19 +81,19 @@ class AddressService {
       // Para queries más largas, intentar API externa también
       let apiSuggestions: AddressSuggestion[] = [];
       try {
-        console.log('🌐 Searching external API...');
+        ProductionLogger.debug('AddressService', 'Searching external API');
         await this.respectRateLimit();
         
         apiSuggestions = await this.searchWithNominatim(query);
-        console.log('🌐 API results found:', apiSuggestions.length);
+        ProductionLogger.debug('AddressService', 'API results found', { count: apiSuggestions.length });
       } catch (apiError) {
-        console.warn('⚠️ API search failed, using local results only:', apiError);
+        ProductionLogger.warn('AddressService', 'API search failed, using local results only', { error: apiError });
       }
       
       // Combinar resultados, priorizando diversidad geográfica
       const combinedResults = this.combineResultsWithDiversity(localSuggestions, apiSuggestions);
 
-      console.log('✅ Returning combined results:', combinedResults.length);
+      ProductionLogger.debug('AddressService', 'Returning combined results', { count: combinedResults.length });
       
       // Guardar en cache
       if (combinedResults.length > 0) {
@@ -101,7 +103,7 @@ class AddressService {
       return combinedResults;
       
     } catch (error) {
-      console.error('❌ Error searching addresses:', error);
+      ProductionLogger.error('AddressService', 'Error searching addresses', error as Error);
       
       // En caso de error, devolver solo resultados locales
       const fallbackResults = searchZipCodes(query).slice(0, 8).map((item, index) => ({
@@ -114,7 +116,7 @@ class AddressService {
         county: item.county
       }));
       
-      console.log('🔄 Returning fallback results:', fallbackResults.length);
+      ProductionLogger.info('AddressService', 'Returning fallback results', { count: fallbackResults.length });
       return fallbackResults;
     }
   }
@@ -157,62 +159,80 @@ class AddressService {
     return combined;
   }
 
-  // Buscar usando la API gratuita de Nominatim
+  // Buscar usando la API gratuita de Nominatim con exponential backoff
   private async searchWithNominatim(query: string): Promise<AddressSuggestion[]> {
-    try {
-      // Construir URL de búsqueda
-      const params = new URLSearchParams({
-        q: `${query}, United States`,
-        format: 'json',
-        addressdetails: '1',
-        limit: '5',
-        countrycodes: 'us',
-        'accept-language': 'en'
-      });
-
-      const response = await fetch(`${this.NOMINATIM_BASE_URL}?${params}`, {
-        headers: {
-          'User-Agent': 'AccountExpress/1.0 (Business Application)'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Nominatim API error: ${response.status}`);
+    const backoff = new ExponentialBackoff({
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 8000,
+      shouldRetry: (error: Error) => {
+        // Retry on network errors and 5xx server errors
+        return error.message.includes('NetworkError') ||
+               error.message.includes('ETIMEDOUT') ||
+               error.message.includes('ECONNREFUSED') ||
+               error.message.includes('500') ||
+               error.message.includes('502') ||
+               error.message.includes('503') ||
+               error.message.includes('504');
       }
+    });
 
-      const data = await response.json();
-      console.log('🌐 Nominatim API response:', data.length, 'results');
+    try {
+      return await backoff.execute(async () => {
+        // Construir URL de búsqueda
+        const params = new URLSearchParams({
+          q: `${query}, United States`,
+          format: 'json',
+          addressdetails: '1',
+          limit: '5',
+          countrycodes: 'us',
+          'accept-language': 'en'
+        });
 
-      // Procesar resultados de la API
-      const suggestions: AddressSuggestion[] = [];
-      
-      for (const item of data) {
-        if (item.address && item.address.state && item.address.country_code === 'us') {
-          const stateCode = this.getStateCode(item.address.state);
-          const city = item.address.city || item.address.town || item.address.village || item.address.hamlet;
-          const county = item.address.county;
-          const postcode = item.address.postcode;
+        const response = await fetch(`${this.NOMINATIM_BASE_URL}?${params}`, {
+          headers: {
+            'User-Agent': 'AccountExpress/1.0 (Business Application)'
+          }
+        });
 
-          if (city && stateCode) {
-            suggestions.push({
-              id: `nominatim-${item.place_id}`,
-              display_name: `${city}, ${stateCode}${postcode ? ' ' + postcode : ''}`,
-              city: city,
-              state: item.address.state,
-              stateCode: stateCode,
-              zipCode: postcode || '',
-              county: county ? county.replace(' County', '') : '',
-              lat: parseFloat(item.lat),
-              lon: parseFloat(item.lon)
-            });
+        if (!response.ok) {
+          throw new Error(`Nominatim API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        ProductionLogger.debug('AddressService', 'Nominatim API response', { resultCount: data.length });
+
+        // Procesar resultados de la API
+        const suggestions: AddressSuggestion[] = [];
+        
+        for (const item of data) {
+          if (item.address && item.address.state && item.address.country_code === 'us') {
+            const stateCode = this.getStateCode(item.address.state);
+            const city = item.address.city || item.address.town || item.address.village || item.address.hamlet;
+            const county = item.address.county;
+            const postcode = item.address.postcode;
+
+            if (city && stateCode) {
+              suggestions.push({
+                id: `nominatim-${item.place_id}`,
+                display_name: `${city}, ${stateCode}${postcode ? ' ' + postcode : ''}`,
+                city: city,
+                state: item.address.state,
+                stateCode: stateCode,
+                zipCode: postcode || '',
+                county: county ? county.replace(' County', '') : '',
+                lat: parseFloat(item.lat),
+                lon: parseFloat(item.lon)
+              });
+            }
           }
         }
-      }
 
-      return suggestions;
+        return suggestions;
+      }, 'AddressService.searchWithNominatim');
       
     } catch (error) {
-      console.error('❌ Error with Nominatim API:', error);
+      ProductionLogger.error('AddressService', 'Nominatim API failed after retries', error as Error);
       return [];
     }
   }
@@ -231,19 +251,19 @@ class AddressService {
 
       return details;
     } catch (error) {
-      console.error('Error getting address details:', error);
+      ProductionLogger.error('AddressService', 'Error getting address details', error as Error);
       throw error;
     }
   }
 
-  // Buscar por código postal específico
+  // Buscar por código postal específico con exponential backoff
   async searchByZipCode(zipCode: string): Promise<AddressSuggestion | null> {
-    console.log('🔍 Searching by zip code:', zipCode);
+    ProductionLogger.debug('AddressService', 'Searching by zip code', { zipCode });
     
     // Primero buscar en datos locales
     const localResult = findByZipCode(zipCode);
     if (localResult) {
-      console.log('✅ Found in local data');
+      ProductionLogger.debug('AddressService', 'Found in local data');
       return {
         id: localResult.zipCode,
         display_name: `${localResult.city}, ${localResult.stateCode} ${localResult.zipCode}`,
@@ -255,53 +275,64 @@ class AddressService {
       };
     }
 
-    // Si no se encuentra localmente, buscar en API
+    // Si no se encuentra localmente, buscar en API con backoff
+    const backoff = new ExponentialBackoff({
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 8000
+    });
+
     try {
       await this.respectRateLimit();
       
-      const params = new URLSearchParams({
-        q: `${zipCode}, United States`,
-        format: 'json',
-        addressdetails: '1',
-        limit: '1',
-        countrycodes: 'us'
-      });
+      return await backoff.execute(async () => {
+        const params = new URLSearchParams({
+          q: `${zipCode}, United States`,
+          format: 'json',
+          addressdetails: '1',
+          limit: '1',
+          countrycodes: 'us'
+        });
 
-      const response = await fetch(`${this.NOMINATIM_BASE_URL}?${params}`, {
-        headers: {
-          'User-Agent': 'AccountExpress/1.0 (Business Application)'
+        const response = await fetch(`${this.NOMINATIM_BASE_URL}?${params}`, {
+          headers: {
+            'User-Agent': 'AccountExpress/1.0 (Business Application)'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Nominatim API error: ${response.status}`);
         }
-      });
 
-      if (!response.ok) return null;
+        const data = await response.json();
+        if (data.length === 0) return null;
 
-      const data = await response.json();
-      if (data.length === 0) return null;
+        const item = data[0];
+        if (item.address && item.address.state) {
+          const stateCode = this.getStateCode(item.address.state);
+          const city = item.address.city || item.address.town || item.address.village;
+          const county = item.address.county;
 
-      const item = data[0];
-      if (item.address && item.address.state) {
-        const stateCode = this.getStateCode(item.address.state);
-        const city = item.address.city || item.address.town || item.address.village;
-        const county = item.address.county;
-
-        if (city && stateCode) {
-          console.log('✅ Found via API');
-          return {
-            id: `api-${item.place_id}`,
-            display_name: `${city}, ${stateCode} ${zipCode}`,
-            city: city,
-            state: item.address.state,
-            stateCode: stateCode,
-            zipCode: zipCode,
-            county: county ? county.replace(' County', '') : ''
-          };
+          if (city && stateCode) {
+            ProductionLogger.debug('AddressService', 'Found via API');
+            return {
+              id: `api-${item.place_id}`,
+              display_name: `${city}, ${stateCode} ${zipCode}`,
+              city: city,
+              state: item.address.state,
+              stateCode: stateCode,
+              zipCode: zipCode,
+              county: county ? county.replace(' County', '') : ''
+            };
+          }
         }
-      }
+
+        return null;
+      }, 'AddressService.searchByZipCode');
     } catch (error) {
-      console.error('Error searching by zip code:', error);
+      ProductionLogger.error('AddressService', 'Error searching by zip code', error as Error);
+      return null;
     }
-
-    return null;
   }
 
   // Convertir nombre de estado a código
