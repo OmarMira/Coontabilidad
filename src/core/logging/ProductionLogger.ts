@@ -164,9 +164,9 @@ class ProductionLoggerClass {
     private async persistLog(context: LogContext): Promise<void> {
         try {
             // Lazy import para evitar circular dependencies
-            const { logger } = await import('./SystemLogger');
-            await logger.log(
-                'ProductionLogger',
+            const { logger: systemLogger } = await import('./SystemLogger');
+            await systemLogger.log(
+                'System',
                 'critical_event',
                 context.message,
                 context.data
