@@ -75,13 +75,16 @@ async function initializeApplication(): Promise<void> {
 
   const App = (await import('./App')).default;
   const { AuthProvider } = await import('./contexts/AuthContext');
+  const { SystemIntegrityGate } = await import('./components/security/SystemIntegrityGate');
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <DynamicErrorBoundary>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <SystemIntegrityGate>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </SystemIntegrityGate>
       </DynamicErrorBoundary>
     </React.StrictMode>
   );
