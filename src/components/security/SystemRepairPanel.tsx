@@ -122,7 +122,7 @@ export const SystemRepairPanel: React.FC<Props> = ({
                             className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                         >
                             <Wrench className="w-5 h-5" />
-                            {repairing ? 'Reparando Sistema...' : `Reparar Todo (${repairableChecks.length})`}
+                            {repairing ? 'Reparando Sistema... Recargando...' : `Reparar Todo (${repairableChecks.length})`}
                         </button>
                     )}
                     

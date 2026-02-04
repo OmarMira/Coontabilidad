@@ -48,13 +48,20 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
         setRepairing(true);
         try {
             const service = new IntegrityService();
-            await service.repairCheck(checkId);
+            const success = await service.repairCheck(checkId);
             
-            // Re-ejecutar verificaciones después de reparar
-            await runIntegrityChecks();
+            // Si se reparó exitosamente, recargar la página
+            if (success) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Si no se pudo reparar, re-ejecutar verificaciones
+                await runIntegrityChecks();
+                setRepairing(false);
+            }
         } catch (err) {
             setError(`Error reparando: ${(err as Error).message}`);
-        } finally {
             setRepairing(false);
         }
     };
@@ -65,13 +72,20 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
         setRepairing(true);
         try {
             const service = new IntegrityService();
-            await service.repairAll();
+            const result = await service.repairAll();
             
-            // Re-ejecutar verificaciones después de reparar
-            await runIntegrityChecks();
+            // Si se reparó al menos un check, recargar la página para reinicializar todo
+            if (result.repaired > 0) {
+                // Mostrar mensaje de éxito antes de recargar
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                // Si no se pudo reparar nada, re-ejecutar verificaciones
+                await runIntegrityChecks();
+            }
         } catch (err) {
             setError(`Error reparando sistema: ${(err as Error).message}`);
-        } finally {
             setRepairing(false);
         }
     };
