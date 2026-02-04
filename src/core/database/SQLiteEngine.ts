@@ -9,6 +9,7 @@ export class SQLiteEngine {
     private db: number | null = null;
     private sqlJsDB: any = null;
     private dbName: string = 'accountexpress_v2.db';
+    private vfs: any = null;
 
     constructor() { }
 
@@ -28,9 +29,9 @@ export class SQLiteEngine {
             this.sqlite3 = SQLite.Factory(module);
 
             // 2. Register Persistent VFS (IDB Batch Atomic for Main Thread compatibility)
-            const vfs = new IDBBatchAtomicVFS(this.dbName);
+            this.vfs = new IDBBatchAtomicVFS(this.dbName);
             // @ts-ignore
-            this.sqlite3.vfs_register(vfs, true);
+            this.sqlite3.vfs_register(this.vfs, true);
 
             // 3. Open Database
             // @ts-ignore
@@ -259,6 +260,26 @@ export class SQLiteEngine {
         if (this.sqlite3 && this.db) {
             await this.sqlite3.close(this.db);
             this.db = null;
+        }
+    }
+
+    /**
+     * Fuerza la persistencia de cambios a IndexedDB
+     * CRÍTICO para IDBBatchAtomicVFS que hace batch de escrituras
+     */
+    async sync(): Promise<void> {
+        if (!this.sqlite3 || this.db === null) return;
+        
+        try {
+            // Forzar flush de cambios pendientes
+            if (this.vfs && typeof this.vfs.flush === 'function') {
+                await this.vfs.flush();
+            }
+            
+            // Ejecutar checkpoint para asegurar que todo se escriba
+            await this.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+        } catch (e) {
+            console.warn('Sync warning (non-critical):', e);
         }
     }
 

@@ -5,7 +5,25 @@ Todos los cambios notables del Sistema de Coontabilidad se documentarán en este
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-12-24
+## [4.1.0] - 2026-02-04
+
+### 🔒 **SYSTEM RECOVERY & INTEGRITY (MEGA PATCH)**
+
+#### ✅ **PERSISTENCIA HÍBRIDA (FIX DEFINITIVO)**
+- **PersistenceLayer.ts**: Nueva capa de abstracción para almacenamiento robusto
+- **IndexedDB**: Integración nativa para guardar el binario SQLite (wa-sqlite)
+- **Auto-Sync**: Sincronización automática tras cada reparación de esquema
+
+#### 🔧 **REPARACIÓN DE ESQUEMA (FLORIDA TAX)**
+- **SchemaRepairService**: Corregido bug crítico en tabla `florida_tax_rates`
+- **Missing Columns**: Agregada columna `surtax_rate` faltante que causaba crash
+- **Integrity Gate**: El sistema ahora se auto-repara y persisten los cambios
+
+#### 🐛 **CORRECCIONES UI**
+- **UserProfile**: Import faltante de `UserForm` corregido en Sidebar
+- **Dashboard**: Estado "Verde" restaurado tras validación de integridad
+
+## [4.0.0] - 2026-01-31
 
 ### 🎉 **LANZAMIENTO OFICIAL - SISTEMA EMPRESARIAL COMPLETO**
 

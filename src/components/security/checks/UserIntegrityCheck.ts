@@ -34,6 +34,14 @@ export class UserIntegrityCheck implements IntegrityCheck {
                     engine.setDB(newDb);
                     const repair = new SchemaRepairService(engine);
                     await repair.repairSchema();
+                    
+                    // CRÍTICO: Forzar persistencia
+                    if (typeof engine.sync === 'function') {
+                        await engine.sync();
+                    }
+                    
+                    // Esperar un momento para asegurar que IndexedDB termine
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
             };
         }

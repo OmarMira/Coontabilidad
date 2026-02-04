@@ -8,7 +8,7 @@ The "Iron Core" project brings forensic-grade accounting capabilities to Account
 
 The system is built on a layered security model:
 
-* **L1 (Storage):** SQLite with WAL mode + OPFS for high-performance persistence.
+* **L1 (Storage):** SQLite (WASM) + PersistenceLayer (IndexedDB) for robust browser persistence.
 * **L2 (Hashing):** `AuditService` chains every transaction using SHA-256. Each block contains the hash of the previous block, creating an immutable ledger.
 * **L3 (Triggers):** Anti-tamper SQL triggers (`prevent_journal_update`, `prevent_journal_delete`) block modification of finalized records at the engine level.
 * **L4 (Encryption):** Data at rest and in backups is protected using AES-256-GCM / PBKDF2.

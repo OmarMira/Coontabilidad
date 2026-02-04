@@ -116,6 +116,7 @@ import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
 import { NotificationService } from './services/NotificationService';
 import { UserList } from './components/auth/UserList';
+import { UserForm } from './components/auth/UserForm';
 import { RoleManager } from './components/auth/RoleManager';
 import { AuditTrailTable } from './components/audit/AuditTrailTable';
 import { CustomerFormAdvanced } from './components/CustomerFormAdvanced';

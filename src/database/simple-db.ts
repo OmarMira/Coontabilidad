@@ -1696,7 +1696,15 @@ export const initDB = async (password?: string): Promise<any> => {
     logger.info('Database', 'sqljs_loaded', 'SQL.js cargado y base de datos inicializada');
 
     // Cargar datos existentes
-    const dbData = await loadFromLocalStorage();
+    const { loadDatabase } = await import('./PersistenceLayer');
+    let dbData = await loadDatabase();
+
+    // Fallback a localStorage si no hay en IndexedDB
+    if (!dbData) {
+      try {
+        dbData = await loadFromLocalStorage();
+      } catch (e) { console.warn('LocalStorage load failed', e); }
+    }
 
     if (!db) {
       db = new SQL.Database(dbData || undefined);
@@ -11936,15 +11944,15 @@ function generateBudgetPeriods(
   annualAmount: number,
   distributionType: 'EQUAL' | 'CUSTOM' | 'ZERO'
 ): void {
-  const monthlyAmount = distributionType === 'EQUAL' 
+  const monthlyAmount = distributionType === 'EQUAL'
     ? Math.round(annualAmount / 12)
     : 0;
-  
+
   for (let month = 1; month <= 12; month++) {
     const lastDay = getLastDayOfMonth(fiscalYear, month);
     const periodStartDate = `${fiscalYear}-${month.toString().padStart(2, '0')}-01`;
     const periodEndDate = `${fiscalYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
-    
+
     db?.run(`
       INSERT INTO budget_periods (
         budget_line_id, period_type, period_number,
@@ -11972,9 +11980,9 @@ export function createBudget(
     // Validate CP-1: Balance Invariant
     const linesTotal = budgetLines.reduce((sum, line) => sum + line.annual_amount, 0);
     if (Math.abs(linesTotal - budgetData.total_budget_amount) > 1) {
-      return { 
-        success: false, 
-        message: `Total de líneas (${(linesTotal / 100).toFixed(2)}) no coincide con total del presupuesto (${(budgetData.total_budget_amount / 100).toFixed(2)})` 
+      return {
+        success: false,
+        message: `Total de líneas (${(linesTotal / 100).toFixed(2)}) no coincide con total del presupuesto (${(budgetData.total_budget_amount / 100).toFixed(2)})`
       };
     }
 
@@ -12366,8 +12374,8 @@ export function calculateActualsByAccount(
 
     // For expense accounts (5xxx): net = debits - credits
     // For revenue accounts (4xxx): net = credits - debits
-    return accountNumber >= 5000 
-      ? totalDebit - totalCredit 
+    return accountNumber >= 5000
+      ? totalDebit - totalCredit
       : totalCredit - totalDebit;
   } catch (error) {
     console.error('Error calculating actuals:', error);
@@ -12424,7 +12432,7 @@ export function getBudgetVarianceAnalysis(
         const periodActual = calculateActualsByAccount(accountNumber, p.period_start_date, p.period_end_date);
         const periodVariance = periodActual - p.budgeted_amount;
         const periodVariancePercent = p.budgeted_amount !== 0 ? (periodVariance / p.budgeted_amount) * 100 : 0;
-        
+
         // Determine if favorable (depends on account type)
         // Expense (5xxx): favorable if under budget (negative variance)
         // Revenue (4xxx): favorable if over budget (positive variance)
@@ -12471,7 +12479,7 @@ export function updatePeriodActuals(budgetId: number): { success: boolean; messa
 
     for (const line of lines) {
       const periods = getBudgetPeriods(line.id);
-      
+
       for (const period of periods) {
         // Calculate actual for this period
         const actualAmount = calculateActualsByAccount(
@@ -12482,8 +12490,8 @@ export function updatePeriodActuals(budgetId: number): { success: boolean; messa
 
         // Calculate variance
         const variance = actualAmount - period.budgeted_amount;
-        const variancePercent = period.budgeted_amount !== 0 
-          ? (variance / period.budgeted_amount) * 100 
+        const variancePercent = period.budgeted_amount !== 0
+          ? (variance / period.budgeted_amount) * 100
           : 0;
 
         // Update period
@@ -12553,7 +12561,7 @@ export function getBudgetSummary(budgetId: number): {
 
     for (const va of varianceAnalysis) {
       const variancePercent = Math.abs(va.ytd_variance_percent);
-      
+
       if (variancePercent > alertThreshold) {
         alertCount++;
       }
@@ -12617,16 +12625,16 @@ export function generateBudgetAlerts(budgetId: number): Array<{
 
     for (const va of varianceAnalysis) {
       const variancePercent = Math.abs(va.ytd_variance_percent);
-      
+
       // Check if variance exceeds threshold
       if (variancePercent > alertThreshold) {
         const isOverBudget = va.ytd_variance > 0;
         const severity = variancePercent > (alertThreshold * 2) ? 'critical' : 'warning';
-        
+
         // Get budget line ID
         const lines = getBudgetLines(budgetId);
         const line = lines.find(l => l.account_number === va.account_number);
-        
+
         if (line) {
           alerts.push({
             budget_id: budgetId,
@@ -12646,9 +12654,9 @@ export function generateBudgetAlerts(budgetId: number): Array<{
 
     // Log alerts if any
     if (alerts.length > 0) {
-      logger.warn('Budgets', 'alerts_generated', `${alerts.length} alertas generadas para presupuesto ${budgetId}`, { 
-        budgetId, 
-        alertCount: alerts.length 
+      logger.warn('Budgets', 'alerts_generated', `${alerts.length} alertas generadas para presupuesto ${budgetId}`, {
+        budgetId,
+        alertCount: alerts.length
       });
     }
 
@@ -12694,14 +12702,14 @@ export function getBudgetExecutionStatus(budgetId: number): {
     const periodProgressPercent = (daysElapsed / totalDays) * 100;
 
     // Calculate budget consumption
-    const budgetConsumedPercent = summary.total_budgeted !== 0 
-      ? (summary.total_actual / summary.total_budgeted) * 100 
+    const budgetConsumedPercent = summary.total_budgeted !== 0
+      ? (summary.total_actual / summary.total_budgeted) * 100
       : 0;
 
     // Calculate execution percent (actual vs budgeted for elapsed time)
     const expectedSpending = (summary.total_budgeted * periodProgressPercent) / 100;
-    const executionPercent = expectedSpending !== 0 
-      ? (summary.total_actual / expectedSpending) * 100 
+    const executionPercent = expectedSpending !== 0
+      ? (summary.total_actual / expectedSpending) * 100
       : 0;
 
     // Determine pace
@@ -12740,3 +12748,21 @@ export function getBudgetExecutionStatus(budgetId: number): {
     return null;
   }
 }
+
+/**
+ * Persist DB explicitly to IndexedDB (and LocalStorage as fallback if configured)
+ * This bypasses the SQLiteEngine's sync if running in sql.js compatibility mode.
+ */
+export const forceSaveDB = async () => {
+  if (!db || typeof db.export !== 'function') return;
+
+  try {
+    const data = db.export();
+    // Save to PersistenceLayer (IndexedDB)
+    const { saveDatabase } = await import('./PersistenceLayer');
+    await saveDatabase(data);
+    logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente');
+  } catch (e) {
+    logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
+  }
+};

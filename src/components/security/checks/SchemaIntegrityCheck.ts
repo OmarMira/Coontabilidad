@@ -32,7 +32,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
 
     async execute(): Promise<CheckResult> {
         const db = getDB();
-        
+
         if (!db) {
             return {
                 passed: false,
@@ -40,17 +40,34 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                 canAutoRepair: true,
                 repairAction: async () => {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
-                    const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
-                    const { initDB } = await import('../../../database/simple-db');
-                    
-                    // Inicializar DB primero
-                    const newDb = await initDB();
-                    
-                    // Luego reparar
-                    const engine = new SQLiteEngine();
-                    engine.setDB(newDb);
-                    const repair = new SchemaRepairService(engine);
-                    await repair.repairSchema();
+                    const { getDBEngine } = await import('../../../database/simple-db');
+
+                    try {
+                        // Usar la instancia única del motor que gestiona la persistencia real
+                        const engine = getDBEngine();
+                        const repair = new SchemaRepairService(engine);
+                        await repair.repairSchema();
+
+                        // Forzar sincronización si es necesaria
+                        if (typeof engine.sync === 'function') {
+                            await engine.sync();
+                        }
+                    } catch (e) {
+                        // Fallback si el motor no está inicializado (raro en arranque, pero posible)
+                        console.warn('DB Engine not ready, trying init...', e);
+                        const { initDB } = await import('../../../database/simple-db');
+                        const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
+
+                        await initDB();
+                        // Re-intentar obtener el motor
+                        const engine = getDBEngine();
+                        const repair = new SchemaRepairService(engine);
+                        await repair.repairSchema();
+                        if (typeof engine.sync === 'function') await engine.sync();
+                    }
+
+                    // Esperar un momento para asegurar que IndexedDB termine
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             };
         }
@@ -60,7 +77,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                 SELECT name FROM sqlite_master 
                 WHERE type='table' AND name NOT LIKE 'sqlite_%'
             `);
-            
+
             const existingTables = result[0]?.values.map((row: any) => row[0] as string) || [];
             const missingTables = this.CRITICAL_TABLES.filter(
                 table => !existingTables.includes(table)
@@ -77,7 +94,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
             return {
                 passed: false,
                 message: `❌ Faltan ${missingTables.length} tablas críticas`,
-                details: { 
+                details: {
                     missingTables,
                     existingTables: existingTables.length,
                     requiredTables: this.CRITICAL_TABLES.length
@@ -85,11 +102,38 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                 canAutoRepair: true,
                 repairAction: async () => {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
-                    const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
-                    const engine = new SQLiteEngine();
-                    engine.setDB(db);
-                    const repair = new SchemaRepairService(engine);
-                    await repair.repairSchema();
+                    const { getDBEngine, initDB } = await import('../../../database/simple-db');
+
+                    try {
+                        let engine;
+                        try {
+                            engine = getDBEngine();
+                        } catch (e) {
+                            await initDB();
+                            engine = getDBEngine();
+                        }
+
+                        const repair = new SchemaRepairService(engine);
+                        await repair.repairSchema();
+
+                        // CRÍTICO: Forzar persistencia
+                        if (typeof engine.sync === 'function') {
+                            await engine.sync();
+                        }
+
+                        // Forzar exportación explicita a IndexedDB
+                        try {
+                            const { forceSaveDB } = await import('../../../database/simple-db');
+                            if (forceSaveDB) await forceSaveDB();
+                        } catch (e) {
+                            console.warn('Force save failed', e);
+                        }
+                    } catch (e) {
+                        console.error("Critical Repair Fail", e);
+                    }
+
+                    // Esperar un momento para asegurar que IndexedDB termine
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             };
         } catch (error) {

@@ -50,5 +50,5 @@ El sistema está contenerizado para un despliegue "Zero-Config" usando Nginx com
 
 ## 📂 Estructura de Persistencia
 
-La base de datos SQLite se gestiona localmente en el navegador (OPFS) para garantizar disponibilidad Offline-First.
+La base de datos SQLite se gestiona localmente en el navegador (PersistenceLayer / IndexedDB) para garantizar disponibilidad Offline-First y protección de datos.
 Si se requiere backup centralizado, configurar el servicio `db_sync` en `docker-compose.yml`.

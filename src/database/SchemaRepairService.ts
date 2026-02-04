@@ -337,6 +337,7 @@ export class SchemaRepairService {
                 const required = [
                     { name: 'county_code', type: 'TEXT' },
                     { name: 'base_rate', type: 'REAL', default: '600' },
+                    { name: 'surtax_rate', type: 'REAL', default: '0' },
                     { name: 'effective_date', type: 'TEXT', default: "'2026-01-01'" }
                 ];
                 for (const col of required) {
@@ -464,7 +465,7 @@ export class SchemaRepairService {
                 `);
                 logs.push("✅ Tabla tax_transactions creada");
             }
-            
+
             // Verificar columnas faltantes en tax_transactions
             if (taxTransCols.length > 0) {
                 const required = [
@@ -496,7 +497,7 @@ export class SchemaRepairService {
                 `);
                 logs.push("✅ Tabla sys_migrations creada");
             }
-            
+
             // SIEMPRE insertar registro de migración
             try {
                 await this.db.run("INSERT OR IGNORE INTO sys_migrations (version, migration_name) VALUES (7, 'repaired_schema_v7')");
@@ -504,12 +505,23 @@ export class SchemaRepairService {
             } catch (e) {
                 logs.push(`⚠️ Error registrando migración: ${(e as Error).message}`);
             }
-            
+
             if (migCols.length > 0 && !migCols.includes('version')) {
                 // Fix missing version column if table existed base level
                 await this.db.run("ALTER TABLE sys_migrations ADD COLUMN version INTEGER DEFAULT 0");
                 await this.db.run("UPDATE sys_migrations SET version = 7 WHERE migration_name = 'initial_schema' OR migration_name = 'repaired_schema_v7'");
                 logs.push("✅ Columna version agregada a sys_migrations");
+            }
+
+            // CRÍTICO: Forzar persistencia de todos los cambios a IndexedDB
+            logger.info('SchemaRepair', 'sync_start', 'Forzando persistencia de cambios...');
+            try {
+                if (typeof this.db.sync === 'function') {
+                    await this.db.sync();
+                    logs.push("✅ Cambios persistidos a IndexedDB");
+                }
+            } catch (e) {
+                logs.push(`⚠️ Error en sync: ${(e as Error).message}`);
             }
 
             return logs;
