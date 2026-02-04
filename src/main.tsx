@@ -68,6 +68,9 @@ async function initializeApplication(): Promise<void> {
       window.history.replaceState({}, '', newUrl.pathname);
     }
 
+    // CRÍTICO: Inicializar DB ANTES de renderizar
+    await initDB();
+
     // Validar y Cargar
     const dbHealth = await DatabaseHealthChecker.checkHealth();
     if (!dbHealth.healthy) {
