@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { IntegrityService } from '../../services/integrity/IntegrityService';
 import { SystemIntegrityReport } from '../../types/integrity.types';
 import { SystemRepairPanel } from './SystemRepairPanel';
+import { SystemWarningBanner } from './SystemWarningBanner';
 import { Loader2, Shield } from 'lucide-react';
 
 interface Props {
@@ -19,6 +20,8 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
     const [report, setReport] = useState<SystemIntegrityReport | null>(null);
     const [repairing, setRepairing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showWarningBanner, setShowWarningBanner] = useState(true);
+    const [showWarningDetails, setShowWarningDetails] = useState(false);
 
     useEffect(() => {
         runIntegrityChecks();
@@ -123,9 +126,34 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
 
     // Sistema con advertencias (permitir continuar pero mostrar aviso)
     if (report && report.overallStatus === 'degraded') {
-        // TODO: Mostrar banner de advertencia en la parte superior
-        // Por ahora, permitir continuar
-        return <>{children}</>;
+        // Si el usuario quiere ver detalles, mostrar el panel completo
+        if (showWarningDetails) {
+            return (
+                <SystemRepairPanel
+                    report={report}
+                    onRepair={handleRepair}
+                    onRepairAll={handleRepairAll}
+                    onRetry={runIntegrityChecks}
+                    repairing={repairing}
+                    allowContinue={true}
+                    onContinue={() => setShowWarningDetails(false)}
+                />
+            );
+        }
+
+        // Mostrar banner de advertencia en la parte superior
+        return (
+            <>
+                {showWarningBanner && (
+                    <SystemWarningBanner
+                        report={report}
+                        onDismiss={() => setShowWarningBanner(false)}
+                        onViewDetails={() => setShowWarningDetails(true)}
+                    />
+                )}
+                {children}
+            </>
+        );
     }
 
     // Sistema saludable - permitir acceso

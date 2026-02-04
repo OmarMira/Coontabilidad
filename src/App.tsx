@@ -52,6 +52,8 @@ const AgingReport = lazy(() => import('./components/reports/AgingReport').then(m
 const AccountLedger = lazy(() => import('./components/reports/AccountLedger').then(m => ({ default: m.AccountLedger })));
 const ForensicDemoPage = lazy(() => import('./pages/forensic/ForensicDemoPage').then(m => ({ default: m.ForensicDemoPage })));
 const UnifiedAssistant = lazy(() => import('./components/ai/UnifiedAssistant').then(m => ({ default: m.UnifiedAssistant })));
+const HealthCheckPage = lazy(() => import('./pages/HealthCheckPage').then(m => ({ default: m.HealthCheckPage })));
+const SystemStatusDashboard = lazy(() => import('./pages/SystemStatusDashboard').then(m => ({ default: m.SystemStatusDashboard })));
 
 // Regular imports (lighter components)
 import { UserRoleManager } from './components/system/UserRoleManager';
@@ -1744,6 +1746,18 @@ function App() {
               {state.currentSection === 'auditoria' && <TransactionAudit />}
 
               {state.currentSection === 'security' && <SecuritySettings />}
+
+              {state.currentSection === 'health-check' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <HealthCheckPage />
+                </Suspense>
+              )}
+
+              {state.currentSection === 'system-status' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <SystemStatusDashboard />
+                </Suspense>
+              )}
 
               {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
 

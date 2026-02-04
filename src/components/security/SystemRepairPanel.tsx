@@ -13,6 +13,8 @@ interface Props {
     onRepairAll: () => Promise<void>;
     onRetry: () => void;
     repairing: boolean;
+    allowContinue?: boolean;
+    onContinue?: () => void;
 }
 
 export const SystemRepairPanel: React.FC<Props> = ({ 
@@ -20,7 +22,9 @@ export const SystemRepairPanel: React.FC<Props> = ({
     onRepair, 
     onRepairAll, 
     onRetry,
-    repairing 
+    repairing,
+    allowContinue = false,
+    onContinue
 }) => {
     const getSeverityColor = (severity: string) => {
         switch (severity) {
@@ -130,6 +134,16 @@ export const SystemRepairPanel: React.FC<Props> = ({
                         <RefreshCw className="w-5 h-5" />
                         Verificar de Nuevo
                     </button>
+
+                    {allowContinue && onContinue && (
+                        <button
+                            onClick={onContinue}
+                            disabled={repairing}
+                            className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Continuar de Todos Modos
+                        </button>
+                    )}
                 </div>
 
                 {/* Footer Info */}
