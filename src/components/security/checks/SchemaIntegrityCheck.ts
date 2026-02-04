@@ -37,7 +37,21 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
             return {
                 passed: false,
                 message: 'Base de datos no inicializada',
-                canAutoRepair: false
+                canAutoRepair: true,
+                repairAction: async () => {
+                    const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
+                    const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
+                    const { initDB } = await import('../../../database/simple-db');
+                    
+                    // Inicializar DB primero
+                    const newDb = await initDB();
+                    
+                    // Luego reparar
+                    const engine = new SQLiteEngine();
+                    engine.setDB(newDb);
+                    const repair = new SchemaRepairService(engine);
+                    await repair.repairSchema();
+                }
             };
         }
 
