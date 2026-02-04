@@ -18,6 +18,7 @@ import {
   ScanSearch,
   HardDrive,
   UserCheck,
+  User as UserIcon,
   Lock,
   Bot,
   Activity,
@@ -223,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => {
       const isAlreadyExpanded = prev.has(itemId);
-      
+
       if (isAlreadyExpanded) {
         // Si ya está expandido, lo cerramos (todos quedan cerrados)
         return new Set();
@@ -345,8 +346,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
 
 
-      {/* Botón de Cerrar Sesión */}
-      <div className="p-4 border-t border-slate-900/50 mt-auto">
+      {/* Perfil del Usuario y Botón de Cerrar Sesión */}
+      <div className="p-4 border-t border-slate-900/50 mt-auto space-y-2">
+        {user && (
+          <button
+            onClick={() => onNavigate('my-profile')}
+            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
+              ${currentSection === 'my-profile'
+                ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/40'
+                : 'bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-white border-slate-800'
+              }`}
+          >
+            <UserIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            {!isCollapsed && <span>MI PERFIL</span>}
+          </button>
+        )}
+
         <button
           onClick={() => {
             if (confirm('¿Deseas cerrar la sesión?')) {

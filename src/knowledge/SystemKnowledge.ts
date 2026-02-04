@@ -310,7 +310,166 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         ],
         relatedMenu: 'CONTABILIDAD > Reportes Financieros > Activos',
         category: 'contabilidad'
-    }
+    },
+
+    // NOMINA
+    processPayroll: {
+        title: '¿Cómo procesar la nómina?',
+        description: 'Cálculo y registro de pagos a empleados',
+        steps: [
+            'Ve a "RECURSOS HUMANOS" > "Nómina"',
+            'Selecciona el período de pago',
+            'Verifica horas trabajadas de cada empleado',
+            'El sistema calcula automáticamente: salario bruto, retenciones (FICA, Medicare, impuestos), deducciones',
+            'Revisa el salario neto de cada empleado',
+            'Aprueba la nómina',
+            'El sistema genera asientos: Débito Gasto Nómina / Crédito Nómina por Pagar',
+            'Procesa el pago: Débito Nómina por Pagar / Crédito Banco'
+        ],
+        tips: [
+            'Florida no tiene impuesto estatal sobre la renta, solo retenciones federales',
+            'Remite las retenciones al IRS según tu calendario (mensual/trimestral)',
+            'Genera formularios W-2 al final del año'
+        ],
+        relatedMenu: 'RECURSOS HUMANOS > Nómina',
+        category: 'contabilidad'
+    },
+
+    // AUDITORIA
+    prepareAudit: {
+        title: '¿Cómo prepararse para una auditoría?',
+        description: 'Organización de documentos para revisión externa',
+        steps: [
+            'Organiza todos los documentos de soporte: facturas, recibos, contratos',
+            'Verifica que todos los asientos contables tengan respaldo documental',
+            'Prepara conciliaciones bancarias de todos los meses del período',
+            'Revisa el balance de comprobación para detectar anomalías',
+            'Prepara explicaciones para transacciones inusuales o grandes',
+            'Asegura que inventarios físicos coincidan con registros',
+            'Revisa cumplimiento de obligaciones fiscales (DR-15, impuestos)',
+            'Designa un punto de contacto para el auditor'
+        ],
+        tips: [
+            'Mantén copias digitales de todos los documentos',
+            'Prepara un índice de documentos para facilitar la búsqueda',
+            'Revisa años anteriores para anticipar preguntas comunes'
+        ],
+        relatedMenu: 'CONTABILIDAD > Auditoría',
+        category: 'contabilidad'
+    },
+
+    // CIERRE DE MES
+    monthEndClose: {
+        title: '¿Cómo hacer el cierre de mes?',
+        description: 'Proceso de cierre contable mensual',
+        steps: [
+            'Registra todos los asientos de ajuste (depreciación, amortización)',
+            'Registra gastos devengados no pagados',
+            'Registra ingresos devengados no cobrados',
+            'Concilia todas las cuentas bancarias',
+            'Verifica saldos de cuentas por cobrar y por pagar',
+            'Realiza conteo físico de inventario (si aplica)',
+            'Genera balance de comprobación',
+            'Prepara estados financieros (Balance, P&L, Flujo de Efectivo)',
+            'Revisa y aprueba el cierre con gerencia'
+        ],
+        tips: [
+            'Usa una checklist para no olvidar ningún paso',
+            'Documenta todos los ajustes realizados',
+            'Compara resultados con meses anteriores para detectar anomalías'
+        ],
+        relatedMenu: 'CONTABILIDAD > Cierre de Período',
+        category: 'contabilidad'
+    },
+
+    // CUENTAS INCOBRABLES
+    writeOffBadDebt: {
+        title: '¿Cómo dar de baja cuentas incobrables?',
+        description: 'Registro de cuentas por cobrar que no se podrán cobrar',
+        steps: [
+            'Identifica cuentas por cobrar con más de 90-120 días vencidas',
+            'Documenta intentos de cobro realizados',
+            'Obtén aprobación de gerencia para dar de baja',
+            'Ve a "CONTABILIDAD" > "Asientos Contables"',
+            'Crea asiento: Débito Gasto por Cuentas Incobrables / Crédito Cuentas por Cobrar',
+            'Mantén registro separado para seguimiento futuro',
+            'Si el cliente paga después: Débito Efectivo / Crédito Recuperación de Cuentas Incobrables'
+        ],
+        tips: [
+            'Considera usar el método de provisión para cuentas incobrables',
+            'Mantén políticas claras de crédito para minimizar pérdidas',
+            'Documenta todo para propósitos fiscales'
+        ],
+        relatedMenu: 'CONTABILIDAD > Asientos Contables',
+        category: 'contabilidad'
+    },
+
+    // AJUSTE DE INVENTARIO
+    adjustInventory: {
+        title: '¿Cómo ajustar el inventario?',
+        description: 'Corrección de diferencias entre físico y sistema',
+        steps: [
+            'Ve a "INVENTARIO" > "Ajustes de Inventario"',
+            'Realiza conteo físico del inventario',
+            'Compara conteo físico con registros del sistema',
+            'Investiga diferencias significativas',
+            'Documenta razones del ajuste (robo, daño, error de conteo)',
+            'Crea el ajuste en el sistema',
+            'Si falta inventario: Débito Pérdida de Inventario / Crédito Inventario',
+            'Si sobra inventario: Débito Inventario / Crédito Ganancia de Inventario'
+        ],
+        tips: [
+            'Realiza conteos cíclicos regularmente para detectar problemas temprano',
+            'Investiga diferencias grandes antes de ajustar',
+            'Mantén seguridad física del inventario para prevenir robos'
+        ],
+        relatedMenu: 'INVENTARIO > Ajustes',
+        category: 'inventario'
+    },
+
+    // IMPUESTO PROPIEDAD PERSONAL
+    tangiblePropertyTax: {
+        title: '¿Cómo declarar el impuesto sobre propiedad personal tangible?',
+        description: 'Declaración anual de activos comerciales en Florida',
+        steps: [
+            'Prepara lista de todos los activos tangibles al 1 de enero',
+            'Incluye: equipos, muebles, computadoras, vehículos comerciales',
+            'Calcula el valor de mercado o valor en libros de cada activo',
+            'Completa el formulario DR-405 antes del 1 de abril',
+            'Presenta el formulario al Property Appraiser de tu condado',
+            'Espera la factura del impuesto (generalmente en noviembre)',
+            'Paga el impuesto antes del 31 de marzo del año siguiente'
+        ],
+        tips: [
+            'Exención disponible si el valor total es menor a $25,000',
+            'Mantén registros detallados de compras y ventas de activos',
+            'Considera depreciar activos para reducir el valor imponible'
+        ],
+        relatedMenu: 'IMPUESTOS FLORIDA > Propiedad Personal',
+        category: 'impuestos'
+    },
+
+    // CERTIFICADO DE REVENTA
+    resaleCertificate: {
+        title: '¿Cómo usar un certificado de reventa?',
+        description: 'Comprar sin impuesto productos para reventa',
+        steps: [
+            'Obtén tu certificado de reventa (DR-13) del Florida Department of Revenue',
+            'Proporciona el certificado a tus proveedores al hacer compras',
+            'El proveedor no te cobrará impuesto de ventas',
+            'Registra la compra normalmente en tu sistema',
+            'Cuando vendas el producto, cobra el impuesto de ventas al cliente final',
+            'Reporta y remite el impuesto cobrado en tu DR-15',
+            'Renueva el certificado anualmente'
+        ],
+        tips: [
+            'Solo usa el certificado para productos que realmente revenderás',
+            'Uso indebido puede resultar en multas y auditorías',
+            'Mantén copias de todos los certificados proporcionados'
+        ],
+        relatedMenu: 'IMPUESTOS FLORIDA > Certificados',
+        category: 'impuestos'
+    },
 };
 
 // ===========================================
@@ -382,20 +541,94 @@ export const ACCOUNTING_KNOWLEDGE = {
         }
     },
 
-    // Florida Tax
     floridaTax: {
         stateTaxRate: 0.06, // 6% base
         counties: {
-            'Miami-Dade': { surtax: 0.015, total: 0.075, code: 'MD' },
-            'Broward': { surtax: 0.01, total: 0.07, code: 'BW' },
-            'Orange': { surtax: 0.005, total: 0.065, code: 'OR' },
-            'Hillsborough': { surtax: 0.015, total: 0.075, code: 'HB' },
-            'Palm Beach': { surtax: 0.01, total: 0.07, code: 'PB' }
+            'Alachua': { surtax: 0.01, total: 0.07, code: 'ALACHUA' },
+            'Baker': { surtax: 0.01, total: 0.07, code: 'BAKER' },
+            'Bay': { surtax: 0.01, total: 0.07, code: 'BAY' },
+            'Bradford': { surtax: 0.01, total: 0.07, code: 'BRADFORD' },
+            'Brevard': { surtax: 0.01, total: 0.07, code: 'BREVARD' },
+            'Broward': { surtax: 0.01, total: 0.07, code: 'BROWARD' },
+            'Calhoun': { surtax: 0.01, total: 0.07, code: 'CALHOUN' },
+            'Charlotte': { surtax: 0.01, total: 0.07, code: 'CHARLOTTE' },
+            'Citrus': { surtax: 0.01, total: 0.07, code: 'CITRUS' },
+            'Clay': { surtax: 0.01, total: 0.07, code: 'CLAY' },
+            'Collier': { surtax: 0.01, total: 0.07, code: 'COLLIER' },
+            'Columbia': { surtax: 0.01, total: 0.07, code: 'COLUMBIA' },
+            'DeSoto': { surtax: 0.01, total: 0.07, code: 'DESOTO' },
+            'Dixie': { surtax: 0.01, total: 0.07, code: 'DIXIE' },
+            'Duval': { surtax: 0.01, total: 0.07, code: 'DUVAL' },
+            'Escambia': { surtax: 0.015, total: 0.075, code: 'ESCAMBIA' },
+            'Flagler': { surtax: 0.01, total: 0.07, code: 'FLAGLER' },
+            'Franklin': { surtax: 0.01, total: 0.07, code: 'FRANKLIN' },
+            'Gadsden': { surtax: 0.01, total: 0.07, code: 'GADSDEN' },
+            'Gilchrist': { surtax: 0.01, total: 0.07, code: 'GILCHRIST' },
+            'Glades': { surtax: 0.01, total: 0.07, code: 'GLADES' },
+            'Gulf': { surtax: 0.01, total: 0.07, code: 'GULF' },
+            'Hamilton': { surtax: 0.01, total: 0.07, code: 'HAMILTON' },
+            'Hardee': { surtax: 0.01, total: 0.07, code: 'HARDEE' },
+            'Hendry': { surtax: 0.01, total: 0.07, code: 'HENDRY' },
+            'Hernando': { surtax: 0.01, total: 0.07, code: 'HERNANDO' },
+            'Highlands': { surtax: 0.01, total: 0.07, code: 'HIGHLANDS' },
+            'Hillsborough': { surtax: 0.015, total: 0.075, code: 'HILLSBOROUGH' },
+            'Holmes': { surtax: 0.01, total: 0.07, code: 'HOLMES' },
+            'Indian River': { surtax: 0.01, total: 0.07, code: 'INDIAN-RIVER' },
+            'Jackson': { surtax: 0.01, total: 0.07, code: 'JACKSON' },
+            'Jefferson': { surtax: 0.01, total: 0.07, code: 'JEFFERSON' },
+            'Lafayette': { surtax: 0.01, total: 0.07, code: 'LAFAYETTE' },
+            'Lake': { surtax: 0.01, total: 0.07, code: 'LAKE' },
+            'Lee': { surtax: 0.01, total: 0.07, code: 'LEE' },
+            'Leon': { surtax: 0.015, total: 0.075, code: 'LEON' },
+            'Levy': { surtax: 0.01, total: 0.07, code: 'LEVY' },
+            'Liberty': { surtax: 0.01, total: 0.07, code: 'LIBERTY' },
+            'Madison': { surtax: 0.01, total: 0.07, code: 'MADISON' },
+            'Manatee': { surtax: 0.01, total: 0.07, code: 'MANATEE' },
+            'Marion': { surtax: 0.01, total: 0.07, code: 'MARION' },
+            'Martin': { surtax: 0.01, total: 0.07, code: 'MARTIN' },
+            'Miami-Dade': { surtax: 0.015, total: 0.075, code: 'MIAMI-DADE' },
+            'Monroe': { surtax: 0.015, total: 0.075, code: 'MONROE' },
+            'Nassau': { surtax: 0.01, total: 0.07, code: 'NASSAU' },
+            'Okaloosa': { surtax: 0.01, total: 0.07, code: 'OKALOOSA' },
+            'Okeechobee': { surtax: 0.01, total: 0.07, code: 'OKEECHOBEE' },
+            'Orange': { surtax: 0.005, total: 0.065, code: 'ORANGE' },
+            'Osceola': { surtax: 0.01, total: 0.07, code: 'OSCEOLA' },
+            'Palm Beach': { surtax: 0.01, total: 0.07, code: 'PALM-BEACH' },
+            'Pasco': { surtax: 0.01, total: 0.07, code: 'PASCO' },
+            'Pinellas': { surtax: 0.01, total: 0.07, code: 'PINELLAS' },
+            'Polk': { surtax: 0.01, total: 0.07, code: 'POLK' },
+            'Putnam': { surtax: 0.01, total: 0.07, code: 'PUTNAM' },
+            'St. Johns': { surtax: 0.01, total: 0.07, code: 'ST-JOHNS' },
+            'St. Lucie': { surtax: 0.01, total: 0.07, code: 'ST-LUCIE' },
+            'Santa Rosa': { surtax: 0.01, total: 0.07, code: 'SANTA-ROSA' },
+            'Sarasota': { surtax: 0.01, total: 0.07, code: 'SARASOTA' },
+            'Seminole': { surtax: 0.01, total: 0.07, code: 'SEMINOLE' },
+            'Sumter': { surtax: 0.01, total: 0.07, code: 'SUMTER' },
+            'Suwannee': { surtax: 0.01, total: 0.07, code: 'SUWANNEE' },
+            'Taylor': { surtax: 0.01, total: 0.07, code: 'TAYLOR' },
+            'Union': { surtax: 0.01, total: 0.07, code: 'UNION' },
+            'Volusia': { surtax: 0.01, total: 0.07, code: 'VOLUSIA' },
+            'Wakulla': { surtax: 0.01, total: 0.07, code: 'WAKULLA' },
+            'Walton': { surtax: 0.01, total: 0.07, code: 'WALTON' },
+            'Washington': { surtax: 0.01, total: 0.07, code: 'WASHINGTON' }
         },
         dr15: {
             description: 'Formulario de declaración de impuestos de ventas de Florida',
             dueDate: 'Día 20 del mes siguiente al período',
             filingPeriods: ['Mensual', 'Trimestral', 'Anual']
+        },
+        exemptions: {
+            groceries: 'Alimentos no preparados están exentos del impuesto de ventas',
+            prescription: 'Medicamentos con receta están exentos',
+            manufacturing: 'Maquinaria de manufactura puede calificar para exención',
+            resale: 'Productos comprados para reventa están exentos con certificado de reventa válido',
+            agricultural: 'Equipos agrícolas pueden estar exentos bajo ciertas condiciones'
+        },
+        specialRules: {
+            interstate: 'Ventas fuera de Florida no están sujetas al impuesto de ventas de Florida',
+            services: 'La mayoría de servicios profesionales no están gravados en Florida',
+            rentals: 'Alquileres comerciales están sujetos a impuesto de ventas',
+            digital: 'Productos digitales descargables generalmente no están gravados'
         }
     },
 
@@ -484,6 +717,70 @@ export const FAQ = [
     {
         question: '¿Cómo se calculan los impuestos?',
         answer: 'El sistema usa las tasas oficiales de cada condado de Florida. Se aplican automáticamente según la dirección del cliente.'
+    },
+    {
+        question: '¿Cuántos condados de Florida están cubiertos?',
+        answer: 'Los 67 condados de Florida están incluidos con sus tasas de impuesto actualizadas (6% base + surtax local).'
+    },
+    {
+        question: '¿Qué es el DR-15?',
+        answer: 'Es el formulario de declaración de impuestos de ventas de Florida. Debe presentarse antes del día 20 del mes siguiente al período de recaudación.'
+    },
+    {
+        question: '¿Qué productos están exentos de impuesto en Florida?',
+        answer: 'Alimentos no preparados, medicamentos con receta, productos para reventa (con certificado DR-13), y equipos agrícolas/manufactureros bajo ciertas condiciones.'
+    },
+    {
+        question: '¿Qué es un certificado de reventa?',
+        answer: 'Es el formulario DR-13 que permite comprar productos sin pagar impuesto cuando serán revendidos. Debe renovarse anualmente.'
+    },
+    {
+        question: '¿Florida tiene impuesto sobre la renta?',
+        answer: 'No, Florida no tiene impuesto estatal sobre la renta personal ni corporativo. Solo aplican impuestos federales.'
+    },
+    {
+        question: '¿Qué es el impuesto sobre propiedad personal tangible?',
+        answer: 'Es un impuesto anual sobre equipos, muebles y activos comerciales. Se declara el 1 de abril. Hay exención si el valor total es menor a $25,000.'
+    },
+    {
+        question: '¿Qué es MACRS?',
+        answer: 'Sistema de depreciación acelerada para impuestos federales. Permite deducir más en los primeros años de vida del activo.'
+    },
+    {
+        question: '¿Qué es la Sección 179?',
+        answer: 'Deducción fiscal que permite deducir el costo completo de equipos calificados en el año de compra (hasta $1,220,000 en 2024).'
+    },
+    {
+        question: '¿Cómo hago un respaldo de mis datos?',
+        answer: 'Ve a ARCHIVO > Respaldos y Restauración > Crear Nuevo Respaldo. El archivo .aex estará cifrado con tu contraseña.'
+    },
+    {
+        question: '¿Puedo importar datos de otro sistema?',
+        answer: 'Sí, puedes importar desde Excel/CSV o restaurar un respaldo .aex. Ve a ARCHIVO > Importar Datos.'
+    },
+    {
+        question: '¿El sistema genera estados financieros?',
+        answer: 'Sí, genera Balance General, Estado de Resultados (P&L), y Flujo de Efectivo. Ve a CONTABILIDAD > Reportes Financieros.'
+    },
+    {
+        question: '¿Puedo procesar nómina?',
+        answer: 'Sí, el módulo de nómina calcula salarios, retenciones federales (FICA, Medicare), y genera asientos contables automáticamente.'
+    },
+    {
+        question: '¿Cómo concilio mi cuenta bancaria?',
+        answer: 'Ve a HERRAMIENTAS > Cuentas Bancarias > Importar Estado de Cuenta. El sistema machea automáticamente transacciones por monto y fecha.'
+    },
+    {
+        question: '¿Qué hago si tengo una cuenta incobrable?',
+        answer: 'Documenta intentos de cobro, obtén aprobación de gerencia, y crea un asiento: Débito Gasto Cuentas Incobrables / Crédito Cuentas por Cobrar.'
+    },
+    {
+        question: '¿Cómo preparo mi negocio para una auditoría?',
+        answer: 'Organiza documentos de soporte, prepara conciliaciones bancarias, verifica balance de comprobación, y revisa cumplimiento fiscal.'
+    },
+    {
+        question: '¿Puedo usar el sistema para múltiples empresas?',
+        answer: 'Sí, puedes crear múltiples bases de datos y cambiar entre ellas. Cada empresa tiene sus propios datos separados.'
     }
 ];
 

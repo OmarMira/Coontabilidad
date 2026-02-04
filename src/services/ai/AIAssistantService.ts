@@ -2,6 +2,7 @@ import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../audit/AuditChainService';
 import { FinancialReportingService } from '../accounting/FinancialReportingService';
 import { AccountingService } from '../accounting/AccountingService';
+import { SmartAIProvider } from './SmartAIProvider';
 
 /**
  * AIAssistantService - Read-Only AI Analysis Engine
@@ -28,6 +29,7 @@ export class AIAssistantService {
     private auditChainService: AuditChainService;
     private reportingService: FinancialReportingService;
     private accountingService: AccountingService;
+    private smartAI: SmartAIProvider;
     private apiKey: string;
     private readonly DAILY_LIMIT = 100;
     private readonly SYSTEM_PROMPT = `You are a Forensic Auditor and Florida Tax Consultant for AccountExpress Next-Gen.
@@ -51,12 +53,18 @@ Response format:
 - Provide specific recommendations
 - Reference logic_clock for data freshness`;
 
-    constructor(db: SQLiteEngine, apiKey: string) {
+    constructor(db: SQLiteEngine, apiKey: string = '') {
         this.db = db;
         this.apiKey = apiKey;
         this.auditChainService = new AuditChainService(db);
         this.accountingService = new AccountingService(db);
         this.reportingService = new FinancialReportingService(db);
+        this.smartAI = new SmartAIProvider(db); // ✅ Pass DB for full data access
+
+        // Initialize AI in background
+        this.smartAI.initialize().catch((err: unknown) => {
+            console.error('Failed to initialize Smart AI:', err);
+        });
     }
 
     /**

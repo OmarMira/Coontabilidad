@@ -1,0 +1,404 @@
+[
+    {
+        "name": "Alachua",
+        "code": "ALACHUA",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Baker",
+        "code": "BAKER",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Bay",
+        "code": "BAY",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Bradford",
+        "code": "BRADFORD",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Brevard",
+        "code": "BREVARD",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Broward",
+        "code": "BROWARD",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Calhoun",
+        "code": "CALHOUN",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Charlotte",
+        "code": "CHARLOTTE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Citrus",
+        "code": "CITRUS",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Clay",
+        "code": "CLAY",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Collier",
+        "code": "COLLIER",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Columbia",
+        "code": "COLUMBIA",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "DeSoto",
+        "code": "DESOTO",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Dixie",
+        "code": "DIXIE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Duval",
+        "code": "DUVAL",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Escambia",
+        "code": "ESCAMBIA",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Flagler",
+        "code": "FLAGLER",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Franklin",
+        "code": "FRANKLIN",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Gadsden",
+        "code": "GADSDEN",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Gilchrist",
+        "code": "GILCHRIST",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Glades",
+        "code": "GLADES",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Gulf",
+        "code": "GULF",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Hamilton",
+        "code": "HAMILTON",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Hardee",
+        "code": "HARDEE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Hendry",
+        "code": "HENDRY",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Hernando",
+        "code": "HERNANDO",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Highlands",
+        "code": "HIGHLANDS",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Hillsborough",
+        "code": "HILLSBOROUGH",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Holmes",
+        "code": "HOLMES",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Indian River",
+        "code": "INDIAN-RIVER",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Jackson",
+        "code": "JACKSON",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Jefferson",
+        "code": "JEFFERSON",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Lafayette",
+        "code": "LAFAYETTE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Lake",
+        "code": "LAKE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Lee",
+        "code": "LEE",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Leon",
+        "code": "LEON",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Levy",
+        "code": "LEVY",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Liberty",
+        "code": "LIBERTY",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Madison",
+        "code": "MADISON",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Manatee",
+        "code": "MANATEE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Marion",
+        "code": "MARION",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Martin",
+        "code": "MARTIN",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Miami-Dade",
+        "code": "MIAMI-DADE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Monroe",
+        "code": "MONROE",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Nassau",
+        "code": "NASSAU",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Okaloosa",
+        "code": "OKALOOSA",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Okeechobee",
+        "code": "OKEECHOBEE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Orange",
+        "code": "ORANGE",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Osceola",
+        "code": "OSCEOLA",
+        "surtax": 0.015,
+        "total": 0.075
+    },
+    {
+        "name": "Palm Beach",
+        "code": "PALM-BEACH",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Pasco",
+        "code": "PASCO",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Pinellas",
+        "code": "PINELLAS",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Polk",
+        "code": "POLK",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Putnam",
+        "code": "PUTNAM",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Santa Rosa",
+        "code": "SANTA-ROSA",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Sarasota",
+        "code": "SARASOTA",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Seminole",
+        "code": "SEMINOLE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "St. Johns",
+        "code": "ST-JOHNS",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "St. Lucie",
+        "code": "ST-LUCIE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Sumter",
+        "code": "SUMTER",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Suwannee",
+        "code": "SUWANNEE",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Taylor",
+        "code": "TAYLOR",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Union",
+        "code": "UNION",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Volusia",
+        "code": "VOLUSIA",
+        "surtax": 0.005,
+        "total": 0.065
+    },
+    {
+        "name": "Wakulla",
+        "code": "WAKULLA",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Walton",
+        "code": "WALTON",
+        "surtax": 0.01,
+        "total": 0.07
+    },
+    {
+        "name": "Washington",
+        "code": "WASHINGTON",
+        "surtax": 0.01,
+        "total": 0.07
+    }
+]

@@ -280,7 +280,7 @@ function App() {
 
         // Inicializar sin contraseña primero para simplificar
         const db = await initDB();
-        
+
         // CRITICAL: Set DatabaseService instance
         DatabaseService.setDB(db);
 
@@ -1816,6 +1816,16 @@ function App() {
               {state.currentSection === 'admin-users' && <UserList />}
               {state.currentSection === 'role-manager' && <RoleManager />}
               {state.currentSection === 'audit-trail' && <AuditTrailTable />}
+              {state.currentSection === 'my-profile' && user && (
+                <UserForm
+                  user={user as any}
+                  onSave={() => {
+                    // Actualizar el estado del usuario localmente si es necesario
+                    window.location.reload(); // Forma más segura de refrescar todo el context
+                  }}
+                  onCancel={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
+                />
+              )}
 
 
 

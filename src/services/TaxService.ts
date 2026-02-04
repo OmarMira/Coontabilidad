@@ -35,31 +35,22 @@ export class TaxService {
 
         // 2. Consultar Configuración Fiscal
         const configResult = await DatabaseService.executeQuery(
-            "SELECT * FROM florida_tax_rates WHERE county_name = ?",
-            [countyCode]
+            "SELECT * FROM florida_tax_rates WHERE county_code = ? OR county_name = ?",
+            [countyCode, countyCode]
         );
 
         if (configResult.length === 0) {
             throw new Error(`County code not found in configuration: ${countyCode}`);
         }
 
-        const config = configResult[0]; // { county_code, county_name, base_rate, surtax_rate, effective_date, expiry_date }
+        const config = configResult[0]; // { county_code, county_name, base_rate, surtax_rate, effective_date }
 
         // 3. Validar Vigencia
         const txDate = new Date(transactionDate);
-        const effDate = new Date(config.effective_date);
+        const effDate = config.effective_date ? new Date(config.effective_date) : new Date('2026-01-01');
 
         if (isNaN(txDate.getTime())) {
             throw new Error("Invalid transaction date format.");
-        }
-
-        if (txDate < effDate) {
-            logger.warn('TaxService', 'date_warning', `Transaction date ${transactionDate} is before effective tax date ${config.effective_date}. Using current rates fallback.`);
-            // En producción estricta, deberíamos buscar tasas históricas. Aquí usamos las actuales pero logueamos.
-        }
-
-        if (config.expiry_date && txDate > new Date(config.expiry_date)) {
-            logger.warn('TaxService', 'expired_rate', `Tax rates for ${countyCode} expired on ${config.expiry_date}.`);
         }
 
         // 4. Calcular Impuestos
@@ -67,19 +58,17 @@ export class TaxService {
         // Rates are in Basis Points (600 = 6%).
         // Formula: Cents * (Rate / 10000)
 
-        const baseRate = config.base_rate;
-        const surtaxRate = config.surtax_rate;
+        const baseRate = config.base_rate || 600;
+        const surtaxRate = config.surtax_rate || 0;
         const totalRate = baseRate + surtaxRate;
 
         const rawTax = amountInCents * (totalRate / 10000);
 
         // Regla Redondeo DOR (Post-2021): Standard Rounding to whole cent.
-        // "tax computation must be carried to the third decimal place... > 4 rounded up"
-        // Equivale a Math.round() en JS aplicada al valor en centavos.
         const taxAmount = Math.round(rawTax);
 
         const countyName = config.county_name;
-        const effectiveDate = config.effective_date;
+        const effectiveDate = config.effective_date || '2026-01-01';
 
         // 5. Generar Hash de Verificación
         // Hash vinculante de los parámetros de cálculo

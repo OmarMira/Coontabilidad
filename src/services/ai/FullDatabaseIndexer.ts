@@ -1,7 +1,7 @@
-import { EmbeddingsService } from './EmbeddingsService';
-import { SQLiteEngine } from '../../core/database/SQLiteEngine';
-import floridaTaxRates from '../../knowledge/florida-tax-rates.json';
-import { ProductionLogger } from '../../core/logging/ProductionLogger';
+import { EmbeddingsService } from '@/services/ai/EmbeddingsService';
+import { SQLiteEngine } from '@/core/database/SQLiteEngine';
+import floridaTaxRates from '@/knowledge/florida-tax-rates.json';
+import { ProductionLogger } from '@/core/logging/ProductionLogger';
 
 /**
  * FullDatabaseIndexer - Indexa TODOS los datos del sistema en RAG

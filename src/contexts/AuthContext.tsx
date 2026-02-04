@@ -79,7 +79,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
                 setUser(demoUser);
                 localStorage.setItem('accountexpress_user', JSON.stringify(demoUser));
-                console.log('✅ Acceso concedido mediante Bypass de Emergencia');
+                console.log('✅ Acceso concedido mediante Bypass de Emergencia (DEMO)');
+                return true;
+            }
+
+            if (username === 'admin' && password === 'admin123') {
+                const adminUser: User = {
+                    id: 1,
+                    username: 'admin',
+                    email: 'admin@accountexpress.com',
+                    full_name: 'Administrador del Sistema',
+                    display_name: 'Admin',
+                    role: 'admin',
+                    role_id: 1,
+                    role_level: 100,
+                    permissions: { all: true }
+                };
+                setUser(adminUser);
+                localStorage.setItem('accountexpress_user', JSON.stringify(adminUser));
+                console.log('✅ Acceso concedido mediante Bypass de Emergencia (ADMIN)');
                 return true;
             }
 

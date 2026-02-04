@@ -1,11 +1,10 @@
-
-import initSqlJs from 'sql.js';
 import { logger } from '../core/logging/SystemLogger';
+import { SQLiteEngine } from '../core/database/SQLiteEngine';
 
 export class SchemaRepairService {
-    private db: initSqlJs.Database;
+    private db: SQLiteEngine;
 
-    constructor(db: initSqlJs.Database) {
+    constructor(db: SQLiteEngine) {
         this.db = db;
     }
 
@@ -38,10 +37,10 @@ export class SchemaRepairService {
 
         try {
             // 1. REPARAR COMPANY_DATA
-            const companyCols = this.getTableColumns('company_data');
+            const companyCols = await this.getTableColumns('company_data');
 
             if (companyCols.length === 0) {
-                this.db.run(`
+                await this.db.run(`
                     CREATE TABLE IF NOT EXISTS company_data (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         company_name TEXT NOT NULL,
@@ -83,7 +82,7 @@ export class SchemaRepairService {
                 for (const col of requiredColumns) {
                     if (!companyCols.includes(col.name)) {
                         try {
-                            this.db.run(`ALTER TABLE company_data ADD COLUMN ${col.name} ${col.type} DEFAULT ${col.default}`);
+                            await this.db.run(`ALTER TABLE company_data ADD COLUMN ${col.name} ${col.type} DEFAULT ${col.default}`);
                             logs.push(`✅ Agregada columna ${col.name} a company_data`);
                         } catch (e) {
                             logs.push(`⚠️ Error agregando columna ${col.name}: ${(e as Error).message}`);
@@ -93,9 +92,10 @@ export class SchemaRepairService {
             }
 
             // Ensure Data Exists
-            const hasData = this.db.exec(`SELECT COUNT(*) as count FROM company_data`);
-            if (hasData.length === 0 || hasData[0].values[0][0] === 0) {
-                this.db.run(`
+            const hasDataRes = await this.db.select(`SELECT COUNT(*) as count FROM company_data`);
+            const hasData = hasDataRes[0]?.count || 0;
+            if (hasData === 0) {
+                await this.db.run(`
                     INSERT INTO company_data (
                         company_name, legal_name, tax_id, address, city, state, zip_code, 
                         phone, email, fiscal_year_start, currency, language, timezone, date_format, is_active
@@ -112,26 +112,21 @@ export class SchemaRepairService {
             // 2. VERIFICAR INTEGRIDAD DE VISTAS
             await this.syncViews(logs);
 
-            // 2.5. REPARAR TABLA CUSTOMERS - Agregar columna assigned_salesperson si falta
-            const customerCols = this.getTableColumns('customers');
+            // 2.5. REPARAR TABLA CUSTOMERS
+            const customerCols = await this.getTableColumns('customers');
             if (customerCols.length > 0 && !customerCols.includes('assigned_salesperson')) {
                 try {
-                    this.db.run(`ALTER TABLE customers ADD COLUMN assigned_salesperson TEXT`);
+                    await this.db.run(`ALTER TABLE customers ADD COLUMN assigned_salesperson TEXT`);
                     logs.push("✅ Agregada columna assigned_salesperson a customers");
                 } catch (e) {
                     logs.push(`⚠️ Error agregando columna assigned_salesperson: ${(e as Error).message}`);
                 }
             }
 
-            // 3. LIMPIAR REGISTROS HUÉRFANOS - DESHABILITADO TEMPORALMENTE
-            // NOTA: Esta función es demasiado agresiva y elimina datos iniciales válidos
-            // await this.cleanOrphanedRecords(logs);
-            logs.push("⏭️ Limpieza de registros huérfanos deshabilitada (previene eliminación de datos iniciales)");
-
             // 4. FIX ADMIN PASSWORD & USERS
-            const userCols = this.getTableColumns('users');
+            const userCols = await this.getTableColumns('users');
             if (userCols.length === 0) {
-                this.db.run(`
+                await this.db.run(`
                     CREATE TABLE IF NOT EXISTS user_roles (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL UNIQUE,
@@ -142,7 +137,7 @@ export class SchemaRepairService {
                     )
                 `);
 
-                this.db.run(`
+                await this.db.run(`
                     CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         username TEXT NOT NULL UNIQUE,
@@ -160,7 +155,7 @@ export class SchemaRepairService {
                 `);
 
                 // Seed Roles
-                this.db.run(`
+                await this.db.run(`
                     INSERT INTO user_roles (name, description, level, permissions_json) VALUES 
                     ('admin', 'Administrador del sistema', 10, '{"all": true}'),
                     ('accountant', 'Contador', 5, '{"accounting": true, "view_all": true}'),
@@ -169,34 +164,61 @@ export class SchemaRepairService {
                 `);
             }
 
-            const adminUser = this.db.exec("SELECT id, password_hash FROM users WHERE username = 'admin'");
-            if (adminUser.length > 0 && adminUser[0].values.length > 0) {
-                const currentHash = adminUser[0].values[0][1] as string;
-                // Check if it's the broken/junk hash or empty
+            const adminUserRes = await this.db.select("SELECT id, password_hash FROM users WHERE username = 'admin'");
+            if (adminUserRes.length > 0) {
+                const currentHash = adminUserRes[0].password_hash as string;
                 if (!currentHash || currentHash.startsWith('U2FsdGVk')) {
                     const newHash = await this.hashPassword('admin123');
                     if (newHash) {
-                        this.db.run("UPDATE users SET password_hash = ? WHERE username = 'admin'", [newHash]);
+                        await this.db.run("UPDATE users SET password_hash = ?, is_active = 1 WHERE username = 'admin'", [newHash]);
                         logs.push("✅ Contraseña de Admin reparada (admin123)");
                     }
                 }
             } else {
-                // Create admin if not exists
+                // Buscar el ID del rol admin dinámicamente
+                const adminRoleRes = await this.db.select("SELECT id FROM user_roles WHERE name = 'admin' LIMIT 1");
+                const adminRoleId = adminRoleRes[0]?.id || 1;
+
                 const newHash = await this.hashPassword('admin123');
                 if (newHash) {
-                    this.db.run(`
+                    await this.db.run(`
                         INSERT INTO users (username, email, password_hash, full_name, display_name, role_id, is_active)
-                        VALUES 
-                        ('admin', 'admin@accountexpress.com', ?, 'System Admin', 'Admin', 1, 1)
-                     `, [newHash]);
+                        VALUES ('admin', 'admin@accountexpress.com', ?, 'System Admin', 'Admin', ?, 1)
+                     `, [newHash, adminRoleId]);
                     logs.push("✅ Usuario Admin recreado");
                 }
             }
 
+            // CREAR/REPARAR USUARIO DEMO
+            const demoUserRes = await this.db.select("SELECT id, password_hash FROM users WHERE username = 'demo'");
+            if (demoUserRes.length > 0) {
+                const currentHash = demoUserRes[0].password_hash as string;
+                if (!currentHash || currentHash.startsWith('U2FsdGVk')) {
+                    const newHash = await this.hashPassword('demo123');
+                    if (newHash) {
+                        await this.db.run("UPDATE users SET password_hash = ?, is_active = 1 WHERE username = 'demo'", [newHash]);
+                        logs.push("✅ Contraseña de Demo reparada (demo123)");
+                    }
+                }
+            } else {
+                // Buscar el ID del rol admin dinámicamente
+                const adminRoleRes = await this.db.select("SELECT id FROM user_roles WHERE name = 'admin' LIMIT 1");
+                const adminRoleId = adminRoleRes[0]?.id || 1;
+
+                const newHash = await this.hashPassword('demo123');
+                if (newHash) {
+                    await this.db.run(`
+                        INSERT INTO users (username, email, password_hash, full_name, display_name, role_id, is_active)
+                        VALUES ('demo', 'demo@empresa.com', ?, 'Usuario Demo', 'Demo', ?, 1)
+                     `, [newHash, adminRoleId]);
+                    logs.push("✅ Usuario Demo creado");
+                }
+            }
+
             // 5. ENSURE PAYMENT METHODS
-            const pmCols = this.getTableColumns('payment_methods');
+            const pmCols = await this.getTableColumns('payment_methods');
             if (pmCols.length === 0) {
-                this.db.run(`
+                await this.db.run(`
                   CREATE TABLE IF NOT EXISTS payment_methods (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     method_name TEXT NOT NULL,
@@ -206,7 +228,7 @@ export class SchemaRepairService {
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                   )
                  `);
-                this.db.run(`
+                await this.db.run(`
                   INSERT INTO payment_methods (method_name, method_type, is_active, requires_reference) VALUES 
                   ('Efectivo', 'cash', 1, 0),
                   ('Transferencia Bancaria', 'bank_transfer', 1, 1),
@@ -217,10 +239,282 @@ export class SchemaRepairService {
                 logs.push("✅ Métodos de pago restaurados");
             }
 
+            // 6. REPARAR TABLAS DE ACTIVOS FIJOS
+            const assetCatCols = await this.getTableColumns('asset_categories');
+            if (assetCatCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS asset_categories (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        default_useful_life_years INTEGER,
+                        default_depreciation_rate REAL,
+                        account_code TEXT,
+                        depreciation_expense_account TEXT,
+                        accumulated_depreciation_account TEXT,
+                        is_active BOOLEAN DEFAULT 1,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                logs.push("✅ Tabla asset_categories creada");
+            }
+
+            const assetCols = await this.getTableColumns('fixed_assets');
+            if (assetCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS fixed_assets (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        asset_code TEXT NOT NULL UNIQUE,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        category_id INTEGER,
+                        acquisition_date TEXT NOT NULL,
+                        acquisition_cost REAL NOT NULL,
+                        useful_life_years INTEGER,
+                        useful_life_months INTEGER,
+                        depreciation_method TEXT DEFAULT 'straight_line',
+                        salvage_value REAL DEFAULT 0,
+                        current_value REAL,
+                        accumulated_depreciation REAL DEFAULT 0,
+                        status TEXT DEFAULT 'active',
+                        location TEXT,
+                        serial_number TEXT,
+                        manufacturer TEXT,
+                        model TEXT,
+                        purchase_order TEXT,
+                        supplier_id INTEGER,
+                        warranty_expiration TEXT,
+                        notes TEXT,
+                        disposal_date TEXT,
+                        disposal_value REAL,
+                        disposal_reason TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        created_by INTEGER,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (category_id) REFERENCES asset_categories(id)
+                    )
+                `);
+                logs.push("✅ Tabla fixed_assets creada");
+            }
+
+            const depCols = await this.getTableColumns('asset_depreciation');
+            if (depCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS asset_depreciation (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        asset_id INTEGER NOT NULL,
+                        period_date TEXT NOT NULL,
+                        depreciation_amount REAL NOT NULL,
+                        accumulated_depreciation REAL NOT NULL,
+                        net_book_value REAL NOT NULL,
+                        journal_entry_id INTEGER,
+                        is_posted BOOLEAN DEFAULT 0,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (asset_id) REFERENCES fixed_assets(id)
+                    )
+                `);
+                logs.push("✅ Tabla asset_depreciation creada");
+            }
+
+            // 7. REPARAR TABLAS FISCALES (FLORIDA)
+            const countyCols = await this.getTableColumns('florida_tax_rates');
+            if (countyCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS florida_tax_rates (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        county_name TEXT NOT NULL UNIQUE,
+                        county_code TEXT NOT NULL UNIQUE,
+                        base_rate REAL DEFAULT 600,
+                        surtax_rate REAL DEFAULT 0,
+                        total_rate REAL DEFAULT 600,
+                        effective_date TEXT DEFAULT '2026-01-01',
+                        is_active BOOLEAN DEFAULT 1,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                logs.push("✅ Tabla florida_tax_rates creada");
+            } else {
+                const required = [
+                    { name: 'county_code', type: 'TEXT' },
+                    { name: 'base_rate', type: 'REAL', default: '600' },
+                    { name: 'effective_date', type: 'TEXT', default: "'2026-01-01'" }
+                ];
+                for (const col of required) {
+                    if (!countyCols.includes(col.name)) {
+                        try {
+                            const def = col.default ? ` DEFAULT ${col.default}` : "";
+                            await this.db.run(`ALTER TABLE florida_tax_rates ADD COLUMN ${col.name} ${col.type}${def}`);
+                            logs.push(`✅ Agregada columna ${col.name} a florida_tax_rates`);
+                        } catch (e) {
+                            logs.push(`⚠️ Error agregando columna ${col.name}: ${(e as Error).message}`);
+                        }
+                    }
+                }
+            }
+
+            // SEEDING COMPLETO (67 CONDADOS) - FORZAR SIEMPRE
+            let countyCount = 0;
+            try {
+                const countRes = await this.db.select("SELECT COUNT(*) as c FROM florida_tax_rates");
+                countyCount = countRes[0]?.c || 0;
+                logs.push(`📊 Condados actuales: ${countyCount}/67`);
+            } catch (e) {
+                logger.error('SchemaRepair', 'count_failed', 'Error contando condados', { error: e });
+            }
+
+            // SIEMPRE insertar/actualizar los 67 condados
+            if (true) {
+                const counties = [
+                    { name: "Alachua", code: "ALACHUA", surtax: 150 },
+                    { name: "Baker", code: "BAKER", surtax: 100 },
+                    { name: "Bay", code: "BAY", surtax: 100 },
+                    { name: "Bradford", code: "BRADFORD", surtax: 100 },
+                    { name: "Brevard", code: "BREVARD", surtax: 100 },
+                    { name: "Broward", code: "BROWARD", surtax: 100 },
+                    { name: "Calhoun", code: "CALHOUN", surtax: 150 },
+                    { name: "Charlotte", code: "CHARLOTTE", surtax: 100 },
+                    { name: "Citrus", code: "CITRUS", surtax: 100 },
+                    { name: "Clay", code: "CLAY", surtax: 150 },
+                    { name: "Collier", code: "COLLIER", surtax: 100 },
+                    { name: "Columbia", code: "COLUMBIA", surtax: 100 },
+                    { name: "DeSoto", code: "DESOTO", surtax: 150 },
+                    { name: "Dixie", code: "DIXIE", surtax: 100 },
+                    { name: "Duval", code: "DUVAL", surtax: 150 },
+                    { name: "Escambia", code: "ESCAMBIA", surtax: 150 },
+                    { name: "Flagler", code: "FLAGLER", surtax: 100 },
+                    { name: "Franklin", code: "FRANKLIN", surtax: 100 },
+                    { name: "Gadsden", code: "GADSDEN", surtax: 150 },
+                    { name: "Gilchrist", code: "GILCHRIST", surtax: 100 },
+                    { name: "Glades", code: "GLADES", surtax: 100 },
+                    { name: "Gulf", code: "GULF", surtax: 100 },
+                    { name: "Hamilton", code: "HAMILTON", surtax: 100 },
+                    { name: "Hardee", code: "HARDEE", surtax: 100 },
+                    { name: "Hendry", code: "HENDRY", surtax: 100 },
+                    { name: "Hernando", code: "HERNANDO", surtax: 50 },
+                    { name: "Highlands", code: "HIGHLANDS", surtax: 150 },
+                    { name: "Hillsborough", code: "HILLSBOROUGH", surtax: 150 },
+                    { name: "Holmes", code: "HOLMES", surtax: 100 },
+                    { name: "Indian River", code: "INDIAN-RIVER", surtax: 100 },
+                    { name: "Jackson", code: "JACKSON", surtax: 150 },
+                    { name: "Jefferson", code: "JEFFERSON", surtax: 100 },
+                    { name: "Lafayette", code: "LAFAYETTE", surtax: 100 },
+                    { name: "Lake", code: "LAKE", surtax: 100 },
+                    { name: "Lee", code: "LEE", surtax: 50 },
+                    { name: "Leon", code: "LEON", surtax: 150 },
+                    { name: "Levy", code: "LEVY", surtax: 100 },
+                    { name: "Liberty", code: "LIBERTY", surtax: 150 },
+                    { name: "Madison", code: "MADISON", surtax: 150 },
+                    { name: "Manatee", code: "MANATEE", surtax: 100 },
+                    { name: "Marion", code: "MARION", surtax: 100 },
+                    { name: "Martin", code: "MARTIN", surtax: 50 },
+                    { name: "Miami-Dade", code: "MIAMI-DADE", surtax: 100 },
+                    { name: "Monroe", code: "MONROE", surtax: 150 },
+                    { name: "Nassau", code: "NASSAU", surtax: 100 },
+                    { name: "Okaloosa", code: "OKALOOSA", surtax: 50 },
+                    { name: "Okeechobee", code: "OKEECHOBEE", surtax: 100 },
+                    { name: "Orange", code: "ORANGE", surtax: 50 },
+                    { name: "Osceola", code: "OSCEOLA", surtax: 150 },
+                    { name: "Palm Beach", code: "PALM-BEACH", surtax: 100 },
+                    { name: "Pasco", code: "PASCO", surtax: 100 },
+                    { name: "Pinellas", code: "PINELLAS", surtax: 100 },
+                    { name: "Polk", code: "POLK", surtax: 100 },
+                    { name: "Putnam", code: "PUTNAM", surtax: 100 },
+                    { name: "Santa Rosa", code: "SANTA-ROSA", surtax: 50 },
+                    { name: "Sarasota", code: "SARASOTA", surtax: 100 },
+                    { name: "Seminole", code: "SEMINOLE", surtax: 100 },
+                    { name: "St. Johns", code: "ST-JOHNS", surtax: 50 },
+                    { name: "St. Lucie", code: "ST-LUCIE", surtax: 100 },
+                    { name: "Sumter", code: "SUMTER", surtax: 100 },
+                    { name: "Suwannee", code: "SUWANNEE", surtax: 100 },
+                    { name: "Taylor", code: "TAYLOR", surtax: 100 },
+                    { name: "Union", code: "UNION", surtax: 100 },
+                    { name: "Volusia", code: "VOLUSIA", surtax: 50 },
+                    { name: "Wakulla", code: "WAKULLA", surtax: 100 },
+                    { name: "Walton", code: "WALTON", surtax: 100 },
+                    { name: "Washington", code: "WASHINGTON", surtax: 100 }
+                ];
+
+                for (const c of counties) {
+                    await this.db.run(`
+                        INSERT OR REPLACE INTO florida_tax_rates (county_name, county_code, base_rate, surtax_rate, total_rate, effective_date)
+                        VALUES (?, ?, 600, ?, ?, '2026-01-01')
+                    `, [c.name, c.code, c.surtax, 600 + c.surtax]);
+                }
+                logs.push("✅ Inyectados los 67 condados de Florida");
+            }
+
+            const taxTransCols = await this.getTableColumns('tax_transactions');
+            if (taxTransCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS tax_transactions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        invoice_id INTEGER NOT NULL,
+                        transaction_date TEXT NOT NULL,
+                        county_code TEXT NOT NULL,
+                        taxable_amount REAL NOT NULL,
+                        effective_rate REAL NOT NULL,
+                        tax_amount REAL NOT NULL,
+                        is_exempt BOOLEAN DEFAULT 0,
+                        exemption_type TEXT,
+                        verification_hash TEXT,
+                        status TEXT DEFAULT 'pending',
+                        dr15_report_id INTEGER,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                logs.push("✅ Tabla tax_transactions creada");
+            }
+            
+            // Verificar columnas faltantes en tax_transactions
+            if (taxTransCols.length > 0) {
+                const required = [
+                    { name: 'county_code', type: 'TEXT' },
+                    { name: 'verification_hash', type: 'TEXT' }
+                ];
+                for (const col of required) {
+                    if (!taxTransCols.includes(col.name)) {
+                        try {
+                            await this.db.run(`ALTER TABLE tax_transactions ADD COLUMN ${col.name} ${col.type}`);
+                            logs.push(`✅ Agregada columna ${col.name} a tax_transactions`);
+                        } catch (e) {
+                            logs.push(`⚠️ Error agregando columna ${col.name} a tax_transactions: ${(e as Error).message}`);
+                        }
+                    }
+                }
+            }
+
+            // 8. REPARAR TABLA DE MIGRACIONES - SIEMPRE
+            const migCols = await this.getTableColumns('sys_migrations');
+            if (migCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS sys_migrations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        version INTEGER NOT NULL UNIQUE,
+                        migration_name TEXT NOT NULL,
+                        applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                logs.push("✅ Tabla sys_migrations creada");
+            }
+            
+            // SIEMPRE insertar registro de migración
+            try {
+                await this.db.run("INSERT OR IGNORE INTO sys_migrations (version, migration_name) VALUES (7, 'repaired_schema_v7')");
+                logs.push("✅ Migración v7 registrada");
+            } catch (e) {
+                logs.push(`⚠️ Error registrando migración: ${(e as Error).message}`);
+            }
+            
+            if (migCols.length > 0 && !migCols.includes('version')) {
+                // Fix missing version column if table existed base level
+                await this.db.run("ALTER TABLE sys_migrations ADD COLUMN version INTEGER DEFAULT 0");
+                await this.db.run("UPDATE sys_migrations SET version = 7 WHERE migration_name = 'initial_schema' OR migration_name = 'repaired_schema_v7'");
+                logs.push("✅ Columna version agregada a sys_migrations");
+            }
+
             return logs;
         } catch (error) {
-            logger.critical('SchemaRepair', 'failed', 'Error fatal en reparación', null, error as Error);
-            logs.push(`❌ Error crítico: ${(error as Error).message}`);
+            logger.error('SchemaRepair', 'failure', 'Error fatal en reparación', { error });
             return logs;
         }
     }
@@ -228,8 +522,8 @@ export class SchemaRepairService {
     public async syncViews(logs: string[] = []) {
         try {
             // Recrear vistas críticas
-            this.db.run(`DROP VIEW IF EXISTS datos_sistema`);
-            this.db.run(`
+            await this.db.run(`DROP VIEW IF EXISTS datos_sistema`);
+            await this.db.run(`
                 CREATE VIEW IF NOT EXISTS datos_sistema AS
                 SELECT 
                   (SELECT COUNT(*) FROM customers) as total_clientes,
@@ -248,21 +542,21 @@ export class SchemaRepairService {
     public async cleanOrphanedRecords(logs: string[] = []) {
         try {
             // Detectar violaciones FK
-            const fkCheck = this.db.exec("PRAGMA foreign_key_check");
+            const fkCheck = await this.db.select("PRAGMA foreign_key_check");
 
-            if (fkCheck.length === 0 || fkCheck[0].values.length === 0) {
+            if (fkCheck.length === 0) {
                 logs.push("✅ No se encontraron registros huérfanos");
                 return;
             }
 
             let deletedCount = 0;
-            const violations = fkCheck[0].values;
+            const violations = fkCheck;
 
             // Agrupar violaciones por tabla
             const violationsByTable = new Map<string, number[]>();
             violations.forEach((row: any) => {
-                const tableName = row[0] as string;
-                const rowId = row[1] as number;
+                const tableName = row.table as string;
+                const rowId = row.rowid as number;
                 if (!violationsByTable.has(tableName)) {
                     violationsByTable.set(tableName, []);
                 }
@@ -270,24 +564,21 @@ export class SchemaRepairService {
             });
 
             // Eliminar registros huérfanos por tabla
-            violationsByTable.forEach((rowIds, tableName) => {
+            for (const [tableName, rowIds] of violationsByTable.entries()) {
                 try {
-                    // Eliminar en batch
                     const idsStr = rowIds.join(',');
-                    this.db.run(`DELETE FROM ${tableName} WHERE rowid IN (${idsStr})`);
+                    await this.db.run(`DELETE FROM ${tableName} WHERE rowid IN (${idsStr})`);
                     deletedCount += rowIds.length;
                     logs.push(`✅ Eliminados ${rowIds.length} registros huérfanos de ${tableName}`);
                 } catch (e: any) {
                     logs.push(`⚠️ Error limpiando ${tableName}: ${e.message}`);
                 }
-            });
+            }
 
             if (deletedCount > 0) {
                 logs.push(`✅ Total: ${deletedCount} registros huérfanos eliminados`);
-
-                // Ejecutar VACUUM para liberar espacio
                 try {
-                    this.db.run("VACUUM");
+                    await this.db.run("VACUUM");
                     logs.push("✅ Base de datos optimizada (VACUUM)");
                 } catch (e: any) {
                     logs.push(`⚠️ No se pudo ejecutar VACUUM: ${e.message}`);
@@ -299,14 +590,13 @@ export class SchemaRepairService {
         }
     }
 
-    public validateIntegrity(): { valid: boolean; errors: string[] } {
+    public async validateIntegrity(): Promise<{ valid: boolean; errors: string[] }> {
         const errors: string[] = [];
         try {
-            // Check Foreign Keys
-            const fkCheck = this.db.exec("PRAGMA foreign_key_check");
-            if (fkCheck.length > 0 && fkCheck[0].values.length > 0) {
-                fkCheck[0].values.forEach((row: any) => {
-                    errors.push(`Violación FK en tabla ${row[0]}, rowid ${row[1]}, referenciando ${row[2]}`);
+            const fkCheck = await this.db.select("PRAGMA foreign_key_check");
+            if (fkCheck.length > 0) {
+                fkCheck.forEach((row: any) => {
+                    errors.push(`Violación FK en tabla ${row.table}, rowid ${row.rowid}, referenciando ${row.parent}`);
                 });
             }
         } catch (e: any) {
@@ -325,7 +615,7 @@ export class SchemaRepairService {
             logs.push(...repairLogs);
 
             // 2. Validar integridad
-            const { valid, errors } = this.validateIntegrity();
+            const { valid, errors } = await this.validateIntegrity();
             if (!valid) {
                 logs.push('⚠️ Errores FK detectados (no críticos):');
                 logs.push(...errors.slice(0, 5)); // Máximo 5 para no saturar
@@ -348,11 +638,11 @@ export class SchemaRepairService {
         }
     }
 
-    private getTableColumns(tableName: string): string[] {
+    private async getTableColumns(tableName: string): Promise<string[]> {
         try {
-            const res = this.db.exec(`PRAGMA table_info(${tableName})`);
-            if (res.length > 0 && res[0].values) {
-                return res[0].values.map((row: any) => row[1] as string);
+            const res = await this.db.select(`PRAGMA table_info(${tableName})`);
+            if (res.length > 0) {
+                return res.map((row: any) => row.name as string);
             }
         } catch (e) {
             return [];

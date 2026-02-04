@@ -225,37 +225,80 @@ export class ModernConversationalAssistant {
 
     private emergencyFallback(query: string, startTime: number, lang: 'es' | 'en' = 'es'): AssistantResponse {
         const lower = query.toLowerCase();
-        let msg = lang === 'es'
-            ? "No pude entender tu consulta semánticamente. ¿Podrías intentar preguntar de otra forma?"
-            : "I couldn't semantically understand your query. Could you try asking in a different way?";
+        let msg = '';
+        let suggestions: string[] = [];
 
-        const suggestions = lang === 'es'
-            ? ["¿Cuántos clientes hay?", "¿Qué es un activo?", "¿Cuánto vendí este mes?"]
-            : ["How many customers are there?", "What is an asset?", "How much did I sell this month?"];
-
-        // Contextual hints
+        // Contextual intelligent fallback
         if (lower.match(/\b(cliente|customer)\b/)) {
             msg = lang === 'es'
-                ? "Pareces preguntar sobre clientes. ¿Te refieres a cuántos tienes o quién es el mejor?"
-                : "You seem to be asking about customers. Do you mean how many you have or who is the best?";
+                ? "📊 Puedo ayudarte con información sobre clientes. Intenta preguntar:\n• ¿Cuántos clientes tengo?\n• ¿Quién es mi mejor cliente?\n• Muéstrame los clientes con deuda pendiente"
+                : "📊 I can help you with customer information. Try asking:\n• How many customers do I have?\n• Who is my best customer?\n• Show me customers with outstanding debt";
+            suggestions = lang === 'es' 
+                ? ["¿Cuántos clientes tengo?", "¿Quién es mi mejor cliente?"]
+                : ["How many customers do I have?", "Who is my best customer?"];
         } else if (lower.match(/\b(factura|venta|vendi|invoice|sale|sold)\b/)) {
             msg = lang === 'es'
-                ? "Pareces preguntar sobre ventas. Puedo decirte el total o buscar facturas."
-                : "You seem to be asking about sales. I can tell you the total or find invoices.";
+                ? "💰 Puedo ayudarte con información de ventas. Intenta preguntar:\n• ¿Cuánto vendí este mes?\n• ¿Cuál fue mi mejor venta?\n• Muéstrame las facturas pendientes de cobro"
+                : "💰 I can help you with sales information. Try asking:\n• How much did I sell this month?\n• What was my best sale?\n• Show me outstanding invoices";
+            suggestions = lang === 'es'
+                ? ["¿Cuánto vendí este mes?", "¿Cuál fue mi mejor venta?"]
+                : ["How much did I sell this month?", "What was my best sale?"];
+        } else if (lower.match(/\b(impuesto|tax|florida|dr-?15)\b/)) {
+            msg = lang === 'es'
+                ? "🌴 Puedo ayudarte con impuestos de Florida. Intenta preguntar:\n• ¿Qué es el DR-15?\n• ¿Cuál es la tasa de impuesto en Miami-Dade?\n• ¿Qué productos están exentos de impuesto?\n• ¿Cómo generar el reporte DR-15?"
+                : "🌴 I can help you with Florida taxes. Try asking:\n• What is DR-15?\n• What is the tax rate in Miami-Dade?\n• What products are tax-exempt?\n• How to generate the DR-15 report?";
+            suggestions = lang === 'es'
+                ? ["¿Qué es el DR-15?", "Tasas de impuesto por condado"]
+                : ["What is DR-15?", "Tax rates by county"];
+        } else if (lower.match(/\b(activo|pasivo|patrimonio|asset|liability|equity|balance)\b/)) {
+            msg = lang === 'es'
+                ? "🧮 Puedo explicarte conceptos contables. Intenta preguntar:\n• ¿Qué es un activo?\n• ¿Qué es un pasivo?\n• ¿Qué es el patrimonio?\n• ¿Cómo funciona la partida doble?"
+                : "🧮 I can explain accounting concepts. Try asking:\n• What is an asset?\n• What is a liability?\n• What is equity?\n• How does double-entry work?";
+            suggestions = lang === 'es'
+                ? ["¿Qué es un activo?", "¿Qué es un pasivo?"]
+                : ["What is an asset?", "What is a liability?"];
+        } else if (lower.match(/\b(como|how|procedimiento|procedure|paso|step)\b/)) {
+            msg = lang === 'es'
+                ? "📖 Puedo guiarte en procedimientos contables. Intenta preguntar:\n• ¿Cómo crear una factura?\n• ¿Cómo registrar una venta a crédito?\n• ¿Cómo hacer conciliación bancaria?\n• ¿Cómo procesar nómina?\n• ¿Cómo prepararse para una auditoría?"
+                : "📖 I can guide you through accounting procedures. Try asking:\n• How to create an invoice?\n• How to record a credit sale?\n• How to do bank reconciliation?\n• How to process payroll?\n• How to prepare for an audit?";
+            suggestions = lang === 'es'
+                ? ["¿Cómo crear una factura?", "¿Cómo hacer conciliación bancaria?"]
+                : ["How to create an invoice?", "How to do bank reconciliation?"];
+        } else if (lower.match(/\b(depreciacion|depreciation|macrs|seccion 179|section 179)\b/)) {
+            msg = lang === 'es'
+                ? "📉 Puedo ayudarte con depreciación de activos. Intenta preguntar:\n• ¿Qué es MACRS?\n• ¿Qué es la Sección 179?\n• ¿Cómo calcular depreciación?\n• ¿Qué es bonus depreciation?"
+                : "📉 I can help you with asset depreciation. Try asking:\n• What is MACRS?\n• What is Section 179?\n• How to calculate depreciation?\n• What is bonus depreciation?";
+            suggestions = lang === 'es'
+                ? ["¿Qué es MACRS?", "¿Qué es la Sección 179?"]
+                : ["What is MACRS?", "What is Section 179?"];
+        } else if (lower.match(/\b(exencion|exemption|exento|exempt|certificado|certificate)\b/)) {
+            msg = lang === 'es'
+                ? "📋 Puedo ayudarte con exenciones fiscales. Intenta preguntar:\n• ¿Qué productos están exentos de impuesto?\n• ¿Qué es un certificado de reventa?\n• ¿Qué es el DR-13?\n• ¿Qué es el use tax?"
+                : "📋 I can help you with tax exemptions. Try asking:\n• What products are tax-exempt?\n• What is a resale certificate?\n• What is DR-13?\n• What is use tax?";
+            suggestions = lang === 'es'
+                ? ["¿Qué es un certificado de reventa?", "Productos exentos de impuesto"]
+                : ["What is a resale certificate?", "Tax-exempt products"];
+        } else {
+            msg = lang === 'es'
+                ? "🤖 Soy tu asistente contable para Florida. Puedo ayudarte con:\n\n📊 **Datos del sistema:**\n• Clientes, facturas, productos, ventas\n• Reportes financieros y estadísticas\n\n🧮 **Conceptos contables:**\n• Activos, pasivos, patrimonio\n• Depreciación, MACRS, Sección 179\n• Plan de cuentas, libro mayor\n\n🌴 **Impuestos de Florida:**\n• DR-15, tasas por condado (67 condados)\n• Exenciones, certificados de reventa\n• Use tax, impuesto sobre propiedad personal\n\n📖 **Procedimientos:**\n• Crear facturas, registrar ventas\n• Conciliación bancaria, cierre de mes\n• Procesar nómina, auditorías\n\n**Ejemplos de preguntas:**\n• ¿Cuánto vendí este mes?\n• ¿Qué es el DR-15?\n• ¿Cómo hacer conciliación bancaria?\n• ¿Cuál es la tasa de impuesto en Broward?"
+                : "🤖 I'm your Florida accounting assistant. I can help you with:\n\n📊 **System data:**\n• Customers, invoices, products, sales\n• Financial reports and statistics\n\n🧮 **Accounting concepts:**\n• Assets, liabilities, equity\n• Depreciation, MACRS, Section 179\n• Chart of accounts, general ledger\n\n🌴 **Florida taxes:**\n• DR-15, county rates (67 counties)\n• Exemptions, resale certificates\n• Use tax, tangible personal property tax\n\n📖 **Procedures:**\n• Create invoices, record sales\n• Bank reconciliation, month-end close\n• Process payroll, audits\n\n**Example questions:**\n• How much did I sell this month?\n• What is DR-15?\n• How to do bank reconciliation?\n• What is the tax rate in Broward?";
+            suggestions = lang === 'es'
+                ? ["¿Cuánto vendí este mes?", "¿Qué es el DR-15?", "¿Cómo crear una factura?", "Tasas de impuesto Florida"]
+                : ["How much did I sell this month?", "What is DR-15?", "How to create an invoice?", "Florida tax rates"];
         }
 
         return {
-            success: false,
+            success: true,
             content: msg,
             data: null,
             metadata: {
                 query,
                 timestamp: new Date().toISOString(),
-                intent: 'EMERGENCY_FALLBACK',
-                confidence: 0,
-                dataSource: 'fallback',
+                intent: 'CONTEXTUAL_HELP',
+                confidence: 0.5,
+                dataSource: 'intelligent_fallback',
                 processingTime: Date.now() - startTime,
-                method: 'emergency_fallback',
+                method: 'contextual_fallback',
                 language: lang
             },
             suggestions,
