@@ -3,6 +3,7 @@ import { Building2, AlertTriangle, CheckCircle, Save, RefreshCw, Shield, FileTex
 import { getCompanyData, updateCompanyData, checkAccountingDataAssociation, CompanyData } from '../database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { LogoUploader } from './LogoUploader';
+import { BackupService } from '../services/BackupService';
 
 export function CompanyDataForm() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
@@ -16,11 +17,26 @@ export function CompanyDataForm() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<Partial<CompanyData>>({});
   const [activeTab, setActiveTab] = useState<'empresa' | 'finanzas' | 'usuarios'>('empresa');
+  const [isCloudLinked, setIsCloudLinked] = useState(false);
 
   useEffect(() => {
     loadCompanyData();
     checkAccountingAssociations();
+
+    const token = localStorage.getItem('gdrive_token');
+    setIsCloudLinked(!!token);
   }, []);
+
+  const handleCloudLink = () => {
+    if (isCloudLinked) {
+      if (window.confirm('¿Desea desvincular Google Drive? Las copias de seguridad automáticas se detendrán.')) {
+        localStorage.removeItem('gdrive_token');
+        setIsCloudLinked(false);
+      }
+    } else {
+      BackupService.initiateCloudLink();
+    }
+  };
 
   const loadCompanyData = async () => {
     try {
@@ -256,8 +272,8 @@ export function CompanyDataForm() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 py-4 px-4 font-black text-xs uppercase tracking-widest transition-all relative ${activeTab === tab.id
-                      ? 'text-blue-400'
-                      : 'text-slate-500 hover:text-slate-300'
+                    ? 'text-blue-400'
+                    : 'text-slate-500 hover:text-slate-300'
                     }`}
                 >
                   <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-blue-500' : 'text-slate-600'}`} />
@@ -286,6 +302,35 @@ export function CompanyDataForm() {
                       onLogoChange={(logoPath) => handleInputChange('logo_path', logoPath || '')}
                       disabled={saving}
                     />
+                  </div>
+
+                  {/* Cloud Vault Section (Moved here based on user request) */}
+                  <div className="pt-6 border-t border-slate-800">
+                    <h3 className="text-xs font-black text-blue-500 uppercase tracking-widest flex items-center gap-2 mb-4">
+                      <Shield className="w-3 h-3" />
+                      Cloud Vault™ (Backup)
+                    </h3>
+                    <div className={`p-4 rounded-2xl border ${isCloudLinked ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-900 border-slate-800'}`}>
+                      <div className="flex items-center gap-3 mb-3">
+                        {isCloudLinked ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <AlertTriangle className="w-5 h-5 text-slate-500" />}
+                        <span className={`text-sm font-bold ${isCloudLinked ? 'text-emerald-400' : 'text-slate-400'}`}>
+                          {isCloudLinked ? 'Sincronización Activa' : 'Sin Respaldo Nube'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                        {isCloudLinked ? 'Sus datos se cifran y respaldan automáticamente en su Google Drive privado.' : 'Conecte su cuenta para activar el respaldo híbrido automático y proteger su información.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleCloudLink}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wide transition-colors ${isCloudLinked
+                          ? 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                          }`}
+                      >
+                        {isCloudLinked ? 'Desvincular Cuenta' : 'Conectar Google Drive'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -460,20 +505,20 @@ export function CompanyDataForm() {
                   <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Shield className="h-10 w-10 text-amber-500" />
                   </div>
-                  <h3 className="text-2xl font-black text-white mb-4">Acceso Restringido</h3>
+                  <h3 className="text-2xl font-black text-white mb-4">Modalidad Single-User</h3>
                   <p className="text-slate-400 font-medium mb-10 leading-relaxed">
-                    Sistema en modalidad "Local-Single-User". El administrador Root es el único perfil habilitado.
+                    El sistema está configurado en modo local mono-usuario. La gestión de roles adicionales está inhabilitada en está versión.
                   </p>
 
                   <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800 inline-flex flex-col md:flex-row items-center gap-8 text-left">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Perfil</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Perfil Actual</span>
                       <span className="text-lg font-black text-white tracking-tight">Root Administrator</span>
                     </div>
                     <div className="w-px h-10 bg-slate-800 hidden md:block"></div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Estado</span>
-                      <span className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase">Protección Activa</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Permisos</span>
+                      <span className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase">Total Control (R/W)</span>
                     </div>
                   </div>
                 </div>

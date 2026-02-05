@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Save, Globe } from 'lucide-react';
+import { Building, Save, Globe, Cloud, CheckCircle, AlertTriangle } from 'lucide-react';
 import { type CompanyInfo } from '../../modules/system/System.types';
+import { BackupService } from '../../services/BackupService';
 
 export const CompanyInfoForm: React.FC = () => {
     const [info, setInfo] = useState<CompanyInfo>({
@@ -17,7 +18,28 @@ export const CompanyInfoForm: React.FC = () => {
         phone: '305-555-0101'
     });
 
+    const [isCloudLinked, setIsCloudLinked] = useState(false);
+
+    useEffect(() => {
+        // Check for link status on mount
+        const token = localStorage.getItem('gdrive_token');
+        setIsCloudLinked(!!token);
+    }, []);
+
     const handleChange = (f: keyof CompanyInfo, v: string) => setInfo({ ...info, [f]: v });
+
+    const handleCloudLink = () => {
+        if (isCloudLinked) {
+            // Unlink logic
+            if (window.confirm('¿Desea desvincular Google Drive? Las copias de seguridad automáticas se detendrán.')) {
+                localStorage.removeItem('gdrive_token');
+                setIsCloudLinked(false);
+            }
+        } else {
+            // Link logic
+            BackupService.initiateCloudLink();
+        }
+    };
 
     return (
         <Card className="bg-gray-900 border-gray-800 text-white w-full max-w-4xl mx-auto">
@@ -78,6 +100,42 @@ export const CompanyInfoForm: React.FC = () => {
                                 <option value="EUR">EUR - Euro</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                <div className="border-t border-gray-800 pt-4">
+                    <h3 className="text-sm font-medium text-blue-400 mb-4 flex items-center gap-2">
+                        <Cloud className="w-4 h-4" />
+                        Cloud Vault &trade; (Respaldo Híbrido)
+                    </h3>
+
+                    <div className="bg-gray-800/50 p-4 rounded border border-gray-700 flex items-center justify-between">
+                        <div>
+                            {isCloudLinked ? (
+                                <div className="flex items-center gap-2 text-green-400">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Conectado a Google Drive</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                                    <span className="text-sm">No hay respaldo en nube configurado</span>
+                                </div>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                                {isCloudLinked
+                                    ? "Sus copias de seguridad (.aex) se cifran localmente y se replican automáticamente en su nube personal."
+                                    : "Vincule su cuenta para proteger sus datos contra fallos del dispositivo."}
+                            </p>
+                        </div>
+
+                        <Button
+                            variant={isCloudLinked ? "outline" : "default"}
+                            className={isCloudLinked ? "border-red-900 text-red-400 hover:bg-red-900/20" : "bg-blue-600 hover:bg-blue-700"}
+                            onClick={handleCloudLink}
+                        >
+                            {isCloudLinked ? "Desvincular" : "Conectar Google Drive"}
+                        </Button>
                     </div>
                 </div>
 

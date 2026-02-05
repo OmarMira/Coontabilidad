@@ -274,6 +274,12 @@ function App() {
 
         logger.info('App', 'init_start', 'Iniciando AccountExpress Next-Gen MVP');
 
+        // NASA/Hybrid Persistence: Ensure storage is persistent
+        if (navigator.storage && navigator.storage.persist) {
+          const isPersisted = await navigator.storage.persist();
+          console.log(`[Storage] Persisted: ${isPersisted}`);
+        }
+
         // Verificar compatibilidad básica
         if (typeof window === 'undefined') {
           throw new Error('Entorno no compatible - se requiere navegador web');

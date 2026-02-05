@@ -10782,12 +10782,12 @@ export const hashPassword = async (password: string): Promise<string> => {
     ['deriveBits']
   );
 
-  // Derivar hash usando PBKDF2
+  // Derivar hash usando PBKDF2 (NASA/OWASP 2024: 600k iterations)
   const hashBuffer = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
       salt: salt,
-      iterations: 100000,
+      iterations: 600000,
       hash: 'SHA-256'
     },
     keyMaterial,
@@ -10827,7 +10827,7 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
       {
         name: 'PBKDF2',
         salt: salt,
-        iterations: 100000,
+        iterations: 600000,
         hash: 'SHA-256'
       },
       keyMaterial,

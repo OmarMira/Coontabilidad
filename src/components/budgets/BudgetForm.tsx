@@ -30,10 +30,10 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
   const [department, setDepartment] = useState(budget?.department || '');
   const [notes, setNotes] = useState(budget?.notes || '');
   const [alertThreshold, setAlertThreshold] = useState(budget?.alert_threshold_percentage || 10);
-  
+
   // Budget lines
   const [lines, setLines] = useState<Partial<BudgetLine>[]>([]);
-  
+
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,15 +135,15 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Header Information */}
-      <Card>
+      <Card className="bg-slate-900 border-slate-800 text-white">
         <CardHeader>
           <CardTitle>{isEditing ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Validation Errors */}
           {validationErrors.length > 0 && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
+            <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-200">
+              <AlertTriangle className="h-4 w-4 text-red-400" />
               <AlertDescription>
                 <ul className="list-disc list-inside space-y-1">
                   {validationErrors.map((error, index) => (
@@ -156,8 +156,8 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
 
           {/* Error Alert */}
           {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
+            <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-200">
+              <AlertTriangle className="h-4 w-4 text-red-400" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -165,7 +165,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Budget Name */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Nombre del Presupuesto *
               </label>
               <Input
@@ -174,12 +174,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
                 onChange={(e) => setBudgetName(e.target.value)}
                 placeholder="Ej: Presupuesto Operativo 2026"
                 required
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Fecha de Inicio *
               </label>
               <Input
@@ -187,12 +188,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 required
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
             {/* End Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Fecha de Fin *
               </label>
               <Input
@@ -200,25 +202,26 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 required
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
             {/* Fiscal Year (auto-calculated) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Año Fiscal
               </label>
               <Input
                 type="number"
                 value={fiscalYear}
                 readOnly
-                className="bg-gray-50"
+                className="bg-slate-950 border-slate-800 text-slate-400 cursor-not-allowed"
               />
             </div>
 
             {/* Department */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Departamento
               </label>
               <Input
@@ -226,12 +229,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 placeholder="Ej: Ventas, Operaciones"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
             {/* Alert Threshold */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Umbral de Alerta (%)
               </label>
               <Input
@@ -241,22 +245,23 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
                 min="0"
                 max="100"
                 step="1"
+                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Se generará una alerta cuando la varianza exceda este porcentaje
               </p>
             </div>
 
             {/* Notes */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Notas
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-md text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Notas adicionales sobre este presupuesto..."
               />
             </div>
@@ -275,9 +280,10 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
       <div className="flex justify-end gap-3">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           onClick={onCancel}
           disabled={loading}
+          className="text-slate-400 hover:text-white hover:bg-slate-800"
         >
           <X className="h-4 w-4 mr-2" />
           Cancelar
@@ -285,6 +291,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
         <Button
           type="submit"
           disabled={loading || lines.length === 0}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           {loading ? (
             <>

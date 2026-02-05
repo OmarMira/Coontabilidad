@@ -47,22 +47,22 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
   };
 
   const getVarianceColor = (variancePercent: number): string => {
-    if (Math.abs(variancePercent) < 5) return 'text-gray-700';
-    return variancePercent > 0 ? 'text-red-600' : 'text-green-600';
+    if (Math.abs(variancePercent) < 5) return 'text-slate-400';
+    return variancePercent > 0 ? 'text-red-400' : 'text-green-400';
   };
 
   const getVarianceBgColor = (variancePercent: number): string => {
-    if (Math.abs(variancePercent) < 5) return 'bg-gray-50';
-    return variancePercent > 0 ? 'bg-red-50' : 'bg-green-50';
+    if (Math.abs(variancePercent) < 5) return 'bg-slate-800/50';
+    return variancePercent > 0 ? 'bg-red-900/10' : 'bg-green-900/10';
   };
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-slate-900 border-slate-800 text-white">
         <CardContent className="py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando líneas...</p>
+            <p className="mt-4 text-slate-400">Cargando líneas...</p>
           </div>
         </CardContent>
       </Card>
@@ -70,31 +70,31 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
   }
 
   return (
-    <Card>
+    <Card className="bg-slate-900 border-slate-800 text-white">
       <CardHeader>
         <CardTitle>Líneas de Presupuesto con Análisis de Varianza</CardTitle>
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-500">
             <p>No hay líneas de presupuesto</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-slate-800">
             <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700 w-8"></th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Cuenta</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nombre</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Presupuestado</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Real (YTD)</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Varianza</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Varianza %</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">Estado</th>
+              <thead className="bg-slate-950">
+                <tr>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400 w-8"></th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Cuenta</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Nombre</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Presupuestado (YTD)</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Real (YTD)</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Varianza</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Varianza %</th>
+                  <th className="text-center py-3 px-4 font-semibold text-slate-400">Estado</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-800">
                 {lines.map((line) => {
                   const variance = varianceData.find(v => v.account_number === line.account_number);
                   const isExpanded = expandedLines.has(line.id);
@@ -104,14 +104,13 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                     <React.Fragment key={line.id}>
                       {/* Main Row */}
                       <tr
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                          hasAlert ? 'bg-yellow-50' : ''
-                        }`}
+                        className={`hover:bg-slate-800/60 transition-colors ${hasAlert ? 'bg-yellow-900/10' : 'bg-slate-900'
+                          }`}
                       >
                         <td className="py-3 px-4">
                           <button
                             onClick={() => toggleExpand(line.id)}
-                            className="text-gray-500 hover:text-gray-700"
+                            className="text-slate-500 hover:text-white"
                           >
                             {isExpanded ? (
                               <ChevronDown className="h-4 w-4" />
@@ -120,19 +119,19 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                             )}
                           </button>
                         </td>
-                        <td className="py-3 px-4 font-medium text-gray-900">
+                        <td className="py-3 px-4 font-medium text-slate-200">
                           {line.account_number}
                         </td>
-                        <td className="py-3 px-4 text-gray-700">
+                        <td className="py-3 px-4 text-slate-300">
                           {variance?.account_name || 'N/A'}
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-gray-900">
-                          ${(line.annual_amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        <td className="py-3 px-4 text-right font-medium text-slate-200">
+                          ${variance ? (variance.ytd_budget / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-gray-900">
+                        <td className="py-3 px-4 text-right font-medium text-slate-200">
                           ${variance ? (variance.ytd_actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
                         </td>
-                        <td className={`py-3 px-4 text-right font-medium ${variance ? getVarianceColor(variance.ytd_variance_percent) : 'text-gray-900'}`}>
+                        <td className={`py-3 px-4 text-right font-medium ${variance ? getVarianceColor(variance.ytd_variance_percent) : 'text-slate-200'}`}>
                           {variance ? (
                             <>
                               {variance.ytd_variance > 0 ? '+' : ''}
@@ -142,7 +141,7 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                             '$0.00'
                           )}
                         </td>
-                        <td className={`py-3 px-4 text-right font-medium ${variance ? getVarianceColor(variance.ytd_variance_percent) : 'text-gray-900'}`}>
+                        <td className={`py-3 px-4 text-right font-medium ${variance ? getVarianceColor(variance.ytd_variance_percent) : 'text-slate-200'}`}>
                           {variance ? (
                             <>
                               {variance.ytd_variance_percent > 0 ? '+' : ''}
@@ -154,13 +153,13 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                         </td>
                         <td className="py-3 px-4 text-center">
                           {hasAlert && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/40 text-yellow-300 border border-yellow-800">
                               <AlertTriangle className="h-3 w-3" />
                               Alerta
                             </span>
                           )}
                           {variance && !hasAlert && Math.abs(variance.ytd_variance_percent) < 5 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-900/40 text-green-300 border border-green-800">
                               En curso
                             </span>
                           )}
@@ -170,29 +169,29 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                       {/* Expanded Period Breakdown */}
                       {isExpanded && variance && (
                         <tr>
-                          <td colSpan={8} className="py-4 px-8 bg-gray-50">
+                          <td colSpan={8} className="py-4 px-8 bg-slate-950">
                             <div className="space-y-2">
-                              <h4 className="font-semibold text-gray-900 mb-3">Desglose por Período</h4>
-                              <div className="overflow-x-auto">
+                              <h4 className="font-semibold text-slate-300 mb-3">Desglose por Período</h4>
+                              <div className="overflow-x-auto border border-slate-800 rounded">
                                 <table className="w-full text-sm">
                                   <thead>
-                                    <tr className="border-b border-gray-300">
-                                      <th className="text-left py-2 px-3 font-medium text-gray-700">Período</th>
-                                      <th className="text-right py-2 px-3 font-medium text-gray-700">Presupuestado</th>
-                                      <th className="text-right py-2 px-3 font-medium text-gray-700">Real</th>
-                                      <th className="text-right py-2 px-3 font-medium text-gray-700">Varianza</th>
-                                      <th className="text-right py-2 px-3 font-medium text-gray-700">Varianza %</th>
-                                      <th className="text-center py-2 px-3 font-medium text-gray-700">Estado</th>
+                                    <tr className="border-b border-slate-800 bg-slate-900">
+                                      <th className="text-left py-2 px-3 font-medium text-slate-400">Período</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Presupuestado</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Real</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Varianza</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Varianza %</th>
+                                      <th className="text-center py-2 px-3 font-medium text-slate-400">Estado</th>
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {variance.periods.map((period) => (
-                                      <tr key={period.period_number} className={`border-b border-gray-200 ${getVarianceBgColor(period.variance_percent)}`}>
-                                        <td className="py-2 px-3 text-gray-700">{period.period_name}</td>
-                                        <td className="py-2 px-3 text-right text-gray-900">
+                                      <tr key={period.period_number} className={`border-b border-slate-800 ${getVarianceBgColor(period.variance_percent)}`}>
+                                        <td className="py-2 px-3 text-slate-300">{period.period_name}</td>
+                                        <td className="py-2 px-3 text-right text-slate-200">
                                           ${(period.budgeted / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </td>
-                                        <td className="py-2 px-3 text-right text-gray-900">
+                                        <td className="py-2 px-3 text-right text-slate-200">
                                           ${(period.actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                         </td>
                                         <td className={`py-2 px-3 text-right font-medium ${getVarianceColor(period.variance_percent)}`}>
@@ -205,9 +204,9 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                                         </td>
                                         <td className="py-2 px-3 text-center">
                                           {period.is_favorable ? (
-                                            <TrendingDown className="h-4 w-4 text-green-600 mx-auto" />
+                                            <TrendingDown className="h-4 w-4 text-green-500 mx-auto" />
                                           ) : (
-                                            <TrendingUp className="h-4 w-4 text-red-600 mx-auto" />
+                                            <TrendingUp className="h-4 w-4 text-red-500 mx-auto" />
                                           )}
                                         </td>
                                       </tr>

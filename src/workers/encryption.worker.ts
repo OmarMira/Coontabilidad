@@ -79,7 +79,7 @@ async function initializeKey(payload: { password: string, salt: Uint8Array, conf
             {
                 name: 'PBKDF2',
                 salt: saltBuffer,
-                iterations: config.iterations || 10000,
+                iterations: config.iterations || 600000,
                 hash: config.hash || 'SHA-256'
             },
             keyMaterial,
@@ -124,7 +124,7 @@ async function encryptSJCL(data: ArrayBuffer) {
     const bits = sjcl.codec.base64.toBits(base64);
 
     // Encrypt
-    const encryptedJsonFn = sjcl.json.encrypt(sjclPassword, base64, { ks: 256, iter: 10000 } as any);
+    const encryptedJsonFn = sjcl.json.encrypt(sjclPassword, base64, { ks: 256, iter: 600000 } as any);
     const encryptedStr = typeof encryptedJsonFn === 'string' ? encryptedJsonFn : JSON.stringify(encryptedJsonFn);
 
     return {

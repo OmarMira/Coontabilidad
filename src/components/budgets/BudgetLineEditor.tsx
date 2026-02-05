@@ -64,7 +64,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="bg-slate-900 border-slate-800 text-white">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Líneas de Presupuesto</CardTitle>
@@ -72,7 +72,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
             type="button"
             size="sm"
             onClick={handleAddLine}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-4 w-4" />
             Agregar Línea
@@ -81,15 +81,15 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+          <div className="text-center py-8 text-slate-500 border border-slate-800 rounded-lg bg-slate-900/50">
+            <DollarSign className="h-12 w-12 mx-auto mb-3 text-slate-600" />
             <p>No hay líneas de presupuesto</p>
             <p className="text-sm mt-1">Haz clic en "Agregar Línea" para comenzar</p>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Table Header */}
-            <div className="hidden md:grid md:grid-cols-12 gap-4 pb-2 border-b border-gray-200 font-semibold text-sm text-gray-700">
+            <div className="hidden md:grid md:grid-cols-12 gap-4 pb-2 border-b border-slate-700 font-semibold text-sm text-slate-400">
               <div className="col-span-3">Cuenta</div>
               <div className="col-span-3">Nombre de Cuenta</div>
               <div className="col-span-2">Monto Anual</div>
@@ -102,17 +102,17 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
             {lines.map((line, index) => (
               <div
                 key={index}
-                className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-gray-50 rounded-lg"
+                className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-slate-800 rounded-lg border border-slate-700"
               >
                 {/* Account Selector */}
                 <div className="md:col-span-3">
-                  <label className="block md:hidden text-sm font-medium text-gray-700 mb-1">
+                  <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
                     Cuenta
                   </label>
                   <select
                     value={line.account_number || ''}
                     onChange={(e) => handleLineChange(index, 'account_number', Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
                     <option value="">Seleccionar cuenta...</option>
@@ -126,21 +126,21 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
 
                 {/* Account Name (auto-filled) */}
                 <div className="md:col-span-3">
-                  <label className="block md:hidden text-sm font-medium text-gray-700 mb-1">
+                  <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
                     Nombre
                   </label>
                   <Input
                     type="text"
                     value={getAccountName(line.account_number || 0)}
                     readOnly
-                    className="bg-white"
+                    className="bg-slate-950 border-slate-700 text-slate-400 cursor-not-allowed"
                     placeholder="Nombre de cuenta"
                   />
                 </div>
 
                 {/* Annual Amount */}
                 <div className="md:col-span-2">
-                  <label className="block md:hidden text-sm font-medium text-gray-700 mb-1">
+                  <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
                     Monto Anual
                   </label>
                   <Input
@@ -151,18 +151,19 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                     step="0.01"
                     min="0"
                     required
+                    className="bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:ring-blue-500"
                   />
                 </div>
 
                 {/* Distribution Type */}
                 <div className="md:col-span-2">
-                  <label className="block md:hidden text-sm font-medium text-gray-700 mb-1">
+                  <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
                     Distribución
                   </label>
                   <select
                     value={line.distribution_type || 'EQUAL'}
                     onChange={(e) => handleLineChange(index, 'distribution_type', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="EQUAL">Equitativa</option>
                     <option value="CUSTOM">Personalizada</option>
@@ -172,7 +173,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
 
                 {/* Notes */}
                 <div className="md:col-span-1">
-                  <label className="block md:hidden text-sm font-medium text-gray-700 mb-1">
+                  <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
                     Notas
                   </label>
                   <Input
@@ -180,6 +181,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                     value={line.notes || ''}
                     onChange={(e) => handleLineChange(index, 'notes', e.target.value)}
                     placeholder="Notas"
+                    className="bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:ring-blue-500"
                   />
                 </div>
 
@@ -190,7 +192,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleRemoveLine(index)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -199,19 +201,19 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
             ))}
 
             {/* Total */}
-            <div className="flex justify-end items-center gap-4 pt-4 border-t border-gray-200">
-              <span className="text-lg font-semibold text-gray-700">Total Presupuestado:</span>
-              <span className="text-2xl font-bold text-blue-600">
+            <div className="flex justify-end items-center gap-4 pt-4 border-t border-slate-700">
+              <span className="text-lg font-semibold text-slate-300">Total Presupuestado:</span>
+              <span className="text-2xl font-bold text-blue-400">
                 ${(totalAmount / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
             </div>
 
             {/* Distribution Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
+            <div className="bg-blue-900/20 border border-blue-900/50 rounded-lg p-4">
+              <p className="text-sm text-blue-300">
                 <strong>Distribución Equitativa:</strong> El monto anual se divide en 12 períodos mensuales iguales.
               </p>
-              <p className="text-sm text-blue-800 mt-1">
+              <p className="text-sm text-blue-300 mt-1">
                 <strong>Personalizada:</strong> Podrás ajustar los montos por período después de crear el presupuesto.
               </p>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, Clock, AlertCircle, CheckCircle, Bell, Filter, Printer } from 'lucide-react';
@@ -17,7 +18,16 @@ export const TaxCalendar: React.FC = () => {
                     <h2 className="text-2xl font-black text-white tracking-tight">Calendario Fiscal Florida</h2>
                     <p className="text-slate-400 font-medium">Alertas y vencimientos del Florida Department of Revenue</p>
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold px-6 shadow-lg shadow-blue-900/40">
+                <Button
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold px-6 shadow-lg shadow-blue-900/40"
+                    onClick={() => toast('El módulo de configuración de alertas estará disponible en la próxima actualización.', {
+                        icon: '🔔',
+                        style: {
+                            background: '#1e293b',
+                            color: '#fff',
+                        },
+                    })}
+                >
                     <Bell className="w-4 h-4 mr-2" /> Configurar Alertas
                 </Button>
             </div>

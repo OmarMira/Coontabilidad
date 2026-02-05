@@ -168,6 +168,12 @@ export class SystemLogger {
   }
 
   private consoleLog(level: LogLevel, module: string, action: string, message: string, data?: any, error?: Error): void {
+    // SECURITY: In production, do not log sensitive data to console
+    // This connects with vite.config.ts esbuild.drop configuration
+    if (import.meta.env?.MODE === 'production' && level !== 'CRITICAL') {
+      return;
+    }
+
     const colors = {
       DEBUG: '#6B7280',
       INFO: '#3B82F6',
@@ -178,6 +184,15 @@ export class SystemLogger {
 
     const timestamp = new Date().toLocaleTimeString();
     const logMessage = `[${timestamp}] [${level}] ${module}.${action}: ${message}`;
+
+    // IntelligentPerformanceMonitor Logic: Filter internal errors
+    if (level === 'ERROR' || level === 'CRITICAL') {
+      const isInternal = error?.message?.includes('Internal') || message.includes('Internal');
+      if (isInternal && import.meta.env?.MODE === 'production') {
+        console.log(`%c[Security] Error internal logged to Vault due to security policy.`, 'color: #DC2626');
+        return;
+      }
+    }
 
     console.log(`%c${logMessage}`, `color: ${colors[level]}; font-weight: ${level === 'ERROR' || level === 'CRITICAL' ? 'bold' : 'normal'}`);
 

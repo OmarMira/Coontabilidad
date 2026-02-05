@@ -364,9 +364,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
         <button
           onClick={() => {
-            if (confirm('¿Deseas cerrar la sesión?')) {
-              logout();
-            }
+            logout();
           }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs"
         >

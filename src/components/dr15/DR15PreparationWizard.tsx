@@ -132,28 +132,47 @@ const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, up
 };
 
 const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) => {
-    const handleDownloadPDF = () => {
-        const companyData = {
-            name: 'AccountExpress Next-Gen',
-            fein: '12-3456789',
-            address: '123 Business St',
-            city: 'Miami',
-            state: 'FL',
-            zipCode: '33101'
-        };
+    const [isProcessing, setIsProcessing] = useState(false);
 
-        dr15PDFGenerator.downloadPDF(data, companyData);
+    const handleDownloadPDF = async () => {
+        setIsProcessing(true);
+        try {
+            const companyData = {
+                name: 'AccountExpress Next-Gen',
+                fein: '12-3456789',
+                address: '123 Business St',
+                city: 'Miami',
+                state: 'FL',
+                zipCode: '33101'
+            };
+
+            // Usamos la versión ASYNC que utiliza Workers (Zero Lag)
+            await dr15PDFGenerator.downloadPDF(data, companyData);
+        } catch (error) {
+            console.error(error);
+            alert("Error generando PDF: " + (error as Error).message);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
         <div className="space-y-6 text-center py-4">
             <div className="flex justify-center">
-                <CheckCircle className="w-16 h-16 text-green-500" />
+                {isProcessing ? (
+                    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                    <CheckCircle className="w-16 h-16 text-green-500" />
+                )}
             </div>
             <div>
-                <h3 className="text-xl font-bold text-white">Listo para Generar</h3>
+                <h3 className="text-xl font-bold text-white">
+                    {isProcessing ? 'Procesando en Segundo Plano...' : 'Listo para Generar'}
+                </h3>
                 <p className="text-gray-400 mt-2">
-                    El reporte DR-15 para el periodo <span className="text-white font-mono">{data.period}</span> está listo.
+                    {isProcessing
+                        ? 'El Worker está compilando el reporte sin congelar tu interfaz.'
+                        : <>El reporte DR-15 para el periodo <span className="text-white font-mono">{data.period}</span> está listo.</>}
                 </p>
             </div>
 
@@ -169,17 +188,22 @@ const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) =
             {/* Botón de descarga PDF */}
             <Button
                 onClick={handleDownloadPDF}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isProcessing}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                <Download className="w-4 h-4 mr-2" />
-                📥 Descargar PDF DR-15
+                <Download className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-bounce' : ''}`} />
+                {isProcessing ? 'Generando PDF (Worker)...' : '📥 Descargar PDF DR-15'}
             </Button>
 
-            <Button onClick={() => updateData({ confirmed: true })} className="w-full bg-green-600 hover:bg-green-700 text-white">
+            <Button
+                onClick={() => updateData({ confirmed: true })}
+                disabled={isProcessing}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
                 <Shield className="w-4 h-4 mr-2" />
                 Finalizar y Firmar Reporte
             </Button>
-            <Button variant="ghost" onClick={onBack} className="w-full text-gray-400">Volver a Revisar</Button>
+            <Button variant="ghost" onClick={isProcessing ? undefined : onBack} disabled={isProcessing} className="w-full text-gray-400">Volver a Revisar</Button>
         </div>
     );
 };

@@ -94,7 +94,7 @@ export const BudgetManager: React.FC = () => {
         if (summary) {
           totalBudgeted += summary.total_budgeted;
           totalActual += summary.total_actual;
-          
+
           const status = getBudgetExecutionStatus(budget.id);
           if (status && (status.status === 'at_risk' || status.status === 'over_budget')) {
             budgetsAtRisk++;
@@ -177,8 +177,8 @@ export const BudgetManager: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Presupuestos</h1>
-          <p className="text-gray-600 mt-1">Gestión y control de presupuestos</p>
+          <h1 className="text-3xl font-bold text-white">Presupuestos</h1>
+          <p className="text-slate-400 mt-1">Gestión y control de presupuestos</p>
         </div>
         {activeView === 'list' && canCreate && (
           <Button onClick={handleCreateBudget} className="flex items-center gap-2">
@@ -212,66 +212,66 @@ export const BudgetManager: React.FC = () => {
       {/* Summary KPIs - Only show in list view */}
       {activeView === 'list' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card>
+          <Card className="bg-slate-900 border-slate-800 text-white">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Presupuestos</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total_budgets}</p>
+                  <p className="text-sm font-medium text-slate-400">Total Presupuestos</p>
+                  <p className="text-2xl font-bold text-white">{stats.total_budgets}</p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-600" />
+                <FileText className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-slate-900 border-slate-800 text-white">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Activos</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.active_budgets}</p>
+                  <p className="text-sm font-medium text-slate-400">Activos</p>
+                  <p className="text-2xl font-bold text-green-400">{stats.active_budgets}</p>
                 </div>
-                <Calendar className="h-8 w-8 text-green-600" />
+                <Calendar className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-slate-900 border-slate-800 text-white">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Presupuestado</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-slate-400">Total Presupuestado</p>
+                  <p className="text-2xl font-bold text-white">
                     ${(stats.total_budgeted / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <DollarSign className="h-8 w-8 text-blue-600" />
+                <DollarSign className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-slate-900 border-slate-800 text-white">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Ejecutado</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-slate-400">Total Ejecutado</p>
+                  <p className="text-2xl font-bold text-white">
                     ${(stats.total_actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-purple-600" />
+                <TrendingUp className="h-8 w-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-slate-900 border-slate-800 text-white">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">En Riesgo</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.budgets_at_risk}</p>
+                  <p className="text-sm font-medium text-slate-400">En Riesgo</p>
+                  <p className="text-2xl font-bold text-red-400">{stats.budgets_at_risk}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-600" />
+                <AlertTriangle className="h-8 w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>

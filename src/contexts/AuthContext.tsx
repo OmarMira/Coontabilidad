@@ -208,10 +208,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const logout = () => {
-        setUser(null);
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = '/';
+        try {
+            setUser(null);
+            localStorage.removeItem('accountexpress_user');
+            localStorage.removeItem('gdrive_token'); // Ensure this is also cleared
+
+            // Clear everything else
+            localStorage.clear();
+            sessionStorage.clear();
+
+            console.log('Sesión cerrada correctamente');
+        } catch (error) {
+            console.error('Error durante cierre de sesión:', error);
+        } finally {
+            // Force hard reload to login page
+            window.location.href = '/';
+            // Fallback reload if router doesn't pick it up
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        }
     };
 
     const refreshUser = async () => {

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getBudgetVarianceAnalysis, type BudgetVarianceAnalysis } from '@/database/simple-db';
 import { Download, Filter } from 'lucide-react';
-import {
-  getBudgetVarianceAnalysis,
-  generateBudgetAlerts,
-  type BudgetVarianceAnalysis
-} from '@/database/simple-db';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface BudgetVarianceReportProps {
   budgetId: number;
@@ -14,9 +12,8 @@ interface BudgetVarianceReportProps {
 
 export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budgetId }) => {
   const [varianceData, setVarianceData] = useState<BudgetVarianceAnalysis[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [filterType, setFilterType] = useState<'all' | 'over' | 'under' | 'alerts'>('all');
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<'ALL' | 'OVER_BUDGET' | 'UNDER_BUDGET'>('ALL');
 
   useEffect(() => {
     loadData();
@@ -25,10 +22,8 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
   const loadData = () => {
     try {
       setLoading(true);
-      const variance = getBudgetVarianceAnalysis(budgetId);
-      const alertsData = generateBudgetAlerts(budgetId);
-      setVarianceData(variance);
-      setAlerts(alertsData);
+      const data = getBudgetVarianceAnalysis(budgetId);
+      setVarianceData(data);
     } catch (error) {
       console.error('Error loading variance report:', error);
     } finally {
@@ -37,195 +32,184 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
   };
 
   const filteredData = varianceData.filter(item => {
-    if (filterType === 'all') return true;
-    if (filterType === 'over') return item.ytd_variance > 0;
-    if (filterType === 'under') return item.ytd_variance < 0;
-    if (filterType === 'alerts') {
-      return alerts.some(alert => alert.account_number === item.account_number);
-    }
+    if (filterType === 'OVER_BUDGET') return item.ytd_variance > 0;
+    if (filterType === 'UNDER_BUDGET') return item.ytd_variance < 0;
     return true;
   });
 
-  const handleExportCSV = () => {
-    const headers = ['Cuenta', 'Nombre', 'Presupuesto Anual', 'Presupuesto YTD', 'Real YTD', 'Varianza', 'Varianza %'];
-    const rows = filteredData.map(item => [
-      item.account_number,
-      item.account_name,
-      (item.annual_budget / 100).toFixed(2),
-      (item.ytd_budget / 100).toFixed(2),
-      (item.ytd_actual / 100).toFixed(2),
-      (item.ytd_variance / 100).toFixed(2),
-      item.ytd_variance_percent.toFixed(2)
-    ]);
+  const totalVariance = filteredData.reduce((acc, item) => acc + item.ytd_variance, 0);
+
+  const exportToCSV = () => {
+    const headers = ['Cuenta', 'Nombre', 'Presupuestado (YTD)', 'Real (YTD)', 'Varianza', 'Varianza %'];
+    const rows = filteredData.map(item => {
+      const row = [
+        item.account_number,
+        '"' + item.account_name + '"',
+        (item.ytd_budget / 100).toFixed(2),
+        (item.ytd_actual / 100).toFixed(2),
+        (item.ytd_variance / 100).toFixed(2),
+        item.ytd_variance_percent.toFixed(2) + '%'
+      ];
+      return row.join(',');
+    });
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.join(','))
+      ...rows
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `budget_variance_report_${budgetId}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'reporte_varianza_' + budgetId + '.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
-  const totals = filteredData.reduce(
-    (acc, item) => ({
-      budgeted: acc.budgeted + item.ytd_budget,
-      actual: acc.actual + item.ytd_actual,
-      variance: acc.variance + item.ytd_variance
-    }),
-    { budgeted: 0, actual: 0, variance: 0 }
-  );
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    // Título del reporte
+    doc.setFontSize(18);
+    doc.text('Reporte de Varianza Presupuestaria', 14, 22);
+
+    // Fecha de generación
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    const date = new Date().toLocaleDateString('es-ES');
+    doc.text('Generado: ' + date, 14, 30);
+
+    // Resumen
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Total Varianza: $' + (totalVariance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }), 14, 40);
+
+    // Tabla de datos
+    const tableColumn = ["Cuenta", "Nombre", "Presupuestado", "Real", "Varianza", "%"];
+    const tableRowsBuffer: any[] = [];
+
+    filteredData.forEach(item => {
+      const budgetData = [
+        item.account_number,
+        item.account_name,
+        '$' + (item.ytd_budget / 100).toFixed(2),
+        '$' + (item.ytd_actual / 100).toFixed(2),
+        '$' + (item.ytd_variance / 100).toFixed(2),
+        item.ytd_variance_percent.toFixed(1) + '%'
+      ];
+      tableRowsBuffer.push(budgetData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRowsBuffer,
+      startY: 45,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    doc.save('reporte_varianza_' + budgetId + '.pdf');
+  };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Generando reporte...</p>
-          </div>
+      <Card className="bg-slate-900 border-slate-800 text-white">
+        <CardContent className="py-12 text-center text-slate-400">
+          Cargando reporte...
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="bg-slate-900 border-slate-800 text-white">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Reporte de Análisis de Varianza</CardTitle>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <CardTitle>Reporte de Varianza</CardTitle>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleExportCSV}>
+            <div className="flex items-center bg-slate-800 rounded-md border border-slate-700 p-1">
+              <Filter className="h-4 w-4 text-slate-400 ml-2 mr-1" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as any)}
+                className="bg-transparent border-none text-sm text-white focus:ring-0 cursor-pointer py-1"
+              >
+                <option value="ALL">Todo</option>
+                <option value="OVER_BUDGET">Sobre Presupuesto</option>
+                <option value="UNDER_BUDGET">Bajo Presupuesto</option>
+              </select>
+            </div>
+            <Button variant="outline" size="sm" onClick={exportToCSV} className="border-slate-700 text-slate-300 hover:bg-slate-800">
               <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
+              CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportToPDF} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+              <Download className="h-4 w-4 mr-2" />
+              PDF
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Filters */}
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterType('all')}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                filterType === 'all'
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todas ({varianceData.length})
-            </button>
-            <button
-              onClick={() => setFilterType('over')}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                filterType === 'over'
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Sobre Presupuesto ({varianceData.filter(v => v.ytd_variance > 0).length})
-            </button>
-            <button
-              onClick={() => setFilterType('under')}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                filterType === 'under'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Bajo Presupuesto ({varianceData.filter(v => v.ytd_variance < 0).length})
-            </button>
-            <button
-              onClick={() => setFilterType('alerts')}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                filterType === 'alerts'
-                  ? 'bg-yellow-100 text-yellow-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Con Alertas ({alerts.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Summary Totals */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
-          <div>
-            <p className="text-sm font-medium text-blue-900">Total Presupuestado (YTD)</p>
-            <p className="text-2xl font-bold text-blue-900">
-              ${(totals.budgeted / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-blue-900">Total Real (YTD)</p>
-            <p className="text-2xl font-bold text-blue-900">
-              ${(totals.actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-blue-900">Varianza Total</p>
-            <p className={`text-2xl font-bold ${totals.variance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              {totals.variance > 0 ? '+' : ''}
-              ${(totals.variance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </p>
+      <CardContent>
+        {/* Summary Header */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+            <p className="text-sm font-medium text-slate-400">Total Varianza (YTD)</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`text-2xl font-bold ${totalVariance > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                ${Math.abs(totalVariance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </span>
+              <span className="text-sm text-slate-500">
+                {totalVariance > 0 ? 'Sobre presupuesto' : 'Bajo presupuesto'}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Variance Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Cuenta</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Nombre</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Presup. Anual</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Presup. YTD</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Real YTD</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Varianza</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Varianza %</th>
+        <div className="overflow-x-auto rounded-lg border border-slate-800">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-950">
+              <tr>
+                <th className="text-left py-3 px-4 font-semibold text-slate-400">Cuenta</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-400">Nombre</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">Presupuestado</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">Real</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">Varianza</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">%</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredData.map((item) => {
-                const hasAlert = alerts.some(alert => alert.account_number === item.account_number);
-                return (
-                  <tr
-                    key={item.account_number}
-                    className={`border-b border-gray-100 ${hasAlert ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}
-                  >
-                    <td className="py-3 px-4 font-medium text-gray-900">{item.account_number}</td>
-                    <td className="py-3 px-4 text-gray-700">{item.account_name}</td>
-                    <td className="py-3 px-4 text-right text-gray-900">
-                      ${(item.annual_budget / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-900">
-                      ${(item.ytd_budget / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-900">
-                      ${(item.ytd_actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className={`py-3 px-4 text-right font-medium ${item.ytd_variance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {item.ytd_variance > 0 ? '+' : ''}
-                      ${(item.ytd_variance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className={`py-3 px-4 text-right font-medium ${item.ytd_variance_percent > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {item.ytd_variance_percent > 0 ? '+' : ''}
-                      {item.ytd_variance_percent.toFixed(1)}%
-                    </td>
-                  </tr>
-                );
-              })}
+            <tbody className="divide-y divide-slate-800">
+              {filteredData.map((item) => (
+                <tr key={item.account_number} className="hover:bg-slate-800/60 transition-colors">
+                  <td className="py-3 px-4 font-medium text-slate-200">{item.account_number}</td>
+                  <td className="py-3 px-4 text-slate-300">{item.account_name}</td>
+                  <td className="py-3 px-4 text-right text-slate-200">
+                    ${(item.ytd_budget / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="py-3 px-4 text-right text-slate-200">
+                    ${(item.ytd_actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className={`py-3 px-4 text-right font-medium ${item.ytd_variance > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    ${(item.ytd_variance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className={`py-3 px-4 text-right font-medium ${item.ytd_variance > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    {item.ytd_variance_percent.toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
         {filteredData.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-slate-500">
             <p>No hay datos para mostrar con los filtros seleccionados</p>
           </div>
         )}

@@ -143,10 +143,14 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                             onChange={e => setFormData({ ...formData, supplier_id: Number(e.target.value) })}
                         >
                             <option value={0}>Seleccionar...</option>
+                            {suppliers.length === 0 && <option disabled>No hay proveedores registrados</option>}
                             {suppliers.map(s => (
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>
+                        {suppliers.length === 0 && (
+                            <p className="text-xs text-red-400 mt-1">⚠️ Debe crear proveedores primero en el módulo de Compras.</p>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha Emisión</label>
@@ -203,10 +207,14 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                                 onChange={e => setNewItem({ ...newItem, product_id: Number(e.target.value) })}
                             >
                                 <option value={0}>Agregar producto...</option>
+                                {products.length === 0 && <option disabled>No hay productos activos</option>}
                                 {products.map(p => (
                                     <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>
                                 ))}
                             </select>
+                            {products.length === 0 && (
+                                <p className="text-xs text-red-400 mt-1">⚠️ No hay productos. Registre productos en Inventario.</p>
+                            )}
                         </div>
                         <div className="w-24">
                             <input

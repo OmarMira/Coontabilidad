@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Plus, ShoppingCart, RefreshCw, Truck, FileText } from 'lucide-react';
-import { PurchaseOrder, getPurchaseOrders } from '@/database/simple-db';
+import { PurchaseOrder, getPurchaseOrders, getSuppliers, getProducts } from '@/database/simple-db';
 import { PurchaseOrderReceiving } from './PurchaseOrderReceiving';
+import { toast } from 'react-hot-toast';
 
 export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateToKardex?: (refId: number) => void }> = ({ onCreateNew, onNavigateToKardex }) => {
     const [orders, setOrders] = useState<PurchaseOrder[]>([]);
@@ -16,6 +17,31 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
         } catch (error) {
             console.error(error);
         }
+    };
+
+    const handleCreateNew = () => {
+        const suppliers = getSuppliers();
+        const products = getProducts();
+
+        const hasSuppliers = suppliers.length > 0;
+        const hasProducts = products.length > 0;
+
+        if (!hasSuppliers && !hasProducts) {
+            toast.error("Faltan Proveedores y Productos. Registre ambos antes de crear una orden.");
+            return;
+        }
+
+        if (!hasSuppliers) {
+            toast.error("Faltan Proveedores. Registre al menos un proveedor.");
+            return;
+        }
+
+        if (!hasProducts) {
+            toast.error("Faltan Productos. Registre al menos un producto.");
+            return;
+        }
+
+        onCreateNew();
     };
 
     useEffect(() => {
@@ -34,7 +60,10 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                         <Button variant="outline" size="icon" onClick={loadOrders} className="border-slate-700 text-slate-400">
                             <RefreshCw className="w-4 h-4" />
                         </Button>
-                        <Button onClick={onCreateNew} className="bg-blue-600 hover:bg-blue-700">
+                        <Button
+                            onClick={handleCreateNew}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
                             <Plus className="w-4 h-4 mr-2" />
                             Nueva Orden
                         </Button>

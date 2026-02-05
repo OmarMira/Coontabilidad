@@ -110,8 +110,7 @@ export default defineConfig({
     minify: 'esbuild',
     // Strip console.log and console.warn in production (OWASP A03:2021 compliance)
     esbuild: {
-      drop: import.meta.env?.MODE === 'production' ? ['console', 'debugger'] : [],
-      pure: import.meta.env?.MODE === 'production' ? ['console.log', 'console.warn'] : []
+      drop: ['console', 'debugger'],
     },
     // Improve CSS code splitting
     cssCodeSplit: true,

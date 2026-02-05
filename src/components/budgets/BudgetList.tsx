@@ -68,10 +68,10 @@ export const BudgetList: React.FC<BudgetListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      DRAFT: { label: 'Borrador', color: 'bg-gray-100 text-gray-800', icon: Clock },
-      APPROVED: { label: 'Aprobado', color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
-      ACTIVE: { label: 'Activo', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      CLOSED: { label: 'Cerrado', color: 'bg-red-100 text-red-800', icon: AlertCircle }
+      DRAFT: { label: 'Borrador', color: 'bg-slate-700 text-slate-300', icon: Clock },
+      APPROVED: { label: 'Aprobado', color: 'bg-blue-900/40 text-blue-300 border border-blue-800', icon: CheckCircle },
+      ACTIVE: { label: 'Activo', color: 'bg-green-900/40 text-green-300 border border-green-800', icon: CheckCircle },
+      CLOSED: { label: 'Cerrado', color: 'bg-red-900/40 text-red-300 border border-red-800', icon: AlertCircle }
     };
 
     const badge = badges[status as keyof typeof badges] || badges.DRAFT;
@@ -90,22 +90,22 @@ export const BudgetList: React.FC<BudgetListProps> = ({
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
   return (
-    <Card>
+    <Card className="bg-slate-900 border-slate-800 text-slate-100">
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <CardTitle>Lista de Presupuestos</CardTitle>
-          
+
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-2">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="text"
                 placeholder="Buscar presupuesto..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full sm:w-64"
+                className="pl-10 w-full sm:w-64 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
@@ -113,7 +113,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
             <select
               value={filterYear}
               onChange={(e) => onFilterYearChange(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-md text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos los años</option>
               {yearOptions.map(year => (
@@ -125,7 +125,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
             <select
               value={filterStatus}
               onChange={(e) => onFilterStatusChange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-md text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos los estados</option>
               <option value="DRAFT">Borrador</option>
@@ -139,56 +139,56 @@ export const BudgetList: React.FC<BudgetListProps> = ({
 
       <CardContent>
         {filteredBudgets.length === 0 ? (
-          <div className="text-center py-12">
-            <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">No se encontraron presupuestos</p>
-            <p className="text-gray-500 text-sm mt-2">
+          <div className="text-center py-12 border border-slate-800 rounded-lg bg-slate-900/50">
+            <DollarSign className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-400 text-lg">No se encontraron presupuestos</p>
+            <p className="text-slate-500 text-sm mt-2">
               {searchTerm || filterStatus || filterYear
                 ? 'Intenta ajustar los filtros de búsqueda'
                 : 'Crea tu primer presupuesto para comenzar'}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-slate-800">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nombre</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Año Fiscal</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Período</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Departamento</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Monto Total</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">Estado</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">Acciones</th>
+              <thead className="bg-slate-950">
+                <tr>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Nombre</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Año Fiscal</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Período</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Departamento</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Monto Total</th>
+                  <th className="text-center py-3 px-4 font-semibold text-slate-400">Estado</th>
+                  <th className="text-center py-3 px-4 font-semibold text-slate-400">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-800">
                 {filteredBudgets.map((budget) => (
                   <tr
                     key={budget.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    className="bg-slate-900 hover:bg-slate-800/60 transition-colors"
                   >
                     <td className="py-3 px-4">
-                      <div className="font-medium text-gray-900">{budget.budget_name}</div>
+                      <div className="font-medium text-slate-200">{budget.budget_name}</div>
                       {budget.notes && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">{budget.notes}</div>
+                        <div className="text-sm text-slate-500 truncate max-w-xs">{budget.notes}</div>
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Calendar className="h-4 w-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <Calendar className="h-4 w-4 text-slate-500" />
                         {budget.fiscal_year}
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
+                    <td className="py-3 px-4 text-sm text-slate-400">
                       {new Date(budget.start_date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
                       {' - '}
                       {new Date(budget.end_date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
                     </td>
-                    <td className="py-3 px-4 text-gray-700">
+                    <td className="py-3 px-4 text-slate-300">
                       {budget.department || '-'}
                     </td>
-                    <td className="py-3 px-4 text-right font-medium text-gray-900">
+                    <td className="py-3 px-4 text-right font-medium text-slate-200 font-mono">
                       ${(budget.total_budget_amount / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -201,6 +201,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
                           variant="ghost"
                           onClick={() => onViewBudget(budget)}
                           title="Ver detalles"
+                          className="text-slate-400 hover:text-white hover:bg-slate-700"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -211,6 +212,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
                               variant="ghost"
                               onClick={() => onEditBudget(budget)}
                               title="Editar"
+                              className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -220,7 +222,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
                               onClick={() => handleDelete(budget)}
                               disabled={deletingId === budget.id}
                               title="Eliminar"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -237,7 +239,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
 
         {/* Results count */}
         {filteredBudgets.length > 0 && (
-          <div className="mt-4 text-sm text-gray-600 text-center">
+          <div className="mt-4 text-sm text-slate-500 text-center">
             Mostrando {filteredBudgets.length} de {budgets.length} presupuestos
           </div>
         )}
