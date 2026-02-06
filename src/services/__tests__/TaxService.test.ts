@@ -44,7 +44,7 @@ describe('TaxService Logic', () => {
         expect(result.totalRate).toBe(700);
         expect(DatabaseService.executeQuery).toHaveBeenCalledWith(
             expect.stringContaining('SELECT * FROM florida_tax_rates'),
-            ['MIAMI-DADE']
+            ['MIAMI-DADE', 'MIAMI-DADE'] // El query usa el parámetro dos veces (county_code y county_name)
         );
     });
 

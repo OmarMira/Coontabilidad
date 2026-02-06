@@ -3,6 +3,8 @@
 import SQLiteFactory from 'wa-sqlite/dist/wa-sqlite-async.mjs';
 // @ts-ignore
 import { IDBBatchAtomicVFS } from 'wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
+// @ts-ignore
+import initSqlJs from 'sql.js';
 
 export class SQLiteEngine {
     private sqlite3: any = null;
@@ -21,8 +23,29 @@ export class SQLiteEngine {
     async initialize(databaseName?: string): Promise<void> {
         if (databaseName) this.dbName = databaseName;
 
+        // Use sql.js for testing environment
+        if (process.env.NODE_ENV === 'test') {
+            try {
+                console.log('🧪 Initializing sql.js for testing...');
+                const SQL = await initSqlJs({
+                    // In Node/Vitest, locatFile might not be needed if wasm is found or fetched via MSW
+                    // But explicitly pointing to it is safer if we can.
+                    // For now relying on default or MSW interception.
+                });
+                this.sqlJsDB = new SQL.Database();
+                console.log('✅ sql.js initialized successfully');
+
+                // Initialize settings compatible with sql.js
+                this.sqlJsDB.run('PRAGMA foreign_keys=ON;');
+                return;
+            } catch (e) {
+                console.error('❌ Failed to initialize sql.js:', e);
+                throw e;
+            }
+        }
+
         try {
-            console.log('ðŸ”„ Initializing wa-sqlite...');
+            console.log('🔄 Initializing wa-sqlite...');
 
             // 1. Initialize SQLite3 Module
             const module = await SQLiteFactory();
@@ -41,20 +64,21 @@ export class SQLiteEngine {
                 this.dbName
             );
 
+
             // 4. Initialize Database Settings
             await this.exec('PRAGMA journal_mode=DELETE'); // IDB often prefers DELETE or MEMORY, WAL can be tricky without OPFS
             await this.exec('PRAGMA synchronous=NORMAL');
             await this.exec('PRAGMA foreign_keys=ON');
             await this.exec('PRAGMA cache_size=-5000');
 
-            console.log('âœ… SQLiteEngine (wa-sqlite) initialized successfully');
+            console.log('✅ SQLiteEngine (wa-sqlite) initialized successfully');
 
             // Verify persistence
             await this.exec('CREATE TABLE IF NOT EXISTS system_check (id INTEGER PRIMARY KEY, initialized_at TEXT)');
             await this.run('INSERT INTO system_check (initialized_at) VALUES (?)', [new Date().toISOString()]);
 
         } catch (e) {
-            console.error('âŒ SQLiteEngine initialization failed:', e);
+            console.error('❌ SQLiteEngine initialization failed:', e);
             throw e;
         }
     }
@@ -186,6 +210,31 @@ export class SQLiteEngine {
     }
 
     async executeTransaction<T>(operation: () => Promise<T>): Promise<T> {
+        // En modo test con sql.js, no hay soporte nativo de transacciones async
+        // Ejecutamos directamente la operación sin transacción explícita
+        if (this.sqlJsDB) {
+            try {
+                // Check if we're already in a transaction
+                const inTransaction = this.sqlJsDB.exec('SELECT 1 FROM sqlite_master WHERE type="table" LIMIT 1');
+                // sql.js doesn't have a way to check transaction state, so we just try-catch
+                try {
+                    this.sqlJsDB.run('BEGIN TRANSACTION');
+                    const result = await operation();
+                    this.sqlJsDB.run('COMMIT');
+                    return result;
+                } catch (error: any) {
+                    // If we get "cannot start a transaction within a transaction", just run the operation
+                    if (error.message && error.message.includes('cannot start a transaction within a transaction')) {
+                        return await operation();
+                    }
+                    this.sqlJsDB.run('ROLLBACK');
+                    throw error;
+                }
+            } catch (error) {
+                throw error;
+            }
+        }
+
         if (!this.db) throw new Error('Database not initialized');
 
         try {
@@ -269,13 +318,13 @@ export class SQLiteEngine {
      */
     async sync(): Promise<void> {
         if (!this.sqlite3 || this.db === null) return;
-        
+
         try {
             // Forzar flush de cambios pendientes
             if (this.vfs && typeof this.vfs.flush === 'function') {
                 await this.vfs.flush();
             }
-            
+
             // Ejecutar checkpoint para asegurar que todo se escriba
             await this.exec('PRAGMA wal_checkpoint(TRUNCATE)');
         } catch (e) {

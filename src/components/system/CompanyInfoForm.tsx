@@ -32,12 +32,19 @@ export const CompanyInfoForm: React.FC = () => {
         if (isCloudLinked) {
             // Unlink logic
             if (window.confirm('¿Desea desvincular Google Drive? Las copias de seguridad automáticas se detendrán.')) {
-                localStorage.removeItem('gdrive_token');
+                import('../../services/GoogleAuthService').then(mod => {
+                    mod.GoogleAuthService.signOut();
+                });
                 setIsCloudLinked(false);
             }
         } else {
             // Link logic
-            BackupService.initiateCloudLink();
+            // Load service dynamically to avoid circular deps if any, or just direct import
+            import('../../services/GoogleAuthService').then(mod => {
+                mod.GoogleAuthService.signIn().catch(err => {
+                    alert("Error inicializando Google Auth: " + err.message);
+                });
+            });
         }
     };
 

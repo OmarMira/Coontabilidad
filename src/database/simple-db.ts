@@ -2326,6 +2326,7 @@ const initializeSchema = async (db: any) => {
     entry_date DATE NOT NULL,
     reference TEXT,
     description TEXT,
+    notes TEXT,
     total_debit DECIMAL(15, 2) NOT NULL CHECK(total_debit >= 0),
     total_credit DECIMAL(15, 2) NOT NULL CHECK(total_credit >= 0),
     is_balanced BOOLEAN GENERATED ALWAYS AS(total_debit = total_credit) STORED,
@@ -2498,6 +2499,59 @@ SELECT
 
   console.log('Database schema created successfully');
   console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN N°1 IMPLEMENTADA');
+
+  // ==========================================
+  // TABLAS DE PRESUPUESTOS (BUDGETS) - FASE 2
+  // ==========================================
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS budgets(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      budget_name TEXT NOT NULL,
+      fiscal_year INTEGER NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      status TEXT DEFAULT 'DRAFT' CHECK(status IN('DRAFT', 'APPROVED', 'ACTIVE', 'CLOSED')),
+      total_budget_amount INTEGER DEFAULT 0, -- Store in cents
+      department TEXT,
+      notes TEXT,
+      alert_threshold_percentage INTEGER DEFAULT 10,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER REFERENCES users(id) DEFAULT 1,
+      updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+      approved_by INTEGER REFERENCES users(id),
+      approved_at DATETIME
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS budget_lines(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      budget_id INTEGER NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
+      account_number INTEGER NOT NULL,
+      annual_amount INTEGER DEFAULT 0, -- Store in cents
+      distribution_type TEXT DEFAULT 'EQUAL' CHECK(distribution_type IN('EQUAL', 'CUSTOM', 'ZERO')),
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS budget_periods(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      budget_line_id INTEGER NOT NULL REFERENCES budget_lines(id) ON DELETE CASCADE,
+      period_type TEXT DEFAULT 'MONTHLY' CHECK(period_type IN('MONTHLY', 'QUARTERLY')),
+      period_number INTEGER NOT NULL,
+      period_start_date DATE NOT NULL,
+      period_end_date DATE NOT NULL,
+      budgeted_amount INTEGER DEFAULT 0, -- Store in cents
+      actual_amount INTEGER DEFAULT 0,
+      variance_amount INTEGER DEFAULT 0,
+      variance_percent DECIMAL(5, 2) DEFAULT 0.00,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
 
   // Tabla de historial de conversaciones IA
@@ -2897,9 +2951,9 @@ GROUP BY ba.id
             const roleId = roleMap[sysUser.role] || 1;
 
             db.run(`
-            INSERT INTO users(username, email, display_name, password_hash, role_id, is_active)
-VALUES(?, ?, ?, ?, ?, 1)
-          `, [sysUser.username, sysUser.email, sysUser.display_name, hash, roleId]);
+            INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active)
+VALUES(?, ?, ?, ?, ?, ?, 1)
+          `, [sysUser.username, sysUser.email, sysUser.display_name, sysUser.display_name, hash, roleId]);
 
             logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} (${sysUser.email}) creado correctamente`);
           } else {
@@ -7107,8 +7161,10 @@ export const generateSupplierPaymentNumber = (): string => {
 export const createPayment = (paymentData: Partial<Payment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
+  let transactionStarted = false;
   try {
     db.run('BEGIN TRANSACTION');
+    transactionStarted = true;
 
     // 1. Validaciones básicas
     if (!paymentData.customer_id || !paymentData.amount) {
@@ -7160,11 +7216,14 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
       }
     }
 
-    // 5. Auditoría
+    db.run('COMMIT');
+    transactionStarted = false;
+    
+    // 5. Auditoría (después del COMMIT para evitar problemas de transacción)
     const auditData = { ...paymentData, id: paymentId, payment_number: paymentNumber };
     logAuditEvent('payments', paymentId, 'INSERT', null, auditData, userId);
-
-    // 6. Generar Asiento Contable
+    
+    // 6. Generar Asiento Contable (después del COMMIT para evitar transacciones anidadas)
     const fullPayment: Payment = {
       id: paymentId,
       customer_id: paymentData.customer_id,
@@ -7180,15 +7239,24 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
 
     const customer = getCustomerById(paymentData.customer_id);
     if (customer) {
-      generatePaymentReceivedJournalEntry(fullPayment, customer, userId);
+      try {
+        generatePaymentReceivedJournalEntry(fullPayment, customer, userId);
+      } catch (journalError) {
+        logger.warn('Payments', 'journal_entry_failed', 'Error al generar asiento contable, pero pago creado', { journalError }, journalError as Error);
+      }
     }
-
-    db.run('COMMIT');
+    
     logger.info('Payments', 'create_success', 'Pago de cliente creado correctamente', { paymentId, userId });
     return { success: true, message: 'Pago registrado correctamente', paymentId };
 
   } catch (error) {
-    db.run('ROLLBACK');
+    if (transactionStarted) {
+      try {
+        db.run('ROLLBACK');
+      } catch (rollbackError) {
+        logger.error('Payments', 'rollback_failed', 'Error al hacer rollback', { rollbackError }, rollbackError as Error);
+      }
+    }
     logger.error('Payments', 'create_failed', 'Error al crear pago', { error }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }

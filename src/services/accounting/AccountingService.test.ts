@@ -49,14 +49,20 @@ describe('AccountingService', () => {
                 id TEXT PRIMARY KEY,
                 entry_date DATE NOT NULL,
                 description TEXT NOT NULL,
+                reference TEXT,
                 reference_type TEXT,
                 reference_id TEXT,
+                notes TEXT,
                 logic_clock INTEGER NOT NULL,
                 status TEXT NOT NULL DEFAULT 'DRAFT',
                 posted_at DATETIME,
                 posted_by TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                created_by TEXT
+                created_by INTEGER,
+                updated_by INTEGER,
+                verified_by INTEGER,
+                verified_at DATETIME,
+                is_balanced BOOLEAN DEFAULT 1
             )
         `);
 
@@ -117,6 +123,35 @@ describe('AccountingService', () => {
     beforeEach(async () => {
         // Reset logic_clock before each test
         await db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
+        
+        // Clear all journal entries and ledger lines
+        // First, temporarily disable triggers to allow deletion of POSTED entries
+        await db.exec(`DROP TRIGGER IF EXISTS prevent_journal_delete`);
+        await db.exec(`DROP TRIGGER IF EXISTS prevent_ledger_delete`);
+        
+        await db.run(`DELETE FROM ledger_lines`);
+        await db.run(`DELETE FROM journal_entries`);
+        
+        // Recreate triggers
+        await db.exec(`
+            CREATE TRIGGER prevent_journal_delete
+            BEFORE DELETE ON journal_entries
+            FOR EACH ROW
+            WHEN OLD.status = 'POSTED'
+            BEGIN
+                SELECT RAISE(ABORT, 'Cannot delete POSTED journal entry');
+            END
+        `);
+
+        await db.exec(`
+            CREATE TRIGGER prevent_ledger_delete
+            BEFORE DELETE ON ledger_lines
+            FOR EACH ROW
+            WHEN (SELECT status FROM journal_entries WHERE id = OLD.journal_entry_id) = 'POSTED'
+            BEGIN
+                SELECT RAISE(ABORT, 'Cannot delete ledger line from POSTED journal entry');
+            END
+        `);
     });
 
     describe('ACCEPTANCE TEST 1: $100 Sale + $7 Tax', () => {

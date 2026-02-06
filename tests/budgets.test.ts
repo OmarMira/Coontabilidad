@@ -25,14 +25,14 @@ import {
 } from '../src/database/simple-db';
 
 describe('Budget Management - Unit Tests', () => {
-  
+
   beforeEach(async () => {
     // Initialize database before each test
     await initDB();
   });
 
   describe('createBudget', () => {
-    
+
     it('should create a budget with valid data', () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Test Budget 2024',
@@ -113,11 +113,11 @@ describe('Budget Management - Unit Tests', () => {
       const result = createBudget(budgetData, budgetLines);
 
       expect(result.success).toBe(true);
-      
+
       // Verify lines were created
       const lines = getBudgetLines(result.id!);
       expect(lines.length).toBe(3);
-      
+
       // Verify periods were generated for each line
       lines.forEach(line => {
         const periods = getBudgetPeriods(line.id);
@@ -137,13 +137,14 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      // This should fail during database insertion
-      expect(() => createBudget(budgetData, budgetLines)).toThrow();
+      // This should fail gracefully with success: false
+      const result = createBudget(budgetData, budgetLines);
+      expect(result.success).toBe(false);
     });
   });
 
   describe('updateBudget', () => {
-    
+
     it('should update budget header fields', () => {
       // Create a budget first
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
@@ -210,7 +211,7 @@ describe('Budget Management - Unit Tests', () => {
   });
 
   describe('deleteBudget', () => {
-    
+
     it('should delete DRAFT budgets', () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Budget to Delete',
@@ -262,7 +263,7 @@ describe('Budget Management - Unit Tests', () => {
   });
 
   describe('approveBudget', () => {
-    
+
     it('should approve DRAFT budgets (CP-3)', () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Budget to Approve',
@@ -316,7 +317,7 @@ describe('Budget Management - Unit Tests', () => {
   });
 
   describe('getBudgets with filters', () => {
-    
+
     it('should filter budgets by fiscal year', () => {
       // Create budgets for different years
       const budget2024: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
@@ -382,7 +383,7 @@ describe('Budget Management - Unit Tests', () => {
   });
 
   describe('Period generation', () => {
-    
+
     it('should generate 12 monthly periods for annual budget', () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Annual Budget',
@@ -403,7 +404,7 @@ describe('Budget Management - Unit Tests', () => {
       const periods = getBudgetPeriods(lines[0].id);
 
       expect(periods.length).toBe(12);
-      
+
       // Verify equal distribution
       const expectedMonthly = 120000 / 12; // $10.00 per month
       periods.forEach(period => {
@@ -438,7 +439,7 @@ describe('Budget Management - Unit Tests', () => {
   });
 
   describe('Variance calculations', () => {
-    
+
     it('should calculate variance correctly', () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Variance Test Budget',
@@ -455,7 +456,7 @@ describe('Budget Management - Unit Tests', () => {
       ];
 
       const result = createBudget(budgetData, budgetLines);
-      
+
       // Get variance analysis (will be 0 without actual transactions)
       const variance = getBudgetVarianceAnalysis(result.id!);
 
@@ -488,7 +489,7 @@ describe('Budget Management - Unit Tests', () => {
   });
 
   describe('Budget summary and alerts', () => {
-    
+
     it('should generate budget summary', () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Summary Test Budget',

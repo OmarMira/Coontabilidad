@@ -181,7 +181,7 @@ describe('FloridaTaxEngine', () => {
         it('should throw error for unknown county', () => {
             expect(() => {
                 taxEngine.calculateLineTax(100000, 'Unknown County');
-            }).toThrow('County not found');
+            }).toThrow(/County rates not loaded or not found|County not found/);
         });
 
         it('should handle exactly $5,000 amount', () => {

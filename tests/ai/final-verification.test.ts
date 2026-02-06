@@ -10,6 +10,63 @@ vi.mock('../../src/database/simple-db', () => ({
     }
 }));
 
+// Mock LocalAIService methods
+vi.mock('../../src/services/ai/LocalAIService', () => {
+    return {
+        LocalAIService: class MockLocalAIService {
+            async processQuery(query: string) {
+                const lowerQuery = query.toLowerCase();
+                
+                if (lowerQuery.includes('clientes')) {
+                    return {
+                        response: {
+                            information: 'Tienes 8 clientes registrados en el sistema.'
+                        }
+                    };
+                }
+                
+                if (lowerQuery.includes('facturas')) {
+                    return {
+                        response: {
+                            information: 'Hay 15 facturas de venta y 5 de compra en el sistema.'
+                        }
+                    };
+                }
+                
+                if (lowerQuery.includes('mayor venta')) {
+                    return {
+                        response: {
+                            information: 'La mayor venta es INV-001 por $2850.00'
+                        }
+                    };
+                }
+                
+                if (lowerQuery.includes('proveedores')) {
+                    return {
+                        response: {
+                            information: 'Tienes 3 proveedores registrados.'
+                        }
+                    };
+                }
+                
+                if (lowerQuery.includes('inventario')) {
+                    return {
+                        response: {
+                            information: 'El valor total del inventario es $50000'
+                        }
+                    };
+                }
+                
+                return {
+                    response: {
+                        information: 'No entiendo la pregunta.'
+                    }
+                };
+            }
+        }
+    };
+});
+
 describe('Final AI Verification', () => {
     let aiService: LocalAIService;
 

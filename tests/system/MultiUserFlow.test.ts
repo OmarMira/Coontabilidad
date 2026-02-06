@@ -181,7 +181,11 @@ describe('Multi-User System Flow & Isolation', () => {
         };
 
         const payRes = createPayment(paymentData, salesUserId);
+        console.log('Payment Result:', payRes);
         expect(payRes.success).toBe(true);
+
+        // Esperar a que se cree el audit trail (async operation)
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Verify Payment Attribution (Audit Trail)
         const auditRes = db?.exec(`

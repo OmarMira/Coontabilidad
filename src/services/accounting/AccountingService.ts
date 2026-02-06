@@ -330,12 +330,31 @@ export class AccountingService {
             const balance = await this.getAccountBalance(account.code);
 
             if (balance !== 0) {
+                let debitAmount = 0;
+                let creditAmount = 0;
+                
+                // Si el balance es positivo, va en el lado normal
+                // Si es negativo, va en el lado opuesto
+                if (account.normal_balance === 'DEBIT') {
+                    if (balance > 0) {
+                        debitAmount = balance;
+                    } else {
+                        creditAmount = Math.abs(balance);
+                    }
+                } else { // CREDIT
+                    if (balance > 0) {
+                        creditAmount = balance;
+                    } else {
+                        debitAmount = Math.abs(balance);
+                    }
+                }
+                
                 const entry: TrialBalanceEntry = {
                     accountCode: account.code,
                     accountName: account.name,
                     accountType: account.type,
-                    debit: account.normal_balance === 'DEBIT' && balance > 0 ? balance : 0,
-                    credit: account.normal_balance === 'CREDIT' && balance > 0 ? balance : 0
+                    debit: debitAmount,
+                    credit: creditAmount
                 };
 
                 trialBalance.push(entry);

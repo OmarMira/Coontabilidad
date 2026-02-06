@@ -3,6 +3,7 @@ import { BasicEncryption } from '../core/security/BasicEncryption';
 import { restoreDatabaseFromBackup, initDB } from '../database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
+import { BackupLocationService, BackupLocation } from './BackupLocationService';
 
 const BACKUP_SECRET = "IRON-CORE-MASTER-KEY-2026-FLORIDA";
 
@@ -46,20 +47,107 @@ export class BackupService {
 
   /**
    * Genera un backup cifrado (.aex) con firma HMAC/Checksum.
-   * Modificado para intentar subida a Cloud Vault si está configurado.
+   * NIVEL NASA: Permite elegir ubicación de guardado
    */
-  static async createBackup(onProgress?: (progress: any) => void): Promise<string> {
+  static async createBackup(
+    location?: BackupLocation,
+    onProgress?: (progress: any) => void
+  ): Promise<string> {
     // Ensure persistence is requested at least once
     await this.requestPersistentStorage();
 
     const backupJson = await this.createBackupLegacy(); // Usa la lógica robusta existente
+    const filename = `AccountExpress_Backup_${new Date().toISOString().replace(/[:.]/g, '-')}.aex`;
 
-    // Cloud Vault Integration (Fire and Forget)
-    this.uploadToCloudVault(backupJson).catch(err => {
-      logger.warn('BackupService', 'cloud_upload_failed', 'Background cloud backup failed', null, err);
-    });
+    // Si se especificó una ubicación, guardar ahí
+    if (location) {
+      const success = await BackupLocationService.saveBackup(backupJson, filename, { type: location });
+      if (success) {
+        logger.info('BackupService', 'backup_saved', `Backup guardado en: ${location}`);
+      } else {
+        logger.error('BackupService', 'backup_save_failed', `Error guardando backup en: ${location}`);
+      }
+    } else {
+      // Comportamiento legacy: intentar Google Drive si está configurado
+      const token = localStorage.getItem('gdrive_token');
+      if (token) {
+        import('./GDriveSyncService').then(mod => {
+          const blob = new Blob([backupJson], { type: 'application/json' });
+          mod.GDriveSyncService.uploadBackup(blob, filename);
+        });
+      }
+    }
 
     return backupJson;
+  }
+
+  /**
+   * Permite al usuario elegir ubicación y guardar backup
+   * NIVEL NASA: Interfaz completa de selección
+   */
+  static async createBackupWithLocationChoice(onProgress?: (progress: any) => void): Promise<boolean> {
+    try {
+      // Generar backup
+      const backupJson = await this.createBackupLegacy();
+      const filename = `AccountExpress_Backup_${new Date().toISOString().replace(/[:.]/g, '-')}.aex`;
+
+      // Permitir al usuario elegir ubicación
+      const destination = await BackupLocationService.chooseBackupLocation();
+      
+      if (!destination) {
+        // Usuario canceló
+        logger.info('BackupService', 'backup_cancelled', 'Usuario canceló selección de ubicación');
+        return false;
+      }
+
+      // Guardar en la ubicación elegida
+      const success = await BackupLocationService.saveBackup(backupJson, filename, destination);
+      
+      if (success) {
+        logger.info('BackupService', 'backup_success', `Backup guardado exitosamente en: ${destination.type}`);
+        return true;
+      } else {
+        logger.error('BackupService', 'backup_failed', 'Error guardando backup');
+        return false;
+      }
+    } catch (e) {
+      logger.error('BackupService', 'backup_error', 'Error en proceso de backup', null, e as Error);
+      return false;
+    }
+  }
+
+  /**
+   * Permite al usuario elegir archivo de backup y restaurarlo
+   * NIVEL NASA: Interfaz completa de selección
+   */
+  static async restoreBackupWithFileChoice(onProgress?: (progress: any) => void): Promise<boolean> {
+    try {
+      // Permitir al usuario elegir archivo
+      const file = await BackupLocationService.chooseBackupFile();
+      
+      if (!file) {
+        // Usuario canceló
+        logger.info('BackupService', 'restore_cancelled', 'Usuario canceló selección de archivo');
+        return false;
+      }
+
+      // Leer contenido del archivo
+      const content = await file.text();
+      
+      // Restaurar
+      const success = await this.restoreBackupLegacy(content);
+      
+      if (success) {
+        logger.info('BackupService', 'restore_success', `Backup restaurado exitosamente desde: ${file.name}`);
+        return true;
+      } else {
+        logger.error('BackupService', 'restore_failed', 'Error restaurando backup');
+        return false;
+      }
+    } catch (e) {
+      logger.error('BackupService', 'restore_error', 'Error en proceso de restauración', null, e as Error);
+      return false;
+    }
   }
 
 

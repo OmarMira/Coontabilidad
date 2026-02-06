@@ -37,8 +37,26 @@ describe('Emergency Database Initializer', () => {
     });
 
     it('Debe detectar requerimiento de emergencia si hay error FK en sessionStorage', () => {
-        sessionStorage.setItem('db_init_error', 'FOREIGN KEY constraint failed');
-        expect(checkEmergencyRequirement()).toBe(true);
+        // Mock sessionStorage.getItem to return the FK error
+        const mockGetItem = vi.fn((key: string) => {
+            if (key === 'db_init_error') {
+                return 'FOREIGN KEY constraint failed';
+            }
+            return null;
+        });
+        
+        vi.stubGlobal('sessionStorage', {
+            getItem: mockGetItem,
+            setItem: vi.fn(),
+            removeItem: vi.fn(),
+            clear: vi.fn(),
+            length: 0,
+            key: vi.fn()
+        });
+        
+        const result = checkEmergencyRequirement();
+        expect(mockGetItem).toHaveBeenCalledWith('db_init_error');
+        expect(result).toBe(true);
     });
 
     it('Debe ejecutar la inicialización de emergencia sin errores', async () => {

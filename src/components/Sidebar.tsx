@@ -235,10 +235,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     });
   };
 
-  const handleItemClick = (item: MenuItem) => {
+  const handleItemClick = (item: MenuItem, level: number) => {
     if (item.children) {
-      toggleExpanded(item.id);
+      if (level === 0) {
+        // Si es un menú raíz padre (ej. Cuentas Cobrar), cerramos hermanos (comportamiento acordeón normal)
+        toggleExpanded(item.id);
+      } else {
+        // Si es un submenú con hijos, comportamiento normal
+        toggleExpanded(item.id);
+      }
     } else {
+      // Si es un ítem HOJA (acción final), debemos decidir si cerramos el menú o no.
+
+      if (level === 0) {
+        // CASE 1: Es un ítem raíz sin hijos (ej. Dashboard, AI Assistant).
+        // Aquí SÍ debemos colapsar todo, porque no pertenece a ningún submenú.
+        setExpandedItems(new Set());
+      } else {
+        // CASE 2: Es un hijo dentro de un submenú (ej. Crear Factura).
+        // Aquí NO cerramos nada, para mantener el contexto del usuario visible.
+      }
+
       onNavigate(item.id);
     }
   };
@@ -252,7 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     return (
       <div key={item.id} className="relative">
         <div
-          onClick={() => handleItemClick(item)}
+          onClick={() => handleItemClick(item, level)}
           className={`
             group flex items-center gap-3 px-4 py-1.5 cursor-pointer transition-all duration-300 relative overflow-hidden
             ${level === 0 ? 'mx-0 rounded-none' : 'mx-1 rounded-xl'}

@@ -143,6 +143,7 @@ export class AuditChainService {
 
         for (const recordData of records) {
             const record = recordData as any;
+            
             // Check 1: Logic clock sequencing
             if (record.logic_clock !== expectedLogicClock) {
                 errors.push({

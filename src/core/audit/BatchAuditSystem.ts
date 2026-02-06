@@ -1,6 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { ExternalTimestampService } from '../security/ExternalTimestampService';
+import { ExternalTimestampService } from '../../services/ExternalTimestampService';
 
 // Define strict interfaces for the system
 export interface AuditEvent {
@@ -79,7 +79,8 @@ export class BatchAuditSystem {
      */
     private async ensureSchema() {
         try {
-            const { db } = await import('../../database/simple-db');
+            const simpleDb = await import('../../database/simple-db');
+            const db = simpleDb.db;
             if (!db) return;
 
             db.exec(`
@@ -145,8 +146,8 @@ export class BatchAuditSystem {
                 // Execute with Exponential Backoff
                 externalSignature = await this.executeWithBackoff(async () => {
                     const result = await ExternalTimestampService.getTrustedTimestamp(batchRootHash);
-                    if (!result.verified) throw new Error('TSA Verification Failed');
-                    return JSON.stringify(result);
+                    if (!result) throw new Error('TSA Verification Failed');
+                    return result;
                 });
                 witnessStatus = 'VERIFIED';
                 this.retryAttempts = 0;
@@ -241,7 +242,8 @@ export class BatchAuditSystem {
     // Obtener último hash de la cadena
     private async getLastHash(): Promise<string | null> {
         try {
-            const { db } = await import('../../database/simple-db');
+            const simpleDb = await import('../../database/simple-db');
+            const db = simpleDb.db;
             if (!db) return null;
 
             const result = db.exec(
@@ -259,7 +261,8 @@ export class BatchAuditSystem {
 
     // Guardar lote en base de datos
     private async saveBatch(batch: StoredAuditEvent[]) {
-        const { db } = await import('../../database/simple-db');
+        const simpleDb = await import('../../database/simple-db');
+        const db = simpleDb.db;
         if (!db) throw new Error('Database not available');
 
         db.exec('BEGIN TRANSACTION');

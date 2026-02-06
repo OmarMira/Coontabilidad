@@ -47,8 +47,8 @@ export class UserService {
                 return { success: false, message: 'El nombre de usuario debe tener al menos 3 caracteres' };
             }
 
-            if (!data.password || data.password.length < 6) {
-                return { success: false, message: 'La contraseña debe tener al menos 6 caracteres' };
+            if (!data.password || data.password.length < 12) {
+                return { success: false, message: 'La contraseña debe tener al menos 12 caracteres (NIST SP 800-63B)' };
             }
 
             if (!data.email || !data.email.includes('@')) {
@@ -231,8 +231,8 @@ export class UserService {
     async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<UserServiceResponse> {
         try {
             // Validar nueva contraseña
-            if (!newPassword || newPassword.length < 6) {
-                return { success: false, message: 'La nueva contraseña debe tener al menos 6 caracteres' };
+            if (!newPassword || newPassword.length < 12) {
+                return { success: false, message: 'La nueva contraseña debe tener al menos 12 caracteres (NIST SP 800-63B)' };
             }
 
             // Obtener usuario con password_hash
@@ -272,8 +272,8 @@ export class UserService {
      */
     async resetUserPassword(userId: number, newPassword: string): Promise<UserServiceResponse> {
         try {
-            if (!newPassword || newPassword.length < 6) {
-                return { success: false, message: 'La nueva contraseña debe tener al menos 6 caracteres' };
+            if (!newPassword || newPassword.length < 12) {
+                return { success: false, message: 'La nueva contraseña debe tener al menos 12 caracteres (NIST SP 800-63B)' };
             }
 
             const result = await dbUpdateUserPassword(userId, newPassword);

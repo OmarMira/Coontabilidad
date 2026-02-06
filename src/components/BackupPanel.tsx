@@ -1,32 +1,40 @@
 import React, { useState } from 'react';
 import { BackupService } from '../services/BackupService';
-import { Download, Upload, Shield, Loader2, AlertTriangle, FileJson, CheckCircle } from 'lucide-react';
+import { BackupLocationSelector } from './backup/BackupLocationSelector';
+import { BackupLocation } from '../services/BackupLocationService';
+import { Download, Upload, Shield, Loader2, AlertTriangle, FileJson, CheckCircle, FolderOpen } from 'lucide-react';
 
 export const BackupPanel: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState('');
     const [error, setError] = useState('');
+    const [showLocationSelector, setShowLocationSelector] = useState(false);
+    const [selectedLocation, setSelectedLocation] = useState<BackupLocation>('downloads');
 
     const handleBackup = async () => {
+        setShowLocationSelector(true);
+    };
+
+    const handleLocationSelected = async (location: BackupLocation, customPath?: string) => {
+        setShowLocationSelector(false);
         setLoading(true);
         setStatus('Iniciando protocolo de cifrado (L4)...');
         setError('');
+        
         try {
             // Delay visual para UX
             await new Promise(r => setTimeout(r, 800));
 
-            const json = await BackupService.createBackup();
+            setStatus(`Guardando backup en: ${customPath || location}...`);
+            
+            // Usar el nuevo sistema de selección de ubicación
+            const success = await BackupService.createBackupWithLocationChoice();
 
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `account-express-backup-${new Date().toISOString().split('T')[0]}.aex`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-
-            setStatus('Respaldo .aex cifrado generado y descargado.');
+            if (success) {
+                setStatus(`✅ Respaldo .aex cifrado generado y guardado en: ${customPath || location}`);
+            } else {
+                setError('Usuario canceló la operación o hubo un error');
+            }
         } catch (e: any) {
             setError('Error al generar respaldo: ' + e.message);
             setStatus('');
@@ -35,31 +43,29 @@ export const BackupPanel: React.FC = () => {
         }
     };
 
-    const handleRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const handleRestore = async () => {
         setError('');
 
         if (!window.confirm("⚠️ ADVERTENCIA CRÍTICA DE SEGURIDAD ⚠️\n\nEsta acción eliminará TODOS los datos actuales y los reemplazará con el contenido del respaldo.\n\nEsta acción es irreversible.\n\n¿Estás absolutamente seguro de continuar?")) {
-            e.target.value = ''; // Reset input
             return;
         }
 
         setLoading(true);
-        setStatus('Verificando firma criptográfica e integridad...');
+        setStatus('Esperando selección de archivo...');
 
         try {
-            const text = await file.text();
+            setStatus('Verificando firma criptográfica e integridad...');
+            
+            // Usar el nuevo sistema de selección de archivo
+            const success = await BackupService.restoreBackupWithFileChoice();
 
-            setStatus('Descifrando base de datos (AES-GCM-256)...');
-            await new Promise(r => setTimeout(r, 1000)); // UX
-
-            await BackupService.restoreBackup(text);
-
-            setStatus('Restauración completada. El sistema se reiniciará.');
-            // Reload handled by Service, but just in case:
-            setTimeout(() => window.location.reload(), 2000);
+            if (success) {
+                setStatus('Restauración completada. El sistema se reiniciará.');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                setError('Usuario canceló la operación o hubo un error');
+                setLoading(false);
+            }
 
         } catch (e: any) {
             setError('FALLO CRÍTICO DE RESTAURACIÓN: ' + e.message);
@@ -77,9 +83,32 @@ export const BackupPanel: React.FC = () => {
                 </div>
                 <div>
                     <h1 className="text-3xl font-black text-white tracking-tight">Centro de Seguridad</h1>
-                    <p className="text-slate-400">Gestión de Respaldos Cifrados (.aex)</p>
+                    <p className="text-slate-400">Gestión de Respaldos Cifrados (.aex) - Nivel NASA</p>
                 </div>
             </div>
+
+            {/* Selector de Ubicación Modal */}
+            {showLocationSelector && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-900 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-800 shadow-2xl">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold text-white">Seleccionar Ubicación del Backup</h2>
+                            <button
+                                onClick={() => setShowLocationSelector(false)}
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <BackupLocationSelector
+                            mode="save"
+                            onLocationSelected={handleLocationSelected}
+                        />
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -94,7 +123,7 @@ export const BackupPanel: React.FC = () => {
 
                         <h3 className="text-xl font-bold text-white mb-2">Exportar Copia Maestra</h3>
                         <p className="text-sm text-slate-400 mb-6 min-h-[40px]">
-                            Genera un archivo <code>.aex</code> cifrado militarmente con toda la base de datos y logs de auditoría.
+                            Genera un archivo <code>.aex</code> cifrado militarmente. Elige dónde guardarlo: Descargas, Disco Local, Google Drive o Pendrive.
                         </p>
 
                         <button
@@ -102,8 +131,8 @@ export const BackupPanel: React.FC = () => {
                             disabled={loading}
                             className="w-full py-4 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-violet-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileJson className="w-5 h-5" />}
-                            {loading ? 'Procesando...' : 'Descargar Respaldo .aex'}
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FolderOpen className="w-5 h-5" />}
+                            {loading ? 'Procesando...' : 'Elegir Ubicación y Guardar'}
                         </button>
                     </div>
                 </div>
@@ -119,20 +148,17 @@ export const BackupPanel: React.FC = () => {
 
                         <h3 className="text-xl font-bold text-white mb-2">Restaurar Copia</h3>
                         <p className="text-sm text-slate-400 mb-6 min-h-[40px]">
-                            Recupera el sistema desde un archivo <code>.aex</code>. Sobrescribirá los datos actuales.
+                            Recupera el sistema desde un archivo <code>.aex</code> desde cualquier ubicación. Sobrescribirá los datos actuales.
                         </p>
 
-                        <label className={`w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-bold transition-all border border-slate-700 hover:border-slate-600 cursor-pointer flex items-center justify-center gap-2 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <button
+                            onClick={handleRestore}
+                            disabled={loading}
+                            className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-bold transition-all border border-slate-700 hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                            {loading ? 'Restaurando...' : 'Seleccionar Archivo .aex'}
-                            <input
-                                type="file"
-                                accept=".aex,.json"
-                                onChange={handleRestore}
-                                className="hidden"
-                                disabled={loading}
-                            />
-                        </label>
+                            {loading ? 'Restaurando...' : 'Elegir Archivo y Restaurar'}
+                        </button>
                     </div>
                 </div>
 
@@ -151,7 +177,7 @@ export const BackupPanel: React.FC = () => {
 
             <div className="text-center">
                 <p className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">
-                    Iron Core Security Protocol v1.0 • AES-256-GCM Encryption
+                    Iron Core Security Protocol v2.0 NASA • AES-256-GCM Encryption • Multi-Location Backup
                 </p>
             </div>
 
