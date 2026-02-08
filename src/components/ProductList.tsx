@@ -12,7 +12,12 @@ import {
   Tag,
   Truck,
   BarChart3,
-  Plus
+  Plus,
+  Zap,
+  Box,
+  Server,
+  Activity,
+  Maximize2
 } from 'lucide-react';
 import { Product, ProductCategory } from '../database/simple-db';
 
@@ -38,43 +43,35 @@ export const ProductList: React.FC<ProductListProps> = ({
   const [filterType, setFilterType] = useState<'all' | 'products' | 'services'>('all');
   const [filterStock, setFilterStock] = useState<'all' | 'low' | 'out'>('all');
 
-  // Filtrar productos
   const filteredProducts = products.filter(product => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
     const matchesType =
       filterType === 'all' ||
       (filterType === 'products' && !product.is_service) ||
       (filterType === 'services' && product.is_service);
-
     const matchesStock =
       filterStock === 'all' ||
       (filterStock === 'low' && !product.is_service && product.stock_quantity <= product.reorder_point) ||
       (filterStock === 'out' && !product.is_service && product.stock_quantity === 0);
-
     return matchesSearch && matchesType && matchesStock;
   });
 
   const getStockStatus = (product: Product) => {
     if (product.is_service) return null;
-
     if (product.stock_quantity === 0) {
-      return { status: 'out', label: 'AGOTADO', color: 'text-rose-400', bgColor: 'bg-rose-500/10', border: 'border-rose-500/20' };
+      return { label: 'AGOTADO', color: 'text-rose-500', bgColor: 'bg-rose-500/10', border: 'border-rose-500/20' };
     } else if (product.stock_quantity <= product.reorder_point) {
-      return { status: 'low', label: 'STOCK BAJO', color: 'text-sun-orange', bgColor: 'bg-sun-orange/10', border: 'border-sun-orange/20' };
+      return { label: 'STOCK BAJO', color: 'text-amber-500', bgColor: 'bg-amber-500/10', border: 'border-amber-500/20' };
     } else {
-      return { status: 'ok', label: 'OPTIMO', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+      return { label: 'OPTIMO', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
     }
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
   };
 
   const handleDelete = (product: Product) => {
@@ -84,220 +81,171 @@ export const ProductList: React.FC<ProductListProps> = ({
   };
 
   return (
-    <div className="space-y-10 animate-fade-in px-4">
-      {/* HEADER PREMIUM */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-white tracking-tighter flex items-center gap-4">
-            <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-              <Package className="w-8 h-8 text-emerald-400" />
-            </div>
-            Gestión de Inventario Elite
-          </h2>
-          <p className="text-gray-400 mt-2 font-medium">Control unificado de stock, servicios y cumplimiento de Florida.</p>
+    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+      {/* Header Hub */}
+      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+        <div className="flex items-center gap-6">
+          <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
+            <Box className="w-10 h-10 text-emerald-500 group-hover:-rotate-12 transition-transform duration-500" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Matriz de Activos</h1>
+            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Neural Inventory Controller v4
+            </p>
+          </div>
         </div>
-        <button
-          onClick={onAddProduct}
-          className="btn-elite-primary flex items-center gap-3"
-        >
-          <Plus className="w-5 h-5" />
-          REGISTRAR PRODUCTO
-        </button>
-      </div>
 
-      {/* SEARCH AND FILTERS ELITE */}
-      <div className="card-elite !p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-6 relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-400 transition-colors w-5 h-5" />
+        <div className="flex flex-wrap items-center gap-4 justify-center">
+          <div className="relative group">
+            <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
             <input
               type="text"
-              placeholder="Buscar por SKU, nombre o descripción..."
+              placeholder="BUSCAR SKU / NOMBRE..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all font-medium"
+              className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all"
             />
           </div>
 
-          <div className="lg:col-span-3">
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
-                className="w-full pl-10 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none cursor-pointer"
-              >
-                <option value="all">TODOS LOS TIPOS</option>
-                <option value="products">PRODUCTOS FÍSICOS</option>
-                <option value="services">SERVICIOS</option>
-              </select>
-            </div>
-          </div>
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value as any)}
+            className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
+          >
+            <option value="all">TODOS LOS TIPOS</option>
+            <option value="products">PRODUCTOS FÍSICOS</option>
+            <option value="services">SERVICIOS</option>
+          </select>
 
-          <div className="lg:col-span-3">
-            <select
-              value={filterStock}
-              onChange={(e) => setFilterStock(e.target.value as any)}
-              className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 appearance-none cursor-pointer"
-            >
-              <option value="all">CUALQUIER ESTADO DE STOCK</option>
-              <option value="low">ALERTA DE STOCK BAJO</option>
-              <option value="out">PRODUCTOS AGOTADOS</option>
-            </select>
-          </div>
-        </div>
-
-        {/* QUICK INTELLIGENCE STATS */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-white/5">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Total SKU</span>
-            <span className="text-xl font-black text-white">{products.length}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Valor Inventario</span>
-            <span className="text-xl font-black text-emerald-400">
-              {formatPrice(products.reduce((acc, p) => acc + (p.price * p.stock_quantity), 0))}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Alertas Activas</span>
-            <span className={`text-xl font-black ${products.some(p => !p.is_service && p.stock_quantity <= p.reorder_point) ? 'text-sun-orange' : 'text-gray-400'}`}>
-              {products.filter(p => !p.is_service && p.stock_quantity <= p.reorder_point).length}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Margen Promedio</span>
-            <span className="text-xl font-black text-blue-400">32.4%</span>
-          </div>
+          <button
+            onClick={onAddProduct}
+            className="flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-emerald-900/40 hover:-translate-y-1"
+          >
+            <Plus className="w-4 h-4" />
+            Registrar Activo
+          </button>
         </div>
       </div>
 
-      {/* PRODUCT LIST TABLE ELITE */}
-      <div className="card-elite !p-0 overflow-hidden border-white/5">
-        {filteredProducts.length === 0 ? (
-          <div className="p-20 text-center">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Package className="w-10 h-10 text-gray-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-400">No se encontraron activos</h3>
-            <p className="text-gray-500 mt-2">Intenta ajustar los criterios de búsqueda o filtros.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-white/5 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-white/10">
-                  <th className="px-8 py-5">Activo / Identificador</th>
-                  <th className="px-8 py-5">Tipo & Categoría</th>
-                  <th className="px-8 py-5">Finanzas (Unidad)</th>
-                  <th className="px-8 py-5">Disponibilidad</th>
-                  <th className="px-8 py-5">Estado</th>
-                  <th className="px-8 py-5 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product);
+      {/* Intelligence Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <EliteMiniCard title="Total SKU" value={products.length.toString()} icon={Box} color="blue" />
+        <EliteMiniCard title="Valorización" value={formatPrice(products.reduce((acc, p) => acc + (p.price * p.stock_quantity), 0))} icon={DollarSign} color="emerald" />
+        <EliteMiniCard title="Alertas Stock" value={products.filter(p => !p.is_service && p.stock_quantity <= p.reorder_point).length.toString()} icon={AlertTriangle} color="amber" label="Crítico / Bajo" />
+        <EliteMiniCard title="Servicios Activos" value={products.filter(p => p.is_service).length.toString()} icon={Server} color="rose" />
+      </div>
 
-                  return (
-                    <tr key={product.id} className="hover:bg-white/5 transition-all group">
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-5">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${product.is_service ? 'bg-purple-500/10 text-purple-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                            {product.is_service ? <Tag className="w-6 h-6" /> : <Package className="w-6 h-6" />}
-                          </div>
-                          <div>
-                            <span className="block text-white font-bold text-base">{product.name}</span>
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{product.sku}</span>
-                          </div>
+      {/* Main Assets Table */}
+      <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 shadow-2xl overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-700/5 blur-[100px] pointer-events-none"></div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-950/50">
+                {['Activo / Identificador', 'Tipo & Categoría', 'Venta (Unit)', 'Disponibilidad', 'Estado', 'Control'].map(h => (
+                  <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50">
+              {filteredProducts.map((product) => {
+                const stockStatus = getStockStatus(product);
+                return (
+                  <tr key={product.id} className="hover:bg-white/[0.02] transition-colors group/row">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-5">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-lg transition-transform group-hover/row:scale-110 ${product.is_service ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
+                          {product.is_service ? <Server className="w-6 h-6" /> : <Box className="w-6 h-6" />}
                         </div>
-                      </td>
+                        <div>
+                          <span className="block text-sm font-black text-white uppercase tracking-tighter">{product.name}</span>
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">SKU: {product.sku}</span>
+                        </div>
+                      </div>
+                    </td>
 
-                      <td className="px-8 py-6">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider mb-2 ${product.is_service
-                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          }`}>
-                          {product.is_service ? 'Servicio' : 'Producto'}
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col gap-1.5">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest w-fit border ${product.is_service ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                          {product.is_service ? 'Digital Service' : 'Physical Asset'}
                         </span>
-                        <div className="text-xs font-bold text-gray-400">
-                          {product.category?.name || 'General'}
-                        </div>
-                      </td>
+                        <span className="text-[10px] font-black text-slate-500 uppercase italic">{product.category?.name || 'GENERIC'}</span>
+                      </div>
+                    </td>
 
-                      <td className="px-8 py-6">
-                        <div className="text-white font-black text-base tabular-nums">
-                          {formatPrice(product.price)}
-                        </div>
-                        {product.cost && product.cost > 0 && (
-                          <div className="text-[10px] font-black text-gray-500 uppercase">
-                            COST: {formatPrice(product.cost)}
+                    <td className="px-8 py-6">
+                      <div className="text-base font-black text-white font-mono">{formatPrice(product.price)}</div>
+                      <div className="text-[9px] font-black text-slate-600 uppercase">Cost: {formatPrice(product.cost || 0)}</div>
+                    </td>
+
+                    <td className="px-8 py-6">
+                      {product.is_service ? (
+                        <span className="text-[9px] font-black text-slate-700 bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50 uppercase tracking-widest">Inmortal / Infinito</span>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-white font-mono">{product.stock_quantity}</span>
+                            <span className="text-[10px] font-black text-slate-500 uppercase">{product.unit_of_measure}</span>
                           </div>
-                        )}
-                      </td>
-
-                      <td className="px-8 py-6">
-                        {product.is_service ? (
-                          <span className="text-[10px] font-black text-gray-600 uppercase">Ilimitado</span>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="text-white font-bold text-sm">
-                                {product.stock_quantity} <span className="text-gray-500 font-medium text-xs">{product.unit_of_measure}</span>
-                              </div>
-                              {onNavigateToKardex && (
-                                <button
-                                  onClick={() => onNavigateToKardex(product.id)}
-                                  className="p-1 hover:bg-white/10 rounded transition-colors text-blue-400 group/link"
-                                  title="Ver Historial (Kardex)"
-                                >
-                                  <BarChart3 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
+                          {stockStatus && (
+                            <div className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest w-fit ${stockStatus.bgColor} ${stockStatus.color} ${stockStatus.border}`}>
+                              {stockStatus.label}
                             </div>
-                            {stockStatus && (
-                              <span className={`badge-elite ${stockStatus.bgColor} ${stockStatus.color} border ${stockStatus.border} text-[9px]`}>
-                                {stockStatus.label}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-8 py-6">
-                        <div className={`flex items-center gap-2 ${product.active ? 'text-emerald-400' : 'text-gray-500'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${product.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-gray-500'}`}></div>
-                          <span className="text-[10px] font-black uppercase tracking-widest">{product.active ? 'Activo' : 'Pausado'}</span>
+                          )}
                         </div>
-                      </td>
+                      )}
+                    </td>
 
-                      <td className="px-8 py-6 text-right">
-                        <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => onView(product)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-blue-400">
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          <button onClick={() => onEdit(product)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-sun-orange">
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button onClick={() => handleDelete(product)} className="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl transition-colors text-rose-400">
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    <td className="px-8 py-6">
+                      <div className={`flex items-center gap-2 ${product.active ? 'text-emerald-400' : 'text-slate-600'}`}>
+                        <div className={`w-2 h-2 rounded-full ${product.active ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-700'}`}></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{product.active ? 'Sincronizado' : 'Offline'}</span>
+                      </div>
+                    </td>
 
-      {/* FOOTER ELITE */}
-      <div className="flex justify-center pt-10">
-        <div className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
-          Total de activos en sistema: {filteredProducts.length}
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => onView(product)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-blue-500 hover:bg-blue-500 hover:text-white transition-all">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => onEdit(product)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(product)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const EliteMiniCard = ({ title, value, icon: Icon, color, label }: any) => {
+  const themes: any = {
+    blue: 'text-blue-500 bg-blue-600/10 border-blue-500/20',
+    emerald: 'text-emerald-500 bg-emerald-600/10 border-emerald-500/20',
+    amber: 'text-amber-500 bg-amber-600/10 border-amber-500/20',
+    rose: 'text-rose-500 bg-rose-600/10 border-rose-500/20',
+  };
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem] shadow-xl hover:border-slate-700 transition-all flex items-center gap-5 group">
+      <div className={`p-4 rounded-2xl border ${themes[color]} group-hover:scale-110 transition-transform`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <div>
+        <div className="text-2xl font-black text-white tracking-tighter leading-none mb-1 font-mono">{value}</div>
+        <div className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">{title}</div>
+        {label && <div className="text-[7px] font-black text-slate-600 uppercase tracking-[0.2em]">{label}</div>}
       </div>
     </div>
   );

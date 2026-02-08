@@ -169,3 +169,4 @@ export class ExternalTimestampService {
         }
         return btoa(binary);
     }
+}

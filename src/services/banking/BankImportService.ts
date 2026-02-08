@@ -1,150 +1,462 @@
-import { BankTransaction } from '@/database/simple-db';
-import { DuplicateDetectionService, DuplicateDetectionResult } from './DuplicateDetectionService';
-
-export interface BankImportOptions {
-    skipDuplicateCheck?: boolean;
-    autoSkipDuplicates?: boolean; // If true, automatically skip duplicates without asking
-}
-
-export interface BankImportResult {
-    success: boolean;
-    message: string;
-    importedCount: number;
-    skippedCount?: number;
-    duplicateDetection?: DuplicateDetectionResult;
-}
-
 /**
- * Enhanced bank transaction import service with duplicate detection
+ * BankImportService - Orquestador principal de importación bancaria
+ * 
+ * Coordina el proceso completo de importación:
+ * 1. Upload y validación
+ * 2. Parsing
+ * 3. Detección de duplicados
+ * 4. Categorización con IA
+ * 5. Matching con facturas/gastos
+ * 6. Preview
+ * 7. Importación final
+ * 8. Rollback si es necesario
  */
+
+import { db } from '../../database/simple-db';
+import { FileParserService, ParsedTransaction } from './FileParserService';
+import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
+import { AICategorizerService, TrainingExample } from './AICategorizerService';
+import { TransactionMatcher, Invoice, Bill } from './TransactionMatcher';
+import { DatabaseService } from '../../database/DatabaseService';
+
+export interface ImportBatch {
+  id: number;
+  batchNumber: string;
+  fileName: string;
+  fileFormat: string;
+  totalTransactions: number;
+  importedCount: number;
+  duplicateCount: number;
+  status: 'pending' | 'completed' | 'rolled_back';
+  createdAt: string;
+}
+
+export interface ImportTransaction {
+  id: number;
+  batchId: number;
+  transactionDate: string;
+  description: string;
+  amount: number;
+  balance?: number;
+  suggestedCategory: string;
+  confidenceScore: number;
+  isDuplicate: boolean;
+  duplicateConfidence: number;
+  matchedInvoiceId?: number;
+  matchedBillId?: number;
+  matchConfidence?: number;
+  excluded: boolean;
+  userCategory?: string;
+  userDescription?: string;
+}
+
 export class BankImportService {
-
-    /**
-     * Validates and prepares transactions for import with duplicate detection
-     * @param bankAccountId - Target bank account
-     * @param newTransactions - Transactions to import
-     * @param existingTransactions - Already imported transactions
-     * @param options - Import options
-     * @returns Validation result with duplicates detected
-     */
-    static validateImport(
-        bankAccountId: number,
-        newTransactions: Partial<BankTransaction>[],
-        existingTransactions: BankTransaction[],
-        options: BankImportOptions = {}
-    ): BankImportResult {
-
-        // 1. Validate amounts (detect potential cents/dollars confusion)
-        const validationErrors = this.validateAmounts(newTransactions);
-        if (validationErrors.length > 0) {
-            return {
-                success: false,
-                message: `Errores de validación: ${validationErrors.join(', ')}`,
-                importedCount: 0
-            };
-        }
-
-        // 2. Duplicate detection (unless skipped)
-        if (!options.skipDuplicateCheck) {
-            const duplicateResult = DuplicateDetectionService.findPotentialDuplicates(
-                bankAccountId,
-                newTransactions,
-                existingTransactions
-            );
-
-            if (duplicateResult.hasDuplicates) {
-                const summary = DuplicateDetectionService.generateDuplicateSummary(duplicateResult);
-
-                return {
-                    success: false,
-                    message: summary,
-                    importedCount: 0,
-                    skippedCount: duplicateResult.potentialDuplicates.length,
-                    duplicateDetection: duplicateResult
-                };
-            }
-        }
-
-        // 3. All validations passed
-        return {
-            success: true,
-            message: `${newTransactions.length} transacciones listas para importar`,
-            importedCount: 0 // Not imported yet, just validated
-        };
+  private categorizer: AICategorizerService;
+  
+  constructor() {
+    this.categorizer = new AICategorizerService();
+    this.loadTrainingData();
+  }
+  
+  /**
+   * Carga datos de entrenamiento desde la base de datos
+   */
+  private async loadTrainingData(): Promise<void> {
+    try {
+      const trainingData = db.exec(`
+        SELECT description, category, amount, transaction_type
+        FROM ml_training_data
+        ORDER BY created_at DESC
+        LIMIT 1000
+      `);
+      
+      if (trainingData.length > 0 && trainingData[0].values.length > 0) {
+        const examples: TrainingExample[] = trainingData[0].values.map((row: any) => ({
+          description: row[0],
+          category: row[1],
+          amount: row[2],
+          transactionType: row[3]
+        }));
+        
+        this.categorizer.train(examples);
+      }
+    } catch (error) {
+      console.error('Error loading training data:', error);
     }
-
-    /**
-     * Validates transaction amounts to detect potential cents/dollars confusion
-     * @param transactions - Transactions to validate
-     * @returns Array of validation error messages
-     */
-    private static validateAmounts(transactions: Partial<BankTransaction>[]): string[] {
-        const errors: string[] = [];
-
-        transactions.forEach((tx, index) => {
-            if (!tx.amount) {
-                errors.push(`Transacción ${index + 1}: Monto faltante`);
-                return;
-            }
-
-            // Check for suspiciously large amounts (possible cents confusion)
-            // If amount > $1,000,000, it might be cents instead of dollars
-            if (Math.abs(tx.amount) > 1000000) {
-                errors.push(
-                    `Transacción ${index + 1} (${tx.description}): ` +
-                    `Monto sospechosamente alto: $${tx.amount.toFixed(2)}. ` +
-                    `¿Podría ser un error de conversión cents/dollars?`
-                );
-            }
-
-            // Check for invalid amounts
-            if (isNaN(tx.amount)) {
-                errors.push(`Transacción ${index + 1}: Monto inválido (NaN)`);
-            }
-
-            // Check for amounts with too many decimal places
-            const decimalPlaces = (tx.amount.toString().split('.')[1] || '').length;
-            if (decimalPlaces > 2) {
-                errors.push(
-                    `Transacción ${index + 1}: Monto con demasiados decimales (${decimalPlaces}). ` +
-                    `Se esperan máximo 2 decimales.`
-                );
-            }
+  }
+  
+  /**
+   * Crea un nuevo batch de importación y genera preview
+   */
+  async createImportBatch(
+    file: File,
+    bankAccountId: number,
+    userId: number
+  ): Promise<{ batchId: number; transactions: ImportTransaction[] }> {
+    
+    // 1. Parse file
+    const parseResult = await FileParserService.parseFile(file);
+    
+    if (parseResult.errors.length > 0) {
+      throw new Error(`Errores al parsear archivo: ${parseResult.errors.join(', ')}`);
+    }
+    
+    if (parseResult.transactions.length === 0) {
+      throw new Error('No se encontraron transacciones en el archivo');
+    }
+    
+    // 2. Create batch
+    const batchNumber = `IMP-${Date.now()}`;
+    
+    db.run(`
+      INSERT INTO import_batches (
+        batch_number, file_name, file_format, bank_account_id,
+        total_transactions, status, created_by
+      ) VALUES (?, ?, ?, ?, ?, 'pending', ?)
+    `, [
+      batchNumber,
+      file.name,
+      parseResult.format,
+      bankAccountId,
+      parseResult.transactions.length,
+      userId
+    ]);
+    
+    const batchIdResult = db.exec('SELECT last_insert_rowid() as id');
+    const batchId = batchIdResult[0].values[0][0] as number;
+    
+    // 3. Get existing transactions for duplicate detection
+    const existingTxns = await this.getExistingTransactions();
+    
+    // 4. Get unpaid invoices and bills for matching
+    const unpaidInvoices = await this.getUnpaidInvoices();
+    const unpaidBills = await this.getUnpaidBills();
+    
+    // 5. Process each transaction
+    const importTransactions: ImportTransaction[] = [];
+    
+    for (const txn of parseResult.transactions) {
+      // Detect duplicates
+      const duplicateResult = await DuplicateDetector.detectDuplicate(txn, existingTxns);
+      
+      // Categorize with AI
+      const categorizationResult = this.categorizer.categorize(txn);
+      
+      // Match with invoices/bills
+      const matchResult = await TransactionMatcher.matchTransaction(
+        txn,
+        unpaidInvoices,
+        unpaidBills
+      );
+      
+      // Insert into temp table
+      db.run(`
+        INSERT INTO import_transactions_temp (
+          batch_id, transaction_date, description, amount, balance,
+          suggested_category, confidence_score,
+          is_duplicate, duplicate_confidence,
+          matched_invoice_id, matched_bill_id, match_confidence
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        batchId,
+        txn.date,
+        txn.description,
+        txn.amount,
+        txn.balance || null,
+        categorizationResult.category,
+        categorizationResult.confidence,
+        duplicateResult.isDuplicate ? 1 : 0,
+        duplicateResult.confidence,
+        matchResult.matchType === 'invoice' ? matchResult.matchedId : null,
+        matchResult.matchType === 'bill' ? matchResult.matchedId : null,
+        matchResult.confidence || null
+      ]);
+      
+      const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
+      const txnId = txnIdResult[0].values[0][0] as number;
+      
+      importTransactions.push({
+        id: txnId,
+        batchId,
+        transactionDate: txn.date,
+        description: txn.description,
+        amount: txn.amount,
+        balance: txn.balance,
+        suggestedCategory: categorizationResult.category,
+        confidenceScore: categorizationResult.confidence,
+        isDuplicate: duplicateResult.isDuplicate,
+        duplicateConfidence: duplicateResult.confidence,
+        matchedInvoiceId: matchResult.matchType === 'invoice' ? matchResult.matchedId || undefined : undefined,
+        matchedBillId: matchResult.matchType === 'bill' ? matchResult.matchedId || undefined : undefined,
+        matchConfidence: matchResult.confidence,
+        excluded: false
+      });
+    }
+    
+    return { batchId, transactions: importTransactions };
+  }
+  
+  /**
+   * Actualiza una transacción en el preview
+   */
+  async updateImportTransaction(
+    transactionId: number,
+    updates: {
+      userCategory?: string;
+      userDescription?: string;
+      excluded?: boolean;
+    }
+  ): Promise<void> {
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    
+    if (updates.userCategory !== undefined) {
+      setClauses.push('user_category = ?');
+      values.push(updates.userCategory);
+    }
+    
+    if (updates.userDescription !== undefined) {
+      setClauses.push('user_description = ?');
+      values.push(updates.userDescription);
+    }
+    
+    if (updates.excluded !== undefined) {
+      setClauses.push('excluded = ?');
+      values.push(updates.excluded ? 1 : 0);
+    }
+    
+    if (setClauses.length === 0) return;
+    
+    values.push(transactionId);
+    
+    db.run(`
+      UPDATE import_transactions_temp
+      SET ${setClauses.join(', ')}
+      WHERE id = ?
+    `, values);
+  }
+  
+  /**
+   * Importa las transacciones finales
+   */
+  async finalizeImport(batchId: number, userId: number): Promise<void> {
+    try {
+      db.run('BEGIN TRANSACTION');
+      
+      // Get transactions to import (not excluded, not duplicates)
+      const txnsResult = db.exec(`
+        SELECT * FROM import_transactions_temp
+        WHERE batch_id = ? AND excluded = 0 AND is_duplicate = 0
+      `, [batchId]);
+      
+      if (txnsResult.length === 0 || txnsResult[0].values.length === 0) {
+        throw new Error('No hay transacciones para importar');
+      }
+      
+      const columns = txnsResult[0].columns;
+      const transactions = txnsResult[0].values.map((row: any) => {
+        const obj: any = {};
+        columns.forEach((col, idx) => {
+          obj[col] = row[idx];
         });
-
-        return errors;
-    }
-
-    /**
-     * Generates a detailed import summary
-     */
-    static generateImportSummary(
-        totalTransactions: number,
-        importedCount: number,
-        skippedCount: number,
-        duplicateDetection?: DuplicateDetectionResult
-    ): string {
-        let summary = `📊 Resumen de Importación:\n\n`;
-        summary += `Total de transacciones procesadas: ${totalTransactions}\n`;
-        summary += `✅ Importadas exitosamente: ${importedCount}\n`;
-
-        if (skippedCount > 0) {
-            summary += `⏭️ Omitidas (duplicados): ${skippedCount}\n`;
-        }
-
-        if (duplicateDetection && duplicateDetection.hasDuplicates) {
-            summary += `\n⚠️ Duplicados detectados:\n`;
-            duplicateDetection.potentialDuplicates.slice(0, 3).forEach((dup, idx) => {
-                summary += `  ${idx + 1}. ${dup.newTransaction.description} - `;
-                summary += `$${dup.newTransaction.amount?.toFixed(2)} `;
-                summary += `(${dup.matchScore}% confianza)\n`;
-            });
-
-            if (duplicateDetection.potentialDuplicates.length > 3) {
-                summary += `  ... y ${duplicateDetection.potentialDuplicates.length - 3} más\n`;
+        return obj;
+      });
+      
+      let importedCount = 0;
+      
+      for (const txn of transactions) {
+        // Determine final category (user override or suggested)
+        const finalCategory = txn.user_category || txn.suggested_category;
+        const finalDescription = txn.user_description || txn.description;
+        
+        // Create bank transaction (assuming there's a bank_transactions table)
+        // Note: This would need to be adapted to your actual schema
+        
+        // Generate journal entry
+        const debitAccount = txn.amount < 0 ? finalCategory : 'Bank Account';
+        const creditAccount = txn.amount < 0 ? 'Bank Account' : finalCategory;
+        const absAmount = Math.abs(txn.amount);
+        
+        await DatabaseService.insertJournalEntry({
+          description: `Bank Import: ${finalDescription}`,
+          date: txn.transaction_date,
+          items: [
+            {
+              account_code: debitAccount,
+              debit: txn.amount < 0 ? absAmount : 0,
+              credit: 0,
+              description: finalDescription
+            },
+            {
+              account_code: creditAccount,
+              debit: 0,
+              credit: txn.amount < 0 ? 0 : absAmount,
+              description: finalDescription
             }
+          ],
+          userId
+        });
+        
+        // Save as training data if user corrected the category
+        if (txn.user_category && txn.user_category !== txn.suggested_category) {
+          db.run(`
+            INSERT INTO ml_training_data (description, category, amount, transaction_type, source)
+            VALUES (?, ?, ?, ?, 'user_correction')
+          `, [
+            txn.description,
+            txn.user_category,
+            txn.amount,
+            txn.amount < 0 ? 'debit' : 'credit'
+          ]);
+          
+          // Add to categorizer for immediate learning
+          this.categorizer.addTrainingExample({
+            description: txn.description,
+            category: txn.user_category,
+            amount: txn.amount,
+            transactionType: txn.amount < 0 ? 'debit' : 'credit'
+          });
         }
-
-        return summary;
+        
+        importedCount++;
+      }
+      
+      // Update batch status
+      db.run(`
+        UPDATE import_batches
+        SET status = 'completed', imported_count = ?, imported_at = datetime('now')
+        WHERE id = ?
+      `, [importedCount, batchId]);
+      
+      // Clean up temp transactions
+      db.run('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
+      
+      db.run('COMMIT');
+      
+    } catch (error) {
+      db.run('ROLLBACK');
+      throw error;
     }
+  }
+  
+  /**
+   * Rollback de una importación
+   */
+  async rollbackImport(batchId: number): Promise<void> {
+    try {
+      db.run('BEGIN TRANSACTION');
+      
+      // Check if period is open
+      // (This would need to check against accounting_periods table)
+      
+      // Delete journal entries created by this batch
+      // Note: This would need to track which journal entries belong to which batch
+      // For now, we'll just mark the batch as rolled back
+      
+      db.run(`
+        UPDATE import_batches
+        SET status = 'rolled_back', rolled_back_at = datetime('now')
+        WHERE id = ?
+      `, [batchId]);
+      
+      db.run('COMMIT');
+      
+    } catch (error) {
+      db.run('ROLLBACK');
+      throw error;
+    }
+  }
+  
+  /**
+   * Obtiene transacciones existentes para detección de duplicados
+   */
+  private async getExistingTransactions(): Promise<ExistingTransaction[]> {
+    try {
+      // This would query your actual bank_transactions table
+      // For now, return empty array
+      return [];
+    } catch (error) {
+      console.error('Error getting existing transactions:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Obtiene facturas no pagadas
+   */
+  private async getUnpaidInvoices(): Promise<Invoice[]> {
+    try {
+      const result = db.exec(`
+        SELECT id, invoice_number, total, date, customer_name
+        FROM invoices
+        WHERE status = 'unpaid'
+        ORDER BY date DESC
+        LIMIT 100
+      `);
+      
+      if (result.length === 0 || result[0].values.length === 0) {
+        return [];
+      }
+      
+      return result[0].values.map((row: any) => ({
+        id: row[0],
+        invoice_number: row[1],
+        total: row[2],
+        date: row[3],
+        customer_name: row[4]
+      }));
+    } catch (error) {
+      console.error('Error getting unpaid invoices:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Obtiene gastos no pagados
+   */
+  private async getUnpaidBills(): Promise<Bill[]> {
+    try {
+      // This would query your bills/expenses table
+      // For now, return empty array
+      return [];
+    } catch (error) {
+      console.error('Error getting unpaid bills:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * Obtiene el historial de importaciones
+   */
+  async getImportHistory(): Promise<ImportBatch[]> {
+    try {
+      const result = db.exec(`
+        SELECT id, batch_number, file_name, file_format,
+               total_transactions, imported_count, duplicate_count,
+               status, created_at
+        FROM import_batches
+        ORDER BY created_at DESC
+        LIMIT 50
+      `);
+      
+      if (result.length === 0 || result[0].values.length === 0) {
+        return [];
+      }
+      
+      return result[0].values.map((row: any) => ({
+        id: row[0],
+        batchNumber: row[1],
+        fileName: row[2],
+        fileFormat: row[3],
+        totalTransactions: row[4],
+        importedCount: row[5],
+        duplicateCount: row[6],
+        status: row[7],
+        createdAt: row[8]
+      }));
+    } catch (error) {
+      console.error('Error getting import history:', error);
+      return [];
+    }
+  }
 }

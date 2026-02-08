@@ -161,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           </div>
         </div>
 
-        {/* CUMPLIMIENTO HISTORY */}
+        {/* CUMPLIMIENTO HISTORY Overlay */}
         <div className="h-full card-elite !p-0 border-white/5 overflow-hidden">
           <ComplianceHistory />
         </div>

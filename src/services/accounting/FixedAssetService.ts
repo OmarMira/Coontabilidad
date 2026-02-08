@@ -7,12 +7,12 @@ import { DatabaseService } from '../../database/DatabaseService';
  */
 export interface FixedAsset {
     id: number;
-    asset_tag: string;
-    asset_name: string;
+    asset_code: string;  // Usando esquema de simple-db.ts
+    name: string;        // Usando esquema de simple-db.ts
     description?: string;
     category_id: number;
-    purchase_date: string;
-    purchase_cost: number; // in cents
+    acquisition_date: string;  // Usando esquema de simple-db.ts
+    acquisition_cost: number;  // Usando esquema de simple-db.ts (in cents)
     salvage_value: number; // in cents
     vendor_id?: number;
     useful_life_months: number;
@@ -22,8 +22,8 @@ export interface FixedAsset {
     disposal_date?: string;
     disposal_method?: 'SALE' | 'RETIREMENT' | 'TRADE_IN' | 'LOST';
     disposal_amount?: number; // in cents
-    total_accumulated_depreciation: number; // in cents
-    net_book_value?: number; // in cents
+    total_accumulated_depreciation: number; // in cents (mapped from accumulated_depreciation)
+    net_book_value?: number; // in cents (mapped from current_value)
     purchase_entry_id?: number;
     disposal_entry_id?: number;
     created_at: string;
@@ -95,7 +95,7 @@ export class FixedAssetService {
         }
 
         // Generate asset tag
-        const assetTag = await this.generateAssetTag(category.code);
+        const assetCode = await this.generateAssetTag(category.code);
 
         // Create purchase journal entry
         let purchaseEntryId: number | undefined;
@@ -113,15 +113,15 @@ export class FixedAssetService {
         // Calculate initial net book value
         const netBookValue = data.purchase_cost;
 
-        // Insert asset
+        // Insert asset (usando nombres de columnas de simple-db.ts)
         const result = await this.db.run(
             `INSERT INTO fixed_assets 
-            (asset_tag, asset_name, description, category_id, purchase_date, purchase_cost, 
-             salvage_value, vendor_id, useful_life_months, depreciation_method, 
-             net_book_value, purchase_entry_id, status)
+            (asset_code, name, description, category_id, acquisition_date, acquisition_cost, 
+             salvage_value, supplier_id, useful_life_months, depreciation_method, 
+             current_value, purchase_entry_id, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                assetTag,
+                assetCode,
                 data.asset_name,
                 data.description,
                 data.category_id,
@@ -405,9 +405,9 @@ export class FixedAssetService {
             SELECT 
                 COUNT(*) as total_assets,
                 SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_assets,
-                COALESCE(SUM(purchase_cost), 0) as total_cost,
-                COALESCE(SUM(total_accumulated_depreciation), 0) as total_depreciation,
-                COALESCE(SUM(net_book_value), 0) as net_book_value
+                COALESCE(SUM(acquisition_cost), 0) as total_cost,
+                COALESCE(SUM(accumulated_depreciation), 0) as total_depreciation,
+                COALESCE(SUM(current_value), 0) as net_book_value
             FROM fixed_assets
             WHERE status != 'DISPOSED'
         `);

@@ -3,10 +3,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Lock, User, AlertCircle, Loader2, Zap, ShieldCheck } from 'lucide-react';
 import { GoogleLoginButton } from './GoogleLoginButton';
 
-// Verificar si Google está configurado
+// Verificar si Google está configurado (Soporte VITE/REACT_APP)
 const isGoogleConfigured = () => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-    return clientId && clientId !== 'YOUR_GOOGLE_CLIENT_ID_HERE' && clientId.length > 20;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+        import.meta.env.REACT_APP_GOOGLE_CLIENT_ID ||
+        import.meta.env.REACT_APP_CLIENT_ID || '';
+    return clientId && clientId !== 'YOUR_GOOGLE_CLIENT_ID_HERE' && clientId.length > 10;
 };
 
 const LoginForm: React.FC = () => {
@@ -14,8 +16,8 @@ const LoginForm: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, loginWithGoogle } = useAuth();
-    const showGoogleLogin = isGoogleConfigured();
+    const { login, loginWithGoogle, loginAsGuest } = useAuth();
+    const showGoogleLogin = true; // Forzar mostrar botón de Google
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,9 +41,9 @@ const LoginForm: React.FC = () => {
         setError('');
         setLoading(true);
         try {
-            const success = await login('demo', 'demo123');
+            const success = await loginAsGuest();
             if (!success) {
-                setError('Error en el acceso rápido. Intente manualmente.');
+                setError('Error iniciando modo Demo/Guest.');
             }
         } catch (err) {
             setError('Error de conexión.');
@@ -50,6 +52,7 @@ const LoginForm: React.FC = () => {
         }
     };
 
+
     const handleGoogleSuccess = async (userInfo: any) => {
         setLoading(true);
         setError('');
@@ -57,10 +60,11 @@ const LoginForm: React.FC = () => {
         try {
             const success = await loginWithGoogle(userInfo);
             if (!success) {
-                setError('Error al iniciar sesión con Google');
+                setError('Error al iniciar sesión con Google. Verifica la consola del navegador para más detalles.');
             }
         } catch (err) {
-            setError('Error al procesar login de Google');
+            const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
+            setError(`Error al procesar login de Google: ${errorMsg}`);
             console.error('Google login error:', err);
         } finally {
             setLoading(false);
@@ -108,27 +112,23 @@ const LoginForm: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Google Login - Solo si está configurado */}
-                    {showGoogleLogin && (
-                        <>
-                            <div className="mb-6">
-                                <GoogleLoginButton
-                                    onSuccess={handleGoogleSuccess}
-                                    onError={handleGoogleError}
-                                />
-                            </div>
+                    {/* Google Login - Siempre visible, maneja su propia lógica interna */}
+                    <div className="mb-6">
+                        <GoogleLoginButton
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                        />
+                    </div>
 
-                            {/* Divider */}
-                            <div className="relative my-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-white/20"></div>
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-4 bg-white/15 text-white/60 font-semibold text-xs uppercase tracking-widest">O credenciales locales</span>
-                                </div>
-                            </div>
-                        </>
-                    )}
+                    {/* Divider */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-white/20"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-4 bg-white/15 text-white/60 font-semibold text-xs uppercase tracking-widest">O credenciales locales</span>
+                        </div>
+                    </div>
 
                     {/* Traditional Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-5">
@@ -172,19 +172,7 @@ const LoginForm: React.FC = () => {
                     </form>
 
                     {/* Demo Credentials Footer */}
-                    <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-4">
-                        <div className="flex gap-4">
-                            <div className="text-[10px] text-white/40 text-center">
-                                <p className="font-black uppercase">Admin</p>
-                                <p>admin / admin123</p>
-                            </div>
-                            <div className="text-[10px] text-white/40 text-center border-l border-white/10 pl-4">
-                                <p className="font-black uppercase">Demo</p>
-                                <p>demo / demo123</p>
-                            </div>
-                        </div>
-
-                    </div>
+                    {/* Footer Removed (No hardcoded credentials) */}
                 </div>
 
                 {/* Footer */}

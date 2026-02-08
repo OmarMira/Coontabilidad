@@ -133,7 +133,7 @@ export const PayrollSettings: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
-                        <Settings className="w-8 h-8 text-indigo-500" />
+                        <Settings className="w-8 h-8 text-emerald-500" />
                         Configuración de Nómina
                     </h2>
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Tasas, Impuestos y Parámetros</p>
@@ -161,7 +161,7 @@ export const PayrollSettings: React.FC = () => {
                                                 handleSettingUpdate(setting.setting_key, e.target.value);
                                             }
                                         }}
-                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                                        className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-emerald-500"
                                     />
                                     <div className="p-2 bg-slate-800 rounded-xl">
                                         {setting.setting_key.includes('rate') ? (
@@ -183,7 +183,7 @@ export const PayrollSettings: React.FC = () => {
                         <Button
                             onClick={() => { setShowBracketForm(true); setEditingBracket(null); resetBracketForm(); }}
                             size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700 font-bold"
+                            className="bg-emerald-600 hover:bg-emerald-700 font-bold"
                         >
                             <Plus className="w-4 h-4 mr-2" /> Nuevo Rango
                         </Button>
@@ -207,12 +207,12 @@ export const PayrollSettings: React.FC = () => {
                                             {bracket.max_income ? `$${bracket.max_income.toLocaleString()}` : 'En adelante'}
                                         </td>
                                         <td className="px-4 py-3 font-mono text-slate-300">${bracket.fixed_amount.toLocaleString()}</td>
-                                        <td className="px-4 py-3 font-mono text-indigo-400">{(bracket.percentage * 100).toFixed(1)}%</td>
+                                        <td className="px-4 py-3 font-mono text-emerald-400">{(bracket.percentage * 100).toFixed(1)}%</td>
                                         <td className="px-4 py-3">
                                             <div className="flex gap-1">
                                                 <button
                                                     onClick={() => startEditBracket(bracket)}
-                                                    className="p-1.5 hover:bg-indigo-500/20 text-indigo-400 rounded-lg"
+                                                    className="p-1.5 hover:bg-emerald-500/20 text-emerald-400 rounded-lg"
                                                 >
                                                     <Calculator className="w-3.5 h-3.5" />
                                                 </button>
@@ -256,7 +256,7 @@ export const PayrollSettings: React.FC = () => {
                                         value={bracketForm.min_income}
                                         onChange={(e) => setBracketForm(prev => ({ ...prev, min_income: parseFloat(e.target.value) || 0 }))}
                                         required
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-emerald-500"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -267,7 +267,7 @@ export const PayrollSettings: React.FC = () => {
                                         value={bracketForm.max_income || ''}
                                         onChange={(e) => setBracketForm(prev => ({ ...prev, max_income: e.target.value ? parseFloat(e.target.value) : undefined }))}
                                         placeholder="Dejar vacío para 'en adelante'"
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-emerald-500"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -278,7 +278,7 @@ export const PayrollSettings: React.FC = () => {
                                         value={bracketForm.fixed_amount}
                                         onChange={(e) => setBracketForm(prev => ({ ...prev, fixed_amount: parseFloat(e.target.value) || 0 }))}
                                         required
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-emerald-500"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -291,7 +291,7 @@ export const PayrollSettings: React.FC = () => {
                                         value={bracketForm.percentage}
                                         onChange={(e) => setBracketForm(prev => ({ ...prev, percentage: parseFloat(e.target.value) || 0 }))}
                                         required
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-emerald-500"
                                     />
                                 </div>
                             </div>
@@ -318,7 +318,7 @@ export const PayrollSettings: React.FC = () => {
                                 <Button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8"
                                 >
                                     {isLoading ? 'Procesando...' : editingBracket ? 'Actualizar Rango' : 'Crear Rango'}
                                 </Button>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import UserService from '../services/UserService';
-import { createUser, getUserByUsername } from '../database/simple-db';
+import { createUser, getUserByUsername, hasUsers } from '../database/simple-db';
 import type { User as DBUser } from '../types/user.types';
 
 interface User {
@@ -28,11 +28,14 @@ interface AuthContextType {
     user: User | null;
     login: (username: string, password: string) => Promise<boolean>;
     loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<boolean>;
+    loginAsGuest: () => Promise<boolean>;
     logout: () => void;
     isAuthenticated: boolean;
     refreshUser: () => Promise<void>;
     hasPermission: (module: string, action: string) => boolean;
+    checkSystemHasUsers: () => boolean;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -40,13 +43,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
 
     // Verificar sesión guardada al cargar
+    // Verificar sesión guardada al cargar
     useEffect(() => {
-        const savedUser = localStorage.getItem('accountexpress_user');
-        if (savedUser) {
+        const savedData = localStorage.getItem('accountexpress_user');
+        if (savedData) {
             try {
-                setUser(JSON.parse(savedUser));
+                const parsed = JSON.parse(savedData);
+
+                // Check format: New (with expiry) or Legacy (active user)
+                if (parsed.expiresAt) {
+                    if (Date.now() < parsed.expiresAt) {
+                        setUser(parsed.user);
+                    } else {
+                        console.warn('Session expired (8h limit).');
+                        localStorage.removeItem('accountexpress_user');
+                    }
+                } else if (parsed.id) { // Legacy user object
+                    // Migrate legacy session to 8h expiry
+                    setUser(parsed);
+                    const sessionData = {
+                        user: parsed,
+                        expiresAt: Date.now() + 8 * 60 * 60 * 1000
+                    };
+                    localStorage.setItem('accountexpress_user', JSON.stringify(sessionData));
+                }
             } catch (error) {
-                console.error('Error loading saved user:', error);
+                console.error('Error loading saved session:', error);
                 localStorage.removeItem('accountexpress_user');
             }
         }
@@ -54,54 +76,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (username: string, password: string): Promise<boolean> => {
         try {
-            // --- BYPASS DE EMERGENCIA (Opción B) ---
-            if (username === 'demo' && password === 'demo123') {
-                const demoUser: User = {
-                    id: 999,
-                    username: 'demo',
-                    email: 'demo@accountexpress.com',
-                    full_name: 'Usuario de Demostración',
-                    display_name: 'Demo User',
-                    role: 'admin',
-                    role_id: 1,
-                    role_level: 100,
-                    permissions: {
-                        dashboard: ["view", "export"],
-                        customers: ["view", "create", "edit", "delete", "export"],
-                        suppliers: ["view", "create", "edit", "delete"],
-                        products: ["view", "create", "edit", "delete", "manage_inventory"],
-                        sales: ["view_invoices", "create_invoice", "edit_invoice", "cancel_invoice", "view_reports"],
-                        purchases: ["view_bills", "create_bill", "edit_bill", "pay_bill"],
-                        accounting: ["view_chart_of_accounts", "create_journal", "edit_journal", "view_reports", "close_period"],
-                        reports: ["view_financial", "view_tax", "view_inventory", "export_all"],
-                        settings: ["view_company", "edit_company", "manage_users", "manage_roles", "system_settings"]
-                    }
-                };
-                setUser(demoUser);
-                localStorage.setItem('accountexpress_user', JSON.stringify(demoUser));
-                console.log('✅ Acceso concedido mediante Bypass de Emergencia (DEMO)');
-                return true;
-            }
-
-            if (username === 'admin' && password === 'admin123') {
-                const adminUser: User = {
-                    id: 1,
-                    username: 'admin',
-                    email: 'admin@accountexpress.com',
-                    full_name: 'Administrador del Sistema',
-                    display_name: 'Admin',
-                    role: 'admin',
-                    role_id: 1,
-                    role_level: 100,
-                    permissions: { all: true }
-                };
-                setUser(adminUser);
-                localStorage.setItem('accountexpress_user', JSON.stringify(adminUser));
-                console.log('✅ Acceso concedido mediante Bypass de Emergencia (ADMIN)');
-                return true;
-            }
-
             // Autenticar con UserService (base de datos real)
+            // NOTA: Los accesos hardcodeados (demo/admin) han sido eliminados por política de seguridad (NIST/ISO 27001).
+            // Todo acceso debe pasar por la base de datos cifrada o OAuth2.
             const result = await UserService.authenticateUser(username, password);
 
             if (result.success && result.data) {
@@ -121,7 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
 
                 setUser(userData);
-                localStorage.setItem('accountexpress_user', JSON.stringify(userData));
+                localStorage.setItem('accountexpress_user', JSON.stringify({
+                    user: userData,
+                    expiresAt: Date.now() + 8 * 60 * 60 * 1000
+                }));
                 return true;
             }
 
@@ -156,27 +136,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
 
                 setUser(userData);
-                localStorage.setItem('accountexpress_user', JSON.stringify(userData));
+                localStorage.setItem('accountexpress_user', JSON.stringify({
+                    user: userData,
+                    expiresAt: Date.now() + 8 * 60 * 60 * 1000
+                }));
                 return true;
             } else {
-                // Usuario no existe, crear uno nuevo con rol viewer por defecto
+                // Usuario no existe, determinar rol según si es el primer usuario
                 const roles = UserService.getRoles();
-                const viewerRole = roles.find(r => r.name === 'viewer') || roles[roles.length - 1];
+                const isFirstUser = !hasUsers();
 
-                if (!viewerRole) {
+                // Si es el primer usuario → Admin, si no → Vendedor
+                let assignedRole;
+                if (isFirstUser) {
+                    assignedRole = roles.find(r => r.name === 'admin');
+                    console.log('🎯 Primer usuario del sistema - Asignando rol de Administrador');
+                } else {
+                    assignedRole = roles.find(r => r.name === 'vendedor');
+                    console.log('👤 Usuario adicional - Asignando rol de Vendedor');
+                }
+
+                // Fallback a viewer si no se encuentra el rol
+                if (!assignedRole) {
+                    assignedRole = roles.find(r => r.name === 'viewer') || roles[roles.length - 1];
+                }
+
+                if (!assignedRole) {
                     console.error('No hay roles disponibles en el sistema');
                     return false;
                 }
 
                 // Crear usuario nuevo
+                console.log('📝 Creando usuario de Google:', {
+                    email: googleUser.email,
+                    name: googleUser.name,
+                    role: assignedRole.name
+                });
+
                 const result = await createUser({
                     username: googleUser.email,
                     email: googleUser.email,
                     full_name: googleUser.name,
                     password: `google_${googleUser.sub}_${Date.now()}`, // Password aleatorio (no se usará)
                     display_name: googleUser.name,
-                    role_id: viewerRole.id
+                    role_id: assignedRole.id
                 });
+
+                console.log('📊 Resultado de creación de usuario:', result);
 
                 if (result.success && result.userId) {
                     const userData: User = {
@@ -185,24 +191,98 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         email: googleUser.email,
                         full_name: googleUser.name,
                         display_name: googleUser.name,
-                        role: viewerRole.name,
-                        role_id: viewerRole.id,
-                        role_level: viewerRole.level,
-                        permissions: viewerRole.permissions_json ? JSON.parse(viewerRole.permissions_json) : {},
+                        role: assignedRole.name,
+                        role_id: assignedRole.id,
+                        role_level: assignedRole.level,
+                        permissions: assignedRole.permissions_json ? JSON.parse(assignedRole.permissions_json) : {},
                         googleId: googleUser.sub,
                         picture: googleUser.picture
                     };
 
                     setUser(userData);
-                    localStorage.setItem('accountexpress_user', JSON.stringify(userData));
-                    console.log('Usuario de Google creado exitosamente:', userData);
+                    localStorage.setItem('accountexpress_user', JSON.stringify({
+                        user: userData,
+                        expiresAt: Date.now() + 8 * 60 * 60 * 1000
+                    }));
+                    console.log(`✅ Usuario de Google creado exitosamente con rol: ${assignedRole.name}`, userData);
                     return true;
                 }
 
-                return false;
+                // Si la creación falla, propagar el error
+                console.error('❌ Error al crear usuario de Google:', {
+                    mensaje: result.message,
+                    datos: { email: googleUser.email, role: assignedRole.name }
+                });
+                throw new Error(result.message || 'Error desconocido al crear usuario');
             }
         } catch (error) {
-            console.error('Error en login de Google:', error);
+            console.error('❌ CRITICAL: Error en login de Google:', error);
+            // Propagar el error para que LoginForm lo muestre
+            throw error;
+        }
+    };
+
+    const checkSystemHasUsers = () => {
+        return hasUsers();
+    };
+
+    const loginAsGuest = async (): Promise<boolean> => {
+        try {
+            console.log('🔄 Switching to Volatile Demo Mode...');
+
+            // 1. Reset current DB connection to switch modes
+            const { resetDB, initDB, createUser } = await import('../database/simple-db');
+            await resetDB();
+
+            // 2. Initialize in RAM-ONLY Mode (Volatile)
+            // This creates a fresh new SQL.Database() instance
+            await initDB(undefined, true);
+
+            // 3. Create Demo User in the Volatile DB
+            // We need a user in the DB so relational queries (invoice.userId) work
+            const roles = UserService.getRoles();
+            const adminRole = roles.find(r => r.name === 'admin') || roles[0];
+
+            if (!adminRole) throw new Error('System roles not initialized in Demo Mode');
+
+            const demoUserFn = {
+                username: 'demo.admin',
+                email: 'demo@volatile.local',
+                full_name: 'Modo Demo Volátil',
+                display_name: 'Demo Admin',
+                password: 'demo_access_grant',
+                role_id: adminRole.id
+            };
+
+            const createRes = await createUser(demoUserFn);
+
+            if (createRes.success && createRes.userId) {
+                const userData: User = {
+                    id: createRes.userId,
+                    username: demoUserFn.username,
+                    email: demoUserFn.email,
+                    full_name: demoUserFn.full_name,
+                    display_name: demoUserFn.display_name,
+                    role: adminRole.name,
+                    role_id: adminRole.id,
+                    role_level: adminRole.level,
+                    permissions: adminRole.permissions_json ? JSON.parse(adminRole.permissions_json) : {}
+                };
+
+                setUser(userData);
+
+                // NOTA CRÍTICA: NO guardamos en localStorage.
+                // "Al cerrar la pestaña o refrescar, los datos deben desaparecer por completo".
+                // Esto incluye la sesión. Si refrescan, vuelven al login y la DB persistente.
+
+                console.log('✅ Volatile Demo Mode Activated (RAM Only)');
+                return true;
+            }
+
+            return false;
+
+        } catch (e) {
+            console.error('Guest login failed', e);
             return false;
         }
     };
@@ -272,6 +352,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             user,
             login,
             loginWithGoogle,
+            loginAsGuest,
+            checkSystemHasUsers,
             logout,
             isAuthenticated: !!user,
             refreshUser,

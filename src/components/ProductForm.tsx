@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, DollarSign, Hash, Tag, Truck, BarChart3, AlertTriangle } from 'lucide-react';
+import {
+  X, Package, DollarSign, Hash, Tag, Truck, BarChart3,
+  AlertTriangle, ShieldCheck, Zap, Cpu, Sparkles, Box, Server,
+  Layers, Settings, Info
+} from 'lucide-react';
 import { Product, ProductCategory, Supplier, getProductCategories, getSuppliers } from '../database/simple-db';
 
 interface ProductFormProps {
@@ -49,47 +53,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Cargar categorías y proveedores
     setCategories(getProductCategories());
     setSuppliers(getSuppliers());
   }, []);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.sku.trim()) {
-      newErrors.sku = 'El SKU es requerido';
-    }
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'El nombre del producto es requerido';
-    }
-
-    if (formData.price < 0) {
-      newErrors.price = 'El precio no puede ser negativo';
-    }
-
-    if (formData.cost && formData.cost < 0) {
-      newErrors.cost = 'El costo no puede ser negativo';
-    }
-
-    if (!formData.is_service) {
-      if (formData.stock_quantity < 0) {
-        newErrors.stock_quantity = 'La cantidad en stock no puede ser negativa';
-      }
-
-      if (formData.min_stock_level < 0) {
-        newErrors.min_stock_level = 'El stock mínimo no puede ser negativo';
-      }
-
-      if (formData.max_stock_level < formData.min_stock_level) {
-        newErrors.max_stock_level = 'El stock máximo debe ser mayor al mínimo';
-      }
-
-      if (formData.reorder_point < 0) {
-        newErrors.reorder_point = 'El punto de reorden no puede ser negativo';
-      }
-    }
+    if (!formData.sku.trim()) newErrors.sku = 'SKU mandatorio';
+    if (!formData.name.trim()) newErrors.name = 'Identificador mandatorio';
+    if (formData.price < 0) newErrors.price = 'Valor negativo no permitido';
+    if (formData.cost && formData.cost < 0) newErrors.cost = 'Costo negativo no permitido';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -97,12 +70,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!validateForm()) {
-      return;
-    }
-
-    // Limpiar campos no aplicables para servicios
     const productData = { ...formData };
     if (formData.is_service) {
       productData.stock_quantity = 0;
@@ -121,530 +90,263 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-
-    // Limpiar error del campo cuando el usuario empiece a escribir
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
   const tabs = [
-    { id: 'basic', label: 'Información Básica', icon: Package },
-    { id: 'inventory', label: 'Inventario', icon: BarChart3 },
-    { id: 'advanced', label: 'Avanzado', icon: Tag }
+    { id: 'basic', label: 'Básico', icon: Info },
+    { id: 'inventory', label: 'Matriz', icon: Layers },
+    { id: 'advanced', label: 'Protocolos', icon: Settings }
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-50 p-6">
+      <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 blur-[120px] pointer-events-none"></div>
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <div>
-            <h2 className="text-xl font-semibold text-white">
-              {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
-            </h2>
-            <p className="text-gray-400 text-sm">
-              {isEditing ? 'Modifica la información del producto' : 'Agrega un nuevo producto o servicio al catálogo'}
-            </p>
+        <header className="flex items-center justify-between p-10 border-b border-slate-800 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className={`p-5 rounded-2.5xl border shadow-lg ${isEditing ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500'} animate-pulse`}>
+              {isEditing ? <Cpu className="w-8 h-8" /> : <Sparkles className="w-8 h-8" />}
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                {isEditing ? 'Actualizar Ficha de Activo' : 'Sincronizar Nuevo Activo'}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Registro Central de Inventario v4.2
+              </p>
+            </div>
           </div>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={onCancel} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all">
             <X className="w-6 h-6" />
           </button>
-        </div>
+        </header>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-700">
+        {/* Tab Selector */}
+        <div className="flex px-10 border-b border-slate-800/50 bg-slate-950/20">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center space-x-2 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
-                  ? 'text-blue-400 border-b-2 border-blue-400 bg-gray-700/50'
-                  : 'text-gray-400 hover:text-white'
+              className={`flex items-center gap-3 px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab.id ? 'text-emerald-400' : 'text-slate-500 hover:text-white'
                 }`}
             >
               <tab.icon className="w-4 h-4" />
               <span>{tab.label}</span>
+              {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>}
             </button>
           ))}
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto p-6">
-            {/* Tab: Información Básica */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
             {activeTab === 'basic' && (
-              <div className="space-y-6">
-                {/* Tipo de producto */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Tipo de Producto
-                  </label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        checked={!formData.is_service}
-                        onChange={() => handleInputChange('is_service', false)}
-                        className="mr-2"
+              <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  {/* Type Selector */}
+                  <div className="p-8 bg-slate-950 border border-slate-800 rounded-3xl space-y-4">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Naturaleza del Activo</label>
+                    <div className="flex gap-4">
+                      <TypeButton
+                        active={!formData.is_service}
+                        onClick={() => handleInputChange('is_service', false)}
+                        icon={Box}
+                        label="Producto Físico"
+                        color="emerald"
                       />
-                      <span className="text-white">Producto Físico</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        checked={formData.is_service}
-                        onChange={() => handleInputChange('is_service', true)}
-                        className="mr-2"
-                      />
-                      <span className="text-white">Servicio</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* SKU */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      SKU *
-                    </label>
-                    <div className="relative">
-                      <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        type="text"
-                        value={formData.sku}
-                        onChange={(e) => handleInputChange('sku', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.sku ? 'border-red-500' : 'border-gray-600'
-                          }`}
-                        placeholder="Ej: PROD-001"
+                      <TypeButton
+                        active={formData.is_service}
+                        onClick={() => handleInputChange('is_service', true)}
+                        icon={Server}
+                        label="Servicio / Digital"
+                        color="rose"
                       />
                     </div>
-                    {errors.sku && (
-                      <p className="mt-1 text-sm text-red-400">{errors.sku}</p>
-                    )}
                   </div>
 
-                  {/* Nombre */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Nombre *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-600'
-                        }`}
-                      placeholder="Nombre del producto"
-                    />
-                    {errors.name && (
-                      <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-                    )}
+                  <PremiumInput label="SKU / Hash" icon={Hash} value={formData.sku} error={errors.sku} onChange={(v) => handleInputChange('sku', v)} placeholder="SKU-999-X" required />
+                  <div className="md:col-span-2">
+                    <PremiumInput label="Nombre del Activo" icon={Package} value={formData.name} error={errors.name} onChange={(v) => handleInputChange('name', v)} placeholder="NOMBRE DESCRIPTIVO" required />
                   </div>
 
-                  {/* Categoría */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Categoría
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                      <Layers className="w-3.5 h-3.5 text-emerald-500" /> Clasificación Matriz
                     </label>
                     <select
                       value={formData.category_id || ''}
                       onChange={(e) => handleInputChange('category_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
                     >
-                      <option value="">Seleccionar categoría</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
+                      <option value="">SIN CATEGORÍA</option>
+                      {categories.map((c) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
                     </select>
                   </div>
 
-                  {/* Unidad de medida */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Unidad de Medida
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                      <Zap className="w-3.5 h-3.5 text-emerald-500" /> Unidad de Control
                     </label>
                     <select
                       value={formData.unit_of_measure}
                       onChange={(e) => handleInputChange('unit_of_measure', e.target.value)}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
                     >
-                      <option value="unidad">Unidad</option>
-                      <option value="pieza">Pieza</option>
-                      <option value="kg">Kilogramo</option>
-                      <option value="litro">Litro</option>
-                      <option value="metro">Metro</option>
-                      <option value="caja">Caja</option>
-                      <option value="paquete">Paquete</option>
-                      <option value="hora">Hora</option>
-                      <option value="servicio">Servicio</option>
+                      {['unidad', 'pieza', 'kg', 'litro', 'metro', 'caja', 'paquete', 'hora', 'servicio'].map(u => (
+                        <option key={u} value={u}>{u.toUpperCase()}</option>
+                      ))}
                     </select>
                   </div>
 
-                  {/* Precio */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Precio de Venta *
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.price}
-                        onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.price ? 'border-red-500' : 'border-gray-600'
-                          }`}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    {errors.price && (
-                      <p className="mt-1 text-sm text-red-400">{errors.price}</p>
-                    )}
-                  </div>
+                  <PremiumInput label="Precio Venta (Unit)" icon={DollarSign} value={formData.price.toString()} error={errors.price} onChange={(v) => handleInputChange('price', parseFloat(v) || 0)} type="number" />
+                  <PremiumInput label="Costo Adquisición" icon={DollarSign} value={formData.cost.toString()} error={errors.cost} onChange={(v) => handleInputChange('cost', parseFloat(v) || 0)} type="number" />
+                </div>
+              </div>
+            )}
 
-                  {/* Costo */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Costo
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.cost || ''}
-                        onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
-                        className={`w-full pl-10 pr-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.cost ? 'border-red-500' : 'border-gray-600'
-                          }`}
-                        placeholder="0.00"
-                      />
+            {activeTab === 'inventory' && (
+              <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-500">
+                {formData.is_service ? (
+                  <div className="p-16 bg-blue-950/10 border-2 border-dashed border-blue-500/20 rounded-[3rem] text-center">
+                    <Zap className="w-16 h-16 text-blue-500 mx-auto mb-6 animate-pulse" />
+                    <h4 className="text-2xl font-black text-white uppercase tracking-tighter">Activo Intangible Detectado</h4>
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2">Los servicios no requieren métricas de stock físico.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <PremiumInput label="Stock Actual" icon={Box} value={formData.stock_quantity.toString()} onChange={(v) => handleInputChange('stock_quantity', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Mínimo Seguridad" icon={AlertTriangle} value={formData.min_stock_level.toString()} onChange={(v) => handleInputChange('min_stock_level', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Punto de Reorden" icon={Zap} value={formData.reorder_point.toString()} onChange={(v) => handleInputChange('reorder_point', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Máximo Permitido" icon={Maximize2} value={formData.max_stock_level.toString()} onChange={(v) => handleInputChange('max_stock_level', parseInt(v) || 0)} type="number" />
+
+                    <div className="md:col-span-2 space-y-3">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                        <Truck className="w-3.5 h-3.5 text-emerald-500" /> Proveedor Primario
+                      </label>
+                      <select
+                        value={formData.supplier_id || ''}
+                        onChange={(e) => handleInputChange('supplier_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                        className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
+                      >
+                        <option value="">SELECCIONAR PROVEEDOR</option>
+                        {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
+                      </select>
                     </div>
-                    {errors.cost && (
-                      <p className="mt-1 text-sm text-red-400">{errors.cost}</p>
-                    )}
+
+                    <div className="md:col-span-2">
+                      <PremiumInput label="Código EAN / Barras" icon={Hash} value={formData.barcode} onChange={(v) => handleInputChange('barcode', v)} placeholder="0000000000" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'advanced' && (
+              <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <PremiumInput label="Garantía (Días)" icon={ShieldCheck} value={formData.warranty_period?.toString() || ''} onChange={(v) => handleInputChange('warranty_period', parseInt(v) || undefined)} type="number" />
+                  {formData.is_service && <PremiumInput label="Duración (Minutos)" icon={Zap} value={formData.service_duration?.toString() || ''} onChange={(v) => handleInputChange('service_duration', parseInt(v) || undefined)} type="number" />}
+
+                  <div className="md:col-span-2 space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                      <Info className="w-3.5 h-3.5 text-emerald-500" /> Notas Técnicas
+                    </label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => handleInputChange('notes', e.target.value)}
+                      rows={4}
+                      className="w-full bg-slate-950 text-white px-8 py-6 rounded-[2rem] border border-slate-800 focus:border-emerald-500 focus:outline-none font-medium text-sm placeholder:text-slate-800"
+                      placeholder="Información adicional para auditoría..."
+                    />
                   </div>
                 </div>
 
-                {/* Descripción */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Descripción
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Descripción detallada del producto"
-                  />
-                </div>
-
-                {/* Configuración de impuestos */}
-                <div className="space-y-4">
-                  <div className="flex items-center">
+                <div className="flex items-center gap-6 p-8 bg-slate-950 border border-slate-800 rounded-3xl">
+                  <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
                       id="taxable"
                       checked={formData.taxable}
                       onChange={(e) => handleInputChange('taxable', e.target.checked)}
-                      className="mr-2"
+                      className="w-5 h-5 rounded border-slate-800 bg-slate-900 text-emerald-600 focus:ring-emerald-500/20"
                     />
-                    <label htmlFor="taxable" className="text-white">
-                      Producto gravable (sujeto a impuestos)
-                    </label>
+                    <label htmlFor="taxable" className="text-xs font-black text-white uppercase tracking-widest">Activo Gravable (Impuestos)</label>
                   </div>
-
-                  {formData.taxable && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Tasa de Impuesto Específica (opcional)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={formData.tax_rate || ''}
-                        onChange={(e) => handleInputChange('tax_rate', parseFloat(e.target.value) || undefined)}
-                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Dejar vacío para usar tasa por defecto"
-                      />
-                      <p className="mt-1 text-xs text-gray-400">
-                        Si se deja vacío, se usará la tasa de impuesto por defecto según el condado del cliente
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Duración del servicio (solo para servicios) */}
-                {formData.is_service && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Duración del Servicio (minutos)
-                    </label>
+                  <div className="flex items-center gap-3 border-l border-slate-800 pl-6">
                     <input
-                      type="number"
-                      min="0"
-                      value={formData.service_duration || ''}
-                      onChange={(e) => handleInputChange('service_duration', parseInt(e.target.value) || undefined)}
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: 60 para 1 hora"
+                      type="checkbox"
+                      id="active"
+                      checked={formData.active}
+                      onChange={(e) => handleInputChange('active', e.target.checked)}
+                      className="w-5 h-5 rounded border-slate-800 bg-slate-900 text-blue-600 focus:ring-blue-500/20"
                     />
+                    <label htmlFor="active" className="text-xs font-black text-white uppercase tracking-widest">Visibilidad en Catálogo</label>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Tab: Inventario */}
-            {activeTab === 'inventory' && (
-              <div className="space-y-6">
-                {formData.is_service ? (
-                  <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <AlertTriangle className="w-5 h-5 text-blue-400 mr-2" />
-                      <p className="text-blue-300">
-                        Los servicios no requieren gestión de inventario
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Stock actual */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Cantidad en Stock
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.stock_quantity}
-                          onChange={(e) => handleInputChange('stock_quantity', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.stock_quantity ? 'border-red-500' : 'border-gray-600'
-                            }`}
-                        />
-                        {errors.stock_quantity && (
-                          <p className="mt-1 text-sm text-red-400">{errors.stock_quantity}</p>
-                        )}
-                      </div>
-
-                      {/* Stock mínimo */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Stock Mínimo
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.min_stock_level}
-                          onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.min_stock_level ? 'border-red-500' : 'border-gray-600'
-                            }`}
-                        />
-                        {errors.min_stock_level && (
-                          <p className="mt-1 text-sm text-red-400">{errors.min_stock_level}</p>
-                        )}
-                      </div>
-
-                      {/* Stock máximo */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Stock Máximo
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.max_stock_level}
-                          onChange={(e) => handleInputChange('max_stock_level', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.max_stock_level ? 'border-red-500' : 'border-gray-600'
-                            }`}
-                        />
-                        {errors.max_stock_level && (
-                          <p className="mt-1 text-sm text-red-400">{errors.max_stock_level}</p>
-                        )}
-                      </div>
-
-                      {/* Punto de reorden */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Punto de Reorden
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.reorder_point}
-                          onChange={(e) => handleInputChange('reorder_point', parseInt(e.target.value) || 0)}
-                          className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.reorder_point ? 'border-red-500' : 'border-gray-600'
-                            }`}
-                        />
-                        {errors.reorder_point && (
-                          <p className="mt-1 text-sm text-red-400">{errors.reorder_point}</p>
-                        )}
-                        <p className="mt-1 text-xs text-gray-400">
-                          Cantidad mínima antes de generar alerta de reposición
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Proveedor */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Proveedor Principal
-                      </label>
-                      <div className="relative">
-                        <Truck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <select
-                          value={formData.supplier_id || ''}
-                          onChange={(e) => handleInputChange('supplier_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                          className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Seleccionar proveedor</option>
-                          {suppliers.map((supplier) => (
-                            <option key={supplier.id} value={supplier.id}>
-                              {supplier.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Código de barras */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Código de Barras
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.barcode}
-                        onChange={(e) => handleInputChange('barcode', e.target.value)}
-                        className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Código de barras del producto"
-                      />
-                    </div>
-
-                    {/* Peso y dimensiones */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Peso (kg)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.weight || ''}
-                          onChange={(e) => handleInputChange('weight', parseFloat(e.target.value) || undefined)}
-                          className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                          Dimensiones (LxWxH)
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.dimensions}
-                          onChange={(e) => handleInputChange('dimensions', e.target.value)}
-                          className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Ej: 10x5x3 cm"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Tab: Avanzado */}
-            {activeTab === 'advanced' && (
-              <div className="space-y-6">
-                {/* Período de garantía */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Período de Garantía (días)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.warranty_period || ''}
-                    onChange={(e) => handleInputChange('warranty_period', parseInt(e.target.value) || undefined)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ej: 365 para 1 año"
-                  />
-                </div>
-
-                {/* Imagen */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Ruta de Imagen
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.image_path}
-                    onChange={(e) => handleInputChange('image_path', e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="URL o ruta de la imagen del producto"
-                  />
-                </div>
-
-                {/* Notas */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Notas Adicionales
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    rows={4}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Información adicional sobre el producto"
-                  />
-                </div>
-
-                {/* Estado activo */}
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="active"
-                    checked={formData.active}
-                    onChange={(e) => handleInputChange('active', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <label htmlFor="active" className="text-white">
-                    Producto activo (visible en el catálogo)
-                  </label>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Footer con botones */}
-          <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-700">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-6 py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              {isEditing ? 'Actualizar Producto' : 'Crear Producto'}
-            </button>
-          </div>
+          {/* Footer Actions */}
+          <footer className="p-10 border-t border-slate-800 bg-slate-950/50 relative z-10 flex items-center justify-between">
+            <div className="hidden md:flex items-center gap-3 text-slate-500">
+              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Sincronización inmutable con el repositorio de activos ALPHA.</span>
+            </div>
+
+            <div className="flex gap-6 w-full md:w-auto">
+              <button type="button" onClick={onCancel} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
+                Abortar Protocolo
+              </button>
+              <button type="submit" className={`flex-1 md:flex-none px-12 py-5 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-2xl ${isEditing ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40'
+                } hover:-translate-y-1 active:scale-95`}>
+                {isEditing ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                {isEditing ? 'Confirmar Sincronización' : 'Ejecutar Alta de Activo'}
+              </button>
+            </div>
+          </footer>
         </form>
       </div>
     </div>
   );
 };
+
+const TypeButton = ({ active, onClick, icon: Icon, label, color }: any) => {
+  const variants: any = {
+    emerald: active ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-900/40' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-50',
+    rose: active ? 'bg-rose-600 text-white border-rose-500 shadow-rose-900/40' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-50',
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 flex items-center justify-center gap-3 p-5 rounded-2xl border-2 transition-all font-black uppercase tracking-tighter text-xs ${variants[color]}`}
+    >
+      <Icon className="w-5 h-5" />
+      {label}
+    </button>
+  );
+};
+
+const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required }: any) => (
+  <div className="space-y-3">
+    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+      <Icon className={`w-3.5 h-3.5 ${error ? 'text-rose-500' : 'text-emerald-500'}`} /> {label} {required && '*'}
+    </label>
+    <div className="relative group/input">
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full bg-slate-950 text-white px-8 py-6 rounded-[2.5rem] border transition-all font-black uppercase tracking-widest text-[10px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800 focus:border-emerald-500 focus:shadow-[0_0_25px_rgba(16,185,129,0.1)] group-hover/input:border-slate-700'
+          }`}
+        placeholder={placeholder}
+        required={required}
+      />
+      {error && <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-3 ml-2 animate-bounce">{error}</p>}
+    </div>
+  </div>
+);

@@ -34,6 +34,43 @@ export const getDBEngine = (): SQLiteEngine => {
   return dbEngine;
 };
 
+// --- SANDBOX SECURITY INTERCEPTOR ---
+const GUEST_LIMIT_PER_TABLE = 20;
+
+export async function checkGuestRestriction(userId: number | undefined, table: string, action: 'create' | 'update' | 'delete'): Promise<void> {
+  if (!db || !userId) return;
+
+  // Check user role
+  try {
+    const userRes = db.exec("SELECT r.name FROM users u JOIN user_roles r ON u.role_id = r.id WHERE u.id = ?", [userId]);
+    if (!userRes.length || !userRes[0].values.length) return;
+
+    const roleName = (userRes[0].values[0][0] as string).toLowerCase();
+
+    // Only restrict 'guest' or 'demo' roles
+    if (!['guest', 'demo', 'viewer'].includes(roleName)) return;
+
+    // Rule 1: No modifications to 'users' table
+    if (table === 'users') {
+      throw new Error('SANDBOX SECURITY: Las cuentas demo no pueden modificar usuarios del sistema.');
+    }
+
+    // Rule 2: Limit records on ANY table creation
+    if (action === 'create') {
+      // Safe-guard against SQL injection in table name implies internal usage only
+      const countRes = db.exec(`SELECT COUNT(*) FROM ${table}`);
+      const count = countRes[0].values[0][0] as number;
+      if (count >= GUEST_LIMIT_PER_TABLE) {
+        throw new Error(`SANDBOX DEMO LIMIT: No puedes crear más de ${GUEST_LIMIT_PER_TABLE} registros en ${table} durante la demostración.`);
+      }
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith('SANDBOX')) throw e;
+    // Ignore other errors to not block logic if check fails (fail-open vs fail-close trade-off)
+    // For security, usually fail-close, but here we assume DB errors shouldn't block admins if check fails.
+  }
+}
+
 // ==========================================
 // DASHBOARD & ANALYTICS
 // ==========================================
@@ -62,6 +99,19 @@ export interface Employee {
   salary_rate: number;
   status: 'active' | 'inactive' | 'on_leave';
   florida_county?: string;
+  
+  // Payroll Engine Fields
+  hourly_rate?: number;
+  salary?: number;
+  pay_type?: 'hourly' | 'salaried';
+  filing_status?: 'single' | 'married' | 'married_separate' | 'head_of_household';
+  allowances?: number;
+  additional_withholding?: number;
+  ytd_gross_pay?: number;
+  ytd_federal_tax?: number;
+  ytd_fica?: number;
+  ytd_medicare?: number;
+  ssn?: string;
 }
 
 export interface PayrollPeriod {
@@ -102,6 +152,53 @@ export interface PayrollSetting {
   setting_value: string;
   category: string;
   description?: string;
+}
+
+// Payroll Engine Interface
+export interface Payroll {
+  id?: number;
+  employee_id: number;
+  pay_period_start: string;
+  pay_period_end: string;
+  pay_date: string;
+  
+  // Hours and rates
+  regular_hours: number;
+  overtime_hours: number;
+  hourly_rate?: number;
+  
+  // Earnings
+  regular_pay: number;
+  overtime_pay: number;
+  bonuses: number;
+  commissions: number;
+  gross_pay: number;
+  
+  // Taxes
+  social_security_tax: number;
+  medicare_tax: number;
+  medicare_additional_tax: number;
+  federal_income_tax: number;
+  
+  // Deductions
+  other_deductions: number;
+  total_deductions: number;
+  
+  // Net
+  net_pay: number;
+  
+  // Journal entry
+  journal_entry_id?: number;
+  
+  // Audit
+  status: 'draft' | 'approved' | 'paid' | 'voided';
+  processed_by?: number;
+  processed_at?: string;
+  approved_by?: number;
+  approved_at?: string;
+  
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TaxBracket {
@@ -241,6 +338,18 @@ export function getEmployees(): Employee[] {
   } catch (e) {
     console.error('Error fetching employees:', e);
     return [];
+  }
+}
+
+export function getEmployeeById(id: number): Employee | null {
+  if (!db) return null;
+  try {
+    const res = db.exec("SELECT * FROM employees WHERE id = ?", [id]);
+    if (res.length === 0 || res[0].values.length === 0) return null;
+    return rowToEntity<Employee>(res[0].columns, res[0].values[0]);
+  } catch (e) {
+    console.error('Error fetching employee:', e);
+    return null;
   }
 }
 
@@ -741,6 +850,11 @@ export function recordDepreciation(depreciation: Partial<AssetDepreciation>): { 
   if (depreciation.accumulated_depreciation == null) return { success: false, message: 'Depreciación acumulada requerida' };
   if (depreciation.net_book_value == null) return { success: false, message: 'Valor neto en libros requerido' };
 
+  // Validar bloqueo de periodos
+  if (isDateLocked(depreciation.period_date)) {
+    return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+  }
+
   try {
     db.run('BEGIN TRANSACTION');
 
@@ -1076,11 +1190,10 @@ export function isDateLocked(dateStr: string): boolean {
   try {
     const date = new Date(dateStr).toISOString().split('T')[0];
     const res = db.exec(`
-      SELECT p.status 
-      FROM accounting_periods p
-      JOIN fiscal_years f ON p.fiscal_year_id = f.id
-      WHERE date(?) BETWEEN date(p.start_date) AND date(p.end_date)
-      AND (p.status IN ('closed', 'locked') OR f.status IN ('closed', 'locked'))
+      SELECT status 
+      FROM accounting_periods
+      WHERE date(?) BETWEEN date(start_date) AND date(end_date)
+      AND status IN ('closed', 'locked')
     `, [date]);
 
     return res.length > 0 && res[0].values.length > 0;
@@ -1666,13 +1779,29 @@ export interface BudgetVarianceAnalysis {
   }[];
 }
 
-export const initDB = async (password?: string): Promise<any> => {
+// Flag global de modo demo
+export let isDemoActive = false;
+
+export const resetDB = async () => {
+  if (dbEngine) {
+    await dbEngine.close().catch(e => console.warn('Error closing DB:', e));
+  }
+  db = null;
+  dbEngine = null;
+  isInitialized = false;
+  isDemoActive = false;
+  logger.info('Database', 'reset', 'Base de datos reiniciada para cambio de modo');
+};
+
+export const initDB = async (password?: string, demoMode: boolean = false): Promise<any> => {
   if (isInitialized && db) {
     return db;
   }
 
+  isDemoActive = demoMode;
+
   try {
-    logger.info('Database', 'init_start', 'Iniciando inicialización de base de datos SQLite');
+    logger.info('Database', 'init_start', `Iniciando inicialización de base de datos SQLite (Demo: ${demoMode})`);
 
     // Configurar cifrado si se proporciona contraseña
     if (password && BasicEncryption.isSupported()) {
@@ -1695,15 +1824,22 @@ export const initDB = async (password?: string): Promise<any> => {
 
     logger.info('Database', 'sqljs_loaded', 'SQL.js cargado y base de datos inicializada');
 
-    // Cargar datos existentes
-    const { loadDatabase } = await import('./PersistenceLayer');
-    let dbData = await loadDatabase();
+    let dbData: Uint8Array | null = null;
 
-    // Fallback a localStorage si no hay en IndexedDB
-    if (!dbData) {
-      try {
-        dbData = await loadFromLocalStorage();
-      } catch (e) { console.warn('LocalStorage load failed', e); }
+    // Solo cargar persistencia si NO estamos en modo demo
+    if (!demoMode) {
+      // Cargar datos existentes
+      const { loadDatabase } = await import('./PersistenceLayer');
+      dbData = await loadDatabase();
+
+      // Fallback a localStorage si no hay en IndexedDB
+      if (!dbData) {
+        try {
+          dbData = await loadFromLocalStorage();
+        } catch (e) { console.warn('LocalStorage load failed', e); }
+      }
+    } else {
+      logger.warn('Database', 'demo_warning', '⚠️ MODO DEMO: Base de datos en RAM. Los datos se perderán al recargar.');
     }
 
     if (!db) {
@@ -1713,6 +1849,12 @@ export const initDB = async (password?: string): Promise<any> => {
     // Crear instancia de SQLiteEngine y configurarla con la instancia de sql.js
     dbEngine = new SQLiteEngine();
     dbEngine.setDB(db);
+
+    // Configurar modo demo en el motor
+    if (demoMode) {
+      dbEngine.setDemoMode(true);
+    }
+
     logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
 
     // Ejecutar inicialización de esquema
@@ -1721,8 +1863,10 @@ export const initDB = async (password?: string): Promise<any> => {
     // NUEVO: Ejecutar reparación profunda y seed de emergencia (Iron Core Protection)
     await DatabaseInitializer.initializeWithFix(db);
 
-    // Configurar servicios adicionales
-    setupAutoSave();
+    // Configurar servicios adicionales solo si no es demo (para evitar sobrescribir datos reales)
+    if (!demoMode) {
+      setupAutoSave();
+    }
 
     return db;
   } catch (error) {
@@ -2205,6 +2349,20 @@ const initializeSchema = async (db: any) => {
     salary_rate DECIMAL(12, 2) NOT NULL DEFAULT 0,
     status TEXT DEFAULT 'active' CHECK(status IN('active', 'inactive', 'on_leave')),
     florida_county TEXT DEFAULT 'Miami-Dade',
+    
+    -- Payroll Engine Fields
+    hourly_rate REAL,
+    salary REAL,
+    pay_type TEXT CHECK(pay_type IN('hourly', 'salaried')),
+    filing_status TEXT CHECK(filing_status IN('single', 'married', 'married_separate', 'head_of_household')),
+    allowances INTEGER DEFAULT 0,
+    additional_withholding REAL DEFAULT 0,
+    ytd_gross_pay REAL DEFAULT 0,
+    ytd_federal_tax REAL DEFAULT 0,
+    ytd_fica REAL DEFAULT 0,
+    ytd_medicare REAL DEFAULT 0,
+    ssn TEXT,
+    
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     created_by INTEGER REFERENCES users(id) DEFAULT 1,
@@ -2273,6 +2431,61 @@ const initializeSchema = async (db: any) => {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
   `);
+
+  // Tabla de nómina procesada (Payroll Engine)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS payroll(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id),
+    pay_period_start DATE NOT NULL,
+    pay_period_end DATE NOT NULL,
+    pay_date DATE NOT NULL,
+    
+    -- Horas y tasas
+    regular_hours REAL NOT NULL DEFAULT 0,
+    overtime_hours REAL NOT NULL DEFAULT 0,
+    hourly_rate REAL,
+    
+    -- Ingresos
+    regular_pay REAL NOT NULL DEFAULT 0,
+    overtime_pay REAL NOT NULL DEFAULT 0,
+    bonuses REAL NOT NULL DEFAULT 0,
+    commissions REAL NOT NULL DEFAULT 0,
+    gross_pay REAL NOT NULL,
+    
+    -- Impuestos
+    social_security_tax REAL NOT NULL DEFAULT 0,
+    medicare_tax REAL NOT NULL DEFAULT 0,
+    medicare_additional_tax REAL NOT NULL DEFAULT 0,
+    federal_income_tax REAL NOT NULL DEFAULT 0,
+    
+    -- Deducciones
+    other_deductions REAL NOT NULL DEFAULT 0,
+    total_deductions REAL NOT NULL,
+    
+    -- Neto
+    net_pay REAL NOT NULL,
+    
+    -- Asiento contable
+    journal_entry_id INTEGER REFERENCES journal_entries(id),
+    
+    -- Auditoría
+    status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN('draft', 'approved', 'paid', 'voided')),
+    processed_by INTEGER REFERENCES users(id),
+    processed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    approved_by INTEGER REFERENCES users(id),
+    approved_at DATETIME,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // Índices para optimizar consultas de nómina
+  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_employee ON payroll(employee_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_dates ON payroll(pay_period_start, pay_period_end)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_status ON payroll(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_pay_date ON payroll(pay_date)`);
 
   // Tabla de logs del sistema
   db.run(`
@@ -2352,7 +2565,63 @@ const initializeSchema = async (db: any) => {
     )
 `);
 
-  // Tabla para reportes Florida DR-15
+  // ==========================================
+  // PERÍODOS CONTABLES Y CIERRES
+  // ==========================================
+
+  // Tabla de períodos contables
+  db.run(`
+    CREATE TABLE IF NOT EXISTS accounting_periods(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    period_type TEXT NOT NULL CHECK(period_type IN('monthly', 'quarterly', 'annual')),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    fiscal_year INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open' CHECK(status IN('open', 'closed', 'locked')),
+    closed_by INTEGER REFERENCES users(id),
+    closed_at DATETIME,
+    locked_by INTEGER REFERENCES users(id),
+    locked_at DATETIME,
+    notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id) DEFAULT 1,
+    updated_by INTEGER REFERENCES users(id) DEFAULT 1,
+    CHECK(end_date > start_date),
+    UNIQUE(start_date, end_date)
+  )
+  `);
+
+  // Índices para períodos contables
+  db.run(`CREATE INDEX IF NOT EXISTS idx_periods_dates ON accounting_periods(start_date, end_date)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_periods_status ON accounting_periods(status)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_periods_fiscal_year ON accounting_periods(fiscal_year)`);
+
+  // Tabla de auditoría de cierres de períodos
+  db.run(`
+    CREATE TABLE IF NOT EXISTS period_closure_log(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    period_id INTEGER NOT NULL REFERENCES accounting_periods(id),
+    action TEXT NOT NULL CHECK(action IN('closed', 'reopened', 'locked', 'unlocked')),
+    performed_by INTEGER NOT NULL REFERENCES users(id),
+    performed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT,
+    ip_address TEXT,
+    user_agent TEXT,
+    previous_status TEXT,
+    new_status TEXT
+  )
+  `);
+
+  // Índice para log de cierres
+  db.run(`CREATE INDEX IF NOT EXISTS idx_closure_log_period ON period_closure_log(period_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_closure_log_date ON period_closure_log(performed_at)`);
+
+  // ==========================================
+  // REPORTES FISCALES FLORIDA
+  // ==========================================
+
   db.run(`
     CREATE TABLE IF NOT EXISTS florida_tax_reports(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -3514,6 +3783,9 @@ export const addCustomer = async (customerData: Partial<Customer>, userId?: numb
     throw new Error('Database not initialized. Please wait for the system to load completely.');
   }
 
+  // SANDBOX CHECK
+  await checkGuestRestriction(userId, 'customers', 'create');
+
   try {
     logger.debug('CustomerModule', 'add_customer_transaction', 'Iniciando transacción para agregar cliente');
     // Iniciar transacción
@@ -4435,6 +4707,12 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
     const currentInvoice = getInvoiceById(id);
     if (!currentInvoice) {
       return { success: false, message: 'Invoice not found' };
+    }
+
+    // Validar bloqueo de periodos - usar fecha de la factura actual o la nueva si se está actualizando
+    const dateToCheck = invoiceData.issue_date || currentInvoice.issue_date;
+    if (isDateLocked(dateToCheck)) {
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
     }
 
     // Actualizar factura principal
@@ -5869,6 +6147,12 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
       return { success: false, message: 'Factura de compra no encontrada' };
     }
 
+    // Validar bloqueo de periodos - usar fecha de la factura actual o la nueva si se está actualizando
+    const dateToCheck = billData.issue_date || currentBill.issue_date;
+    if (isDateLocked(dateToCheck)) {
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+    }
+
     db.run('BEGIN TRANSACTION');
 
     // Actualizar factura principal
@@ -7171,6 +7455,12 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
       throw new Error('Faltan datos requeridos (Cliente o Monto)');
     }
 
+    // 2. Validar bloqueo de periodos
+    const paymentDateStr = paymentData.payment_date || new Date().toISOString().split('T')[0];
+    if (isDateLocked(paymentDateStr)) {
+      throw new Error('ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.');
+    }
+
     // 2. Generar número si no existe
     const paymentNumber = paymentData.payment_number || generatePaymentNumber();
 
@@ -7218,11 +7508,11 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
 
     db.run('COMMIT');
     transactionStarted = false;
-    
+
     // 5. Auditoría (después del COMMIT para evitar problemas de transacción)
     const auditData = { ...paymentData, id: paymentId, payment_number: paymentNumber };
     logAuditEvent('payments', paymentId, 'INSERT', null, auditData, userId);
-    
+
     // 6. Generar Asiento Contable (después del COMMIT para evitar transacciones anidadas)
     const fullPayment: Payment = {
       id: paymentId,
@@ -7245,7 +7535,7 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
         logger.warn('Payments', 'journal_entry_failed', 'Error al generar asiento contable, pero pago creado', { journalError }, journalError as Error);
       }
     }
-    
+
     logger.info('Payments', 'create_success', 'Pago de cliente creado correctamente', { paymentId, userId });
     return { success: true, message: 'Pago registrado correctamente', paymentId };
 
@@ -10917,6 +11207,8 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
   }
 };
 
+
+
 /**
  * Crear un nuevo usuario
  */
@@ -12834,3 +13126,188 @@ export const forceSaveDB = async () => {
     logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
   }
 };
+
+
+/**
+ * Verifica si existen usuarios REALES en el sistema (excluye usuarios demo/guest)
+ * Usado para determinar si mostrar el Initial Setup Wizard
+ * 
+ * IMPORTANTE: Ignora usuarios con username 'demo.admin' o 'guest' para que
+ * el wizard se muestre correctamente incluso si existe una sesión demo activa.
+ */
+export function hasUsers(): boolean {
+  if (!db) return false;
+  try {
+    // Excluir usuarios demo/guest del conteo
+    const result = db.exec(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE username NOT IN ('demo.admin', 'guest', 'demo@volatile.local')
+    `);
+    if (result.length > 0 && result[0].values.length > 0) {
+      const count = result[0].values[0][0] as number;
+      return count > 0;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking if users exist:', error);
+    return false;
+  }
+}
+
+// ==========================================
+// PAYROLL ENGINE FUNCTIONS (Phase 4)
+// ==========================================
+
+/**
+ * Get payroll by ID
+ */
+export function getPayroll(payrollId: number): Payroll | null {
+  if (!db) return null;
+  
+  try {
+    const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
+    if (result.length === 0 || result[0].values.length === 0) return null;
+    
+    return rowToEntity<Payroll>(result[0].columns, result[0].values[0]);
+  } catch (error) {
+    console.error('Error getting payroll:', error);
+    return null;
+  }
+}
+
+/**
+ * Get all payrolls for an employee
+ */
+export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[] {
+  if (!db) return [];
+  
+  try {
+    let query = 'SELECT * FROM payroll WHERE employee_id = ?';
+    const params: any[] = [employeeId];
+    
+    if (year) {
+      query += ' AND strftime("%Y", pay_date) = ?';
+      params.push(year.toString());
+    }
+    
+    query += ' ORDER BY pay_date DESC';
+    
+    const result = db.exec(query, params);
+    if (result.length === 0) return [];
+    
+    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+  } catch (error) {
+    console.error('Error getting employee payrolls:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all payrolls with filters
+ */
+export function getAllPayrolls(filters?: {
+  employeeId?: number;
+  startDate?: string;
+  endDate?: string;
+  status?: 'draft' | 'approved' | 'voided';
+}): Payroll[] {
+  if (!db) return [];
+  
+  try {
+    let query = 'SELECT * FROM payroll WHERE 1=1';
+    const params: any[] = [];
+    
+    if (filters?.employeeId) {
+      query += ' AND employee_id = ?';
+      params.push(filters.employeeId);
+    }
+    
+    if (filters?.startDate) {
+      query += ' AND pay_date >= ?';
+      params.push(filters.startDate);
+    }
+    
+    if (filters?.endDate) {
+      query += ' AND pay_date <= ?';
+      params.push(filters.endDate);
+    }
+    
+    if (filters?.status) {
+      query += ' AND status = ?';
+      params.push(filters.status);
+    }
+    
+    query += ' ORDER BY pay_date DESC, created_at DESC';
+    
+    const result = db.exec(query, params);
+    if (result.length === 0) return [];
+    
+    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+  } catch (error) {
+    console.error('Error getting all payrolls:', error);
+    return [];
+  }
+}
+
+/**
+ * Get payrolls for a specific quarter (for Form 941)
+ */
+export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
+  if (!db) return [];
+  
+  try {
+    const quarterMonths = {
+      1: ['01', '02', '03'],
+      2: ['04', '05', '06'],
+      3: ['07', '08', '09'],
+      4: ['10', '11', '12']
+    };
+    
+    const months = quarterMonths[quarter as keyof typeof quarterMonths];
+    if (!months) return [];
+    
+    const startDate = `${year}-${months[0]}-01`;
+    const endDate = `${year}-${months[2]}-31`;
+    
+    const query = `
+      SELECT * FROM payroll 
+      WHERE pay_date >= ? AND pay_date <= ?
+      AND status = 'approved'
+      ORDER BY pay_date
+    `;
+    
+    const result = db.exec(query, [startDate, endDate]);
+    if (result.length === 0) return [];
+    
+    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+  } catch (error) {
+    console.error('Error getting quarterly payrolls:', error);
+    return [];
+  }
+}
+
+/**
+ * Get annual payrolls for W-2 generation
+ */
+export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
+  if (!db) return [];
+  
+  try {
+    const query = `
+      SELECT * FROM payroll 
+      WHERE employee_id = ?
+      AND strftime('%Y', pay_date) = ?
+      AND status = 'approved'
+      ORDER BY pay_date
+    `;
+    
+    const result = db.exec(query, [employeeId, year.toString()]);
+    if (result.length === 0) return [];
+    
+    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+  } catch (error) {
+    console.error('Error getting annual payrolls:', error);
+    return [];
+  }
+}

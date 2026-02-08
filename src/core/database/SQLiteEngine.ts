@@ -13,7 +13,16 @@ export class SQLiteEngine {
     private dbName: string = 'accountexpress_v2.db';
     private vfs: any = null;
 
+    private isDemoMode: boolean = false;
+
     constructor() { }
+
+    setDemoMode(enabled: boolean) {
+        this.isDemoMode = enabled;
+        if (enabled) {
+            console.warn('⚠️ ENGINE: MODO DEMO ACTIVADO - DATOS VOLÁTILES (RAM)');
+        }
+    }
 
     // Permitir usar una instancia de sql.js para compatibilidad con simple-db
     setDB(db: any) {
@@ -96,10 +105,56 @@ export class SQLiteEngine {
     // Run with parameters - Async
     async run(sql: string, params: any[] = []): Promise<void> {
         if (this.sqlJsDB) {
+            // INTERCETOR DE MODO DEMO (RAM)
+            if (this.isDemoMode) {
+                const upperSql = sql.toUpperCase().trim();
+                if (upperSql.startsWith('INSERT INTO')) {
+                    // Extraer nombre de tabla (simplificado)
+                    const match = upperSql.match(/INSERT\s+INTO\s+([a-zA-Z0-9_]+)/);
+                    if (match && match[1]) {
+                        const tableName = match[1];
+                        try {
+                            // Ejecutar conteo sincrónico (sql.js es sync)
+                            const res = this.sqlJsDB.exec(`SELECT COUNT(*) as c FROM ${tableName}`);
+                            if (res.length > 0 && res[0].values.length > 0) {
+                                const count = res[0].values[0][0] as number;
+                                if (count >= 20) {
+                                    throw new Error(`Límite de demo alcanzado (20 cargas máximo por archivo) en tabla: ${tableName}`);
+                                }
+                            }
+                        } catch (e: any) {
+                            if (e.message.includes('Límite de demo')) throw e;
+                            console.warn('Demo Check Warning:', e);
+                        }
+                    }
+                }
+            }
+
             this.sqlJsDB.run(sql, params);
             return;
         }
+
         if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
+
+        // INTERCEPTOR MODO DEMO (ASYNC WA-SQLITE)
+        if (this.isDemoMode) {
+            const upperSql = sql.toUpperCase().trim();
+            if (upperSql.startsWith('INSERT INTO')) {
+                const match = upperSql.match(/INSERT\s+INTO\s+([a-zA-Z0-9_]+)/);
+                if (match && match[1]) {
+                    const tableName = match[1];
+                    // Necesitamos hacer una consulta async aparte
+                    // Nota: Esto podría ser lento, pero es demo
+                    const countRes = await this.select(`SELECT COUNT(*) as c FROM ${tableName}`);
+                    if (countRes.length > 0) {
+                        const count = countRes[0]['c'] as number;
+                        if (count >= 20) {
+                            throw new Error(`Límite de demo alcanzado (20 cargas máximo por archivo) en tabla: ${tableName}`);
+                        }
+                    }
+                }
+            }
+        }
 
         let stmt: number | undefined;
         try {

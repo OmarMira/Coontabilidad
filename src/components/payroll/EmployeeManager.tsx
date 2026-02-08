@@ -13,12 +13,17 @@ import {
     Trash2,
     CheckCircle,
     XCircle,
-    Clock
+    Clock,
+    Zap,
+    ShieldCheck,
+    Activity,
+    Cpu,
+    Target,
+    Layers,
+    Info
 } from 'lucide-react';
 import { getEmployees, createEmployee, updateEmployee, Employee } from '../../database/simple-db';
 import { toast } from 'react-hot-toast';
-import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
 
 export const EmployeeManager: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -50,8 +55,7 @@ export const EmployeeManager: React.FC = () => {
         loadEmployees();
     }, []);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+    const handleInputChange = (name: string, value: any) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -103,160 +107,262 @@ export const EmployeeManager: React.FC = () => {
         emp.employee_number.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const getStatusConfig = (status: string) => {
+        switch (status) {
+            case 'active': return { label: 'ACTIVO', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+            case 'inactive': return { label: 'INACTIVO', color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
+            case 'on_leave': return { label: 'LICENCIA', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+            default: return { label: 'GENERAL', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
+        }
+    };
+
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
-                        <Users className="w-8 h-8 text-indigo-500" />
-                        Gestión de Empleados
-                    </h2>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Directorio y Fuerza Laboral</p>
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-indigo-600/10 rounded-2.5xl border border-indigo-500/20 shadow-indigo-900/10 shadow-lg group">
+                        <Users className="w-10 h-10 text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Gestión de Empleados</h1>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> Control de Capital Humano
+                        </p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <div className="flex flex-wrap items-center gap-4 justify-center">
+                    <div className="relative group">
+                        <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Buscar por nombre o ID..."
+                            placeholder="BUSCAR COLABORADOR / ID..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none w-64"
+                            className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all"
                         />
                     </div>
-                    <Button
+                    <button
                         onClick={() => { setShowForm(true); setEditingEmployee(null); resetForm(); }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+                        className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-indigo-900/40 hover:-translate-y-1"
                     >
-                        <UserPlus className="w-4 h-4 mr-2" /> Nuevo Empleado
-                    </Button>
+                        <UserPlus className="w-4 h-4" />
+                        Reclutar Activo
+                    </button>
                 </div>
             </div>
 
+            {/* Intelligence Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <EliteMiniCard title="Total Fuerza Laboral" value={employees.length.toString()} icon={Users} color="indigo" />
+                <EliteMiniCard title="Activos Operativos" value={employees.filter(e => e.status === 'active').length.toString()} icon={ShieldCheck} color="emerald" />
+                <EliteMiniCard title="Costo Mensual Est." value={`$${employees.reduce((sum, e) => sum + (e.salary_type === 'monthly' ? e.salary_rate : 0), 0).toLocaleString()}`} icon={DollarSign} color="amber" />
+                <EliteMiniCard title="Departamentos" value={Array.from(new Set(employees.map(e => e.department))).length.toString()} icon={Layers} color="rose" />
+            </div>
+
             {showForm && (
-                <Card className="bg-slate-900 border-slate-800 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
-                    <CardContent className="p-8">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nombre</label>
-                                    <input name="first_name" value={formData.first_name} onChange={handleInputChange} required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
+                <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-50 p-6 overflow-y-auto">
+                    <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-3xl w-full max-w-5xl my-auto overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-700">
+                        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/5 blur-[120px] pointer-events-none"></div>
+
+                        <header className="flex items-center justify-between p-10 border-b border-slate-800 relative z-10 bg-slate-900/50">
+                            <div className="flex items-center gap-6">
+                                <div className="p-5 bg-indigo-600/10 rounded-2.5xl border border-indigo-500/20 text-indigo-500 shadow-xl">
+                                    <Cpu className="w-8 h-8 animate-pulse" />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Apellidos</label>
-                                    <input name="last_name" value={formData.last_name} onChange={handleInputChange} required className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
+                                <div>
+                                    <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                                        {editingEmployee ? 'Optimizar Registro' : 'Registrar Nuevo Activo'}
+                                    </h2>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" /> Human Capital Forensic Protocol v4.0
+                                    </p>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email</label>
-                                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Teléfono</label>
-                                    <input name="phone" value={formData.phone} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Departamento</label>
-                                    <input name="department" value={formData.department} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Puesto</label>
-                                    <input name="position" value={formData.position} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo de Salario</label>
-                                    <select name="salary_type" value={formData.salary_type} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500">
-                                        <option value="monthly">Mensual</option>
-                                        <option value="hourly">Por Hora</option>
+                            </div>
+                            <button onClick={() => setShowForm(false)} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        </header>
+
+                        <form onSubmit={handleSubmit} className="p-10 space-y-12 relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                                <PremiumInput label="Nombre(s)" icon={UserPlus} value={formData.first_name} onChange={(v: string) => handleInputChange('first_name', v)} placeholder="JOHN / JANE" required />
+                                <PremiumInput label="Apellidos" icon={Target} value={formData.last_name} onChange={(v: string) => handleInputChange('last_name', v)} placeholder="DOE / SMITH" required />
+                                <PremiumInput label="Email Corporativo" icon={Mail} value={formData.email} onChange={(v: string) => handleInputChange('email', v)} placeholder="JOHN@CORP.COM" />
+                                <PremiumInput label="Teléfono Enlace" icon={Phone} value={formData.phone} onChange={(v: string) => handleInputChange('phone', v)} placeholder="+1 XXX XXX XXXX" />
+                                <PremiumInput label="Departamento" icon={Layers} value={formData.department} onChange={(v: string) => handleInputChange('department', v)} placeholder="VENTAS / TECNOLOGÍA" />
+                                <PremiumInput label="Cargo Oficial" icon={Briefcase} value={formData.position} onChange={(v: string) => handleInputChange('position', v)} placeholder="PROJECT MANAGER" />
+
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                                        <Activity className="w-3.5 h-3.5 text-indigo-500" /> Clasificación Salarial
+                                    </label>
+                                    <select
+                                        name="salary_type"
+                                        value={formData.salary_type}
+                                        onChange={(e) => handleInputChange('salary_type', e.target.value)}
+                                        className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none font-black uppercase tracking-widest text-[10px] h-[58px] appearance-none cursor-pointer"
+                                    >
+                                        <option value="monthly">SALARIO MENSUAL</option>
+                                        <option value="hourly">TASA POR HORA</option>
                                     </select>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tasa Salarial</label>
-                                    <input type="number" step="0.01" name="salary_rate" value={formData.salary_rate} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado</label>
-                                    <select name="status" value={formData.status} onChange={handleInputChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white outline-none focus:border-indigo-500">
-                                        <option value="active">Activo</option>
-                                        <option value="inactive">Inactivo</option>
-                                        <option value="on_leave">Licencia</option>
+
+                                <PremiumInput label="Monto Bruto" icon={DollarSign} value={formData.salary_rate?.toString()} onChange={(v: string) => handleInputChange('salary_rate', parseFloat(v) || 0)} type="number" />
+
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                                        <Activity className="w-3.5 h-3.5 text-indigo-500" /> Estado Operativo
+                                    </label>
+                                    <select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={(e) => handleInputChange('status', e.target.value)}
+                                        className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none font-black uppercase tracking-widest text-[10px] h-[58px] appearance-none cursor-pointer"
+                                    >
+                                        <option value="active">ACTIVO</option>
+                                        <option value="inactive">INACTIVO</option>
+                                        <option value="on_leave">LICENCIA</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                                <Button variant="ghost" type="button" onClick={() => setShowForm(false)} className="text-slate-400 hover:text-white">Cancelar</Button>
-                                <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8">
-                                    {isLoading ? 'Procesando...' : editingEmployee ? 'Actualizar Empleado' : 'Registrar Empleado'}
-                                </Button>
-                            </div>
+                            <footer className="flex justify-end gap-6 pt-10 border-t border-slate-800">
+                                <button type="button" onClick={() => setShowForm(false)} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
+                                    Abortar Registro
+                                </button>
+                                <button type="submit" disabled={isLoading} className="px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-indigo-900/40 hover:-translate-y-1 active:scale-95 disabled:opacity-50">
+                                    {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <CheckCircle className="w-5 h-5" />}
+                                    {editingEmployee ? 'Sincronizar Cambios' : 'Desplegar Activo'}
+                                </button>
+                            </footer>
                         </form>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 {filteredEmployees.length === 0 ? (
-                    <div className="col-span-full py-20 text-center bg-slate-900/20 rounded-3xl border border-dashed border-slate-800">
-                        <Users className="w-12 h-12 text-slate-700 mx-auto mb-4 opacity-20" />
-                        <p className="text-slate-500 font-bold uppercase tracking-widest">No se encontraron empleados</p>
+                    <div className="col-span-full bg-slate-900/20 border border-dashed border-slate-800 rounded-[3rem] py-32 text-center group">
+                        <Users className="w-20 h-20 text-slate-800 mx-auto mb-6 group-hover:scale-110 transition-transform duration-500" />
+                        <h3 className="text-xl font-black text-slate-500 uppercase tracking-[0.2em]">Fuerza Laboral no Detectada</h3>
                     </div>
                 ) : (
-                    filteredEmployees.map(emp => (
-                        <Card key={emp.id} className="bg-slate-900/50 border-slate-800 hover:border-indigo-500/30 transition-all group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-all"></div>
+                    filteredEmployees.map(emp => {
+                        const status = getStatusConfig(emp.status);
+                        return (
+                            <div key={emp.id} className="relative bg-slate-900 p-8 rounded-[2.5rem] border-2 border-slate-800 hover:border-indigo-500/40 transition-all duration-500 group overflow-hidden hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-900/20">
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 blur-[80px] pointer-events-none group-hover:bg-indigo-500/10 transition-all duration-700"></div>
 
-                            <CardContent className="p-6 relative z-10">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
-                                            <span className="text-indigo-400 font-black text-xl">{emp.first_name[0]}{emp.last_name[0]}</span>
+                                <div className="relative z-10">
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-16 h-16 bg-slate-950 border-2 border-slate-800 rounded-2.2xl flex items-center justify-center shadow-lg group-hover:border-indigo-500/50 transition-colors">
+                                                <span className="text-indigo-500 font-black text-2xl">{emp.first_name[0]}{emp.last_name[0]}</span>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none mb-1.5 group-hover:text-indigo-400 transition-colors">{emp.first_name} {emp.last_name}</h3>
+                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{emp.employee_number}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-white text-lg leading-none">{emp.first_name} {emp.last_name}</h3>
-                                            <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">{emp.employee_number}</p>
+                                        <div className={`px-2.5 py-0.5 rounded-lg border text-[8px] font-black uppercase tracking-widest ${status.bg} ${status.color} ${status.border}`}>
+                                            {status.label}
                                         </div>
                                     </div>
 
-                                    <div className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${emp.status === 'active' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                            emp.status === 'inactive' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
-                                                'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                        }`}>
-                                        {emp.status}
+                                    <div className="grid grid-cols-2 gap-4 mb-8">
+                                        <EmployeeStat label="Posición" value={emp.position || 'N/A'} icon={Briefcase} />
+                                        <EmployeeStat label="Dpto" value={emp.department || 'N/A'} icon={Layers} />
                                     </div>
-                                </div>
 
-                                <div className="space-y-3 mb-6">
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <Briefcase className="w-3.5 h-3.5" />
-                                        <span className="text-xs font-semibold">{emp.position || 'Sin Puesto'} • {emp.department || 'General'}</span>
+                                    <div className="space-y-4 pt-6 border-t border-slate-800/60">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2 text-slate-500">
+                                                <DollarSign className="w-3.5 h-3.5" />
+                                                <span className="text-[10px] font-black uppercase tracking-wider">Compensación</span>
+                                            </div>
+                                            <div className="text-lg font-black text-white font-mono tracking-tighter">
+                                                ${emp.salary_rate.toLocaleString()} <span className="text-[8px] text-slate-500">{emp.salary_type === 'monthly' ? '/MES' : '/HR'}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2 text-slate-500">
+                                                <Mail className="w-3.5 h-3.5" />
+                                                <span className="text-[10px] font-black uppercase tracking-wider">Contacto</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{emp.email || 'N/A'}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <Mail className="w-3.5 h-3.5" />
-                                        <span className="text-xs truncate">{emp.email || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-slate-400">
-                                        <DollarSign className="w-3.5 h-3.5" />
-                                        <span className="text-xs font-black text-white">${emp.salary_rate.toLocaleString()} <span className="text-[9px] text-slate-500 uppercase">{emp.salary_type === 'monthly' ? '/ MES' : '/ HORA'}</span></span>
-                                    </div>
-                                </div>
 
-                                <div className="flex gap-2 pt-4 border-t border-slate-800/50">
-                                    <button
-                                        onClick={() => { setEditingEmployee(emp); setFormData(emp); setShowForm(true); }}
-                                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-all"
-                                    >
-                                        <Edit className="w-3.5 h-3.5" /> Editar
-                                    </button>
-                                    <button className="p-2 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl transition-all">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
+                                    <div className="flex gap-4 mt-8 pt-6 border-t border-slate-800/60">
+                                        <button
+                                            onClick={() => { setEditingEmployee(emp); setFormData(emp); setShowForm(true); }}
+                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-950 border border-slate-800 rounded-xl text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest shadow-lg"
+                                        >
+                                            <Edit className="w-3.5 h-3.5" /> Optimizar
+                                        </button>
+                                        <button className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-rose-500 hover:bg-rose-600 hover:text-white transition-all shadow-lg">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                            </div>
+                        );
+                    })
                 )}
             </div>
         </div>
     );
 };
+
+const EliteMiniCard = ({ title, value, icon: Icon, color }: any) => {
+    const themes: any = {
+        indigo: 'text-indigo-500 bg-indigo-600/10 border-indigo-500/20 shadow-indigo-900/5',
+        emerald: 'text-emerald-500 bg-emerald-600/10 border-emerald-500/20 shadow-emerald-900/5',
+        amber: 'text-amber-500 bg-amber-600/10 border-amber-500/20 shadow-amber-900/5',
+        rose: 'text-rose-500 bg-rose-600/10 border-rose-500/20 shadow-rose-900/5',
+    };
+
+    return (
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl hover:border-slate-700 transition-all flex items-center gap-6 group">
+            <div className={`p-4 rounded-2.5xl border ${themes[color]} group-hover:scale-110 transition-all duration-500 shadow-xl`}>
+                <Icon className="w-6 h-6" />
+            </div>
+            <div className="overflow-hidden">
+                <div className="text-2xl font-black text-white tracking-tighter leading-none mb-1 font-mono uppercase truncate">{value}</div>
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{title}</div>
+            </div>
+        </div>
+    );
+};
+
+const EmployeeStat = ({ label, value, icon: Icon }: any) => (
+    <div className="p-4 bg-slate-950/50 border border-slate-800/50 rounded-2.2xl group/stat hover:border-slate-700 transition-colors">
+        <div className="flex items-center gap-2 mb-1">
+            <Icon className="w-3 h-3 text-indigo-500" />
+            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+        </div>
+        <p className="text-[10px] font-black text-white uppercase truncate">{value}</p>
+    </div>
+);
+
+const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required }: any) => (
+    <div className="space-y-4">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+            <Icon className={`w-3.5 h-3.5 ${error ? 'text-rose-500' : 'text-indigo-500'}`} /> {label} {required && '*'}
+        </label>
+        <div className="relative group/input">
+            <input
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className={`w-full bg-slate-950 text-white px-8 py-4 rounded-2xl border transition-all font-black uppercase tracking-widest text-[10px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800 focus:border-indigo-500 focus:shadow-[0_0_25px_rgba(79,70,229,0.1)] group-hover/input:border-slate-700'
+                    }`}
+                placeholder={placeholder}
+                required={required}
+            />
+            {error && <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-2 ml-2">{error}</p>}
+        </div>
+    </div>
+);

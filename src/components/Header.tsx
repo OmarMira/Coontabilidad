@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wifi, WifiOff, Database, Shield, User as UserIcon } from 'lucide-react';
+import { Wifi, WifiOff, Database, Shield, User as UserIcon, Zap, ShieldCheck, Activity, Cpu } from 'lucide-react';
 import { OnlineStatus } from './common/OnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
 

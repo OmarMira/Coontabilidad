@@ -17,6 +17,7 @@ import {
   getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
 } from './database/simple-db';
 import { DatabaseService } from './database/DatabaseService';
+import { isDemoActive } from './database/simple-db';
 
 // Core components (always loaded)
 import { Header } from './components/Header';
@@ -34,6 +35,8 @@ import { offlineManager } from './utils/offline-manager';
 const ARDModule = lazy(() => import('./components/ard/ARDModule').then(m => ({ default: m.ARDModule })));
 const ReportsDashboard = lazy(() => import('./components/reports/ReportsDashboard').then(m => ({ default: m.ReportsDashboard })));
 const PayrollProcessor = lazy(() => import('./components/payroll/PayrollProcessor').then(m => ({ default: m.PayrollProcessor })));
+const PayrollReview = lazy(() => import('./components/payroll/PayrollReview').then(m => ({ default: m.default })));
+const EmployeePaystub = lazy(() => import('./components/payroll/EmployeePaystub').then(m => ({ default: m.EmployeePaystub })));
 const PayrollEntryList = lazy(() => import('./components/payroll/PayrollEntryList').then(m => ({ default: m.PayrollEntryList })));
 const PayrollReports = lazy(() => import('./components/payroll/PayrollReports').then(m => ({ default: m.PayrollReports })));
 const PayrollSettings = lazy(() => import('./components/payroll/PayrollSettings').then(m => ({ default: m.PayrollSettings })));
@@ -44,7 +47,6 @@ const DR15PreparationWizard = lazy(() => import('./components/dr15/DR15Preparati
 const InventoryReports = lazy(() => import('./components/inventory/InventoryReports').then(m => ({ default: m.InventoryReports })));
 const InventoryMovements = lazy(() => import('./components/inventory/InventoryMovements').then(m => ({ default: m.InventoryMovements })));
 const InventoryAdjustments = lazy(() => import('./components/inventory/InventoryAdjustments').then(m => ({ default: m.InventoryAdjustments })));
-const InventoryDashboard = lazy(() => import('./components/inventory/InventoryDashboard').then(m => ({ default: m.InventoryDashboard })));
 const InventoryKardexViewer = lazy(() => import('./components/inventory/InventoryKardexViewer').then(m => ({ default: m.InventoryKardexViewer })));
 const LocationsManager = lazy(() => import('./components/inventory/LocationsManager').then(m => ({ default: m.LocationsManager })));
 const CashFlowStatement = lazy(() => import('./components/reports/CashFlowStatement').then(m => ({ default: m.CashFlowStatement })));
@@ -102,6 +104,7 @@ import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
 import { SalesInvoiceForm } from './components/SalesInvoiceForm';
 import { BankStatementImporter } from './components/BankStatementImporter';
+import { BankImport } from './components/banking/BankImport';
 import { ManualJournalEntries } from './components/ManualJournalEntries';
 import { GeneralLedger } from './components/GeneralLedger';
 import { IncomeStatement } from './components/accounting/IncomeStatement';
@@ -122,6 +125,7 @@ import { AuditTrailTable } from './components/audit/AuditTrailTable';
 import { CustomerFormAdvanced } from './components/CustomerFormAdvanced';
 import { CustomerDetailView } from './components/CustomerDetailView';
 import { CustomerList } from './components/CustomerList';
+import { AppRouter } from './components/AppRouter';
 
 // --- CIERRE CONTABLE FASE 3 ---
 import { PeriodManager } from './components/accounting/PeriodManager';
@@ -137,6 +141,16 @@ import { FixedAssetsManager } from './components/assets/FixedAssetsManager';
 
 // --- BUDGETS MODULE ---
 import { BudgetManager } from './components/budgets/BudgetManager';
+
+// --- SYSTEM AUDIT MODULE ---
+import { SystemAudit } from './components/admin/SystemAudit';
+
+// --- DASHBOARDS AVANZADOS ---
+const FinancialDashboard = lazy(() => import('./components/dashboards/FinancialDashboard').then(m => ({ default: m.FinancialDashboard })));
+const InventoryDashboard = lazy(() => import('./components/dashboards/InventoryDashboard').then(m => ({ default: m.InventoryDashboard })));
+const CustomerDashboard = lazy(() => import('./components/dashboards/CustomerDashboard').then(m => ({ default: m.CustomerDashboard })));
+const SupplierDashboard = lazy(() => import('./components/dashboards/SupplierDashboard').then(m => ({ default: m.SupplierDashboard })));
+const PayrollDashboard = lazy(() => import('./components/dashboards/PayrollDashboard').then(m => ({ default: m.PayrollDashboard })));
 
 
 // 1. Add to AppState
@@ -188,6 +202,7 @@ interface AppState {
   currentSection: string;
   chartOfAccounts: ChartOfAccount[];
   kardexParams?: { productId?: string; type?: string };
+  selectedPayrollId?: number;
 }
 
 
@@ -1258,12 +1273,19 @@ function App() {
   }
 
   return (
-    <ProtectedRoute>
+    <AppRouter>
       <div className="flex h-screen bg-slate-950 overflow-hidden">
         <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
         <div className="flex-1 overflow-auto bg-slate-950/50 relative">
           {/* Background Decorative Element */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] -mr-64 -mt-64 pointer-events-none"></div>
+
+          {/* VOLATILE DEMO BANNER */}
+          {isDemoActive && (
+            <div className="bg-orange-600 text-white text-[10px] font-bold text-center py-1 uppercase tracking-[0.2em] shadow-md z-50 select-none sticky top-0">
+              ⚠️ MODO DEMO - DATOS VOLÁTILES (RAM) - Máx. 20 registros
+            </div>
+          )}
 
           <Header
             dbStats={state.dbStats}
@@ -1301,6 +1323,33 @@ function App() {
                   invoices={state.invoices}
                   bills={state.bills}
                 />
+              )}
+
+              {/* --- DASHBOARDS AVANZADOS --- */}
+              {state.currentSection === 'dashboard-financial' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <FinancialDashboard />
+                </Suspense>
+              )}
+              {state.currentSection === 'dashboard-inventory' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <InventoryDashboard />
+                </Suspense>
+              )}
+              {state.currentSection === 'dashboard-customers' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <CustomerDashboard />
+                </Suspense>
+              )}
+              {state.currentSection === 'dashboard-suppliers' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <SupplierDashboard />
+                </Suspense>
+              )}
+              {state.currentSection === 'dashboard-payroll' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PayrollDashboard />
+                </Suspense>
               )}
 
               {/* --- CUENTAS POR COBRAR (RECEIVABLES) --- */}
@@ -1544,6 +1593,33 @@ function App() {
                   <PayrollProcessor />
                 </Suspense>
               )}
+              {state.currentSection === 'payroll-review' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <PayrollReview
+                    onViewPaystub={(payrollId) => {
+                      setState(prev => ({
+                        ...prev,
+                        currentSection: 'payroll-paystub',
+                        selectedPayrollId: payrollId
+                      }));
+                    }}
+                  />
+                </Suspense>
+              )}
+              {state.currentSection === 'payroll-paystub' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <EmployeePaystub
+                    payrollId={state.selectedPayrollId}
+                    onBack={() => {
+                      setState(prev => ({
+                        ...prev,
+                        currentSection: 'payroll-review',
+                        selectedPayrollId: undefined
+                      }));
+                    }}
+                  />
+                </Suspense>
+              )}
               {state.currentSection === 'payroll-reports' && (
                 <Suspense fallback={<LoadingSpinner />}>
                   <PayrollReports />
@@ -1731,17 +1807,6 @@ function App() {
                   <InventoryKardexViewer initialFilters={state.kardexParams} />
                 </Suspense>
               )}
-              {state.currentSection === 'inventory-dashboard' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <InventoryDashboard
-                    OnNavigateToKardex={(filters) => setState(prev => ({
-                      ...prev,
-                      currentSection: 'inventory-kardex',
-                      kardexParams: filters ? { ...filters, productId: 'all' } : undefined
-                    }))}
-                  />
-                </Suspense>
-              )}
 
               {state.currentSection === 'users' && <UserRoleManager />}
 
@@ -1807,6 +1872,7 @@ function App() {
                 </Suspense>
               )}
               {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
+              {state.currentSection === 'banking-import' && <BankImport />}
 
               {/* --- IMPUESTOS FLORIDA --- */}
               {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
@@ -1832,6 +1898,7 @@ function App() {
               {/* --- HERRAMIENTAS --- */}
               {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
               {state.currentSection === 'journal-entry-test' && <JournalEntryTest />}
+              {state.currentSection === 'system-audit' && <SystemAudit />}
 
               {/* --- GESTIÓN DE USUARIOS --- */}
               {state.currentSection === 'admin-users' && <UserList />}
@@ -1922,7 +1989,7 @@ function App() {
           )}
       </div >
       <Toaster position="top-right" />
-    </ProtectedRoute>
+    </AppRouter>
   );
 }
 

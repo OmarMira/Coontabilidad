@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Download, Printer, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import {
+    RefreshCw,
+    Download,
+    Printer,
+    TrendingUp,
+    TrendingDown,
+    DollarSign,
+    Calendar,
+    ChevronRight,
+    ArrowRight,
+    PieChart,
+    ArrowUpCircle,
+    ArrowDownCircle,
+    FileText,
+    History,
+    Loader2
+} from 'lucide-react';
 import { getIncomeStatementReport, IncomeStatementItem } from '@/database/simple-db';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -20,9 +36,9 @@ export const IncomeStatement: React.FC = () => {
             const result = getIncomeStatementReport(startDate, endDate);
             setData(result);
         } catch (error) {
-            console.error('Error loading P&L:', error);
+            console.error('Error loading P&L Flow:', error);
         } finally {
-            setLoading(false);
+            setTimeout(() => setLoading(false), 500);
         }
     };
 
@@ -42,163 +58,240 @@ export const IncomeStatement: React.FC = () => {
         const [y, m] = month.split('-').map(Number);
         const monthName = new Date(y, m - 1).toLocaleString('es-ES', { month: 'long' });
 
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 0, 210, 40, 'F');
+
         doc.setFontSize(22);
-        doc.setTextColor(40, 40, 40);
-        doc.text('Estado de Resultados', 14, 22);
-
+        doc.setTextColor(255);
+        doc.text('ACCOUNT EXPRESS', 14, 20);
         doc.setFontSize(12);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Período: ${monthName} ${y}`, 14, 30);
+        doc.text('ESTADO DE RESULTADOS • P&L PROTOCOL', 14, 30);
 
-        let finalY = 40;
+        doc.setFontSize(10);
+        doc.setTextColor(200);
+        doc.text(`Corte Fiscal: ${monthName.toUpperCase()} ${y}`, 145, 20);
+        doc.text(`ID Reporte: ${Math.random().toString(36).substring(7).toUpperCase()}`, 145, 25);
 
-        // Secciones
-        const addSection = (title: string, items: IncomeStatementItem[], total: number, color: [number, number, number]) => {
-            const body = items.map(i => [i.account_code, i.account_name, i.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })]);
+        let finalY = 45;
+
+        const addTableSection = (title: string, items: IncomeStatementItem[], total: number, color: [number, number, number]) => {
+            doc.setFontSize(12);
+            doc.setTextColor(color[0], color[1], color[2]);
+            doc.text(title.toUpperCase(), 14, finalY + 5);
+
+            const body = items.map(i => [
+                i.account_code,
+                i.account_name,
+                i.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            ]);
 
             autoTable(doc, {
-                startY: finalY,
-                head: [[title.toUpperCase(), '', '']],
+                startY: finalY + 8,
+                head: [['COD', 'CUENTA', 'MONTO (USD)']],
                 body: body,
-                theme: 'plain',
+                theme: 'grid',
                 headStyles: { fillColor: color, textColor: 255, fontStyle: 'bold' },
-                columnStyles: { 0: { cellWidth: 30 }, 2: { halign: 'right', fontStyle: 'bold' } },
+                styles: { fontSize: 9 },
+                columnStyles: { 0: { cellWidth: 25 }, 2: { halign: 'right' } }
             });
 
-            finalY = (doc as any).lastAutoTable.finalY + 2;
-
-            // Total Sección
+            finalY = (doc as any).lastAutoTable.finalY + 10;
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text(`Total ${title}:`, 120, finalY + 4);
-            doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY + 4, { align: 'right' });
-            finalY += 10;
+            doc.text(`TOTAL ${title.toUpperCase()}:`, 120, finalY);
+            doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
+            finalY += 15;
         };
 
-        addSection('Ingresos', revenue, totalRevenue, [16, 185, 129]); // Emerald-ish
-        addSection('Gastos', expenses, totalExpenses, [244, 63, 94]); // Rose-ish
+        addTableSection('Ingresos Operativos', revenue, totalRevenue, [16, 185, 129]);
+        addTableSection('Egresos / Gastos', expenses, totalExpenses, [244, 63, 94]);
 
-        // Resultado Final
-        doc.setDrawColor(200, 200, 200);
+        doc.setDrawColor(30, 41, 59);
+        doc.setLineWidth(1);
         doc.line(14, finalY, 196, finalY);
-        finalY += 10;
+        finalY += 15;
 
-        doc.setFontSize(14);
-        doc.setTextColor(0, 0, 0);
-        doc.text('Utilidad Neta del Ejercicio:', 14, finalY);
-
-        const netColor = netIncome >= 0 ? [16, 185, 129] : [244, 63, 94];
-        doc.setTextColor(netColor[0], netColor[1], netColor[2]);
+        doc.setFontSize(16);
+        doc.setTextColor(netIncome >= 0 ? 16 : 244, netIncome >= 0 ? 185 : 63, netIncome >= 0 ? 129 : 94);
+        doc.text('UTILIDAD NETA DISPONIBLE:', 14, finalY);
         doc.text(`$${netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
 
-        doc.save(`Estado_Resultados_${month}.pdf`);
+        doc.save(`AEX_P&L_${month}.pdf`);
     };
 
     return (
-        <div className="space-y-6 bg-slate-950 p-8 rounded-2xl border border-slate-800 shadow-2xl animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6">
-                <div>
-                    <h2 className="text-section-title">Estado de Resultados</h2>
-                    <p className="text-standard-body opacity-80">Profit & Loss Statement</p>
+        <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+            {/* Control Hub */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg">
+                        <PieChart className="w-10 h-10 text-emerald-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Estado de Resultados</h2>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+                            <FileText className="w-3.5 h-3.5" /> Performance & Ledger Analysis • Final Report
+                        </p>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <label className="text-slate-400 text-sm font-medium">Período:</label>
-                    <input
-                        type="month"
-                        value={month}
-                        onChange={(e) => setMonth(e.target.value)}
-                        className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-                    />
-                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 p-2 rounded-2xl shadow-inner group">
+                        <div className="bg-slate-900 p-2 rounded-xl group-hover:bg-blue-600/10 transition-colors">
+                            <Calendar className="w-4 h-4 text-slate-500 group-hover:text-blue-500 transition-colors" />
+                        </div>
+                        <div className="flex flex-col pr-4">
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Corte de Mes</span>
+                            <input
+                                type="month"
+                                value={month}
+                                onChange={(e) => setMonth(e.target.value)}
+                                className="bg-transparent text-white border-0 p-0 text-xs font-black outline-none focus:ring-0 uppercase cursor-pointer"
+                            />
+                        </div>
+                    </div>
 
-                <div className="flex gap-3 no-print">
-                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white rounded-xl" onClick={() => window.print()}>
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir
-                    </Button>
-                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white rounded-xl" onClick={loadData} disabled={loading}>
-                        <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Actualizar
-                    </Button>
-                    <Button onClick={handleDownloadPDF} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold px-6 shadow-lg shadow-blue-900/40 transition-all hover:scale-105">
-                        <Download className="w-4 h-4 mr-2" /> Exportar PDF
-                    </Button>
+                    <div className="flex gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                        <button onClick={loadData} disabled={loading} className="p-3 hover:bg-slate-900 text-slate-500 hover:text-white rounded-xl transition-all">
+                            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
+                            <Printer className="w-4 h-4" /> Imprimir
+                        </button>
+                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/30 active:scale-95">
+                            <Download className="w-4 h-4" /> Export Protocol
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid gap-8 max-w-4xl mx-auto">
-                {/* INGRESOS */}
-                <div className="bg-slate-900/60 rounded-xl p-6 border border-emerald-500/20 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400">
-                            <TrendingUp className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold text-white">Ingresos Operacionales</h3>
-                    </div>
-
-                    <div className="space-y-3">
-                        {revenue.length === 0 && <p className="text-slate-500 italic">No hay ingresos registrados en este período.</p>}
-                        {revenue.map((item, i) => (
-                            <div key={i} className="flex justify-between items-center text-sm py-2 border-b border-slate-800/50 hover:bg-slate-800/30 px-2 rounded transition-colors">
-                                <span className="text-slate-300 font-medium">
-                                    <span className="text-slate-500 mr-2 font-mono text-xs">{item.account_code}</span>
-                                    {item.account_name}
-                                </span>
-                                <span className="text-emerald-300 font-mono tracking-wide">
-                                    {item.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                </span>
+            {/* Financial Flow Visualization */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+                {/* REVENUE COLUMN */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-xl group hover:border-emerald-500/20 transition-all duration-500">
+                    <header className="px-10 py-8 bg-slate-950/50 border-b border-slate-800/60 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                <ArrowUpCircle className="w-6 h-6 text-emerald-500" />
                             </div>
-                        ))}
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Entradas / Ingresos</h3>
+                        </div>
+                        <span className="text-[10px] font-black text-emerald-500/60 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">NODO 4000</span>
+                    </header>
+
+                    <div className="p-10 space-y-4">
+                        {loading ? (
+                            <div className="py-20 flex flex-col items-center gap-4">
+                                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Sincronizando Ingresos...</p>
+                            </div>
+                        ) : revenue.length === 0 ? (
+                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">Sin registros de entrada</div>
+                        ) : (
+                            revenue.map((item, i) => (
+                                <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] font-black text-slate-600 font-mono tracking-widest">{item.account_code}</span>
+                                        <span className="text-sm font-bold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-lg font-black text-emerald-400 font-mono">
+                                            ${item.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-emerald-500/30 flex justify-between items-center">
-                        <span className="text-emerald-400 font-bold uppercase text-sm tracking-wider">Total Ingresos</span>
-                        <span className="text-2xl font-black text-emerald-400 font-mono">
-                            {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </span>
-                    </div>
+                    <footer className="p-10 bg-emerald-500/5 border-t border-emerald-500/10 flex justify-between items-center">
+                        <div>
+                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Total Ingresos Brutos</p>
+                            <p className="text-xs text-slate-500 font-medium">Período de Auditoría Vigente</p>
+                        </div>
+                        <p className="text-3xl font-black text-emerald-400 font-mono tracking-tighter">
+                            ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </p>
+                    </footer>
                 </div>
 
-                {/* GASTOS */}
-                <div className="bg-slate-900/60 rounded-xl p-6 border border-rose-500/20 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-rose-500/20 rounded-lg text-rose-400">
-                            <TrendingDown className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold text-white">Gastos Operacionales</h3>
-                    </div>
-
-                    <div className="space-y-3">
-                        {expenses.length === 0 && <p className="text-slate-500 italic">No hay gastos registrados en este período.</p>}
-                        {expenses.map((item, i) => (
-                            <div key={i} className="flex justify-between items-center text-sm py-2 border-b border-slate-800/50 hover:bg-slate-800/30 px-2 rounded transition-colors">
-                                <span className="text-slate-300 font-medium">
-                                    <span className="text-slate-500 mr-2 font-mono text-xs">{item.account_code}</span>
-                                    {item.account_name}
-                                </span>
-                                <span className="text-rose-300 font-mono tracking-wide">
-                                    {item.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                </span>
+                {/* EXPENSES COLUMN */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-xl group hover:border-rose-500/20 transition-all duration-500">
+                    <header className="px-10 py-8 bg-slate-950/50 border-b border-slate-800/60 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20">
+                                <ArrowDownCircle className="w-6 h-6 text-rose-500" />
                             </div>
-                        ))}
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Salidas / Gastos</h3>
+                        </div>
+                        <span className="text-[10px] font-black text-rose-500/60 bg-rose-500/5 px-3 py-1 rounded-full border border-rose-500/10">NODO 5000</span>
+                    </header>
+
+                    <div className="p-10 space-y-4">
+                        {loading ? (
+                            <div className="py-20 flex flex-col items-center gap-4">
+                                <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Sincronizando Gastos...</p>
+                            </div>
+                        ) : expenses.length === 0 ? (
+                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">Sin registros de egreso</div>
+                        ) : (
+                            expenses.map((item, i) => (
+                                <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] font-black text-slate-600 font-mono tracking-widest">{item.account_code}</span>
+                                        <span className="text-sm font-bold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-lg font-black text-rose-400 font-mono">
+                                            ${item.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-rose-500/30 flex justify-between items-center">
-                        <span className="text-rose-400 font-bold uppercase text-sm tracking-wider">Total Gastos</span>
-                        <span className="text-2xl font-black text-rose-400 font-mono">
-                            {totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </span>
-                    </div>
+                    <footer className="p-10 bg-rose-500/5 border-t border-rose-500/10 flex justify-between items-center">
+                        <div>
+                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Total Gastos Operativos</p>
+                            <p className="text-xs text-slate-500 font-medium">Consumo Operativo de Recursos</p>
+                        </div>
+                        <p className="text-3xl font-black text-rose-400 font-mono tracking-tighter">
+                            ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </p>
+                    </footer>
                 </div>
 
-                {/* NET INCOME */}
-                <div className="bg-slate-800 rounded-2xl p-8 border border-slate-600 shadow-xl flex justify-between items-center transform hover:scale-[1.01] transition-transform duration-300">
-                    <div>
-                        <h3 className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-1">Utilidad Neta del Ejercicio</h3>
-                        <p className="text-slate-500 text-xs">Ingresos menos Gastos</p>
-                    </div>
-                    <div className={`text-4xl font-black font-mono flex items-center gap-2 ${netIncome >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        <DollarSign className="w-8 h-8" strokeWidth={3} />
-                        {netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {/* BOTTOM RESULT BAR - Full Width */}
+                <div className={`lg:col-span-2 relative mt-4 group cursor-pointer transition-all duration-500 transform hover:scale-[1.01]`}>
+                    <div className={`absolute inset-0 blur-3xl opacity-20 transition-all group-hover:opacity-40 ${netIncome >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <div className={`relative flex flex-col md:flex-row items-center justify-between p-12 rounded-[3.5rem] border-2 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-3xl transition-all ${netIncome >= 0
+                            ? 'bg-slate-900/60 border-emerald-500/30'
+                            : 'bg-slate-900/60 border-rose-500/30'
+                        }`}>
+                        <div className="flex items-center gap-8 mb-6 md:mb-0">
+                            <div className={`p-6 rounded-[2rem] border shadow-2xl ${netIncome >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                                }`}>
+                                <DollarSign className="w-12 h-12" strokeWidth={3} />
+                            </div>
+                            <div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 px-1">Resultado de la Gestión</h4>
+                                <p className="text-4xl font-black text-white uppercase tracking-tighter">
+                                    {netIncome >= 0 ? 'Utilidad Neta del Ejercicio' : 'Pérdida Neta del Ejercicio'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <div className="flex items-baseline gap-2 mb-1 justify-end">
+                                <span className={`text-6xl font-black font-mono tracking-tighter ${netIncome >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    ${Math.abs(netIncome).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <p className={`text-[11px] font-black uppercase tracking-widest ${netIncome >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
+                                Flujo de Caja Realizado • Protocolo {netIncome >= 0 ? 'E' : 'D'}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

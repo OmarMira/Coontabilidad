@@ -1,5 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, Save, X, AlertCircle, CheckCircle, FileText, Calendar } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  Calculator,
+  Save,
+  X,
+  AlertCircle,
+  CheckCircle,
+  FileText,
+  Calendar,
+  History,
+  ShieldCheck,
+  ArrowRight,
+  ChevronRight,
+  ArrowDownCircle,
+  Hash,
+  Search,
+  Loader2
+} from 'lucide-react';
 import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '../database/simple-db';
 import { toast } from 'react-hot-toast';
 
@@ -57,11 +75,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
   const loadJournalEntries = () => {
     try {
-      const dbEntries = getJournalEntries(100);
-
-      // Mapear de JournalEntry (DB) a ManualJournalEntry (UI) si es necesario
-      // O simplemente usar el tipo de la DB. Para este componente, las entries listadas
-      // son para visualización.
+      const dbEntries = getJournalEntries(200);
       const mappedEntries: ManualJournalEntry[] = dbEntries.map(entry => ({
         id: entry.id,
         date: entry.entry_date,
@@ -70,13 +84,12 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         total_debits: entry.total_debit,
         total_credits: entry.total_credit,
         is_balanced: entry.is_balanced,
-        lines: [] // Las líneas se cargarían bajo demanda si fuera necesario, o por ahora vacías en la lista
+        lines: []
       }));
-
       setEntries(mappedEntries);
     } catch (error) {
       console.error('Error loading entries:', error);
-      toast.error('Error al cargar asientos contables');
+      toast.error('Fallo en sincronización de diario');
     }
   };
 
@@ -103,11 +116,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
       debit: 0,
       credit: 0
     };
-
-    setCurrentEntry(prev => ({
-      ...prev,
-      lines: [...prev.lines, newLine]
-    }));
+    setCurrentEntry(prev => ({ ...prev, lines: [...prev.lines, newLine] }));
   };
 
   const updateLine = (lineId: string, field: keyof JournalEntryLine, value: any) => {
@@ -116,8 +125,6 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
       lines: prev.lines.map(line => {
         if (line.id === lineId) {
           const updatedLine = { ...line, [field]: value };
-
-          // Si se selecciona una cuenta, actualizar código y nombre
           if (field === 'account_id') {
             const account = chartOfAccounts.find(acc => acc.id === parseInt(value));
             if (account) {
@@ -125,14 +132,8 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
               updatedLine.account_name = account.account_name;
             }
           }
-
-          // Si se actualiza débito, limpiar crédito y viceversa
-          if (field === 'debit' && parseFloat(value) > 0) {
-            updatedLine.credit = 0;
-          } else if (field === 'credit' && parseFloat(value) > 0) {
-            updatedLine.debit = 0;
-          }
-
+          if (field === 'debit' && parseFloat(value) > 0) updatedLine.credit = 0;
+          else if (field === 'credit' && parseFloat(value) > 0) updatedLine.debit = 0;
           return updatedLine;
         }
         return line;
@@ -147,55 +148,15 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
     }));
   };
 
-  const validateEntry = (): string[] => {
-    const errors: string[] = [];
-
-    if (!currentEntry.reference.trim()) {
-      errors.push('La referencia es obligatoria');
-    }
-
-    if (!currentEntry.description.trim()) {
-      errors.push('La descripción es obligatoria');
-    }
-
-    if (currentEntry.lines.length < 2) {
-      errors.push('Se requieren al menos 2 líneas para un asiento contable');
-    }
-
-    currentEntry.lines.forEach((line, index) => {
-      if (!line.account_id) {
-        errors.push(`Línea ${index + 1}: Debe seleccionar una cuenta`);
-      }
-      if (!line.description.trim()) {
-        errors.push(`Línea ${index + 1}: La descripción es obligatoria`);
-      }
-      if (line.debit === 0 && line.credit === 0) {
-        errors.push(`Línea ${index + 1}: Debe tener un valor en débito o crédito`);
-      }
-      if (line.debit > 0 && line.credit > 0) {
-        errors.push(`Línea ${index + 1}: No puede tener débito y crédito al mismo tiempo`);
-      }
-    });
-
-    if (!currentEntry.is_balanced) {
-      errors.push(`El asiento no está balanceado. Diferencia: $${Math.abs(currentEntry.total_debits - currentEntry.total_credits).toFixed(2)}`);
-    }
-
-    return errors;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const errors = validateEntry();
-    if (errors.length > 0) {
-      alert('Errores en el asiento:\n' + errors.join('\n'));
+    if (!currentEntry.is_balanced) {
+      toast.error('El asiento no cumple con partida doble');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Mapear líneas de UI a JournalDetail de DB
       const details: Partial<JournalDetail>[] = currentEntry.lines.map(line => ({
         account_code: line.account_code,
         debit_amount: line.debit,
@@ -213,9 +174,8 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
       };
 
       const result = createJournalEntry(entryData, details);
-
       if (result.success) {
-        toast.success(result.message);
+        toast.success('Asiento registrado y validado');
         loadJournalEntries();
         setShowEntryForm(false);
         resetForm();
@@ -224,8 +184,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         toast.error(result.message);
       }
     } catch (error: any) {
-      console.error('Error creating journal entry:', error);
-      toast.error('Error al crear el asiento contable: ' + error.message);
+      toast.error('Error crítico en persistencia: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -243,100 +202,88 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
     });
   };
 
-  const getBalanceIndicator = () => {
-    if (currentEntry.lines.length === 0) return null;
-
-    const difference = Math.abs(currentEntry.total_debits - currentEntry.total_credits);
-
-    if (currentEntry.is_balanced) {
-      return (
-        <div className="flex items-center text-green-600">
-          <CheckCircle className="w-4 h-4 mr-1" />
-          <span className="text-sm font-medium">Asiento Balanceado</span>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center text-red-600">
-          <AlertCircle className="w-4 h-4 mr-1" />
-          <span className="text-sm font-medium">
-            Diferencia: ${difference.toFixed(2)}
-          </span>
-        </div>
-      );
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Asientos Contables Manuales</h2>
-          <p className="text-gray-300">Crea asientos contables con validación de partida doble</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Header Panel */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-1 bg-slate-900/40 border border-slate-800 rounded-3xl backdrop-blur-md">
+        <div className="flex items-center gap-5 p-4">
+          <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
+            <History className="w-8 h-8 text-blue-500" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Libro Diario</h2>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Registros Auxiliares e Historial de Auditoría</p>
+          </div>
         </div>
-        <button
-          onClick={() => setShowEntryForm(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Asiento
-        </button>
+        <div className="p-4 w-full md:w-auto">
+          <button
+            onClick={() => setShowEntryForm(true)}
+            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-widest px-8 py-4 rounded-2xl transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-3"
+          >
+            <Plus className="w-5 h-5" />
+            Nuevo Registro Manual
+          </button>
+        </div>
       </div>
 
-      {/* Lista de asientos */}
-      <div className="bg-gray-800 rounded-lg shadow-sm border border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-700">
-          <h3 className="text-lg font-medium text-white">Asientos Registrados</h3>
+      {/* Registry Database Visual */}
+      <div className="bg-slate-900/40 border border-slate-800/60 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-sm">
+        <div className="px-10 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
+          <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            Asientos Verificados
+          </h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded-xl border border-slate-800">
+              <Search className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Filtrar Historial</span>
+            </div>
+          </div>
         </div>
 
         {entries.length === 0 ? (
-          <div className="text-center py-8">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-white">No hay asientos registrados</h3>
-            <p className="mt-1 text-sm text-gray-300">
-              Comienza creando tu primer asiento contable manual
-            </p>
+          <div className="text-center py-24 opacity-30">
+            <FileText className="mx-auto h-20 w-20 text-slate-700 mb-6" />
+            <p className="font-black text-slate-500 uppercase tracking-widest text-xs">Cero registros en este nodo</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Referencia
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Descripción
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Débitos
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Créditos
-                  </th>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-950/50 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
+                  <th className="px-10 py-5 text-left">Fecha Fiscal</th>
+                  <th className="px-10 py-5 text-left">Ref. Auditoría</th>
+                  <th className="px-10 py-5 text-left">Glosa / Descripción</th>
+                  <th className="px-10 py-5 text-right w-32">Total DR</th>
+                  <th className="px-10 py-5 text-right w-32">Total CR</th>
+                  <th className="px-10 py-5 text-center w-24">Estado</th>
                 </tr>
               </thead>
-              <tbody className="bg-gray-800 divide-y divide-gray-700">
+              <tbody className="divide-y divide-slate-800/40">
                 {entries.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                      {new Date(entry.date).toLocaleDateString()}
+                  <tr key={entry.id} className="hover:bg-slate-800/30 transition-all group">
+                    <td className="px-10 py-6">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                        <span className="font-mono text-xs text-slate-400 font-bold">{new Date(entry.date).toLocaleDateString()}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                      {entry.reference}
+                    <td className="px-10 py-6">
+                      <span className="font-black text-xs text-blue-500 uppercase tracking-tight bg-blue-500/5 px-3 py-1.5 rounded-xl border border-blue-500/10 shadow-sm">{entry.reference}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-white">
-                      {entry.description}
+                    <td className="px-10 py-6">
+                      <p className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors">{entry.description}</p>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      ${entry.total_debits.toFixed(2)}
+                    <td className="px-10 py-6 text-right font-mono font-black text-emerald-400/90 text-[13px]">
+                      ${entry.total_debits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      ${entry.total_credits.toFixed(2)}
+                    <td className="px-10 py-6 text-right font-mono font-black text-rose-400/90 text-[13px]">
+                      ${entry.total_credits.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-10 py-6">
+                      <div className="flex justify-center">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -346,211 +293,194 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         )}
       </div>
 
-      {/* Modal de formulario */}
+      {/* Industrial Grade Entry Modal */}
       {showEntryForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border max-w-4xl shadow-lg rounded-md bg-gray-800 border-gray-700">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium text-white">
-                  Nuevo Asiento Contable Manual
-                </h3>
-                <button
-                  onClick={() => setShowEntryForm(false)}
-                  className="text-gray-400 hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Información general */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-1">
-                      Fecha
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        type="date"
-                        value={currentEntry.date}
-                        onChange={(e) => setCurrentEntry(prev => ({ ...prev, date: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-1">
-                      Referencia
-                    </label>
-                    <input
-                      type="text"
-                      value={currentEntry.reference}
-                      onChange={(e) => setCurrentEntry(prev => ({ ...prev, reference: e.target.value }))}
-                      placeholder="Ej: AST-001"
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-1">
-                      Estado del Balance
-                    </label>
-                    <div className="py-2">
-                      {getBalanceIndicator()}
-                    </div>
-                  </div>
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl overflow-y-auto h-full w-full z-50 p-4 md:p-8 animate-in fade-in duration-300">
+          <div className="relative mx-auto bg-slate-900 border border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-[3rem] overflow-hidden max-w-6xl animate-in slide-in-from-bottom-8 duration-500">
+            <header className="bg-slate-950/50 px-10 py-8 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
+                  <Calculator className="w-8 h-8 text-blue-500" />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-white mb-1">
-                    Descripción General
+                  <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Iniciador de Folio</h3>
+                  <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mt-1">Sincronización de Partida Doble • US GAAP Standard</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEntryForm(false)} className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-all active:scale-90 shadow-lg">
+                <X className="w-6 h-6" />
+              </button>
+            </header>
+
+            <form onSubmit={handleSubmit} className="p-10 space-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5" /> Fecha Fiscal
                   </label>
-                  <textarea
-                    value={currentEntry.description}
-                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, description: e.target.value }))}
-                    rows={2}
-                    placeholder="Descripción del asiento contable..."
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  <input
+                    type="date"
+                    value={currentEntry.date}
+                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-mono text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                     required
                   />
                 </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                    <Hash className="w-3.5 h-3.5" /> Referencia Interna
+                  </label>
+                  <input
+                    type="text"
+                    value={currentEntry.reference}
+                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, reference: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-black text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all uppercase"
+                    placeholder="Ej: AST-001"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5" /> Glosa General
+                  </label>
+                  <input
+                    type="text"
+                    value={currentEntry.description}
+                    onChange={(e) => setCurrentEntry(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    placeholder="Descripción detallada del movimiento contable..."
+                    required
+                  />
+                </div>
+              </div>
 
-                {/* Líneas del asiento */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-md font-medium text-white">Líneas del Asiento</h4>
-                    <button
-                      type="button"
-                      onClick={addNewLine}
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Agregar Línea
-                    </button>
-                  </div>
+              <div className="bg-slate-950/40 border border-slate-800 rounded-[2rem] overflow-hidden shadow-inner p-1">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-950/80 text-[9px] font-black text-slate-600 uppercase tracking-widest border-b border-slate-800">
+                    <tr>
+                      <th className="px-8 py-5">Cuenta Contable</th>
+                      <th className="px-8 py-5">Detalle Línea</th>
+                      <th className="px-8 py-5 text-right w-40">Cargo (DR)</th>
+                      <th className="px-8 py-5 text-right w-40">Abono (CR)</th>
+                      <th className="py-5 w-16"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/40">
+                    {currentEntry.lines.map((line) => (
+                      <tr key={line.id} className="hover:bg-slate-800/20 transition-all">
+                        <td className="px-6 py-4">
+                          <select
+                            value={line.account_id}
+                            onChange={(e) => updateLine(line.id, 'account_id', e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-black text-white focus:border-blue-500 outline-none transition-all uppercase"
+                            required
+                          >
+                            <option value="">-- SELECCIONAR NODO --</option>
+                            {chartOfAccounts.map((account) => (
+                              <option key={account.id} value={account.id}>
+                                {account.account_code} • {account.account_name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={line.description}
+                            onChange={(e) => updateLine(line.id, 'description', e.target.value)}
+                            className="w-full bg-transparent border-b border-slate-800 focus:border-blue-500 text-xs font-bold text-slate-400 p-2 outline-none transition-all"
+                            placeholder="Concepto por línea..."
+                            required
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={line.debit || ''}
+                            onChange={(e) => updateLine(line.id, 'debit', parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-right font-mono font-black text-emerald-400 text-sm focus:border-emerald-500 outline-none transition-all"
+                            disabled={line.credit > 0}
+                            onFocus={(e) => e.target.select()}
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={line.credit || ''}
+                            onChange={(e) => updateLine(line.id, 'credit', parseFloat(e.target.value) || 0)}
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-right font-mono font-black text-rose-400 text-sm focus:border-rose-500 outline-none transition-all"
+                            disabled={line.debit > 0}
+                            onFocus={(e) => e.target.select()}
+                          />
+                        </td>
+                        <td className="pr-6">
+                          <button onClick={() => removeLine(line.id)} className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-950/60 font-black">
+                    <tr>
+                      <td colSpan={2} className="px-8 py-8">
+                        <button
+                          type="button"
+                          onClick={addNewLine}
+                          className="flex items-center gap-2 text-blue-500 hover:text-white bg-blue-500/5 hover:bg-blue-600 px-6 py-3 border border-blue-500/20 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all"
+                        >
+                          <Plus className="w-4 h-4" /> Expandir Asiento
+                        </button>
+                      </td>
+                      <td className="px-8 py-8 text-right bg-slate-900/40">
+                        <span className="text-[8px] text-slate-600 uppercase tracking-widest block mb-1">Total DR</span>
+                        <span className="font-mono text-xl text-emerald-400">${currentEntry.total_debits.toFixed(2)}</span>
+                      </td>
+                      <td className="px-8 py-8 text-right bg-slate-900/40">
+                        <span className="text-[8px] text-slate-600 uppercase tracking-widest block mb-1">Total CR</span>
+                        <span className="font-mono text-xl text-rose-400">${currentEntry.total_credits.toFixed(2)}</span>
+                      </td>
+                      <td className="bg-slate-900/40"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-600 border border-gray-600 rounded-md">
-                      <thead className="bg-gray-700">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                            Cuenta
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                            Descripción
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                            Débito
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                            Crédito
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                            Acciones
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-gray-800 divide-y divide-gray-600">
-                        {currentEntry.lines.map((line) => (
-                          <tr key={line.id}>
-                            <td className="px-4 py-3">
-                              <select
-                                value={line.account_id}
-                                onChange={(e) => updateLine(line.id, 'account_id', e.target.value)}
-                                className="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                required
-                              >
-                                <option value="">Seleccionar cuenta...</option>
-                                {chartOfAccounts.map((account) => (
-                                  <option key={account.id} value={account.id}>
-                                    {account.account_code} - {account.account_name}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="text"
-                                value={line.description}
-                                onChange={(e) => updateLine(line.id, 'description', e.target.value)}
-                                placeholder="Descripción de la línea..."
-                                className="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                required
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={line.debit || ''}
-                                onChange={(e) => updateLine(line.id, 'debit', parseFloat(e.target.value) || 0)}
-                                className="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                disabled={line.credit > 0}
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={line.credit || ''}
-                                onChange={(e) => updateLine(line.id, 'credit', parseFloat(e.target.value) || 0)}
-                                className="w-full px-2 py-1 text-sm bg-gray-700 border border-gray-600 rounded text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                disabled={line.debit > 0}
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                type="button"
-                                onClick={() => removeLine(line.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot className="bg-gray-700">
-                        <tr>
-                          <td colSpan={2} className="px-4 py-3 text-sm font-medium text-white">
-                            TOTALES:
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium text-white">
-                            ${currentEntry.total_debits.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium text-white">
-                            ${currentEntry.total_credits.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-3">
-                            {getBalanceIndicator()}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-800">
+                <div className={`flex items-center gap-4 px-8 py-4 rounded-3xl border-2 transition-all ${currentEntry.is_balanced
+                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                  }`}>
+                  {currentEntry.is_balanced ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">{currentEntry.is_balanced ? 'Protocolo Validado' : 'Fuera de Balance'}</p>
+                    {!currentEntry.is_balanced && (
+                      <p className="text-xs font-bold font-mono tracking-tighter">DESCUADRE: ${Math.abs(currentEntry.total_debits - currentEntry.total_credits).toFixed(2)}</p>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-6 border-t border-gray-600">
+                <div className="flex gap-4 w-full md:w-auto">
                   <button
                     type="button"
                     onClick={() => setShowEntryForm(false)}
-                    className="px-4 py-2 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-black uppercase text-[10px] tracking-widest px-10 py-5 rounded-2xl transition-all"
                   >
-                    Cancelar
+                    Descartar
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading || !currentEntry.is_balanced || currentEntry.lines.length < 2}
-                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-widest px-12 py-5 rounded-2xl transition-all shadow-2xl shadow-blue-900/60 disabled:opacity-20 flex items-center justify-center gap-3"
                   >
-                    {isLoading ? 'Guardando...' : 'Guardar Asiento'}
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    Sincronizar Ledger
                   </button>
                 </div>
-              </form>
-            </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

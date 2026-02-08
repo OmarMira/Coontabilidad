@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Save, X, Calculator, Truck, Calendar } from 'lucide-react';
+import {
+  Plus, Save, X, Calculator, Truck, Calendar,
+  ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Info, Layers
+} from 'lucide-react';
 import { Supplier, Product, Bill, BillItem, getFloridaTaxRate } from '../database/simple-db';
 
 interface BillFormProps {
@@ -59,25 +62,21 @@ export const BillForm: React.FC<BillFormProps> = ({
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
   const handleItemChange = (index: number, field: keyof ItemData, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
-    // Si se selecciona un producto, llenar automáticamente descripción y precio
     if (field === 'product_id' && value) {
       const product = products.find(p => p.id === parseInt(value));
       if (product) {
         newItems[index].description = product.name;
-        newItems[index].unit_price = product.cost || product.price; // Usar costo si está disponible
+        newItems[index].unit_price = product.cost || product.price;
         newItems[index].taxable = product.taxable;
       }
     }
-
     setItems(newItems);
   };
 
@@ -94,7 +93,6 @@ export const BillForm: React.FC<BillFormProps> = ({
   const calculateTotals = () => {
     let subtotal = 0;
     let taxAmount = 0;
-
     const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
     const county = selectedSupplier?.florida_county || 'Miami-Dade';
     const taxRate = getFloridaTaxRate(county);
@@ -102,384 +100,239 @@ export const BillForm: React.FC<BillFormProps> = ({
     items.forEach(item => {
       const lineTotal = item.quantity * item.unit_price;
       subtotal += lineTotal;
-      if (item.taxable) {
-        taxAmount += lineTotal * taxRate;
-      }
+      if (item.taxable) taxAmount += lineTotal * taxRate;
     });
 
-    return {
-      subtotal: subtotal,
-      taxAmount: taxAmount,
-      total: subtotal + taxAmount
-    };
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.supplier_id) {
-      newErrors.supplier_id = 'Supplier is required';
-    }
-
-    if (!formData.issue_date) {
-      newErrors.issue_date = 'Issue date is required';
-    }
-
-    if (!formData.due_date) {
-      newErrors.due_date = 'Due date is required';
-    }
-
-    // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
-    if (formData.issue_date && formData.due_date && formData.due_date < formData.issue_date) {
-      newErrors.due_date = 'Due date must be after issue date';
-    }
-
-    // Validar items
-    items.forEach((item, index) => {
-      if (!item.description.trim()) {
-        newErrors[`item_${index}_description`] = 'Description is required';
-      }
-      if (item.quantity <= 0) {
-        newErrors[`item_${index}_quantity`] = 'Quantity must be greater than 0';
-      }
-      if (item.unit_price < 0) {
-        newErrors[`item_${index}_unit_price`] = 'Unit price cannot be negative';
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    const billData: Partial<Bill> = {
-      supplier_id: formData.supplier_id as number,
-      issue_date: formData.issue_date,
-      due_date: formData.due_date,
-      status: formData.status,
-      notes: formData.notes
-    };
-
-    const billItems: Partial<BillItem>[] = items.map(item => ({
-      product_id: item.product_id || undefined,
-      description: item.description,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      taxable: item.taxable
-    }));
-
-    onSubmit(billData, billItems);
+    return { subtotal, taxAmount, total: subtotal + taxAmount };
   };
 
   const { subtotal, taxAmount, total } = calculateTotals();
   const selectedSupplier = suppliers.find(s => s.id === formData.supplier_id);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const billData: Partial<Bill> = { ...formData, supplier_id: formData.supplier_id as number };
+    const billItems = items.map(item => ({ ...item, product_id: item.product_id || undefined }));
+    onSubmit(billData, billItems);
+  };
+
+  const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-          <Calculator className="w-5 h-5 text-orange-400" />
-          {isEditing ? 'Editar Factura de Compra' : 'Nueva Factura de Compra'}
-        </h2>
-        {onCancel && (
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
+    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-50 p-6 overflow-y-auto">
+      <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-3xl w-full max-w-6xl my-auto overflow-hidden flex flex-col relative transition-all duration-700 animate-in zoom-in-95">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/5 blur-[120px] pointer-events-none"></div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Supplier and Date Information */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Proveedor *
-            </label>
-            <select
-              value={formData.supplier_id}
-              onChange={(e) => handleInputChange('supplier_id', parseInt(e.target.value) || '')}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.supplier_id ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                } focus:outline-none`}
-            >
-              <option value="">Seleccionar Proveedor</option>
-              {suppliers.map(supplier => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.business_name || supplier.name}
-                </option>
-              ))}
-            </select>
-            {errors.supplier_id && <p className="text-red-400 text-sm mt-1">{errors.supplier_id}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Fecha de Emisión *
-            </label>
-            <input
-              type="date"
-              value={formData.issue_date}
-              onChange={(e) => handleInputChange('issue_date', e.target.value)}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.issue_date ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                } focus:outline-none`}
-            />
-            {errors.issue_date && <p className="text-red-400 text-sm mt-1">{errors.issue_date}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Fecha de Vencimiento *
-            </label>
-            <input
-              type="date"
-              value={formData.due_date}
-              onChange={(e) => handleInputChange('due_date', e.target.value)}
-              className={`w-full bg-gray-700 text-white px-4 py-2 rounded-md border transition-colors ${errors.due_date ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                } focus:outline-none`}
-            />
-            {errors.due_date && <p className="text-red-400 text-sm mt-1">{errors.due_date}</p>}
-          </div>
-        </div>
-
-        {/* Supplier Information Display */}
-        {selectedSupplier && (
-          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-              <Truck className="w-4 h-4" />
-              Información del Proveedor
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-400">Nombre:</p>
-                <p className="text-white">{selectedSupplier.business_name || selectedSupplier.name}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">Email:</p>
-                <p className="text-white">{selectedSupplier.email}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">Teléfono:</p>
-                <p className="text-white">{selectedSupplier.phone}</p>
-              </div>
-              <div>
-                <p className="text-gray-400">Términos de Pago:</p>
-                <p className="text-white">{selectedSupplier.payment_terms} días</p>
-              </div>
+        {/* Header Hub */}
+        <header className="flex items-center justify-between p-10 border-b border-slate-800 relative z-10 bg-slate-900/50">
+          <div className="flex items-center gap-6">
+            <div className="p-5 bg-orange-600/10 rounded-2.5xl border border-orange-500/20 text-orange-500 shadow-xl animate-pulse">
+              {isEditing ? <Cpu className="w-8 h-8" /> : <Sparkles className="w-8 h-8" />}
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                {isEditing ? 'Ajustar Obligación' : 'Registrar Factura de Compra'}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-orange-500" /> AP Forensic Protocol v2.5
+              </p>
             </div>
           </div>
-        )}
+          <button onClick={onCancel} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
+            <X className="w-6 h-6" />
+          </button>
+        </header>
 
-        {/* Bill Items */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-white">Líneas de Factura</h3>
-            <button
-              type="button"
-              onClick={addItem}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Agregar Línea
-            </button>
-          </div>
+        <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
+          <div className="p-10 space-y-12 overflow-y-auto custom-scrollbar max-h-[70vh]">
 
-          <div className="space-y-3">
-            {items.map((item, index) => (
-              <div key={index} className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Producto (Opcional)
-                    </label>
-                    <select
-                      value={item.product_id}
-                      onChange={(e) => handleItemChange(index, 'product_id', parseInt(e.target.value) || '')}
-                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-md border border-gray-600 focus:border-orange-500 focus:outline-none text-sm"
-                    >
-                      <option value="">Seleccionar Producto</option>
-                      {products.map(product => (
-                        <option key={product.id} value={product.id}>
-                          {product.name} - ${product.cost || product.price}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+            {/* Phase 1: Supplier & Logic Mapping */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+              <div className="xl:col-span-1 space-y-8">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                    <Truck className="w-3.5 h-3.5 text-orange-500" /> Aliado Primario
+                  </label>
+                  <select
+                    value={formData.supplier_id}
+                    onChange={(e) => handleInputChange('supplier_id', parseInt(e.target.value) || '')}
+                    className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px] transition-all appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="">SELECCIONAR ALIADO</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{(s.business_name || s.name).toUpperCase()}</option>)}
+                  </select>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Descripción *
-                    </label>
-                    <input
-                      type="text"
-                      value={item.description}
-                      onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_description`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                        } focus:outline-none`}
-                      placeholder="Descripción del producto/servicio"
-                    />
-                    {errors[`item_${index}_description`] && (
-                      <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_description`]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Cantidad *
-                    </label>
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={item.quantity}
-                      onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_quantity`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                        } focus:outline-none`}
-                    />
-                    {errors[`item_${index}_quantity`] && (
-                      <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_quantity`]}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Precio Unitario *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.unit_price}
-                      onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                      className={`w-full bg-gray-700 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_unit_price`] ? 'border-red-500' : 'border-gray-600 focus:border-orange-500'
-                        } focus:outline-none`}
-                    />
-                    {errors[`item_${index}_unit_price`] && (
-                      <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_unit_price`]}</p>
-                    )}
-                  </div>
-
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-400 mb-1">
-                        Gravable
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={item.taxable}
-                          onChange={(e) => handleItemChange(index, 'taxable', e.target.checked)}
-                          className="w-4 h-4 text-orange-600 bg-gray-700 border-gray-600 rounded focus:ring-orange-500"
-                        />
-                        <span className="ml-2 text-sm text-gray-300">Tax</span>
-                      </label>
+                {selectedSupplier && (
+                  <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 relative group overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/50"></div>
+                    <div className="space-y-4 relative z-10">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Metadata Aliado</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-600 uppercase">Jurisdicción</p>
+                          <p className="text-[10px] font-black text-white">{selectedSupplier.florida_county.toUpperCase()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-600 uppercase">Términos</p>
+                          <p className="text-[10px] font-black text-orange-500">{selectedSupplier.payment_terms} DÍAS</p>
+                        </div>
+                      </div>
                     </div>
-                    {items.length > 1 && (
+                  </div>
+                )}
+              </div>
+
+              <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-10">
+                <PremiumInput label="Eje Temporal: Emisión" icon={Calendar} value={formData.issue_date} onChange={(v) => handleInputChange('issue_date', v)} type="date" required />
+                <PremiumInput label="Eje Temporal: Vencimiento" icon={Clock} value={formData.due_date} onChange={(v) => handleInputChange('due_date', v)} type="date" required />
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                    <Zap className="w-3.5 h-3.5 text-orange-500" /> Estatus Operativo
+                  </label>
+                  <div className="flex bg-slate-950 rounded-2xl p-1 border border-slate-800">
+                    {['draft', 'received', 'approved', 'paid'].map(s => (
                       <button
+                        key={s}
                         type="button"
-                        onClick={() => removeItem(index)}
-                        className="text-red-400 hover:text-red-300 p-2 transition-colors"
-                        title="Eliminar línea"
+                        onClick={() => handleInputChange('status', s)}
+                        className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${formData.status === s ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                       >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                    <Info className="w-3.5 h-3.5 text-orange-500" /> Notas de Auditoría
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    placeholder="MEMORANDUM INTERNO..."
+                    className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Phase 2: Transaction Matrix (Line Items) */}
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
+                  <Layers className="w-6 h-6 text-orange-500" /> Matriz de Transacciones
+                </h3>
+                <button type="button" onClick={addItem} className="px-6 py-3 bg-orange-600/10 border border-orange-500/20 text-orange-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all">
+                  Adjuntar Nueva Línea
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {items.map((item, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-950/50 p-6 rounded-[2rem] border border-slate-800 hover:border-slate-700 transition-all group/line">
+                    <div className="md:col-span-3">
+                      <select
+                        value={item.product_id}
+                        onChange={(e) => handleItemChange(index, 'product_id', parseInt(e.target.value) || '')}
+                        className="w-full bg-slate-900 text-white px-4 py-3 rounded-xl border border-slate-800 focus:border-orange-500 focus:outline-none text-[10px] font-black uppercase tracking-widest"
+                      >
+                        <option value="">PRODUCTO / SKU</option>
+                        {products.map(p => <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>)}
+                      </select>
+                    </div>
+                    <div className="md:col-span-3">
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                        placeholder="DESCRIPCIÓN TÉCNICA..."
+                        className="w-full bg-slate-900 text-white px-4 py-3 rounded-xl border border-slate-800 focus:border-orange-500 focus:outline-none text-[10px] font-black uppercase tracking-widest"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-slate-900 text-white px-4 py-3 rounded-xl border border-slate-800 focus:border-orange-500 focus:outline-none text-[10px] font-black font-mono text-center"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <input
+                        type="number"
+                        value={item.unit_price}
+                        onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                        className="w-full bg-slate-900 text-white px-4 py-3 rounded-xl border border-slate-800 focus:border-orange-500 focus:outline-none text-[10px] font-black font-mono text-right text-emerald-500"
+                      />
+                    </div>
+                    <div className="md:col-span-2 flex items-center justify-between gap-4">
+                      <div className="text-right flex-1">
+                        <p className="text-[8px] font-black text-slate-600 uppercase">Subtotal</p>
+                        <p className="text-xs font-black text-white font-mono">{formatCurrency(item.quantity * item.unit_price)}</p>
+                      </div>
+                      <button type="button" onClick={() => removeItem(index)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover/line:opacity-100">
                         <X className="w-4 h-4" />
                       </button>
-                    )}
+                    </div>
                   </div>
-                </div>
-
-                <div className="mt-2 text-right">
-                  <span className="text-sm text-gray-400">Total Línea: </span>
-                  <span className="text-white font-medium">
-                    ${(item.quantity * item.unit_price).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bill Totals */}
-        <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-          <h3 className="text-lg font-medium text-white mb-4">Resumen de Factura</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-gray-300">
-              <span>Subtotal:</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-gray-300">
-              <span>Impuestos ({(getFloridaTaxRate(selectedSupplier?.florida_county || 'Miami-Dade') * 100).toFixed(1)}% FL):</span>
-              <span>${taxAmount.toFixed(2)}</span>
-            </div>
-            <div className="border-t border-gray-700 pt-2">
-              <div className="flex justify-between text-white font-semibold text-lg">
-                <span>Total:</span>
-                <span>${total.toFixed(2)}</span>
+                ))}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Status and Notes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Estado
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value)}
-              className="w-full bg-gray-700 text-white px-4 py-2 rounded-md border border-gray-600 focus:border-orange-500 focus:outline-none"
-            >
-              <option value="draft">Borrador</option>
-              <option value="received">Recibida</option>
-              <option value="approved">Aprobada</option>
-              <option value="paid">Pagada</option>
-              <option value="overdue">Vencida</option>
-              <option value="cancelled">Cancelada</option>
-            </select>
-          </div>
+          {/* Phase 3: Liquid Consolidation (Totals) */}
+          <footer className="p-10 border-t border-slate-800 bg-slate-950/80 relative z-10">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+              <div className="flex gap-16 order-2 md:order-1">
+                <ConsolidationStat label="Subtotal Neto" value={formatCurrency(subtotal)} />
+                <ConsolidationStat label="Impuesto Florida" value={formatCurrency(taxAmount)} />
+                <div className="group">
+                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.3em] mb-3">Total Obligado</p>
+                  <p className="text-5xl font-black text-white font-mono tracking-tighter group-hover:scale-105 transition-transform origin-left">{formatCurrency(total)}</p>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Notas
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              rows={3}
-              className="w-full bg-gray-700 text-white px-4 py-2 rounded-md border border-gray-600 focus:border-orange-500 focus:outline-none resize-none"
-              placeholder="Notas adicionales o términos..."
-            />
-          </div>
-        </div>
-
-        {/* Form Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-700">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-            >
-              Cancelar
-            </button>
-          )}
-          <button
-            type="submit"
-            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            {isEditing ? 'Actualizar Factura' : 'Crear Factura de Compra'}
-          </button>
-        </div>
-      </form>
+              <div className="flex gap-6 w-full md:w-auto order-1 md:order-2">
+                <button type="button" onClick={onCancel} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
+                  Abortar Protocolo
+                </button>
+                <button type="submit" className="flex-1 md:flex-none px-12 py-5 bg-orange-600 hover:bg-orange-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-orange-900/40 hover:-translate-y-1 active:scale-95">
+                  <Save className="w-5 h-5" />
+                  {isEditing ? 'Confirmar Ajuste' : 'Registrar Obligación'}
+                </button>
+              </div>
+            </div>
+          </footer>
+        </form>
+      </div>
     </div>
   );
 };
+
+const PremiumInput = ({ label, icon: Icon, value, onChange, type = "text", required, placeholder }: any) => (
+  <div className="space-y-4">
+    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+      <Icon className="w-3.5 h-3.5 text-orange-500" /> {label} {required && '*'}
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px] transition-all"
+      required={required}
+    />
+  </div>
+);
+
+const ConsolidationStat = ({ label, value }: any) => (
+  <div className="text-left">
+    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">{label}</p>
+    <p className="text-xl font-black text-slate-300 font-mono italic">{value}</p>
+  </div>
+);

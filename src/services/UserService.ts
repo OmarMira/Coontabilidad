@@ -47,7 +47,11 @@ export class UserService {
                 return { success: false, message: 'El nombre de usuario debe tener al menos 3 caracteres' };
             }
 
-            if (!data.password || data.password.length < 12) {
+            // Bypass validación de longitud para usuarios OAuth (Google, etc.)
+            // Estos usuarios usan tokens externos, la contraseña es solo placeholder
+            const isOAuthUser = data.password?.startsWith('google_') || data.password?.startsWith('oauth_');
+
+            if (!data.password || (data.password.length < 12 && !isOAuthUser)) {
                 return { success: false, message: 'La contraseña debe tener al menos 12 caracteres (NIST SP 800-63B)' };
             }
 

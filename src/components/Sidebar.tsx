@@ -1,38 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Home,
-  Users,
-  Building2,
-  Package,
-  MapPin,
-  ShoppingCart,
-  TrendingUp,
-  Package2,
-  Calculator,
-  FileText,
-  BarChart3,
-  Settings,
-  Receipt,
-  Search,
-  ScanSearch,
-  HardDrive,
-  UserCheck,
-  User as UserIcon,
-  Lock,
-  Bot,
-  Activity,
-  HelpCircle,
-  ChevronDown,
-  ChevronRight,
-  Database,
-  CreditCard,
-  Shield,
-  History,
-  PieChart,
-  ShieldCheck,
-  Clock,
-  DollarSign
+  Home, Users, Building2, Package, MapPin, ShoppingCart, TrendingUp,
+  Package2, Calculator, FileText, BarChart3, Settings, Receipt, Search,
+  ScanSearch, HardDrive, UserCheck, User as UserIcon, Lock, Bot, Activity,
+  HelpCircle, ChevronDown, ChevronRight, Database, CreditCard, Shield,
+  History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
+  CheckCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -73,6 +47,7 @@ const menuItems: MenuItem[] = [
     label: 'Cta por Pagar',
     icon: Receipt,
     children: [
+      { id: 'dashboard-suppliers', label: 'Dashboard de Proveedores', icon: Building2 },
       { id: 'suppliers', label: 'Proveedores', icon: Building2 },
       { id: 'bills', label: 'Facturas de Compra', icon: FileText },
       { id: 'supplier-payments', label: 'Pagos a Proveedores', icon: CreditCard },
@@ -85,6 +60,7 @@ const menuItems: MenuItem[] = [
     label: 'Cta por Cobrar',
     icon: TrendingUp,
     children: [
+      { id: 'dashboard-customers', label: 'Dashboard de Clientes', icon: Users },
       { id: 'ard-module', label: 'Análisis ARD', icon: ScanSearch },
       { id: 'customers', label: 'Clientes', icon: Users },
       { id: 'invoices', label: 'Facturas de Venta', icon: FileText },
@@ -98,6 +74,7 @@ const menuItems: MenuItem[] = [
     label: 'Contabilidad',
     icon: Calculator,
     children: [
+      { id: 'dashboard-financial', label: 'Dashboard Financiero', icon: TrendingUp },
       { id: 'reports-dashboard', label: 'Dashboard de Reportes', icon: BarChart3 },
       { id: 'accounting-periods', label: 'Cierres y Periodos', icon: Lock },
       { id: 'ledger-hub', label: 'Libros y Auxiliares', icon: Database },
@@ -113,18 +90,19 @@ const menuItems: MenuItem[] = [
       { id: 'income-statement', label: 'Estado de Resultados', icon: TrendingUp },
       { id: 'cash-flow', label: 'Flujo de Efectivo', icon: DollarSign },
       { id: 'aging-report', label: 'Reporte de Antigüedad', icon: Clock },
-      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package }, // MOVIDO AQUÍ
+      { id: 'fixed-assets', label: 'Gestión de Activos', icon: Package },
       { id: 'budgets', label: 'Presupuestos', icon: BarChart3 }
     ]
   },
-  // SECCIONES MOVIDAS FUERA DE CONTABILIDAD (SOLICITUD USUARIO)
   {
     id: 'payroll',
     label: 'NÓMINA',
     icon: Users,
     children: [
+      { id: 'dashboard-payroll', label: 'Dashboard de Nómina', icon: PieChart },
       { id: 'employee-mgr', label: 'Gestión de Empleados', icon: UserCheck },
       { id: 'payroll-process', label: 'Procesar Nómina', icon: Calculator },
+      { id: 'payroll-review', label: 'Revisar Nómina', icon: ShieldCheck },
       { id: 'payroll-reports', label: 'Reportes de Nómina', icon: BarChart3 }
     ]
   },
@@ -133,6 +111,7 @@ const menuItems: MenuItem[] = [
     label: 'INVENTARIO',
     icon: Package,
     children: [
+      { id: 'dashboard-inventory', label: 'Dashboard de Inventario', icon: PieChart },
       { id: 'products', label: 'Productos y Servicios', icon: Package },
       { id: 'inventory-movements', label: 'Movimientos', icon: TrendingUp },
       { id: 'inventory-adjustments', label: 'Ajustes de Inventario', icon: Settings },
@@ -184,15 +163,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     if (!user) return false;
     const role = user.role;
 
-    if (role === 'admin') return true; // Admin ve todo
+    if (role === 'admin') return true;
 
     switch (itemId) {
       case 'dashboard':
       case 'ai-assistant':
-        return true; // Todos ven dashboard e IA
+        return true;
 
       case 'archivo':
-        return role === 'auditor'; // Solo admin y auditor (admin ya manejado arriba)
+        return role === 'auditor';
 
       case 'cuentas-pagar':
         return ['contador', 'comprador', 'auditor'].includes(role);
@@ -218,44 +197,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     }
   };
 
-  // Filtrar ítems del menú según rol
   const filteredMenuItems = menuItems.filter(item => hasAccess(item.id));
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => {
       const isAlreadyExpanded = prev.has(itemId);
-
       if (isAlreadyExpanded) {
-        // Si ya está expandido, lo cerramos (todos quedan cerrados)
         return new Set();
       } else {
-        // Si no está expandido, cerramos todos y abrimos solo este
         return new Set([itemId]);
       }
     });
   };
 
-  const handleItemClick = (item: MenuItem, level: number) => {
+  const handleItemClick = (item: MenuItem) => {
     if (item.children) {
-      if (level === 0) {
-        // Si es un menú raíz padre (ej. Cuentas Cobrar), cerramos hermanos (comportamiento acordeón normal)
-        toggleExpanded(item.id);
-      } else {
-        // Si es un submenú con hijos, comportamiento normal
-        toggleExpanded(item.id);
-      }
+      toggleExpanded(item.id);
     } else {
-      // Si es un ítem HOJA (acción final), debemos decidir si cerramos el menú o no.
-
-      if (level === 0) {
-        // CASE 1: Es un ítem raíz sin hijos (ej. Dashboard, AI Assistant).
-        // Aquí SÍ debemos colapsar todo, porque no pertenece a ningún submenú.
-        setExpandedItems(new Set());
-      } else {
-        // CASE 2: Es un hijo dentro de un submenú (ej. Crear Factura).
-        // Aquí NO cerramos nada, para mantener el contexto del usuario visible.
-      }
-
       onNavigate(item.id);
     }
   };
@@ -269,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     return (
       <div key={item.id} className="relative">
         <div
-          onClick={() => handleItemClick(item, level)}
+          onClick={() => handleItemClick(item)}
           className={`
             group flex items-center gap-3 px-4 py-1.5 cursor-pointer transition-all duration-300 relative overflow-hidden
             ${level === 0 ? 'mx-0 rounded-none' : 'mx-1 rounded-xl'}
@@ -282,33 +240,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
             ${level > 0 ? 'text-lg font-bold' : 'text-lg font-black uppercase tracking-wider'}
           `}
         >
-          {/* Active indicator bar */}
           {isActive && !hasChildren && (
             <div className="absolute left-0 top-0 w-1 h-full bg-white"></div>
           )}
 
-          {/* Icono */}
           <item.icon className={`
             w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-110
             ${isActive && !hasChildren ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}
             ${isParentCategory ? 'w-3.5 h-3.5' : ''}
           `} />
 
-          {/* Texto del menú */}
           {!isCollapsed && (
             <>
               <span className={`flex-1 ${level === 0 ? 'text-lg font-black' : 'text-lg font-semibold'}`}>
                 {item.label}
               </span>
 
-              {/* Badge */}
               {item.badge && (
                 <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   {item.badge}
                 </span>
               )}
 
-              {/* Flecha para expandir */}
               {hasChildren && (
                 <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400" />
@@ -318,7 +271,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           )}
         </div>
 
-        {/* Elementos hijos */}
         {hasChildren && isExpanded && !isCollapsed && (
           <div className="mt-1 pb-2 space-y-1 animate-in fade-in slide-in-from-top-1 duration-300">
             {item.children!.map(child => renderMenuItem(child, level + 1))}
@@ -333,10 +285,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       relative h-screen bg-slate-950 border-r border-slate-900 flex flex-col transition-all duration-300 ease-in-out z-[40]
       ${isCollapsed ? 'w-20' : 'w-80'}
     `}>
-      {/* Glossy Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none"></div>
 
-      {/* Header del Sidebar */}
       <div className="p-6 mb-2 border-b border-slate-900/50">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40 border border-blue-500/30 group cursor-default">
@@ -354,16 +304,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         </div>
       </div>
 
-      {/* Menú de navegación */}
       <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar relative px-3">
         <div className="space-y-1">
           {filteredMenuItems.map(item => renderMenuItem(item))}
         </div>
       </nav>
 
-
-
-      {/* Perfil del Usuario y Botón de Cerrar Sesión */}
       <div className="p-4 border-t border-slate-900/50 mt-auto space-y-2">
         {user && (
           <button
@@ -381,7 +327,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
         <button
           onClick={() => {
-            logout();
+            if (confirm('¿Deseas cerrar la sesión?')) {
+              logout();
+            }
           }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs"
         >
@@ -390,7 +338,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         </button>
       </div>
 
-      {/* Botón para colapsar/expandir mejorado */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-4 top-20 bg-blue-600 w-8 h-8 rounded-xl flex items-center justify-center text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/50 border border-blue-400/30 z-50 group"

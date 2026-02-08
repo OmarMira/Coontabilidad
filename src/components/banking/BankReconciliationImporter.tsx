@@ -1,351 +1,301 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { db, BankAccount, insertBankTransactions } from '@/database/simple-db';
-import { Upload, FileText, Check, AlertCircle, ArrowRight, RefreshCw, AlertTriangle } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import {
+    Upload,
+    FileText,
+    X,
+    AlertCircle,
+    CheckCircle,
+    Database,
+    ArrowRight,
+    Zap,
+    ShieldCheck,
+    Layers,
+    Target,
+    Cpu,
+    Activity,
+    Landmark,
+    FileSpreadsheet,
+    Terminal as TerminalIcon,
+    Sparkles,
+    Calendar,
+    ChevronRight
+} from 'lucide-react';
+import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions } from '../../database/simple-db';
 import Papa from 'papaparse';
-import { detectBankFormat } from './importers/FormatDetector';
-import { normalizeTransaction } from './importers/TransactionNormalizer';
+import { toast } from 'react-hot-toast';
 
 export const BankReconciliationImporter: React.FC = () => {
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
     const [file, setFile] = useState<File | null>(null);
-    const [previewData, setPreviewData] = useState<any[]>([]);
-    const [headers, setHeaders] = useState<string[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [successMsg, setSuccessMsg] = useState<string | null>(null);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [stats, setStats] = useState<{ valid: number, invalid: number } | null>(null);
-    const [fileFormat, setFileFormat] = useState<string>('UNKNOWN');
-
-    // Mapeo dinámico
-    const [columnMapping, setColumnMapping] = useState({
-        date: '',
-        description: '',
-        amount: '',
-        reference: ''
+    const [dragActive, setDragActive] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [mapping, setMapping] = useState({
+        date: 0,
+        description: 1,
+        amount: 2,
+        reference: 3
     });
+    const [preview, setPreview] = useState<any[]>([]);
+    const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
 
-    useEffect(() => {
-        loadAccounts();
+    React.useEffect(() => {
+        setAccounts(getBankAccounts());
     }, []);
 
-    const loadAccounts = () => {
-        if (!db) return;
-        try {
-            const res = db.exec("SELECT * FROM bank_accounts WHERE is_active = 1");
-            if (res.length > 0 && res[0].values.length > 0) {
-                const cols = res[0].columns;
-                const loadedAccounts = res[0].values.map((row: any) => {
-                    const acc: any = {};
-                    cols.forEach((col: string, i: number) => acc[col] = row[i]);
-                    return acc as BankAccount;
-                });
-                setAccounts(loadedAccounts);
-                if (loadedAccounts.length > 0) setSelectedAccountId(loadedAccounts[0].id);
-            }
-        } catch (e) {
-            console.error("Error loading accounts", e);
+    const handleDrag = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === 'dragenter' || e.type === 'dragover') {
+            setDragActive(true);
+        } else if (e.type === 'dragleave') {
+            setDragActive(false);
         }
-    };
+    }, []);
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const selectedFile = e.target.files[0];
-            setFile(selectedFile);
-            setSuccessMsg(null);
-            setErrorMsg(null);
-            setStats(null);
-            setLoading(true);
-
-            try {
-                // 1. Detect Format
-                const detection = await detectBankFormat(selectedFile);
-                setFileFormat(detection.format);
-
-                if (detection.suggestedParser !== 'CSV') {
-                    setErrorMsg(`Formato detectado: ${detection.format}. Por favor usa la pestaña ${detection.suggestedParser}.`);
-                    setLoading(false);
-                    return;
-                }
-
-                // 2. Parse CSV
-                Papa.parse(selectedFile, {
-                    header: true,
-                    preview: 5,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        setLoading(false);
-                        if (results.meta.fields) {
-                            setHeaders(results.meta.fields);
-                            setPreviewData(results.data);
-
-                            // Auto-map based on detection metadata or heuristics
-                            // FormatDetector returns metadata that might help, but for now we rely on headers
-                            // Re-implementing simplified mapping logic or using what we had
-                            autoMapColumns(results.meta.fields, detection.metadata);
-                        }
-                    },
-                    error: (error) => {
-                        setLoading(false);
-                        setErrorMsg(`Error leyendo CSV: ${error.message}`);
-                    }
-                });
-
-            } catch (err) {
-                setLoading(false);
-                setErrorMsg('Error analizando archivo.');
-            }
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0]);
         }
-    };
+    }, []);
 
-    const autoMapColumns = (headers: string[], metadata: any) => {
-        const mapping = { date: '', description: '', amount: '', reference: '' };
-
-        // Use FormatDetector metadata if available for mapping hints?
-        // Currently FormatDetector mainly identifies format name.
-        // We use simple heuristic here.
-
-        headers.forEach(h => {
-            const lower = h.toLowerCase();
-            if (lower.includes('date') || lower.includes('fecha')) mapping.date = h;
-            if (lower.includes('desc') || lower.includes('detail') || lower.includes('payee') || lower.includes('concepto')) mapping.description = h;
-            if (lower.includes('amount') || lower.includes('monto') || lower.includes('importe')) mapping.amount = h;
-            if (lower.includes('ref') || lower.includes('check') || lower.includes('num')) mapping.reference = h;
+    const handleFileSelect = (selectedFile: File) => {
+        if (!selectedFile.name.endsWith('.csv')) {
+            toast.error('Protocolo requiere formato CSV');
+            return;
+        }
+        setFile(selectedFile);
+        Papa.parse(selectedFile, {
+            complete: (results) => {
+                setPreview(results.data.slice(0, 10));
+                setStep('mapping');
+                toast.success('Integridad de archivo verificada');
+            },
+            header: false,
+            skipEmptyLines: true
         });
-
-        setColumnMapping(mapping);
     };
 
-    const handleImport = () => {
+    const handleImport = async () => {
         if (!file || !selectedAccountId) return;
 
-        setLoading(true);
-        setErrorMsg(null);
-        setStats(null);
-
+        setIsProcessing(true);
         Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
             complete: (results) => {
-                const transactions: any[] = [];
-                let validCount = 0;
-                let invalidCount = 0;
+                const transactions: Partial<BankTransaction>[] = results.data
+                    .slice(1) // Skip header
+                    .map((row: any) => ({
+                        bank_account_id: selectedAccountId,
+                        transaction_date: row[mapping.date],
+                        description: row[mapping.description],
+                        amount: parseFloat(row[mapping.amount]?.toString().replace(/[$,]/g, '')) || 0,
+                        reference_number: row[mapping.reference] || '',
+                        status: 'unreconciled'
+                    }))
+                    .filter((t: any) => t.transaction_date && t.amount !== 0);
 
-                results.data.forEach((row: any) => {
-                    // Use TransactionNormalizer
-                    const rawDate = row[columnMapping.date];
-                    const rawDesc = row[columnMapping.description];
-                    const rawAmt = row[columnMapping.amount];
-                    const rawRef = row[columnMapping.reference];
-
-                    const normalized = normalizeTransaction(rawDate, rawDesc, rawAmt, rawRef, {
-                        strictMode: false, // Be lenient on import to allow manual correction later? No, Gold+ requires valid data.
-                        detectNegativesInParens: true
-                    });
-
-                    if (normalized.success && normalized.data) {
-                        transactions.push({
-                            bank_account_id: selectedAccountId,
-                            ...normalized.data,
-                            status: 'pending'
-                        });
-                        validCount++;
-                    } else {
-                        invalidCount++;
-                        console.warn('Row failed normalization:', row, normalized.error);
-                    }
-                });
-
-                if (transactions.length > 0) {
-                    const result = insertBankTransactions(transactions);
-                    if (result.success) {
-                        setSuccessMsg(`Importación completada: ${result.importedCount} nuevas transacciones.`);
-                        setStats({ valid: validCount, invalid: invalidCount });
-                        if (invalidCount > 0) {
-                            setErrorMsg(`Atención: ${invalidCount} filas fueron ignoradas o eran inválidas.`);
-                        }
-                        setFile(null);
-                        setPreviewData([]);
-                    } else {
-                        setErrorMsg(result.message);
-                    }
+                const result = insertBankTransactions(transactions as BankTransaction[]);
+                if (result.success) {
+                    toast.success(`Inyección completa: ${transactions.length} registros certificados`);
+                    setStep('upload');
+                    setFile(null);
+                    setPreview([]);
                 } else {
-                    setErrorMsg("No se encontraron transacciones válidas para importar.");
+                    toast.error(result.message);
                 }
-                setLoading(false);
+                setIsProcessing(false);
             },
-            error: (error) => {
-                setErrorMsg(`Error crítico al parsear: ${error.message}`);
-                setLoading(false);
-            }
+            header: false,
+            skipEmptyLines: true
         });
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                <div>
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                        Importación Inteligente (CSV)
-                    </h2>
-                    <p className="text-slate-400">Detecta y normaliza formatos bancarios automáticamente.</p>
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 shadow-blue-900/10 shadow-lg group">
+                        <FileSpreadsheet className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Inyector de Conciliación</h2>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
+                            <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> Asset Synchronization Interface
+                        </p>
+                    </div>
                 </div>
-                {fileFormat !== 'UNKNOWN' && (
-                    <span className="bg-blue-900/40 text-blue-200 px-3 py-1 rounded-full text-xs border border-blue-500/30">
-                        Formato: {fileFormat}
-                    </span>
-                )}
+
+                <div className="flex items-center gap-6 p-1.5 bg-slate-950 border border-slate-900 rounded-2.5xl shadow-3xl">
+                    <div className="px-6 py-3 flex items-center gap-3">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Kernel Integrity: Active</span>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Control Panel */}
-                <Card className="bg-slate-900 border-slate-800 shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-white">
-                            <Upload className="w-5 h-5 text-blue-400" />
-                            Cargar Archivo
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-300">Cuenta Destino</label>
-                            <select
-                                className="w-full bg-slate-950 border border-slate-700 rounded-md p-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                value={selectedAccountId || ''}
-                                onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-                            >
-                                {accounts.length === 0 && <option value="">No hay cuentas activas</option>}
-                                {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.bank_name} - {acc.account_name}</option>
-                                ))}
-                            </select>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 border-slate-800">
+                {/* Protocol Selector - Account selection */}
+                <div className="space-y-6">
+                    <div className="bg-slate-900 border-2 border-slate-800 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[60px] pointer-events-none"></div>
+                        <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
+                            <Landmark className="w-4 h-4 text-blue-500" /> Destino de Bóveda
+                        </h3>
+                        <div className="space-y-3">
+                            {accounts.map(account => (
+                                <button
+                                    key={account.id}
+                                    onClick={() => setSelectedAccountId(account.id)}
+                                    className={`w-full text-left p-6 rounded-[1.8rem] transition-all duration-500 relative overflow-hidden ${selectedAccountId === account.id
+                                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-950/40'
+                                        : 'bg-slate-950 border border-slate-800 text-slate-400 hover:border-slate-700 hover:-translate-x-1'
+                                        }`}
+                                >
+                                    <div className="relative z-10 flex flex-col gap-1">
+                                        <div className="font-black uppercase tracking-tighter text-sm">{account.account_name}</div>
+                                        <div className={`text-[9px] font-black uppercase tracking-[0.2em] font-mono ${selectedAccountId === account.id ? 'text-blue-100' : 'text-slate-600'}`}>ID: #{account.id}</div>
+                                    </div>
+                                    {selectedAccountId === account.id && (
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-[30px] -mr-12 -mt-12"></div>
+                                    )}
+                                </button>
+                            ))}
                         </div>
+                    </div>
 
+                    <div className="p-8 bg-slate-950 border border-slate-800 rounded-[2.5rem] shadow-xl text-center space-y-4">
+                        <TerminalIcon className="w-8 h-8 text-slate-800 mx-auto mb-4 group-hover:text-blue-500 transition-colors" />
                         <div className="space-y-2">
-                            <div className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer relative group">
-                                <input
-                                    type="file"
-                                    accept=".csv,.txt"
-                                    onChange={handleFileChange}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                />
-                                <FileText className="w-10 h-10 text-slate-500 mx-auto mb-2 group-hover:text-blue-400 transition-colors" />
-                                <p className="text-sm text-slate-400 group-hover:text-blue-300">{file ? file.name : "Arrastra archivo CSV"}</p>
-                            </div>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Protocol: CSV_STANDARD_V1</p>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Auth: AES-X_CRYPTO</p>
                         </div>
+                    </div>
+                </div>
 
-                        {successMsg && (
-                            <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-md flex items-center gap-2 animate-in slide-in-from-top-2">
-                                <Check className="w-4 h-4" />
-                                <div>
-                                    <p className="font-bold">¡Éxito!</p>
-                                    <p className="text-xs">{successMsg}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {errorMsg && (
-                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-md flex items-center gap-2 animate-in slide-in-from-top-2">
-                                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                <span className="text-sm">{errorMsg}</span>
-                            </div>
-                        )}
-
-                        {stats && (
-                            <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                                <div className="bg-green-900/30 p-2 rounded text-green-300">
-                                    <span className="block text-lg font-bold">{stats.valid}</span>
-                                    Válidas
-                                </div>
-                                <div className="bg-red-900/30 p-2 rounded text-red-300">
-                                    <span className="block text-lg font-bold">{stats.invalid}</span>
-                                    Inválidas
-                                </div>
-                            </div>
-                        )}
-
-                        <Button
-                            onClick={handleImport}
-                            disabled={!file || !selectedAccountId || loading || !!errorMsg}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-900/20 font-bold"
+                {/* Main Action Hub */}
+                <div className="lg:col-span-2">
+                    {step === 'upload' ? (
+                        <div
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                            className={`h-full bg-slate-900 border-4 border-dashed rounded-[3.5rem] p-24 text-center transition-all duration-700 flex flex-col items-center justify-center group relative overflow-hidden ${dragActive ? 'border-blue-500 bg-blue-500/5' : 'border-slate-800 bg-slate-950/20 hover:border-slate-700'
+                                }`}
                         >
-                            {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
-                            {loading ? 'Procesando...' : 'Confirmar Importación'}
-                        </Button>
-                    </CardContent>
-                </Card>
+                            <div className={`absolute inset-0 bg-blue-500/5 transition-opacity duration-700 ${dragActive ? 'opacity-100 animate-pulse' : 'opacity-0'}`}></div>
 
-                {/* Panel de Mapeo */}
-                {previewData.length > 0 && (
-                    <Card className="bg-slate-900 border-slate-800 shadow-xl flex flex-col h-full">
-                        <CardHeader>
-                            <CardTitle className="text-white flex justify-between items-center">
-                                <span>Verificación de Columnas</span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col">
-                            <div className="space-y-4 mb-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Fecha</label>
-                                        <select
-                                            value={columnMapping.date}
-                                            onChange={(e) => setColumnMapping({ ...columnMapping, date: e.target.value })}
-                                            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-blue-500"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Descripción</label>
-                                        <select
-                                            value={columnMapping.description}
-                                            onChange={(e) => setColumnMapping({ ...columnMapping, description: e.target.value })}
-                                            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-blue-500"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Monto</label>
-                                        <select
-                                            value={columnMapping.amount}
-                                            onChange={(e) => setColumnMapping({ ...columnMapping, amount: e.target.value })}
-                                            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-blue-500"
-                                        >
-                                            <option value="">Seleccionar...</option>
-                                            {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Referencia</label>
-                                        <select
-                                            value={columnMapping.reference}
-                                            onChange={(e) => setColumnMapping({ ...columnMapping, reference: e.target.value })}
-                                            className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-sm text-white focus:border-blue-500"
-                                        >
-                                            <option value="">(Opcional)</option>
-                                            {headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                    </div>
+                            <div className={`w-32 h-32 bg-slate-950 rounded-[2.5rem] border border-slate-800 flex items-center justify-center mb-10 shadow-2xl transition-all duration-700 ${dragActive ? 'scale-110 border-blue-500/50' : 'group-hover:scale-105 group-hover:bg-slate-900'}`}>
+                                <Upload className={`w-12 h-12 ${dragActive ? 'text-blue-500 animate-bounce' : 'text-slate-700'}`} />
+                            </div>
+
+                            <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ingreso de Base CSV</h3>
+                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm mb-12">
+                                ARRASTRA EL ARCHIVO DE TRANSACCIONES O HAZ CLIC PARA SELECCIONAR. NUESTRO MOTOR REFIBRARÁ LOS DATOS.
+                            </p>
+
+                            <input
+                                type="file"
+                                accept=".csv"
+                                onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
+                                className="hidden"
+                                id="csv-upload"
+                                disabled={!selectedAccountId}
+                            />
+                            <label
+                                htmlFor="csv-upload"
+                                className={`px-14 py-6 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-3xl flex items-center gap-4 cursor-pointer ${!selectedAccountId ? 'bg-slate-800 text-slate-600 opacity-50' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40 hover:-translate-y-1 active:scale-95'
+                                    }`}
+                            >
+                                <Zap className="w-5 h-5 fill-current" />
+                                LOCALIZAR FUENTE CSV
+                            </label>
+                            {!selectedAccountId && <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mt-6">⚠️ ACCESO DENEGADO: SELECCIONA BÓVEDA PRIMERO</p>}
+                        </div>
+                    ) : (
+                        <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] p-12 shadow-3xl space-y-12 animate-in slide-in-from-bottom-6 duration-700 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] pointer-events-none transition-all duration-700 group-hover:bg-blue-500/10"></div>
+
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Mapeo de Atributos</h3>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 italic flex items-center gap-2">
+                                        <Layers className="w-3.5 h-3.5 text-blue-500" /> Neural Layer Coordination
+                                    </p>
+                                </div>
+                                <button onClick={() => setStep('upload')} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <MappingField label="Timestamp (Fecha)" icon={Calendar} value={mapping.date} onChange={(v) => setMapping(prev => ({ ...prev, date: v }))} />
+                                <MappingField label="Descriptor (Descripción)" icon={Target} value={mapping.description} onChange={(v) => setMapping(prev => ({ ...prev, description: v }))} />
+                                <MappingField label="Cuantía (Monto)" icon={Activity} value={mapping.amount} onChange={(v) => setMapping(prev => ({ ...prev, amount: v }))} />
+                                <MappingField label="Referencia (ID)" icon={ShieldCheck} value={mapping.reference} onChange={(v) => setMapping(prev => ({ ...prev, reference: v }))} />
+                            </div>
+
+                            <div className="bg-slate-950 border-2 border-slate-800 rounded-[2.5rem] overflow-hidden shadow-inner">
+                                <div className="px-8 py-4 bg-slate-900/50 border-b border-slate-800">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Heurística: Vista Previa de Kernel</span>
+                                </div>
+                                <div className="overflow-x-auto p-4 max-h-48 custom-scrollbar">
+                                    <table className="w-full text-left">
+                                        <tbody>
+                                            {preview.map((row, i) => (
+                                                <tr key={i} className="border-b border-slate-800/40 last:border-0 hover:bg-white/[0.02]">
+                                                    {row.map((cell: any, j: number) => (
+                                                        <td key={j} className="px-4 py-3 text-[10px] font-black text-slate-600 font-mono tracking-tighter truncate max-w-[150px]">{cell}</td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-auto rounded-lg border border-slate-800 bg-slate-950/30 p-2 text-xs text-slate-400">
-                                Previsualización de datos brutos:
-                                <pre className="mt-2 text-xs text-slate-500 font-mono overflow-x-auto">
-                                    {JSON.stringify(previewData[0], null, 2)}
-                                </pre>
-                            </div>
-
-                        </CardContent>
-                    </Card>
-                )}
+                            <footer className="flex justify-end pt-6 border-t border-slate-800">
+                                <button
+                                    onClick={handleImport}
+                                    disabled={isProcessing}
+                                    className="px-14 py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-3xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4"
+                                >
+                                    {isProcessing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Cpu className="w-5 h-5" />}
+                                    {isProcessing ? 'INYECTANDO...' : 'EJECUTAR SINCRO'}
+                                </button>
+                            </footer>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
 };
+
+const MappingField = ({ label, icon: Icon, value, onChange }: any) => (
+    <div className="space-y-4">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-3 ml-1">
+            <Icon className="w-4 h-4 text-blue-500" /> {label}
+        </label>
+        <div className="relative group/input">
+            <select
+                value={value}
+                onChange={(e) => onChange(parseInt(e.target.value))}
+                className="w-full bg-slate-950 text-white px-8 py-5 rounded-2.5xl border border-slate-800 transition-all font-black uppercase tracking-widest text-[11px] focus:outline-none focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.1)] group-hover/input:border-slate-700 shadow-inner appearance-none relative z-10"
+            >
+                {[...Array(10)].map((_, i) => (
+                    <option key={i} value={i} className="bg-slate-900">Columna {i + 1}</option>
+                ))}
+            </select>
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 pointer-events-none">
+                <ChevronRight className="w-4 h-4 text-slate-600 group-hover/input:text-blue-500 transition-colors rotate-90" />
+            </div>
+        </div>
+    </div>
+);
+
+

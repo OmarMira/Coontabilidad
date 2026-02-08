@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, Building2, AlertCircle } from 'lucide-react';
+import { Save, X, Building2, AlertCircle, ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Landmark, Layers, Info } from 'lucide-react';
 import { BankAccount } from '../database/simple-db';
 
 interface BankAccountFormProps {
@@ -44,40 +44,23 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
         }
     }, [initialData]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox'
-                ? (e.target as HTMLInputElement).checked
-                : name === 'balance'
-                    ? parseFloat(value) || 0
-                    : value
-        }));
-
-        // Limpiar error al editar
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
+    const handleChange = (name: string, value: any) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
     const validate = () => {
         const newErrors: Record<string, string> = {};
-
-        if (!formData.account_name.trim()) newErrors.account_name = 'El nombre de la cuenta es requerido';
-        if (!formData.bank_name.trim()) newErrors.bank_name = 'El nombre del banco es requerido';
-        if (!formData.account_number.trim()) newErrors.account_number = 'El número de cuenta es requerido';
-
+        if (!formData.account_name.trim()) newErrors.account_name = 'Nombre mandatorio';
+        if (!formData.bank_name.trim()) newErrors.bank_name = 'Entidad mandatoria';
+        if (!formData.account_number.trim()) newErrors.account_number = 'Identificador mandatorio';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!validate()) return;
-
         setIsSubmitting(true);
         try {
             await onSubmit(formData);
@@ -89,177 +72,147 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
     };
 
     return (
-        <div className="bg-gray-800 rounded-xl shadow-xl border border-gray-700 overflow-hidden max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-b border-gray-700 flex items-center gap-3">
-                <Building2 className="w-6 h-6 text-blue-400" />
-                <h2 className="text-xl font-bold text-white">
-                    {initialData ? 'Editar Cuenta Bancaria' : 'Nueva Cuenta Bancaria'}
-                </h2>
-            </div>
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-50 p-6 overflow-y-auto">
+            <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-3xl w-full max-w-4xl my-auto overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-700">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] pointer-events-none"></div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Nombre de la Cuenta *</label>
-                        <input
-                            type="text"
-                            name="account_name"
-                            value={formData.account_name}
-                            onChange={handleChange}
-                            placeholder="Ej. Cuenta Operativa"
-                            className={`w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border ${errors.account_name ? 'border-red-500' : 'border-gray-600'} text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all`}
-                        />
-                        {errors.account_name && <span className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.account_name}</span>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Banco *</label>
-                        <input
-                            type="text"
-                            name="bank_name"
-                            value={formData.bank_name}
-                            onChange={handleChange}
-                            placeholder="Ej. Bank of America"
-                            className={`w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border ${errors.bank_name ? 'border-red-500' : 'border-gray-600'} text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all`}
-                        />
-                        {errors.bank_name && <span className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.bank_name}</span>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Tipo de Cuenta</label>
-                        <select
-                            name="account_type"
-                            value={formData.account_type}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none"
-                        >
-                            <option value="checking">Cuenta Corriente (Checking)</option>
-                            <option value="savings">Cuenta de Ahorros (Savings)</option>
-                            <option value="credit">Tarjeta de Crédito</option>
-                            <option value="other">Otro</option>
-                        </select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Moneda</label>
-                        <select
-                            name="currency"
-                            value={formData.currency}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                        >
-                            <option value="USD">USD - Dólar Estadounidense</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="MXN">MXN - Peso Mexicano</option>
-                        </select>
-                    </div>
-                </div>
-
-                {/* Account Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Número de Cuenta *</label>
-                        <input
-                            type="text"
-                            name="account_number"
-                            value={formData.account_number}
-                            onChange={handleChange}
-                            placeholder="XXXX-XXXX-XXXX"
-                            className={`w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border ${errors.account_number ? 'border-red-500' : 'border-gray-600'} text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all`}
-                        />
-                        {errors.account_number && <span className="text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.account_number}</span>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Número de Ruta (Routing)</label>
-                        <input
-                            type="text"
-                            name="routing_number"
-                            value={formData.routing_number}
-                            onChange={handleChange}
-                            placeholder="XXXXXXXXX"
-                            className="w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                        />
-                    </div>
-                </div>
-
-                {/* Balance & Status */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300">Saldo Inicial / Actual</label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                            <input
-                                type="number"
-                                name="balance"
-                                value={formData.balance}
-                                onChange={handleChange}
-                                step="0.01"
-                                className="w-full pl-8 pr-4 py-2.5 bg-gray-900/50 rounded-lg border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono"
-                            />
+                {/* Header Hub */}
+                <header className="flex items-center justify-between p-10 border-b border-slate-800 relative z-10 bg-slate-900/50">
+                    <div className="flex items-center gap-6">
+                        <div className="p-5 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 text-blue-500 shadow-xl animate-pulse">
+                            {initialData ? <Cpu className="w-8 h-8" /> : <Sparkles className="w-8 h-8" />}
                         </div>
-                        {initialData && <p className="text-xs text-yellow-500/80">Nota: Ajustar manualmente el saldo no generará un asiento contable. Use "Ajustes" para eso.</p>}
+                        <div>
+                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                                {initialData ? 'Ajustar Bóveda' : 'Sincronizar Nueva Cuenta'}
+                            </h2>
+                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Banking Forensic Protocol v5.1
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={onCancel} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
+                        <X className="w-6 h-6" />
+                    </button>
+                </header>
+
+                <form onSubmit={handleSubmit} className="p-10 space-y-12 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <PremiumInput label="Alias de la Cuenta" icon={Building2} value={formData.account_name} error={errors.account_name} onChange={(v) => handleChange('account_name', v)} placeholder="CUENTA OPERATIVA ALPHA" required />
+                        <PremiumInput label="Entidad Bancaria" icon={Landmark} value={formData.bank_name} error={errors.bank_name} onChange={(v) => handleChange('bank_name', v)} placeholder="CHASE / BOFA / WELLS" required />
+
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                                <Layers className="w-3.5 h-3.5 text-blue-500" /> Clasificación
+                            </label>
+                            <select
+                                name="account_type"
+                                value={formData.account_type}
+                                onChange={(e) => handleChange('account_type', e.target.value)}
+                                className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer h-[58px]"
+                            >
+                                <option value="checking">CUENTA CORRIENTE (CHECKING)</option>
+                                <option value="savings">CUENTA DE AHORROS (SAVINGS)</option>
+                                <option value="credit">TARJETA DE CRÉDITO</option>
+                                <option value="other">OTRO ACTIVO</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                                <Zap className="w-3.5 h-3.5 text-blue-500" /> Divisa
+                            </label>
+                            <select
+                                name="currency"
+                                value={formData.currency}
+                                onChange={(e) => handleChange('currency', e.target.value)}
+                                className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer h-[58px]"
+                            >
+                                <option value="USD">USD - DÓLAR AMERICANO</option>
+                                <option value="EUR">EUR - EURO</option>
+                                <option value="MXN">MXN - PESO MEXICANO</option>
+                            </select>
+                        </div>
+
+                        <PremiumInput label="Identificador de Cuenta" icon={Layers} value={formData.account_number} error={errors.account_number} onChange={(v) => handleChange('account_number', v)} placeholder="XXXX-XXXX-XXXX" required />
+                        <PremiumInput label="Número de Ruta (Routing)" icon={ShieldCheck} value={formData.routing_number} onChange={(v) => handleChange('routing_number', v)} placeholder="XXXXXXXXX" />
+
+                        <PremiumInput label="Saldo Inicial" icon={DollarSign} value={formData.balance.toString()} onChange={(v) => handleChange('balance', parseFloat(v) || 0)} type="number" />
+
+                        <div className="flex items-center gap-6 p-6 bg-slate-950 border border-slate-800 rounded-3xl h-[58px] self-end">
+                            <label className="flex items-center gap-4 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.is_active}
+                                        onChange={(e) => handleChange('is_active', e.target.checked)}
+                                        className="sr-only"
+                                    />
+                                    <div className={`w-12 h-6 rounded-full transition-colors duration-300 ${formData.is_active ? 'bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-800'}`}></div>
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${formData.is_active ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.is_active ? 'text-white' : 'text-slate-500'}`}>Estado: {formData.is_active ? 'ACTIVA' : 'INACTIVA'}</span>
+                            </label>
+                        </div>
                     </div>
 
-                    <div className="flex items-center space-x-3 pt-8">
-                        <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out rounded-full cursor-pointer">
-                            <input
-                                type="checkbox"
-                                name="is_active"
-                                id="is_active"
-                                checked={formData.is_active}
-                                onChange={handleChange}
-                                className="absolute w-6 h-6 opacity-0 cursor-pointer z-10"
-                            />
-                            <div className={`block w-12 h-6 rounded-full transition-colors ${formData.is_active ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-                            <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform transform ${formData.is_active ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                        </div>
-                        <label htmlFor="is_active" className="text-sm font-medium text-gray-300 cursor-pointer select-none">
-                            Cuenta Activa
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                            <Info className="w-3.5 h-3.5 text-blue-500" /> Memorándum Interno
                         </label>
+                        <textarea
+                            name="notes"
+                            value={formData.notes}
+                            onChange={(e) => handleChange('notes', e.target.value)}
+                            rows={3}
+                            placeholder="NOTAS TÉCNICAS DE AUDITORÍA..."
+                            className="w-full bg-slate-950 text-white px-8 py-6 rounded-[2rem] border border-slate-800 focus:border-blue-500 focus:outline-none font-medium text-sm transition-all placeholder:text-slate-800 resize-none"
+                        />
                     </div>
-                </div>
 
-                {/* Notes */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Notas Adicionales</label>
-                    <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleChange}
-                        rows={3}
-                        placeholder="Información adicional sobre la cuenta..."
-                        className="w-full px-4 py-2.5 bg-gray-900/50 rounded-lg border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
-                    />
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-6 py-2.5 text-gray-300 font-medium hover:text-white hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
-                    >
-                        <X className="w-5 h-5" />
-                        Cancelar
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSubmitting ? (
-                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                        ) : (
-                            <Save className="w-5 h-5" />
-                        )}
-                        {initialData ? 'Guardar Cambios' : 'Crear Cuenta'}
-                    </button>
-                </div>
-
-            </form>
+                    <footer className="flex justify-end gap-6 pt-10 border-t border-slate-800">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg"
+                        >
+                            Abortar Proceso
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-12 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                        >
+                            {isSubmitting ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <Save className="w-5 h-5" />
+                            )}
+                            {initialData ? 'Confirmar Ajustes' : 'Sincronizar Bóveda'}
+                        </button>
+                    </footer>
+                </form>
+            </div>
         </div>
     );
 };
+
+const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required }: any) => (
+    <div className="space-y-4">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+            <Icon className={`w-3.5 h-3.5 ${error ? 'text-rose-500' : 'text-blue-500'}`} /> {label} {required && '*'}
+        </label>
+        <div className="relative group/input">
+            <input
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className={`w-full bg-slate-950 text-white px-8 py-4 rounded-2xl border transition-all font-black uppercase tracking-widest text-[10px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800 focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.1)] group-hover/input:border-slate-700'
+                    }`}
+                placeholder={placeholder}
+                required={required}
+            />
+            {error && <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-2 ml-2">{error}</p>}
+        </div>
+    </div>
+);

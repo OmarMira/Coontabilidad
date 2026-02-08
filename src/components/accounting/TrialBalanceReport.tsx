@@ -1,7 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { RefreshCw, Download, ShieldAlert, Printer, CheckCircle, Database, Wrench, Search, FileSpreadsheet, Eye, X } from 'lucide-react';
+import {
+    RefreshCw,
+    Download,
+    ShieldAlert,
+    Printer,
+    CheckCircle,
+    Database,
+    Wrench,
+    Search,
+    FileSpreadsheet,
+    Eye,
+    X,
+    Calendar,
+    ArrowRight,
+    ArrowDown,
+    History,
+    ShieldCheck,
+    FileText,
+    TrendingUp,
+    TrendingDown,
+    ChevronRight,
+    Loader2
+} from 'lucide-react';
 import {
     getTrialBalanceReport,
     getAccountMovementsDetails,
@@ -19,7 +41,8 @@ export const TrialBalanceReport: React.FC = () => {
     // Estado para filtro de período
     const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
     const [data, setData] = useState<TrialBalanceRow[]>([]);
-    // Helper para formato de moneda (Requerido para tipos y consistencia)
+
+    // Helper para formato de moneda
     const formatCurrency = (value: number): string => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -46,7 +69,7 @@ export const TrialBalanceReport: React.FC = () => {
         } catch (error) {
             console.error('Error loading trial balance:', error);
         } finally {
-            setLoading(false);
+            setTimeout(() => setLoading(false), 300); // Smooth transition
         }
     };
 
@@ -65,12 +88,16 @@ export const TrialBalanceReport: React.FC = () => {
     };
 
     const handleRunIntegrity = () => {
-        const result = validateAccountingIntegrity();
-        setIntegrityResult(result);
-        setShowIntegrityModal(true);
+        setLoading(true);
+        setTimeout(() => {
+            const result = validateAccountingIntegrity();
+            setIntegrityResult(result);
+            setShowIntegrityModal(true);
+            setLoading(false);
+        }, 800);
     };
 
-    // Herramientas de Reparación y Datos (Solo Dev/Demo)
+    // Herramientas de Reparación
     const handleRepairAccounts = () => {
         const requiredAccounts = [
             { code: '1112', name: 'Banco Operativo', type: 'asset', normal_balance: 'debit', parent: '1100' },
@@ -97,19 +124,13 @@ export const TrialBalanceReport: React.FC = () => {
         });
 
         if (created > 0) {
-            alert(`Se crearon ${created} cuentas faltantes necesarias para el reporte.`);
             loadData();
-        } else {
-            alert('Todas las cuentas necesarias ya existen.');
         }
     };
 
     const handleGenerateTestData = () => {
-        if (!confirm('Esto insertará asientos contables de ejemplo. ¿Continuar?')) return;
-
+        if (!confirm('¿Inyectar registros de prueba históricos? Operación registrable en logs.')) return;
         handleRepairAccounts();
-
-        // 1. Asiento de Apertura
         createJournalEntry({
             entry_date: `${period}-01`,
             description: 'Apertura de Cuenta - Capital Inicial',
@@ -118,8 +139,6 @@ export const TrialBalanceReport: React.FC = () => {
             { account_code: '1112', debit_amount: 50000, credit_amount: 0, description: 'Efectivo Inicial' },
             { account_code: '3100', debit_amount: 0, credit_amount: 50000, description: 'Aporte Capital' }
         ]);
-
-        // 2. Venta con Tax Florida
         createJournalEntry({
             entry_date: `${period}-10`,
             description: 'Venta de Servicios Corporativos',
@@ -129,12 +148,9 @@ export const TrialBalanceReport: React.FC = () => {
             { account_code: '4110', debit_amount: 0, credit_amount: 1000, description: 'Servicios Web' },
             { account_code: '2121', debit_amount: 0, credit_amount: 70, description: 'FL Sales Tax 7%' }
         ]);
-
         loadData();
-        alert('Movimientos de prueba inyectados correctamente.');
     };
 
-    // Totales
     const totalDebit = data.reduce((s, r) => s + r.period_debit, 0);
     const totalCredit = data.reduce((s, r) => s + r.period_credit, 0);
     const difference = Math.abs(totalDebit - totalCredit);
@@ -143,76 +159,56 @@ export const TrialBalanceReport: React.FC = () => {
     // Export PDF
     const handleDownloadPDF = () => {
         const doc = new jsPDF('l', 'mm', 'a4');
-
-        // Header Estilizado
-        doc.setFillColor(41, 128, 185);
+        doc.setFillColor(15, 23, 42); // slate-950
         doc.rect(0, 0, 297, 40, 'F');
-
         doc.setFontSize(24);
         doc.setTextColor(255);
         doc.text('ACCOUNT EXPRESS', 14, 20);
-
         doc.setFontSize(14);
-        doc.text('BALANCE DE COMPROBACIÓN', 14, 30);
-
+        doc.text('BALANCE DE COMPROBACIÓN - PROTOCOLO US GAAP', 14, 30);
         doc.setFontSize(10);
-        doc.text(`Período: ${period}`, 250, 20);
-        doc.text(`Generado: ${new Date().toLocaleString()}`, 250, 25);
-
+        doc.text(`Período de Auditoría: ${period}`, 230, 20);
+        doc.text(`Identificador de Sesión: ${Math.random().toString(36).substring(7).toUpperCase()}`, 230, 25);
         const tableData = data.map(row => [
             row.account_code,
             row.account_name,
-            row.normal_balance === 'debit' ? 'DEUDORA' : 'ACREEDORA',
+            row.normal_balance.toUpperCase(),
             formatCurrency(row.initial_balance),
             formatCurrency(row.period_debit),
             formatCurrency(row.period_credit),
             formatCurrency(row.final_balance)
         ]);
-
         autoTable(doc, {
             startY: 45,
-            head: [['CÓDIGO', 'DESCRIPCIÓN DE CUENTA', 'NATURALEZA', 'SALDO ANTERIOR', 'DÉBITOS', 'CRÉDITOS', 'SALDO ACTUAL']],
+            head: [['COD', 'DESCRIPCIÓN', 'NAT', 'SALDO ANT', 'DÉBITOS', 'CRÉDITOS', 'SALDO ACT']],
             body: tableData,
-            theme: 'striped',
-            headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold' },
+            theme: 'grid',
+            headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 8 },
             columnStyles: {
-                0: { cellWidth: 30 },
+                0: { cellWidth: 25 },
                 1: { cellWidth: 'auto' },
-                2: { cellWidth: 30, halign: 'center' },
+                2: { cellWidth: 15, halign: 'center' },
                 3: { halign: 'right' },
                 4: { halign: 'right' },
                 5: { halign: 'right' },
                 6: { halign: 'right' }
             }
         });
-
         const finalY = (doc as any).lastAutoTable.finalY + 15;
-        doc.setFontSize(12);
-        doc.setTextColor(50);
-        doc.text(`TOTAL DÉBITOS: ${formatCurrency(totalDebit)}`, 180, finalY);
-        doc.text(`TOTAL CRÉDITOS: ${formatCurrency(totalCredit)}`, 180, finalY + 8);
-
-        if (isBalanced) {
-            doc.setTextColor(46, 204, 113);
-            doc.text('ESTADO: VALIDADO (CUADRADO)', 14, finalY + 8);
-        } else {
-            doc.setTextColor(231, 76, 60);
-            doc.text(`ESTADO: DESCUADRE ($${difference.toFixed(2)})`, 14, finalY + 8);
-        }
-
-        doc.save(`Balance_Comprobacion_${period}.pdf`);
+        doc.setFontSize(10);
+        doc.setTextColor(30);
+        doc.text(`DÉBITOS TOTALES: ${formatCurrency(totalDebit)}`, 180, finalY);
+        doc.text(`CRÉDITOS TOTALES: ${formatCurrency(totalCredit)}`, 180, finalY + 8);
+        doc.save(`AEX_TrialBalance_${period}.pdf`);
     };
 
-    // Export Excel
     const handleDownloadExcel = () => {
         const wsData: string[][] = [
-            ["ACCOUNT EXPRESS - BALANCE DE COMPROBACIÓN"],
+            ["ACCOUNT EXPRESS - BALANCE DE COMPROBACIÓN INDUSTRIAL"],
             [`Período: ${period}`],
-            [`Fecha de Generación: ${new Date().toLocaleString()}`],
-            [],
-            ["Código", "Nombre de Cuenta", "Naturaleza", "Saldo Anterior", "Débitos Mensuales", "Créditos Mensuales", "Saldo Actual"]
+            ["Código", "Nombre de Cuenta", "Naturaleza", "Saldo Anterior", "Débitos", "Créditos", "Saldo Actual"]
         ];
-
         data.forEach(row => {
             wsData.push([
                 row.account_code,
@@ -224,232 +220,274 @@ export const TrialBalanceReport: React.FC = () => {
                 formatCurrency(row.final_balance)
             ]);
         });
-
-        wsData.push([]);
-        wsData.push(["", "TOTALES GENERALES", "", "", formatCurrency(totalDebit), formatCurrency(totalCredit), ""]);
-
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Formatear columnas numéricas (D, E, F, G son 3, 4, 5, 6)
-        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-        for (let R = 5; R <= range.e.r; ++R) {
-            for (let C = 3; C <= 6; ++C) {
-                const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-                if (cell) cell.z = '#,##0.00';
-            }
-        }
-
         XLSX.utils.book_append_sheet(wb, ws, "Trial Balance");
-        XLSX.writeFile(wb, `Balance_Comprobacion_${period}.xlsx`);
+        XLSX.writeFile(wb, `AEX_Balance_${period}.xlsx`);
     };
 
     return (
-        <div className="space-y-6 bg-slate-950 p-8 rounded-2xl border border-slate-800 shadow-2xl relative min-h-[600px]">
-            {/* Header section con Estilo Premium */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                        <FileSpreadsheet className="w-8 h-8 text-blue-400" />
+        <div className="space-y-10 animate-in fade-in duration-500 pb-20">
+            {/* Legend & Stats Banner */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-1 bg-slate-900/50 border border-slate-800/80 rounded-[2rem] shadow-2xl backdrop-blur-xl">
+                <div className="p-6 bg-slate-950/80 rounded-[1.8rem] border border-slate-800/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Saldo Apertura</span>
+                        <History className="w-4 h-4 text-slate-600" />
+                    </div>
+                    <p className="text-xl font-black text-white">{formatCurrency(data.reduce((s, r) => s + r.initial_balance, 0))}</p>
+                </div>
+                <div className="p-6 bg-slate-950/40 rounded-[1.8rem] border border-slate-800/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Flujo Débitos</span>
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <p className="text-xl font-black text-emerald-400">{formatCurrency(totalDebit)}</p>
+                </div>
+                <div className="p-6 bg-slate-950/40 rounded-[1.8rem] border border-slate-800/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Flujo Créditos</span>
+                        <TrendingDown className="w-4 h-4 text-rose-500" />
+                    </div>
+                    <p className="text-xl font-black text-rose-400">{formatCurrency(totalCredit)}</p>
+                </div>
+                <div className={`p-6 rounded-[1.8rem] border-2 space-y-3 ${isBalanced ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-rose-900/10 border-rose-500/30'}`}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest">Integridad</span>
+                        {isBalanced ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <ShieldAlert className="w-4 h-4 text-rose-500 animate-pulse" />}
+                    </div>
+                    <p className={`text-xl font-black ${isBalanced ? 'text-emerald-500' : 'text-rose-500'}`}>{isBalanced ? 'CALIBRADO' : 'ERROR: ' + formatCurrency(difference)}</p>
+                </div>
+            </div>
+
+            {/* Header section with Premium Controls */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-5">
+                    <div className="p-4 bg-blue-600/10 rounded-2xl border border-blue-500/20 shadow-blue-900/10 shadow-lg">
+                        <FileSpreadsheet className="w-10 h-10 text-blue-500" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-white tracking-tight">Balance de Comprobación</h2>
-                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Módulo de Integridad Contable v2.0</p>
+                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Balance Comprobación</h2>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+                            <Database className="w-3 h-3" />
+                            Audit Ready Protocol • GAAP Compliance
+                        </p>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    {/* Selector de Período Estilizado */}
-                    <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-2xl shadow-inner">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Período</label>
-                        <input
-                            type="month"
-                            value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
-                            className="bg-transparent text-white border-0 p-0 text-sm font-black outline-none w-32 focus:ring-0"
-                        />
+                <div className="flex flex-wrap items-center gap-4">
+                    {/* Period Selector styled as Control Panel */}
+                    <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 p-2 rounded-2xl shadow-inner">
+                        <div className="bg-slate-900 p-2 rounded-xl">
+                            <Calendar className="w-4 h-4 text-slate-500" />
+                        </div>
+                        <div className="flex flex-col pr-4">
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Período Fiscal</span>
+                            <input
+                                type="month"
+                                value={period}
+                                onChange={(e) => setPeriod(e.target.value)}
+                                className="bg-transparent text-white border-0 p-0 text-xs font-black outline-none focus:ring-0 uppercase"
+                            />
+                        </div>
                     </div>
 
-                    <div className="flex gap-2">
-                        <Button variant="ghost" className="bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl" onClick={loadData} disabled={loading}>
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="bg-blue-500/5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 rounded-xl font-bold"
-                            onClick={handleRunIntegrity}
-                        >
-                            <ShieldAlert className="w-4 h-4 mr-2" /> Validar Datos
-                        </Button>
-                        <Button onClick={handleDownloadExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl px-5 shadow-lg shadow-emerald-900/40">
-                            <Download className="w-4 h-4 mr-2" /> Excel
-                        </Button>
-                        <Button onClick={handleDownloadPDF} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-5 shadow-lg shadow-indigo-900/40">
-                            <Printer className="w-4 h-4 mr-2" /> PDF
-                        </Button>
+                    <div className="flex gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                        <button onClick={loadData} disabled={loading} className="p-3 hover:bg-slate-900 text-slate-500 hover:text-white rounded-xl transition-all">
+                            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button onClick={handleRunIntegrity} className="flex items-center gap-2 px-6 py-3 bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-500/20 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
+                            <ShieldCheck className="w-4 h-4" /> Diagnóstico
+                        </button>
+                        <button onClick={handleDownloadExcel} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-emerald-900/20">
+                            <Download className="w-4 h-4" /> Export Excel
+                        </button>
+                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-indigo-900/20">
+                            <Printer className="w-4 h-4" /> Reporte PDF
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Debug Tools Toolbar */}
-            <div className="flex justify-end gap-2 no-print opacity-40 hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="sm" className="text-[9px] text-slate-600 hover:text-white" onClick={handleRepairAccounts}>
-                    <Wrench className="w-3 h-3 mr-1" /> Reparar Estructura
-                </Button>
-                <Button variant="ghost" size="sm" className="text-[9px] text-slate-600 hover:text-white" onClick={handleGenerateTestData}>
-                    <Database className="w-3 h-3 mr-1" /> Inyectar Demo
-                </Button>
-            </div>
-
-            {/* Tabla Principal */}
-            <div className="rounded-3xl border border-slate-800 overflow-hidden bg-slate-900/20 backdrop-blur-xl shadow-inner">
+            {/* Main Data Registry */}
+            <div className="rounded-[2.5rem] border border-slate-800 overflow-hidden bg-slate-950/20 backdrop-blur-2xl shadow-2xl">
                 <table className="w-full text-sm text-left border-collapse">
-                    <thead className="bg-slate-900/60 text-slate-500 font-black uppercase tracking-[0.15em] text-[9px] border-b border-slate-800">
+                    <thead className="bg-slate-950 text-slate-600 font-black uppercase tracking-[0.2em] text-[10px] border-b border-slate-800">
                         <tr>
-                            <th className="px-6 py-5">Código</th>
-                            <th className="px-6 py-5">Cuenta Contable</th>
-                            <th className="px-6 py-5 text-center">NAT</th>
-                            <th className="px-6 py-5 text-right">Saldo Anterior</th>
-                            <th className="px-6 py-5 text-right">Débitos</th>
-                            <th className="px-6 py-5 text-right">Créditos</th>
-                            <th className="px-6 py-5 text-right">Saldo Actual</th>
-                            <th className="px-6 py-5 text-center">Audit</th>
+                            <th className="px-10 py-6">Código Estructural</th>
+                            <th className="px-10 py-6">Descripción de Cuenta</th>
+                            <th className="px-10 py-6 text-center">NAT</th>
+                            <th className="px-10 py-6 text-right">Saldo Anterior</th>
+                            <th className="px-10 py-6 text-right">Débitos (DR)</th>
+                            <th className="px-10 py-6 text-right">Créditos (CR)</th>
+                            <th className="px-10 py-6 text-right">Saldo de Cierre</th>
+                            <th className="px-10 py-6 text-center">Protocolo</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/30">
-                        {data.length === 0 ? (
+                    <tbody className="divide-y divide-slate-800/40">
+                        {loading ? (
                             <tr>
-                                <td colSpan={8} className="px-6 py-20 text-center text-slate-600">
-                                    <Database className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                    <p className="font-bold text-lg">Sin movimientos en este ciclo</p>
-                                    <p className="text-xs uppercase tracking-widest mt-1">Seleccione otro período o genere datos de prueba</p>
+                                <td colSpan={8} className="py-32 text-center">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sincronizando Libro Auxiliar...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : data.length === 0 ? (
+                            <tr>
+                                <td colSpan={8} className="px-10 py-24 text-center">
+                                    <div className="space-y-4 opacity-30">
+                                        <Database className="w-20 h-20 mx-auto text-slate-700" />
+                                        <p className="font-black text-xl text-slate-500 uppercase tracking-tighter">Sin Movimientos Registrados</p>
+                                        <div className="flex justify-center gap-4 pt-4 no-print">
+                                            <button onClick={handleRepairAccounts} className="text-[9px] font-black text-slate-600 hover:text-white uppercase tracking-widest px-4 py-2 border border-slate-800 rounded-lg transition-all">Reparar Estructura</button>
+                                            <button onClick={handleGenerateTestData} className="text-[9px] font-black text-slate-600 hover:text-white uppercase tracking-widest px-4 py-2 border border-slate-800 rounded-lg transition-all">Inyectar Demo</button>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
                             data.map((row, i) => (
-                                <tr key={i} className="hover:bg-blue-500/[0.03] transition-colors group">
-                                    <td className="px-6 py-4">
-                                        <span className="font-mono text-[11px] text-blue-400 font-black bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg shadow-sm">
+                                <tr key={i} className="hover:bg-slate-900/30 transition-all group">
+                                    <td className="px-10 py-6">
+                                        <span className="font-mono text-xs text-blue-400 font-black bg-blue-500/5 px-3 py-1.5 rounded-xl border border-blue-500/10">
                                             {row.account_code}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <p className="font-bold text-slate-200 group-hover:text-white">{row.account_name}</p>
-                                        <p className="text-[10px] text-slate-500 font-black uppercase opacity-60">{row.account_type}</p>
+                                    <td className="px-10 py-6">
+                                        <div className="space-y-1">
+                                            <p className="font-black text-slate-200 group-hover:text-white transition-colors">{row.account_name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[9px] text-slate-500 font-black uppercase tracking-tight">{row.account_type}</span>
+                                                <ChevronRight className="w-2.5 h-2.5 text-slate-800" />
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <div className={`text-[10px] font-black inline-flex px-2 py-0.5 rounded-md border ${row.normal_balance === 'debit'
+                                    <td className="px-10 py-6 text-center">
+                                        <div className={`text-[9px] font-black px-2 py-0.5 rounded-lg border flex items-center justify-center gap-1.5 min-w-[50px] mx-auto ${row.normal_balance === 'debit'
                                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                                             : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
                                             }`}>
+                                            <div className={`w-1 h-1 rounded-full ${row.normal_balance === 'debit' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                                             {row.normal_balance === 'debit' ? 'DB' : 'CR'}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono text-slate-400 font-bold text-xs">
+                                    <td className="px-10 py-6 text-right font-mono text-[11px] text-slate-500 font-bold">
                                         {formatCurrency(row.initial_balance)}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono font-black text-emerald-400/90 text-sm">
+                                    <td className="px-10 py-6 text-right font-mono font-black text-emerald-400 text-sm">
                                         {row.period_debit > 0 ? formatCurrency(row.period_debit) : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono font-black text-rose-400/90 text-sm">
+                                    <td className="px-10 py-6 text-right font-mono font-black text-rose-400 text-sm">
                                         {row.period_credit > 0 ? formatCurrency(row.period_credit) : '-'}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono font-black text-blue-300 bg-blue-500/[0.02]">
-                                        <span className="p-1.5 rounded-lg border border-blue-400/10 text-sm">
+                                    <td className="px-10 py-6 text-right font-mono font-black text-slate-100 bg-slate-900/30 group-hover:bg-blue-600/10 transition-colors">
+                                        <span className="px-4 py-2 rounded-xl border border-slate-800 text-sm group-hover:border-blue-500/30 transition-all">
                                             {formatCurrency(row.final_balance)}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
+                                    <td className="px-10 py-6 text-center">
                                         <button
                                             onClick={() => handleViewDetails(row.account_code)}
-                                            className="p-2.5 bg-slate-800/50 hover:bg-blue-500/20 text-slate-500 hover:text-blue-400 rounded-xl transition-all border border-slate-700 hover:border-blue-500/30 shadow-sm"
-                                            title="Explorar Mayoreo"
+                                            className="p-3 bg-slate-950 hover:bg-blue-600 text-slate-600 hover:text-white rounded-2xl transition-all border border-slate-800 hover:border-blue-500 active:scale-95 group/btn"
+                                            title="Ver Auxilio Contable"
                                         >
-                                            <Search className="w-4 h-4" />
+                                            <Search className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                                         </button>
                                     </td>
                                 </tr>
                             ))
                         )}
                     </tbody>
-                    <tfoot className="bg-slate-900/90 border-t-4 border-slate-800 shadow-2xl">
+                    <tfoot className="bg-slate-950/80 border-t-2 border-slate-800">
                         <tr>
-                            <td colSpan={4} className="px-6 py-8 text-right font-black uppercase text-[10px] tracking-[0.2em] text-slate-500">Totales de Control Mensual</td>
-                            <td className="px-6 py-8 text-right border-x border-slate-800/50">
-                                <p className="text-[10px] text-emerald-500 font-black uppercase mb-1">Total Débitos</p>
-                                <p className="font-mono text-xl font-black text-emerald-400 tracking-tighter">
+                            <td colSpan={4} className="px-10 py-10 text-right font-black uppercase text-[10px] tracking-[0.3em] text-slate-600">Consolidación de Auditoría Interna</td>
+                            <td className="px-10 py-10 text-right">
+                                <p className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mb-1.5">Consumo Débito</p>
+                                <p className="font-mono text-2xl font-black text-emerald-400 tracking-tighter">
                                     {formatCurrency(totalDebit)}
                                 </p>
                             </td>
-                            <td className="px-6 py-8 text-right border-x border-slate-800/50">
-                                <p className="text-[10px] text-rose-500 font-black uppercase mb-1">Total Créditos</p>
-                                <p className="font-mono text-xl font-black text-rose-400 tracking-tighter">
+                            <td className="px-10 py-10 text-right">
+                                <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest mb-1.5">Consumo Crédito</p>
+                                <p className="font-mono text-2xl font-black text-rose-400 tracking-tighter">
                                     {formatCurrency(totalCredit)}
                                 </p>
                             </td>
-                            <td colSpan={2} className="px-6 py-8 text-center bg-slate-950/40">
-                                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl border-2 ${isBalanced
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                    : 'bg-rose-500/10 border-rose-500/50 text-rose-400 animate-pulse'
+                            <td colSpan={2} className="px-10 py-10 text-center">
+                                <div className={`inline-flex flex-col items-center gap-1.5 px-10 py-5 rounded-[2rem] border-2 shadow-2xl transition-all ${isBalanced
+                                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
+                                    : 'bg-rose-500/5 border-rose-500/40 text-rose-400 animate-pulse'
                                     }`}>
-                                    {isBalanced ? <CheckCircle className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
-                                    <span className="font-black text-xs uppercase tracking-widest">
-                                        {isBalanced ? 'Libro Cuadrado' : 'Fuera de Balance'}
-                                    </span>
+                                    <div className="flex items-center gap-3">
+                                        {isBalanced ? <CheckCircle className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
+                                        <span className="font-black text-sm uppercase tracking-[0.15em]">
+                                            {isBalanced ? 'Libro Íntegro' : 'Desbalance Crítico'}
+                                        </span>
+                                    </div>
+                                    {!isBalanced && (
+                                        <p className="text-[10px] font-black text-rose-500/80 uppercase tracking-widest">Diferencia: ${difference.toFixed(2)}</p>
+                                    )}
                                 </div>
-                                {!isBalanced && (
-                                    <p className="text-[9px] font-bold text-rose-500/80 mt-2">DIF: ${difference.toFixed(2)}</p>
-                                )}
                             </td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
 
-            {/* Drill-down Modal (Account History) */}
+            {/* Drill-down Modal (Account History) - Modern Backlit Aesthetic */}
             {selectedAccount && (
-                <div className="fixed inset-0 z-[200] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4">
-                    <Card className="w-full max-w-5xl bg-slate-900 border-slate-800 shadow-[0_0_100px_rgba(37,99,235,0.2)] h-[85vh] flex flex-col rounded-[32px] overflow-hidden">
-                        <CardHeader className="bg-slate-900 border-b border-slate-800 px-8 py-6 flex flex-row items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                                    <Eye className="w-6 h-6 text-blue-400" />
+                <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="w-full max-w-6xl bg-slate-900/80 rounded-[3rem] border border-slate-800 shadow-[0_0_150px_rgba(59,130,246,0.1)] h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+                        <header className="px-12 py-8 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-blue-600/10 rounded-[1.5rem] border border-blue-500/20">
+                                    <Eye className="w-8 h-8 text-blue-500" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-black text-white flex items-center gap-2">
-                                        Mayoreo Auxiliar: <span className="text-blue-400">{selectedAccount}</span>
-                                    </CardTitle>
-                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Exploración detallada de transacciones del ciclo</p>
+                                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                                        Historial Auxiliar: <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{selectedAccount}</span>
+                                    </h3>
+                                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                                        <FileText className="w-3.5 h-3.5" /> Transacciones Registradas en el Período
+                                    </p>
                                 </div>
                             </div>
-                            <Button variant="ghost" className="bg-slate-800 hover:bg-slate-700 text-white rounded-full p-2 h-auto" onClick={() => setSelectedAccount(null)}>
-                                <X className="w-5 h-5" />
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-auto p-0 scrollbar-hide">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-950 text-slate-500 font-black uppercase tracking-widest text-[9px] sticky top-0 z-10 border-b border-slate-800">
-                                    <tr>
-                                        <th className="px-8 py-5">Fecha</th>
-                                        <th className="px-8 py-5">Referencia</th>
-                                        <th className="px-8 py-5">Concepto / Descripción</th>
-                                        <th className="px-8 py-5 text-right">Débito</th>
-                                        <th className="px-8 py-5 text-right">Crédito</th>
+                            <button onClick={() => setSelectedAccount(null)} className="p-3 bg-slate-800 hover:bg-red-500/20 text-slate-500 hover:text-red-500 rounded-full transition-all active:scale-90 border border-slate-700">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </header>
+
+                        <div className="flex-1 overflow-auto px-4 custom-scrollbar">
+                            <table className="w-full text-left">
+                                <thead className="sticky top-0 bg-slate-900 border-b border-slate-800 z-10">
+                                    <tr className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                                        <th className="px-12 py-6">Fecha Efectiva</th>
+                                        <th className="px-12 py-6">Referencia / Folio</th>
+                                        <th className="px-12 py-6">Concepto Operativo</th>
+                                        <th className="px-12 py-6 text-right">Debitar (DR)</th>
+                                        <th className="px-12 py-6 text-right">Acreditar (CR)</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-800/50">
+                                <tbody className="divide-y divide-slate-800/40">
                                     {movements.length === 0 ? (
-                                        <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-500 italic">No existen asientos registrados para esta cuenta en el período.</td></tr>
+                                        <tr><td colSpan={5} className="py-40 text-center text-slate-700 font-black uppercase tracking-widest italic opacity-30">Cero movimientos en este nodo auxiliar</td></tr>
                                     ) : (
                                         movements.map((move, i) => (
-                                            <tr key={i} className="hover:bg-blue-500/[0.02] transition-colors">
-                                                <td className="px-8 py-5 font-mono text-xs text-slate-400">{move.date}</td>
-                                                <td className="px-8 py-5 font-black text-[11px] text-blue-400 tracking-tighter">{move.reference}</td>
-                                                <td className="px-8 py-5 text-slate-300 font-medium">{move.description}</td>
-                                                <td className="px-8 py-5 text-right font-mono font-black text-emerald-400 text-lg">
+                                            <tr key={i} className="hover:bg-slate-800/30 transition-all group">
+                                                <td className="px-12 py-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500/50" />
+                                                        <span className="font-mono text-xs text-slate-400 font-bold">{new Date(move.date).toLocaleDateString()}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-12 py-6 font-black text-[11px] text-blue-500 tracking-tighter uppercase">{move.reference}</td>
+                                                <td className="px-12 py-6 text-slate-300 font-bold text-sm tracking-tight">{move.description}</td>
+                                                <td className="px-12 py-6 text-right font-mono font-black text-emerald-400 text-lg">
                                                     {move.debit > 0 ? move.debit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-'}
                                                 </td>
-                                                <td className="px-8 py-5 text-right font-mono font-black text-rose-400 text-lg">
+                                                <td className="px-12 py-6 text-right font-mono font-black text-rose-400 text-lg">
                                                     {move.credit > 0 ? move.credit.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '-'}
                                                 </td>
                                             </tr>
@@ -457,68 +495,79 @@ export const TrialBalanceReport: React.FC = () => {
                                     )}
                                 </tbody>
                             </table>
-                        </CardContent>
-                        <div className="bg-slate-900 p-6 border-t border-slate-800 flex justify-end">
-                            <div className="flex gap-12">
-                                <div className="text-right">
-                                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Suma Débitos</p>
-                                    <p className="text-xl font-black text-emerald-400">{movements.reduce((a, c) => a + c.debit, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Suma Créditos</p>
-                                    <p className="text-xl font-black text-rose-400">{movements.reduce((a, c) => a + c.credit, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                        </div>
+
+                        <footer className="px-12 py-10 bg-slate-950/80 border-t border-slate-800 flex justify-between items-center">
+                            <div className="flex gap-4">
+                                <div className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl">
+                                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest block">Registros Totales</span>
+                                    <span className="text-white font-black">{movements.length} Asientos</span>
                                 </div>
                             </div>
-                        </div>
-                    </Card>
+                            <div className="flex gap-12">
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Cierre Débito</p>
+                                    <p className="text-3xl font-black text-emerald-400 tracking-tighter">{movements.reduce((a, c) => a + c.debit, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Cierre Crédito</p>
+                                    <p className="text-3xl font-black text-rose-400 tracking-tighter">{movements.reduce((a, c) => a + c.credit, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                </div>
+                            </div>
+                        </footer>
+                    </div>
                 </div>
             )}
 
             {/* Integrity Diagnosis Modal */}
             {showIntegrityModal && integrityResult && (
-                <div className="fixed inset-0 z-[200] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
-                    <Card className="w-full max-w-2xl bg-slate-950 border border-slate-800 shadow-[0_0_80px_rgba(0,0,0,0.5)] rounded-[32px] overflow-hidden">
-                        <CardHeader className="border-b border-slate-800/50 pb-6">
-                            <CardTitle className="flex items-center gap-4 text-2xl font-black text-white">
-                                <div className={`p-2 rounded-xl ${integrityResult.isValid ? 'bg-emerald-500/20' : 'bg-rose-500/20'}`}>
-                                    {integrityResult.isValid ? <CheckCircle className="w-8 h-8 text-emerald-500" /> : <ShieldAlert className="w-8 h-8 text-rose-500" />}
+                <div className="fixed inset-0 z-[250] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="w-full max-w-2xl bg-slate-900 rounded-[3rem] border border-slate-800 shadow-2xl p-1 overflow-hidden animate-in zoom-in-95 duration-500">
+                        <div className="bg-slate-950/50 p-12 space-y-10">
+                            <header className="text-center space-y-4">
+                                <div className={`w-24 h-24 mx-auto rounded-[2rem] flex items-center justify-center border-4 shadow-2xl ${integrityResult.isValid
+                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-emerald-900/20'
+                                        : 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-rose-900/20'
+                                    }`}>
+                                    {integrityResult.isValid ? <CheckCircle className="w-12 h-12" /> : <ShieldAlert className="w-12 h-12" />}
                                 </div>
-                                Diagnóstico de Salud Contable
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-8 space-y-6">
-                            {integrityResult.isValid ? (
-                                <div className="text-emerald-400 bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10">
-                                    <p className="font-black text-lg mb-2">INTEGRIDAD TOTAL CONFIRMADA</p>
-                                    <p className="text-xs font-bold text-emerald-500/70 uppercase tracking-widest leading-loose">
-                                        El motor de validación no encontró inconsistencias entre encabezados y detalles de asientos ni descuadres en el libro mayor.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <p className="text-rose-400 font-black uppercase text-[10px] tracking-[0.2em]">Inconsistencias Detectadas:</p>
-                                    <div className="max-h-60 overflow-auto bg-black/40 p-6 rounded-3xl border border-rose-500/10 space-y-3 custom-scrollbar">
-                                        {integrityResult.errors.map((err, i) => (
-                                            <div key={i} className="flex gap-4 p-3 bg-rose-500/5 rounded-xl border border-rose-500/10">
-                                                <X className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
-                                                <p className="text-xs text-rose-200 font-mono font-bold">{err}</p>
-                                            </div>
-                                        ))}
+                                <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Diagnóstico de Red</h3>
+                                <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px]">Verificación de Registros Contables</p>
+                            </header>
+
+                            <div className="space-y-6">
+                                {integrityResult.isValid ? (
+                                    <div className="p-8 bg-emerald-500/5 rounded-3xl border border-emerald-500/10 text-center">
+                                        <p className="font-black text-emerald-500 text-lg uppercase tracking-tight mb-2">Sincronización Perfecta</p>
+                                        <p className="text-xs font-medium text-emerald-200/40 italic leading-relaxed">
+                                            No se hallaron discrepancias de céntimos ni errores de foliación en el libro mayor. La base de datos es consistente para cierre de período.
+                                        </p>
                                     </div>
-                                </div>
-                            )}
-                            <div className="grid grid-cols-1 gap-3 pt-4">
-                                <Button onClick={() => setShowIntegrityModal(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-black py-6 rounded-2xl transition-all">
-                                    Cerrar Diagnóstico
-                                </Button>
-                                {!integrityResult.isValid && (
-                                    <p className="text-center text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-2">
-                                        Se recomienda revisar los asientos listados mediante el registro de auditoría
-                                    </p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest pl-2 flex items-center gap-2">
+                                            <ShieldAlert className="w-3.5 h-3.5" /> Bitácora de Inconsistencias
+                                        </p>
+                                        <div className="max-h-56 overflow-auto bg-black/40 p-6 rounded-3xl border border-slate-800 space-y-3 custom-scrollbar">
+                                            {integrityResult.errors.map((err, i) => (
+                                                <div key={i} className="flex gap-4 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/10 hover:border-rose-500/30 transition-colors">
+                                                    <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                                                    <p className="text-xs text-rose-200 font-mono font-bold leading-relaxed">{err}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
+
+                                <button
+                                    onClick={() => setShowIntegrityModal(false)}
+                                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-black uppercase text-xs tracking-widest py-6 rounded-3xl transition-all shadow-xl active:scale-95 border border-slate-700"
+                                >
+                                    Finalizar Escaneo
+                                </button>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { BadgeDollarSign, Edit, Trash2, Search, Plus, Building2, CreditCard } from 'lucide-react';
+import {
+    BadgeDollarSign, Edit, Trash2, Search, Plus,
+    Building2, CreditCard, Zap, Activity, ShieldCheck,
+    ArrowUpRight, Wallet, Landmark
+} from 'lucide-react';
 import { BankAccount } from '../database/simple-db';
 
 interface BankAccountListProps {
@@ -23,164 +27,168 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
             account.account_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             account.bank_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             account.account_number.includes(searchTerm);
-
         const matchesType = filterType === 'all' || account.account_type === filterType;
-
         return matchesSearch && matchesType;
     });
 
-    const getAccountTypeLabel = (type: string) => {
+    const getAccountTypeConfig = (type: string) => {
         switch (type) {
-            case 'checking': return 'Corriente';
-            case 'savings': return 'Ahorros';
-            case 'credit': return 'Crédito';
-            case 'other': return 'Otro';
-            default: return type;
-        }
-    };
-
-    const getAccountTypeColor = (type: string) => {
-        switch (type) {
-            case 'checking': return 'text-blue-400';
-            case 'savings': return 'text-green-400';
-            case 'credit': return 'text-purple-400';
-            default: return 'text-gray-400';
+            case 'checking': return { label: 'CORRIENTE', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+            case 'savings': return { label: 'AHORROS', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+            case 'credit': return { label: 'CRÉDITO', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+            default: return { label: 'GENERAL', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
         }
     };
 
     const formatCurrency = (amount: number, currency: string) => {
-        return new Intl.NumberFormat('es-US', {
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency
         }).format(amount);
     };
 
     return (
-        <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-500/10 rounded-lg">
-                        <Building2 className="w-8 h-8 text-blue-500" />
+        <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 shadow-blue-900/10 shadow-lg group">
+                        <Landmark className="w-10 h-10 text-blue-500 group-hover:-rotate-12 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Cuentas Bancarias</h2>
-                        <p className="text-gray-400 text-sm">Gestiona tus cuentas y saldos bancarios</p>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Matriz Bancaria</h1>
+                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> Asset Liquidity Controller v5.0
+                        </p>
                     </div>
                 </div>
 
-                <button
-                    onClick={onAddAccount}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium shadow-lg shadow-blue-500/20"
-                >
-                    <Plus className="w-5 h-5" />
-                    Nueva Cuenta
-                </button>
+                <div className="flex flex-wrap items-center gap-4 justify-center">
+                    <div className="relative group">
+                        <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="BUSCAR CUENTA / ENTIDAD..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all"
+                        />
+                    </div>
+
+                    <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
+                    >
+                        <option value="all">TODOS LOS TIPOS</option>
+                        <option value="checking">CORRIENTE</option>
+                        <option value="savings">AHORROS</option>
+                        <option value="credit">CRÉDITO</option>
+                    </select>
+
+                    <button
+                        onClick={onAddAccount}
+                        className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Sincronizar Bóveda
+                    </button>
+                </div>
             </div>
 
-            {/* Filtros */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="relative flex-1">
-                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre, banco o número..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-900/50 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-all"
-                    />
-                </div>
-
-                <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="px-4 py-2.5 bg-gray-900/50 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none min-w-[150px]"
-                >
-                    <option value="all">Todos los tipos</option>
-                    <option value="checking">Corriente</option>
-                    <option value="savings">Ahorros</option>
-                    <option value="credit">Crédito</option>
-                    <option value="other">Otro</option>
-                </select>
+            {/* Intelligence Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <EliteMiniCard title="Cuentas Activas" value={accounts.filter(a => a.is_active).length.toString()} icon={ShieldCheck} color="blue" />
+                <EliteMiniCard title="Liquidez Total" value={formatCurrency(accounts.reduce((sum, a) => sum + a.balance, 0), 'USD')} icon={BadgeDollarSign} color="emerald" />
+                <EliteMiniCard title="Líneas de Crédito" value={accounts.filter(a => a.account_type === 'credit').length.toString()} icon={CreditCard} color="amber" />
+                <EliteMiniCard title="Entidades" value={Array.from(new Set(accounts.map(a => a.bank_name))).length.toString()} icon={Landmark} color="rose" />
             </div>
 
             {filteredAccounts.length === 0 ? (
-                <div className="text-center py-16 bg-gray-900/30 rounded-xl border border-dashed border-gray-700">
-                    <BadgeDollarSign className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg font-medium mb-2">
-                        {searchTerm || filterType !== 'all' ? 'No se encontraron cuentas' : 'No hay cuentas registradas'}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                        {searchTerm || filterType !== 'all'
-                            ? 'Intenta cambiar los criterios de búsqueda'
-                            : 'Registra tu primera cuenta bancaria para comenzar'
-                        }
-                    </p>
+                <div className="bg-slate-900 border border-slate-800 rounded-[3.5rem] p-24 text-center border-dashed group opacity-60">
+                    <Landmark className="w-20 h-20 text-slate-800 mx-auto mb-8 group-hover:scale-110 transition-transform duration-500" />
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">Bóveda no Detectada</h3>
+                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">No se han mapeado cuentas bancarias bajo estos parámetros.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredAccounts.map((account) => (
-                        <div
-                            key={account.id}
-                            className={`relative bg-gray-900 p-6 rounded-xl border transition-all duration-200 group hover:-translate-y-1 hover:shadow-xl ${!account.is_active ? 'border-gray-700 opacity-75' : 'border-gray-700 hover:border-blue-500/50'
-                                }`}
-                        >
-                            {!account.is_active && (
-                                <div className="absolute top-4 right-4 px-2 py-1 bg-gray-800 rounded text-xs text-gray-400 font-medium">
-                                    Inactiva
-                                </div>
-                            )}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    {filteredAccounts.map((account) => {
+                        const cfg = getAccountTypeConfig(account.account_type);
+                        return (
+                            <div
+                                key={account.id}
+                                className={`relative bg-slate-900 p-8 rounded-[3rem] border-2 transition-all duration-500 group overflow-hidden ${!account.is_active ? 'border-slate-800 grayscale opacity-60' : 'border-slate-800 hover:border-blue-500/40 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-900/20'}`}
+                            >
+                                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[80px] pointer-events-none group-hover:bg-blue-500/10 transition-all duration-700"></div>
 
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-gray-800 rounded-lg group-hover:bg-gray-700 transition-colors">
-                                    <CreditCard className={`w-6 h-6 ${getAccountTypeColor(account.account_type)}`} />
-                                </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => onEditAccount(account)}
-                                        className="p-2 text-blue-400 hover:text-white hover:bg-blue-600 rounded-lg transition-all"
-                                        title="Editar cuenta"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => onDeleteAccount(account.id)}
-                                        className="p-2 text-red-400 hover:text-white hover:bg-red-600 rounded-lg transition-all"
-                                        title="Eliminar cuenta"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                <div className="relative z-10">
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div className={`p-4 rounded-2.2xl border shadow-lg ${cfg.bg} ${cfg.border} ${cfg.color} group-hover:scale-110 transition-transform`}>
+                                            <CreditCard className="w-7 h-7" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => onEditAccount(account)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-blue-500 hover:bg-blue-600 hover:text-white transition-all">
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => onDeleteAccount(account.id)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-rose-500 hover:bg-rose-600 hover:text-white transition-all">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-8">
+                                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2 truncate group-hover:text-blue-400 transition-colors">
+                                            {account.account_name}
+                                        </h3>
+                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                                            {account.bank_name}
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-6 pt-6 border-t border-slate-800/50">
+                                        <div>
+                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Posición Líquida</p>
+                                            <p className={`text-3xl font-black font-mono tracking-tighter ${account.balance >= 0 ? 'text-white' : 'text-rose-500'}`}>
+                                                {formatCurrency(account.balance, account.currency)}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex justify-between items-center">
+                                            <div className={`px-3 py-1 rounded-[0.5rem] border text-[9px] font-black uppercase tracking-widest ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                                                {cfg.label}
+                                            </div>
+                                            <div className="text-[10px] font-black text-slate-500 font-mono tracking-widest">
+                                                •••• {account.account_number.slice(-4)}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <h3 className="text-lg font-bold text-white mb-1 truncate">
-                                {account.account_name}
-                            </h3>
-                            <p className="text-sm text-gray-400 mb-4 font-medium">
-                                {account.bank_name}
-                            </p>
-
-                            <div className="space-y-3 pt-4 border-t border-gray-800">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-500">Saldo Actual</span>
-                                    <span className={`font-mono font-bold text-lg ${account.balance >= 0 ? 'text-white' : 'text-red-400'}`}>
-                                        {formatCurrency(account.balance, account.currency)}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                    <span className="flex items-center gap-1">
-                                        <span className={`w-2 h-2 rounded-full ${getAccountTypeColor(account.account_type).replace('text-', 'bg-')}`}></span>
-                                        {getAccountTypeLabel(account.account_type)}
-                                    </span>
-                                    <span className="font-mono">
-                                        •••• {account.account_number.slice(-4)}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
+        </div>
+    );
+};
+
+const EliteMiniCard = ({ title, value, icon: Icon, color }: any) => {
+    const themes: any = {
+        blue: 'text-blue-500 bg-blue-600/10 border-blue-500/20 shadow-blue-900/5',
+        emerald: 'text-emerald-500 bg-emerald-600/10 border-emerald-500/20 shadow-emerald-900/5',
+        amber: 'text-amber-500 bg-amber-600/10 border-amber-500/20 shadow-amber-900/5',
+        rose: 'text-rose-500 bg-rose-600/10 border-rose-500/20 shadow-rose-900/5',
+    };
+
+    return (
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl hover:border-slate-700 transition-all flex items-center gap-6 group">
+            <div className={`p-4 rounded-2.5xl border ${themes[color]} group-hover:scale-110 transition-all duration-500`}>
+                <Icon className="w-6 h-6" />
+            </div>
+            <div>
+                <div className="text-2xl font-black text-white tracking-tighter leading-none mb-1 font-mono uppercase truncate max-w-[150px]">{value}</div>
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{title}</div>
+            </div>
         </div>
     );
 };

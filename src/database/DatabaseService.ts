@@ -162,6 +162,82 @@ export class DatabaseService {
         FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id)
       );
     `);
+
+        // 3. BANK IMPORT BATCHES
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS import_batches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_number TEXT UNIQUE NOT NULL,
+        file_name TEXT NOT NULL,
+        file_format TEXT NOT NULL,              -- 'CSV', 'OFX', 'QFX'
+        bank_account_id INTEGER,
+        total_transactions INTEGER NOT NULL,
+        imported_count INTEGER DEFAULT 0,
+        duplicate_count INTEGER DEFAULT 0,
+        status TEXT NOT NULL,                   -- 'pending', 'completed', 'rolled_back'
+        created_by INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        imported_at TEXT,
+        rolled_back_at TEXT
+      );
+    `);
+
+        // 4. IMPORT TRANSACTIONS TEMP
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS import_transactions_temp (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        batch_id INTEGER NOT NULL,
+        transaction_date TEXT NOT NULL,
+        description TEXT NOT NULL,
+        amount REAL NOT NULL,
+        balance REAL,
+        suggested_category TEXT,
+        confidence_score REAL,
+        is_duplicate BOOLEAN DEFAULT 0,
+        duplicate_confidence REAL,
+        matched_invoice_id INTEGER,
+        matched_bill_id INTEGER,
+        match_confidence REAL,
+        excluded BOOLEAN DEFAULT 0,
+        user_category TEXT,
+        user_description TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (batch_id) REFERENCES import_batches(id)
+      );
+    `);
+
+        // 5. ML TRAINING DATA
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS ml_training_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        description TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL,
+        transaction_type TEXT,                  -- 'debit', 'credit'
+        source TEXT NOT NULL,                   -- 'historical', 'user_correction'
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+        // 6. ML METRICS
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS ml_metrics (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        metric_date TEXT NOT NULL,
+        total_predictions INTEGER NOT NULL,
+        correct_predictions INTEGER NOT NULL,
+        accuracy REAL NOT NULL,
+        precision_score REAL,
+        recall_score REAL,
+        training_examples INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+        // Create indices for performance
+        DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_import_batch_status ON import_batches(status);`);
+        DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_import_temp_batch ON import_transactions_temp(batch_id);`);
+        DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_ml_training_category ON ml_training_data(category);`);
     }
 
     private static async ensureSchemaCompatibility() {
