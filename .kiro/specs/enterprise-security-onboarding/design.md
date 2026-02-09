@@ -391,3 +391,32 @@ export const InitialSetupWizard: React.FC = () => {
 };
 ```
 
+
+**Step 2: Admin Creation Component**:
+
+```typescript
+const AdminStep: React.FC<StepProps> = ({ data, onNext }) => {
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        fullName: '',
+        displayName: '',
+        password: '',
+        confirmPassword: ''
+    });
+    const [passwordStrength, setPasswordStrength] = useState(0);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    
+    const validatePassword = (password: string): number => {
+        let strength = 0;
+        if (password.length >= 12) strength += 25;
+        if (password.length >= 16) strength += 25;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+        if (/\d/.test(password)) strength += 15;
+        if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
+        return Math.min(strength, 100);
+    };
+    
+    const handlePasswordChange = (password: string) => {
+        setFormData({ ...formData, password });
+        setPasswordStreng

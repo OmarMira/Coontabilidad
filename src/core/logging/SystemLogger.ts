@@ -101,7 +101,7 @@ export class SystemLogger {
     action: string,
     message: string,
     data?: any,
-    error?: Error
+    error?: any
   ): Promise<void> {
     const logEntry = {
       timestamp: new Date().toISOString(),
@@ -167,7 +167,7 @@ export class SystemLogger {
     return 'localhost';
   }
 
-  private consoleLog(level: LogLevel, module: string, action: string, message: string, data?: any, error?: Error): void {
+  private consoleLog(level: LogLevel, module: string, action: string, message: string, data?: any, error?: any): void {
     // SECURITY: In production, do not log sensitive data to console
     // This connects with vite.config.ts esbuild.drop configuration
     if (import.meta.env?.MODE === 'production' && level !== 'CRITICAL') {
@@ -504,32 +504,32 @@ export class SystemLogger {
   }
 
   // Métodos de conveniencia para logging rápido
-  debug(module: string, action: string, message: string, data?: any): void {
-    this.log('DEBUG', module, action, message, data);
+  debug(module: string, action: string, message: string, data?: any, error?: any): void {
+    this.log('DEBUG', module, action, message, data, error);
   }
 
-  info(module: string, action: string, message: string, data?: any): void {
-    this.log('INFO', module, action, message, data);
+  info(module: string, action: string, message: string, data?: any, error?: any): void {
+    this.log('INFO', module, action, message, data, error);
   }
 
-  warn(module: string, action: string, message: string, data?: any): void {
-    this.log('WARN', module, action, message, data);
+  warn(module: string, action: string, message: string, data?: any, error?: any): void {
+    this.log('WARN', module, action, message, data, error);
   }
 
-  error(module: string, action: string, message: string, data?: any, error?: Error): void {
+  error(module: string, action: string, message: string, data?: any, error?: any): void {
     this.log('ERROR', module, action, message, data, error);
   }
 
-  critical(module: string, action: string, message: string, data?: any, error?: Error): void {
+  critical(module: string, action: string, message: string, data?: any, error?: any): void {
     this.log('CRITICAL', module, action, message, data, error);
   }
 
-  emergency(module: string, action: string, message: string, data?: any, error?: Error): void {
+  emergency(module: string, action: string, message: string, data?: any, error?: any): void {
     this.log('CRITICAL', module, action, `🚨 EMERGENCY: ${message}`, data, error);
   }
 
-  success(module: string, action: string, message: string, data?: any): void {
-    this.log('INFO', module, action, `✅ ${message}`, data);
+  success(module: string, action: string, message: string, data?: any, error?: any): void {
+    this.log('INFO', module, action, `✅ ${message}`, data, error);
   }
 }
 

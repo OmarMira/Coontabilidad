@@ -164,8 +164,8 @@ export class SQLiteEngine {
 
             // Bind parameters
             if (params.length > 0) {
-                // @ts-ignore
-                this.sqlite3.bind_collection(stmt, params);
+                // @ts-ignore wa-sqlite bind_collection: expects never but accepts any
+                this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
             // Execute
@@ -203,10 +203,9 @@ export class SQLiteEngine {
             if (!stmt) throw new Error('Failed to prepare statement');
 
             // Bind parameters
-            // @ts-ignore
             if (params.length > 0) {
-                // @ts-ignore
-                this.sqlite3.bind_collection(stmt, params);
+                    // @ts-ignore
+                    this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
             // Step through results
@@ -220,6 +219,7 @@ export class SQLiteEngine {
                 const columns = [];
                 const colCount = this.sqlite3.column_count(stmt);
                 for (let i = 0; i < colCount; i++) {
+                    // @ts-ignore wa-sqlite column_name signature mismatch
                     columns.push(this.sqlite3.column_name(stmt, i));
                 }
 
@@ -270,15 +270,12 @@ export class SQLiteEngine {
         if (this.sqlJsDB) {
             try {
                 // Check if we're already in a transaction
-                const inTransaction = this.sqlJsDB.exec('SELECT 1 FROM sqlite_master WHERE type="table" LIMIT 1');
-                // sql.js doesn't have a way to check transaction state, so we just try-catch
                 try {
                     this.sqlJsDB.run('BEGIN TRANSACTION');
                     const result = await operation();
                     this.sqlJsDB.run('COMMIT');
                     return result;
                 } catch (error: any) {
-                    // If we get "cannot start a transaction within a transaction", just run the operation
                     if (error.message && error.message.includes('cannot start a transaction within a transaction')) {
                         return await operation();
                     }
@@ -304,6 +301,18 @@ export class SQLiteEngine {
         }
     }
 
+    /**
+     * executeBatchTransaction (Iron Clad Objective 2.2)
+     * High-performance execution of multiple prepared queries in a single transaction.
+     */
+    async executeBatchTransaction(queries: { sql: string, params: any[] }[]): Promise<void> {
+        return await this.executeTransaction(async () => {
+            for (const query of queries) {
+                await this.run(query.sql, query.params);
+            }
+        });
+    }
+
     // Compatibility with sql.js return format: [{ columns: [...], values: [...] }] (Async)
     async execCompatible(sql: string, params: any[] = []): Promise<{ columns: string[], values: any[][] }[]> {
         if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
@@ -319,7 +328,7 @@ export class SQLiteEngine {
             // @ts-ignore
             if (params.length > 0) {
                 // @ts-ignore
-                this.sqlite3.bind_collection(stmt, params);
+                this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
             // Get columns

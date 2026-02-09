@@ -13,6 +13,9 @@ export default defineConfig({
     },
   },
   envPrefix: ['VITE_', 'REACT_APP_'],
+  worker: {
+    format: 'es'
+  },
   server: {
     port: 3000,
     host: true,

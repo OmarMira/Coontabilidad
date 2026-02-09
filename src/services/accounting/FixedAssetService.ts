@@ -9,6 +9,11 @@ export interface FixedAsset {
     id: number;
     asset_code: string;  // Usando esquema de simple-db.ts
     name: string;        // Usando esquema de simple-db.ts
+    // Backwards-compatible aliases used by UI components
+    asset_name: string; // alias of 'name'
+    asset_tag: string;
+    purchase_date: string; // alias of 'acquisition_date' / acquisition_date
+    purchase_cost: number; // alias of 'acquisition_cost'
     description?: string;
     category_id: number;
     acquisition_date: string;  // Usando esquema de simple-db.ts
@@ -63,6 +68,21 @@ export interface AssetFilters {
  */
 export class FixedAssetService {
     private categoryService: AssetCategoryService;
+
+    private mapDbAsset(raw: any): FixedAsset {
+        return {
+            // Keep all existing properties from raw
+            ...raw,
+            // Legacy aliases for UI compatibility
+            asset_name: raw.name || raw.asset_name || undefined,
+            asset_tag: raw.asset_tag || raw.asset_code || undefined,
+            purchase_date: raw.acquisition_date || raw.purchase_date || undefined,
+            purchase_cost: raw.acquisition_cost || raw.purchase_cost || undefined,
+            // Ensure numeric defaults where appropriate
+            acquisition_cost: raw.acquisition_cost || raw.purchase_cost || 0,
+            acquisition_date: raw.acquisition_date || raw.purchase_date || '',
+        } as FixedAsset;
+    }
 
     constructor(private db: SQLiteEngine) {
         this.categoryService = new AssetCategoryService(db);
@@ -182,7 +202,7 @@ export class FixedAssetService {
             'SELECT * FROM fixed_assets WHERE id = ?',
             [assetId]
         );
-        return assets.length > 0 ? (assets[0] as FixedAsset) : null;
+        return assets.length > 0 ? this.mapDbAsset(assets[0]) : null;
     }
 
     /**
@@ -218,17 +238,19 @@ export class FixedAssetService {
 
         query += ' ORDER BY created_at DESC';
 
-        return (await this.db.select(query, params)) as any;
+        const rows = await this.db.select(query, params);
+        return rows.map((r: any) => this.mapDbAsset(r));
     }
 
     /**
      * Get only active assets (for depreciation batch)
      */
     async getActiveAssets(): Promise<FixedAsset[]> {
-        return (await this.db.select(
+        const rows = await this.db.select(
             'SELECT * FROM fixed_assets WHERE status = ? ORDER BY purchase_date',
             ['ACTIVE']
-        )) as any;
+        );
+        return rows.map((r: any) => this.mapDbAsset(r));
     }
 
     /**

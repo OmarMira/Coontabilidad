@@ -37,7 +37,7 @@ export class BackupService {
       this.persistenceGranted = isPersisted;
       logger.info('BackupService', 'persistence_request', `Storage persistence granted: ${isPersisted}`);
 
-      const estimate = await navigator.storage.estimate();
+      const estimate = await (navigator.storage?.estimate?.() ?? Promise.resolve({ quota: 0, usage: 0 }));
       logger.info('BackupService', 'storage_estimate', `Quota: ${(estimate.quota || 0) / 1024 / 1024} MB, Usage: ${(estimate.usage || 0) / 1024 / 1024} MB`);
 
       return isPersisted;

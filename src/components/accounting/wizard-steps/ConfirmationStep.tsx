@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, AlertTriangle, AlertCircle, Loader2, Info, FileText, ChevronRight, User, Calendar, CheckCircle2 } from 'lucide-react';
+import { CheckCircle, AlertTriangle, AlertCircle, Loader2, Info, FileText, ChevronRight, User, Calendar, CheckCircle2, Activity } from 'lucide-react';
 import { ValidationResult } from '../ClosureChecklist';
 import { accountingPeriodService, AccountingPeriod } from '../../../services/accounting/AccountingPeriodService';
 import ClosureReport, { ClosureReportData } from '../ClosureReport';

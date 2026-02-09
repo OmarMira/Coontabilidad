@@ -119,8 +119,8 @@ export class BackupLocationService {
             // Crear archivo en el directorio seleccionado
             const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
             
-            // Obtener writable stream
-            const writable = await fileHandle.createWritable();
+            // Obtener writable stream con safe fallback
+            const writable = await (fileHandle.createWritable?.() ?? Promise.reject(new Error('createWritable not available')));
             
             // Escribir datos
             await writable.write(data);

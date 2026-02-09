@@ -72,7 +72,7 @@ export const DatabaseMaintenance: React.FC = () => {
 
     const handleValidate = () => runAction('Validar Integridad', async () => {
         const service = new SchemaRepairService(db!);
-        const { valid, errors } = service.validateIntegrity();
+        const { valid, errors } = await service.validateIntegrity();
         return valid ? ['Sistema saludable. Sin errores FK.'] : errors;
     });
 

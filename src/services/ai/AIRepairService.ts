@@ -595,12 +595,13 @@ export class AIRepairService {
             throw new Error(`Unsupported action type: ${action.type}`);
         }
 
-        await fn(action.params);
+        // SAFE_FUNCTIONS entries can have varying signatures; cast to any for invocation
+        await (fn as any)(action.params);
     }
 
     private async verifyRepair(proposal: RepairProposal) {
         // Verificaciones básicas post-reparación
-        const checks = [];
+        const checks: { name: string; passed: boolean; message: string; severity: 'error' | 'info' }[] = [];
 
         // 1. Verificar integridad de audit chain
         const integrity = await this.auditChainService.verifyIntegrity();

@@ -10,8 +10,16 @@ import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
 import AuditTrailService from '../services/AuditTrailService';
 
-// Instancia global de la base de datos (any para compatibilidad con sql.js)
+// Tipo ligero para la API que usamos de sql.js (exec/run/prepare)
+type SQLJSDB = {
+  exec: (sql: string, params?: any[]) => any;
+  run: (sql: string, params?: any[]) => any;
+  prepare?: (sql: string) => any;
+};
+
+// Mantener `db` como `any` para compatibilidad con llamadas y wrappers externos
 let db: any = null;
+let sqlJsDb: SQLJSDB | null = null;
 
 // Instancia global de SQLiteEngine (wrapper tipado sobre sql.js)
 let dbEngine: SQLiteEngine | null = null;
@@ -19,6 +27,17 @@ let dbEngine: SQLiteEngine | null = null;
 // Exportar la instancia de db para acceso externo
 export { db };
 export const getDB = () => db;
+
+// Helpers que normalizan llamadas a la instancia `db` y evitan inferencias problemáticas
+export const dbExec = (sql: string, params?: any[]) => {
+  if (!db) return null;
+  return (db as any).exec(sql, params);
+};
+
+export const dbRun = (sql: string, params?: any[]) => {
+  if (!db) throw new Error('Database not initialized');
+  return (db as any).run(sql, params);
+};
 
 // Exportar la instancia de dbEngine para servicios tipados
 export { dbEngine };
@@ -99,7 +118,7 @@ export interface Employee {
   salary_rate: number;
   status: 'active' | 'inactive' | 'on_leave';
   florida_county?: string;
-  
+
   // Payroll Engine Fields
   hourly_rate?: number;
   salary?: number;
@@ -161,42 +180,42 @@ export interface Payroll {
   pay_period_start: string;
   pay_period_end: string;
   pay_date: string;
-  
+
   // Hours and rates
   regular_hours: number;
   overtime_hours: number;
   hourly_rate?: number;
-  
+
   // Earnings
   regular_pay: number;
   overtime_pay: number;
   bonuses: number;
   commissions: number;
   gross_pay: number;
-  
+
   // Taxes
   social_security_tax: number;
   medicare_tax: number;
   medicare_additional_tax: number;
   federal_income_tax: number;
-  
+
   // Deductions
   other_deductions: number;
   total_deductions: number;
-  
+
   // Net
   net_pay: number;
-  
+
   // Journal entry
   journal_entry_id?: number;
-  
+
   // Audit
   status: 'draft' | 'approved' | 'paid' | 'voided';
   processed_by?: number;
   processed_at?: string;
   approved_by?: number;
   approved_at?: string;
-  
+
   created_at?: string;
   updated_at?: string;
 }
@@ -231,6 +250,11 @@ export interface FixedAsset {
   id?: number;
   asset_code: string;
   name: string;
+  // Backwards-compatible aliases used across the codebase
+  asset_name?: string; // alias of 'name'
+  asset_tag?: string;  // additional tag
+  purchase_date?: string; // alias of 'acquisition_date'
+  purchase_cost?: number; // alias of 'acquisition_cost'
   description?: string;
   category_id: number;
   acquisition_date: string;
@@ -4282,7 +4306,17 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
       userId: userId || 1
     };
 
-    // Generar hash con chaining
+    // 🚀 Objective 1: NASA Level Total Hash Coverage
+    // Automatizamos el sellado de CUALQUIER cambio en el sistema
+    await DatabaseService.sealGenericRecord({
+      tableName,
+      recordId,
+      operation: action as any,
+      payload: newValues || oldValues || {},
+      userId: userId || 1
+    });
+
+    // Generar hash con chaining (Legacy system support)
     const auditHash = await generateAuditHash(auditData);
 
     const stmt = db.prepare(`
@@ -4716,8 +4750,8 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
     }
 
     // Actualizar factura principal
-    const updateFields = [];
-    const updateValues = [];
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
 
     if (invoiceData.issue_date !== undefined) {
       updateFields.push('issue_date = ?');
@@ -5203,8 +5237,8 @@ export const updateQuote = (
     db.run('BEGIN TRANSACTION');
 
     // Actualizar cotizaci�n principal
-    const updateFields = [];
-    const updateValues = [];
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
 
     if (quoteData.issue_date !== undefined) {
       updateFields.push('issue_date = ?');
@@ -6156,8 +6190,8 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
     db.run('BEGIN TRANSACTION');
 
     // Actualizar factura principal
-    const updateFields = [];
-    const updateValues = [];
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
 
     if (billData.issue_date !== undefined) {
       updateFields.push('issue_date = ?');
@@ -13164,11 +13198,11 @@ export function hasUsers(): boolean {
  */
 export function getPayroll(payrollId: number): Payroll | null {
   if (!db) return null;
-  
+
   try {
     const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
     if (result.length === 0 || result[0].values.length === 0) return null;
-    
+
     return rowToEntity<Payroll>(result[0].columns, result[0].values[0]);
   } catch (error) {
     console.error('Error getting payroll:', error);
@@ -13181,21 +13215,21 @@ export function getPayroll(payrollId: number): Payroll | null {
  */
 export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[] {
   if (!db) return [];
-  
+
   try {
     let query = 'SELECT * FROM payroll WHERE employee_id = ?';
     const params: any[] = [employeeId];
-    
+
     if (year) {
       query += ' AND strftime("%Y", pay_date) = ?';
       params.push(year.toString());
     }
-    
+
     query += ' ORDER BY pay_date DESC';
-    
+
     const result = db.exec(query, params);
     if (result.length === 0) return [];
-    
+
     return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
   } catch (error) {
     console.error('Error getting employee payrolls:', error);
@@ -13213,36 +13247,36 @@ export function getAllPayrolls(filters?: {
   status?: 'draft' | 'approved' | 'voided';
 }): Payroll[] {
   if (!db) return [];
-  
+
   try {
     let query = 'SELECT * FROM payroll WHERE 1=1';
     const params: any[] = [];
-    
+
     if (filters?.employeeId) {
       query += ' AND employee_id = ?';
       params.push(filters.employeeId);
     }
-    
+
     if (filters?.startDate) {
       query += ' AND pay_date >= ?';
       params.push(filters.startDate);
     }
-    
+
     if (filters?.endDate) {
       query += ' AND pay_date <= ?';
       params.push(filters.endDate);
     }
-    
+
     if (filters?.status) {
       query += ' AND status = ?';
       params.push(filters.status);
     }
-    
+
     query += ' ORDER BY pay_date DESC, created_at DESC';
-    
+
     const result = db.exec(query, params);
     if (result.length === 0) return [];
-    
+
     return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
   } catch (error) {
     console.error('Error getting all payrolls:', error);
@@ -13255,7 +13289,7 @@ export function getAllPayrolls(filters?: {
  */
 export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
   if (!db) return [];
-  
+
   try {
     const quarterMonths = {
       1: ['01', '02', '03'],
@@ -13263,23 +13297,23 @@ export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
       3: ['07', '08', '09'],
       4: ['10', '11', '12']
     };
-    
+
     const months = quarterMonths[quarter as keyof typeof quarterMonths];
     if (!months) return [];
-    
+
     const startDate = `${year}-${months[0]}-01`;
     const endDate = `${year}-${months[2]}-31`;
-    
+
     const query = `
       SELECT * FROM payroll 
       WHERE pay_date >= ? AND pay_date <= ?
       AND status = 'approved'
       ORDER BY pay_date
     `;
-    
+
     const result = db.exec(query, [startDate, endDate]);
     if (result.length === 0) return [];
-    
+
     return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
   } catch (error) {
     console.error('Error getting quarterly payrolls:', error);
@@ -13292,7 +13326,7 @@ export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
  */
 export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
   if (!db) return [];
-  
+
   try {
     const query = `
       SELECT * FROM payroll 
@@ -13301,10 +13335,10 @@ export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
       AND status = 'approved'
       ORDER BY pay_date
     `;
-    
+
     const result = db.exec(query, [employeeId, year.toString()]);
     if (result.length === 0) return [];
-    
+
     return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
   } catch (error) {
     console.error('Error getting annual payrolls:', error);

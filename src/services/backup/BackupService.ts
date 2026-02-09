@@ -4,6 +4,7 @@ import { ExponentialBackoff } from '../../core/resilience/ExponentialBackoff';
 import { ProductionLogger } from '../../core/logging/ProductionLogger';
 import { timestampService, TimestampResponse } from '../../core/timestamping/TimestampService';
 import { metricsCollector, MetricCategory } from '../../core/monitoring/MetricsCollector';
+import { TransactionManager } from '../../core/database/TransactionManager';
 
 /**
  * BackupService - Versatile Multi-Destination Backup System
@@ -34,9 +35,11 @@ import { metricsCollector, MetricCategory } from '../../core/monitoring/MetricsC
  */
 export class BackupService {
     private auditChainService: AuditChainService;
+    private txManager: TransactionManager;
 
     constructor(private db: SQLiteEngine) {
         this.auditChainService = new AuditChainService(db);
+        this.txManager = new TransactionManager(db);
     }
 
     /**
@@ -96,7 +99,7 @@ export class BackupService {
                 try {
                     const encoder = new TextEncoder();
                     const dataToTimestamp = encoder.encode(encrypted);
-                    
+
                     rfc3161Timestamp = await timestampService.getTimestamp({
                         data: dataToTimestamp.buffer,
                         hashAlgorithm: 'SHA-256',
@@ -142,39 +145,39 @@ export class BackupService {
                 }
 
                 const backup: EncryptedBackup = {
-                filename: `backup-${new Date().toISOString().split('T')[0]}.aex`,
-                data: encrypted,
-                size: encrypted.length,
-                timestamp: payload.timestamp,
-                logicClock,
-                rfc3161Timestamp
-            };
+                    filename: `backup-${new Date().toISOString().split('T')[0]}.aex`,
+                    data: encrypted,
+                    size: encrypted.length,
+                    timestamp: payload.timestamp,
+                    logicClock,
+                    rfc3161Timestamp
+                };
 
-            const duration = Date.now() - startTime;
+                const duration = Date.now() - startTime;
 
-            ProductionLogger.info('BackupService', 'Backup created successfully', {
-                size: backup.size,
-                logicClock: backup.logicClock,
-                hasRFC3161: !!rfc3161Timestamp,
-                duration
-            });
-
-            // Record backup success metric
-            metricsCollector.recordMetric({
-                category: MetricCategory.BACKUP,
-                operation: 'create_backup',
-                status: 'success',
-                duration,
-                value: backup.size,
-                metadata: {
+                ProductionLogger.info('BackupService', 'Backup created successfully', {
+                    size: backup.size,
                     logicClock: backup.logicClock,
                     hasRFC3161: !!rfc3161Timestamp,
-                    recordCount: payload.metadata.recordCount
-                }
-            });
+                    duration
+                });
 
-            return backup;
-        }, 'BackupService.createBackup');
+                // Record backup success metric
+                metricsCollector.recordMetric({
+                    category: MetricCategory.BACKUP,
+                    operation: 'create_backup',
+                    status: 'success',
+                    duration,
+                    value: backup.size,
+                    metadata: {
+                        logicClock: backup.logicClock,
+                        hasRFC3161: !!rfc3161Timestamp,
+                        recordCount: payload.metadata.recordCount
+                    }
+                });
+
+                return backup;
+            }, 'BackupService.createBackup');
         } catch (error) {
             const duration = Date.now() - startTime;
 
@@ -191,6 +194,27 @@ export class BackupService {
 
             throw error;
         }
+    }
+
+    /**
+     * Create backup and automatically queue for cloud sync using the Outbox Pattern.
+     * Objective 3.4 implementation.
+     */
+    public async createBackupAndQueueSync(password: string, cloudConfig: any): Promise<EncryptedBackup> {
+        return await this.txManager.executeForensicWrite(
+            async () => {
+                const backup = await this.createBackup(password);
+                return backup;
+            },
+            {
+                module: 'backups',
+                operation: 'UPLOAD',
+                payload: {
+                    fileName: `backup-${new Date().toISOString().split('T')[0]}.aex`,
+                    cloudConfig
+                }
+            }
+        );
     }
 
     /**
@@ -222,7 +246,7 @@ export class BackupService {
                 try {
                     const encoder = new TextEncoder();
                     const dataToVerify = encoder.encode(encryptedData);
-                    
+
                     const verification = await timestampService.verifyTimestamp(
                         rfc3161Token,
                         dataToVerify.buffer

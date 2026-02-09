@@ -119,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
                 {/* Sunbiz Compliance */}
                 <div className="relative">
                   <div className="flex justify-between items-end mb-3">
-                    <span className="text-white font-semibold text-base">Sunbiz Annual Report</span>
+                    <span className="text-white font-semibold text-base">Reporte Anual de Sunbiz</span>
                     <span className={`badge-elite ${sunbizDaysLeft < 30 ? 'bg-rose-500/20 text-rose-400' : 'bg-white/5 text-gray-400'}`}>
                       {sunbizDaysLeft} DÍAS RESTANTES
                     </span>

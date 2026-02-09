@@ -199,6 +199,7 @@ export class AccountingPeriodService {
    * Obtener todos los períodos con filtros opcionales
    */
   public getPeriods(filters?: {
+    id?: number;
     fiscal_year?: number;
     status?: 'open' | 'closed' | 'locked';
     period_type?: 'monthly' | 'quarterly' | 'annual';
@@ -209,6 +210,11 @@ export class AccountingPeriodService {
     try {
       let query = 'SELECT * FROM accounting_periods WHERE 1=1';
       const params: any[] = [];
+
+  if (filters?.id) {
+    query += ' AND id = ?';
+    params.push(filters.id);
+  }
 
       if (filters?.fiscal_year) {
         query += ' AND fiscal_year = ?';

@@ -112,7 +112,7 @@ export class ContextBuilder {
         }
 
         try {
-            const results = [];
+            const results: any[] = [];
             for (const query of queries) {
                 const data = await this.dbService.executeSafeQuery(query, []);
                 results.push(...data);

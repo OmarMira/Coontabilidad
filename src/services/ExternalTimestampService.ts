@@ -26,9 +26,9 @@ export class ExternalTimestampService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/timestamp-query',
-                    'Content-Length': requestBytes.length.toString()
+                    'Content-Length': requestBytes.byteLength.toString()
                 },
-                body: requestBytes
+                body: new Blob([requestBytes.buffer as ArrayBuffer])
             });
 
             if (!response.ok) {
@@ -131,14 +131,14 @@ export class ExternalTimestampService {
     // --- UTILS ---
 
     private static hexToBytes(hex: string): number[] {
-        const bytes = [];
+        const bytes: number[] = [];
         for (let c = 0; c < hex.length; c += 2)
             bytes.push(parseInt(hex.substr(c, 2), 16));
         return bytes;
     }
 
     private static intToBytes(num: number): number[] {
-        const arr = [
+        const arr: number[] = [
             (num >> 24) & 0xff,
             (num >> 16) & 0xff,
             (num >> 8) & 0xff,
@@ -153,7 +153,7 @@ export class ExternalTimestampService {
 
     private static encodeLength(len: number): number[] {
         if (len < 128) return [len];
-        const lenBytes = [];
+        const lenBytes: number[] = [];
         while (len > 0) {
             lenBytes.unshift(len & 0xff);
             len = len >> 8;

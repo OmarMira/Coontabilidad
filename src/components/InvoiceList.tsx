@@ -56,11 +56,11 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
 
   const handleDelete = (invoice: Invoice) => {
     if (invoice.status === 'paid') {
-      alert('Cannot delete paid invoices');
+      alert('No se pueden eliminar facturas pagadas');
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete invoice ${invoice.invoice_number}?`)) {
+    if (window.confirm(`¿Está seguro de que desea eliminar la factura ${invoice.invoice_number}?`)) {
       onDelete(invoice.id);
     }
   };
@@ -69,14 +69,14 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
     return (
       <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
         <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-white mb-2">No Invoices Yet</h3>
-        <p className="text-gray-400 mb-4">Create your first invoice to get started.</p>
+        <h3 className="text-lg font-medium text-white mb-2">Aún no hay facturas</h3>
+        <p className="text-gray-400 mb-4">Cree su primera factura para comenzar.</p>
         <button
           onClick={onAddInvoice}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Create Invoice
+          Crear Factura
         </button>
       </div>
     );
@@ -89,14 +89,14 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-white flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-400" />
-            Invoices ({filteredInvoices.length})
+            Facturas ({filteredInvoices.length})
           </h2>
           <button
             onClick={onAddInvoice}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            New Sale
+            Nueva Venta
           </button>
         </div>
 
@@ -105,7 +105,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
           <div className="flex-1">
             <input
               type="text"
-              placeholder="Search by invoice number or customer..."
+              placeholder="Buscar por número de factura o cliente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-gray-700 text-white px-4 py-2 rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none"
@@ -118,12 +118,12 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-gray-700 text-white px-3 py-2 rounded-md border border-gray-600 focus:border-blue-500 focus:outline-none"
             >
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">Todos los Estados</option>
+              <option value="draft">Borrador</option>
+              <option value="sent">Enviada</option>
+              <option value="paid">Pagada</option>
+              <option value="overdue">Vencida</option>
+              <option value="cancelled">Cancelada</option>
             </select>
           </div>
         </div>
@@ -159,8 +159,8 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                   <div className="flex items-center gap-2 text-gray-300">
                     <Calendar className="w-4 h-4 text-gray-400" />
                     <div>
-                      <p className="text-white">Issue: {new Date(invoice.issue_date).toLocaleDateString()}</p>
-                      <p className="text-gray-400 text-xs">Due: {new Date(invoice.due_date).toLocaleDateString()}</p>
+                      <p className="text-white">Emisión: {new Date(invoice.issue_date).toLocaleDateString()}</p>
+                      <p className="text-gray-400 text-xs">Vencim.: {new Date(invoice.due_date).toLocaleDateString()}</p>
                     </div>
                   </div>
 
@@ -169,7 +169,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     <div>
                       <p className="text-white font-medium">${invoice.total_amount.toFixed(2)}</p>
                       <p className="text-gray-400 text-xs">
-                        Tax: ${invoice.tax_amount.toFixed(2)}
+                        Impuesto: ${invoice.tax_amount.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -177,11 +177,11 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                   <div className="flex items-center gap-2 text-gray-300">
                     <div>
                       <p className="text-white text-xs">
-                        Created: {new Date(invoice.created_at).toLocaleDateString()}
+                        Creado: {new Date(invoice.created_at).toLocaleDateString()}
                       </p>
                       {invoice.notes && (
                         <p className="text-gray-400 text-xs truncate max-w-32" title={invoice.notes}>
-                          Note: {invoice.notes}
+                          Nota: {invoice.notes}
                         </p>
                       )}
                     </div>
@@ -194,7 +194,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                 <button
                   onClick={() => onView(invoice)}
                   className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-700 rounded-lg transition-colors"
-                  title="View Invoice"
+                  title="Ver Factura"
                 >
                   <Eye className="w-4 h-4" />
                 </button>
@@ -212,7 +212,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                 <button
                   onClick={() => onEdit(invoice)}
                   className="p-2 text-yellow-400 hover:text-yellow-300 hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Edit Invoice"
+                  title="Editar Factura"
                 >
                   <Edit className="w-4 h-4" />
                 </button>
@@ -223,7 +223,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     ? 'text-gray-500 cursor-not-allowed'
                     : 'text-red-400 hover:text-red-300 hover:bg-gray-700'
                     }`}
-                  title={invoice.status === 'paid' ? 'Cannot delete paid invoices' : 'Delete Invoice'}
+                  title={invoice.status === 'paid' ? 'No se pueden eliminar facturas pagadas' : 'Eliminar Factura'}
                   disabled={invoice.status === 'paid'}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -235,7 +235,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
             {invoice.status === 'overdue' && (
               <div className="mt-3 p-2 bg-red-900/20 border border-red-700 rounded-md">
                 <p className="text-red-300 text-sm">
-                  ⚠️ This invoice is overdue by {Math.ceil((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))} days
+                  ⚠️ Esta factura está vencida por {Math.ceil((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))} días
                 </p>
               </div>
             )}
@@ -247,23 +247,23 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
       <div className="p-6 border-t border-gray-700 bg-gray-900">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="text-center">
-            <p className="text-gray-400">Total Invoices</p>
+            <p className="text-gray-400">Total Facturas</p>
             <p className="text-white font-semibold">{filteredInvoices.length}</p>
           </div>
           <div className="text-center">
-            <p className="text-gray-400">Total Amount</p>
+            <p className="text-gray-400">Monto Total</p>
             <p className="text-white font-semibold">
               ${filteredInvoices.reduce((sum, inv) => sum + inv.total_amount, 0).toFixed(2)}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-gray-400">Paid</p>
+            <p className="text-gray-400">Pagadas</p>
             <p className="text-green-400 font-semibold">
               {filteredInvoices.filter(inv => inv.status === 'paid').length}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-gray-400">Outstanding</p>
+            <p className="text-gray-400">Pendiente</p>
             <p className="text-yellow-400 font-semibold">
               ${filteredInvoices
                 .filter(inv => inv.status !== 'paid' && inv.status !== 'cancelled')

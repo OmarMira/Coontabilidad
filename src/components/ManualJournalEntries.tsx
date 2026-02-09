@@ -360,7 +360,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                     <tr>
                       <th className="px-8 py-5">Cuenta Contable</th>
                       <th className="px-8 py-5">Detalle Línea</th>
-                      <th className="px-8 py-5 text-right w-40">Cargo (DR)</th>
+                      <th className="px-8 py-5 text-right w-40">Débito (DR)</th>
                       <th className="px-8 py-5 text-right w-40">Abono (CR)</th>
                       <th className="py-5 w-16"></th>
                     </tr>
@@ -450,8 +450,8 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
               <div className="flex flex-col md:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-800">
                 <div className={`flex items-center gap-4 px-8 py-4 rounded-3xl border-2 transition-all ${currentEntry.is_balanced
-                    ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                  ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
                   }`}>
                   {currentEntry.is_balanced ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
                   <div>

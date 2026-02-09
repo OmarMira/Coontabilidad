@@ -19,6 +19,9 @@ import type { FixedAsset, AssetCategory } from '@/services/accounting/fixed-asse
 import { AssetForm } from './AssetForm';
 import { AssetDetailView } from './AssetDetailView';
 import { AssetDisposalForm } from './AssetDisposalForm';
+import { AssetRegisterReport } from './reports/AssetRegisterReport';
+import { DepreciationScheduleReport } from './reports/DepreciationScheduleReport';
+import { DisposalSummaryReport } from './reports/DisposalSummaryReport';
 
 /**
  * FixedAssetsManager
@@ -47,6 +50,7 @@ export const FixedAssetsManager: React.FC = () => {
   const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);
   const [viewingAsset, setViewingAsset] = useState<FixedAsset | null>(null);
   const [disposingAsset, setDisposingAsset] = useState<FixedAsset | null>(null);
+  const [activeReport, setActiveReport] = useState<'register' | 'schedule' | 'disposals' | null>(null);
 
   useEffect(() => {
     loadData();
@@ -88,7 +92,7 @@ export const FixedAssetsManager: React.FC = () => {
 
       const result = await controller.runDepreciationBatch(now);
 
-      setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: $${(result.total_depreciation_amount / 100).toFixed(2)}`);
+      setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: ${(result.total_depreciation_amount / 100).toFixed(2)}`);
 
       // Reload data
       await loadData();
@@ -323,16 +327,16 @@ export const FixedAssetsManager: React.FC = () => {
                           onClick={() => setViewingAsset(asset)}
                           className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-pointer"
                         >
-                          <td className="py-3 px-4 text-sm font-mono text-blue-400">{asset.asset_tag}</td>
-                          <td className="py-3 px-4 text-sm">{asset.asset_name}</td>
+                          <td className="py-3 px-4 text-sm font-mono text-blue-400">{asset.asset_code}</td>
+                          <td className="py-3 px-4 text-sm">{asset.name}</td>
                           <td className="py-3 px-4 text-sm text-slate-400">
                             {categories.find(c => c.id === asset.category_id)?.name || 'N/A'}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono">
-                            ${(asset.purchase_cost / 100).toFixed(2)}
+                            ${((asset.acquisition_cost || 0) / 100).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono text-amber-400">
-                            ${(asset.total_accumulated_depreciation / 100).toFixed(2)}
+                            ${((asset.total_accumulated_depreciation || 0) / 100).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono text-green-400">
                             ${((asset.net_book_value || 0) / 100).toFixed(2)}
@@ -402,17 +406,26 @@ export const FixedAssetsManager: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left">
+                <button 
+                  onClick={() => setActiveReport('register')}
+                  className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
+                >
                   <FileText className="w-8 h-8 text-blue-400 mb-3" />
                   <h3 className="font-medium text-white mb-1">Registro de Activos</h3>
                   <p className="text-sm text-slate-400">Lista completa con valores actuales</p>
                 </button>
-                <button className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left">
+                <button 
+                  onClick={() => setActiveReport('schedule')}
+                  className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
+                >
                   <Calendar className="w-8 h-8 text-amber-400 mb-3" />
                   <h3 className="font-medium text-white mb-1">Calendario de Depreciación</h3>
                   <p className="text-sm text-slate-400">Proyección mensual de gastos</p>
                 </button>
-                <button className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left">
+                <button 
+                  onClick={() => setActiveReport('disposals')}
+                  className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
+                >
                   <TrendingDown className="w-8 h-8 text-green-400 mb-3" />
                   <h3 className="font-medium text-white mb-1">Resumen de Disposiciones</h3>
                   <p className="text-sm text-slate-400">Activos vendidos o dados de baja</p>
@@ -444,6 +457,82 @@ export const FixedAssetsManager: React.FC = () => {
                 db={db}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Asset Disposal Modal */}
+      {disposingAsset && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <AssetDisposalForm
+                asset={disposingAsset}
+                onDispose={async () => {
+                  setDisposingAsset(null);
+                  await loadData();
+                  setSuccess('Asset disposed successfully');
+                  setTimeout(() => setSuccess(null), 3000);
+                }}
+                onCancel={() => setDisposingAsset(null)}
+                db={db}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Asset Disposal Modal */}
+      {disposingAsset && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <AssetDisposalForm
+                asset={disposingAsset}
+                onDispose={async () => {
+                  setDisposingAsset(null);
+                  await loadData();
+                  setSuccess('Asset disposed successfully');
+                  setTimeout(() => setSuccess(null), 3000);
+                }}
+                onCancel={() => setDisposingAsset(null)}
+                db={db}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Modals */}
+      {activeReport === 'register' && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <AssetRegisterReport
+              db={db}
+              onClose={() => setActiveReport(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeReport === 'schedule' && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <DepreciationScheduleReport
+              db={db}
+              onClose={() => setActiveReport(null)}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeReport === 'disposals' && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="bg-slate-900 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <DisposalSummaryReport
+              db={db}
+              onClose={() => setActiveReport(null)}
+            />
           </div>
         </div>
       )}

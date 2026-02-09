@@ -289,10 +289,29 @@ function App() {
 
         logger.info('App', 'init_start', 'Iniciando AccountExpress Next-Gen MVP');
 
-        // NASA/Hybrid Persistence: Ensure storage is persistent
-        if (navigator.storage && navigator.storage.persist) {
-          const isPersisted = await navigator.storage.persist();
-          console.log(`[Storage] Persisted: ${isPersisted}`);
+        // IRON CLAD UPGRADE - Phase 1, Day 5: Persistent Storage Integration
+        setState(prev => ({ ...prev, initializationStep: 'Solicitando almacenamiento persistente...' }));
+
+        try {
+          const { PersistentStorageService } = await import('./services/PersistentStorageService');
+          const storageStatus = await PersistentStorageService.initialize();
+
+          if (!storageStatus.isPersistent) {
+            console.warn('⚠️ Persistent storage not granted - data may be cleared by browser');
+            logger.warn('App', 'storage_not_persistent', 'Persistent storage denied by browser');
+          }
+
+          if (!storageStatus.hasSufficientSpace) {
+            console.warn('⚠️ Insufficient storage space available');
+            logger.warn('App', 'storage_low', `Low storage: ${storageStatus.quota.availableMB}MB available`);
+          }
+
+          // Start storage monitoring (every 5 minutes)
+          PersistentStorageService.startMonitoring(5 * 60 * 1000);
+
+        } catch (storageError) {
+          console.error('Error initializing persistent storage:', storageError);
+          logger.error('App', 'storage_init_failed', 'Failed to initialize persistent storage', null, storageError as Error);
         }
 
         // Verificar compatibilidad básica
@@ -312,6 +331,17 @@ function App() {
 
         // Cargar datos iniciales
         await loadData();
+
+        // IRON CLAD UPGRADE - Phase 1, Day 2: Schedule Auto-Backup
+        setState(prev => ({ ...prev, initializationStep: 'Configurando backups automáticos...' }));
+
+        try {
+          await DatabaseService.scheduleAutoBackup();
+          logger.info('App', 'auto_backup_scheduled', 'Automatic backups scheduled successfully');
+        } catch (backupError) {
+          console.error('Error scheduling auto-backup:', backupError);
+          logger.error('App', 'auto_backup_failed', 'Failed to schedule auto-backup', null, backupError as Error);
+        }
 
         setState(prev => ({
           ...prev,

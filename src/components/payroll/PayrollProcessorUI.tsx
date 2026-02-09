@@ -406,7 +406,7 @@ export default function PayrollProcessorUI() {
                       )}
                       <div className="flex justify-between items-center pt-2 border-t border-slate-800">
                         <span className="text-xs font-black text-slate-300 uppercase">SUBTOTAL BRUTO</span>
-                        <span className="text-lg font-black text-blue-400 font-mono">${preview.grossPay.toFixed(2)}</span>
+                        <span className="text-lg font-black text-blue-400 font-mono">${(preview?.grossPay ?? 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -417,15 +417,15 @@ export default function PayrollProcessorUI() {
                     <div className="p-4 space-y-3">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500 font-bold italic font-sans">Social Security (6.2%)</span>
-                        <span className="text-red-400 font-bold">-${preview.taxes.socialSecurity.toFixed(2)}</span>
+                        <span className="text-red-400 font-bold">-${(preview?.taxes?.socialSecurity ?? 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500 font-bold italic font-sans">Medicare (1.45%)</span>
-                        <span className="text-red-400 font-bold">-${preview.taxes.medicare.toFixed(2)}</span>
+                        <span className="text-red-400 font-bold">-${(preview?.taxes?.medicare ?? 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500 font-bold italic font-sans">Federal Income Tax</span>
-                        <span className="text-red-400 font-bold">-${preview.taxes.federalIncomeTax.toFixed(2)}</span>
+                        <span className="text-red-400 font-bold">-${(preview?.taxes?.federalIncomeTax ?? 0).toFixed(2)}</span>
                       </div>
                       {parseFloat(formData.otherDeductions) > 0 && (
                         <div className="flex justify-between items-center text-xs">
@@ -435,7 +435,7 @@ export default function PayrollProcessorUI() {
                       )}
                       <div className="flex justify-between items-center pt-2 border-t border-slate-800">
                         <span className="text-[10px] font-black text-red-500/60 uppercase">TOTAL DEDUCCIONES</span>
-                        <span className="text-base font-black text-red-400 font-mono">-${preview.taxes.totalTaxes.toFixed(2)}</span>
+                        <span className="text-base font-black text-red-400 font-mono">-${(preview?.taxes?.totalTaxes ?? 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>

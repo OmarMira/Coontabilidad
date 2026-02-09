@@ -60,13 +60,13 @@ export class GoogleAuthService {
      * Callback handler
      */
     private static handleAuthSuccess(resp: google.accounts.oauth2.TokenResponse) {
-        this.accessToken = resp.access_token;
+        this.accessToken = resp.access_token ?? null;
         // Calculate expiry (expires_in is seconds)
         this.tokenExpiry = Date.now() + (Number(resp.expires_in) * 1000) - 60000; // Buffer 1 min
 
         // Store flag in localStorage (NOT the token)
         localStorage.setItem('gdrive_linked', 'true');
-        localStorage.setItem('gdrive_token', resp.access_token); // TEMPORARY: For MVP hybrid backup service compatibility
+        localStorage.setItem('gdrive_token', resp.access_token || ''); // TEMPORARY: For MVP hybrid backup service compatibility
 
         logger.info('GoogleAuth', 'auth_success', 'Access token received');
 
@@ -115,7 +115,7 @@ export class GoogleAuthService {
 
         // 3. Fallback to storage (Legacy) - pero validar que no esté expirado
         const storedToken = localStorage.getItem('gdrive_token');
-        if (storedToken) {
+        if (storedToken && storedToken.length > 0) {
             // Verificar si el token almacenado aún es válido
             // En producción, deberíamos validar contra Google, pero por ahora lo usamos
             logger.warn('GoogleAuth', 'fallback_token', 'Using stored token (may be expired)');
@@ -146,10 +146,10 @@ export class GoogleAuthService {
                         resolve(null);
                         return;
                     }
-                    
+
                     // Actualizar token
                     this.handleAuthSuccess(resp);
-                    resolve(resp.access_token);
+                    resolve(resp.access_token || null);
                 };
                 
                 // Intentar refresco con prompt='none' (sin UI)

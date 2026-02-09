@@ -109,31 +109,31 @@ export const PayrollReports: React.FC = () => {
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Form 941', 105, 20, { align: 'center' });
+      doc.text('Formulario 941', 105, 20, { align: 'center' });
       doc.setFontSize(12);
-      doc.text('Employer\'s QUARTERLY Federal Tax Return', 105, 28, { align: 'center' });
+      doc.text('Declaración Trimestral Federal de Impuestos del Empleador', 105, 28, { align: 'center' });
       doc.setFontSize(10);
-      doc.text(`Employer: ${form941Data.employerName}`, 20, 45);
-      doc.text(`EIN: ${form941Data.ein}`, 20, 52);
-      doc.text(`Address: ${form941Data.address}`, 20, 59);
-      doc.text(`Quarter: Q${form941Data.quarter} ${form941Data.year}`, 20, 66);
+      doc.text(`Empleador: ${form941Data.employerName}`, 20, 45);
+      doc.text(`NIF (EIN): ${form941Data.ein}`, 20, 52);
+      doc.text(`Dirección: ${form941Data.address}`, 20, 59);
+      doc.text(`Trimestre: Q${form941Data.quarter} ${form941Data.year}`, 20, 66);
 
       const tableData = [
-        ['Number of Employees', form941Data.numberOfEmployees.toString()],
-        ['Total Wages', payrollReportGenerator.formatCurrency(form941Data.totalWages)],
-        ['Federal Income Tax', payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)],
-        ['Social Security Wages', payrollReportGenerator.formatCurrency(form941Data.socialSecurityWages)],
-        ['Social Security Tax', payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)],
-        ['Medicare Wages', payrollReportGenerator.formatCurrency(form941Data.medicareWages)],
-        ['Medicare Tax', payrollReportGenerator.formatCurrency(form941Data.medicareTax)],
-        ['Additional Medicare Tax', payrollReportGenerator.formatCurrency(form941Data.additionalMedicareTax)],
-        ['Total Taxes', payrollReportGenerator.formatCurrency(form941Data.totalTaxes)],
-        ['Balance Due', payrollReportGenerator.formatCurrency(form941Data.balanceDue)]
+        ['Número de Empleados', form941Data.numberOfEmployees.toString()],
+        ['Salarios Totales', payrollReportGenerator.formatCurrency(form941Data.totalWages)],
+        ['Impuesto Federal a la Renta', payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)],
+        ['Salarios del Seguro Social', payrollReportGenerator.formatCurrency(form941Data.socialSecurityWages)],
+        ['Impuesto del Seguro Social', payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)],
+        ['Salarios de Medicare', payrollReportGenerator.formatCurrency(form941Data.medicareWages)],
+        ['Impuesto de Medicare', payrollReportGenerator.formatCurrency(form941Data.medicareTax)],
+        ['Impuesto Adicional de Medicare', payrollReportGenerator.formatCurrency(form941Data.additionalMedicareTax)],
+        ['Impuestos Totales', payrollReportGenerator.formatCurrency(form941Data.totalTaxes)],
+        ['Saldo Adeudado', payrollReportGenerator.formatCurrency(form941Data.balanceDue)]
       ];
 
       (doc as any).autoTable({
         startY: 75,
-        head: [['Description', 'Amount']],
+        head: [['Descripción', 'Monto']],
         body: tableData,
         theme: 'grid',
         headStyles: { fillColor: [16, 185, 129] }
@@ -172,32 +172,32 @@ export const PayrollReports: React.FC = () => {
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Form W-2', 105, 20, { align: 'center' });
+      doc.text('Formulario W-2', 105, 20, { align: 'center' });
       doc.setFontSize(12);
-      doc.text('Wage and Tax Statement', 105, 28, { align: 'center' });
-      doc.text(`Tax Year ${w2Data.year}`, 105, 35, { align: 'center' });
+      doc.text('Estado de Salarios e Impuestos', 105, 28, { align: 'center' });
+      doc.text(`Año Fiscal ${w2Data.year}`, 105, 35, { align: 'center' });
       doc.setFontSize(10);
-      doc.text('Employer Information:', 20, 50);
-      doc.text(`Name: ${w2Data.employerName}`, 25, 57);
-      doc.text(`EIN: ${w2Data.employerEIN}`, 25, 64);
-      doc.text(`Address: ${w2Data.employerAddress}`, 25, 71);
-      doc.text('Employee Information:', 20, 85);
-      doc.text(`Name: ${w2Data.employeeName}`, 25, 92);
-      doc.text(`SSN: ${w2Data.employeeSSN}`, 25, 99);
-      doc.text(`Address: ${w2Data.employeeAddress}`, 25, 106);
+      doc.text('Información del Empleador:', 20, 50);
+      doc.text(`Nombre: ${w2Data.employerName}`, 25, 57);
+      doc.text(`NIF (EIN): ${w2Data.employerEIN}`, 25, 64);
+      doc.text(`Dirección: ${w2Data.employerAddress}`, 25, 71);
+      doc.text('Información del Empleado:', 20, 85);
+      doc.text(`Nombre: ${w2Data.employeeName}`, 25, 92);
+      doc.text(`NSS (SSN): ${w2Data.employeeSSN}`, 25, 99);
+      doc.text(`Dirección: ${w2Data.employeeAddress}`, 25, 106);
 
       const w2Boxes = [
-        ['Box 1 - Wages', payrollReportGenerator.formatCurrency(w2Data.wages)],
-        ['Box 2 - Federal Income Tax', payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)],
-        ['Box 3 - Social Security Wages', payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)],
-        ['Box 4 - Social Security Tax', payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)],
-        ['Box 5 - Medicare Wages', payrollReportGenerator.formatCurrency(w2Data.medicareWages)],
-        ['Box 6 - Medicare Tax', payrollReportGenerator.formatCurrency(w2Data.medicareTax)]
+        ['Casilla 1 - Salarios', payrollReportGenerator.formatCurrency(w2Data.wages)],
+        ['Casilla 2 - Impuesto Federal a la Renta', payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)],
+        ['Casilla 3 - Salarios del Seguro Social', payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)],
+        ['Casilla 4 - Impuesto del Seguro Social', payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)],
+        ['Casilla 5 - Salarios de Medicare', payrollReportGenerator.formatCurrency(w2Data.medicareWages)],
+        ['Casilla 6 - Impuesto de Medicare', payrollReportGenerator.formatCurrency(w2Data.medicareTax)]
       ];
 
       (doc as any).autoTable({
         startY: 120,
-        head: [['Box', 'Amount']],
+        head: [['Casilla', 'Monto']],
         body: w2Boxes,
         theme: 'grid',
         headStyles: { fillColor: [16, 185, 129] }
@@ -228,24 +228,24 @@ export const PayrollReports: React.FC = () => {
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Form W-3', 105, 20, { align: 'center' });
+      doc.text('Formulario W-3', 105, 20, { align: 'center' });
       doc.setFontSize(12);
-      doc.text('Transmittal of Wage and Tax Statements', 105, 28, { align: 'center' });
-      doc.text(`Tax Year ${w3Data.year}`, 105, 35, { align: 'center' });
+      doc.text('Transmisión de Estados de Salarios e Impuestos', 105, 28, { align: 'center' });
+      doc.text(`Año Fiscal ${w3Data.year}`, 105, 35, { align: 'center' });
       doc.setFontSize(10);
-      doc.text('Employer Information:', 20, 50);
-      doc.text(`Name: ${w3Data.employerName}`, 25, 57);
-      doc.text(`EIN: ${w3Data.employerEIN}`, 25, 64);
-      doc.text(`Address: ${w3Data.employerAddress}`, 25, 71);
+      doc.text('Información del Empleador:', 20, 50);
+      doc.text(`Nombre: ${w3Data.employerName}`, 25, 57);
+      doc.text(`NIF (EIN): ${w3Data.employerEIN}`, 25, 64);
+      doc.text(`Dirección: ${w3Data.employerAddress}`, 25, 71);
 
       const summaryData = [
-        ['Number of W-2 Forms', w3Data.numberOfW2Forms.toString()],
-        ['Total Wages', payrollReportGenerator.formatCurrency(w3Data.totalWages)],
-        ['Total Federal Income Tax', payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)],
-        ['Total Social Security Wages', payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityWages)],
-        ['Total Social Security Tax', payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)],
-        ['Total Medicare Wages', payrollReportGenerator.formatCurrency(w3Data.totalMedicareWages)],
-        ['Total Medicare Tax', payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)]
+        ['Número de Formularios W-2', w3Data.numberOfW2Forms.toString()],
+        ['Salarios Totales', payrollReportGenerator.formatCurrency(w3Data.totalWages)],
+        ['Impuesto Federal Total a la Renta', payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)],
+        ['Salarios Totales del Seguro Social', payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityWages)],
+        ['Impuesto Total del Seguro Social', payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)],
+        ['Salarios Totales de Medicare', payrollReportGenerator.formatCurrency(w3Data.totalMedicareWages)],
+        ['Impuesto Total de Medicare', payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)]
       ];
 
       (doc as any).autoTable({
@@ -324,9 +324,9 @@ export const PayrollReports: React.FC = () => {
 
             <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
               <h3 className="text-xl font-black text-white uppercase tracking-tighter">
-                {activeTab === 'form941' ? 'Quarterly Federal Tax Return' :
-                  activeTab === 'w2' ? 'Wage and Tax Statement' :
-                    'Transmittal of Wage and Tax Statements'}
+                {activeTab === 'form941' ? 'Declaración Federal Trimestral (Form 941)' :
+                  activeTab === 'w2' ? 'Comprobante de Salarios e Impuestos (W-2)' :
+                    'Transmisión de Comprobantes (W-3)'}
               </h3>
               <div className="flex items-center gap-3">
                 <Zap className="w-4 h-4 text-emerald-500 animate-pulse" />
@@ -412,10 +412,10 @@ export const PayrollReports: React.FC = () => {
                       <div className="border-t border-slate-800 pt-10">
                         <table className="w-full">
                           <tbody className="divide-y divide-slate-800/40 font-mono">
-                            <PreviewRow label="Total Wages" value={payrollReportGenerator.formatCurrency(form941Data.totalWages)} />
-                            <PreviewRow label="Fed Income Tax" value={payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)} />
-                            <PreviewRow label="Soc Security Tax" value={payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)} />
-                            <PreviewRow label="Medicare Tax" value={payrollReportGenerator.formatCurrency(form941Data.medicareTax)} />
+                            <PreviewRow label="Salarios Totales" value={payrollReportGenerator.formatCurrency(form941Data.totalWages)} />
+                            <PreviewRow label="Impuesto Fed. Renta" value={payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)} />
+                            <PreviewRow label="Impuesto Seg. Social" value={payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)} />
+                            <PreviewRow label="Impuesto Medicare" value={payrollReportGenerator.formatCurrency(form941Data.medicareTax)} />
                             <PreviewRow
                               label="Consolidado Total"
                               value={payrollReportGenerator.formatCurrency(form941Data.totalTaxes)}
@@ -509,12 +509,12 @@ export const PayrollReports: React.FC = () => {
                       <div className="border-t border-slate-800 pt-10">
                         <table className="w-full">
                           <tbody className="divide-y divide-slate-800/40 font-mono">
-                            <PreviewRow label="Box 1 - Gross Wages" value={payrollReportGenerator.formatCurrency(w2Data.wages)} />
-                            <PreviewRow label="Box 2 - Fed Income Tax" value={payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)} />
-                            <PreviewRow label="Box 3 - SS Wages" value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)} />
-                            <PreviewRow label="Box 4 - SS Tax" value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)} />
-                            <PreviewRow label="Box 5 - Medicare Wages" value={payrollReportGenerator.formatCurrency(w2Data.medicareWages)} />
-                            <PreviewRow label="Box 6 - Medicare Tax" value={payrollReportGenerator.formatCurrency(w2Data.medicareTax)} />
+                            <PreviewRow label="Casilla 1 - Salarios Brutos" value={payrollReportGenerator.formatCurrency(w2Data.wages)} />
+                            <PreviewRow label="Casilla 2 - Impuesto Fed. Renta" value={payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)} />
+                            <PreviewRow label="Casilla 3 - Salarios Seg. Soc." value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)} />
+                            <PreviewRow label="Casilla 4 - Impuesto Seg. Soc." value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)} />
+                            <PreviewRow label="Casilla 5 - Salarios Medicare" value={payrollReportGenerator.formatCurrency(w2Data.medicareWages)} />
+                            <PreviewRow label="Casilla 6 - Impuesto Medicare" value={payrollReportGenerator.formatCurrency(w2Data.medicareTax)} />
                           </tbody>
                         </table>
                       </div>
@@ -595,10 +595,10 @@ export const PayrollReports: React.FC = () => {
                       <div className="border-t border-slate-800 pt-10">
                         <table className="w-full">
                           <tbody className="divide-y divide-slate-800/40 font-mono">
-                            <PreviewRow label="Total Aggregate Wages" value={payrollReportGenerator.formatCurrency(w3Data.totalWages)} />
-                            <PreviewRow label="Aggregate Income Tax" value={payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)} />
-                            <PreviewRow label="Aggregate SS Tax" value={payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)} />
-                            <PreviewRow label="Aggregate Medicare Tax" value={payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)} />
+                            <PreviewRow label="Salarios Totales Agregados" value={payrollReportGenerator.formatCurrency(w3Data.totalWages)} />
+                            <PreviewRow label="Impuesto Federal Agregado" value={payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)} />
+                            <PreviewRow label="Impuesto Seg. Soc. Agregado" value={payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)} />
+                            <PreviewRow label="Impuesto Medicare Agregado" value={payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)} />
                           </tbody>
                         </table>
                       </div>

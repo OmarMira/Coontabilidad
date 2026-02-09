@@ -239,4 +239,47 @@ export class BasicEncryption {
 
     return { salt, iv, encrypted };
   }
+
+  // Descifrar datos combinados (convenio para backups sin contraseña de usuario)
+  static async decryptCombined(
+    combined: Uint8Array,
+    password: string = ''
+  ): Promise<Uint8Array> {
+    const { salt, iv, encrypted } = this.separateEncryptedData(combined);
+    return this.decrypt(encrypted, salt, iv, password);
+  }
+
+  // Cifrar datos a formato combinado (salt+iv+encrypted)
+  static async encryptCombined(
+    data: Uint8Array,
+    password: string = ''
+  ): Promise<Uint8Array> {
+    const result = await this.encrypt(data, password);
+    return this.combineEncryptedData(result.encrypted, result.salt, result.iv);
+  }
+
+  // Descifrar datos combinados desde base64
+  static async decryptCombinedBase64(
+    base64Data: string,
+    password: string = ''
+  ): Promise<string> {
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const decrypted = await this.decryptCombined(bytes, password);
+    return new TextDecoder().decode(decrypted);
+  }
+
+  // Cifrar datos a base64 combinado (convenio para backups)
+  static async encryptCombinedToBase64(
+    data: Uint8Array,
+    password: string = ''
+  ): Promise<string> {
+    const result = await this.encrypt(data, password);
+    const combined = this.combineEncryptedData(result.encrypted, result.salt, result.iv);
+    const binaryString = String.fromCharCode(...Array.from(combined));
+    return btoa(binaryString);
+  }
 }

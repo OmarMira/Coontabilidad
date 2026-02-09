@@ -31,13 +31,13 @@ export const ComplianceHistory: React.FC = () => {
                 const configStatus = await TaxReportingService.hasValidConfiguration();
 
                 if (!configStatus.valid) {
-                    const errors = [];
+                    const errors: string[] = [];
                     if (configStatus.missingCounties.length > 0) errors.push(...configStatus.missingCounties);
                     if (configStatus.outdatedRates) errors.push('Tasas de impuesto desactualizadas (Base != 6%)');
                     setConfigAlert(`AVISO CRÍTICO: Configuración Fiscal Incompleta. ${errors.join('. ')}`);
                 }
 
-                const months = [];
+                const months: { month: number; year: number; label: string }[] = [];
                 const today = new Date();
                 // Last 6 months (including current)
                 for (let i = 0; i < 6; i++) {

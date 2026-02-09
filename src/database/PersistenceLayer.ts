@@ -24,7 +24,7 @@ async function encryptData(data: Uint8Array, key: CryptoKey): Promise<Uint8Array
             iv: iv
         },
         key,
-        data
+        data as unknown as BufferSource
     );
 
     // Concatenate IV + Encrypted Data
@@ -47,7 +47,7 @@ async function decryptData(data: Uint8Array, key: CryptoKey): Promise<Uint8Array
             iv: iv
         },
         key,
-        ciphertext
+        ciphertext as unknown as BufferSource
     ));
 }
 

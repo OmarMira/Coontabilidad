@@ -1,6 +1,7 @@
 import { DatabaseService } from '../database/DatabaseService';
 import { BasicEncryption } from '../core/security/BasicEncryption';
 import { logger } from '../core/logging/SystemLogger';
+import { TaxRulesCache } from './tax/TaxRulesCache';
 
 export class TaxService {
 
@@ -17,33 +18,29 @@ export class TaxService {
         amountInCents: number,
         countyCode: string,
         transactionDate: string
-    ): Promise<{
-        taxableAmount: number;      // En centavos
-        taxAmount: number;          // En centavos
-        baseRate: number;           // Tasa estado (basis points: 600 = 6%)
-        surtaxRate: number;         // Tasa condado (basis points)
-        totalRate: number;          // Tasa total (basis points)
-        countyName: string;
-        effectiveDate: string;
-        verificationHash: string;   // Para auditoría
-    }> {
+    ): Promise<any> {
 
         // 1. Validar inputs
         if (!Number.isInteger(amountInCents) || amountInCents < 0) {
             throw new Error(`Invalid amount: ${amountInCents}. Must be a positive integer.`);
         }
 
-        // 2. Consultar Configuración Fiscal
-        const configResult = await DatabaseService.executeQuery(
-            "SELECT * FROM florida_tax_rates WHERE county_code = ? OR county_name = ?",
-            [countyCode, countyCode]
-        );
+        // 2. Consultar Cache primero (Turbo Mode Objective 2.1)
+        const cache = TaxRulesCache.getInstance();
+        let config = cache.getRate(countyCode);
 
-        if (configResult.length === 0) {
-            throw new Error(`County code not found in configuration: ${countyCode}`);
+        if (!config) {
+            const configResult = await DatabaseService.executeQuery(
+                "SELECT * FROM florida_tax_rates WHERE county_code = ? OR county_name = ?",
+                [countyCode, countyCode]
+            );
+
+            if (configResult.length === 0) {
+                throw new Error(`County code not found: ${countyCode}`);
+            }
+            config = configResult[0];
+            cache.setRate(countyCode, config);
         }
-
-        const config = configResult[0]; // { county_code, county_name, base_rate, surtax_rate, effective_date }
 
         // 3. Validar Vigencia
         const txDate = new Date(transactionDate);

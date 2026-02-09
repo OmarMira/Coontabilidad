@@ -2,9 +2,7 @@
 
 // Tipos para Web APIs modernas
 interface Navigator {
-  storage?: {
-    getDirectory(): Promise<FileSystemDirectoryHandle>;
-  };
+  storage?: StorageManager;
 }
 
 interface FileSystemDirectoryHandle {

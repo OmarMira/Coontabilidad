@@ -36,7 +36,7 @@ export const BankReconciliationImporter: React.FC = () => {
         amount: 2,
         reference: 3
     });
-    const [preview, setPreview] = useState<any[]>([]);
+    const [preview, setPreview] = useState<string[][]>([]);
     const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
 
     React.useEffect(() => {
@@ -69,8 +69,8 @@ export const BankReconciliationImporter: React.FC = () => {
         }
         setFile(selectedFile);
         Papa.parse(selectedFile, {
-            complete: (results) => {
-                setPreview(results.data.slice(0, 10));
+            complete: (results: Papa.ParseResult<string[]>) => {
+                setPreview((results.data as string[][]).slice(0, 10));
                 setStep('mapping');
                 toast.success('Integridad de archivo verificada');
             },
@@ -84,18 +84,20 @@ export const BankReconciliationImporter: React.FC = () => {
 
         setIsProcessing(true);
         Papa.parse(file, {
-            complete: (results) => {
-                const transactions: Partial<BankTransaction>[] = results.data
-                    .slice(1) // Skip header
-                    .map((row: any) => ({
+            complete: (results: Papa.ParseResult<string[]>) => {
+                const rows = results.data as string[][];
+                const mapped = rows
+                    .slice(1)
+                    .map((row: string[]) => ({
                         bank_account_id: selectedAccountId,
                         transaction_date: row[mapping.date],
                         description: row[mapping.description],
-                        amount: parseFloat(row[mapping.amount]?.toString().replace(/[$,]/g, '')) || 0,
+                        amount: parseFloat((row[mapping.amount] || '').toString().replace(/[$,]/g, '')) || 0,
                         reference_number: row[mapping.reference] || '',
-                        status: 'unreconciled'
-                    }))
-                    .filter((t: any) => t.transaction_date && t.amount !== 0);
+                        status: 'pending' as const
+                    }));
+
+                const transactions = mapped.filter((t) => !!t.transaction_date && t.amount !== 0) as Partial<BankTransaction>[];
 
                 const result = insertBankTransactions(transactions as BankTransaction[]);
                 if (result.success) {
@@ -246,13 +248,13 @@ export const BankReconciliationImporter: React.FC = () => {
                                 <div className="overflow-x-auto p-4 max-h-48 custom-scrollbar">
                                     <table className="w-full text-left">
                                         <tbody>
-                                            {preview.map((row, i) => (
-                                                <tr key={i} className="border-b border-slate-800/40 last:border-0 hover:bg-white/[0.02]">
-                                                    {row.map((cell: any, j: number) => (
-                                                        <td key={j} className="px-4 py-3 text-[10px] font-black text-slate-600 font-mono tracking-tighter truncate max-w-[150px]">{cell}</td>
+                                            {preview.map((row: string[], i: number) => (
+                                                        <tr key={i} className="border-b border-slate-800/40 last:border-0 hover:bg-white/[0.02]">
+                                                            {row.map((cell: string | number, j: number) => (
+                                                                <td key={j} className="px-4 py-3 text-[10px] font-black text-slate-600 font-mono tracking-tighter truncate max-w-[150px]">{cell}</td>
+                                                            ))}
+                                                        </tr>
                                                     ))}
-                                                </tr>
-                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
@@ -276,7 +278,14 @@ export const BankReconciliationImporter: React.FC = () => {
     );
 };
 
-const MappingField = ({ label, icon: Icon, value, onChange }: any) => (
+interface MappingFieldProps {
+    label: string;
+    icon: React.ComponentType<any>;
+    value: number;
+    onChange: (v: number) => void;
+}
+
+const MappingField = ({ label, icon: Icon, value, onChange }: MappingFieldProps) => (
     <div className="space-y-4">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-3 ml-1">
             <Icon className="w-4 h-4 text-blue-500" /> {label}

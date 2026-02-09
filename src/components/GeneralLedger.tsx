@@ -119,9 +119,16 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
       revenue: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
       expense: 'bg-orange-500/10 text-orange-500 border-orange-500/20'
     };
+    const labels: Record<string, string> = {
+      asset: 'ACTIVO',
+      liability: 'PASIVO',
+      equity: 'PATRIMONIO',
+      revenue: 'INGRESO',
+      expense: 'GASTO'
+    };
     return (
       <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${styles[type] || 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
-        {type}
+        {labels[type] || type.toUpperCase()}
       </span>
     );
   };
@@ -152,7 +159,11 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
               className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
             >
               <option value="all">Todas</option>
-              {['asset', 'liability', 'equity', 'revenue', 'expense'].map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+              <option value="asset">ACTIVO</option>
+              <option value="liability">PASIVO</option>
+              <option value="equity">PATRIMONIO</option>
+              <option value="revenue">INGRESO</option>
+              <option value="expense">GASTO</option>
             </select>
           </div>
           <div className="space-y-2">
@@ -265,9 +276,9 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
                           <th className="px-8 py-5">Fecha</th>
                           <th className="px-8 py-5">Referencia Contable</th>
                           <th className="px-8 py-5">Descripción de Movimiento</th>
-                          <th className="px-8 py-5 text-right">Debit</th>
-                          <th className="px-10 py-5 text-right">Credit</th>
-                          <th className="px-10 py-5 text-right bg-slate-950/80">Running Balance</th>
+                          <th className="px-8 py-5 text-right">Débito</th>
+                          <th className="px-10 py-5 text-right">Crédito</th>
+                          <th className="px-10 py-5 text-right bg-slate-950/80">Saldo Acumulado</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800/40">

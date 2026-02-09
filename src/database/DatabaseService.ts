@@ -2,6 +2,7 @@
 import { logger } from '../core/logging/SystemLogger';
 import { CurrencyUtils } from '../lib/currency';
 import { BasicEncryption } from '../core/security/BasicEncryption';
+import { LogicClockService } from '../services/LogicClockService';
 
 export class DatabaseService {
 
@@ -92,10 +93,20 @@ export class DatabaseService {
         record_id INTEGER NOT NULL,
         operation TEXT NOT NULL,
         data_hash TEXT NOT NULL,
+        logic_clock INTEGER NOT NULL DEFAULT 0,
+        payload TEXT, -- Iron Clad NASA Phase 2 (Self-Healing)
         created_at TEXT DEFAULT (datetime('now')),
         created_by INTEGER NOT NULL
       );
     `);
+
+        // Ensure logic_clock and payload exist if table was already created
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE audit_chain ADD COLUMN logic_clock INTEGER NOT NULL DEFAULT 0");
+        } catch (e) { }
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE audit_chain ADD COLUMN payload TEXT");
+        } catch (e) { }
 
         // 1b. Tabla: JOURNAL ENTRY LINES
         DatabaseService.dbInstance.run(`
@@ -111,7 +122,7 @@ export class DatabaseService {
       );
     `);
 
-        // 2. Tabla: TAX TRANSACTIONS
+        // 3. Tabla: TAX TRANSACTIONS
         DatabaseService.dbInstance.run(`
       CREATE TABLE IF NOT EXISTS tax_transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,7 +136,36 @@ export class DatabaseService {
       );
     `);
 
-        // 4. Assegurar Tablas Fiscales (Llamado interno)
+        // 4. Tabla: SYNC OUTBOX (Iron Clad Upgrade)
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS sync_outbox (
+        id TEXT PRIMARY KEY,           -- UUID
+        module TEXT NOT NULL,          -- e.g., 'backups', 'invoices'
+        operation TEXT NOT NULL,       -- e.g., 'UPLOAD', 'SYNC'
+        payload TEXT NOT NULL,         -- JSON data
+        status TEXT DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed'
+        retry_count INTEGER DEFAULT 0,
+        last_error TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+        // 5. Tabla: DRAFT TRANSACTIONS (Iron Clad Objective 4.1)
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS draft_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        module TEXT NOT NULL,          -- 'accounting', 'inventory', 'payroll'
+        operation TEXT NOT NULL,       -- 'CREATE_INVOICE', 'ADJUST_STOCKS'
+        payload TEXT NOT NULL,         -- JSON payload of the proposed change
+        ai_proposal_reason TEXT,       -- Why the AI is proposing this
+        status TEXT DEFAULT 'draft',   -- 'draft', 'approved', 'rejected'
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+        // 6. Assegurar Tablas Fiscales (Llamado interno)
         // await this.ensureFiscalTables(); // Movido a método separado para claridad
     }
 
@@ -412,9 +452,10 @@ export class DatabaseService {
             lineStmt.free();
 
             // Audit Chain
-            DatabaseService.dbInstance.run(`INSERT INTO audit_chain(previous_hash, current_hash, table_name, record_id, operation, data_hash, created_by)
-            VALUES(?, ?, ?, ?, ?, ?, ?)`,
-                [previousHash, currentHash, 'journal_entries', jeId, 'INSERT', dataHash, entry.userId]);
+            const logicClock = await LogicClockService.getNextClock();
+            DatabaseService.dbInstance.run(`INSERT INTO audit_chain(previous_hash, current_hash, table_name, record_id, operation, data_hash, created_by, logic_clock)
+            VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
+                [previousHash, currentHash, 'journal_entries', jeId, 'INSERT', dataHash, entry.userId, logicClock]);
 
             DatabaseService.dbInstance.run('COMMIT');
             logger.info('DatabaseService', 'entry_sealed', `Asiento ${entryNumber} sellado criptográficamente.`);
@@ -492,5 +533,171 @@ export class DatabaseService {
             logger.error('DatabaseService', 'verify_error', 'Error verifying integrity', null, e as Error);
             return false;
         }
+    }
+
+    /**
+     * Universal Forensic Sealing (NASA Level Objective 1)
+     * Seals any database record into the audit chain.
+     */
+    static async sealGenericRecord(data: {
+        tableName: string;
+        recordId: number;
+        operation: 'INSERT' | 'UPDATE' | 'DELETE';
+        payload: any;
+        userId: number;
+    }): Promise<string> {
+        if (!DatabaseService.dbInstance) throw new Error('DB not initialized');
+
+        const dataToHash = JSON.stringify(data.payload);
+        const dataHash = await BasicEncryption.hash(new TextEncoder().encode(dataToHash));
+
+        // Get Previous Hash
+        const lastHashResult = await this.executeQuery("SELECT current_hash FROM audit_chain ORDER BY id DESC LIMIT 1");
+        const previousHash = lastHashResult.length > 0 ? lastHashResult[0].current_hash : 'GENESIS_BLOCK';
+
+        // Chain Hash
+        const logicClock = await LogicClockService.getNextClock();
+        const chainPayload = previousHash + dataHash + data.tableName + data.recordId + logicClock;
+        const currentHash = await BasicEncryption.hash(new TextEncoder().encode(chainPayload));
+
+        await DatabaseService.dbInstance.run(`
+            INSERT INTO audit_chain (previous_hash, current_hash, table_name, record_id, operation, data_hash, created_by, logic_clock, payload)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [previousHash, currentHash, data.tableName, data.recordId, data.operation, dataHash, data.userId, logicClock, dataToHash]);
+
+        logger.info('Forensic', 'record_sealed', `Record ${data.recordId} in ${data.tableName} sealed into NASA-level Audit Chain.`);
+        return currentHash;
+    }
+
+    /**
+     * Creates a backup snapshot of the entire database (Iron Clad Upgrade - Phase 1)
+     * Exports, compresses, and encrypts the database for safe storage.
+     * 
+     * @returns Promise<Blob> - Encrypted and compressed database snapshot
+     */
+    static async createBackupSnapshot(): Promise<Blob> {
+        if (!DatabaseService.dbInstance) throw new Error('DB not initialized');
+
+        try {
+            logger.info('DatabaseService', 'backup_start', 'Creating database snapshot...');
+
+            // 1. Export database to ArrayBuffer
+            const dbData = DatabaseService.dbInstance.export();
+            logger.info('DatabaseService', 'backup_export', `Database exported (${dbData.byteLength} bytes)`);
+
+            // 2. Compress with GZIP
+            const compressed = await this.compressData(dbData);
+            logger.info('DatabaseService', 'backup_compress', `Compressed to ${compressed.byteLength} bytes`);
+
+            // 3. Encrypt with AES-256-GCM
+            const encryptedPackage = await BasicEncryption.encryptCombined(compressed);
+            logger.info('DatabaseService', 'backup_encrypt', `Encrypted (${encryptedPackage.byteLength} bytes)`);
+
+            // 4. Create Blob from encrypted package
+            // @ts-ignore ArrayBufferLike can be SharedArrayBuffer, acceptable for encryption blob
+            const blob = new Blob([encryptedPackage.buffer.slice(encryptedPackage.byteOffset, encryptedPackage.byteOffset + encryptedPackage.byteLength)], { type: 'application/octet-stream' });
+
+            logger.info('DatabaseService', 'backup_success', `Backup snapshot created (${blob.size} bytes)`);
+            return blob;
+
+        } catch (error) {
+            logger.error('DatabaseService', 'backup_failed', 'Failed to create backup snapshot', null, error as Error);
+            throw error;
+        }
+    }
+
+    /**
+     * Compresses data using GZIP.
+     * 
+     * @param data - Data to compress
+     * @returns Promise<Uint8Array> - Compressed data
+     */
+    private static async compressData(data: Uint8Array): Promise<Uint8Array> {
+        const pako = await import('pako');
+        return pako.gzip(data);
+    }
+
+    /**
+     * Schedules automatic backups every 6 hours.
+     * Backups are queued in sync_outbox for asynchronous processing.
+     * 
+     * @returns Promise<void>
+     */
+    static async scheduleAutoBackup(): Promise<void> {
+        logger.info('DatabaseService', 'auto_backup_init', 'Initializing automatic backup scheduler...');
+
+        // Check if cloud backup is configured
+        const cloudConfig = localStorage.getItem('cloud_backup_config');
+        if (!cloudConfig) {
+            logger.warn('DatabaseService', 'auto_backup_skip', 'Cloud backup not configured, skipping auto-backup');
+            return;
+        }
+
+        // Schedule backup every 6 hours
+        setInterval(async () => {
+            try {
+                logger.info('DatabaseService', 'auto_backup_trigger', 'Automatic backup triggered');
+
+                // Create snapshot
+                const snapshot = await this.createBackupSnapshot();
+                const arrayBuffer = await snapshot.arrayBuffer();
+
+                // Generate filename with timestamp
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `backup_${timestamp}.aex`;
+
+                // Convert ArrayBuffer to Base64 for JSON storage
+                const base64Data = this.arrayBufferToBase64(arrayBuffer);
+
+                // Insert into sync_outbox for background processing
+                await this.executeQuery(`
+                    INSERT INTO sync_outbox (id, module, operation, payload, status, created_at, updated_at)
+                    VALUES (?, 'backups', 'UPLOAD', ?, 'pending', datetime('now'), datetime('now'))
+                `, [
+                    this.generateUUID(),
+                    JSON.stringify({
+                        filename,
+                        data: base64Data,
+                        size: arrayBuffer.byteLength,
+                        timestamp
+                    })
+                ]);
+
+                logger.info('DatabaseService', 'auto_backup_queued', `Backup ${filename} queued for upload`);
+
+            } catch (error) {
+                logger.error('DatabaseService', 'auto_backup_error', 'Auto-backup failed', null, error as Error);
+            }
+        }, 6 * 60 * 60 * 1000); // Every 6 hours
+
+        logger.info('DatabaseService', 'auto_backup_scheduled', 'Automatic backups scheduled (every 6 hours)');
+    }
+
+    /**
+     * Converts ArrayBuffer to Base64 string.
+     * 
+     * @param buffer - ArrayBuffer to convert
+     * @returns string - Base64 encoded string
+     */
+    private static arrayBufferToBase64(buffer: ArrayBuffer): string {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+
+    /**
+     * Generates a UUID v4.
+     * 
+     * @returns string - UUID
+     */
+    private static generateUUID(): string {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
 }

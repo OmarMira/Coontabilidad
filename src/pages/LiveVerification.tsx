@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Activity, Shield } from 'lucide-react';
 import { DatabaseService } from '../database/DatabaseService';
 import { TaxService } from '../services/TaxService';
 import { BackupService } from '../services/BackupService';
 import { ForensicAuditService } from '../services/ForensicAuditService';
+import { ForensicSentinelDashboard } from '../components/forensic/ForensicSentinelDashboard';
 
 export const LiveVerification: React.FC = () => {
     const [results, setResults] = useState<any[]>([]);
@@ -122,14 +124,18 @@ export const LiveVerification: React.FC = () => {
                 <h1 className="text-3xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
                     IRON CORE VERIFICATION
                 </h1>
-                <p className="text-slate-400 mb-8">Live Diagnostic & Verification Protocol</p>
+                <div className="mb-10">
+                    <h2 className="text-xl font-bold mb-4 text-blue-400 flex items-center gap-2">
+                        <Activity className="w-5 h-5" />
+                        NASA FORENSIC SENTINEL TELEMETRY
+                    </h2>
+                    <ForensicSentinelDashboard />
+                </div>
 
-                {loading && (
-                    <div className="flex items-center gap-2 mb-4 text-blue-400 animate-pulse">
-                        <div className="w-4 h-4 rounded-full bg-blue-400"></div>
-                        Running diagnostics...
-                    </div>
-                )}
+                <h2 className="text-xl font-bold mb-4 text-slate-400 flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    SIMPLE SYSTEM DIAGNOSTICS
+                </h2>
 
                 <div className="space-y-4">
                     {results.map((r, i) => (

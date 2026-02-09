@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Loader2, AlertCircle, Rocket } from 'lucide-react';
 import UserService from '@/services/UserService';
+import type { SetupData } from '../InitialSetupWizard';
 
 interface ConfirmationStepProps {
-  data: any;
-  onNext?: (data: any) => void;
+  data: SetupData;
+  onNext: (data: Partial<SetupData>) => void;
 }
 
-export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data }) => {
+export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,11 +26,11 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data }) => {
       }
 
       const result = await UserService.createUser({
-        username: data.username,
-        email: data.email,
-        full_name: data.fullName,
-        display_name: data.displayName,
-        password: data.password,
+        username: data.username || `admin_${Date.now()}`,
+        email: data.email || '',
+        full_name: data.fullName || '',
+        display_name: data.displayName || '',
+        password: data.password || '',
         role_id: adminRole.id
       });
 

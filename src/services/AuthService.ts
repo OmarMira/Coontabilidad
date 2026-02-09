@@ -52,6 +52,21 @@ export class AuthService {
     }
 
     /**
+     * Crea una sesión real para un usuario autenticado
+     */
+    static createSession(userId: number, email: string, role: string): UserSession {
+        const session: UserSession = {
+            userId,
+            email,
+            role,
+            expiresAt: Date.now() + SESSION_DURATION,
+            isDemo: false
+        };
+        this.saveSession(session);
+        return session;
+    }
+
+    /**
      * Guarda la sesión en localStorage
      */
     private static saveSession(session: UserSession) {

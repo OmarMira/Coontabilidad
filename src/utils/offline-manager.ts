@@ -14,21 +14,39 @@ type PendingOperation = {
 
 class OfflineManager {
     private isOnline: boolean = navigator.onLine;
-    private syncOutbox: PendingOperation[] = [];
     private listeners: ((online: boolean) => void)[] = [];
+    private worker: Worker | null = null;
 
     constructor() {
         window.addEventListener('online', () => this.handleStatusChange(true));
         window.addEventListener('offline', () => this.handleStatusChange(false));
-        this.loadOutbox();
+        this.initWorker();
+    }
+
+    private initWorker() {
+        try {
+            // Using Vite's worker import syntax
+            this.worker = new Worker(new URL('../workers/SyncWorker.ts', import.meta.url), { type: 'module' });
+
+            this.worker.onmessage = (e) => {
+                const { type, opId, error } = e.data;
+                if (type === 'SYNC_ERROR') {
+                    console.warn(`[OfflineManager] Sync failed locally for ${opId}: ${error}`);
+                }
+            };
+
+            this.worker.postMessage({ type: 'INIT', payload: { isOnline: this.isOnline } });
+        } catch (e) {
+            console.error('[OfflineManager] Failed to init SyncWorker:', e);
+        }
     }
 
     private handleStatusChange(online: boolean) {
         this.isOnline = online;
         console.log(`[OfflineManager] Status changed: ${online ? 'ONLINE' : 'OFFLINE'}`);
 
-        if (online) {
-            this.processOutbox();
+        if (this.worker) {
+            this.worker.postMessage({ type: 'STATUS_CHANGE', payload: { isOnline: online } });
         }
 
         this.listeners.forEach(fn => fn(online));
@@ -47,61 +65,35 @@ class OfflineManager {
     }
 
     /**
-     * Queues an operation to be performed when online.
-     * Note: In Account Express, most operations are local (SQLite).
-     * This is primarily for external sync (Cloud Backup, External APIs).
+     * Triggers an immediate sync check in the worker.
+     */
+    public triggerSync() {
+        if (this.worker) {
+            this.worker.postMessage({ type: 'TRIGGER_SYNC' });
+        }
+    }
+
+    /**
+     * Legacy queueOperation maintained for non-database sync tasks if needed,
+     * but recommended to use TransactionManager for atomic DB writes.
      */
     public queueOperation(op: Omit<PendingOperation, 'id' | 'timestamp'>) {
+        console.log('[OfflineManager] Legacy queueOperation called. Enqueueing in LocalStorage fallback.');
         const operation: PendingOperation = {
             ...op,
             id: crypto.randomUUID(),
             timestamp: Date.now()
         };
 
-        this.syncOutbox.push(operation);
-        this.saveOutbox();
+        // Mantener compatibilidad mínima con LocalStorage por ahora
+        const stored = localStorage.getItem('ae_sync_outbox');
+        const list = stored ? JSON.parse(stored) : [];
+        list.push(operation);
+        localStorage.setItem('ae_sync_outbox', JSON.stringify(list));
 
         if (this.isOnline) {
-            this.processOutbox();
+            this.triggerSync();
         }
-    }
-
-    private async processOutbox() {
-        if (this.syncOutbox.length === 0) return;
-
-        console.log(`[OfflineManager] Processing ${this.syncOutbox.length} pending operations...`);
-
-        // Clone outbox to avoid mutation issues during async work
-        const itemsToProcess = [...this.syncOutbox];
-
-        for (const op of itemsToProcess) {
-            try {
-                // Here you would call your specific service handlers based on module
-                // Example: await BackupService.sync(op);
-
-                // Removing successful op
-                this.syncOutbox = this.syncOutbox.filter(item => item.id !== op.id);
-                this.saveOutbox();
-            } catch (error) {
-                console.error(`[OfflineManager] Failed to process ${op.id}`, error);
-                // Keep in outbox for retry later
-            }
-        }
-    }
-
-    private loadOutbox() {
-        const stored = localStorage.getItem('ae_sync_outbox');
-        if (stored) {
-            try {
-                this.syncOutbox = JSON.parse(stored);
-            } catch (e) {
-                this.syncOutbox = [];
-            }
-        }
-    }
-
-    private saveOutbox() {
-        localStorage.setItem('ae_sync_outbox', JSON.stringify(this.syncOutbox));
     }
 }
 

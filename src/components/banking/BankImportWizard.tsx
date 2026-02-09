@@ -15,16 +15,18 @@ import {
   Check
 } from 'lucide-react';
 import { BankImportService, ImportTransaction } from '../../services/banking/BankImportService';
+import { BankAccount } from '../../database/simple-db';
 import { toast } from 'react-hot-toast';
 
 interface BankImportWizardProps {
-  onClose: () => void;
+  onClose?: () => void;
   onComplete: () => void;
+  accounts?: BankAccount[];
 }
 
 type Step = 'upload' | 'preview' | 'edit' | 'confirm';
 
-export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose, onComplete }) => {
+export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => {}, onComplete, accounts }) => {
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [batchId, setBatchId] = useState<number | null>(null);

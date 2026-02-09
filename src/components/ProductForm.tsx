@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, Package, DollarSign, Hash, Tag, Truck, BarChart3,
   AlertTriangle, ShieldCheck, Zap, Cpu, Sparkles, Box, Server,
-  Layers, Settings, Info
+  Layers, Settings, Info, Maximize2, Save, Plus
 } from 'lucide-react';
 import { Product, ProductCategory, Supplier, getProductCategories, getSuppliers } from '../database/simple-db';
 

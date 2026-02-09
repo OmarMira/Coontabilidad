@@ -1,16 +1,60 @@
 /**
  * PayrollProcessor.ts
  * 
- * Orquesta el procesamiento completo de nómina:
- * - Validación de inputs
- * - Cálculo de gross pay
- * - Cálculo de taxes
- * - Cálculo de net pay
- * - Guardado en base de datos
- * - Actualización de YTD totals
+ * Servicio principal para procesamiento de nómina con cumplimiento IRS.
+ * Orquesta el flujo completo desde validación hasta generación de asientos contables.
+ * 
+ * @module PayrollProcessor
+ * @description
+ * Procesa nóminas completas para empleados incluyendo:
+ * - Validación de inputs y datos de empleado
+ * - Cálculo de gross pay (salario bruto) para hourly y salaried
+ * - Cálculo de impuestos federales (FICA, Medicare, Federal Income Tax)
+ * - Cálculo de net pay (salario neto)
+ * - Generación automática de asientos contables
+ * - Actualización de totales YTD (Year-To-Date)
+ * - Gestión de estados (draft, approved, voided)
+ * 
+ * @features
+ * - Validación de períodos contables cerrados
+ * - Prevención de duplicados por período
+ * - Cálculo de overtime (1.5x rate)
+ * - Integración con PayrollTaxCalculator
+ * - Integración con PayrollJournalService
+ * - Manejo de bonuses y commissions
+ * - Reversión de nóminas (void)
+ * 
+ * @compliance
+ * - IRS Publication 15 (Circular E)
+ * - Federal minimum wage ($7.25)
+ * - Overtime rules (FLSA)
+ * - SSN format validation
  * 
  * @author Kiro AI
  * @date 2026-02-07
+ * @version 1.0.0
+ * 
+ * @example
+ * ```typescript
+ * const processor = new PayrollProcessor();
+ * const result = await processor.processPayroll({
+ *   employeeId: 1,
+ *   payPeriodStart: '2026-01-01',
+ *   payPeriodEnd: '2026-01-15',
+ *   payDate: '2026-01-20',
+ *   regularHours: 80,
+ *   overtimeHours: 5,
+ *   bonuses: 0,
+ *   commissions: 0,
+ *   otherDeductions: 0,
+ *   processedBy: 1
+ * });
+ * 
+ * if (result.success) {
+ *   console.log(`Payroll ${result.payrollId} processed`);
+ *   console.log(`Gross: $${result.grossPay}, Net: $${result.netPay}`);
+ * }
+ * ```
  */
 
 import { db } from '../../database/simple-db';
@@ -56,13 +100,91 @@ export interface ValidationResult {
 // PAYROLL PROCESSOR
 // ==========================================
 
+/**
+ * Clase principal para procesamiento de nómina
+ * 
+ * @class PayrollProcessor
+ * @description
+ * Orquesta el procesamiento completo de nómina desde validación hasta
+ * generación de asientos contables. Maneja empleados hourly y salaried,
+ * calcula impuestos federales, y mantiene totales YTD actualizados.
+ * 
+ * @singleton Exportado como instancia única `payrollProcessor`
+ */
 export class PayrollProcessor {
   
   /**
    * Procesa nómina completa para un empleado
    * 
-   * @param input - Datos de entrada para procesar nómina
-   * @returns Resultado del procesamiento
+   * @async
+   * @method processPayroll
+   * @description
+   * Método principal que orquesta todo el flujo de procesamiento de nómina:
+   * 1. Valida inputs (horas, fechas, montos)
+   * 2. Verifica que el período contable esté abierto
+   * 3. Obtiene y valida datos del empleado
+   * 4. Verifica que no exista payroll duplicado
+   * 5. Calcula gross pay (regular + overtime + bonuses + commissions)
+   * 6. Calcula impuestos (FICA, Medicare, Federal Income Tax)
+   * 7. Calcula net pay (gross - taxes - deductions)
+   * 8. Guarda en base de datos con status 'draft'
+   * 9. Genera asiento contable automático
+   * 10. Actualiza totales YTD del empleado
+   * 
+   * @param {PayrollInput} input - Datos de entrada para procesar nómina
+   * @param {number} input.employeeId - ID del empleado
+   * @param {string} input.payPeriodStart - Fecha inicio período (YYYY-MM-DD)
+   * @param {string} input.payPeriodEnd - Fecha fin período (YYYY-MM-DD)
+   * @param {string} input.payDate - Fecha de pago (YYYY-MM-DD)
+   * @param {number} input.regularHours - Horas regulares trabajadas (0-168)
+   * @param {number} input.overtimeHours - Horas extras trabajadas (0-168)
+   * @param {number} input.bonuses - Bonos en dólares
+   * @param {number} input.commissions - Comisiones en dólares
+   * @param {number} input.otherDeductions - Otras deducciones en dólares
+   * @param {number} input.processedBy - ID del usuario que procesa
+   * 
+   * @returns {Promise<PayrollResult>} Resultado del procesamiento
+   * @returns {boolean} result.success - true si procesó exitosamente
+   * @returns {number} [result.payrollId] - ID del payroll creado
+   * @returns {number} result.grossPay - Salario bruto calculado
+   * @returns {number} result.netPay - Salario neto calculado
+   * @returns {TaxCalculationResult} [result.taxes] - Desglose de impuestos
+   * @returns {number} [result.journalEntryId] - ID del asiento contable generado
+   * @returns {string} [result.message] - Mensaje de éxito
+   * @returns {string} [result.error] - Mensaje de error si falló
+   * 
+   * @throws {Error} Si el período contable está cerrado
+   * @throws {Error} Si el empleado no existe o está inactivo
+   * @throws {Error} Si ya existe un payroll para este período
+   * @throws {Error} Si los datos del empleado están incompletos
+   * 
+   * @example
+   * ```typescript
+   * const result = await payrollProcessor.processPayroll({
+   *   employeeId: 1,
+   *   payPeriodStart: '2026-01-01',
+   *   payPeriodEnd: '2026-01-15',
+   *   payDate: '2026-01-20',
+   *   regularHours: 80,
+   *   overtimeHours: 5,
+   *   bonuses: 500,
+   *   commissions: 0,
+   *   otherDeductions: 100,
+   *   processedBy: 1
+   * });
+   * 
+   * if (result.success) {
+   *   console.log(`Payroll ID: ${result.payrollId}`);
+   *   console.log(`Gross Pay: $${result.grossPay.toFixed(2)}`);
+   *   console.log(`Net Pay: $${result.netPay.toFixed(2)}`);
+   *   console.log(`Federal Tax: $${result.taxes.federalIncomeTax.toFixed(2)}`);
+   * } else {
+   *   console.error(`Error: ${result.error}`);
+   * }
+   * ```
+   * 
+   * @see {@link PayrollTaxCalculator} Para cálculo de impuestos
+   * @see {@link PayrollJournalService} Para generación de asientos contables
    */
   async processPayroll(input: PayrollInput): Promise<PayrollResult> {
     try {

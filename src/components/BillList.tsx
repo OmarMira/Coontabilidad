@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Eye, Edit, Trash2, FileText, Calendar, DollarSign, Truck,
-  Filter, Plus, Zap, ShieldAlert, ArrowUpRight, Activity, Clock
+  Filter, Plus, Zap, ShieldAlert, ArrowUpRight, Activity, Clock, Search
 } from 'lucide-react';
 import { Bill } from '../database/simple-db';
 
@@ -25,13 +25,13 @@ export const BillList: React.FC<BillListProps> = ({
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'draft': return { color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: '📝' };
-      case 'received': return { color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: '📥' };
-      case 'approved': return { color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: '✅' };
-      case 'paid': return { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: '💰' };
-      case 'overdue': return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: '⚠️' };
-      case 'cancelled': return { color: 'text-slate-600', bg: 'bg-slate-800/50', border: 'border-slate-700/50', icon: '❌' };
-      default: return { color: 'text-slate-400', bg: 'bg-slate-900', border: 'border-slate-800', icon: '📄' };
+      case 'draft': return { label: 'BORRADOR', color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: '📝' };
+      case 'received': return { label: 'RECIBIDA', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: '📥' };
+      case 'approved': return { label: 'APROBADA', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: '✅' };
+      case 'paid': return { label: 'PAGADA', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: '💰' };
+      case 'overdue': return { label: 'VENCIDA', color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: '⚠️' };
+      case 'cancelled': return { label: 'CANCELADA', color: 'text-slate-600', bg: 'bg-slate-800/50', border: 'border-slate-700/50', icon: '❌' };
+      default: return { label: status.toUpperCase(), color: 'text-slate-400', bg: 'bg-slate-900', border: 'border-slate-800', icon: '📄' };
     }
   };
 
@@ -67,7 +67,7 @@ export const BillList: React.FC<BillListProps> = ({
           <div>
             <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Cuentas por Pagar</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> Liabilities & Obligations Matrix
+              <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> Matriz de Pasivos y Obligaciones
             </p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export const BillList: React.FC<BillListProps> = ({
                       <div>
                         <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none mb-2">{bill.bill_number}</h3>
                         <div className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest w-fit ${cfg.bg} ${cfg.color} ${cfg.border}`}>
-                          {bill.status}
+                          {cfg.label}
                         </div>
                       </div>
                     </div>
@@ -152,7 +152,7 @@ export const BillList: React.FC<BillListProps> = ({
                           <Calendar className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-xs font-black text-white font-mono uppercase">Due: {new Date(bill.due_date).toLocaleDateString()}</p>
+                          <p className="text-xs font-black text-white font-mono uppercase">Vence: {new Date(bill.due_date).toLocaleDateString()}</p>
                           <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Emitida: {new Date(bill.issue_date).toLocaleDateString()}</p>
                         </div>
                       </div>

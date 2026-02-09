@@ -69,7 +69,7 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
                   itemStyle={{ color: '#f8fafc' }}
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                  formatter={(value: number | undefined) => (value !== undefined ? `$${value.toLocaleString()}` : '')}
                 />
                 <Legend
                   wrapperStyle={{ paddingTop: '20px' }}

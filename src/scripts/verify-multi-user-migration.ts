@@ -26,7 +26,7 @@ const verifyAndMigrateData = async () => {
 
     // 2. Verificar/Crear Usuario Admin
     console.log('👤 Verificando usuario Admin...');
-    let adminUser = null;
+    let adminUser: any | null = null;
     try {
         const users = getUsers();
         adminUser = users.find(u => u.username === 'admin');
