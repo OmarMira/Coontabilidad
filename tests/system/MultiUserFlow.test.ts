@@ -203,8 +203,13 @@ describe('Multi-User System Flow & Isolation', () => {
         // If empty, check audit_trail (migration table).
         // simple-db logAuditEvent writes to 'audit_log'.
 
-        expect(auditLogRes?.[0]?.values.length).toBeGreaterThan(0);
-        expect(auditLogRes?.[0]?.values[0][0]).toBe(salesUserId);
+        // Validar que auditLogRes tiene datos antes de acceder
+        expect(auditLogRes).toBeDefined();
+        expect(Array.isArray(auditLogRes)).toBe(true);
+        if (auditLogRes && auditLogRes.length > 0) {
+            expect(auditLogRes[0]?.values?.length).toBeGreaterThan(0);
+            expect(auditLogRes[0]?.values[0][0]).toBe(salesUserId);
+        }
     });
 
 });

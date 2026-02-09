@@ -22,8 +22,10 @@ import { AuditService } from '../services/AuditService';
 import { TaxService } from '../services/TaxService';
 import { DatabaseService } from '../database/DatabaseService';
 import { getMonthlyFinancialSummary, MonthlySummary } from '../database/simple-db';
+import { DraftProposalService } from '../services/DraftProposalService';
 
 import { ComplianceHistory } from './reports/ComplianceHistory';
+import { AIProposalPanel } from './ai/AIProposalPanel';
 
 interface DashboardProps {
   stats: {
@@ -47,6 +49,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
   const [realTaxLiability, setRealTaxLiability] = useState<number>(0);
   const [pendingTaxCount, setPendingTaxCount] = useState<number>(0);
   const [monthlyStats, setMonthlyStats] = useState<MonthlySummary[]>([]);
+  const [aiProposalCount, setAiProposalCount] = useState<number>(0);
 
   useEffect(() => {
     // 1. Get Real Audit Hash from Iron Core
@@ -88,6 +91,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
     // 6. Fetch Monthly Stats for Charts
     const summary = getMonthlyFinancialSummary();
     setMonthlyStats(summary);
+
+    // 7. Fetch AI Proposal Count
+    const fetchAIProposals = async () => {
+      try {
+        const proposals = await DraftProposalService.getPendingProposals();
+        setAiProposalCount(proposals.length);
+      } catch (e) {
+        console.error('Error fetching AI proposals:', e);
+      }
+    };
+    fetchAIProposals();
+
+    // Refresh AI proposal count every 30 seconds
+    const interval = setInterval(fetchAIProposals, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const netIncome = (stats.revenue - stats.expenses) || 0;
@@ -320,14 +338,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
             ))}
           </div>
 
-          <div className="mt-8 p-6 bg-blue-600/5 rounded-3xl border border-blue-600/10 text-center">
-            <Bot className="w-10 h-10 text-blue-500 mx-auto mb-4 animate-bounce" />
+          <div className="mt-8 p-6 bg-blue-600/5 rounded-3xl border border-blue-600/10 text-center hover:bg-blue-600/10 transition-all cursor-pointer">
+            <Bot className="w-10 h-10 text-blue-500 mx-auto mb-4" />
             <p className="text-xs font-bold text-blue-300 mb-2">Asistente Inteligente</p>
-            <p className="text-[10px] text-slate-500 leading-relaxed uppercase font-black">Tu IA está analizando los datos actuales...</p>
+            {aiProposalCount > 0 ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <p className="text-sm font-black text-emerald-400">
+                  {aiProposalCount} {aiProposalCount === 1 ? 'Propuesta' : 'Propuestas'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-500 leading-relaxed uppercase font-black">
+                Monitoreando tu contabilidad 24/7
+              </p>
+            )}
           </div>
         </div>
 
       </div>
+
+      {/* --- SECCIÓN 4: IA PROACTIVA (PROPUESTAS) --- */}
+      {aiProposalCount > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between px-2 mb-6">
+            <h2 className="text-sm font-black text-white p-2 flex items-center gap-3 uppercase tracking-widest">
+              <Bot className="w-5 h-5 text-blue-500" />
+              Propuestas de la IA
+            </h2>
+            <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent ml-4"></div>
+          </div>
+          <AIProposalPanel />
+        </div>
+      )}
     </div>
   );
 };

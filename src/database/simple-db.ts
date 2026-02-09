@@ -5898,12 +5898,14 @@ b.*,
     result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
       const bill = rowToEntity<Bill & { supplier_name: string; supplier_business_name: string; supplier_email: string }>(columns, row);
 
-      // Agregar información del proveedor
-      bill.supplier = {
-        name: bill.supplier_name,
-        business_name: bill.supplier_business_name,
-        email: bill.supplier_email
-      } as Supplier;
+      // Agregar información del proveedor (solo si existe)
+      if (bill.supplier_name) {
+        bill.supplier = {
+          name: bill.supplier_name,
+          business_name: bill.supplier_business_name,
+          email: bill.supplier_email
+        } as any as Supplier;
+      }
 
       bills.push(bill);
     });

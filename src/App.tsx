@@ -343,6 +343,19 @@ function App() {
           logger.error('App', 'auto_backup_failed', 'Failed to schedule auto-backup', null, backupError as Error);
         }
 
+        // IRON CLAD UPGRADE - Phase 3: AI Proactive Anomaly Detection
+        setState(prev => ({ ...prev, initializationStep: 'Iniciando detección de anomalías...' }));
+
+        try {
+          const { AnomalyDetector } = await import('./services/ai/AnomalyDetector');
+          AnomalyDetector.scheduleAutoScan();
+          logger.info('App', 'anomaly_detector_started', 'AI Anomaly Detector started successfully');
+        } catch (anomalyError) {
+          console.error('Error starting anomaly detector:', anomalyError);
+          logger.error('App', 'anomaly_detector_failed', 'Failed to start anomaly detector', null, anomalyError as Error);
+        }
+
+
         setState(prev => ({
           ...prev,
           isLoading: false,

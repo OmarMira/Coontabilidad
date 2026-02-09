@@ -111,6 +111,18 @@ export const BillForm: React.FC<BillFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+      // Validación: asegurar que hay proveedor seleccionado
+      if (!formData.supplier_id) {
+        alert('⚠️ Debes seleccionar un proveedor');
+        return;
+      }
+    
+      // Validación: asegurar que hay al menos un item
+      if (!items || items.length === 0) {
+        alert('⚠️ Debes agregar al menos un item a la factura');
+        return;
+      }
+    
     const billData: Partial<Bill> = { ...formData, supplier_id: formData.supplier_id as number };
     const billItems = items.map(item => ({ ...item, product_id: item.product_id || undefined }));
     onSubmit(billData, billItems);

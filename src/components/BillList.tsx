@@ -35,10 +35,11 @@ export const BillList: React.FC<BillListProps> = ({
     }
   };
 
-  const filteredBills = bills.filter(bill => {
+  const filteredBills = (bills || []).filter(bill => {
+    if (!bill) return false;
     const matchesStatus = statusFilter === 'all' || bill.status === statusFilter;
     const matchesSearch =
-      bill.bill_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (bill.bill_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (bill.supplier?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (bill.supplier?.business_name || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
@@ -129,7 +130,7 @@ export const BillList: React.FC<BillListProps> = ({
                         <span className="absolute -top-2 -right-2 text-base">{cfg.icon}</span>
                       </div>
                       <div>
-                        <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none mb-2">{bill.bill_number}</h3>
+                        <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none mb-2">{bill.bill_number || 'Sin ref.'}</h3>
                         <div className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-widest w-fit ${cfg.bg} ${cfg.color} ${cfg.border}`}>
                           {cfg.label}
                         </div>
@@ -152,8 +153,8 @@ export const BillList: React.FC<BillListProps> = ({
                           <Calendar className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-xs font-black text-white font-mono uppercase">Vence: {new Date(bill.due_date).toLocaleDateString()}</p>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Emitida: {new Date(bill.issue_date).toLocaleDateString()}</p>
+                          <p className="text-xs font-black text-white font-mono uppercase">Vence: {bill.due_date ? new Date(bill.due_date).toLocaleDateString() : '-'}</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Emitida: {bill.issue_date ? new Date(bill.issue_date).toLocaleDateString() : '-'}</p>
                         </div>
                       </div>
 
@@ -162,7 +163,7 @@ export const BillList: React.FC<BillListProps> = ({
                           <DollarSign className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-base font-black text-orange-400 font-mono tracking-tighter">{formatCurrency(bill.total_amount)}</p>
+                          <p className="text-base font-black text-orange-400 font-mono tracking-tighter">{formatCurrency(bill.total_amount || 0)}</p>
                           <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Carga Financiera</p>
                         </div>
                       </div>
@@ -178,7 +179,7 @@ export const BillList: React.FC<BillListProps> = ({
                       <button
                         onClick={() => handleDelete(bill)}
                         disabled={bill.status === 'paid'}
-                        className={`p-4 bg-slate-950 border border-slate-800 rounded-2xl transition-all shadow-sm ${bill.status === 'paid' ? 'opacity-30 cursor-not-allowed text-slate-700' : 'text-rose-500 hover:bg-rose-600 hover:text-white'}`}
+                        className={`p-4 bg-slate-950 border border-slate-800 rounded-2xl transition-all shadow-sm ${(bill.status === 'paid') ? 'opacity-30 cursor-not-allowed text-slate-700' : 'text-rose-500 hover:bg-rose-600 hover:text-white'}`}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -189,7 +190,7 @@ export const BillList: React.FC<BillListProps> = ({
                     <div className="mt-6 p-4 bg-rose-600/10 border border-rose-500/20 rounded-2xl flex items-center gap-4 animate-pulse">
                       <ShieldAlert className="w-5 h-5 text-rose-500" />
                       <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">
-                        ALERTA CRÍTICA: Obligación vencida por {Math.ceil((Date.now() - new Date(bill.due_date).getTime()) / (1000 * 60 * 60 * 24))} ciclos operativos
+                        ALERTA CRÍTICA: Obligación vencida{bill.due_date ? ` por ${Math.ceil((Date.now() - new Date(bill.due_date).getTime()) / (1000 * 60 * 60 * 24))} ciclos operativos` : ' sin fecha definida'}
                       </span>
                     </div>
                   )}
