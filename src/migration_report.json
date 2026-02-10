@@ -1,0 +1,1511 @@
+{
+  "timestamp": "2026-02-09T15:18:21.232979",
+  "total_files": 202,
+  "migrated": 100,
+  "skipped": 102,
+  "dry_run": 0,
+  "results": [
+    {
+      "file": "AccountingDiagnosis.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "AddressAutocomplete.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (3 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (1 veces)"
+      ]
+    },
+    {
+      "file": "AppRouter.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BackupPanel.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "BackupRestore.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BalanceSheet.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BankAccountForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BankAccountList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BankStatementImporter.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BillDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (7 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (15 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (6 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "BillForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "BillList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "ChartOfAccounts.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (9 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (7 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (11 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (5 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (9 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "CompanyDataForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "CustomerDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (19 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (27 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (5 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (14 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (13 encontrados)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "CustomerForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "CustomerFormAdvanced.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (25 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (26 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (2 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (23 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (1 veces)"
+      ]
+    },
+    {
+      "file": "CustomerList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "CustomerPayments.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (14 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (6 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (10 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (8 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (6 encontrados)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "Dashboard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (6 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (5 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)"
+      ]
+    },
+    {
+      "file": "FinancialDashboardPanel.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "FloridaTaxReport.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (14 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (16 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (5 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (8 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (7 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "GeneralLedger.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "Header.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "HelpCenter.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "InvoiceDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (7 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (15 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (6 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "InvoiceForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (9 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (12 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (10 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (3 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (10 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (6 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (5 encontrados)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "InvoiceList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (4 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (14 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (6 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "JournalEntryTest.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "LanguageSwitcher.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "LoadingSpinner.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)"
+      ]
+    },
+    {
+      "file": "LogoUploader.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (2 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (3 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (2 veces)"
+      ]
+    },
+    {
+      "file": "ManualJournalEntries.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "ModulePlaceholder.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "PaymentMethods.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "ProductCategoryForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (4 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (8 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (4 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)"
+      ]
+    },
+    {
+      "file": "ProductCategoryList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (10 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (2 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (6 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (1 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "ProductDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (3 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (29 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (7 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (9 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (3 veces)"
+      ]
+    },
+    {
+      "file": "ProductForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "ProductList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "SalesInvoiceForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (6 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (2 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (5 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (1 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "Sidebar.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "SupplierDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (19 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (27 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (5 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (14 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (13 encontrados)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "SupplierForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (24 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (25 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (22 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (1 veces)"
+      ]
+    },
+    {
+      "file": "SupplierList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "SupplierPayments.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (14 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (7 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (11 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (8 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (6 encontrados)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "SystemLogs.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (10 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (3 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (7 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (7 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (1 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (5 veces)"
+      ]
+    },
+    {
+      "file": "TaxRates.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (2 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (9 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "TransactionAudit.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (9 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (7 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "VerifyIronCore.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\ClosureChecklist.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\ClosureReport.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\FinancialStatements.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\IncomeStatement.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\JournalEntryForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\LedgerHub.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\PeriodClosingWizard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\PeriodClosureWizard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\PeriodManager.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\TrialBalanceReport.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "accounting\\wizard-steps\\AdjustmentsStep.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\wizard-steps\\BankReconciliationStep.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\wizard-steps\\ConfirmationStep.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\wizard-steps\\PayrollValidationStep.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\wizard-steps\\TransactionValidationStep.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "accounting\\wizard-steps\\TrialBalanceStep.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "admin\\SystemAudit.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "ai\\AIProposalPanel.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "ai\\RepairHistoryPanel.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (2 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "ai\\RepairProposalCard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (2 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)"
+      ]
+    },
+    {
+      "file": "ai\\UnifiedAssistant.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (13 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (13 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (11 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (4 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDAssignCustomerModal.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDCollectionManager.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (6 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (3 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDCustomerPanel.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (3 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDDocumentList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (8 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (2 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "ard\\ARDInventorySync.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDModule.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (8 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDPaymentModal.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (7 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDPDFReport.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "ard\\ARDPreviewModal.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (6 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDQualityPanel.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDRoadmap.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDSaleConversionModal.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (9 veces)"
+      ]
+    },
+    {
+      "file": "ard\\ARDScanner.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)"
+      ]
+    },
+    {
+      "file": "assets\\AssetDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "assets\\AssetDisposalForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "assets\\AssetForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "assets\\FixedAssetsManager.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (4 veces)"
+      ]
+    },
+    {
+      "file": "assets\\reports\\AssetRegisterReport.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "assets\\reports\\DepreciationScheduleReport.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "assets\\reports\\DisposalSummaryReport.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "audit\\AuditTrailMonitor.test.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "audit\\AuditTrailMonitor.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (1 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (2 veces)"
+      ]
+    },
+    {
+      "file": "audit\\AuditTrailTable.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "auth\\GoogleLoginButton.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)"
+      ]
+    },
+    {
+      "file": "auth\\LoginForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "auth\\ProtectedRoute.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "auth\\RoleManager.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)"
+      ]
+    },
+    {
+      "file": "auth\\RolesDiagnostic.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "auth\\UserForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "auth\\UserList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)"
+      ]
+    },
+    {
+      "file": "backup\\BackupLocationSelector.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (3 veces)"
+      ]
+    },
+    {
+      "file": "backup\\BackupRestoreModal.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (3 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "backup\\BackupRestoreWizard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (5 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (3 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (3 veces)"
+      ]
+    },
+    {
+      "file": "banking\\BankImport.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "banking\\BankImportWizard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "banking\\BankingModule.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "banking\\BankReconciliation.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "banking\\BankReconciliationImporter.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "banking\\BankTransactionMatcher.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "banking\\DiscrepancyAnalysis.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "banking\\ImportHistory.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "banking\\ReconciliationMatcher.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (14 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (7 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (6 encontrados)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (5 veces)"
+      ]
+    },
+    {
+      "file": "banking\\importers\\OFXImporter.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "banking\\importers\\TransactionPreview.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "budgets\\BudgetDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (6 veces)"
+      ]
+    },
+    {
+      "file": "budgets\\BudgetForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "budgets\\BudgetLineEditor.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "budgets\\BudgetLinesTable.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd Headers de tabla actualizados (2 encontrados)"
+      ]
+    },
+    {
+      "file": "budgets\\BudgetList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "budgets\\BudgetManager.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (5 veces)"
+      ]
+    },
+    {
+      "file": "budgets\\reports\\BudgetPerformanceChart.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "budgets\\reports\\BudgetVarianceReport.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "common\\OnlineStatus.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "common\\WorkerProgress.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "dashboard\\TaxComplianceWidget.test.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dashboard\\TaxComplianceWidget.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (1 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "dashboards\\CustomerDashboard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dashboards\\FinancialDashboard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dashboards\\InventoryDashboard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dashboards\\PayrollDashboard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dashboards\\SupplierDashboard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "demo\\AsyncOperationsDemo.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dr15\\CountyBreakdownTable.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (7 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)"
+      ]
+    },
+    {
+      "file": "dr15\\DORComplianceChecklist.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)"
+      ]
+    },
+    {
+      "file": "dr15\\DR15PreparationWizard.test.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "dr15\\DR15PreparationWizard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (5 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (7 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (2 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (3 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)",
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "dr15\\TaxComponents.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "emergency\\EmergencyScreen.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "error\\DynamicErrorBoundary.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "forensic\\ForensicSentinelDashboard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "inventory\\InventoryAdjustments.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (3 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (3 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (1 veces)"
+      ]
+    },
+    {
+      "file": "inventory\\InventoryDashboard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (3 veces)"
+      ]
+    },
+    {
+      "file": "inventory\\InventoryKardexViewer.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "inventory\\InventoryMovements.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H3 actualizado: font-medium \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "inventory\\InventoryReports.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "inventory\\LocationsManager.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (8 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (5 veces)",
+        "  \ud83c\udfa8 border-gray-600 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (5 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (3 veces)"
+      ]
+    },
+    {
+      "file": "inventory\\ProductKardexReport.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "invoices\\ARComponents.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "invoices\\InvoiceForm.test.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "invoices\\InvoiceForm.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "invoices\\ReceivableReports.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "invoices\\subcomponents\\CustomerSelector.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "invoices\\subcomponents\\InvoiceLinesEditor.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (1 veces)"
+      ]
+    },
+    {
+      "file": "invoices\\subcomponents\\TaxSummary.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "maintenance\\DatabaseMaintenance.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "maintenance\\RepairCompleteModal.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "monitoring\\WorkerPoolMetrics.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\EmployeeManager.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\EmployeePaystub.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (6 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)"
+      ]
+    },
+    {
+      "file": "payroll\\PayrollEntryList.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollProcessor.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollProcessorUI.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollReports.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollReportsPanel.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollReview.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollSettings.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "payroll\\PayrollSlip.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "purchasing\\PayableReports.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (1 veces)"
+      ]
+    },
+    {
+      "file": "purchasing\\PurchaseOrderForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (3 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (8 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (4 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (7 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (6 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "purchasing\\PurchaseOrderManager.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "purchasing\\PurchaseOrderReceiving.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "purchasing\\PurchaseOrdersList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (2 veces)"
+      ]
+    },
+    {
+      "file": "purchasing\\SuppliersList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (2 veces)"
+      ]
+    },
+    {
+      "file": "quotes\\QuoteDetailView.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "quotes\\QuoteForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)",
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "quotes\\QuoteList.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H2 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "reports\\AccountLedger.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (10 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "reports\\AgingReport.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (4 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (7 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)"
+      ]
+    },
+    {
+      "file": "reports\\CashFlowStatement.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (5 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)"
+      ]
+    },
+    {
+      "file": "reports\\ComplianceHistory.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)"
+      ]
+    },
+    {
+      "file": "reports\\DR15Template.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)"
+      ]
+    },
+    {
+      "file": "reports\\ReportExporter.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "reports\\ReportsDashboard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (4 veces)"
+      ]
+    },
+    {
+      "file": "reports\\pdf\\DR15PDF.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "security\\SystemIntegrityGate.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (2 veces)"
+      ]
+    },
+    {
+      "file": "security\\SystemRepairPanel.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-700 \u2192 bg-white/5 (1 veces)",
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "security\\SystemWarningBanner.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd Headers de tabla actualizados (1 encontrados)"
+      ]
+    },
+    {
+      "file": "settings\\BackupRecoveryPanel.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "settings\\CloudBackupSettings.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "setup\\InitialSetupWizard.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "setup\\OnboardingWizard.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 text-gray-600 \u2192 text-slate-700 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)"
+      ]
+    },
+    {
+      "file": "setup\\steps\\AdminStep.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "setup\\steps\\CompanyStep.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "setup\\steps\\ConfirmationStep.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "setup\\steps\\SecurityStep.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "setup\\steps\\WelcomeStep.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83d\udcdd H1 actualizado: font-bold \u2192 font-black tracking-tight (1 veces)"
+      ]
+    },
+    {
+      "file": "system\\CompanyInfoForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (9 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (3 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (10 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (10 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (3 veces)"
+      ]
+    },
+    {
+      "file": "system\\DataHealthPanel.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "system\\FiscalSettingsForm.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (2 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (2 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (4 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (1 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (4 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (3 veces)"
+      ]
+    },
+    {
+      "file": "system\\SecuritySettings.tsx",
+      "status": "skipped",
+      "changes": []
+    },
+    {
+      "file": "system\\UserRoleManager.tsx",
+      "status": "migrated",
+      "changes": [
+        "  \ud83c\udfa8 text-gray-300 \u2192 text-slate-400 (1 veces)",
+        "  \ud83c\udfa8 text-gray-400 \u2192 text-slate-500 (1 veces)",
+        "  \ud83c\udfa8 text-gray-500 \u2192 text-slate-600 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-800 \u2192 bg-white/10 (1 veces)",
+        "  \ud83c\udfa8 bg-gray-900 \u2192 bg-slate-900 (2 veces)",
+        "  \ud83c\udfa8 border-gray-700 \u2192 border-white/10 (2 veces)",
+        "  \ud83c\udfa8 border-gray-800 \u2192 border-white/5 (1 veces)"
+      ]
+    }
+  ]
+}

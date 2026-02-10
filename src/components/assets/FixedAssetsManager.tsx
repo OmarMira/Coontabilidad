@@ -13,7 +13,6 @@ import {
   FileText,
   Settings
 } from 'lucide-react';
-import { db } from '@/database/simple-db';
 import { getFixedAssetsController } from '@/services/accounting/fixed-assets';
 import type { FixedAsset, AssetCategory } from '@/services/accounting/fixed-assets';
 import { AssetForm } from './AssetForm';
@@ -22,6 +21,10 @@ import { AssetDisposalForm } from './AssetDisposalForm';
 import { AssetRegisterReport } from './reports/AssetRegisterReport';
 import { DepreciationScheduleReport } from './reports/DepreciationScheduleReport';
 import { DisposalSummaryReport } from './reports/DisposalSummaryReport';
+
+interface FixedAssetsManagerProps {
+  db: any; // Database instance passed from App
+}
 
 /**
  * FixedAssetsManager
@@ -32,7 +35,7 @@ import { DisposalSummaryReport } from './reports/DisposalSummaryReport';
  * - Quick actions (Add Asset, Run Depreciation, Reports)
  * - Category management
  */
-export const FixedAssetsManager: React.FC = () => {
+export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) => {
   const [assets, setAssets] = useState<FixedAsset[]>([]);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [summary, setSummary] = useState({
@@ -53,8 +56,10 @@ export const FixedAssetsManager: React.FC = () => {
   const [activeReport, setActiveReport] = useState<'register' | 'schedule' | 'disposals' | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (db) {
+      loadData();
+    }
+  }, [db]);
 
   const loadData = async () => {
     try {
@@ -196,7 +201,7 @@ export const FixedAssetsManager: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-400 font-mono">
+            <div className="text-2xl font-black tracking-tight text-blue-400 font-mono">
               ${(summary.total_cost / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-slate-500 mt-1">Costo de adquisición</p>
@@ -211,7 +216,7 @@ export const FixedAssetsManager: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-400 font-mono">
+            <div className="text-2xl font-black tracking-tight text-amber-400 font-mono">
               ${(summary.total_depreciation / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-slate-500 mt-1">Total depreciado</p>
@@ -226,7 +231,7 @@ export const FixedAssetsManager: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-400 font-mono">
+            <div className="text-2xl font-black tracking-tight text-green-400 font-mono">
               ${(summary.net_book_value / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-slate-500 mt-1">Valor neto actual</p>
@@ -241,7 +246,7 @@ export const FixedAssetsManager: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-200">
+            <div className="text-2xl font-black tracking-tight text-slate-200">
               {summary.active_assets}
             </div>
             <p className="text-xs text-slate-500 mt-1">En depreciación</p>
@@ -254,8 +259,8 @@ export const FixedAssetsManager: React.FC = () => {
         <button
           onClick={() => setActiveTab('assets')}
           className={`px-4 py-2 font-medium transition-colors ${activeTab === 'assets'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-slate-400 hover:text-white'
+            ? 'text-blue-400 border-b-2 border-blue-400'
+            : 'text-slate-400 hover:text-white'
             }`}
         >
           <Package className="w-4 h-4 inline mr-2" />
@@ -264,8 +269,8 @@ export const FixedAssetsManager: React.FC = () => {
         <button
           onClick={() => setActiveTab('categories')}
           className={`px-4 py-2 font-medium transition-colors ${activeTab === 'categories'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-slate-400 hover:text-white'
+            ? 'text-blue-400 border-b-2 border-blue-400'
+            : 'text-slate-400 hover:text-white'
             }`}
         >
           <Settings className="w-4 h-4 inline mr-2" />
@@ -274,8 +279,8 @@ export const FixedAssetsManager: React.FC = () => {
         <button
           onClick={() => setActiveTab('reports')}
           className={`px-4 py-2 font-medium transition-colors ${activeTab === 'reports'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-slate-400 hover:text-white'
+            ? 'text-blue-400 border-b-2 border-blue-400'
+            : 'text-slate-400 hover:text-white'
             }`}
         >
           <FileText className="w-4 h-4 inline mr-2" />
@@ -322,8 +327,8 @@ export const FixedAssetsManager: React.FC = () => {
                     </thead>
                     <tbody>
                       {assets.map((asset) => (
-                        <tr 
-                          key={asset.id} 
+                        <tr
+                          key={asset.id}
                           onClick={() => setViewingAsset(asset)}
                           className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-pointer"
                         >
@@ -343,8 +348,8 @@ export const FixedAssetsManager: React.FC = () => {
                           </td>
                           <td className="py-3 px-4 text-center">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${asset.status === 'ACTIVE' ? 'bg-green-900/30 text-green-400' :
-                                asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
-                                  'bg-slate-700 text-slate-400'
+                              asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
+                                'bg-slate-700 text-slate-400'
                               }`}>
                               {asset.status}
                             </span>
@@ -406,7 +411,7 @@ export const FixedAssetsManager: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button 
+                <button
                   onClick={() => setActiveReport('register')}
                   className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
                 >
@@ -414,7 +419,7 @@ export const FixedAssetsManager: React.FC = () => {
                   <h3 className="font-medium text-white mb-1">Registro de Activos</h3>
                   <p className="text-sm text-slate-400">Lista completa con valores actuales</p>
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveReport('schedule')}
                   className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
                 >
@@ -422,7 +427,7 @@ export const FixedAssetsManager: React.FC = () => {
                   <h3 className="font-medium text-white mb-1">Calendario de Depreciación</h3>
                   <p className="text-sm text-slate-400">Proyección mensual de gastos</p>
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveReport('disposals')}
                   className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
                 >

@@ -11,6 +11,7 @@ export interface PDFGenerationOptions {
     orientation?: 'portrait' | 'landscape';
     format?: 'letter' | 'a4';
     compress?: boolean;
+    language?: 'es' | 'en'; // Language for report generation (independent of UI language)
     onProgress?: (percent: number, message: string) => void;
 }
 
@@ -96,7 +97,8 @@ export class AsyncPDFService {
                     options: {
                         orientation: options?.orientation,
                         format: options?.format,
-                        compress: options?.compress
+                        compress: options?.compress,
+                        language: options?.language // Pass language to worker
                     }
                 },
                 options?.onProgress

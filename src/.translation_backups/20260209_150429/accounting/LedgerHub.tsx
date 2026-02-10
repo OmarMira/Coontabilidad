@@ -1,0 +1,195 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Book,
+    BookOpen,
+    Layers,
+    FileText,
+    PieChart as PieChartIcon,
+    ArrowRight,
+    History,
+    Search,
+    Download,
+    Filter,
+    ArrowRightLeft,
+    ShieldCheck
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
+import { ManualJournalEntries } from '../ManualJournalEntries';
+import { GeneralLedger } from '../GeneralLedger';
+import { TrialBalanceReport } from './TrialBalanceReport';
+import { AccountLedger } from '../reports/AccountLedger';
+
+type HubTab = 'summary' | 'journal' | 'ledger' | 'auxiliary';
+
+interface LedgerHubProps {
+    chartOfAccounts: any[];
+    onNavigate?: (section: string) => void;
+}
+
+export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNavigate }) => {
+    const [activeTab, setActiveTab] = useState<HubTab>('summary');
+    const [hasError, setHasError] = useState(false);
+
+    useEffect(() => {
+        console.log('LedgerHub Protocol Initialized', { activeTab, session: new Date().toISOString() });
+    }, [activeTab]);
+
+    if (hasError) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 bg-red-900/10 border-2 border-red-500/30 rounded-3xl text-center space-y-6 animate-in zoom-in duration-300">
+                <div className="p-4 bg-red-600/20 rounded-2xl border border-red-500/40">
+                    <ShieldCheck className="w-12 h-12 text-red-500" />
+                </div>
+                <div className="space-y-2">
+                    <h3 className="font-black text-2xl text-white uppercase tracking-tighter">Inconsistencia en el Módulo</h3>
+                    <p className="text-red-200/60 font-bold max-w-md mx-auto italic">El motor de renderizado detectó un fallo crítico en la carga de libros auxiliares.</p>
+                </div>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="bg-red-600 hover:bg-red-500 text-white font-black uppercase text-xs tracking-widest px-8 py-3 rounded-xl transition-all shadow-xl shadow-red-900/30"
+                >
+                    Reiniciar Protocolos
+                </button>
+            </div>
+        );
+    }
+
+    const tabs = [
+        { id: 'summary', label: 'Centro de Control', icon: PieChartIcon },
+        { id: 'journal', label: 'Asientos Diario', icon: BookOpen },
+        { id: 'ledger', label: 'Validación Mayor', icon: Book },
+        { id: 'auxiliary', label: 'Auxiliares / Terceros', icon: Layers },
+    ];
+
+    return (
+        <div className="space-y-10 animate-in fade-in duration-500 pb-12">
+            {/* Main Navigation Header */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 border-b border-slate-800 pb-10 bg-grid-slate-900/20">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-900/10">
+                            <Book className="w-10 h-10 text-blue-500" />
+                        </div>
+                        <div>
+                            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">
+                                Unidad Contable
+                            </h2>
+                            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-1">
+                                Ledger Control & Audit Hub
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800 shadow-inner">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id as HubTab)}
+                            className={`
+                                flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                                ${activeTab === tab.id
+                                    ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 translate-y-[-2px]'
+                                    : 'text-slate-500 hover:text-white hover:bg-slate-900'}
+                            `}
+                        >
+                            <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-white' : 'text-slate-600 transition-colors group-hover:text-white'}`} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Tab Content with Dynamic Layouts */}
+            <div className="animate-in slide-in-from-bottom-6 duration-700">
+                {activeTab === 'summary' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {/* Interactive Entry Cards */}
+                        <div
+                            className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 hover:border-blue-500/40 transition-all cursor-pointer group relative overflow-hidden shadow-xl"
+                            onClick={() => setActiveTab('journal')}
+                        >
+                            <div className="absolute top-0 right-0 p-3 bg-blue-600/20 rounded-bl-3xl border-l border-b border-blue-500/20 group-hover:bg-blue-600 transition-colors">
+                                <ArrowRight className="w-5 h-5 text-blue-500 group-hover:text-white transition-transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="space-y-6">
+                                <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20 w-fit group-hover:scale-110 transition-transform shadow-lg">
+                                    <BookOpen className="w-8 h-8 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Libro Diario</h3>
+                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">Registro cronológico de asientos. Visibilidad total de transacciones financieras.</p>
+                                </div>
+                                <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sincronizado en Tiempo Real</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 hover:border-emerald-500/40 transition-all cursor-pointer group relative overflow-hidden shadow-xl"
+                            onClick={() => setActiveTab('ledger')}
+                        >
+                            <div className="absolute top-0 right-0 p-3 bg-emerald-600/20 rounded-bl-3xl border-l border-b border-emerald-500/20 group-hover:bg-emerald-600 transition-colors">
+                                <ArrowRight className="w-5 h-5 text-emerald-500 group-hover:text-white transition-transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="space-y-6">
+                                <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 w-fit group-hover:scale-110 transition-transform shadow-lg">
+                                    <Book className="w-8 h-8 text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Libro Mayor</h3>
+                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">Agregación de saldos por cuenta contable. Base indispensable para reportes fiscales.</p>
+                                </div>
+                                <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
+                                    <History className="w-3.5 h-3.5 text-slate-600" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Último Cierre: Dic 2024</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 hover:border-purple-500/40 transition-all cursor-pointer group relative overflow-hidden shadow-xl"
+                            onClick={() => setActiveTab('auxiliary')}
+                        >
+                            <div className="absolute top-0 right-0 p-3 bg-purple-600/20 rounded-bl-3xl border-l border-b border-purple-500/20 group-hover:bg-purple-600 transition-colors">
+                                <ArrowRight className="w-5 h-5 text-purple-500 group-hover:text-white transition-transform group-hover:translate-x-1" />
+                            </div>
+                            <div className="space-y-6">
+                                <div className="p-4 bg-purple-500/10 rounded-2xl border border-purple-500/20 w-fit group-hover:scale-110 transition-transform shadow-lg">
+                                    <Layers className="w-8 h-8 text-purple-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Auxiliares</h3>
+                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">Seguimiento detallado por tercero, cliente y proveedor. Precisión micrométrica.</p>
+                                </div>
+                                <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Validación US GAAP Activa</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="bg-slate-950/30 rounded-3xl p-1 border border-slate-800 shadow-2xl backdrop-blur-md min-h-[600px]">
+                    {activeTab === 'journal' && (
+                        <ManualJournalEntries
+                            chartOfAccounts={chartOfAccounts || []}
+                            onEntryCreated={() => { }}
+                        />
+                    )}
+
+                    {activeTab === 'ledger' && (
+                        <GeneralLedger chartOfAccounts={chartOfAccounts || []} />
+                    )}
+
+                    {activeTab === 'auxiliary' && (
+                        <AccountLedger />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};

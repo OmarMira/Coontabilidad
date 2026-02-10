@@ -3,6 +3,7 @@ import { logger } from '../core/logging/SystemLogger';
 import { CurrencyUtils } from '../lib/currency';
 import { BasicEncryption } from '../core/security/BasicEncryption';
 import { LogicClockService } from '../services/LogicClockService';
+import { initializeDataIntegrity, runManualIntegrityCheck } from '../core/data-integrity';
 
 export class DatabaseService {
 
@@ -42,6 +43,14 @@ export class DatabaseService {
 
             // 6. Verificar Integridad de Datos (Corrección de Líneas)
             await this.ensureDataIntegrity();
+
+            // 7. Inicializar Sistema de Integridad de Datos Completo
+            try {
+                initializeDataIntegrity();
+                logger.info('DatabaseService', 'integrity_system_ready', 'Sistema de integridad de datos inicializado con monitoreo continuo');
+            } catch (error) {
+                logger.warn('DatabaseService', 'integrity_init_warn', 'Advertencia al inicializar sistema de integridad (no crítico)', null, error as Error);
+            }
 
             logger.info('DatabaseService', 'forensic_ready', 'Núcleo forense verificado y listo.');
 

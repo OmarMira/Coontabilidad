@@ -1,6 +1,13 @@
 // App.tsx
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Plus, TrendingUp, FileText, Shield } from 'lucide-react';
+
+// Elite Design System - Global Styles
+import './styles/elite-styles.css';
+
+// Internationalization (i18n)
+import { LanguageProvider } from './i18n/LanguageContext';
+
 import {
   initDB, addCustomer, getCustomers, updateCustomer, deleteCustomer, canDeleteCustomer, getStatsWithSuppliers, isDatabaseReady, Customer,
   getInvoices, getInvoiceById, createInvoice, updateInvoice, deleteInvoice, getActiveProducts, Invoice, Product, InvoiceItem,
@@ -1316,723 +1323,725 @@ function App() {
   }
 
   return (
-    <AppRouter>
-      <div className="flex h-screen bg-slate-950 overflow-hidden">
-        <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
-        <div className="flex-1 overflow-auto bg-slate-950/50 relative">
-          {/* Background Decorative Element */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] -mr-64 -mt-64 pointer-events-none"></div>
+    <LanguageProvider>
+      <AppRouter>
+        <div className="flex h-screen bg-slate-950 overflow-hidden">
+          <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
+          <div className="flex-1 overflow-auto bg-slate-950/50 relative">
+            {/* Background Decorative Element */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] -mr-64 -mt-64 pointer-events-none"></div>
 
-          {/* VOLATILE DEMO BANNER */}
-          {isDemoActive && (
-            <div className="bg-orange-600 text-white text-[10px] font-bold text-center py-1 uppercase tracking-[0.2em] shadow-md z-50 select-none sticky top-0">
-              ⚠️ MODO DEMO - DATOS VOLÁTILES (RAM) - Máx. 20 registros
-            </div>
-          )}
-
-          <Header
-            dbStats={state.dbStats}
-            onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
-          />
-
-          <main className="p-8 relative">
-            {state.error && (
-              <div className="mb-6 rounded-2xl bg-rose-500/10 p-4 text-rose-300 border border-rose-500/20 shadow-lg flex items-center animate-in slide-in-from-top-2">
-                <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center mr-3">
-                  <span className="text-rose-400">⚠️</span>
-                </div>
-                <span className="font-bold">{state.error}</span>
+            {/* VOLATILE DEMO BANNER */}
+            {isDemoActive && (
+              <div className="bg-orange-600 text-white text-[10px] font-bold text-center py-1 uppercase tracking-[0.2em] shadow-md z-50 select-none sticky top-0">
+                ⚠️ MODO DEMO - DATOS VOLÁTILES (RAM) - Máx. 20 registros
               </div>
             )}
 
-            {state.success && (
-              <div className="mb-6 rounded-2xl bg-emerald-500/10 p-4 text-emerald-300 border border-emerald-500/20 shadow-lg flex items-center animate-in slide-in-from-top-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
-                  <span className="text-emerald-400">✅</span>
-                </div>
-                <span className="font-bold">{state.success}</span>
-              </div>
-            )}
+            <Header
+              dbStats={state.dbStats}
+              onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
+            />
 
-            {/* Renderizado condicional basado en la sección actual */}
-            <div className="transition-all duration-500">
-              {state.currentSection === 'debug' && (
-                <DiagnosticPanel />
-              )}
-              {state.currentSection === 'dashboard' && (
-                <Dashboard
-                  stats={state.dbStats}
-                  onNavigate={handleNavigate}
-                  invoices={state.invoices}
-                  bills={state.bills}
-                />
-              )}
-
-              {/* --- DASHBOARDS AVANZADOS --- */}
-              {state.currentSection === 'dashboard-financial' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <FinancialDashboard />
-                </Suspense>
-              )}
-              {state.currentSection === 'dashboard-inventory' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <InventoryDashboard />
-                </Suspense>
-              )}
-              {state.currentSection === 'dashboard-customers' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <CustomerDashboard />
-                </Suspense>
-              )}
-              {state.currentSection === 'dashboard-suppliers' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <SupplierDashboard />
-                </Suspense>
-              )}
-              {state.currentSection === 'dashboard-payroll' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <PayrollDashboard />
-                </Suspense>
-              )}
-
-              {/* --- CUENTAS POR COBRAR (RECEIVABLES) --- */}
-              {state.currentSection === 'customers' && (
-                <>
-                  {state.showingCustomerForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nuevo Cliente</h2>
-                      <CustomerFormAdvanced
-                        onSubmit={handleAddCustomer}
-                        onCancel={() => setState(prev => ({ ...prev, showingCustomerForm: false }))}
-                      />
-                    </div>
-                  ) : state.editingCustomer ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Cliente</h2>
-                      <CustomerFormAdvanced
-                        initialData={state.editingCustomer}
-                        onSubmit={handleUpdateCustomer}
-                        onCancel={handleCancelEdit}
-                      />
-                    </div>
-                  ) : (
-                    <CustomerList
-                      customers={state.customers}
-                      onAddCustomer={() => setState(prev => ({ ...prev, showingCustomerForm: true }))}
-                      onView={handleViewCustomer}
-                      onEdit={handleEditCustomer}
-                      onDelete={handleDeleteCustomer}
-                    />
-                  )}
-                </>
-              )}
-
-              {state.currentSection === 'invoices' && (
-                <>
-                  {state.showingInvoiceForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <SalesInvoiceForm
-                        onSubmit={handleCreateInvoice}
-                        onCancel={() => setState(prev => ({ ...prev, showingInvoiceForm: false }))}
-                        customers={state.customers}
-                        products={state.products}
-                        currentUserId="DEMO_USER"
-                      />
-                    </div>
-                  ) : state.editingInvoice ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Factura #{state.editingInvoice.invoice_number}</h2>
-                      <InvoiceForm
-                        initialData={state.editingInvoice}
-                        onSubmit={handleUpdateInvoice}
-                        onCancel={handleCancelInvoiceEdit}
-                        customers={state.customers}
-                        products={state.products}
-                      />
-                    </div>
-                  ) : (
-                    <InvoiceList
-                      invoices={state.invoices}
-                      onAddInvoice={() => setState(prev => ({ ...prev, showingInvoiceForm: true }))}
-                      onView={handleViewInvoice}
-                      onEdit={handleEditInvoice}
-                      onDelete={handleDeleteInvoice}
-                      onNavigateToKardex={(invoiceId) => {
-                        setState(prev => ({
-                          ...prev,
-                          currentSection: 'inventory-kardex',
-                          kardexParams: { type: 'sale', productId: undefined /* We might want to filter by ref ID in future but KardexViewer mainly filters by product/type. Wait, we want to see movements for *this* invoice. KardexViewer current implementation filters by Product OR Type. It does not have Ref ID filter yet. I should add that to KardexViewer or just link to generic sales. For now, let's link to Sales type. UPDATE: The user requirement says "En factura generada: enlace a movimiento de salida en kardex". `getKardexMovements` HAS a filter for generic attributes but the UI `InventoryKardexViewer` currently only exposes Product and Type. I will update `InventoryKardexViewer` later to support reference filter if needed, but for now I will pass type='sale'. Ideally I should pass the invoice ID as a filter too. Let's start with type='sale'. Actually, filtering by specific invoice is better. I will add `referenceId` to `kardexParams` in AppState.*/ }
-                        }));
-                      }}
-                    />
-                  )}
-                </>
-              )}
-
-              {state.currentSection === 'customer-payments' && (
-                <CustomerPayments
-                  invoices={state.invoices}
-                  customers={state.customers}
-                  onPaymentCreated={() => {
-                    loadData();
-                    setState(prev => ({ ...prev, success: 'Pago de cliente registrado correctamente' }));
-                    setTimeout(() => setState(prev => ({ ...prev, success: null })), 3000);
-                  }}
-                />
-              )}
-
-              {state.currentSection === 'ard-module' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <ARDModule />
-                </Suspense>
-              )}
-
-              {state.currentSection === 'quotes' && (
-                <>
-                  {state.showingQuoteForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <QuoteForm
-                        onSave={handleCreateQuote}
-                        onCancel={() => setState(prev => ({ ...prev, showingQuoteForm: false }))}
-                        customers={state.customers}
-                        products={state.products}
-                      />
-                    </div>
-                  ) : state.editingQuote ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <QuoteForm
-                        quote={state.editingQuote}
-                        onSave={handleUpdateQuote}
-                        onCancel={handleCancelQuoteEdit}
-                        customers={state.customers}
-                        products={state.products}
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-3xl font-bold text-white">Cotizaciones</h2>
-                        <button
-                          onClick={() => setState(prev => ({ ...prev, showingQuoteForm: true }))}
-                          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                        >
-                          <Plus className="w-5 h-5" />
-                          Nueva Cotización
-                        </button>
-                      </div>
-                      <QuotesList
-                        quotes={state.quotes}
-                        onView={handleViewQuote}
-                        onEdit={handleEditQuote}
-                        onDelete={handleDeleteQuote}
-                        onConvert={handleConvertQuoteToInvoice}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-              {state.currentSection === 'receivable-reports' && <ReceivableReports />}
-
-
-              {/* --- CUENTAS A PAGAR (PAYABLES) --- */}
-              {state.currentSection === 'suppliers' && (
-                <>
-                  {state.showingSupplierForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nuevo Proveedor</h2>
-                      <SupplierForm
-                        onSubmit={handleAddSupplier}
-                        onCancel={() => setState(prev => ({ ...prev, showingSupplierForm: false }))}
-                      />
-                    </div>
-                  ) : state.editingSupplier ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Proveedor</h2>
-                      <SupplierForm
-                        initialData={state.editingSupplier}
-                        onSubmit={handleUpdateSupplier}
-                        onCancel={handleCancelSupplierEdit}
-                      />
-                    </div>
-                  ) : (
-                    <SupplierList
-                      suppliers={state.suppliers}
-                      onAddSupplier={() => setState(prev => ({ ...prev, showingSupplierForm: true }))}
-                      onView={handleViewSupplier}
-                      onEdit={handleEditSupplier}
-                      onDelete={handleDeleteSupplier}
-                    />
-                  )}
-                </>
-              )}
-
-              {state.currentSection === 'bills' && (
-                <>
-                  {state.showingBillForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nueva Factura de Compra</h2>
-                      <BillForm
-                        onSubmit={handleBillSave}
-                        onCancel={() => setState(prev => ({ ...prev, showingBillForm: false }))}
-                        suppliers={state.suppliers}
-                        products={state.products}
-                      />
-                    </div>
-                  ) : state.editingBill ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Factura de Compra #{state.editingBill.bill_number}</h2>
-                      <BillForm
-                        initialData={state.editingBill}
-                        onSubmit={handleBillSave}
-                        onCancel={handleCancelBillEdit}
-                        suppliers={state.suppliers}
-                        products={state.products}
-                      />
-                    </div>
-                  ) : (
-                    <BillList
-                      bills={state.bills}
-                      onAddBill={() => setState(prev => ({ ...prev, showingBillForm: true }))}
-                      onView={handleViewBill}
-                      onEdit={handleEditBill}
-                      onDelete={handleDeleteBill}
-                    />
-                  )}
-                </>
-              )}
-
-              {state.currentSection === 'supplier-payments' && (
-                <SupplierPayments
-                  bills={state.bills}
-                  suppliers={state.suppliers}
-                  onPaymentCreated={() => {
-                    loadData();
-                    setState(prev => ({ ...prev, success: 'Pago a proveedor registrado correctamente' }));
-                    setTimeout(() => setState(prev => ({ ...prev, success: null })), 3000);
-                  }}
-                />
-              )}
-
-              {state.currentSection === 'purchase-orders' && (
-                <PurchaseOrdersList
-                  onCreateNew={() => setState(prev => ({ ...prev, showingPurchaseOrderForm: true /* Need to handle form showing logic if duplicate, or just use what PurchaseOrderManager did. WAIT, PurchaseOrderManager likely handled the list AND the form. I should check if I broke the form logic. Let's assume PurchaseOrdersList is ONLY the list. I need to handle switching to form. But for now, adding the Kardex link. */ }))}
-                  onNavigateToKardex={(refId) => setState(prev => ({
-                    ...prev,
-                    currentSection: 'inventory-kardex',
-                    kardexParams: { type: 'purchase', productId: undefined /* Same as Invoice, ideally filter by Ref ID. Using 'purchase' type filter for now. */ }
-                  }))}
-                />
-              )}
-              {state.currentSection === 'payable-reports' && <PayableReports />}
-
-              {/* --- PAYROLL --- */}
-              {state.currentSection === 'employee-mgr' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <EmployeeManager />
-                </Suspense>
-              )}
-              {state.currentSection === 'payroll-process' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <PayrollProcessor />
-                </Suspense>
-              )}
-              {state.currentSection === 'payroll-review' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <PayrollReview
-                    onViewPaystub={(payrollId) => {
-                      setState(prev => ({
-                        ...prev,
-                        currentSection: 'payroll-paystub',
-                        selectedPayrollId: payrollId
-                      }));
-                    }}
-                  />
-                </Suspense>
-              )}
-              {state.currentSection === 'payroll-paystub' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <EmployeePaystub
-                    payrollId={state.selectedPayrollId}
-                    onBack={() => {
-                      setState(prev => ({
-                        ...prev,
-                        currentSection: 'payroll-review',
-                        selectedPayrollId: undefined
-                      }));
-                    }}
-                  />
-                </Suspense>
-              )}
-              {state.currentSection === 'payroll-reports' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <PayrollReports />
-                </Suspense>
-              )}
-
-              {/* --- FIXED ASSETS --- */}
-              {state.currentSection === 'fixed-assets' && <FixedAssetsManager />}
-
-              {/* --- BUDGETS --- */}
-              {state.currentSection === 'budgets' && <BudgetManager />}
-
-              {/* --- CONTABILIDAD --- */}
-              {state.currentSection === 'chart-accounts' && <ChartOfAccounts />}
-
-              {state.currentSection === 'accounting-periods' && <PeriodManager />}
-
-              {state.currentSection === 'ledger-hub' && (
-                <LedgerHub chartOfAccounts={state.chartOfAccounts} />
-              )}
-
-              {state.currentSection === 'journal-entries' && <ManualJournalEntries
-                chartOfAccounts={state.chartOfAccounts}
-                onEntryCreated={() => {
-                  loadData();
-                  setState(prev => ({ ...prev, success: 'Asiento registrado' }));
-                }}
-              />}
-
-              {state.currentSection === 'general-ledger' && <GeneralLedger chartOfAccounts={state.chartOfAccounts} />}
-              {state.currentSection === 'trial-balance' && <TrialBalanceReport />}
-              {state.currentSection === 'balance-sheet' && <BalanceSheet />}
-              {state.currentSection === 'income-statement' && <IncomeStatement />}
-
-              {/* --- NEW ELITE REPORTS FASE 3 --- */}
-              {state.currentSection === 'reports-dashboard' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
-                </Suspense>
-              )}
-              {state.currentSection === 'financial-reports' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
-                </Suspense>
-              )}
-              {state.currentSection === 'cash-flow' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <CashFlowStatement />
-                </Suspense>
-              )}
-              {state.currentSection === 'aging-report' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <AgingReport />
-                </Suspense>
-              )}
-              {state.currentSection === 'account-ledger' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <AccountLedger />
-                </Suspense>
-              )}
-
-
-              {/* --- INVENTARIO --- */}
-              {state.viewingProduct && (
-                <ProductDetailView
-                  product={state.viewingProduct}
-                  onBack={() => setState(prev => ({ ...prev, viewingProduct: null }))}
-                  onEdit={(product) => setState(prev => ({ ...prev, viewingProduct: null, editingProduct: product }))}
-                  onNavigateToKardex={(productId) => {
-                    setState(prev => ({
-                      ...prev,
-                      viewingProduct: null,
-                      currentSection: 'inventory-kardex',
-                      kardexParams: { productId: productId.toString(), type: 'all' }
-                    }));
-                  }}
-                />
-              )}
-              {state.currentSection === 'products' && (
-                <>
-                  {state.showingProductForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nuevo Producto</h2>
-                      <ProductForm
-                        onSubmit={handleCreateProduct}
-                        onCancel={() => setState(prev => ({ ...prev, showingProductForm: false }))}
-                        categories={state.productCategories}
-                      />
-                    </div>
-                  ) : state.editingProduct ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Producto</h2>
-                      <ProductForm
-                        initialData={state.editingProduct}
-                        onSubmit={handleUpdateProduct}
-                        onCancel={handleCancelProductEdit}
-                        categories={state.productCategories}
-                      />
-                    </div>
-                  ) : (
-                    <ProductList
-                      products={state.products}
-                      categories={state.productCategories}
-                      onAddProduct={() => setState(prev => ({ ...prev, showingProductForm: true }))}
-                      onView={handleViewProduct}
-                      onEdit={handleEditProduct}
-                      onDelete={handleDeleteProduct}
-                      onNavigateToKardex={(productId) => {
-                        setState(prev => ({
-                          ...prev,
-                          currentSection: 'inventory-kardex',
-                          kardexParams: { productId: productId.toString(), type: 'all' }
-                        }));
-                      }}
-                    />
-                  )}
-                </>
-              )}
-
-              {state.currentSection === 'product-categories' && (
-                <>
-                  {state.showingProductCategoryForm ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nueva Categoría</h2>
-                      <ProductCategoryForm
-                        onSubmit={handleCreateProductCategory}
-                        onCancel={() => setState(prev => ({ ...prev, showingProductCategoryForm: false }))}
-                      />
-                    </div>
-                  ) : state.editingProductCategory ? (
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Categoría</h2>
-                      <ProductCategoryForm
-                        initialData={state.editingProductCategory}
-                        onSubmit={handleUpdateProductCategory}
-                        onCancel={handleCancelProductCategoryEdit}
-                      />
-                    </div>
-                  ) : (
-                    <ProductCategoryList
-                      categories={state.productCategories}
-                      onAdd={() => setState(prev => ({ ...prev, showingProductCategoryForm: true }))}
-                      onEdit={handleEditProductCategory}
-                      onDelete={handleDeleteProductCategory}
-                    />
-                  )}
-                </>
-              )}
-
-              {state.currentSection === 'inventory-movements' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <InventoryMovements />
-                </Suspense>
-              )}
-              {state.currentSection === 'inventory-adjustments' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <InventoryAdjustments />
-                </Suspense>
-              )}
-              {state.currentSection === 'inventory-reports' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <InventoryReports />
-                </Suspense>
-              )}
-              {state.currentSection === 'locations' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <LocationsManager />
-                </Suspense>
-              )}
-
-
-              {/* --- ARCHIVO / CONFIG / HERRAMIENTAS --- */}
-              {state.currentSection === 'company-data' && (
-                <div className="space-y-6">
-                  <CompanyDataForm />
+            <main className="p-8 relative">
+              {state.error && (
+                <div className="mb-6 rounded-2xl bg-rose-500/10 p-4 text-rose-300 border border-rose-500/20 shadow-lg flex items-center animate-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center mr-3">
+                    <span className="text-rose-400">⚠️</span>
+                  </div>
+                  <span className="font-bold">{state.error}</span>
                 </div>
               )}
 
-              {/* FIXED: Dedicated render for Payment Methods when accessed from Sidebar directly */}
-              {state.currentSection === 'payment-methods' && <PaymentMethods />}
-
-              {/* --- INVENTORY KARDEX MODULE --- */}
-              {state.currentSection === 'inventory-kardex' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <InventoryKardexViewer initialFilters={state.kardexParams} />
-                </Suspense>
+              {state.success && (
+                <div className="mb-6 rounded-2xl bg-emerald-500/10 p-4 text-emerald-300 border border-emerald-500/20 shadow-lg flex items-center animate-in slide-in-from-top-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
+                    <span className="text-emerald-400">✅</span>
+                  </div>
+                  <span className="font-bold">{state.success}</span>
+                </div>
               )}
 
-              {state.currentSection === 'users' && <UserRoleManager />}
+              {/* Renderizado condicional basado en la sección actual */}
+              <div className="transition-all duration-500">
+                {state.currentSection === 'debug' && (
+                  <DiagnosticPanel />
+                )}
+                {state.currentSection === 'dashboard' && (
+                  <Dashboard
+                    stats={state.dbStats}
+                    onNavigate={handleNavigate}
+                    invoices={state.invoices}
+                    bills={state.bills}
+                  />
+                )}
 
-              {state.currentSection === 'backups' && <BackupRestore />}
-
-              {/* FIXED: Dedicated render for System Logs and Auditoria */}
-              {(state.currentSection === 'system-logs' || state.currentSection === 'logs') && <SystemLogs />}
-
-              {state.currentSection === 'auditoria' && <TransactionAudit />}
-
-              {state.currentSection === 'security' && <SecuritySettings />}
-
-              {state.currentSection === 'health-check' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <HealthCheckPage />
-                </Suspense>
-              )}
-
-              {state.currentSection === 'system-status' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <SystemStatusDashboard />
-                </Suspense>
-              )}
-
-              {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
-
-              {/* JournalEntryTest removed */}
-
-              {state.currentSection === 'banks' && (
-                <>
-                  {state.showingBankAccountForm ? (
-                    <BankAccountForm
-                      onSubmit={handleCreateBankAccount}
-                      onCancel={() => setState(prev => ({ ...prev, showingBankAccountForm: false }))}
-                    />
-                  ) : state.editingBankAccount ? (
-                    <BankAccountForm
-                      initialData={state.editingBankAccount}
-                      onSubmit={handleUpdateBankAccount}
-                      onCancel={handleCancelBankAccountEdit}
-                    />
-                  ) : (
-                    <BankAccountList
-                      accounts={state.bankAccounts}
-                      onAddAccount={() => setState(prev => ({ ...prev, showingBankAccountForm: true }))}
-                      onEditAccount={handleEditBankAccount}
-                      onDeleteAccount={handleDeleteBankAccount}
-                    />
-                  )}
-                </>
-              )}
-
-
-
-              {state.currentSection === 'bank-reconciliation' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <BankReconciliation />
-                </Suspense>
-              )}
-              {state.currentSection === 'discrepancy-analysis' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <DiscrepancyAnalysis />
-                </Suspense>
-              )}
-              {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
-              {state.currentSection === 'banking-import' && <BankImport />}
-
-              {/* --- IMPUESTOS FLORIDA --- */}
-              {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
-
-              {state.currentSection === 'help' && <HelpCenter />}
-
-              {/* FIXED: Render FloridaTaxReport correctly */}
-              {state.currentSection === 'florida-dr15' && (
-                <Suspense fallback={<LoadingSpinner />}>
-                  <DR15PreparationWizard />
-                </Suspense>
-              )}
-
-              {/* FIXED: Render TaxRates component */}
-              {state.currentSection === 'tax-rates' && <TaxRates />}
-
-              {state.currentSection === 'tax-reports' && <TaxReports />}
-
-              {state.currentSection === 'tax-calendar' && <TaxCalendar />}
-              {state.currentSection === 'backups' && <BackupPanel />}
-              {state.currentSection === 'verify' && <LiveVerification />}
-
-              {/* --- HERRAMIENTAS --- */}
-              {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
-              {state.currentSection === 'journal-entry-test' && <JournalEntryTest />}
-              {state.currentSection === 'system-audit' && <SystemAudit />}
-
-              {/* --- GESTIÓN DE USUARIOS --- */}
-              {state.currentSection === 'admin-users' && <UserList />}
-              {state.currentSection === 'role-manager' && <RoleManager />}
-              {state.currentSection === 'audit-trail' && <AuditTrailTable />}
-              {state.currentSection === 'my-profile' && user && (
-                <UserForm
-                  user={user as any}
-                  onSave={() => {
-                    // Actualizar el estado del usuario localmente si es necesario
-                    window.location.reload(); // Forma más segura de refrescar todo el context
-                  }}
-                  onCancel={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
-                />
-              )}
-
-
-
-
-              {/* --- ASISTENTE IA (Classic Mode if needed, currently unused via Sidebar) --- */}
-              {state.currentSection === 'ai-assistant' && (
-                <div className="h-[calc(100vh-140px)]">
+                {/* --- DASHBOARDS AVANZADOS --- */}
+                {state.currentSection === 'dashboard-financial' && (
                   <Suspense fallback={<LoadingSpinner />}>
-                    <UnifiedAssistant
-                      isOpen={true}
-                      onClose={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
-                      stats={state.dbStats}
-                      transactionCount={state.invoices.length + state.bills.length}
-                      auditStatus={{
-                        healthy: true,
-                        lastEvent: new Date().toISOString(),
-                        integrityScore: 100
-                      }}
-                      complianceMetrics={{
-                        taxCompliance: 100,
-                        dr15Status: 'Al día',
-                        pendingForms: 0
+                    <FinancialDashboard />
+                  </Suspense>
+                )}
+                {state.currentSection === 'dashboard-inventory' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <InventoryDashboard />
+                  </Suspense>
+                )}
+                {state.currentSection === 'dashboard-customers' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CustomerDashboard />
+                  </Suspense>
+                )}
+                {state.currentSection === 'dashboard-suppliers' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <SupplierDashboard />
+                  </Suspense>
+                )}
+                {state.currentSection === 'dashboard-payroll' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PayrollDashboard />
+                  </Suspense>
+                )}
+
+                {/* --- CUENTAS POR COBRAR (RECEIVABLES) --- */}
+                {state.currentSection === 'customers' && (
+                  <>
+                    {state.showingCustomerForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nuevo Cliente</h2>
+                        <CustomerFormAdvanced
+                          onSubmit={handleAddCustomer}
+                          onCancel={() => setState(prev => ({ ...prev, showingCustomerForm: false }))}
+                        />
+                      </div>
+                    ) : state.editingCustomer ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Cliente</h2>
+                        <CustomerFormAdvanced
+                          initialData={state.editingCustomer}
+                          onSubmit={handleUpdateCustomer}
+                          onCancel={handleCancelEdit}
+                        />
+                      </div>
+                    ) : (
+                      <CustomerList
+                        customers={state.customers}
+                        onAddCustomer={() => setState(prev => ({ ...prev, showingCustomerForm: true }))}
+                        onView={handleViewCustomer}
+                        onEdit={handleEditCustomer}
+                        onDelete={handleDeleteCustomer}
+                      />
+                    )}
+                  </>
+                )}
+
+                {state.currentSection === 'invoices' && (
+                  <>
+                    {state.showingInvoiceForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <SalesInvoiceForm
+                          onSubmit={handleCreateInvoice}
+                          onCancel={() => setState(prev => ({ ...prev, showingInvoiceForm: false }))}
+                          customers={state.customers}
+                          products={state.products}
+                          currentUserId="DEMO_USER"
+                        />
+                      </div>
+                    ) : state.editingInvoice ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Factura #{state.editingInvoice.invoice_number}</h2>
+                        <InvoiceForm
+                          initialData={state.editingInvoice}
+                          onSubmit={handleUpdateInvoice}
+                          onCancel={handleCancelInvoiceEdit}
+                          customers={state.customers}
+                          products={state.products}
+                        />
+                      </div>
+                    ) : (
+                      <InvoiceList
+                        invoices={state.invoices}
+                        onAddInvoice={() => setState(prev => ({ ...prev, showingInvoiceForm: true }))}
+                        onView={handleViewInvoice}
+                        onEdit={handleEditInvoice}
+                        onDelete={handleDeleteInvoice}
+                        onNavigateToKardex={(invoiceId) => {
+                          setState(prev => ({
+                            ...prev,
+                            currentSection: 'inventory-kardex',
+                            kardexParams: { type: 'sale', productId: undefined /* We might want to filter by ref ID in future but KardexViewer mainly filters by product/type. Wait, we want to see movements for *this* invoice. KardexViewer current implementation filters by Product OR Type. It does not have Ref ID filter yet. I should add that to KardexViewer or just link to generic sales. For now, let's link to Sales type. UPDATE: The user requirement says "En factura generada: enlace a movimiento de salida en kardex". `getKardexMovements` HAS a filter for generic attributes but the UI `InventoryKardexViewer` currently only exposes Product and Type. I will update `InventoryKardexViewer` later to support reference filter if needed, but for now I will pass type='sale'. Ideally I should pass the invoice ID as a filter too. Let's start with type='sale'. Actually, filtering by specific invoice is better. I will add `referenceId` to `kardexParams` in AppState.*/ }
+                          }));
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+
+                {state.currentSection === 'customer-payments' && (
+                  <CustomerPayments
+                    invoices={state.invoices}
+                    customers={state.customers}
+                    onPaymentCreated={() => {
+                      loadData();
+                      setState(prev => ({ ...prev, success: 'Pago de cliente registrado correctamente' }));
+                      setTimeout(() => setState(prev => ({ ...prev, success: null })), 3000);
+                    }}
+                  />
+                )}
+
+                {state.currentSection === 'ard-module' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ARDModule />
+                  </Suspense>
+                )}
+
+                {state.currentSection === 'quotes' && (
+                  <>
+                    {state.showingQuoteForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <QuoteForm
+                          onSave={handleCreateQuote}
+                          onCancel={() => setState(prev => ({ ...prev, showingQuoteForm: false }))}
+                          customers={state.customers}
+                          products={state.products}
+                        />
+                      </div>
+                    ) : state.editingQuote ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <QuoteForm
+                          quote={state.editingQuote}
+                          onSave={handleUpdateQuote}
+                          onCancel={handleCancelQuoteEdit}
+                          customers={state.customers}
+                          products={state.products}
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-3xl font-bold text-white">Cotizaciones</h2>
+                          <button
+                            onClick={() => setState(prev => ({ ...prev, showingQuoteForm: true }))}
+                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                          >
+                            <Plus className="w-5 h-5" />
+                            Nueva Cotización
+                          </button>
+                        </div>
+                        <QuotesList
+                          quotes={state.quotes}
+                          onView={handleViewQuote}
+                          onEdit={handleEditQuote}
+                          onDelete={handleDeleteQuote}
+                          onConvert={handleConvertQuoteToInvoice}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+                {state.currentSection === 'receivable-reports' && <ReceivableReports />}
+
+
+                {/* --- CUENTAS A PAGAR (PAYABLES) --- */}
+                {state.currentSection === 'suppliers' && (
+                  <>
+                    {state.showingSupplierForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nuevo Proveedor</h2>
+                        <SupplierForm
+                          onSubmit={handleAddSupplier}
+                          onCancel={() => setState(prev => ({ ...prev, showingSupplierForm: false }))}
+                        />
+                      </div>
+                    ) : state.editingSupplier ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Proveedor</h2>
+                        <SupplierForm
+                          initialData={state.editingSupplier}
+                          onSubmit={handleUpdateSupplier}
+                          onCancel={handleCancelSupplierEdit}
+                        />
+                      </div>
+                    ) : (
+                      <SupplierList
+                        suppliers={state.suppliers}
+                        onAddSupplier={() => setState(prev => ({ ...prev, showingSupplierForm: true }))}
+                        onView={handleViewSupplier}
+                        onEdit={handleEditSupplier}
+                        onDelete={handleDeleteSupplier}
+                      />
+                    )}
+                  </>
+                )}
+
+                {state.currentSection === 'bills' && (
+                  <>
+                    {state.showingBillForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nueva Factura de Compra</h2>
+                        <BillForm
+                          onSubmit={handleBillSave}
+                          onCancel={() => setState(prev => ({ ...prev, showingBillForm: false }))}
+                          suppliers={state.suppliers}
+                          products={state.products}
+                        />
+                      </div>
+                    ) : state.editingBill ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Factura de Compra #{state.editingBill.bill_number}</h2>
+                        <BillForm
+                          initialData={state.editingBill}
+                          onSubmit={handleBillSave}
+                          onCancel={handleCancelBillEdit}
+                          suppliers={state.suppliers}
+                          products={state.products}
+                        />
+                      </div>
+                    ) : (
+                      <BillList
+                        bills={state.bills}
+                        onAddBill={() => setState(prev => ({ ...prev, showingBillForm: true }))}
+                        onView={handleViewBill}
+                        onEdit={handleEditBill}
+                        onDelete={handleDeleteBill}
+                      />
+                    )}
+                  </>
+                )}
+
+                {state.currentSection === 'supplier-payments' && (
+                  <SupplierPayments
+                    bills={state.bills}
+                    suppliers={state.suppliers}
+                    onPaymentCreated={() => {
+                      loadData();
+                      setState(prev => ({ ...prev, success: 'Pago a proveedor registrado correctamente' }));
+                      setTimeout(() => setState(prev => ({ ...prev, success: null })), 3000);
+                    }}
+                  />
+                )}
+
+                {state.currentSection === 'purchase-orders' && (
+                  <PurchaseOrdersList
+                    onCreateNew={() => setState(prev => ({ ...prev, showingPurchaseOrderForm: true /* Need to handle form showing logic if duplicate, or just use what PurchaseOrderManager did. WAIT, PurchaseOrderManager likely handled the list AND the form. I should check if I broke the form logic. Let's assume PurchaseOrdersList is ONLY the list. I need to handle switching to form. But for now, adding the Kardex link. */ }))}
+                    onNavigateToKardex={(refId) => setState(prev => ({
+                      ...prev,
+                      currentSection: 'inventory-kardex',
+                      kardexParams: { type: 'purchase', productId: undefined /* Same as Invoice, ideally filter by Ref ID. Using 'purchase' type filter for now. */ }
+                    }))}
+                  />
+                )}
+                {state.currentSection === 'payable-reports' && <PayableReports />}
+
+                {/* --- PAYROLL --- */}
+                {state.currentSection === 'employee-mgr' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <EmployeeManager />
+                  </Suspense>
+                )}
+                {state.currentSection === 'payroll-process' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PayrollProcessor />
+                  </Suspense>
+                )}
+                {state.currentSection === 'payroll-review' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PayrollReview
+                      onViewPaystub={(payrollId) => {
+                        setState(prev => ({
+                          ...prev,
+                          currentSection: 'payroll-paystub',
+                          selectedPayrollId: payrollId
+                        }));
                       }}
                     />
                   </Suspense>
-                </div>
-              )}
+                )}
+                {state.currentSection === 'payroll-paystub' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <EmployeePaystub
+                      payrollId={state.selectedPayrollId}
+                      onBack={() => {
+                        setState(prev => ({
+                          ...prev,
+                          currentSection: 'payroll-review',
+                          selectedPayrollId: undefined
+                        }));
+                      }}
+                    />
+                  </Suspense>
+                )}
+                {state.currentSection === 'payroll-reports' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <PayrollReports />
+                  </Suspense>
+                )}
 
+                {/* --- FIXED ASSETS --- */}
+                {state.currentSection === 'fixed-assets' && <FixedAssetsManager db={db} />}
 
-            </div>
-          </main>
-        </div >
+                {/* --- BUDGETS --- */}
+                {state.currentSection === 'budgets' && <BudgetManager />}
 
-        {/* --- ASISTENTE IA (OVERLAY) --- */}
-        {state.showAssistant && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-4xl h-[90vh] bg-gray-900 rounded-2xl shadow-2xl relative overflow-hidden">
-              <Suspense fallback={<LoadingSpinner />}>
-                <UnifiedAssistant
-                  isOpen={true}
-                  onClose={() => setState(prev => ({ ...prev, showAssistant: false }))}
-                  stats={state.dbStats}
-                  transactionCount={state.invoices.length + state.bills.length}
-                  auditStatus={{
-                    healthy: true,
-                    lastEvent: new Date().toISOString(),
-                    integrityScore: 100
+                {/* --- CONTABILIDAD --- */}
+                {state.currentSection === 'chart-accounts' && <ChartOfAccounts />}
+
+                {state.currentSection === 'accounting-periods' && <PeriodManager />}
+
+                {state.currentSection === 'ledger-hub' && (
+                  <LedgerHub chartOfAccounts={state.chartOfAccounts} />
+                )}
+
+                {state.currentSection === 'journal-entries' && <ManualJournalEntries
+                  chartOfAccounts={state.chartOfAccounts}
+                  onEntryCreated={() => {
+                    loadData();
+                    setState(prev => ({ ...prev, success: 'Asiento registrado' }));
                   }}
-                  complianceMetrics={{
-                    taxCompliance: 100,
-                    dr15Status: 'Al día',
-                    pendingForms: 0
-                  }}
-                />
-              </Suspense>
-            </div>
-          </div>
-        )}
+                />}
 
-        {/* Floating Assistant Button - Visible everywhere except when assistant is open */}
-        {
-          !state.showAssistant && (
-            <button
-              onClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
-              className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all z-40 flex items-center gap-2 group"
-              aria-label="Asistente Virtual"
-            >
-              <Brain className="w-6 h-6 animate-pulse" />
-              <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap font-medium">
-                Asistente IA
-              </span>
-            </button>
+                {state.currentSection === 'general-ledger' && <GeneralLedger chartOfAccounts={state.chartOfAccounts} />}
+                {state.currentSection === 'trial-balance' && <TrialBalanceReport />}
+                {state.currentSection === 'balance-sheet' && <BalanceSheet />}
+                {state.currentSection === 'income-statement' && <IncomeStatement />}
+
+                {/* --- NEW ELITE REPORTS FASE 3 --- */}
+                {state.currentSection === 'reports-dashboard' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+                  </Suspense>
+                )}
+                {state.currentSection === 'financial-reports' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <ReportsDashboard onNavigate={(section) => setState(prev => ({ ...prev, currentSection: section }))} />
+                  </Suspense>
+                )}
+                {state.currentSection === 'cash-flow' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <CashFlowStatement />
+                  </Suspense>
+                )}
+                {state.currentSection === 'aging-report' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <AgingReport />
+                  </Suspense>
+                )}
+                {state.currentSection === 'account-ledger' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <AccountLedger />
+                  </Suspense>
+                )}
+
+
+                {/* --- INVENTARIO --- */}
+                {state.viewingProduct && (
+                  <ProductDetailView
+                    product={state.viewingProduct}
+                    onBack={() => setState(prev => ({ ...prev, viewingProduct: null }))}
+                    onEdit={(product) => setState(prev => ({ ...prev, viewingProduct: null, editingProduct: product }))}
+                    onNavigateToKardex={(productId) => {
+                      setState(prev => ({
+                        ...prev,
+                        viewingProduct: null,
+                        currentSection: 'inventory-kardex',
+                        kardexParams: { productId: productId.toString(), type: 'all' }
+                      }));
+                    }}
+                  />
+                )}
+                {state.currentSection === 'products' && (
+                  <>
+                    {state.showingProductForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nuevo Producto</h2>
+                        <ProductForm
+                          onSubmit={handleCreateProduct}
+                          onCancel={() => setState(prev => ({ ...prev, showingProductForm: false }))}
+                          categories={state.productCategories}
+                        />
+                      </div>
+                    ) : state.editingProduct ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Producto</h2>
+                        <ProductForm
+                          initialData={state.editingProduct}
+                          onSubmit={handleUpdateProduct}
+                          onCancel={handleCancelProductEdit}
+                          categories={state.productCategories}
+                        />
+                      </div>
+                    ) : (
+                      <ProductList
+                        products={state.products}
+                        categories={state.productCategories}
+                        onAddProduct={() => setState(prev => ({ ...prev, showingProductForm: true }))}
+                        onView={handleViewProduct}
+                        onEdit={handleEditProduct}
+                        onDelete={handleDeleteProduct}
+                        onNavigateToKardex={(productId) => {
+                          setState(prev => ({
+                            ...prev,
+                            currentSection: 'inventory-kardex',
+                            kardexParams: { productId: productId.toString(), type: 'all' }
+                          }));
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+
+                {state.currentSection === 'product-categories' && (
+                  <>
+                    {state.showingProductCategoryForm ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Nueva Categoría</h2>
+                        <ProductCategoryForm
+                          onSubmit={handleCreateProductCategory}
+                          onCancel={() => setState(prev => ({ ...prev, showingProductCategoryForm: false }))}
+                        />
+                      </div>
+                    ) : state.editingProductCategory ? (
+                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                        <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">Editar Categoría</h2>
+                        <ProductCategoryForm
+                          initialData={state.editingProductCategory}
+                          onSubmit={handleUpdateProductCategory}
+                          onCancel={handleCancelProductCategoryEdit}
+                        />
+                      </div>
+                    ) : (
+                      <ProductCategoryList
+                        categories={state.productCategories}
+                        onAdd={() => setState(prev => ({ ...prev, showingProductCategoryForm: true }))}
+                        onEdit={handleEditProductCategory}
+                        onDelete={handleDeleteProductCategory}
+                      />
+                    )}
+                  </>
+                )}
+
+                {state.currentSection === 'inventory-movements' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <InventoryMovements />
+                  </Suspense>
+                )}
+                {state.currentSection === 'inventory-adjustments' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <InventoryAdjustments />
+                  </Suspense>
+                )}
+                {state.currentSection === 'inventory-reports' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <InventoryReports />
+                  </Suspense>
+                )}
+                {state.currentSection === 'locations' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LocationsManager />
+                  </Suspense>
+                )}
+
+
+                {/* --- ARCHIVO / CONFIG / HERRAMIENTAS --- */}
+                {state.currentSection === 'company-data' && (
+                  <div className="space-y-6">
+                    <CompanyDataForm />
+                  </div>
+                )}
+
+                {/* FIXED: Dedicated render for Payment Methods when accessed from Sidebar directly */}
+                {state.currentSection === 'payment-methods' && <PaymentMethods />}
+
+                {/* --- INVENTORY KARDEX MODULE --- */}
+                {state.currentSection === 'inventory-kardex' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <InventoryKardexViewer initialFilters={state.kardexParams} />
+                  </Suspense>
+                )}
+
+                {state.currentSection === 'users' && <UserRoleManager />}
+
+                {state.currentSection === 'backups' && <BackupRestore />}
+
+                {/* FIXED: Dedicated render for System Logs and Auditoria */}
+                {(state.currentSection === 'system-logs' || state.currentSection === 'logs') && <SystemLogs />}
+
+                {state.currentSection === 'auditoria' && <TransactionAudit />}
+
+                {state.currentSection === 'security' && <SecuritySettings />}
+
+                {state.currentSection === 'health-check' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <HealthCheckPage />
+                  </Suspense>
+                )}
+
+                {state.currentSection === 'system-status' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <SystemStatusDashboard />
+                  </Suspense>
+                )}
+
+                {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
+
+                {/* JournalEntryTest removed */}
+
+                {state.currentSection === 'banks' && (
+                  <>
+                    {state.showingBankAccountForm ? (
+                      <BankAccountForm
+                        onSubmit={handleCreateBankAccount}
+                        onCancel={() => setState(prev => ({ ...prev, showingBankAccountForm: false }))}
+                      />
+                    ) : state.editingBankAccount ? (
+                      <BankAccountForm
+                        initialData={state.editingBankAccount}
+                        onSubmit={handleUpdateBankAccount}
+                        onCancel={handleCancelBankAccountEdit}
+                      />
+                    ) : (
+                      <BankAccountList
+                        accounts={state.bankAccounts}
+                        onAddAccount={() => setState(prev => ({ ...prev, showingBankAccountForm: true }))}
+                        onEditAccount={handleEditBankAccount}
+                        onDeleteAccount={handleDeleteBankAccount}
+                      />
+                    )}
+                  </>
+                )}
+
+
+
+                {state.currentSection === 'bank-reconciliation' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <BankReconciliation />
+                  </Suspense>
+                )}
+                {state.currentSection === 'discrepancy-analysis' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <DiscrepancyAnalysis />
+                  </Suspense>
+                )}
+                {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
+                {state.currentSection === 'banking-import' && <BankImport />}
+
+                {/* --- IMPUESTOS FLORIDA --- */}
+                {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
+
+                {state.currentSection === 'help' && <HelpCenter />}
+
+                {/* FIXED: Render FloridaTaxReport correctly */}
+                {state.currentSection === 'florida-dr15' && (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <DR15PreparationWizard />
+                  </Suspense>
+                )}
+
+                {/* FIXED: Render TaxRates component */}
+                {state.currentSection === 'tax-rates' && <TaxRates />}
+
+                {state.currentSection === 'tax-reports' && <TaxReports />}
+
+                {state.currentSection === 'tax-calendar' && <TaxCalendar />}
+                {state.currentSection === 'backups' && <BackupPanel />}
+                {state.currentSection === 'verify' && <LiveVerification />}
+
+                {/* --- HERRAMIENTAS --- */}
+                {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
+                {state.currentSection === 'journal-entry-test' && <JournalEntryTest />}
+                {state.currentSection === 'system-audit' && <SystemAudit />}
+
+                {/* --- GESTIÓN DE USUARIOS --- */}
+                {state.currentSection === 'admin-users' && <UserList />}
+                {state.currentSection === 'role-manager' && <RoleManager />}
+                {state.currentSection === 'audit-trail' && <AuditTrailTable />}
+                {state.currentSection === 'my-profile' && user && (
+                  <UserForm
+                    user={user as any}
+                    onSave={() => {
+                      // Actualizar el estado del usuario localmente si es necesario
+                      window.location.reload(); // Forma más segura de refrescar todo el context
+                    }}
+                    onCancel={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
+                  />
+                )}
+
+
+
+
+                {/* --- ASISTENTE IA (Classic Mode if needed, currently unused via Sidebar) --- */}
+                {state.currentSection === 'ai-assistant' && (
+                  <div className="h-[calc(100vh-140px)]">
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <UnifiedAssistant
+                        isOpen={true}
+                        onClose={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))}
+                        stats={state.dbStats}
+                        transactionCount={state.invoices.length + state.bills.length}
+                        auditStatus={{
+                          healthy: true,
+                          lastEvent: new Date().toISOString(),
+                          integrityScore: 100
+                        }}
+                        complianceMetrics={{
+                          taxCompliance: 100,
+                          dr15Status: 'Al día',
+                          pendingForms: 0
+                        }}
+                      />
+                    </Suspense>
+                  </div>
+                )}
+
+
+              </div>
+            </main>
+          </div >
+
+          {/* --- ASISTENTE IA (OVERLAY) --- */}
+          {state.showAssistant && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="w-full max-w-4xl h-[90vh] bg-gray-900 rounded-2xl shadow-2xl relative overflow-hidden">
+                <Suspense fallback={<LoadingSpinner />}>
+                  <UnifiedAssistant
+                    isOpen={true}
+                    onClose={() => setState(prev => ({ ...prev, showAssistant: false }))}
+                    stats={state.dbStats}
+                    transactionCount={state.invoices.length + state.bills.length}
+                    auditStatus={{
+                      healthy: true,
+                      lastEvent: new Date().toISOString(),
+                      integrityScore: 100
+                    }}
+                    complianceMetrics={{
+                      taxCompliance: 100,
+                      dr15Status: 'Al día',
+                      pendingForms: 0
+                    }}
+                  />
+                </Suspense>
+              </div>
+            </div>
           )}
-      </div >
-      <Toaster position="top-right" />
-    </AppRouter>
+
+          {/* Floating Assistant Button - Visible everywhere except when assistant is open */}
+          {
+            !state.showAssistant && (
+              <button
+                onClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
+                className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all z-40 flex items-center gap-2 group"
+                aria-label="Asistente Virtual"
+              >
+                <Brain className="w-6 h-6 animate-pulse" />
+                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap font-medium">
+                  Asistente IA
+                </span>
+              </button>
+            )}
+        </div >
+        <Toaster position="top-right" />
+      </AppRouter>
+    </LanguageProvider>
   );
 }
 

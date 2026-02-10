@@ -8,6 +8,7 @@ import {
   History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
   CheckCircle
 } from 'lucide-react';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface SidebarProps {
   currentSection: string;
@@ -324,6 +325,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
             {!isCollapsed && <span>MI PERFIL</span>}
           </button>
         )}
+
+        {/* Language Switcher */}
+        {!isCollapsed && <LanguageSwitcher variant="sidebar" />}
 
         <button
           onClick={() => {

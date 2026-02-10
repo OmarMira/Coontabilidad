@@ -655,21 +655,301 @@ export class BackupService {
     }
 
     /**
-     * Upload to Google Drive (placeholder)
+     * Upload to Google Drive using API v3 (multipart upload)
      * @private
      */
     private async uploadToGoogleDrive(backup: EncryptedBackup, destination: CloudDestination): Promise<void> {
-        // Requires Google Drive API integration
-        throw new Error('Google Drive upload not yet implemented');
+        ProductionLogger.info('BackupService', 'Uploading to Google Drive', {
+            filename: backup.filename,
+            size: backup.size
+        });
+
+        const accessToken = destination.credentials?.accessToken;
+        const folderId = destination.credentials?.folderId || 'root';
+
+        if (!accessToken) {
+            throw new Error('Google Drive access token is required');
+        }
+
+        // Create metadata for the file
+        const metadata = {
+            name: backup.filename,
+            mimeType: 'application/octet-stream',
+            parents: [folderId],
+            description: `AccountExpress backup created at ${backup.timestamp}`,
+            properties: {
+                logicClock: backup.logicClock.toString(),
+                hasRFC3161: backup.rfc3161Timestamp ? 'true' : 'false',
+                timestamp: backup.timestamp
+            }
+        };
+
+        // Create multipart form data
+        const boundary = '-------314159265358979323846';
+        const delimiter = `\r\n--${boundary}\r\n`;
+        const closeDelimiter = `\r\n--${boundary}--`;
+
+        const multipartRequestBody =
+            delimiter +
+            'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+            JSON.stringify(metadata) +
+            delimiter +
+            'Content-Type: application/octet-stream\r\n' +
+            'Content-Transfer-Encoding: base64\r\n\r\n' +
+            backup.data +
+            closeDelimiter;
+
+        // Upload to Google Drive
+        const response = await fetch(
+            'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': `multipart/related; boundary=${boundary}`
+                },
+                body: multipartRequestBody
+            }
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            ProductionLogger.error(
+                'BackupService',
+                'Google Drive upload failed',
+                new Error(`HTTP ${response.status}: ${errorText}`)
+            );
+            throw new Error(`Google Drive upload failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        ProductionLogger.info('BackupService', 'Google Drive upload successful', {
+            fileId: result.id,
+            name: result.name,
+            size: backup.size
+        });
+
+        // Record metric
+        metricsCollector.recordMetric({
+            category: MetricCategory.BACKUP,
+            operation: 'google_drive_upload',
+            status: 'success',
+            value: backup.size,
+            metadata: {
+                fileId: result.id,
+                logicClock: backup.logicClock
+            }
+        });
     }
 
     /**
-     * Upload to AWS S3 (placeholder)
+     * Upload to AWS S3 using REST API (PutObject)
+     * Uses pre-signed URL or IAM credentials
      * @private
      */
     private async uploadToS3(backup: EncryptedBackup, destination: CloudDestination): Promise<void> {
-        // Requires AWS S3 SDK integration
-        throw new Error('AWS S3 upload not yet implemented');
+        ProductionLogger.info('BackupService', 'Uploading to AWS S3', {
+            filename: backup.filename,
+            size: backup.size
+        });
+
+        const { bucket, region, accessKeyId, secretAccessKey, presignedUrl } = destination.credentials || {};
+
+        // Option 1: Use pre-signed URL (recommended for browser apps)
+        if (presignedUrl) {
+            const response = await fetch(presignedUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'x-amz-meta-logic-clock': backup.logicClock.toString(),
+                    'x-amz-meta-timestamp': backup.timestamp,
+                    'x-amz-meta-has-rfc3161': backup.rfc3161Timestamp ? 'true' : 'false'
+                },
+                body: backup.data
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                ProductionLogger.error(
+                    'BackupService',
+                    'S3 upload failed (pre-signed URL)',
+                    new Error(`HTTP ${response.status}: ${errorText}`)
+                );
+                throw new Error(`S3 upload failed: ${response.statusText}`);
+            }
+
+            ProductionLogger.info('BackupService', 'S3 upload successful (pre-signed URL)', {
+                filename: backup.filename,
+                size: backup.size
+            });
+
+            metricsCollector.recordMetric({
+                category: MetricCategory.BACKUP,
+                operation: 's3_upload',
+                status: 'success',
+                value: backup.size,
+                metadata: {
+                    method: 'presigned_url',
+                    logicClock: backup.logicClock
+                }
+            });
+
+            return;
+        }
+
+        // Option 2: Use IAM credentials with AWS Signature V4
+        if (!bucket || !region || !accessKeyId || !secretAccessKey) {
+            throw new Error(
+                'S3 upload requires either presignedUrl or (bucket, region, accessKeyId, secretAccessKey)'
+            );
+        }
+
+        // Generate AWS Signature V4
+        const key = `backups/${backup.filename}`;
+        const url = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+        const timestamp = new Date().toISOString().replace(/[:\-]|\.\d{3}/g, '');
+        const datestamp = timestamp.slice(0, 8);
+
+        // Create canonical request
+        const canonicalHeaders = [
+            `host:${bucket}.s3.${region}.amazonaws.com`,
+            `x-amz-content-sha256:UNSIGNED-PAYLOAD`,
+            `x-amz-date:${timestamp}`,
+            `x-amz-meta-logic-clock:${backup.logicClock}`,
+            `x-amz-meta-timestamp:${backup.timestamp}`
+        ].join('\n');
+
+        const signedHeaders = 'host;x-amz-content-sha256;x-amz-date;x-amz-meta-logic-clock;x-amz-meta-timestamp';
+
+        const canonicalRequest = [
+            'PUT',
+            `/${key}`,
+            '',
+            canonicalHeaders,
+            '',
+            signedHeaders,
+            'UNSIGNED-PAYLOAD'
+        ].join('\n');
+
+        // Create string to sign
+        const algorithm = 'AWS4-HMAC-SHA256';
+        const credentialScope = `${datestamp}/${region}/s3/aws4_request`;
+
+        const canonicalRequestHash = await this.sha256(canonicalRequest);
+        const stringToSign = [
+            algorithm,
+            timestamp,
+            credentialScope,
+            canonicalRequestHash
+        ].join('\n');
+
+        // Calculate signature
+        const signature = await this.calculateAWSSignature(
+            secretAccessKey,
+            datestamp,
+            region,
+            stringToSign
+        );
+
+        // Create authorization header
+        const authorizationHeader = [
+            `${algorithm} Credential=${accessKeyId}/${credentialScope}`,
+            `SignedHeaders=${signedHeaders}`,
+            `Signature=${signature}`
+        ].join(', ');
+
+        // Upload to S3
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': authorizationHeader,
+                'Content-Type': 'application/octet-stream',
+                'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
+                'x-amz-date': timestamp,
+                'x-amz-meta-logic-clock': backup.logicClock.toString(),
+                'x-amz-meta-timestamp': backup.timestamp,
+                'x-amz-meta-has-rfc3161': backup.rfc3161Timestamp ? 'true' : 'false'
+            },
+            body: backup.data
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            ProductionLogger.error(
+                'BackupService',
+                'S3 upload failed (IAM credentials)',
+                new Error(`HTTP ${response.status}: ${errorText}`)
+            );
+            throw new Error(`S3 upload failed: ${response.statusText}`);
+        }
+
+        ProductionLogger.info('BackupService', 'S3 upload successful (IAM credentials)', {
+            bucket,
+            key,
+            size: backup.size
+        });
+
+        metricsCollector.recordMetric({
+            category: MetricCategory.BACKUP,
+            operation: 's3_upload',
+            status: 'success',
+            value: backup.size,
+            metadata: {
+                method: 'iam_credentials',
+                bucket,
+                region,
+                logicClock: backup.logicClock
+            }
+        });
+    }
+
+    /**
+     * Calculate SHA-256 hash (helper for AWS Signature V4)
+     * @private
+     */
+    private async sha256(message: string): Promise<string> {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    /**
+     * Calculate AWS Signature V4 (helper for S3 upload)
+     * @private
+     */
+    private async calculateAWSSignature(
+        secretKey: string,
+        datestamp: string,
+        region: string,
+        stringToSign: string
+    ): Promise<string> {
+        const encoder = new TextEncoder();
+
+        // Helper function to create HMAC
+        const hmac = async (key: ArrayBuffer | Uint8Array, message: string): Promise<ArrayBuffer> => {
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw',
+                key,
+                { name: 'HMAC', hash: 'SHA-256' },
+                false,
+                ['sign']
+            );
+            return await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(message));
+        };
+
+        // Derive signing key
+        const kDate = await hmac(encoder.encode(`AWS4${secretKey}`), datestamp);
+        const kRegion = await hmac(kDate, region);
+        const kService = await hmac(kRegion, 's3');
+        const kSigning = await hmac(kService, 'aws4_request');
+
+        // Sign the string
+        const signature = await hmac(kSigning, stringToSign);
+        const signatureArray = Array.from(new Uint8Array(signature));
+        return signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 }
 

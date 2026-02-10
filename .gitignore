@@ -1,65 +1,323 @@
-# Logs
-logs
-*.log
+# ============================================
+# AccountExpress Next-Gen - .gitignore
+# ============================================
+# CRÍTICO: Este archivo protege datos sensibles
+# NO modificar sin revisar con el equipo de seguridad
+# ============================================
+
+# ============================================
+# 🔒 DATOS SENSIBLES (NUNCA SUBIR)
+# ============================================
+
+# Variables de entorno con credenciales reales
+.env
+.env.local
+.env.production
+.env.development
+.env.*.local
+
+# Base de datos SQLite con datos reales de clientes
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Backups cifrados (.aex) con datos de clientes
+*.aex
+backups/
+backup-*.aex
+
+# Archivos de configuración con API keys
+config.local.js
+config.local.ts
+secrets.json
+
+# Certificados y claves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Tokens de OAuth
+oauth-tokens.json
+refresh-tokens.json
+
+# ============================================
+# 📦 DEPENDENCIAS Y BUILD
+# ============================================
+
+# Node modules
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+.output/
+.vercel/
+.netlify/
 
-# Editor directories and files
+# Vite
+.vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# ============================================
+# 🗄️ PERSISTENCIA LOCAL (OPFS/IndexedDB)
+# ============================================
+
+# IndexedDB dumps
+indexeddb/
+idb-dumps/
+
+# OPFS (Origin Private File System) - metadata
+.opfs/
+opfs-cache/
+
+# Temporal storage
+temp/
+tmp/
+.tmp/
+
+# ============================================
+# 💻 EDITORES E IDEs
+# ============================================
+
+# VSCode
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+!.vscode/settings.json.example
+.history/
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# JetBrains IDEs (WebStorm, IntelliJ, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
 
-# Database files
-*.db
-*.sqlite
-*.sqlite3
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
 
-# Build files
-build/
-.cache/
-
-# OS generated files
-Thumbs.db
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-
-# IDE files
+# Vim
 *.swp
 *.swo
 *~
 
-# Temporary files
-*.tmp
-*.temp
+# Emacs
+*~
+\#*\#
+.\#*
 
-# Build/Test output logs (organized in .logs/)
-.logs/
-*_output.txt
-*_check*.txt
-type_check_*.txt
-error_*.txt
+# ============================================
+# 🖥️ SISTEMA OPERATIVO
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# ============================================
+# 🧪 TESTING Y COVERAGE
+# ============================================
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov
+
+# Test results
+test-results/
+junit.xml
+test-report.html
+
+# Playwright
+playwright-report/
+playwright/.cache/
+
+# ============================================
+# 📊 LOGS Y DEBUGGING
+# ============================================
+
+# Logs generales
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Production logs (NO subir logs con datos de clientes)
+production-logs/
+error-logs/
+audit-logs/
+
+# Debug files
+debug/
+.debug/
+
+# ============================================
+# 🚀 DEPLOYMENT
+# ============================================
+
+# Vercel
+.vercel/
+
+# Netlify
+.netlify/
+
+# AWS
+.aws/
+aws-config.json
+
+# Google Cloud
+.gcloud/
+gcloud-config.json
+
+# ============================================
+# 📝 DOCUMENTACIÓN TEMPORAL
+# ============================================
+
+# Drafts y notas personales
+NOTES.md
+TODO.md
+DRAFT_*.md
+notes/
+
+# Documentación generada automáticamente
+api-docs/generated/
+typedoc/
+
+# ============================================
+# 🔧 HERRAMIENTAS DE DESARROLLO
+# ============================================
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Prettier cache
+.prettiercache
+
+# Turbo
+.turbo/
+
+# Next.js (si se usa)
+.next/
+
+# Nuxt.js (si se usa)
+.nuxt/
+
+# ============================================
+# 📦 PACKAGE MANAGERS
+# ============================================
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# pnpm
+.pnpm-store/
+
+# ============================================
+# 🎨 ASSETS TEMPORALES
+# ============================================
+
+# Imágenes temporales
+temp-images/
+*.tmp.png
+*.tmp.jpg
+
+# PDFs generados temporalmente
+temp-pdfs/
+*.tmp.pdf
+
+# ============================================
+# 🔐 SEGURIDAD ADICIONAL
+# ============================================
+
+# Archivos de sesión
+sessions/
+*.session
+
+# Cache de autenticación
+.auth-cache/
+
+# Tokens temporales
+.tokens/
+
+# ============================================
+# ✅ ARCHIVOS QUE SÍ DEBEN SUBIRSE
+# ============================================
+# Los siguientes archivos SON SEGUROS y DEBEN subirse:
+#
+# ✅ .env.example - Template sin credenciales reales
+# ✅ README.md - Documentación pública
+# ✅ CHANGELOG.md - Historial de versiones
+# ✅ package.json - Dependencias del proyecto
+# ✅ tsconfig.json - Configuración de TypeScript
+# ✅ vite.config.ts - Configuración de Vite
+# ✅ src/ - Código fuente
+# ✅ public/ - Assets públicos
+# ✅ docs/ - Documentación del proyecto
+# ✅ .github/ - GitHub Actions y workflows
+#
+# ============================================
+
+# ============================================
+# 🚨 VERIFICACIÓN DE SEGURIDAD
+# ============================================
+# Antes de hacer git push, ejecuta:
+#
+# 1. git status - Verifica qué archivos se subirán
+# 2. git diff --cached - Revisa los cambios
+# 3. grep -r "API_KEY\|SECRET\|PASSWORD" . - Busca credenciales
+# 4. Confirma que NO aparecen archivos .db, .env, o .aex
+#
+# Si encuentras algo sospechoso, usa:
+# git reset HEAD <archivo> - Para quitar del staging
+# git rm --cached <archivo> - Para dejar de trackear
+#
+# ============================================
+
+# ============================================
+# 📞 SOPORTE
+# ============================================
+# Si tienes dudas sobre qué archivos subir:
+# 1. Revisa este archivo
+# 2. Consulta con el equipo de seguridad
+# 3. En caso de duda, NO subas el archivo
+#
+# Es mejor pecar de cauteloso que exponer datos sensibles
+# ============================================

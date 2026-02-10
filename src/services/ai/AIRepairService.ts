@@ -4,6 +4,7 @@ import { ProductionLogger } from '../../core/logging/ProductionLogger';
 import { AIAssistantService } from './AIAssistantService';
 import { AccountingService, CreateJournalEntryDTO } from '../accounting/AccountingService';
 import { FloridaTaxEngine } from '../accounting/FloridaTaxEngine';
+import { I18nHelper } from '../../utils/I18nHelper';
 import {
     RepairProposal,
     RepairResult,
@@ -38,6 +39,8 @@ export class AIRepairService {
     private accountingService: AccountingService;
     private taxEngine: FloridaTaxEngine;
     private proposals: Map<string, RepairProposal> = new Map();
+    private t: (key: string, params?: Record<string, string | number>) => string;
+    private currentLocale: 'es' | 'en';
 
     // Registry de funciones seguras que la IA puede sugerir
     private readonly SAFE_FUNCTIONS: Record<RepairActionType, Function> = {
@@ -55,6 +58,12 @@ export class AIRepairService {
         this.aiAssistant = new AIAssistantService(db, apiKey);
         this.accountingService = new AccountingService(db);
         this.taxEngine = FloridaTaxEngine.getInstance(db);
+        // Detectar idioma actual de la UI
+        this.currentLocale = I18nHelper.getCurrentLocale();
+        // Inicializar función de traducción con locale actual
+        this.t = I18nHelper.createTranslator(this.currentLocale);
+
+        ProductionLogger.info('AIRepairService', `Initialized with locale: ${this.currentLocale}`);
     }
 
     /**
@@ -376,43 +385,59 @@ export class AIRepairService {
         anomaly: any
     ): Promise<RepairProposal | null> {
         let actions: RepairAction[] = [];
+
+        // Generar mensajes en el idioma actual de la UI
         let issue = {
-            title: anomaly.description || 'Unknown issue',
-            description: anomaly.details || 'No details available',
-            affectedEntities: anomaly.affectedEntities || [],
+            title: anomaly.description || this.t('ai.detectIssues'),
+            description: anomaly.details || this.t('messages.noResults'),
+            affectedEntities: await this.translateAffectedEntities(anomaly.affectedEntities || []),
             detectedAt: new Date()
         };
         let risks: string[] = [];
         let confidence = 0.7;
 
-        // Generate actions based on category
+        // Generate actions based on category (in user's language)
         switch (category) {
             case 'balance':
                 if (anomaly.type === 'UNBALANCED_JE') {
+                    const accountName = await this.getAccountDisplayName(anomaly.accountCode);
                     actions = [{
                         type: 'REVERSE_ENTRY',
                         params: {
                             journalEntryId: anomaly.entityid,
-                            reason: 'Unbalanced entry detected'
+                            reason: this.currentLocale === 'es'
+                                ? 'Asiento descuadrado detectado'
+                                : 'Unbalanced entry detected'
                         },
                         reversible: true,
-                        description: `Reverse unbalanced journal entry ${anomaly.entityId}`,
+                        description: this.currentLocale === 'es'
+                            ? `Revertir asiento contable descuadrado ${anomaly.entityId}`
+                            : `Reverse unbalanced journal entry ${anomaly.entityId}`,
                         estimatedImpact: 'medium'
                     }];
-                    risks = ['Will create reversal entry', 'Original entry remains in history'];
+                    risks = this.currentLocale === 'es'
+                        ? ['Creará un asiento de reversión', 'El asiento original permanece en el historial']
+                        : ['Will create reversal entry', 'Original entry remains in history'];
                 } else if (anomaly.type === 'ACCOUNT_MISMATCH') {
+                    const accountName = await this.getAccountDisplayName(anomaly.accountCode);
                     actions = [{
                         type: 'ADJUST_BALANCE',
                         params: {
                             accountCode: anomaly.accountCode,
                             targetBalanceCents: anomaly.expectedBalance,
-                            reason: 'Balance mismatch detected'
+                            reason: this.currentLocale === 'es'
+                                ? 'Descuadre de saldo detectado'
+                                : 'Balance mismatch detected'
                         },
                         reversible: true,
-                        description: `Adjust balance for account ${anomaly.accountCode}`,
+                        description: this.currentLocale === 'es'
+                            ? `Ajustar saldo para cuenta ${accountName}`
+                            : `Adjust balance for account ${accountName}`,
                         estimatedImpact: 'high'
                     }];
-                    risks = ['Creates adjustment entry', 'Uses suspense account 9999'];
+                    risks = this.currentLocale === 'es'
+                        ? ['Crea un asiento de ajuste', 'Usa cuenta suspense 9999']
+                        : ['Creates adjustment entry', 'Uses suspense account 9999'];
                 }
                 break;
 
@@ -424,10 +449,14 @@ export class AIRepairService {
                         county: anomaly.county || 'Miami-Dade'
                     },
                     reversible: true,
-                    description: `Recalculate tax for invoice ${anomaly.invoiceId}`,
+                    description: this.currentLocale === 'es'
+                        ? `Recalcular impuesto para factura ${anomaly.invoiceId}`
+                        : `Recalculate tax for invoice ${anomaly.invoiceId}`,
                     estimatedImpact: 'medium'
                 }];
-                risks = ['Will update invoice tax amount', 'Creates tax adjustment journal entry'];
+                risks = this.currentLocale === 'es'
+                    ? ['Actualizará el monto de impuesto de la factura', 'Crea un asiento de ajuste fiscal']
+                    : ['Will update invoice tax amount', 'Creates tax adjustment journal entry'];
                 break;
 
             case 'audit':
@@ -438,10 +467,14 @@ export class AIRepairService {
                         to_logic_clock: anomaly.toClock
                     },
                     reversible: false,
-                    description: 'Repair broken audit chain',
+                    description: this.currentLocale === 'es'
+                        ? 'Reparar cadena de auditoría rota'
+                        : 'Repair broken audit chain',
                     estimatedImpact: 'high'
                 }];
-                risks = ['Will regenerate hashes', 'Irreversible operation'];
+                risks = this.currentLocale === 'es'
+                    ? ['Regenerará los hashes', 'Operación irreversible']
+                    : ['Will regenerate hashes', 'Irreversible operation'];
                 confidence = 0.5; // Lower confidence for chain repair
                 break;
 
@@ -957,6 +990,80 @@ export class AIRepairService {
             newBalance: params.targetBalanceCents,
             difference: differenceCents
         });
+    }
+
+    /**
+     * Get account display name (uses account_alias if available and UI is in Spanish)
+     */
+    private async getAccountDisplayName(accountCode: string): Promise<string> {
+        if (!accountCode) return '';
+
+        try {
+            const account = await this.db.select(
+                'SELECT code, name, account_alias FROM chart_of_accounts WHERE code = ?',
+                [accountCode]
+            );
+
+            if (!account || account.length === 0) {
+                return accountCode;
+            }
+
+            const accountData = account[0] as any;
+
+            // If UI is in Spanish and account_alias exists, use it
+            if (this.currentLocale === 'es' && accountData.account_alias) {
+                return `${accountData.code} - ${accountData.account_alias}`;
+            }
+
+            // Otherwise, use English name (legal standard)
+            return `${accountData.code} - ${accountData.name}`;
+        } catch (error) {
+            ProductionLogger.error('AIRepairService', 'Failed to get account display name', error as Error);
+            return accountCode;
+        }
+    }
+
+    /**
+     * Translate affected entities to user's language
+     */
+    private async translateAffectedEntities(entities: string[]): Promise<string[]> {
+        const translated: string[] = [];
+
+        for (const entity of entities) {
+            // Check if entity contains account code (e.g., "Account 4010")
+            const accountMatch = entity.match(/Account\s+(\d{4})/i);
+            if (accountMatch) {
+                const accountCode = accountMatch[1];
+                const displayName = await this.getAccountDisplayName(accountCode);
+
+                const prefix = this.currentLocale === 'es' ? 'Cuenta' : 'Account';
+                translated.push(`${prefix} ${displayName}`);
+                continue;
+            }
+
+            // Check for journal entry (e.g., "JE #1234")
+            const jeMatch = entity.match(/JE\s+#?(\d+)/i);
+            if (jeMatch) {
+                const jeId = jeMatch[1];
+                const prefix = this.currentLocale === 'es' ? 'Asiento' : 'JE';
+                translated.push(`${prefix} #${jeId}`);
+                continue;
+            }
+
+            // Check for invoice (e.g., "Invoice #INV-001")
+            const invoiceMatch = entity.match(/Invoice\s+#?(\S+)/i);
+            if (invoiceMatch) {
+                const invoiceNum = invoiceMatch[1];
+                const prefix = this.currentLocale === 'es' ? 'Factura' : 'Invoice';
+                translated.push(`${prefix} #${invoiceNum}`);
+                continue;
+            }
+
+            // Default: keep as is
+            translated.push(entity);
+        }
+
+        return translated;
     }
 
     private generateId(): string {
