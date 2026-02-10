@@ -299,6 +299,23 @@
         "monitoring247": "Monitoring your accounting 24/7",
         "aiProposals": "AI Proposals"
     },
+    "customerList": {
+        "title": "Customer Directory",
+        "subtitle": "Neural Relationship Manager",
+        "searchPlaceholder": "SEARCH CUSTOMER...",
+        "allCounties": "ALL COUNTIES",
+        "registerCustomer": "Register Customer",
+        "emptyTitle": "Empty Data Mesh",
+        "emptyMessage": "No records detected matching the applied neural filters.",
+        "confirmDelete": "Are you sure you want to delete {{name}}?",
+        "invalidDate": "Invalid date",
+        "networkSync": "Network Synchronization",
+        "currentStatus": "Current status of the records database",
+        "totalRecords": "Total Records",
+        "validatedContacts": "Validated Contacts",
+        "activeLines": "Active Lines",
+        "geoZones": "Geographic Zones"
+    },
     "messages": {
         "saveSuccess": "Saved successfully",
         "deleteSuccess": "Deleted successfully",

@@ -4,6 +4,7 @@ import {
   Target, Zap, Activity, Filter, ArrowRight
 } from 'lucide-react';
 import { Customer } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface CustomerListProps {
   customers: Customer[];
@@ -20,6 +21,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
   onDelete,
   onAddCustomer
 }) => {
+  const { t } = useLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCounty, setSelectedCounty] = useState('');
 
@@ -41,12 +43,12 @@ export const CustomerList: React.FC<CustomerListProps> = ({
         day: 'numeric'
       });
     } catch (error) {
-      return 'Fecha inválida';
+      return t('customerList.invalidDate');
     }
   };
 
   const handleDelete = (customer: Customer) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar a ${customer.name}?`)) {
+    if (window.confirm(t('customerList.confirmDelete', { name: customer.name }))) {
       onDelete(customer.id);
     }
   };
@@ -60,9 +62,9 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             <Users className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Directorio de Clientes</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('customerList.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> Neural Relationship Manager
+              <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('customerList.subtitle')}
             </p>
           </div>
         </div>
@@ -72,7 +74,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
             <input
               type="text"
-              placeholder="BUSCAR CLIENTE..."
+              placeholder={t('customerList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none w-80 font-black uppercase tracking-widest text-[10px] transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.1)]"
@@ -84,7 +86,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             onChange={(e) => setSelectedCounty(e.target.value)}
             className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
           >
-            <option value="">TODOS LOS CONDADOS</option>
+            <option value="">{t('customerList.allCounties')}</option>
             {uniqueCounties.map(county => (
               <option key={county} value={county}>{county?.toUpperCase()}</option>
             ))}
@@ -95,7 +97,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            Registrar Cliente
+            {t('customerList.registerCustomer')}
           </button>
         </div>
       </div>
@@ -105,9 +107,9 @@ export const CustomerList: React.FC<CustomerListProps> = ({
           <div className="w-24 h-24 bg-slate-950 rounded-[2rem] border border-slate-800 flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-500">
             <Target className="w-10 h-10 text-slate-700 group-hover:text-blue-500 transition-colors" />
           </div>
-          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">Malla de Datos Vacía</h3>
+          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">{t('customerList.emptyTitle')}</h3>
           <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">
-            No se han detectado registros que coincidan con los filtros neuronales aplicados.
+            {t('customerList.emptyMessage')}
           </p>
         </div>
       ) : (
@@ -202,16 +204,16 @@ export const CustomerList: React.FC<CustomerListProps> = ({
                 <Activity className="w-10 h-10 text-blue-500" />
               </div>
               <div>
-                <h4 className="text-2xl font-black text-white uppercase tracking-tighter">Sincronización de Red</h4>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">Estatus actual de la base de registros</p>
+                <h4 className="text-2xl font-black text-white uppercase tracking-tighter">{t('customerList.networkSync')}</h4>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{t('customerList.currentStatus')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 w-full md:w-auto">
-              <IntelMiniStat value={customers.length} label="Total Registros" color="blue" />
-              <IntelMiniStat value={customers.filter(c => c.email).length} label="Contactos Validados" color="emerald" />
-              <IntelMiniStat value={customers.filter(c => c.phone).length} label="Líneas Activas" color="amber" />
-              <IntelMiniStat value={uniqueCounties.length} label="Zonas Geográficas" color="rose" />
+              <IntelMiniStat value={customers.length} label={t('customerList.totalRecords')} color="blue" />
+              <IntelMiniStat value={customers.filter(c => c.email).length} label={t('customerList.validatedContacts')} color="emerald" />
+              <IntelMiniStat value={customers.filter(c => c.phone).length} label={t('customerList.activeLines')} color="amber" />
+              <IntelMiniStat value={uniqueCounties.length} label={t('customerList.geoZones')} color="rose" />
             </div>
           </div>
         </div>

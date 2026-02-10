@@ -299,6 +299,23 @@
         "monitoring247": "Monitoreando tu contabilidad 24/7",
         "aiProposals": "Propuestas de la IA"
     },
+    "customerList": {
+        "title": "Directorio de Clientes",
+        "subtitle": "Neural Relationship Manager",
+        "searchPlaceholder": "BUSCAR CLIENTE...",
+        "allCounties": "TODOS LOS CONDADOS",
+        "registerCustomer": "Registrar Cliente",
+        "emptyTitle": "Malla de Datos Vacía",
+        "emptyMessage": "No se han detectado registros que coincidan con los filtros neuronales aplicados.",
+        "confirmDelete": "¿Estás seguro de que quieres eliminar a {{name}}?",
+        "invalidDate": "Fecha inválida",
+        "networkSync": "Sincronización de Red",
+        "currentStatus": "Estatus actual de la base de registros",
+        "totalRecords": "Total Registros",
+        "validatedContacts": "Contactos Validados",
+        "activeLines": "Líneas Activas",
+        "geoZones": "Zonas Geográficas"
+    },
     "messages": {
         "saveSuccess": "Guardado exitosamente",
         "deleteSuccess": "Eliminado exitosamente",
