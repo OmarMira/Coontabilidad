@@ -17,6 +17,7 @@ import {
 import { getCompanyLogoUrl, hasCompanyLogo } from '../utils/logoUtils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useLocale } from '../i18n/useLocale';
 
 import { AuditService } from '../services/AuditService';
 import { TaxService } from '../services/TaxService';
@@ -42,6 +43,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoices = [], bills = [] }) => {
+  const { t } = useLocale();
   const [integrityHash, setIntegrityHash] = useState<string>('VERIFICANDO...');
   const [nextTaxDeadline, setNextTaxDeadline] = useState<string>('');
   const [sunbizDaysLeft, setSunbizDaysLeft] = useState<number>(0);
@@ -125,11 +127,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em] flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  Radar de Cumplimiento Florida
+                  {t('dashboard.complianceRadar')}
                 </h3>
                 <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
                   <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[10px] font-bold text-slate-500">CORE HASH: {integrityHash}</span>
+                  <span className="text-[10px] font-bold text-slate-500">{t('dashboard.coreHash')}: {integrityHash}</span>
                 </div>
               </div>
 
@@ -137,9 +139,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
                 {/* Sunbiz Compliance */}
                 <div className="relative">
                   <div className="flex justify-between items-end mb-3">
-                    <span className="text-white font-semibold text-base">Reporte Anual de Sunbiz</span>
+                    <span className="text-white font-semibold text-base">{t('dashboard.sunbizReport')}</span>
                     <span className={`badge-elite ${sunbizDaysLeft < 30 ? 'bg-rose-500/20 text-rose-400' : 'bg-white/5 text-slate-500'}`}>
-                      {sunbizDaysLeft} DÍAS RESTANTES
+                      {sunbizDaysLeft} {t('dashboard.daysRemaining')}
                     </span>
                   </div>
                   <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -157,7 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
                       <Calendar className="w-7 h-7 text-emerald-400" />
                     </div>
                     <div>
-                      <span className="block text-[10px] uppercase text-slate-600 font-black tracking-widest mb-1">Próximo Vencimiento DR-15</span>
+                      <span className="block text-[10px] uppercase text-slate-600 font-black tracking-widest mb-1">{t('dashboard.nextDeadline')}</span>
                       <span className="text-white font-bold text-xl tracking-tight">{nextTaxDeadline}</span>
                     </div>
                     <div className="ml-auto">
@@ -174,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               onClick={() => onNavigate('florida-dr15')}
               className="btn-elite-primary w-full mt-10 text-xs uppercase tracking-[0.2em] py-4"
             >
-              Iniciar Ciclo Fiscal DR-15
+              {t('dashboard.startFiscalCycle')}
             </button>
           </div>
         </div>
@@ -189,7 +191,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
       <div className="flex items-center justify-between px-2">
         <h2 className="text-sm font-black text-white p-2 flex items-center gap-3 uppercase tracking-widest">
           <Activity className="w-5 h-5 text-emerald-500" />
-          Métricas de Vitalidad
+          {t('dashboard.vitalityMetrics')}
         </h2>
         <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent ml-4"></div>
       </div>
@@ -202,10 +204,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               <TrendingUp className="w-6 h-6 text-emerald-400" />
             </div>
             <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
-              Ventas
+              {t('dashboard.sales')}
             </span>
           </div>
-          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">Ingresos Totales</p>
+          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">{t('dashboard.totalRevenue')}</p>
           <h3 className="text-3xl font-black text-white tabular-nums">${stats.revenue.toLocaleString()}</h3>
         </div>
 
@@ -216,7 +218,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               <DollarSign className={`w-6 h-6 ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}`} />
             </div>
           </div>
-          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">Utilidad Neta</p>
+          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">{t('dashboard.netProfit')}</p>
           <h3 className={`text-3xl font-black tabular-nums ${isProfitable ? 'text-white' : 'text-rose-400'}`}>
             ${netIncome.toLocaleString()}
           </h3>
@@ -229,13 +231,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               <Lock className="w-6 h-6 text-sun-orange" />
             </div>
           </div>
-          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">Pasivo DR-15 Reservado</p>
+          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">{t('dashboard.taxLiability')}</p>
           <h3 className="text-3xl font-black text-gray-200 tabular-nums">
             ${(realTaxLiability / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </h3>
           <div className="mt-4 flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-sun-orange animate-pulse"></div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase">{pendingTaxCount} Docs Pendientes</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase">{pendingTaxCount} {t('dashboard.pendingDocs')}</span>
           </div>
         </div>
 
@@ -247,7 +249,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
             </div>
             <div className="text-[10px] font-bold text-slate-500">v1.2 Beta</div>
           </div>
-          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">Cartera de Clientes</p>
+          <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">{t('dashboard.customerPortfolio')}</p>
           <h3 className="text-3xl font-black text-white tabular-nums">{stats.customers}</h3>
         </div>
       </div>
@@ -261,18 +263,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
             <div>
               <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-emerald-400" />
-                Tendencia Operativa {new Date().getFullYear()}
+                {t('dashboard.operationalTrend')} {new Date().getFullYear()}
               </h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Comparativa Mensual de Ventas vs Compras</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{t('dashboard.monthlySalesVsPurchases')}</p>
             </div>
             <div className="flex gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-emerald-500 rounded-sm shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Ventas</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">{t('dashboard.sales')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-rose-500 rounded-sm shadow-[0_0_5px_rgba(244,63,94,0.5)]"></div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Compras</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">{t('dashboard.purchases')}</span>
               </div>
             </div>
           </div>
@@ -314,13 +316,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
 
         {/* Acciones Rápidas (Lateral) */}
         <div className="card-elite">
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Accesos Rápidos</h3>
+          <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-8">{t('dashboard.quickAccess')}</h3>
           <div className="space-y-3">
             {[
-              { id: 'invoices', label: 'Emitir Factura', icon: FileText, color: 'emerald' },
-              { id: 'journal-entries', label: 'Asiento Manual', icon: Activity, color: 'blue' },
-              { id: 'ledger-hub', label: 'Libros Contables', icon: Lock, color: 'purple' },
-              { id: 'tax-config', label: 'Ajustes Fiscales', icon: Shield, color: 'sun-orange' }
+              { id: 'invoices', label: t('dashboard.issueInvoice'), icon: FileText, color: 'emerald' },
+              { id: 'journal-entries', label: t('dashboard.manualEntry'), icon: Activity, color: 'blue' },
+              { id: 'ledger-hub', label: t('dashboard.accountingBooks'), icon: Lock, color: 'purple' },
+              { id: 'tax-config', label: t('dashboard.taxSettings'), icon: Shield, color: 'sun-orange' }
             ].map(action => (
               <button
                 key={action.id}
@@ -340,17 +342,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
 
           <div className="mt-8 p-6 bg-blue-600/5 rounded-3xl border border-blue-600/10 text-center hover:bg-blue-600/10 transition-all cursor-pointer">
             <Bot className="w-10 h-10 text-blue-500 mx-auto mb-4" />
-            <p className="text-xs font-bold text-blue-300 mb-2">Asistente Inteligente</p>
+            <p className="text-xs font-bold text-blue-300 mb-2">{t('dashboard.intelligentAssistant')}</p>
             {aiProposalCount > 0 ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <p className="text-sm font-black text-emerald-400">
-                  {aiProposalCount} {aiProposalCount === 1 ? 'Propuesta' : 'Propuestas'}
+                  {aiProposalCount} {aiProposalCount === 1 ? t('dashboard.proposal') : t('dashboard.proposals')}
                 </p>
               </div>
             ) : (
               <p className="text-[10px] text-slate-500 leading-relaxed uppercase font-black">
-                Monitoreando tu contabilidad 24/7
+                {t('dashboard.monitoring247')}
               </p>
             )}
           </div>
@@ -364,7 +366,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           <div className="flex items-center justify-between px-2 mb-6">
             <h2 className="text-sm font-black text-white p-2 flex items-center gap-3 uppercase tracking-widest">
               <Bot className="w-5 h-5 text-blue-500" />
-              Propuestas de la IA
+              {t('dashboard.aiProposals')}
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent ml-4"></div>
           </div>
