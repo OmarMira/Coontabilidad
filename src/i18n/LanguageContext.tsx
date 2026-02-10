@@ -25,6 +25,9 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         localStorage.setItem('app_language', language);
         // Actualizar atributo lang del HTML
         document.documentElement.lang = language;
+
+        // Disparar evento personalizado para notificar cambio de idioma
+        window.dispatchEvent(new CustomEvent('languageChange', { detail: { language } }));
     }, [language]);
 
     const setLanguage = (lang: Language) => {
@@ -51,3 +54,6 @@ export const useLanguage = (): LanguageContextType => {
     }
     return context;
 };
+
+// Alias para mejor Developer Experience (DX)
+export const useTranslation = useLanguage;

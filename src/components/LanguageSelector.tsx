@@ -1,18 +1,18 @@
 import React from 'react';
-import { useI18n } from '../contexts/I18nContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export function LanguageSelector() {
-    const { locale, setLocale } = useI18n();
+    const { language, setLanguage } = useLanguage();
 
     const toggleLanguage = () => {
-        setLocale(locale === 'es' ? 'en' : 'es');
+        setLanguage(language === 'es' ? 'en' : 'es');
     };
 
     return (
         <button
             onClick={toggleLanguage}
             className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            title={locale === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+            title={language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
         >
             <svg
                 className="w-5 h-5"
@@ -28,7 +28,7 @@ export function LanguageSelector() {
                 />
             </svg>
             <span className="font-medium text-sm">
-                {locale === 'es' ? 'ES' : 'EN'}
+                {language === 'es' ? 'ES' : 'EN'}
             </span>
         </button>
     );
