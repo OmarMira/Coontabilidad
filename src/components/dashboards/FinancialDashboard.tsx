@@ -19,8 +19,10 @@ import {
 } from 'lucide-react';
 import { getMonthlyFinancialSummary } from '../../database/simple-db';
 import { Button } from '../ui/button';
+import { useLocale } from '../../i18n/useLocale';
 
 export const FinancialDashboard: React.FC = () => {
+  const { t } = useLocale();
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<'6m' | '12m' | 'ytd'>('12m');
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,20 @@ export const FinancialDashboard: React.FC = () => {
   };
 
   const getMonthName = (monthNum: string): string => {
-    const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+    const months = [
+      t('financialDashboard.months.jan'),
+      t('financialDashboard.months.feb'),
+      t('financialDashboard.months.mar'),
+      t('financialDashboard.months.abr'),
+      t('financialDashboard.months.may'),
+      t('financialDashboard.months.jun'),
+      t('financialDashboard.months.jul'),
+      t('financialDashboard.months.ago'),
+      t('financialDashboard.months.sep'),
+      t('financialDashboard.months.oct'),
+      t('financialDashboard.months.nov'),
+      t('financialDashboard.months.dic')
+    ];
     return months[parseInt(monthNum) - 1] || monthNum;
   };
 
@@ -79,7 +94,7 @@ export const FinancialDashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-950">
         <div className="w-16 h-16 border-4 border-blue-600/20 border-t-blue-500 rounded-full animate-spin mb-6 shadow-[0_0_20px_rgba(59,130,246,0.3)]"></div>
-        <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Neural Engine Syncing...</span>
+        <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">{t('financialDashboard.syncing')}</span>
       </div>
     );
   }
@@ -93,9 +108,9 @@ export const FinancialDashboard: React.FC = () => {
             <Activity className="w-10 h-10 text-indigo-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Análisis de Capital</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('financialDashboard.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> Real-Time Financial Diagnostics
+              <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t('financialDashboard.subtitle')}
             </p>
           </div>
         </div>
@@ -103,16 +118,16 @@ export const FinancialDashboard: React.FC = () => {
         {/* Control Hub */}
         <div className="flex items-center gap-4">
           <div className="flex gap-2 p-1.5 bg-slate-950 border border-slate-800 rounded-2xl shadow-inner">
-            {['6m', 'ytd', '12m'].map((period) => (
+            {(['6m', 'ytd', '12m'] as const).map((period) => (
               <button
                 key={period}
-                onClick={() => setSelectedPeriod(period as any)}
+                onClick={() => setSelectedPeriod(period)}
                 className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedPeriod === period
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 ring-1 ring-indigo-500/50'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 ring-1 ring-indigo-500/50'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'
                   }`}
               >
-                {period === '6m' ? '6 Meses' : period === 'ytd' ? 'YTD' : '12 Meses'}
+                {t(`financialDashboard.periods.${period}`)}
               </button>
             ))}
           </div>
@@ -120,22 +135,22 @@ export const FinancialDashboard: React.FC = () => {
             <Filter className="w-4 h-4" />
           </Button>
           <Button className="h-12 px-6 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-[10px] gap-3">
-            <Download className="w-4 h-4" /> Exportar
+            <Download className="w-4 h-4" /> {t('financialDashboard.export')}
           </Button>
         </div>
       </div>
 
       {/* KPI Cards Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <PremiumKPICard title="Revenue" value={formatCurrency(kpis.totalRevenue)} change={kpis.revenueChange} icon={DollarSign} color="blue" />
-        <PremiumKPICard title="Operativo" value={formatCurrency(kpis.totalExpenses)} change={kpis.expenseChange} icon={TrendingDown} color="rose" inverse />
-        <PremiumKPICard title="Utilidad" value={formatCurrency(kpis.netProfit)} change={kpis.profitChange} icon={TrendingUp} color="emerald" />
-        <PremiumKPICard title="Margen" value={`${kpis.profitMargin.toFixed(1)}%`} change={kpis.profitChange} icon={PieChartIcon} color="amber" />
+        <PremiumKPICard title={t('financialDashboard.revenue')} value={formatCurrency(kpis.totalRevenue)} change={kpis.revenueChange} icon={DollarSign} color="blue" />
+        <PremiumKPICard title={t('financialDashboard.operating')} value={formatCurrency(kpis.totalExpenses)} change={kpis.expenseChange} icon={TrendingDown} color="rose" inverse />
+        <PremiumKPICard title={t('financialDashboard.profit')} value={formatCurrency(kpis.netProfit)} change={kpis.profitChange} icon={TrendingUp} color="emerald" />
+        <PremiumKPICard title={t('financialDashboard.margin')} value={`${kpis.profitMargin.toFixed(1)}%`} change={kpis.profitChange} icon={PieChartIcon} color="amber" />
       </div>
 
       {/* Main Analysis Hub */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-        <AnalysisBox title="Ingresos vs Gastos" subtitle="Comparativa de flujo de caja mensual">
+        <AnalysisBox title={t('financialDashboard.incomeVsExpenses')} subtitle={t('financialDashboard.monthlyCashFlow')}>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={monthlyData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <defs>
@@ -156,13 +171,13 @@ export const FinancialDashboard: React.FC = () => {
                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1.2rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
                 itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
               />
-              <Bar dataKey="ingresos" fill="url(#barRev)" name="INGRESOS" radius={[6, 6, 0, 0]} barSize={24} />
-              <Bar dataKey="gastos" fill="url(#barExp)" name="GASTOS" radius={[6, 6, 0, 0]} barSize={24} />
+              <Bar dataKey="ingresos" fill="url(#barRev)" name={t('financialDashboard.revenueLabel')} radius={[6, 6, 0, 0]} barSize={24} />
+              <Bar dataKey="gastos" fill="url(#barExp)" name={t('financialDashboard.expensesLabel')} radius={[6, 6, 0, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </AnalysisBox>
 
-        <AnalysisBox title="Tendencia de Utilidad" subtitle="Rendimiento neto y margen de rentabilidad">
+        <AnalysisBox title={t('financialDashboard.profitTrend')} subtitle={t('financialDashboard.profitMarginPerformance')}>
           <ResponsiveContainer width="100%" height={350}>
             <AreaChart data={monthlyData}>
               <defs>
@@ -178,7 +193,7 @@ export const FinancialDashboard: React.FC = () => {
                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1.2rem' }}
                 itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}
               />
-              <Area type="monotone" dataKey="utilidad" stroke="#10b981" strokeWidth={4} fill="url(#areaUtil)" name="UTILIDAD" />
+              <Area type="monotone" dataKey="utilidad" stroke="#10b981" strokeWidth={4} fill="url(#areaUtil)" name={t('financialDashboard.profitLabel')} />
             </AreaChart>
           </ResponsiveContainer>
         </AnalysisBox>
@@ -189,8 +204,8 @@ export const FinancialDashboard: React.FC = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-slate-700/5 blur-[100px] pointer-events-none"></div>
         <header className="flex items-center justify-between mb-10">
           <div>
-            <h3 className="text-xl font-black text-white tracking-tighter uppercase">Audit Log Mensual</h3>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">Sincronización de registros históricos</p>
+            <h3 className="text-xl font-black text-white tracking-tighter uppercase">{t('financialDashboard.monthlyAuditLog')}</h3>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-1">{t('financialDashboard.historicalSync')}</p>
           </div>
           <button className="p-3 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-colors">
             <Maximize2 className="w-4 h-4 text-slate-500" />
@@ -201,7 +216,7 @@ export const FinancialDashboard: React.FC = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-950/50">
               <tr>
-                {['Mes', 'Ingresos', 'Gastos', 'Utilidad', 'Margen %'].map(h => (
+                {[t('financialDashboard.months.jan'), t('financialDashboard.revenueLabel'), t('financialDashboard.expensesLabel'), t('financialDashboard.profitLabel'), t('financialDashboard.margin') + ' %'].map(h => (
                   <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>

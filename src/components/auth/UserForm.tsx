@@ -1,8 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Save, X, User as UserIcon, Lock, Shield } from 'lucide-react';
-import UserService from '../../services/UserService';
-import type { User, UserRole } from '../../types/user.types';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale } from '../../i18n/useLocale';
 
 interface UserFormProps {
     user?: User | null;
@@ -12,6 +9,7 @@ interface UserFormProps {
 
 export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) => {
     const { user: currentUser } = useAuth();
+    const { t } = useLocale();
     const [roles, setRoles] = useState<UserRole[]>([]);
     const [formData, setFormData] = useState({
         username: '',
@@ -50,36 +48,36 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
         const newErrors: Record<string, string> = {};
 
         if (!formData.username || formData.username.length < 3) {
-            newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
+            newErrors.username = t('userForm.errorUsernameLength');
         }
 
         if (!formData.email || !formData.email.includes('@')) {
-            newErrors.email = 'Debe ingresar un email válido';
+            newErrors.email = t('userForm.errorEmailInvalid');
         }
 
         if (!formData.full_name || formData.full_name.length < 2) {
-            newErrors.full_name = 'El nombre completo es requerido';
+            newErrors.full_name = t('userForm.errorFullNameRequired');
         }
 
         // Validación de password: obligatoria en creación, opcional en edición
         if (!isEditing) {
             if (!formData.password || formData.password.length < 6) {
-                newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+                newErrors.password = t('userForm.errorPasswordLength');
             }
         } else if (formData.password && formData.password.length < 6) {
-            newErrors.password = 'La nueva contraseña debe tener al menos 6 caracteres';
+            newErrors.password = t('userForm.errorPasswordLength');
         }
 
         if (formData.password && formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Las contraseñas no coinciden';
+            newErrors.confirmPassword = t('userForm.errorPasswordMismatch');
         }
 
         if (!formData.display_name || formData.display_name.length < 2) {
-            newErrors.display_name = 'El nombre para mostrar es requerido';
+            newErrors.display_name = t('userForm.errorDisplayNameRequired');
         }
 
         if (!formData.role_id || formData.role_id === 0) {
-            newErrors.role_id = 'Debe seleccionar un rol';
+            newErrors.role_id = t('userForm.errorRoleRequired');
         }
 
         setErrors(newErrors);
@@ -142,7 +140,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                 }
             }
         } catch (error) {
-            setErrors({ submit: 'Error al guardar el usuario' });
+            setErrors({ submit: t('userForm.errorSaving') });
         } finally {
             setLoading(false);
         }
@@ -159,10 +157,10 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                         </div>
                         <div>
                             <h2 className="text-xl font-black text-white">
-                                {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
+                                {isEditing ? t('userForm.editUser') : t('userForm.newUser')}
                             </h2>
                             <p className="text-slate-400 text-sm">
-                                {isEditing ? 'Modificar información del usuario' : 'Crear un nuevo usuario del sistema'}
+                                {isEditing ? t('userForm.editUserDesc') : t('userForm.newUserDesc')}
                             </p>
                         </div>
                     </div>
@@ -186,7 +184,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                     {/* Username */}
                     <div>
                         <label className="block text-sm font-bold text-slate-300 mb-2">
-                            Nombre de Usuario
+                            {t('userForm.username')}
                         </label>
                         <input
                             type="text"
@@ -195,7 +193,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                             disabled={isEditing}
                             className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.username ? 'border-red-500' : 'border-slate-700'
                                 } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
-                            placeholder="usuario123"
+                            placeholder={t('userForm.usernamePlaceholder')}
                         />
                         {errors.username && (
                             <p className="mt-2 text-sm text-red-400">{errors.username}</p>
@@ -206,7 +204,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-slate-300 mb-2">
-                                Email
+                                {t('userForm.email')}
                             </label>
                             <input
                                 type="email"
@@ -214,7 +212,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-700'
                                     } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                placeholder="juan@ejemplo.com"
+                                placeholder={t('userForm.emailPlaceholder')}
                             />
                             {errors.email && (
                                 <p className="mt-2 text-sm text-red-400">{errors.email}</p>
@@ -223,7 +221,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
 
                         <div>
                             <label className="block text-sm font-bold text-slate-300 mb-2">
-                                Nombre Completo
+                                {t('userForm.fullName')}
                             </label>
                             <input
                                 type="text"
@@ -231,7 +229,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                                 className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.full_name ? 'border-red-500' : 'border-slate-700'
                                     } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                placeholder="Juan Pérez"
+                                placeholder={t('userForm.fullNamePlaceholder')}
                             />
                             {errors.full_name && (
                                 <p className="mt-2 text-sm text-red-400">{errors.full_name}</p>
@@ -242,7 +240,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                     {/* Display Name */}
                     <div>
                         <label className="block text-sm font-bold text-slate-300 mb-2">
-                            Nombre para Mostrar
+                            {t('userForm.displayName')}
                         </label>
                         <input
                             type="text"
@@ -250,7 +248,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                             onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                             className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.display_name ? 'border-red-500' : 'border-slate-700'
                                 } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                            placeholder="Juan Pérez"
+                            placeholder={t('userForm.displayNamePlaceholder')}
                         />
                         {errors.display_name && (
                             <p className="mt-2 text-sm text-red-400">{errors.display_name}</p>
@@ -261,7 +259,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                     <div>
                         <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
                             <Shield className="w-4 h-4" />
-                            Rol del Usuario
+                            {t('userForm.userRole')}
                         </label>
                         <select
                             value={formData.role_id}
@@ -269,7 +267,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                             className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.role_id ? 'border-red-500' : 'border-slate-700'
                                 } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                         >
-                            <option value={0}>Seleccionar rol...</option>
+                            <option value={0}>{t('userForm.selectRole')}</option>
                             {roles.map((role) => (
                                 <option key={role.id} value={role.id}>
                                     {role.name} - {role.description}
@@ -286,7 +284,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-black text-blue-400 uppercase tracking-wider flex items-center gap-2">
                                 <Lock className="w-4 h-4" />
-                                {isEditing ? 'Cambiar Contraseña (Opcional)' : 'Contraseña del Usuario'}
+                                {isEditing ? t('userForm.changePasswordOptional') : t('userForm.userPassword')}
                             </h3>
                             <button
                                 type="button"
@@ -298,18 +296,18 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                                     }
                                     setFormData({ ...formData, password: generated, confirmPassword: generated });
                                     // Cambiar el tipo de input temporalmente podría ser buena idea, pero por ahora solo lo seteamos
-                                    alert(`Contraseña generada: ${generated}\n\nPor favor, cópiela antes de guardar.`);
+                                    alert(t('userForm.generatedPasswordAlert', { pwd: generated }));
                                 }}
                                 className="text-[10px] font-black bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg border border-blue-500/20 transition-all uppercase tracking-tighter"
                             >
-                                Generar Password
+                                {t('userForm.generatePassword')}
                             </button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
-                                    Nueva Contraseña
+                                    {t('userForm.newPassword')}
                                 </label>
                                 <input
                                     type="password"
@@ -326,7 +324,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
 
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
-                                    Confirmar
+                                    {t('userForm.confirmPassword')}
                                 </label>
                                 <input
                                     type="password"
@@ -334,7 +332,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                     className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.confirmPassword ? 'border-red-500' : 'border-slate-700'
                                         } rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                                    placeholder="••••••••"
+                                    placeholder={t('userForm.passwordPlaceholder')}
                                 />
                                 {errors.confirmPassword && (
                                     <p className="mt-2 text-sm text-red-400">{errors.confirmPassword}</p>
@@ -343,7 +341,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                         </div>
                         {isEditing && (
                             <p className="text-[10px] text-slate-500 italic">
-                                * Deje en blanco si no desea cambiar la contraseña actual.
+                                {t('userForm.passwordLeaveBlank')}
                             </p>
                         )}
                     </div>
@@ -356,7 +354,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                             onClick={onCancel}
                             className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
                         >
-                            Cancelar
+                            {t('userForm.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -364,7 +362,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
                             className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Save className="w-5 h-5" />
-                            {loading ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Usuario'}
+                            {loading ? (isEditing ? t('userForm.updating') : t('userForm.saving')) : (isEditing ? t('userForm.update') : t('userForm.create'))}
                         </button>
                     </div>
                 </form>

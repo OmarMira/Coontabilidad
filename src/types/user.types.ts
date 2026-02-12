@@ -18,6 +18,7 @@ export interface User {
     email: string;
     full_name: string;
     display_name: string; // Keep for compatibility
+    picture?: string;
     password_hash?: string;
     role_id: number;
     role_name?: string;

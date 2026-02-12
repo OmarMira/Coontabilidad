@@ -8,7 +8,10 @@ interface ARDCustomerQuality extends ARDCustomerSummary {
     quality: QualityScore;
 }
 
+import { useLocale } from '../../i18n/useLocale';
+
 export const ARDQualityPanel: React.FC = () => {
+    const { t } = useLocale();
     const [customerQualities, setCustomerQualities] = useState<ARDCustomerQuality[]>([]);
 
     useEffect(() => {
@@ -30,12 +33,12 @@ export const ARDQualityPanel: React.FC = () => {
                         <Gem className="w-10 h-10 text-amber-500" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-white tracking-tight">Análisis de Calidad PRO</h3>
-                        <p className="text-amber-200/60 font-medium text-sm">Motor de Scoring Inteligente basado en comportamiento documental y financiero.</p>
+                        <h3 className="text-2xl font-black text-white tracking-tight">{t('ard.quality.title')}</h3>
+                        <p className="text-amber-200/60 font-medium text-sm">{t('ard.quality.subtitle')}</p>
                     </div>
                 </div>
                 <div className="hidden md:flex flex-col items-end relative z-10">
-                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Algoritmo Activo</span>
+                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">{t('ard.quality.algorithmActive')}</span>
                     <div className="px-4 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full text-[10px] text-amber-400 font-black uppercase">
                         SCS_CORE_V2.5
                     </div>
@@ -58,7 +61,7 @@ export const ARDQualityPanel: React.FC = () => {
                                             style={{ transform: `rotate(${item.quality.score * 3.6}deg)` }}
                                         ></div>
                                         <span className="text-4xl font-black text-white tabular-nums">{item.quality.score}%</span>
-                                        <span className="text-[10px] font-black text-slate-600 uppercase">Score</span>
+                                        <span className="text-[10px] font-black text-slate-600 uppercase">{t('ard.quality.score')}</span>
                                     </div>
                                     <div className={`absolute -bottom-2 -right-2 px-3 py-1 rounded-lg bg-slate-900 border border-white/10 font-black text-lg ${item.quality.color}`}>
                                         {item.quality.rating}
@@ -73,10 +76,10 @@ export const ARDQualityPanel: React.FC = () => {
                             {/* Metrics Breakdown */}
                             <div className="flex-1 p-8 grid grid-cols-2 md:grid-cols-4 gap-8">
                                 {[
-                                    { label: 'Precisión IA', val: item.quality.metrics.precision, icon: ShieldCheck, color: 'text-emerald-400' },
-                                    { label: 'Velocidad Ef.', val: item.quality.metrics.speed, icon: Zap, color: 'text-indigo-400' },
-                                    { label: 'Volumen Oper.', val: item.quality.metrics.volume, icon: BarChart3, color: 'text-amber-400' },
-                                    { label: 'Consistencia', val: item.quality.metrics.consistency, icon: TrendingUp, color: 'text-rose-400' },
+                                    { label: t('ard.quality.metrics.precision'), val: item.quality.metrics.precision, icon: ShieldCheck, color: 'text-emerald-400' },
+                                    { label: t('ard.quality.metrics.speed'), val: item.quality.metrics.speed, icon: Zap, color: 'text-indigo-400' },
+                                    { label: t('ard.quality.metrics.volume'), val: item.quality.metrics.volume, icon: BarChart3, color: 'text-amber-400' },
+                                    { label: t('ard.quality.metrics.consistency'), val: item.quality.metrics.consistency, icon: TrendingUp, color: 'text-rose-400' },
                                 ].map((metric, i) => (
                                     <div key={i} className="space-y-3">
                                         <div className="flex items-center gap-2">
@@ -99,12 +102,12 @@ export const ARDQualityPanel: React.FC = () => {
                                 <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
                                     <div className="flex items-center gap-2">
                                         <Info className="w-3.5 h-3.5 text-indigo-400" />
-                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Recomendación IA</span>
+                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('ard.quality.recommendation')}</span>
                                     </div>
                                     <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
                                         {item.quality.score > 80
-                                            ? "Mantenga este flujo operativo para calificar para beneficios fiscales avanzados y auditoría simplificada."
-                                            : "Se recomienda reducir el tiempo entre digitalización y cobro para mejorar el Score de Velocidad Operativa."}
+                                            ? t('ard.quality.recommendationHigh')
+                                            : t('ard.quality.recommendationLow')}
                                     </p>
                                 </div>
                             </div>
@@ -116,8 +119,8 @@ export const ARDQualityPanel: React.FC = () => {
                 {customerQualities.length === 0 && (
                     <div className="py-20 text-center card-elite border-dashed border-2 border-white/5 opacity-50">
                         <AlertTriangle className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                        <p className="text-slate-600 font-black uppercase tracking-[0.2em] text-xs">No hay datos suficientes para generar Calidad PRO</p>
-                        <p className="text-slate-700 text-[10px] font-bold mt-2 italic">Procese al menos 1 documento y asigne un cliente para iniciar el motor.</p>
+                        <p className="text-slate-600 font-black uppercase tracking-[0.2em] text-xs">{t('ard.quality.noDataTitle')}</p>
+                        <p className="text-slate-700 text-[10px] font-bold mt-2 italic">{t('ard.quality.noDataSubtitle')}</p>
                     </div>
                 )}
             </div>

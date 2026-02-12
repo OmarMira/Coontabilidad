@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { getAllFloridaTaxRates } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface CountyTaxRate {
     id?: string | number;
@@ -19,6 +20,7 @@ const INITIAL_RATES: CountyTaxRate[] = [
 ];
 
 export const TaxRates: React.FC = () => {
+    const { t } = useLocale();
     const [rates, setRates] = useState<CountyTaxRate[]>(INITIAL_RATES);
     const [loading, setLoading] = useState<boolean>(true);
 
@@ -55,15 +57,15 @@ export const TaxRates: React.FC = () => {
                     <div>
                         <h2 className="text-xl font-black tracking-tight text-gray-800 dark:text-white flex items-center gap-2">
                             <MapPin className="w-6 h-6 text-blue-600" />
-                            Tasas por Condado (Florida Discretionary Sales Surtax)
+                            {t('taxRates.title')}
                         </h2>
                         <p className="text-sm text-slate-600 dark:text-slate-500 mt-1">
-                            Configure las tasas discrecionales de sus condados de operación. La tasa base de Florida es 6.0%.
+                            {t('taxRates.subtitle')}
                         </p>
                     </div>
                     <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm">
                         <Save className="w-4 h-4" />
-                        Guardar Cambios
+                        {t('taxRates.saveChanges')}
                     </button>
                 </div>
 
@@ -71,12 +73,12 @@ export const TaxRates: React.FC = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-500 text-sm uppercase tracking-wider">
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Condado</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Tasa Base (State)</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Surtax (Condado)</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Total Impuesto</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10 text-center">Estado</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10 text-right">Acciones</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('taxRates.county')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('taxRates.baseTaxState')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('taxRates.surtaxCounty')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('taxRates.totalTax')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10 text-center">{t('taxRates.status')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10 text-right">{t('taxRates.actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -113,7 +115,7 @@ export const TaxRates: React.FC = () => {
                                                 : 'bg-gray-100 text-gray-800 dark:bg-white/5 dark:text-slate-500'
                                                 }`}
                                         >
-                                            {rate.active ? 'Activo' : 'Inactivo'}
+                                            {rate.active ? t('taxRates.active') : t('taxRates.inactive')}
                                         </button>
                                     </td>
                                     <td className="p-4 text-right">
@@ -130,7 +132,7 @@ export const TaxRates: React.FC = () => {
                 <div className="p-4 border-t border-gray-100 dark:border-white/10 bg-yellow-50 dark:bg-yellow-900/10 text-sm text-yellow-800 dark:text-yellow-200 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <p>
-                        <strong>Nota Importante:</strong> Las tasas de Surtax pueden variar por condado y están sujetas a límites (generalmente aplicables a los primeros $5,000 de una venta única de propiedad personal tangible). Asegúrese de verificar las tasas vigentes con el Departamento de Ingresos de Florida.
+                        <strong>{t('taxRates.importantNote')}:</strong> {t('taxRates.importantNoteDesc')}
                     </p>
                 </div>
             </div>

@@ -18,6 +18,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { getProducts, getInvoices } from '../../database/simple-db';
+import { useLocale } from '../../i18n/useLocale';
 
 interface InventoryStats {
   totalProducts: number;
@@ -44,6 +45,7 @@ interface TopProduct {
 }
 
 export const InventoryDashboard: React.FC = () => {
+  const { t } = useLocale();
   const [stats, setStats] = useState<InventoryStats>({
     totalProducts: 0,
     totalValue: 0,
@@ -85,7 +87,7 @@ export const InventoryDashboard: React.FC = () => {
         stock: p.stock_quantity,
         min_stock: p.min_stock_level || 10,
         price: p.price,
-        category: p.category?.name || 'Uncategorized'
+        category: p.category?.name || t('inventoryDashboard.uncategorized')
       })));
 
       const productSales: Record<number, { name: string; quantity: number; revenue: number }> = {};
@@ -93,7 +95,7 @@ export const InventoryDashboard: React.FC = () => {
         if (invoice.items && Array.isArray(invoice.items)) {
           invoice.items.forEach((item: any) => {
             if (!productSales[item.product_id]) {
-              productSales[item.product_id] = { name: item.product_name || 'Product', quantity: 0, revenue: 0 };
+              productSales[item.product_id] = { name: item.product_name || t('inventoryDashboard.product'), quantity: 0, revenue: 0 };
             }
             productSales[item.product_id].quantity += item.quantity;
             productSales[item.product_id].revenue += item.quantity * item.unit_price;
@@ -105,7 +107,7 @@ export const InventoryDashboard: React.FC = () => {
 
       const categoryMap: Record<string, { value: number; count: number }> = {};
       products.forEach(p => {
-        const catName = p.category?.name || 'Uncategorized';
+        const catName = p.category?.name || t('inventoryDashboard.uncategorized');
         if (!categoryMap[catName]) categoryMap[catName] = { value: 0, count: 0 };
         categoryMap[catName].value += p.stock_quantity * p.price;
         categoryMap[catName].count++;
@@ -127,7 +129,7 @@ export const InventoryDashboard: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-screen bg-slate-950">
       <div className="w-16 h-16 border-4 border-blue-600/20 border-t-amber-500 rounded-full animate-spin mb-6"></div>
-      <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Scanning Asset Registry...</span>
+      <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">{t('inventoryDashboard.scanning')}</span>
     </div>
   );
 
@@ -140,9 +142,9 @@ export const InventoryDashboard: React.FC = () => {
             <Boxes className="w-10 h-10 text-amber-500 group-hover:rotate-12 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Matriz de Activos</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('inventoryDashboard.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> Asset Liquidity & Stock Analysis
+              <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> {t('inventoryDashboard.subtitle')}
             </p>
           </div>
         </div>
@@ -150,10 +152,10 @@ export const InventoryDashboard: React.FC = () => {
 
       {/* Stats Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <EliteStatCard title="Productos Totales" value={stats.totalProducts.toString()} label="SKUs en Almacén" icon={Package} color="blue" />
-        <EliteStatCard title="Valor Acumulado" value={formatCurrency(stats.totalValue)} label={`Prom: ${formatCurrency(stats.averageValue)}`} icon={DollarSign} color="emerald" />
-        <EliteStatCard title="Stock Crítico" value={stats.lowStockCount.toString()} label="Requieren Reorden" icon={AlertTriangle} color="amber" />
-        <EliteStatCard title="Quiebre de Stock" value={stats.outOfStockCount.toString()} label="Productos Agotados" icon={Archive} color="rose" />
+        <EliteStatCard title={t('inventoryDashboard.totalProducts')} value={stats.totalProducts.toString()} label={t('inventoryDashboard.skusInWarehouse')} icon={Package} color="blue" />
+        <EliteStatCard title={t('inventoryDashboard.accumulatedValue')} value={formatCurrency(stats.totalValue)} label={`${t('inventoryDashboard.avg')}: ${formatCurrency(stats.averageValue)}`} icon={DollarSign} color="emerald" />
+        <EliteStatCard title={t('inventoryDashboard.criticalStock')} value={stats.lowStockCount.toString()} label={t('inventoryDashboard.requireReorder')} icon={AlertTriangle} color="amber" />
+        <EliteStatCard title={t('inventoryDashboard.stockOut')} value={stats.outOfStockCount.toString()} label={t('inventoryDashboard.outOfStockProducts')} icon={Archive} color="rose" />
       </div>
 
       {/* Critical Stock Alert - Protocol Red */}
@@ -166,12 +168,14 @@ export const InventoryDashboard: React.FC = () => {
                 <AlertTriangle className="w-6 h-6 text-amber-500" />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">Protocolo de Reposición</h3>
-                <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-1.5 opacity-80">Alerta de quiebre inminente en {lowStockProducts.length} líneas</p>
+                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">{t('inventoryDashboard.replenishmentProtocol')}</h3>
+                <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-1.5 opacity-80">
+                  {t('inventoryDashboard.imminentOutageAlert', { count: lowStockProducts.length })}
+                </p>
               </div>
             </div>
             <button className="flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-amber-950/40 active:scale-95">
-              Generar Órdenes de Compra <ArrowRight className="w-4 h-4" />
+              {t('inventoryDashboard.generatePurchaseOrders')} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
@@ -179,7 +183,7 @@ export const InventoryDashboard: React.FC = () => {
             <table className="w-full text-left">
               <thead className="bg-slate-950/50">
                 <tr>
-                  {['SKU Code', 'Nombre Producto', 'Categoría', 'Actual', 'Mínimo', 'Déficit'].map(h => (
+                  {[t('inventoryDashboard.skuCode'), t('inventoryDashboard.productName'), t('inventoryDashboard.category'), t('inventoryDashboard.current'), t('inventoryDashboard.minimum'), t('inventoryDashboard.deficit')].map(h => (
                     <th key={h} className="px-6 py-4 text-[9px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                   ))}
                 </tr>
@@ -207,7 +211,7 @@ export const InventoryDashboard: React.FC = () => {
 
       {/* Analysis Matrix */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-        <AnalysisBox title="Velocidad de Movimiento" subtitle="Top 10 Productos con mayor rotación de stock">
+        <AnalysisBox title={t('inventoryDashboard.movementVelocity')} subtitle={t('inventoryDashboard.top10Rotation')}>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={topProducts} layout="vertical" margin={{ right: 40, left: 20 }}>
               <defs>
@@ -228,7 +232,7 @@ export const InventoryDashboard: React.FC = () => {
           </ResponsiveContainer>
         </AnalysisBox>
 
-        <AnalysisBox title="Capital por Categoría" subtitle="Distribución del valor monetario en el catálogo">
+        <AnalysisBox title={t('inventoryDashboard.capitalByCategory')} subtitle={t('inventoryDashboard.monetaryValueDistribution')}>
           <div className="flex flex-col lg:flex-row items-center justify-center gap-10 h-full w-full px-6">
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
@@ -281,8 +285,8 @@ export const InventoryDashboard: React.FC = () => {
               <ShieldCheck className="w-5 h-5 text-emerald-500" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">Certificación de Valoración</h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Inventario ABC basado en volumen e ingresos totales</p>
+              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">{t('inventoryDashboard.valuationCertification')}</h3>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{t('inventoryDashboard.abcInventory')}</p>
             </div>
           </div>
           <button className="p-3 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-slate-600 hover:text-white">
@@ -294,7 +298,7 @@ export const InventoryDashboard: React.FC = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-950/50">
               <tr>
-                {['#', 'Identificación de Producto', 'Ingresos Totales', 'Qty Vendida', 'Ticket Med'].map(h => (
+                {['#', t('inventoryDashboard.productId'), t('inventoryDashboard.totalRevenue'), t('inventoryDashboard.qtySold'), t('inventoryDashboard.avgTicket')].map(h => (
                   <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>

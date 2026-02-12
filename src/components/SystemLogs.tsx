@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  AlertCircle, CheckCircle, Info, AlertTriangle, Bug, 
+import {
+  AlertCircle, CheckCircle, Info, AlertTriangle, Bug,
   Filter, RefreshCw, Eye, EyeOff, Download, Trash2,
   Clock, User, Database, Shield, Activity
 } from 'lucide-react';
 import { logger, SystemLog, LogLevel, ErrorStats } from '../core/logging/SystemLogger';
+import { useLocale } from '../i18n/useLocale';
 
 export function SystemLogs() {
+  const { t, language } = useLocale();
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [stats, setStats] = useState<ErrorStats | null>(null);
   const [filter, setFilter] = useState({
@@ -37,7 +39,7 @@ export function SystemLogs() {
       setStats(statsData);
     } catch (error) {
       console.error('Failed to load logs:', error);
-      logger.error('SystemLogs', 'load_failed', 'Error al cargar logs del sistema', null, error as Error);
+      logger.error('SystemLogs', 'load_failed', t('systemLogs.loadingRecords'), null, error as Error);
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ export function SystemLogs() {
 
   useEffect(() => {
     loadLogs();
-    
+
     if (autoRefresh) {
       const interval = setInterval(loadLogs, 30000); // Actualizar cada 30 segundos
       return () => clearInterval(interval);
@@ -77,9 +79,9 @@ export function SystemLogs() {
   const getModuleIcon = (module: string) => {
     switch (module) {
       case 'Database': return <Database className="h-4 w-4" />;
-      case 'CustomerModule': 
-      case 'InvoiceModule': 
-      case 'BillModule': 
+      case 'CustomerModule':
+      case 'InvoiceModule':
+      case 'BillModule':
       case 'SupplierModule': return <Activity className="h-4 w-4" />;
       case 'SystemLogger': return <Shield className="h-4 w-4" />;
       default: return <Info className="h-4 w-4" />;
@@ -87,7 +89,7 @@ export function SystemLogs() {
   };
 
   const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('es-ES', {
+    return new Date(timestamp).toLocaleString(language === 'es' ? 'es-ES' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -143,7 +145,7 @@ export function SystemLogs() {
   };
 
   const clearOldLogs = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar los logs resueltos de más de 30 días?')) {
+    if (!window.confirm(t('systemLogs.confirmClear'))) {
       return;
     }
 
@@ -167,8 +169,8 @@ export function SystemLogs() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">Sistema de Logs</h1>
-          <p className="text-slate-500">Monitoreo y diagnóstico del sistema</p>
+          <h1 className="text-2xl font-black tracking-tight text-white">{t('systemLogs.title')}</h1>
+          <p className="text-slate-500">{t('systemLogs.subtitle')}</p>
         </div>
         <div className="flex items-center space-x-2">
           <label className="flex items-center space-x-2 text-sm text-slate-400">
@@ -178,7 +180,7 @@ export function SystemLogs() {
               onChange={(e) => setAutoRefresh(e.target.checked)}
               className="rounded"
             />
-            <span>Auto-actualizar</span>
+            <span>{t('systemLogs.autoRefresh')}</span>
           </label>
         </div>
       </div>
@@ -186,44 +188,44 @@ export function SystemLogs() {
       {/* Estadísticas */}
       {stats && (
         <div className="bg-white/10 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Estadísticas del Sistema</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">{t('systemLogs.systemStats')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-red-900/20 border border-red-700 p-4 rounded-lg">
               <div className="flex items-center space-x-2">
                 <AlertCircle className="h-5 w-5 text-red-400" />
                 <div>
                   <div className="text-2xl font-black tracking-tight text-red-400">{stats.totalErrors}</div>
-                  <div className="text-sm text-red-300">Errores Totales</div>
+                  <div className="text-sm text-red-300">{t('systemLogs.totalErrors')}</div>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-yellow-900/20 border border-yellow-700 p-4 rounded-lg">
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-5 w-5 text-yellow-400" />
                 <div>
                   <div className="text-2xl font-black tracking-tight text-yellow-400">{stats.unresolved}</div>
-                  <div className="text-sm text-yellow-300">Sin Resolver</div>
+                  <div className="text-sm text-yellow-300">{t('systemLogs.unresolved')}</div>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-orange-900/20 border border-orange-700 p-4 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Clock className="h-5 w-5 text-orange-400" />
                 <div>
                   <div className="text-2xl font-black tracking-tight text-orange-400">{stats.last24Hours}</div>
-                  <div className="text-sm text-orange-300">Últimas 24h</div>
+                  <div className="text-sm text-orange-300">{t('systemLogs.last24Hours')}</div>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-purple-900/20 border border-purple-700 p-4 rounded-lg">
               <div className="flex items-center space-x-2">
                 <AlertCircle className="h-5 w-5 text-purple-400" />
                 <div>
                   <div className="text-2xl font-black tracking-tight text-purple-400">{stats.criticalCount}</div>
-                  <div className="text-sm text-purple-300">Críticos</div>
+                  <div className="text-sm text-purple-300">{t('systemLogs.criticals')}</div>
                 </div>
               </div>
             </div>
@@ -232,7 +234,7 @@ export function SystemLogs() {
           {/* Errores por módulo */}
           {Object.keys(stats.byModule).length > 0 && (
             <div className="mt-6">
-              <h3 className="text-md font-medium text-white mb-3">Errores por Módulo</h3>
+              <h3 className="text-md font-medium text-white mb-3">{t('systemLogs.errorsByModule')}</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {Object.entries(stats.byModule).map(([module, count]) => (
                   <div key={module} className="bg-white/5 p-2 rounded text-center">
@@ -250,29 +252,29 @@ export function SystemLogs() {
       <div className="bg-white/10 rounded-lg p-4">
         <div className="flex flex-wrap gap-4 items-center">
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Nivel</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1">{t('systemLogs.level')}</label>
             <select
               className="bg-white/5 border border-white/10 text-white rounded px-3 py-2 text-sm"
               value={filter.level}
-              onChange={(e) => setFilter({...filter, level: e.target.value as LogLevel | 'ALL'})}
+              onChange={(e) => setFilter({ ...filter, level: e.target.value as LogLevel | 'ALL' })}
             >
-              <option value="ALL">Todos</option>
-              <option value="CRITICAL">Crítico</option>
-              <option value="ERROR">Error</option>
-              <option value="WARN">Advertencia</option>
-              <option value="INFO">Info</option>
-              <option value="DEBUG">Debug</option>
+              <option value="ALL">{t('systemLogs.levels.all')}</option>
+              <option value="CRITICAL">{t('systemLogs.levels.critical')}</option>
+              <option value="ERROR">{t('systemLogs.levels.error')}</option>
+              <option value="WARN">{t('systemLogs.levels.warn')}</option>
+              <option value="INFO">{t('systemLogs.levels.info')}</option>
+              <option value="DEBUG">{t('systemLogs.levels.debug')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Módulo</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1">{t('systemLogs.module')}</label>
             <select
               className="bg-white/5 border border-white/10 text-white rounded px-3 py-2 text-sm"
               value={filter.module}
-              onChange={(e) => setFilter({...filter, module: e.target.value})}
+              onChange={(e) => setFilter({ ...filter, module: e.target.value })}
             >
-              <option value="ALL">Todos</option>
+              <option value="ALL">{t('systemLogs.all')}</option>
               {getUniqueModules().map(module => (
                 <option key={module} value={module}>{module}</option>
               ))}
@@ -280,24 +282,24 @@ export function SystemLogs() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Estado</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1">{t('systemLogs.status')}</label>
             <select
               className="bg-white/5 border border-white/10 text-white rounded px-3 py-2 text-sm"
               value={filter.resolved}
-              onChange={(e) => setFilter({...filter, resolved: e.target.value})}
+              onChange={(e) => setFilter({ ...filter, resolved: e.target.value })}
             >
-              <option value="ALL">Todos</option>
-              <option value="UNRESOLVED">Sin Resolver</option>
-              <option value="RESOLVED">Resueltos</option>
+              <option value="ALL">{t('systemLogs.statuses.all')}</option>
+              <option value="UNRESOLVED">{t('systemLogs.statuses.unresolved')}</option>
+              <option value="RESOLVED">{t('systemLogs.statuses.resolved')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-400 mb-1">Límite</label>
+            <label className="block text-sm font-medium text-slate-400 mb-1">{t('systemLogs.limit')}</label>
             <select
               className="bg-white/5 border border-white/10 text-white rounded px-3 py-2 text-sm"
               value={filter.limit}
-              onChange={(e) => setFilter({...filter, limit: parseInt(e.target.value)})}
+              onChange={(e) => setFilter({ ...filter, limit: parseInt(e.target.value) })}
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -313,7 +315,7 @@ export function SystemLogs() {
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Actualizar</span>
+              <span>{t('systemLogs.refresh')}</span>
             </button>
 
             <button
@@ -321,7 +323,7 @@ export function SystemLogs() {
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
             >
               <Download className="h-4 w-4" />
-              <span>Exportar</span>
+              <span>{t('systemLogs.export')}</span>
             </button>
 
             <button
@@ -329,7 +331,7 @@ export function SystemLogs() {
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 transition-colors"
             >
               <Trash2 className="h-4 w-4" />
-              <span>Limpiar</span>
+              <span>{t('systemLogs.clear')}</span>
             </button>
           </div>
         </div>
@@ -339,31 +341,30 @@ export function SystemLogs() {
       <div className="bg-white/10 rounded-lg">
         <div className="p-4 border-b border-white/10">
           <h2 className="text-lg font-semibold text-white">
-            Registros del Sistema ({logs.length})
+            {t('systemLogs.systemRecords')} ({logs.length})
           </h2>
         </div>
-        
+
         <div className="p-4">
           {loading ? (
             <div className="text-center py-8 text-slate-500">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
-              Cargando registros...
+              {t('systemLogs.loadingRecords')}
             </div>
           ) : logs.length === 0 ? (
             <div className="text-center py-8 text-slate-600">
-              No hay registros que coincidan con los filtros
+              {t('systemLogs.noRecordsMatch')}
             </div>
           ) : (
             <div className="space-y-2 max-h-[600px] overflow-y-auto">
               {logs.map((log) => (
                 <div
                   key={log.id}
-                  className={`border rounded-lg p-4 transition-colors ${
-                    log.level === 'CRITICAL' ? 'border-red-500 bg-red-900/10' :
-                    log.level === 'ERROR' ? 'border-red-400 bg-red-900/5' :
-                    log.level === 'WARN' ? 'border-yellow-400 bg-yellow-900/5' :
-                    'border-white/10 hover:bg-white/5/50'
-                  }`}
+                  className={`border rounded-lg p-4 transition-colors ${log.level === 'CRITICAL' ? 'border-red-500 bg-red-900/10' :
+                      log.level === 'ERROR' ? 'border-red-400 bg-red-900/5' :
+                        log.level === 'WARN' ? 'border-yellow-400 bg-yellow-900/5' :
+                          'border-white/10 hover:bg-white/5/50'
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
@@ -381,7 +382,7 @@ export function SystemLogs() {
                       {log.resolved && (
                         <span className="px-2 py-1 bg-green-900/20 border border-green-700 text-green-300 rounded text-xs flex items-center space-x-1">
                           <CheckCircle className="h-3 w-3" />
-                          <span>Resuelto</span>
+                          <span>{t('systemLogs.resolved')}</span>
                         </span>
                       )}
                     </div>
@@ -392,7 +393,7 @@ export function SystemLogs() {
                           onClick={() => markAsResolved(log.id)}
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs transition-colors"
                         >
-                          Resolver
+                          {t('systemLogs.resolve')}
                         </button>
                       )}
                       <button

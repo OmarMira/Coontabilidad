@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { getCompanyLogoUrl, hasCompanyLogo } from '../utils/logoUtils';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { useLocale } from '../i18n/useLocale';
 
 import { AuditService } from '../services/AuditService';
@@ -43,8 +43,8 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoices = [], bills = [] }) => {
-  const { t } = useLocale();
-  const [integrityHash, setIntegrityHash] = useState<string>('VERIFICANDO...');
+  const { t, language } = useLocale();
+  const [integrityHash, setIntegrityHash] = useState<string>(t('common.loading'));
   const [nextTaxDeadline, setNextTaxDeadline] = useState<string>('');
   const [sunbizDaysLeft, setSunbizDaysLeft] = useState<number>(0);
   const [unclaimedPropDays, setUnclaimedPropDays] = useState<number>(0);
@@ -70,7 +70,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
     const currentYear = today.getFullYear();
     const deadline = new Date(currentYear, today.getMonth(), 20);
     if (today > deadline) deadline.setMonth(deadline.getMonth() + 1);
-    setNextTaxDeadline(format(deadline, "d 'de' MMMM", { locale: es }));
+    const dateLocale = language === 'es' ? es : enUS;
+    const dateFormat = language === 'es' ? "d 'de' MMMM" : "MMMM do";
+    setNextTaxDeadline(format(deadline, dateFormat, { locale: dateLocale }));
 
     const sunbizDeadline = new Date(currentYear, 4, 1);
     if (today > sunbizDeadline) sunbizDeadline.setFullYear(currentYear + 1);
@@ -108,17 +110,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
     // Refresh AI proposal count every 30 seconds
     const interval = setInterval(fetchAIProposals, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [language]);
 
   const netIncome = (stats.revenue - stats.expenses) || 0;
   const isProfitable = netIncome >= 0;
 
+  // Month names for chart based on locale
+  const getMonthName = (idx: number) => {
+    const d = new Date(2026, idx, 1);
+    return d.toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'short' }).toUpperCase();
+  };
+
+  const getFullMonthName = (idx: number) => {
+    const d = new Date(2026, idx, 1);
+    return d.toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long' });
+  };
+
   return (
     <div className="space-y-10 animate-fade-in">
-      {/* --- SECCIÓN 1: MONITOR DE CUMPLIMIENTO (RADAR) --- */}
+      {/* --- SECTION 1: COMPLIANCE MONITOR (RADAR) --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        {/* RADAR DE OBLIGACIONES ELITE */}
+        {/* ELITE OBLIGATION RADAR */}
         <div className="card-elite group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] -mr-32 -mt-32 pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-700"></div>
 
@@ -181,13 +194,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           </div>
         </div>
 
-        {/* CUMPLIMIENTO HISTORY Overlay */}
-        <div className="h-full card-elite !p-0 border-white/5 overflow-hidden">
+        {/* COMPLIANCE HISTORY Overlay */}
+        <div className="h-full bg-transparent overflow-hidden">
           <ComplianceHistory />
         </div>
       </div>
 
-      {/* --- SECCIÓN 2: METRICAS FINANCIERAS (ELITE CARDS) --- */}
+      {/* --- SECTION 2: FINANCIAL METRICS (ELITE CARDS) --- */}
       <div className="flex items-center justify-between px-2">
         <h2 className="text-sm font-black text-white p-2 flex items-center gap-3 uppercase tracking-widest">
           <Activity className="w-5 h-5 text-emerald-500" />
@@ -198,12 +211,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Ingressos */}
-        <div className="card-elite hover:-translate-y-1">
+        <div className="card-elite hover:-translate-y-1 transition-all duration-500">
           <div className="flex justify-between items-start mb-6">
             <div className="p-3 bg-emerald-500/10 rounded-2xl">
               <TrendingUp className="w-6 h-6 text-emerald-400" />
             </div>
-            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
+            <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">
               {t('dashboard.sales')}
             </span>
           </div>
@@ -211,8 +224,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           <h3 className="text-3xl font-black text-white tabular-nums">${stats.revenue.toLocaleString()}</h3>
         </div>
 
-        {/* Utilidad Neta */}
-        <div className="card-elite hover:-translate-y-1">
+        {/* Net Profit */}
+        <div className="card-elite hover:-translate-y-1 transition-all duration-500">
           <div className="flex justify-between items-start mb-6">
             <div className={`p-3 rounded-2xl ${isProfitable ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
               <DollarSign className={`w-6 h-6 ${isProfitable ? 'text-emerald-400' : 'text-rose-400'}`} />
@@ -224,11 +237,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           </h3>
         </div>
 
-        {/* Pasivo Fiscal */}
-        <div className="card-elite hover:-translate-y-1 border-emerald-500/20">
+        {/* Tax Liability */}
+        <div className="card-elite hover:-translate-y-1 border-emerald-500/20 transition-all duration-500">
           <div className="flex justify-between items-start mb-6">
-            <div className="p-3 bg-sun-orange/10 rounded-2xl">
-              <Lock className="w-6 h-6 text-sun-orange" />
+            <div className="p-3 bg-amber-500/10 rounded-2xl">
+              <Lock className="w-6 h-6 text-amber-500" />
             </div>
           </div>
           <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mb-2">{t('dashboard.taxLiability')}</p>
@@ -236,13 +249,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
             ${(realTaxLiability / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </h3>
           <div className="mt-4 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-sun-orange animate-pulse"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
             <span className="text-[10px] text-slate-500 font-bold uppercase">{pendingTaxCount} {t('dashboard.pendingDocs')}</span>
           </div>
         </div>
 
-        {/* Clientes Activos */}
-        <div className="card-elite hover:-translate-y-1">
+        {/* Active Customers */}
+        <div className="card-elite hover:-translate-y-1 transition-all duration-500">
           <div className="flex justify-between items-start mb-6">
             <div className="p-3 bg-blue-500/10 rounded-2xl">
               <Briefcase className="w-6 h-6 text-blue-400" />
@@ -254,10 +267,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         </div>
       </div>
 
-      {/* --- SECCIÓN 3: ANÁLISIS DE TENDENCIAS (CHARTS) --- */}
+      {/* --- SECTION 3: TREND ANALYSIS (CHARTS) --- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 pb-10">
 
-        {/* Gráfico de Barras: Ventas vs Compras */}
+        {/* Bar Chart: Sales vs Purchases */}
         <div className="xl:col-span-2 card-elite min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -284,28 +297,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               const maxVal = Math.max(...monthlyStats.map(m => Math.max(m.revenue, m.expenses))) || 1000;
               const revHeight = (item.revenue / maxVal) * 100;
               const expHeight = (item.expenses / maxVal) * 100;
-              const monthName = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'][idx];
+              const monthName = getMonthName(idx);
+              const fullMonthName = getFullMonthName(idx);
 
               return (
                 <div key={item.month} className="flex-1 flex flex-col items-center group/cell h-full justify-end">
                   <div className="relative w-full h-full flex items-end justify-center gap-1.5 px-1 pb-4 border-b border-white/5 group-hover/cell:bg-white/[0.02] rounded-t-lg transition-all">
                     {/* Tooltip on hover */}
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-800 p-2 rounded-lg opacity-0 group-hover/cell:opacity-100 transition-opacity z-20 pointer-events-none shadow-2xl min-w-[120px]">
-                      <p className="text-[10px] font-black text-slate-500 uppercase mb-1">{monthName}</p>
-                      <p className="text-xs font-bold text-emerald-400 flex justify-between">V: <span className="tabular-nums">${item.revenue.toLocaleString()}</span></p>
-                      <p className="text-xs font-bold text-rose-400 flex justify-between">C: <span className="tabular-nums">${item.expenses.toLocaleString()}</span></p>
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-900 border border-white/10 p-3 rounded-2xl opacity-0 group-hover/cell:opacity-100 transition-all duration-300 z-20 pointer-events-none shadow-2xl min-w-[140px] scale-90 group-hover/cell:scale-100 backdrop-blur-md">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-white/5 pb-1">{fullMonthName}</p>
+                      <p className="text-xs font-bold text-emerald-400 flex justify-between gap-4">
+                        <span className="uppercase tracking-widest text-[9px] text-slate-500">{t('dashboard.sales')}:</span>
+                        <span className="tabular-nums">${item.revenue.toLocaleString()}</span>
+                      </p>
+                      <p className="text-xs font-bold text-rose-400 flex justify-between gap-4">
+                        <span className="uppercase tracking-widest text-[9px] text-slate-500">{t('dashboard.purchases')}:</span>
+                        <span className="tabular-nums">${item.expenses.toLocaleString()}</span>
+                      </p>
                     </div>
 
                     <div
-                      className="w-full max-w-[12px] bg-emerald-500 rounded-t-sm transition-all duration-1000 group-hover/cell:opacity-100 opacity-70 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                      className="w-full max-w-[12px] bg-emerald-500 rounded-t-sm transition-all duration-1000 group-hover/cell:opacity-100 opacity-60 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                       style={{ height: `${Math.max(2, revHeight)}%` }}
                     ></div>
                     <div
-                      className="w-full max-w-[12px] bg-rose-500 rounded-t-sm transition-all duration-1000 group-hover/cell:opacity-100 opacity-70 shadow-[0_0_15px_rgba(244,63,94,0.2)]"
+                      className="w-full max-w-[12px] bg-rose-500 rounded-t-sm transition-all duration-1000 group-hover/cell:opacity-100 opacity-60 shadow-[0_0_15px_rgba(244,63,94,0.2)]"
                       style={{ height: `${Math.max(2, expHeight)}%` }}
                     ></div>
                   </div>
-                  <span className="text-[9px] font-black text-slate-600 mt-3 group-hover/cell:text-white transition-colors">
+                  <span className="text-[9px] font-black text-slate-600 mt-4 group-hover/cell:text-white transition-colors tracking-widest">
                     {monthName}
                   </span>
                 </div>
@@ -314,44 +334,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
           </div>
         </div>
 
-        {/* Acciones Rápidas (Lateral) */}
-        <div className="card-elite">
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-8">{t('dashboard.quickAccess')}</h3>
-          <div className="space-y-3">
+        {/* Quick Actions (Sidebar) */}
+        <div className="card-elite flex flex-col">
+          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-slate-700 rounded-full"></div>
+            {t('dashboard.quickAccess')}
+          </h3>
+          <div className="space-y-4 flex-grow">
             {[
               { id: 'invoices', label: t('dashboard.issueInvoice'), icon: FileText, color: 'emerald' },
               { id: 'journal-entries', label: t('dashboard.manualEntry'), icon: Activity, color: 'blue' },
-              { id: 'ledger-hub', label: t('dashboard.accountingBooks'), icon: Lock, color: 'purple' },
-              { id: 'tax-config', label: t('dashboard.taxSettings'), icon: Shield, color: 'sun-orange' }
+              { id: 'ledger-hub', label: t('dashboard.accountingBooks'), icon: Lock, color: 'amber' },
+              { id: 'tax-config', label: t('dashboard.taxSettings'), icon: Shield, color: 'rose' }
             ].map(action => (
               <button
                 key={action.id}
                 onClick={() => onNavigate(action.id)}
-                className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:border-white/10 transition-all group"
+                className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2.5xl hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 bg-${action.color}-500/10 rounded-xl group-hover:scale-110 transition-transform`}>
-                    <action.icon className={`w-5 h-5 text-${action.color}-400`} />
+                <div className="flex items-center gap-5">
+                  <div className={`p-3 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:bg-${action.color}-500/10`}>
+                    <action.icon className={`w-5 h-5 text-gray-400 group-hover:text-${action.color}-400 transition-colors`} />
                   </div>
-                  <span className="text-sm font-bold text-gray-200">{action.label}</span>
+                  <span className="text-sm font-bold text-gray-200 tracking-tight group-hover:text-white transition-colors">{action.label}</span>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
               </button>
             ))}
           </div>
 
-          <div className="mt-8 p-6 bg-blue-600/5 rounded-3xl border border-blue-600/10 text-center hover:bg-blue-600/10 transition-all cursor-pointer">
-            <Bot className="w-10 h-10 text-blue-500 mx-auto mb-4" />
-            <p className="text-xs font-bold text-blue-300 mb-2">{t('dashboard.intelligentAssistant')}</p>
+          <div className="mt-10 p-8 bg-blue-600/5 rounded-[2.5rem] border border-blue-600/10 text-center hover:bg-blue-600/10 transition-all cursor-pointer group/bot relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[50px] -mr-16 -mt-16 pointer-events-none"></div>
+            <Bot className="w-10 h-10 text-blue-500 mx-auto mb-5 group-hover/bot:scale-110 transition-transform duration-500" />
+            <p className="text-[10px] font-black text-blue-400 mb-2 uppercase tracking-[0.2em]">{t('dashboard.intelligentAssistant')}</p>
             {aiProposalCount > 0 ? (
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <p className="text-sm font-black text-emerald-400">
+                <p className="text-base font-black text-emerald-400 tracking-tighter">
                   {aiProposalCount} {aiProposalCount === 1 ? t('dashboard.proposal') : t('dashboard.proposals')}
                 </p>
               </div>
             ) : (
-              <p className="text-[10px] text-slate-500 leading-relaxed uppercase font-black">
+              <p className="text-[10px] text-slate-600 leading-relaxed uppercase font-black tracking-widest">
                 {t('dashboard.monitoring247')}
               </p>
             )}
@@ -360,15 +384,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
 
       </div>
 
-      {/* --- SECCIÓN 4: IA PROACTIVA (PROPUESTAS) --- */}
+      {/* --- SECTION 4: PROACTIVE AI (PROPOSALS) --- */}
       {aiProposalCount > 0 && (
-        <div className="mt-10">
-          <div className="flex items-center justify-between px-2 mb-6">
-            <h2 className="text-sm font-black text-white p-2 flex items-center gap-3 uppercase tracking-widest">
-              <Bot className="w-5 h-5 text-blue-500" />
+        <div className="mt-10 animate-in slide-in-from-bottom-10 duration-1000">
+          <div className="flex items-center justify-between px-2 mb-8">
+            <h2 className="text-sm font-black text-white p-2 flex items-center gap-4 uppercase tracking-widest">
+              <Bot className="w-6 h-6 text-blue-500" />
               {t('dashboard.aiProposals')}
             </h2>
-            <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent ml-4"></div>
+            <div className="h-px flex-1 bg-gradient-to-r from-blue-500/20 to-transparent ml-6"></div>
           </div>
           <AIProposalPanel />
         </div>

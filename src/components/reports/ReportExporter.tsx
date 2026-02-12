@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { getCompanyData } from '../../database/simple-db';
 import { getCompanyLogoUrl } from '../../utils/logoUtils';
 import { logger } from '../../core/logging/SystemLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 // Extend jsPDF with autotable types
 declare module 'jspdf' {
@@ -35,6 +36,7 @@ interface ReportExporterProps {
 }
 
 export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, variant = 'full' }) => {
+    const { t } = useLocale();
     const [exporting, setExporting] = useState<string | null>(null);
     const [status, setStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
 
@@ -82,7 +84,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
             doc.setFontSize(10);
             doc.setTextColor(156, 163, 175); // text-muted
             doc.text(header.subtitle || company?.legal_name || '', 195, 26, { align: 'right' });
-            doc.text(header.dateRange || `Generado: ${new Date().toLocaleDateString()}`, 195, 32, { align: 'right' });
+            doc.text(header.dateRange || `${t('common.date')}: ${new Date().toLocaleDateString()}`, 195, 32, { align: 'right' });
 
             // Body Table
             doc.autoTable({
@@ -105,7 +107,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
                     doc.setFontSize(8);
                     doc.setTextColor(156, 163, 175);
                     doc.text(
-                        `Página ${dataArg.pageNumber} - AccountExpress Florida Compliance`,
+                        `${t('common.page') || 'Page'} ${dataArg.pageNumber} - AccountExpress Florida Compliance`,
                         105,
                         290,
                         { align: 'center' }
@@ -114,11 +116,11 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
             });
 
             doc.save(`${data.fileName}.pdf`);
-            showStatus('success', 'PDF generado correctamente');
+            showStatus('success', t('reportsDashboard.common.pdfSuccess') || 'PDF generated successfully');
             logger.info('ReportExporter', 'pdf_success', `Exportado PDF: ${data.fileName}`);
         } catch (error) {
             console.error(error);
-            showStatus('error', 'Error al generar PDF');
+            showStatus('error', t('reportsDashboard.common.pdfError') || 'Error generating PDF');
             logger.error('ReportExporter', 'pdf_error', 'Fallo exportación PDF', null, error as Error);
         } finally {
             setExporting(null);
@@ -132,10 +134,10 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
             XLSX.writeFile(wb, `${data.fileName}.xlsx`);
-            showStatus('success', 'Excel generado correctamente');
+            showStatus('success', t('reportsDashboard.common.excelSuccess') || 'Excel generated successfully');
             logger.info('ReportExporter', 'excel_success', `Exportado Excel: ${data.fileName}`);
         } catch (error) {
-            showStatus('error', 'Error al generar Excel');
+            showStatus('error', t('reportsDashboard.common.excelError') || 'Error generating Excel');
             logger.error('ReportExporter', 'excel_error', 'Fallo exportación Excel', null, error as Error);
         } finally {
             setExporting(null);
@@ -164,7 +166,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
                     className="btn-elite-secondary !py-2 !px-4 flex items-center gap-2 text-sm"
                 >
                     <FileText className={`w-4 h-4 text-rose-400 ${exporting === 'pdf' ? 'animate-spin' : ''}`} />
-                    Exportar PDF
+                    {t('common.export')} PDF
                 </button>
 
                 <button
@@ -173,7 +175,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
                     className="btn-elite-secondary !py-2 !px-4 flex items-center gap-2 text-sm"
                 >
                     <TableIcon className={`w-4 h-4 text-emerald-400 ${exporting === 'excel' ? 'animate-spin' : ''}`} />
-                    Exportar Excel
+                    {t('common.export')} Excel
                 </button>
 
                 <button
@@ -181,7 +183,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
                     className="btn-elite-secondary !py-2 !px-4 flex items-center gap-2 text-sm"
                 >
                     <Printer className="w-4 h-4 text-blue-400" />
-                    Imprimir
+                    {t('common.print') || 'Print'}
                 </button>
             </div>
 

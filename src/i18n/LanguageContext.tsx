@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { translations, Language, TranslationKey } from './translations';
+import { translationEngine, Language, TranslationKey } from '../core/i18n/TranslationEngine';
 
 interface LanguageContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
-    t: (key: TranslationKey) => string;
+    t: (key: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -14,30 +14,23 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-    // Cargar idioma guardado o usar español por defecto
-    const [language, setLanguageState] = useState<Language>(() => {
-        const saved = localStorage.getItem('app_language');
-        return (saved === 'en' || saved === 'es') ? saved : 'es';
-    });
-
-    // Guardar idioma cuando cambie
-    useEffect(() => {
-        localStorage.setItem('app_language', language);
-        // Actualizar atributo lang del HTML
-        document.documentElement.lang = language;
-
-        // Disparar evento personalizado para notificar cambio de idioma
-        window.dispatchEvent(new CustomEvent('languageChange', { detail: { language } }));
-    }, [language]);
+    const [language, setLanguageState] = useState<Language>(() => translationEngine.getLanguage());
 
     const setLanguage = (lang: Language) => {
+        translationEngine.setLanguage(lang);
         setLanguageState(lang);
     };
 
-    // Función de traducción
-    const t = (key: TranslationKey): string => {
-        return translations[language][key] || key;
-    };
+    // Escuchar cambios externos del engine (ej. desde fuera de React)
+    useEffect(() => {
+        const handleLanguageChange = (e: any) => {
+            setLanguageState(e.detail.language);
+        };
+        window.addEventListener('languageChange', handleLanguageChange);
+        return () => window.removeEventListener('languageChange', handleLanguageChange);
+    }, []);
+
+    const t = (key: string): string => translationEngine.t(key);
 
     return (
         <LanguageContext.Provider value={{ language, setLanguage, t }}>
@@ -46,7 +39,6 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     );
 };
 
-// Hook personalizado para usar el contexto de idioma
 export const useLanguage = (): LanguageContextType => {
     const context = useContext(LanguageContext);
     if (!context) {
@@ -55,5 +47,4 @@ export const useLanguage = (): LanguageContextType => {
     return context;
 };
 
-// Alias para mejor Developer Experience (DX)
 export const useTranslation = useLanguage;

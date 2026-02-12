@@ -2,6 +2,8 @@ import React from 'react';
 import { Wifi, WifiOff, Database, Shield, User as UserIcon, Zap, ShieldCheck, Activity, Cpu } from 'lucide-react';
 import { OnlineStatus } from './common/OnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
+import { LanguageSelector } from './LanguageSelector';
+import { useLocale } from '../i18n/useLocale';
 
 interface HeaderProps {
   dbStats: {
@@ -12,6 +14,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick }) => {
   const { user } = useAuth();
+  const { t } = useLocale();
 
   return (
     <header className="bg-slate-950/80 backdrop-blur-md border-b border-slate-900 px-8 py-4 sticky top-0 z-[30]">
@@ -23,8 +26,8 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick }) => 
               <Database className="w-4 h-4 text-blue-400" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Engine v1.2</span>
-              <span className="text-xs font-bold text-slate-300 leading-none">SQLite Local Engine</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('header.engineVersion')}</span>
+              <span className="text-xs font-bold text-slate-300 leading-none">{t('header.sqliteLocal')}</span>
             </div>
           </div>
 
@@ -33,8 +36,8 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick }) => 
               <Shield className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Encryption Protocol</span>
-              <span className="text-xs font-bold text-slate-300 leading-none">AES-256 Military Grade</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('header.encryptionProtocol')}</span>
+              <span className="text-xs font-bold text-slate-300 leading-none">{t('header.militaryGrade')}</span>
             </div>
           </div>
         </div>
@@ -55,12 +58,13 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick }) => 
                   {user.display_name.toUpperCase()}
                 </span>
                 <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.1em] mt-0.5">
-                  {user.role}
+                  {t(`roles.${user.role}`)}
                 </span>
               </div>
             </div>
           )}
 
+          <LanguageSelector />
           <OnlineStatus />
         </div>
       </div>

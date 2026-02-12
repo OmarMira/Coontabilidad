@@ -1,56 +1,71 @@
 import React, { useEffect, useState } from 'react';
 import { TaxReportingService, DR15Report } from '../../services/TaxReportingService';
 import { DR15Template } from './DR15Template';
-import { CheckCircle2, AlertCircle, FileText } from 'lucide-react';
+import { CheckCircle2, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { useLocale } from '../../i18n/useLocale';
 
 interface HistoryItem {
     month: number;
     year: number;
     label: string;
-    status: 'filed' | 'no_activity' | 'error' | 'pending';
+    status: 'filed' | 'no_activity' | 'error' | 'pending' | 'loading';
     amount?: number;
 }
 
 export const ComplianceHistory: React.FC = () => {
+    const { t, language } = useLocale();
     const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState<DR15Report | null>(null);
     const [configAlert, setConfigAlert] = useState<string | null>(null);
 
     const viewReport = async (item: HistoryItem) => {
         if (item.status !== 'filed') return;
-        setLoading(true);
         const report = await TaxReportingService.generateDR15Report(item.month, item.year);
         setSelectedReport(report);
-        setLoading(false);
     };
 
     useEffect(() => {
+        let isMounted = true;
+
         const loadHistory = async () => {
             try {
                 const configStatus = await TaxReportingService.hasValidConfiguration();
 
-                if (!configStatus.valid) {
+                if (!configStatus.valid && isMounted) {
                     const errors: string[] = [];
                     if (configStatus.missingCounties.length > 0) errors.push(...configStatus.missingCounties);
-                    if (configStatus.outdatedRates) errors.push('Tasas de impuesto desactualizadas (Base != 6%)');
-                    setConfigAlert(`AVISO CRÍTICO: Configuración Fiscal Incompleta. ${errors.join('. ')}`);
+                    if (configStatus.outdatedRates) errors.push(t('reportsDashboard.compliance.outdatedRates'));
+                    setConfigAlert(`${t('reportsDashboard.compliance.criticalNotice')} ${errors.join('. ')}`);
                 }
 
-                const months: { month: number; year: number; label: string }[] = [];
+                // Initial labels setup
+                const months: HistoryItem[] = [];
                 const today = new Date();
-                // Last 6 months (including current)
                 for (let i = 0; i < 6; i++) {
                     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
                     months.push({
                         month: d.getMonth() + 1,
                         year: d.getFullYear(),
-                        label: d.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
+                        label: d.toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long', year: 'numeric' }),
+                        status: 'loading'
                     });
                 }
 
-                const data = await Promise.all(months.map(async (m) => {
+                if (isMounted) {
+                    setHistory(months);
+                    setInitialLoading(false);
+                }
+
+                // Sequential Loading to prevent UI Lock
+                for (let i = 0; i < months.length; i++) {
+                    if (!isMounted) break;
+
+                    const m = months[i];
                     try {
+                        // Small yield to UI thread
+                        await new Promise(resolve => setTimeout(resolve, 30));
+
                         const report = await TaxReportingService.generateDR15Report(m.month, m.year);
                         const hasData = report.totals.sales > 0;
 
@@ -61,83 +76,101 @@ export const ComplianceHistory: React.FC = () => {
                             status = 'pending';
                         }
 
-                        return {
-                            ...m,
-                            status,
-                            amount: report.totals.tax
-                        } as HistoryItem;
+                        if (isMounted) {
+                            setHistory(prev => {
+                                const newHistory = [...prev];
+                                newHistory[i] = { ...m, status, amount: report.totals.tax };
+                                return newHistory;
+                            });
+                        }
                     } catch (e) {
-                        return { ...m, status: 'error' } as HistoryItem;
+                        if (isMounted) {
+                            setHistory(prev => {
+                                const newHistory = [...prev];
+                                newHistory[i] = { ...m, status: 'error' };
+                                return newHistory;
+                            });
+                        }
                     }
-                }));
-                setHistory(data);
+                }
             } catch (e) {
                 console.error(e);
-            } finally {
-                setLoading(false);
             }
         };
 
         loadHistory();
-    }, []);
+        return () => { isMounted = false; };
+    }, [t, language]);
 
-    if (loading) return <div className="p-4 text-center text-slate-600 animate-pulse">Cargando historial forense...</div>;
+    if (initialLoading) return (
+        <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-8 h-full flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                {t('reportsDashboard.compliance.loading')}
+            </div>
+        </div>
+    );
 
     return (
-        <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-bold mb-4 font-mono uppercase text-slate-700 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-slate-500" />
-                Historial de Cumplimiento
+        <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-8 h-full flex flex-col">
+            <h2 className="text-[10px] font-black mb-8 uppercase tracking-[0.3em] text-emerald-500/80 flex items-center gap-3">
+                <CheckCircle2 className="w-4 h-4" />
+                {t('reportsDashboard.compliance.title')}
             </h2>
             {configAlert && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-2 rounded mb-3 text-xs flex items-center gap-2 font-medium">
-                    <AlertCircle size={14} className="shrink-0" />
+                <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-2xl mb-6 text-[10px] flex items-center gap-3 font-bold uppercase tracking-wider">
+                    <AlertCircle size={16} className="shrink-0" />
                     {configAlert}
                 </div>
             )}
-            <div className="space-y-1">
+            <div className="space-y-2 flex-grow overflow-y-auto pr-2 scrollbar-hide">
                 {history.map((item, idx) => (
                     <div key={idx}
                         onClick={() => viewReport(item)}
-                        className={`flex justify-between items-center p-3 border-b border-slate-100 rounded transition-colors ${item.status === 'filed' ? 'cursor-pointer hover:bg-blue-50' : ''}`}
+                        className={`flex justify-between items-center p-4 bg-white/5 border border-white/5 rounded-2xl transition-all duration-300 ${item.status === 'filed' ? 'cursor-pointer hover:bg-white/10 hover:translate-x-1 hover:border-emerald-500/30 shadow-lg' : item.status === 'loading' ? 'opacity-40' : 'opacity-60'}`}
                     >
-                        <span className="capitalize text-slate-700 font-medium">{item.label}</span>
-                        <div className="flex items-center gap-3">
-                            {item.status === 'filed' ? (
+                        <span className="capitalize text-gray-300 text-sm font-bold">{item.label}</span>
+                        <div className="flex items-center gap-4">
+                            {item.status === 'loading' ? (
+                                <Loader2 className="w-4 h-4 text-emerald-500/50 animate-spin" />
+                            ) : item.status === 'filed' ? (
                                 <>
-                                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold tracking-wider flex items-center gap-1">
+                                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-500/20">
                                         <FileText size={10} />
-                                        GENERADO
+                                        {t('reportsDashboard.compliance.statusGenerated')}
                                     </span>
-                                    <span className="font-mono font-bold text-slate-900">${((item.amount || 0) / 100).toFixed(2)}</span>
+                                    <span className="font-mono font-black text-white text-base tracking-tighter">${((item.amount || 0) / 100).toFixed(2)}</span>
                                 </>
                             ) : item.status === 'pending' ? (
-                                <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold tracking-wider flex items-center gap-1">
+                                <span className="text-[9px] bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-2 border border-amber-500/20">
                                     <AlertCircle size={10} />
-                                    PENDIENTE
+                                    {t('reportsDashboard.compliance.statusPending')}
                                 </span>
                             ) : (
-                                <span className="text-xs text-slate-400 italic">Sin actividad registrada</span>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('reportsDashboard.compliance.noActivity')}</span>
                             )}
                         </div>
                     </div>
                 ))}
-                {history.length === 0 && <div className="text-center p-4 text-slate-400">No hay historial disponible</div>}
+                {history.length === 0 && <div className="text-center p-12 text-slate-600 font-black uppercase text-[10px] tracking-[0.2em]">{t('reportsDashboard.compliance.noHistory')}</div>}
             </div>
-            <div className="mt-4 text-xs text-slate-400 text-right">
-                Verificado por Iron Core v3.0
+            <div className="mt-8 text-[9px] text-slate-700 font-black uppercase tracking-[0.4em] text-right flex items-center justify-end gap-2">
+                <div className="w-1 h-1 bg-slate-700 rounded-full"></div>
+                {t('reportsDashboard.compliance.verifiedBy')} Iron Core v3.0
             </div>
 
             {selectedReport && (
-                <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-lg shadow-2xl max-h-screen overflow-y-auto relative w-auto">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedReport(null); }}
-                            className="absolute top-2 left-2 bg-red-600 text-white rounded-full p-2 z-50 hover:bg-red-700 font-bold text-xs"
-                        >
-                            CERRAR VISTA
-                        </button>
-                        <div onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-8 backdrop-blur-md">
+                    <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-4xl max-h-[90vh] overflow-y-auto relative w-full max-w-4xl scrollbar-hide">
+                        <div className="sticky top-0 right-0 p-6 flex justify-end z-50 bg-slate-900/80 backdrop-blur-sm rounded-t-[3rem]">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedReport(null); }}
+                                className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white px-6 py-2 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest border border-rose-500/30"
+                            >
+                                {t('reportsDashboard.compliance.closeView')}
+                            </button>
+                        </div>
+                        <div className="p-10 pt-0" onClick={(e) => e.stopPropagation()}>
                             <DR15Template report={selectedReport} />
                         </div>
                     </div>

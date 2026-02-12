@@ -27,8 +27,10 @@ import {
   getBillById
 } from '../database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
+import { useLocale } from '../i18n/useLocale';
 
 export function JournalEntryTest() {
+  const { t } = useLocale();
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function JournalEntryTest() {
       const entries = getJournalEntries(20);
       setJournalEntries(entries);
     } catch (error) {
-      setError('Error al cargar asientos contables');
+      setError(t('journalEntryTest.errorLoadingEntries'));
     } finally {
       setTimeout(() => setLoading(false), 500);
     }
@@ -51,12 +53,12 @@ export function JournalEntryTest() {
       const testEntry = {
         entry_date: new Date().toISOString().split('T')[0],
         reference_number: `TEST-${Date.now()}`,
-        description: 'Asiento de prueba manual'
+        description: t('journalEntryTest.manualTestEntryDesc')
       };
 
       const testDetails = [
-        { account_code: '1111', debit_amount: 1000, credit_amount: 0, description: 'Entrada de efectivo' },
-        { account_code: '4110', debit_amount: 0, credit_amount: 1000, description: 'Venta de servicios' }
+        { account_code: '1111', debit_amount: 1000, credit_amount: 0, description: t('journalEntryTest.cashEntryDesc') },
+        { account_code: '4110', debit_amount: 0, credit_amount: 1000, description: t('journalEntryTest.serviceSaleDesc') }
       ];
 
       const result = await createJournalEntry(testEntry, testDetails);
@@ -127,9 +129,9 @@ export function JournalEntryTest() {
             <Beaker className="w-10 h-10 text-amber-500" />
           </div>
           <div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Laboratorio Contable</h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('journalEntryTest.title')}</h2>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> Double-Entry Stress Tests • Stress Engine
+              <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> {t('journalEntryTest.subtitle')}
             </p>
           </div>
         </div>
@@ -139,7 +141,7 @@ export function JournalEntryTest() {
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button onClick={runAllTests} className="flex items-center gap-3 px-10 py-4 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-amber-900/30 active:scale-95">
-            <Play className="w-4 h-4 fill-current" /> Ejecutar Suite Total
+            <Play className="w-4 h-4 fill-current" /> {t('journalEntryTest.runTotalSuite')}
           </button>
         </div>
       </div>
@@ -147,22 +149,22 @@ export function JournalEntryTest() {
       {/* Action Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <TestTrigger
-          title="Manual Entry"
-          desc="Generar asiento de prueba 1:1"
+          title={t('journalEntryTest.manualEntry')}
+          desc={t('journalEntryTest.generateTestEntry')}
           onClick={testManualJournalEntry}
           color="emerald"
           icon={TrendingUp}
         />
         <TestTrigger
-          title="Auto-Ventas"
-          desc="Protocolo de factura a ledger"
+          title={t('journalEntryTest.autoSales')}
+          desc={t('journalEntryTest.invoiceToLedgerProtocol')}
           onClick={testSalesJournalEntry}
           color="blue"
           icon={Calculator}
         />
         <TestTrigger
-          title="Auto-Compras"
-          desc="Protocolo de factura de gastos"
+          title={t('journalEntryTest.autoPurchases')}
+          desc={t('journalEntryTest.billToLedgerProtocol')}
           onClick={testPurchaseJournalEntry}
           color="purple"
           icon={TrendingDown}
@@ -174,13 +176,13 @@ export function JournalEntryTest() {
         <div className="lg:col-span-1 bg-slate-900/40 border border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col h-[600px]">
           <header className="px-10 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
             <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-              <TerminalIcon className="w-4 h-4 text-emerald-500" /> Test Logs
+              <TerminalIcon className="w-4 h-4 text-emerald-500" /> {t('journalEntryTest.testLogs')}
             </h4>
             <span className="text-[9px] font-black text-slate-600 bg-slate-900 px-2 py-1 rounded">REV 41.0</span>
           </header>
           <div className="flex-1 overflow-y-auto p-8 space-y-4 scrollbar-hide">
             {testResults.length === 0 ? (
-              <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-[10px]">Esperando ejecución...</div>
+              <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-[10px]">{t('journalEntryTest.waitingForExecution')}</div>
             ) : (
               testResults.map((result, i) => (
                 <div key={i} className={`p-5 rounded-2xl border transition-all animate-in slide-in-from-left-4 duration-300 ${result.success ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-rose-500/5 border-rose-500/20'
@@ -206,7 +208,7 @@ export function JournalEntryTest() {
         <div className="lg:col-span-2 bg-slate-900/40 border border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col h-[600px]">
           <header className="px-10 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
             <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-              <History className="w-4 h-4 text-blue-500" /> Ultimos Registros del Laboratorio
+              <History className="w-4 h-4 text-blue-500" /> {t('journalEntryTest.latestLabRecords')}
             </h4>
             {loading && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
           </header>
@@ -224,7 +226,7 @@ export function JournalEntryTest() {
                   <div className="text-right">
                     <p className="text-2xl font-black text-white font-mono tracking-tighter">${entry.total_debit.toLocaleString()}</p>
                     <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${entry.is_balanced ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {entry.is_balanced ? 'Sincronía OK' : 'Fuera de Eje'}
+                      {entry.is_balanced ? t('journalEntryTest.syncOk') : t('journalEntryTest.outOfPivot')}
                     </p>
                   </div>
                 </div>

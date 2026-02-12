@@ -20,8 +20,10 @@ import {
 import { getIncomeStatementReport, IncomeStatementItem } from '@/database/simple-db';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useLocale } from '@/i18n/useLocale';
 
 export const IncomeStatement: React.FC = () => {
+    const { t, language } = useLocale();
     const [month, setMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
     const [data, setData] = useState<IncomeStatementItem[]>([]);
     const [loading, setLoading] = useState(false);
@@ -56,7 +58,7 @@ export const IncomeStatement: React.FC = () => {
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
         const [y, m] = month.split('-').map(Number);
-        const monthName = new Date(y, m - 1).toLocaleString('es-ES', { month: 'long' });
+        const monthName = new Date(y, m - 1).toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long' });
 
         doc.setFillColor(15, 23, 42);
         doc.rect(0, 0, 210, 40, 'F');
@@ -65,12 +67,12 @@ export const IncomeStatement: React.FC = () => {
         doc.setTextColor(255);
         doc.text('ACCOUNT EXPRESS', 14, 20);
         doc.setFontSize(12);
-        doc.text('ESTADO DE RESULTADOS • P&L PROTOCOL', 14, 30);
+        doc.text(t('incomeStatement.pdfHeader'), 14, 30);
 
         doc.setFontSize(10);
         doc.setTextColor(200);
-        doc.text(`Corte Fiscal: ${monthName.toUpperCase()} ${y}`, 145, 20);
-        doc.text(`ID Reporte: ${Math.random().toString(36).substring(7).toUpperCase()}`, 145, 25);
+        doc.text(t('incomeStatement.fiscalCutoff', { month: monthName.toUpperCase(), year: y.toString() }), 145, 20);
+        doc.text(t('incomeStatement.reportId', { id: Math.random().toString(36).substring(7).toUpperCase() }), 145, 25);
 
         let finalY = 45;
 
@@ -102,8 +104,8 @@ export const IncomeStatement: React.FC = () => {
             finalY += 15;
         };
 
-        addTableSection('Ingresos Operativos', revenue, totalRevenue, [16, 185, 129]);
-        addTableSection('Egresos / Gastos', expenses, totalExpenses, [244, 63, 94]);
+        addTableSection(t('incomeStatement.pdfRevenue'), revenue, totalRevenue, [16, 185, 129]);
+        addTableSection(t('incomeStatement.pdfExpenses'), expenses, totalExpenses, [244, 63, 94]);
 
         doc.setDrawColor(30, 41, 59);
         doc.setLineWidth(1);
@@ -112,7 +114,7 @@ export const IncomeStatement: React.FC = () => {
 
         doc.setFontSize(16);
         doc.setTextColor(netIncome >= 0 ? 16 : 244, netIncome >= 0 ? 185 : 63, netIncome >= 0 ? 129 : 94);
-        doc.text('UTILIDAD NETA DISPONIBLE:', 14, finalY);
+        doc.text(t('incomeStatement.pdfNetIncome'), 14, finalY);
         doc.text(`$${netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
 
         doc.save(`AEX_P&L_${month}.pdf`);
@@ -127,9 +129,9 @@ export const IncomeStatement: React.FC = () => {
                         <PieChart className="w-10 h-10 text-emerald-500" />
                     </div>
                     <div>
-                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Estado de Resultados</h2>
+                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('incomeStatement.title')}</h2>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <FileText className="w-3.5 h-3.5" /> Performance & Ledger Analysis • Final Report
+                            <FileText className="w-3.5 h-3.5" /> {t('incomeStatement.performance')}
                         </p>
                     </div>
                 </div>
@@ -140,7 +142,7 @@ export const IncomeStatement: React.FC = () => {
                             <Calendar className="w-4 h-4 text-slate-500 group-hover:text-blue-500 transition-colors" />
                         </div>
                         <div className="flex flex-col pr-4">
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Corte de Mes</span>
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{t('incomeStatement.monthCutoff')}</span>
                             <input
                                 type="month"
                                 value={month}
@@ -155,10 +157,10 @@ export const IncomeStatement: React.FC = () => {
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
                         <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
-                            <Printer className="w-4 h-4" /> Imprimir
+                            <Printer className="w-4 h-4" /> {t('incomeStatement.print')}
                         </button>
                         <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/30 active:scale-95">
-                            <Download className="w-4 h-4" /> Export Protocol
+                            <Download className="w-4 h-4" /> {t('incomeStatement.export')}
                         </button>
                     </div>
                 </div>
@@ -173,7 +175,7 @@ export const IncomeStatement: React.FC = () => {
                             <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
                                 <ArrowUpCircle className="w-6 h-6 text-emerald-500" />
                             </div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Entradas / Ingresos</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('incomeStatement.revenue')}</h3>
                         </div>
                         <span className="text-[10px] font-black text-emerald-500/60 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">NODO 4000</span>
                     </header>
@@ -182,10 +184,10 @@ export const IncomeStatement: React.FC = () => {
                         {loading ? (
                             <div className="py-20 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Sincronizando Ingresos...</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('incomeStatement.syncRevenue')}</p>
                             </div>
                         ) : revenue.length === 0 ? (
-                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">Sin registros de entrada</div>
+                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('incomeStatement.noRevenue')}</div>
                         ) : (
                             revenue.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
@@ -205,8 +207,8 @@ export const IncomeStatement: React.FC = () => {
 
                     <footer className="p-10 bg-emerald-500/5 border-t border-emerald-500/10 flex justify-between items-center">
                         <div>
-                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">Total Ingresos Brutos</p>
-                            <p className="text-xs text-slate-500 font-medium">Período de Auditoría Vigente</p>
+                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">{t('incomeStatement.totalRevenue')}</p>
+                            <p className="text-xs text-slate-500 font-medium">{t('incomeStatement.auditPeriod')}</p>
                         </div>
                         <p className="text-3xl font-black text-emerald-400 font-mono tracking-tighter">
                             ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -221,7 +223,7 @@ export const IncomeStatement: React.FC = () => {
                             <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20">
                                 <ArrowDownCircle className="w-6 h-6 text-rose-500" />
                             </div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Salidas / Gastos</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('incomeStatement.expenses')}</h3>
                         </div>
                         <span className="text-[10px] font-black text-rose-500/60 bg-rose-500/5 px-3 py-1 rounded-full border border-rose-500/10">NODO 5000</span>
                     </header>
@@ -230,10 +232,10 @@ export const IncomeStatement: React.FC = () => {
                         {loading ? (
                             <div className="py-20 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Sincronizando Gastos...</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('incomeStatement.syncExpenses')}</p>
                             </div>
                         ) : expenses.length === 0 ? (
-                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">Sin registros de egreso</div>
+                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('incomeStatement.noExpenses')}</div>
                         ) : (
                             expenses.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
@@ -253,8 +255,8 @@ export const IncomeStatement: React.FC = () => {
 
                     <footer className="p-10 bg-rose-500/5 border-t border-rose-500/10 flex justify-between items-center">
                         <div>
-                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">Total Gastos Operativos</p>
-                            <p className="text-xs text-slate-500 font-medium">Consumo Operativo de Recursos</p>
+                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">{t('incomeStatement.totalExpenses')}</p>
+                            <p className="text-xs text-slate-500 font-medium">{t('incomeStatement.resourceConsumption')}</p>
                         </div>
                         <p className="text-3xl font-black text-rose-400 font-mono tracking-tighter">
                             ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -266,8 +268,8 @@ export const IncomeStatement: React.FC = () => {
                 <div className={`lg:col-span-2 relative mt-4 group cursor-pointer transition-all duration-500 transform hover:scale-[1.01]`}>
                     <div className={`absolute inset-0 blur-3xl opacity-20 transition-all group-hover:opacity-40 ${netIncome >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                     <div className={`relative flex flex-col md:flex-row items-center justify-between p-12 rounded-[3.5rem] border-2 shadow-[0_30px_100px_rgba(0,0,0,0.4)] backdrop-blur-3xl transition-all ${netIncome >= 0
-                            ? 'bg-slate-900/60 border-emerald-500/30'
-                            : 'bg-slate-900/60 border-rose-500/30'
+                        ? 'bg-slate-900/60 border-emerald-500/30'
+                        : 'bg-slate-900/60 border-rose-500/30'
                         }`}>
                         <div className="flex items-center gap-8 mb-6 md:mb-0">
                             <div className={`p-6 rounded-[2rem] border shadow-2xl ${netIncome >= 0 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'
@@ -275,9 +277,9 @@ export const IncomeStatement: React.FC = () => {
                                 <DollarSign className="w-12 h-12" strokeWidth={3} />
                             </div>
                             <div>
-                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 px-1">Resultado de la Gestión</h4>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 px-1">{t('incomeStatement.managementResult')}</h4>
                                 <p className="text-4xl font-black text-white uppercase tracking-tighter">
-                                    {netIncome >= 0 ? 'Utilidad Neta del Ejercicio' : 'Pérdida Neta del Ejercicio'}
+                                    {netIncome >= 0 ? t('incomeStatement.netProfit') : t('incomeStatement.netLoss')}
                                 </p>
                             </div>
                         </div>
@@ -289,7 +291,7 @@ export const IncomeStatement: React.FC = () => {
                                 </span>
                             </div>
                             <p className={`text-[11px] font-black uppercase tracking-widest ${netIncome >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                                Flujo de Caja Realizado • Protocolo {netIncome >= 0 ? 'E' : 'D'}
+                                {t('incomeStatement.cashFlowRealized')} {netIncome >= 0 ? 'E' : 'D'}
                             </p>
                         </div>
                     </div>

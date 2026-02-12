@@ -10,8 +10,10 @@ import { ARDInventorySync } from './ARDInventorySync';
 import { ARDRoadmap } from './ARDRoadmap';
 import { getARDDocuments } from '../../database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 export const ARDModule: React.FC = () => {
+    const { t } = useLocale();
     const [activeTab, setActiveTab] = useState<'scan' | 'history' | 'payments' | 'customers' | 'quality' | 'inventory' | 'roadmap'>('scan');
     const [documents, setDocuments] = useState<ARDDocument[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -53,9 +55,9 @@ export const ARDModule: React.FC = () => {
                         <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
                             <ScanSearch className="w-8 h-8 text-indigo-400" />
                         </div>
-                        ARD: Análisis de Recibos y Documentos
+                        {t('ard.title')}
                     </h2>
-                    <p className="text-slate-500 mt-2 font-medium">Motor inteligente de procesamiento de documentos y conversión automática.</p>
+                    <p className="text-slate-500 mt-2 font-medium">{t('ard.subtitle')}</p>
                 </div>
 
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 overflow-x-auto max-w-full">
@@ -63,43 +65,43 @@ export const ARDModule: React.FC = () => {
                         onClick={() => setActiveTab('scan')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'scan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <FilePlus className="w-4 h-4" /> DIGITALIZACIÓN
+                        <FilePlus className="w-4 h-4" /> {t('ard.scanning')}
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Database className="w-4 h-4" /> GESTIÓN GAR
+                        <Database className="w-4 h-4" /> {t('ard.garManagement')}
                     </button>
                     <button
                         onClick={() => setActiveTab('inventory')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'inventory' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Package className="w-4 h-4" /> INVENTARIO
+                        <Package className="w-4 h-4" /> {t('ard.inventory')}
                     </button>
                     <button
                         onClick={() => setActiveTab('payments')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <DollarSign className="w-4 h-4" /> COBROS
+                        <DollarSign className="w-4 h-4" /> {t('ard.collections')}
                     </button>
                     <button
                         onClick={() => setActiveTab('customers')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Users className="w-4 h-4" /> CLIENTES
+                        <Users className="w-4 h-4" /> {t('ard.customers')}
                     </button>
                     <button
                         onClick={() => setActiveTab('quality')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quality' ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Gem className="w-4 h-4" /> CALIDAD
+                        <Gem className="w-4 h-4" /> {t('ard.quality')}
                     </button>
                     <button
                         onClick={() => setActiveTab('roadmap')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'roadmap' ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Rocket className="w-4 h-4" /> HOJA RUTA
+                        <Rocket className="w-4 h-4" /> {t('ard.roadmap')}
                     </button>
                 </div>
             </div>
@@ -107,10 +109,10 @@ export const ARDModule: React.FC = () => {
             {/* STATS OVERVIEW */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                    { label: 'En Proceso', val: stats.pending, icon: Clock, color: 'text-sun-orange' },
-                    { label: 'Analizados', val: stats.processed, icon: CheckCircle2, color: 'text-emerald-400' },
-                    { label: 'Errores', val: stats.errors, icon: AlertCircle, color: 'text-rose-400' },
-                    { label: 'Convertidos', val: stats.converted, icon: RefreshCw, color: 'text-blue-400' },
+                    { label: t('ard.enProceso'), val: stats.pending, icon: Clock, color: 'text-sun-orange' },
+                    { label: t('ard.analizados'), val: stats.processed, icon: CheckCircle2, color: 'text-emerald-400' },
+                    { label: t('ard.errores'), val: stats.errors, icon: AlertCircle, color: 'text-rose-400' },
+                    { label: t('ard.convertidos'), val: stats.converted, icon: RefreshCw, color: 'text-blue-400' },
                 ].map((stat, i) => (
                     <div key={i} className="card-elite !p-6 flex items-center gap-4 border-l-4 border-l-white/5 hover:border-l-indigo-500/50 transition-all">
                         <div className={`p-3 bg-white/5 rounded-xl ${stat.color}`}>
@@ -150,12 +152,12 @@ export const ARDModule: React.FC = () => {
                 <div className="flex items-center gap-3">
                     <Settings className="w-4 h-4 text-indigo-400 animate-spin-slow" />
                     <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest leading-none">
-                        Módulo ARD Fase 4 (COMPLETA) - Iniciando Fase 5: Integración Multi-Módulo
+                        {t('ard.faseStatus')}
                     </span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Motor AccountExpress Listo</span>
+                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">{t('ard.engineReady')}</span>
                 </div>
             </div>
         </div>

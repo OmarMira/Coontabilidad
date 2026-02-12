@@ -1,47 +1,26 @@
+import { useCallback } from 'react';
 import { useLanguage } from './LanguageContext';
-import esTranslations from '../locales/es.json';
-import enTranslations from '../locales/en.json';
-
-type Translations = typeof esTranslations;
+import { translationEngine } from '../core/i18n/TranslationEngine';
 
 /**
- * Hook para usar traducciones desde archivos JSON
- * Soporta claves anidadas con notación de punto (ej: "dashboard.title")
+ * Hook para usar traducciones desde el motor central.
+ * Mantiene compatibilidad con la API anterior.
  */
 export const useLocale = () => {
     const { language } = useLanguage();
 
-    const translations: Record<'es' | 'en', Translations> = {
-        es: esTranslations,
-        en: enTranslations
-    };
+    const t = useCallback((key: string, params?: Record<string, string | number>): string => {
+        let value = translationEngine.t(key);
 
-    const t = (key: string, params?: Record<string, string | number>): string => {
-        const keys = key.split('.');
-        let value: any = translations[language];
-
-        // Navegar por el objeto de traducciones
-        for (const k of keys) {
-            if (value && typeof value === 'object' && k in value) {
-                value = value[k];
-            } else {
-                return key; // Retornar la clave si no se encuentra
-            }
-        }
-
-        if (typeof value !== 'string') {
-            return key;
-        }
-
-        // Interpolación de parámetros {{param}}
-        if (params) {
-            return value.replace(/\{\{(\w+)\}\}/g, (match, paramKey) => {
+        // Interpolación de parámetros {{param}} o {param}
+        if (params && value !== key) {
+            return value.replace(/\{{1,2}(\w+)\}{1,2}/g, (match, paramKey) => {
                 return paramKey in params ? String(params[paramKey]) : match;
             });
         }
 
         return value;
-    };
+    }, [language]);
 
     return { t, language };
 };

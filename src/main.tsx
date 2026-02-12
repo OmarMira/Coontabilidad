@@ -8,6 +8,7 @@ import { AIResponseFixer } from '@/services/ai/AIResponseFixer';
 import { DashboardRestorer } from '@/core/DashboardRestorer';
 import { db, initDB } from '@/database/simple-db';
 import { logger } from '@/utils/logger';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { exhaustiveAuthDiagnostic } from '@/utils/forceInitDB';
 import './index.css';
 import './styles/error-recovery.css';
@@ -85,16 +86,18 @@ async function initializeApplication(): Promise<void> {
       <React.StrictMode>
         <DynamicErrorBoundary>
           <SystemIntegrityGate>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </LanguageProvider>
           </SystemIntegrityGate>
         </DynamicErrorBoundary>
       </React.StrictMode>
     );
   } catch (error: any) {
     logger.critical('Fallo en inicialización', { error: error.message }, error, 'Main', 'startup_error');
-    
+
     // Renderizar pantalla de error en lugar de pantalla negra
     const root = document.getElementById('root');
     if (root) {

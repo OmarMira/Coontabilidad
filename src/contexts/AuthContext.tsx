@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { translationEngine } from '../core/i18n/TranslationEngine';
 import UserService from '../services/UserService';
 import { createUser, getUserByUsername, hasUsers } from '../database/simple-db';
 import type { User as DBUser } from '../types/user.types';
@@ -42,7 +43,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
 
-    // Verificar sesión guardada al cargar
     // Verificar sesión guardada al cargar
     useEffect(() => {
         const savedData = localStorage.getItem('accountexpress_user');
@@ -179,7 +179,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     full_name: googleUser.name,
                     password: `google_${googleUser.sub}_${Date.now()}`, // Password aleatorio (no se usará)
                     display_name: googleUser.name,
-                    role_id: assignedRole.id
+                    display_name: googleUser.name,
+                    role_id: assignedRole.id,
+                    picture: googleUser.picture
                 });
 
                 console.log('📊 Resultado de creación de usuario:', result);
@@ -204,6 +206,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         user: userData,
                         expiresAt: Date.now() + 8 * 60 * 60 * 1000
                     }));
+
+                    // Sync Language Preference for New Users
+                    const browserLang = navigator.language.split('-')[0]; // 'es-ES' -> 'es'
+                    if (browserLang === 'es' || browserLang === 'en') {
+                        translationEngine.setLanguage(browserLang as 'es' | 'en');
+                        console.log(`🌍 Idioma sincronizado con navegador: ${browserLang}`);
+                    }
+
                     console.log(`✅ Usuario de Google creado exitosamente con rol: ${assignedRole.name}`, userData);
                     return true;
                 }

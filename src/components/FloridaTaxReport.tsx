@@ -34,8 +34,10 @@ import {
 } from '../database/simple-db';
 import { getFloridaCountyNames } from '../data/floridaCounties';
 import { logger } from '../core/logging/SystemLogger';
+import { useLocale } from '../i18n/useLocale';
 
 export const FloridaTaxReport: React.FC = () => {
+  const { t, language } = useLocale();
   const [reports, setReports] = useState<FloridaDR15Report[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>('');
   const [selectedCounty, setSelectedCounty] = useState<string>('');
@@ -65,7 +67,7 @@ export const FloridaTaxReport: React.FC = () => {
       }
       logger.info('FloridaTaxReport', 'load_counties_success', 'Condados de Florida cargados', { count: counties.length });
     } catch (error) {
-      setError('Error al cargar condados de Florida');
+      setError(t('floridaTaxReport.loadCountiesError'));
       logger.error('FloridaTaxReport', 'load_counties_error', 'Error al cargar condados', null, error as Error);
     }
   };
@@ -76,7 +78,7 @@ export const FloridaTaxReport: React.FC = () => {
       setReports(savedReports);
       logger.info('FloridaTaxReport', 'load_reports_success', 'Reportes DR-15 cargados', { count: savedReports.length });
     } catch (error) {
-      setError('Error al cargar reportes guardados');
+      setError(t('floridaTaxReport.loadReportsError'));
       logger.error('FloridaTaxReport', 'load_reports_error', 'Error al cargar reportes', null, error as Error);
     }
   };
@@ -89,19 +91,19 @@ export const FloridaTaxReport: React.FC = () => {
         setSelectedPeriod(periods[0]);
       }
     } catch (error) {
-      setError('Error al cargar períodos disponibles');
+      setError(t('floridaTaxReport.loadPeriodsError'));
       logger.error('FloridaTaxReport', 'load_periods_error', 'Error al cargar períodos', null, error as Error);
     }
   };
 
   const calculateReport = async () => {
     if (!selectedPeriod) {
-      setError('Seleccione un período para calcular');
+      setError(t('floridaTaxReport.selectPeriodError'));
       return;
     }
 
     if (!selectedCounty) {
-      setError('Seleccione un condado para calcular');
+      setError(t('floridaTaxReport.selectCountyError'));
       return;
     }
 
@@ -117,7 +119,7 @@ export const FloridaTaxReport: React.FC = () => {
       const report = calculateFloridaDR15Report(selectedPeriod);
 
       if (!report) {
-        setError('No se pudo calcular el reporte. Verifique que existan facturas para el período.');
+        setError(t('floridaTaxReport.noCalculatedReportError'));
         return;
       }
 
@@ -148,7 +150,7 @@ export const FloridaTaxReport: React.FC = () => {
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
-      setError(`Error al calcular reporte: ${errorMsg}`);
+      setError(t('floridaTaxReport.calculateError', { message: errorMsg }));
       logger.error('FloridaTaxReport', 'calculate_error', 'Error en cálculo', {
         period: selectedPeriod,
         county: selectedCounty
@@ -177,7 +179,7 @@ export const FloridaTaxReport: React.FC = () => {
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
-      setError(`Error al guardar reporte: ${errorMsg}`);
+      setError(t('floridaTaxReport.saveError', { message: errorMsg }));
     } finally {
       setIsSaving(false);
     }
@@ -194,7 +196,7 @@ export const FloridaTaxReport: React.FC = () => {
         setError(result.message);
       }
     } catch (error) {
-      setError('Error al marcar reporte como presentado');
+      setError(t('floridaTaxReport.markFiledError'));
     }
   };
 
@@ -225,14 +227,14 @@ export const FloridaTaxReport: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(language === 'es' ? 'es-US' : 'en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-US', {
+    return new Intl.DateTimeFormat(language === 'es' ? 'es-ES' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -253,8 +255,8 @@ export const FloridaTaxReport: React.FC = () => {
   }, []);
 
   const exportToCSV = async () => {
-    if (!currentReport) {
-      setError('No hay reporte para exportar');
+    if (!selectedPeriod) {
+      setError(t('floridaTaxReport.selectPeriodError'));
       return;
     }
 
@@ -319,7 +321,7 @@ export const FloridaTaxReport: React.FC = () => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        setSuccess(`Reporte exportado como ${filename} (vía Worker)`);
+        setSuccess(t('floridaTaxReport.exportSuccess', { filename }));
       } else {
         // Fallback a generación síncrona si worker no está listo
         const csvContent = [
@@ -338,14 +340,14 @@ export const FloridaTaxReport: React.FC = () => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        setSuccess(`Reporte exportado como ${filename}`);
+        setSuccess(t('floridaTaxReport.exportSuccess', { filename }));
       }
 
       logger.info('FloridaTaxReport', 'csv_export_success', 'CSV exportado exitosamente');
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
-      setError(`Error al exportar CSV: ${errorMsg}`);
+      setError(t('floridaTaxReport.exportError', { message: errorMsg }));
       logger.error('FloridaTaxReport', 'csv_export_error', 'Error en exportación CSV', null, error as Error);
     } finally {
       setIsExporting(false);
@@ -373,8 +375,8 @@ export const FloridaTaxReport: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-white">Reporte DR-15 Florida</h1>
-            <p className="text-slate-500">Período: {currentReport.period}</p>
+            <h1 className="text-2xl font-black tracking-tight text-white">{t('floridaTaxReport.title')}</h1>
+            <p className="text-slate-500">{t('floridaTaxReport.period')}: {currentReport.period}</p>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -387,7 +389,7 @@ export const FloridaTaxReport: React.FC = () => {
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              <span>{isExporting ? 'Exportando...' : 'Exportar CSV'}</span>
+              <span>{isExporting ? t('floridaTaxReport.exporting') : t('floridaTaxReport.exportCsv')}</span>
             </button>
             <button
               onClick={saveReport}
@@ -399,13 +401,13 @@ export const FloridaTaxReport: React.FC = () => {
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              <span>{isSaving ? 'Guardando...' : 'Guardar Reporte'}</span>
+              <span>{isSaving ? t('floridaTaxReport.saving') : t('floridaTaxReport.saveReport')}</span>
             </button>
             <button
               onClick={() => setViewMode('list')}
               className="bg-gray-600 hover:bg-white/5 text-white px-4 py-2 rounded-lg transition-colors"
             >
-              Volver
+              {t('floridaTaxReport.back')}
             </button>
           </div>
         </div>
@@ -415,7 +417,7 @@ export const FloridaTaxReport: React.FC = () => {
           <div className="bg-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Ventas Gravables</p>
+                <p className="text-slate-500 text-sm">{t('floridaTaxReport.taxableSales')}</p>
                 <p className="text-2xl font-black tracking-tight text-white">
                   {formatCurrency(currentReport.totalTaxableSales)}
                 </p>
@@ -427,7 +429,7 @@ export const FloridaTaxReport: React.FC = () => {
           <div className="bg-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Impuestos Recolectados</p>
+                <p className="text-slate-500 text-sm">{t('floridaTaxReport.taxesCollected')}</p>
                 <p className="text-2xl font-black tracking-tight text-white">
                   {formatCurrency(currentReport.totalTaxCollected)}
                 </p>
@@ -439,7 +441,7 @@ export const FloridaTaxReport: React.FC = () => {
           <div className="bg-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Ventas Exentas</p>
+                <p className="text-slate-500 text-sm">{t('floridaTaxReport.exemptSales')}</p>
                 <p className="text-2xl font-black tracking-tight text-white">
                   {formatCurrency(currentReport.exemptSales)}
                 </p>
@@ -451,7 +453,7 @@ export const FloridaTaxReport: React.FC = () => {
           <div className="bg-white/10 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-sm">Impuesto Neto a Pagar</p>
+                <p className="text-slate-500 text-sm">{t('floridaTaxReport.netTaxDue')}</p>
                 <p className="text-2xl font-black tracking-tight text-white">
                   {formatCurrency(currentReport.netTaxDue)}
                 </p>
@@ -465,7 +467,7 @@ export const FloridaTaxReport: React.FC = () => {
         <div className="bg-white/10 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
             <MapPin className="w-5 h-5 mr-2 text-blue-400" />
-            Desglose por Condado de Florida
+            {t('floridaTaxReport.countyBreakdown')}
           </h3>
 
           {currentReport.countyBreakdown.length > 0 ? (
@@ -473,10 +475,10 @@ export const FloridaTaxReport: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-3 px-4 text-slate-400">Condado</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Tasa</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Ventas Gravables</th>
-                    <th className="text-right py-3 px-4 text-slate-400">Impuesto</th>
+                    <th className="text-left py-3 px-4 text-slate-400">{t('floridaTaxReport.county')}</th>
+                    <th className="text-right py-3 px-4 text-slate-400">{t('floridaTaxReport.rate')}</th>
+                    <th className="text-right py-3 px-4 text-slate-400">{t('floridaTaxReport.taxableSales')}</th>
+                    <th className="text-right py-3 px-4 text-slate-400">{t('floridaTaxReport.tax')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -499,33 +501,33 @@ export const FloridaTaxReport: React.FC = () => {
             </div>
           ) : (
             <p className="text-slate-500 text-center py-8">
-              No hay ventas registradas para este período
+              {t('floridaTaxReport.noSalesForPeriod')}
             </p>
           )}
         </div>
 
         {/* Información del Reporte */}
         <div className="bg-white/10 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Información del Reporte</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('floridaTaxReport.reportInfo')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-slate-500 text-sm">Período</p>
+              <p className="text-slate-500 text-sm">{t('floridaTaxReport.period')}</p>
               <p className="text-white">{currentReport.period}</p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm">Fecha de Vencimiento</p>
+              <p className="text-slate-500 text-sm">{t('floridaTaxReport.dueDateLabel')}</p>
               <p className="text-white">{formatDate(currentReport.dueDate)}</p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm">Estado</p>
+              <p className="text-slate-500 text-sm">{t('floridaTaxReport.status')}</p>
               <p className={`capitalize ${getStatusColor(currentReport.status)}`}>
-                {currentReport.status === 'pending' ? 'Pendiente' :
-                  currentReport.status === 'filed' ? 'Presentado' :
-                    currentReport.status === 'paid' ? 'Pagado' : 'Vencido'}
+                {currentReport.status === 'pending' ? t('floridaTaxReport.pending') :
+                  currentReport.status === 'filed' ? t('floridaTaxReport.filed') :
+                    currentReport.status === 'paid' ? t('floridaTaxReport.paid') : t('floridaTaxReport.late')}
               </p>
             </div>
             <div>
-              <p className="text-slate-500 text-sm">Condados Incluidos</p>
+              <p className="text-slate-500 text-sm">{t('floridaTaxReport.countiesIncluded')}</p>
               <p className="text-white">{currentReport.countyBreakdown.length}</p>
             </div>
           </div>
@@ -540,32 +542,32 @@ export const FloridaTaxReport: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-white">Calcular Reporte DR-15</h1>
-            <p className="text-slate-500">Generar reporte de impuestos para Florida</p>
+            <h1 className="text-2xl font-black tracking-tight text-white">{t('floridaTaxReport.calculateTitle')}</h1>
+            <p className="text-slate-500">{t('floridaTaxReport.calculateSubtitle')}</p>
           </div>
           <button
             onClick={() => setViewMode('list')}
             className="bg-gray-600 hover:bg-white/5 text-white px-4 py-2 rounded-lg transition-colors"
           >
-            Volver
+            {t('floridaTaxReport.back')}
           </button>
         </div>
 
         {/* Formulario de Cálculo */}
         <div className="bg-white/10 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Seleccionar Período y Condado</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('floridaTaxReport.selectPeriodAndCounty')}</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-slate-400 text-sm font-medium mb-2">
-                Período Fiscal
+                {t('floridaTaxReport.fiscalPeriod')}
               </label>
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Seleccionar período...</option>
+                <option value="">{t('floridaTaxReport.selectPeriod')}</option>
                 {availablePeriods.map(period => (
                   <option key={period} value={period}>
                     {period}
@@ -573,21 +575,21 @@ export const FloridaTaxReport: React.FC = () => {
                 ))}
               </select>
               <p className="text-slate-500 text-xs mt-1">
-                Solo se muestran períodos completados
+                {t('floridaTaxReport.completedPeriodsOnly')}
               </p>
             </div>
 
             <div>
               <label className="block text-slate-400 text-sm font-medium mb-2">
-                Condado de Florida
+                {t('floridaTaxReport.floridaCounty')}
               </label>
               <select
                 value={selectedCounty}
                 onChange={(e) => setSelectedCounty(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Seleccionar condado...</option>
-                <option value="Todos">Todos los condados</option>
+                <option value="">{t('floridaTaxReport.selectCounty')}</option>
+                <option value="Todos">{t('floridaTaxReport.allCounties')}</option>
                 {floridaCounties.map(county => (
                   <option key={county} value={county}>
                     {county}
@@ -595,7 +597,7 @@ export const FloridaTaxReport: React.FC = () => {
                 ))}
               </select>
               <p className="text-slate-500 text-xs mt-1">
-                {floridaCounties.length} condados disponibles
+                {floridaCounties.length} {t('floridaTaxReport.countiesAvailable')}
               </p>
             </div>
 
@@ -610,19 +612,19 @@ export const FloridaTaxReport: React.FC = () => {
                 ) : (
                   <Calculator className="h-4 w-4" />
                 )}
-                <span>{isCalculating ? 'Calculando...' : 'Generar Reporte'}</span>
+                <span>{isCalculating ? t('floridaTaxReport.calculating') : t('floridaTaxReport.generateReport')}</span>
               </button>
             </div>
           </div>
 
           {/* Información sobre DR-15 */}
           <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-            <h4 className="text-blue-300 font-medium mb-2">Sobre el Reporte DR-15</h4>
+            <h4 className="text-blue-300 font-medium mb-2">{t('floridaTaxReport.aboutDr15')}</h4>
             <ul className="text-blue-200 text-sm space-y-1">
-              <li>• Reporte oficial de impuestos sobre ventas para el estado de Florida</li>
-              <li>• Debe presentarse mensualmente o trimestralmente según el volumen de ventas</li>
-              <li>• Incluye desglose por condado de Florida</li>
-              <li>• Vencimiento: día 20 del mes siguiente al período reportado</li>
+              <li>• {t('floridaTaxReport.dr15OfficialDesc')}</li>
+              <li>• {t('floridaTaxReport.dr15Frequency')}</li>
+              <li>• {t('floridaTaxReport.dr15Breakdown')}</li>
+              <li>• {t('floridaTaxReport.dr15DueDate')}</li>
             </ul>
           </div>
         </div>
@@ -636,15 +638,15 @@ export const FloridaTaxReport: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">Reportes Florida DR-15</h1>
-          <p className="text-slate-500">Gestión de reportes de impuestos sobre ventas</p>
+          <h1 className="text-2xl font-black tracking-tight text-white">{t('floridaTaxReport.title')}</h1>
+          <p className="text-slate-500">{t('floridaTaxReport.subtitle')}</p>
         </div>
         <button
           onClick={() => setViewMode('calculate')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          <span>Nuevo Reporte</span>
+          <span>{t('floridaTaxReport.newReport')}</span>
         </button>
       </div>
 
@@ -674,12 +676,12 @@ export const FloridaTaxReport: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-4 px-6 text-slate-400">Período</th>
-                  <th className="text-right py-4 px-6 text-slate-400">Ventas Gravables</th>
-                  <th className="text-right py-4 px-6 text-slate-400">Impuestos</th>
-                  <th className="text-center py-4 px-6 text-slate-400">Estado</th>
-                  <th className="text-center py-4 px-6 text-slate-400">Vencimiento</th>
-                  <th className="text-center py-4 px-6 text-slate-400">Acciones</th>
+                  <th className="text-left py-4 px-6 text-slate-400">{t('floridaTaxReport.period')}</th>
+                  <th className="text-right py-4 px-6 text-slate-400">{t('floridaTaxReport.taxableSales')}</th>
+                  <th className="text-right py-4 px-6 text-slate-400">{t('floridaTaxReport.taxes')}</th>
+                  <th className="text-center py-4 px-6 text-slate-400">{t('floridaTaxReport.status')}</th>
+                  <th className="text-center py-4 px-6 text-slate-400">{t('floridaTaxReport.dueDate')}</th>
+                  <th className="text-center py-4 px-6 text-slate-400">{t('floridaTaxReport.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -701,9 +703,9 @@ export const FloridaTaxReport: React.FC = () => {
                       <div className="flex items-center justify-center space-x-1">
                         {getStatusIcon(report.status)}
                         <span className={`text-sm capitalize ${getStatusColor(report.status)}`}>
-                          {report.status === 'pending' ? 'Pendiente' :
-                            report.status === 'filed' ? 'Presentado' :
-                              report.status === 'paid' ? 'Pagado' : 'Vencido'}
+                          {report.status === 'pending' ? t('floridaTaxReport.pending') :
+                            report.status === 'filed' ? t('floridaTaxReport.filed') :
+                              report.status === 'paid' ? t('floridaTaxReport.paid') : t('floridaTaxReport.late')}
                         </span>
                       </div>
                     </td>
@@ -718,7 +720,7 @@ export const FloridaTaxReport: React.FC = () => {
                             setViewMode('view');
                           }}
                           className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-                          title="Ver reporte"
+                          title={t('floridaTaxReport.viewReport')}
                         >
                           <Eye className="w-4 h-4 text-slate-500" />
                         </button>
@@ -727,7 +729,7 @@ export const FloridaTaxReport: React.FC = () => {
                           <button
                             onClick={() => markAsFiled(report.period)}
                             className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-                            title="Marcar como presentado"
+                            title={t('floridaTaxReport.markAsFiled')}
                           >
                             <CheckCircle className="w-4 h-4 text-green-400" />
                           </button>
@@ -739,7 +741,7 @@ export const FloridaTaxReport: React.FC = () => {
                             exportToCSV();
                           }}
                           className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-                          title="Exportar CSV"
+                          title={t('floridaTaxReport.exportCsv')}
                         >
                           <Download className="w-4 h-4 text-green-400" />
                         </button>
@@ -753,15 +755,15 @@ export const FloridaTaxReport: React.FC = () => {
         ) : (
           <div className="text-center py-12">
             <FileText className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-            <h3 className="text-lg font-black tracking-tight text-white mb-2">No hay reportes DR-15</h3>
+            <h3 className="text-lg font-black tracking-tight text-white mb-2">{t('floridaTaxReport.noReports')}</h3>
             <p className="text-slate-500 mb-6">
-              Comience creando su primer reporte de impuestos para Florida
+              {t('floridaTaxReport.noReportsDesc')}
             </p>
             <button
               onClick={() => setViewMode('calculate')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
-              Crear Primer Reporte
+              {t('floridaTaxReport.createFirstReport')}
             </button>
           </div>
         )}
@@ -772,11 +774,9 @@ export const FloridaTaxReport: React.FC = () => {
         <div className="flex items-start space-x-2">
           <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5" />
           <div>
-            <h4 className="text-yellow-300 font-medium mb-1">Aviso Legal</h4>
+            <h4 className="text-yellow-300 font-medium mb-1">{t('floridaTaxReport.legalNotice')}</h4>
             <p className="text-yellow-200 text-sm">
-              Los reportes DR-15 generados por este sistema son para uso informativo.
-              Siempre verifique los cálculos y consulte con un contador certificado antes de presentar
-              reportes oficiales al Departamento de Ingresos de Florida.
+              {t('floridaTaxReport.legalNoticeDesc')}
             </p>
           </div>
         </div>

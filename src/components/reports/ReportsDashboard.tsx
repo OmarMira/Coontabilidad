@@ -1,46 +1,49 @@
 import React from 'react';
 import { BarChart3, TrendingUp, DollarSign, Activity, PieChart, FileText, ArrowRight, ShieldCheck, Clock, Zap } from 'lucide-react';
+import { useLocale } from '../../i18n/useLocale';
 
 interface ReportDashboardProps {
     onNavigate: (section: string) => void;
 }
 
-const REPORT_CATEGORIES = [
-    {
-        id: 'financial',
-        title: 'Estados Financieros',
-        description: 'Estados contables oficiales bajo principios GAAP/IFRS para Florida.',
-        color: 'emerald',
-        reports: [
-            { id: 'balance-sheet', title: 'Balance General', icon: ShieldCheck, desc: 'Situación patrimonial de la empresa.' },
-            { id: 'income-statement', title: 'Estado de Resultados', icon: TrendingUp, desc: 'Pérdidas y ganancias detalladas.' },
-            { id: 'cash-flow', title: 'Flujo de Efectivo', icon: DollarSign, desc: 'Origen y aplicación del efectivo.', isNew: true },
-        ]
-    },
-    {
-        id: 'ledger',
-        title: 'Libro Mayor y Auxiliares',
-        description: 'Detalle granular de transacciones y movimientos de libros.',
-        color: 'blue',
-        reports: [
-            { id: 'general-ledger', title: 'Libro Mayor', icon: FileText, desc: 'Todos los movimientos por cuenta.' },
-            { id: 'trial-balance', title: 'Balance de Comprobación', icon: Activity, desc: 'Verificación de sumas y saldos.' },
-            { id: 'account-ledger', title: 'Auxiliares de Cuentas', icon: PieChart, desc: 'Detalle por cuenta específica.', isNew: true },
-        ]
-    },
-    {
-        id: 'analysis',
-        title: 'Análisis y Seguimiento',
-        description: 'Control de antigüedad de deudas y ratios operativos.',
-        color: 'sun-orange',
-        reports: [
-            { id: 'aging-report', title: 'Aging Report (Cuentas)', icon: Clock, desc: 'Antigüedad de cobros y pagos.', isNew: true },
-            { id: 'financial-reports', title: 'Ratios Financieros', icon: Zap, desc: 'Indicadores de liquidez y solvencia.' },
-        ]
-    }
-];
-
 export const ReportsDashboard: React.FC<ReportDashboardProps> = ({ onNavigate }) => {
+    const { t } = useLocale();
+
+    const REPORT_CATEGORIES = [
+        {
+            id: 'financial',
+            title: t('reportsDashboard.financialCategory.title'),
+            description: t('reportsDashboard.financialCategory.description'),
+            color: 'emerald',
+            reports: [
+                { id: 'balance-sheet', title: t('reportsDashboard.financialCategory.balanceSheet.title'), icon: ShieldCheck, desc: t('reportsDashboard.financialCategory.balanceSheet.desc') },
+                { id: 'income-statement', title: t('reportsDashboard.financialCategory.incomeStatement.title'), icon: TrendingUp, desc: t('reportsDashboard.financialCategory.incomeStatement.desc') },
+                { id: 'cash-flow', title: t('reportsDashboard.financialCategory.cashFlow.title'), icon: DollarSign, desc: t('reportsDashboard.financialCategory.cashFlow.desc'), isNew: true },
+            ]
+        },
+        {
+            id: 'ledger',
+            title: t('reportsDashboard.ledgerCategory.title'),
+            description: t('reportsDashboard.ledgerCategory.description'),
+            color: 'blue',
+            reports: [
+                { id: 'general-ledger', title: t('reportsDashboard.ledgerCategory.generalLedger.title'), icon: FileText, desc: t('reportsDashboard.ledgerCategory.generalLedger.desc') },
+                { id: 'trial-balance', title: t('reportsDashboard.ledgerCategory.trialBalance.title'), icon: Activity, desc: t('reportsDashboard.ledgerCategory.trialBalance.desc') },
+                { id: 'account-ledger', title: t('reportsDashboard.ledgerCategory.accountLedger.title'), icon: PieChart, desc: t('reportsDashboard.ledgerCategory.accountLedger.desc'), isNew: true },
+            ]
+        },
+        {
+            id: 'analysis',
+            title: t('reportsDashboard.analysisCategory.title'),
+            description: t('reportsDashboard.analysisCategory.description'),
+            color: 'sun-orange',
+            reports: [
+                { id: 'aging-report', title: t('reportsDashboard.analysisCategory.agingReport.title'), icon: Clock, desc: t('reportsDashboard.analysisCategory.agingReport.desc'), isNew: true },
+                { id: 'financial-reports', title: t('reportsDashboard.analysisCategory.financialRatios.title'), icon: Zap, desc: t('reportsDashboard.analysisCategory.financialRatios.desc') },
+            ]
+        }
+    ];
+
     return (
         <div className="space-y-10 animate-fade-in px-2">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -49,9 +52,9 @@ export const ReportsDashboard: React.FC<ReportDashboardProps> = ({ onNavigate })
                         <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
                             <BarChart3 className="w-8 h-8 text-blue-400" />
                         </div>
-                        Inteligencia de Reportes Elite
+                        {t('reportsDashboard.title')}
                     </h2>
-                    <p className="text-slate-500 mt-2 font-medium">Análisis profundo, cumplimiento oficial y exportación unificada.</p>
+                    <p className="text-slate-500 mt-2 font-medium">{t('reportsDashboard.subtitle')}</p>
                 </div>
             </div>
 
@@ -80,7 +83,7 @@ export const ReportsDashboard: React.FC<ReportDashboardProps> = ({ onNavigate })
                                             </div>
                                             {report.isNew && (
                                                 <span className="badge-elite bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 animate-pulse">
-                                                    NUEVO
+                                                    {t('reportsDashboard.new')}
                                                 </span>
                                             )}
                                         </div>
@@ -93,7 +96,7 @@ export const ReportsDashboard: React.FC<ReportDashboardProps> = ({ onNavigate })
                                     </div>
 
                                     <div className="mt-8 flex items-center gap-2 text-[10px] font-black text-blue-400 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Generar Reporte
+                                        {t('reportsDashboard.generate')}
                                         <ArrowRight className="w-3.5 h-3.5" />
                                     </div>
                                 </div>
@@ -110,12 +113,12 @@ export const ReportsDashboard: React.FC<ReportDashboardProps> = ({ onNavigate })
                         <ShieldCheck className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div>
-                        <span className="text-white font-bold block">Cumplimiento Estándar Florida</span>
-                        <p className="text-xs text-slate-600">Todos los reportes están optimizados para auditorías estatales y federales.</p>
+                        <span className="text-white font-bold block">{t('reportsDashboard.complianceTitle')}</span>
+                        <p className="text-xs text-slate-600">{t('reportsDashboard.complianceDesc')}</p>
                     </div>
                 </div>
                 <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center md:text-right">
-                    SISTEMA DE AUDITORÍA INTEGRADO v4.2<br />
+                    {t('reportsDashboard.footerVersion')}<br />
                     ACCOUNTEXPRESS NEXT-GEN
                 </div>
             </div>

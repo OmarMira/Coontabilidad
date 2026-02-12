@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { useLocale } from '../../i18n/useLocale';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserCheck, Shield, Plus, Lock } from 'lucide-react';
 
 export const UserRoleManager: React.FC = () => {
+    const { t } = useLocale();
     const [roles, setRoles] = useState([
-        { id: 1, name: 'Administrador', users: 1, permissions: ['all'] },
-        { id: 2, name: 'Contador', users: 2, permissions: ['accounting.*', 'reports.*'] },
-        { id: 3, name: 'Ventas', users: 4, permissions: ['invoices.*', 'customers.*'] },
+        { id: 1, name: t('userRoleManager.roles.admin'), users: 1, permissions: ['all'] },
+        { id: 2, name: t('userRoleManager.roles.accountant'), users: 2, permissions: ['accounting.*', 'reports.*'] },
+        { id: 3, name: t('userRoleManager.roles.sales'), users: 4, permissions: ['invoices.*', 'customers.*'] },
     ]);
 
     return (
@@ -15,11 +17,11 @@ export const UserRoleManager: React.FC = () => {
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                     <UserCheck className="w-5 h-5 text-blue-400" />
-                    Gestión de Usuarios y Roles
+                    {t('userRoleManager.title')}
                 </CardTitle>
                 <Button className="bg-blue-600 hover:bg-blue-700">
                     <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Rol
+                    {t('userRoleManager.newRole')}
                 </Button>
             </CardHeader>
             <CardContent>
@@ -35,7 +37,7 @@ export const UserRoleManager: React.FC = () => {
                                 </Button>
                             </div>
                             <h3 className="font-bold text-lg">{role.name}</h3>
-                            <p className="text-slate-500 text-sm mt-1">{role.users} {role.users === 1 ? 'Usuario Asignado' : 'Usuarios Asignados'}</p>
+                            <p className="text-slate-500 text-sm mt-1">{role.users} {role.users === 1 ? t('userRoleManager.assignedUser') : t('userRoleManager.assignedUsers')}</p>
 
                             <div className="mt-4 flex flex-wrap gap-2">
                                 {role.permissions.map((p, i) => (

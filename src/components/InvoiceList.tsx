@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, Edit, Trash2, FileText, Calendar, DollarSign, User, Filter, Plus } from 'lucide-react';
 import { Invoice } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceListProps {
   invoices: Invoice[];
@@ -19,8 +20,21 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
   onAddInvoice,
   onNavigateToKardex
 }) => {
+  const { t } = useLocale();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Helper to translate status dynamically
+  const getStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'draft': t('invoiceList.draft'),
+      'sent': t('invoiceList.sent'),
+      'paid': t('invoiceList.paid'),
+      'overdue': t('invoiceList.overdue'),
+      'cancelled': t('invoiceList.cancelled')
+    };
+    return statusMap[status] || status.toUpperCase();
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -56,11 +70,11 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
 
   const handleDelete = (invoice: Invoice) => {
     if (invoice.status === 'paid') {
-      alert('No se pueden eliminar facturas pagadas');
+      alert(t('invoiceList.cannotDeletePaidAlert'));
       return;
     }
 
-    if (window.confirm(`¿Está seguro de que desea eliminar la factura ${invoice.invoice_number}?`)) {
+    if (window.confirm(t('invoiceList.confirmDelete', { number: invoice.invoice_number }))) {
       onDelete(invoice.id);
     }
   };
@@ -69,14 +83,14 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
     return (
       <div className="bg-white/10 rounded-lg p-8 text-center border border-white/10">
         <FileText className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-        <h3 className="text-lg font-black tracking-tight text-white mb-2">Aún no hay facturas</h3>
-        <p className="text-slate-500 mb-4">Cree su primera factura para comenzar.</p>
+        <h3 className="text-lg font-black tracking-tight text-white mb-2">{t('invoiceList.noInvoices')}</h3>
+        <p className="text-slate-500 mb-4">{t('invoiceList.noInvoicesMessage')}</p>
         <button
           onClick={onAddInvoice}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors inline-flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Crear Factura
+          {t('invoiceList.createInvoice')}
         </button>
       </div>
     );
@@ -89,14 +103,14 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-white flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-400" />
-            Facturas ({filteredInvoices.length})
+            {t('invoiceList.title')} ({filteredInvoices.length})
           </h2>
           <button
             onClick={onAddInvoice}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Nueva Venta
+            {t('invoiceList.newSale')}
           </button>
         </div>
 
@@ -105,7 +119,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
           <div className="flex-1">
             <input
               type="text"
-              placeholder="Buscar por número de factura o cliente..."
+              placeholder={t('invoiceList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
@@ -118,12 +132,12 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-white/5 text-white px-3 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
             >
-              <option value="all">Todos los Estados</option>
-              <option value="draft">Borrador</option>
-              <option value="sent">Enviada</option>
-              <option value="paid">Pagada</option>
-              <option value="overdue">Vencida</option>
-              <option value="cancelled">Cancelada</option>
+              <option value="all">{t('invoiceList.allStatuses')}</option>
+              <option value="draft">{t('invoiceList.draft')}</option>
+              <option value="sent">{t('invoiceList.sent')}</option>
+              <option value="paid">{t('invoiceList.paid')}</option>
+              <option value="overdue">{t('invoiceList.overdue')}</option>
+              <option value="cancelled">{t('invoiceList.cancelled')}</option>
             </select>
           </div>
         </div>
@@ -139,7 +153,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     {invoice.invoice_number}
                   </h3>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)} {invoice.status.toUpperCase()}
+                    {getStatusIcon(invoice.status)} {getStatusLabel(invoice.status)}
                   </span>
                 </div>
 
@@ -148,7 +162,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     <User className="w-4 h-4 text-slate-500" />
                     <div>
                       <p className="text-white font-medium">
-                        {invoice.customer?.business_name || invoice.customer?.name || 'Unknown Customer'}
+                        {invoice.customer?.business_name || invoice.customer?.name || t('invoiceList.unknownCustomer')}
                       </p>
                       <p className="text-slate-500 text-xs">
                         {invoice.customer?.email}
@@ -159,8 +173,8 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                   <div className="flex items-center gap-2 text-slate-400">
                     <Calendar className="w-4 h-4 text-slate-500" />
                     <div>
-                      <p className="text-white">Emisión: {new Date(invoice.issue_date).toLocaleDateString()}</p>
-                      <p className="text-slate-500 text-xs">Vencim.: {new Date(invoice.due_date).toLocaleDateString()}</p>
+                      <p className="text-white">{t('invoiceList.issueDate')}: {new Date(invoice.issue_date).toLocaleDateString()}</p>
+                      <p className="text-slate-500 text-xs">{t('invoiceList.dueDate')}: {new Date(invoice.due_date).toLocaleDateString()}</p>
                     </div>
                   </div>
 
@@ -169,7 +183,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     <div>
                       <p className="text-white font-medium">${invoice.total_amount.toFixed(2)}</p>
                       <p className="text-slate-500 text-xs">
-                        Impuesto: ${invoice.tax_amount.toFixed(2)}
+                        {t('invoiceList.tax')}: ${invoice.tax_amount.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -177,11 +191,11 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                   <div className="flex items-center gap-2 text-slate-400">
                     <div>
                       <p className="text-white text-xs">
-                        Creado: {new Date(invoice.created_at).toLocaleDateString()}
+                        {t('invoiceList.created')}: {new Date(invoice.created_at).toLocaleDateString()}
                       </p>
                       {invoice.notes && (
                         <p className="text-slate-500 text-xs truncate max-w-32" title={invoice.notes}>
-                          Nota: {invoice.notes}
+                          {t('invoiceList.note')}: {invoice.notes}
                         </p>
                       )}
                     </div>
@@ -191,19 +205,47 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
 
               {/* Actions */}
               <div className="flex items-center gap-2 ml-4">
-                <button
-                  onClick={() => onView(invoice)}
-                  className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/5 rounded-lg transition-colors"
-                  title="Ver Factura"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
+                {/* View/Print with Language Selection */}
+                <div className="flex bg-slate-950 border border-white/10 rounded-xl overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => onView(invoice)}
+                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-white/5 border-r border-white/10 transition-colors"
+                    title={t('invoiceList.viewInvoice')}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-center px-1 gap-1">
+                    <button
+                      onClick={() => {
+                        // Forzar idioma ES para el PDF
+                        const event = new CustomEvent('generatePdf', { detail: { invoice, lang: 'es' } });
+                        window.dispatchEvent(event);
+                      }}
+                      className="text-[9px] font-black w-5 h-5 flex items-center justify-center rounded hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                      title={`${t('invoiceList.generateIn')} ES`}
+                    >
+                      ES
+                    </button>
+                    <div className="w-[1px] h-3 bg-white/5"></div>
+                    <button
+                      onClick={() => {
+                        // Forzar idioma EN para el PDF
+                        const event = new CustomEvent('generatePdf', { detail: { invoice, lang: 'en' } });
+                        window.dispatchEvent(event);
+                      }}
+                      className="text-[9px] font-black w-5 h-5 flex items-center justify-center rounded hover:bg-white/10 text-white/40 hover:text-emerald-400 transition-all"
+                      title={`${t('invoiceList.generateIn')} EN`}
+                    >
+                      EN
+                    </button>
+                  </div>
+                </div>
 
                 {onNavigateToKardex && (
                   <button
                     onClick={() => onNavigateToKardex(invoice.id)}
                     className="p-2 text-purple-400 hover:text-purple-300 hover:bg-white/5 rounded-lg transition-colors border border-purple-500/30"
-                    title="Ver Salidas de Inventario"
+                    title={t('invoiceList.viewInventoryOutputs')}
                   >
                     <FileText className="w-4 h-4" />
                   </button>
@@ -212,7 +254,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                 <button
                   onClick={() => onEdit(invoice)}
                   className="p-2 text-yellow-400 hover:text-yellow-300 hover:bg-white/5 rounded-lg transition-colors"
-                  title="Editar Factura"
+                  title={t('invoiceList.editInvoice')}
                 >
                   <Edit className="w-4 h-4" />
                 </button>
@@ -223,7 +265,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     ? 'text-slate-600 cursor-not-allowed'
                     : 'text-red-400 hover:text-red-300 hover:bg-white/5'
                     }`}
-                  title={invoice.status === 'paid' ? 'No se pueden eliminar facturas pagadas' : 'Eliminar Factura'}
+                  title={invoice.status === 'paid' ? t('invoiceList.cannotDeletePaid') : t('invoiceList.deleteInvoice')}
                   disabled={invoice.status === 'paid'}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -235,7 +277,9 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
             {invoice.status === 'overdue' && (
               <div className="mt-3 p-2 bg-red-900/20 border border-red-700 rounded-md">
                 <p className="text-red-300 text-sm">
-                  ⚠️ Esta factura está vencida por {Math.ceil((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))} días
+                  {t('invoiceList.overdueWarning', {
+                    days: Math.ceil((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))
+                  })}
                 </p>
               </div>
             )}
@@ -247,23 +291,23 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
       <div className="p-6 border-t border-white/10 bg-slate-900">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="text-center">
-            <p className="text-slate-500">Total Facturas</p>
+            <p className="text-slate-500">{t('invoiceList.totalInvoices')}</p>
             <p className="text-white font-semibold">{filteredInvoices.length}</p>
           </div>
           <div className="text-center">
-            <p className="text-slate-500">Monto Total</p>
+            <p className="text-slate-500">{t('invoiceList.totalAmount')}</p>
             <p className="text-white font-semibold">
               ${filteredInvoices.reduce((sum, inv) => sum + inv.total_amount, 0).toFixed(2)}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-slate-500">Pagadas</p>
+            <p className="text-slate-500">{t('invoiceList.paidCount')}</p>
             <p className="text-green-400 font-semibold">
               {filteredInvoices.filter(inv => inv.status === 'paid').length}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-slate-500">Pendiente</p>
+            <p className="text-slate-500">{t('invoiceList.pendingAmount')}</p>
             <p className="text-yellow-400 font-semibold">
               ${filteredInvoices
                 .filter(inv => inv.status !== 'paid' && inv.status !== 'cancelled')

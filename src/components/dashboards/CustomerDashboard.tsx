@@ -16,6 +16,7 @@ import {
   Users2
 } from 'lucide-react';
 import { getCustomers, getInvoices } from '../../database/simple-db';
+import { useLocale } from '../../i18n/useLocale';
 
 interface CustomerStats {
   totalCustomers: number;
@@ -42,6 +43,7 @@ interface ARAgingBucket {
 }
 
 export const CustomerDashboard: React.FC = () => {
+  const { t } = useLocale();
   const [stats, setStats] = useState<CustomerStats>({
     totalCustomers: 0,
     newThisMonth: 0,
@@ -93,7 +95,7 @@ export const CustomerDashboard: React.FC = () => {
       invoices.forEach(inv => {
         if (!customerRevenue[inv.customer_id]) {
           const customer = customers.find(c => c.id === inv.customer_id);
-          customerRevenue[inv.customer_id] = { name: customer?.name || 'Cliente Desconocido', revenue: 0, count: 0 };
+          customerRevenue[inv.customer_id] = { name: customer?.name || t('customerDashboard.unknownCustomer'), revenue: 0, count: 0 };
         }
         customerRevenue[inv.customer_id].revenue += inv.total_amount;
         customerRevenue[inv.customer_id].count += 1;
@@ -111,10 +113,10 @@ export const CustomerDashboard: React.FC = () => {
         .slice(0, 10));
 
       const aging: ARAgingBucket[] = [
-        { range: 'CORRIENTE', amount: 0, count: 0, color: '#3b82f6' },
-        { range: '31-60 DÍAS', amount: 0, count: 0, color: '#f59e0b' },
-        { range: '61-90 DÍAS', amount: 0, count: 0, color: '#ef4444' },
-        { range: '90+ DÍAS', amount: 0, count: 0, color: '#7f1d1d' }
+        { range: t('customerDashboard.aging.current'), amount: 0, count: 0, color: '#3b82f6' },
+        { range: t('customerDashboard.aging.31-60'), amount: 0, count: 0, color: '#f59e0b' },
+        { range: t('customerDashboard.aging.61-90'), amount: 0, count: 0, color: '#ef4444' },
+        { range: t('customerDashboard.aging.90+'), amount: 0, count: 0, color: '#7f1d1d' }
       ];
 
       unpaidInvoices.forEach(inv => {
@@ -139,7 +141,7 @@ export const CustomerDashboard: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-screen bg-slate-950">
       <div className="w-16 h-16 border-4 border-blue-600/20 border-t-emerald-500 rounded-full animate-spin mb-6"></div>
-      <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Syncing AR Matrix...</span>
+      <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">{t('customerDashboard.syncing')}</span>
     </div>
   );
 
@@ -152,9 +154,9 @@ export const CustomerDashboard: React.FC = () => {
             <Users2 className="w-10 h-10 text-emerald-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Radar de Clientes</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('customerDashboard.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Accounts Receivable Intel Core
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('customerDashboard.subtitle')}
             </p>
           </div>
         </div>
@@ -162,15 +164,15 @@ export const CustomerDashboard: React.FC = () => {
 
       {/* Stats Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <EliteStatCard title="Cartera Total" value={stats.totalCustomers.toString()} label={`${stats.newThisMonth} Nuevos este Mes`} icon={Users} color="blue" />
-        <EliteStatCard title="Revenue Bruto" value={formatCurrency(stats.totalRevenue)} label={`Ticket Prom: ${formatCurrency(stats.averageOrderValue)}`} icon={DollarSign} color="emerald" />
-        <EliteStatCard title="Cuentas por Cobrar" value={formatCurrency(stats.totalAR)} label={`${((stats.totalAR / stats.totalRevenue) * 100).toFixed(1)}% del Ingreso`} icon={Clock} color="amber" />
-        <EliteStatCard title="AR Vencido" value={formatCurrency(stats.overdueAR)} label={`${((stats.overdueAR / stats.totalAR) * 100).toFixed(1)}% en Riesgo`} icon={TrendingUp} color="rose" />
+        <EliteStatCard title={t('customerDashboard.totalPortfolio')} value={stats.totalCustomers.toString()} label={t('customerDashboard.newThisMonth', { count: stats.newThisMonth })} icon={Users} color="blue" />
+        <EliteStatCard title={t('customerDashboard.grossRevenue')} value={formatCurrency(stats.totalRevenue)} label={`${t('customerDashboard.avgTicket')}: ${formatCurrency(stats.averageOrderValue)}`} icon={DollarSign} color="emerald" />
+        <EliteStatCard title={t('customerDashboard.receivables')} value={formatCurrency(stats.totalAR)} label={`${((stats.totalAR / stats.totalRevenue) * 100).toFixed(1)}% ${t('customerDashboard.ofIncome')}`} icon={Clock} color="amber" />
+        <EliteStatCard title={t('customerDashboard.overdueAR')} value={formatCurrency(stats.overdueAR)} label={`${((stats.overdueAR / stats.totalAR) * 100).toFixed(1)}% ${t('customerDashboard.atRisk')}`} icon={TrendingUp} color="rose" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
         {/* Top Customers Vertical Chart */}
-        <AnalysisBox title="Líderes de Cartera" subtitle="Top 10 Clientes por Volumen de Facturación">
+        <AnalysisBox title={t('customerDashboard.portfolioLeaders')} subtitle={t('customerDashboard.top10Volume')}>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={topCustomers} layout="vertical" margin={{ right: 40, left: 20 }}>
               <defs>
@@ -193,7 +195,7 @@ export const CustomerDashboard: React.FC = () => {
         </AnalysisBox>
 
         {/* AR Aging Pie */}
-        <AnalysisBox title="Aging de Deuda" subtitle="Distribución temporal de cuentas pendientes">
+        <AnalysisBox title={t('customerDashboard.debtAging')} subtitle={t('customerDashboard.pendingDistribution')}>
           <div className="flex flex-col lg:flex-row items-center justify-center gap-10 h-full">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -247,8 +249,8 @@ export const CustomerDashboard: React.FC = () => {
               <Target className="w-5 h-5 text-blue-500" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">Mapping de Clientes Élite</h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Detalle cronológico de facturación y performance</p>
+              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">{t('customerDashboard.eliteMapping')}</h3>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{t('customerDashboard.performanceDetail')}</p>
             </div>
           </div>
         </header>
@@ -257,7 +259,7 @@ export const CustomerDashboard: React.FC = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-950/50">
               <tr>
-                {['Ranking', 'Razon Social', 'Revenue Total', 'Facturas', 'Promedio', 'Impacto'].map(h => (
+                {[t('customerDashboard.ranking'), t('customerDashboard.legalName'), t('customerDashboard.totalRevenue'), t('customerDashboard.invoices'), t('customerDashboard.average'), t('customerDashboard.impact')].map(h => (
                   <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>

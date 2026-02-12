@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Save, X, User, MapPin, CreditCard, FileText } from 'lucide-react';
 import { FLORIDA_COUNTIES } from '../database/simple-db';
 import { AddressAutocomplete } from './ui/AddressAutocomplete';
+import { useLocale } from '../i18n/useLocale';
 
 interface CustomerFormAdvancedProps {
   onSubmit: (customerData: any) => void;
@@ -16,6 +17,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
     // Información personal
@@ -75,28 +77,28 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
   ];
 
   const tabs = [
-    { id: 'personal', label: 'Información Personal', icon: User },
-    { id: 'contact', label: 'Contacto', icon: FileText },
-    { id: 'address', label: 'Dirección', icon: MapPin },
-    { id: 'commercial', label: 'Datos Comerciales', icon: CreditCard }
+    { id: 'personal', label: t('customerDetail.personalInfo'), icon: User },
+    { id: 'contact', label: t('customerDetail.contact'), icon: FileText },
+    { id: 'address', label: t('customerDetail.address'), icon: MapPin },
+    { id: 'commercial', label: t('customerDetail.commercialData'), icon: CreditCard }
   ];
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'El nombre es requerido';
+      newErrors.name = t('customerForm.errorName');
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = t('common.invalidEmail');
     }
 
     if (formData.phone && !/^[\d\s\-\(\)\+]+$/.test(formData.phone)) {
-      newErrors.phone = 'Teléfono inválido';
+      newErrors.phone = t('common.invalidPhone');
     }
 
     if (formData.zip_code && !/^\d{5}(-\d{4})?$/.test(formData.zip_code)) {
-      newErrors.zip_code = 'Código postal inválido (formato: 12345 o 12345-6789)';
+      newErrors.zip_code = t('customerForm.errorInvalidZip');
     }
 
     setErrors(newErrors);
@@ -157,7 +159,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Nombre Completo / Razón Social *
+            {t('customerForm.fullName')}
           </label>
           <input
             type="text"
@@ -165,7 +167,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             onChange={(e) => handleInputChange('name', e.target.value)}
             className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.name ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
               } focus:outline-none`}
-            placeholder="Ej: Juan Pérez o Acme Corp LLC"
+            placeholder={t('customerForm.fullNamePlaceholder')}
             required
           />
           {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
@@ -173,14 +175,14 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Nombre Comercial
+            {t('customerForm.businessName')}
           </label>
           <input
             type="text"
             value={formData.business_name}
             onChange={(e) => handleInputChange('business_name', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="Nombre comercial o DBA"
+            placeholder={t('customerForm.businessNamePlaceholder')}
           />
         </div>
       </div>
@@ -188,44 +190,44 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Tipo de Documento
+            {t('customerForm.documentType')}
           </label>
           <select
             value={formData.document_type}
             onChange={(e) => handleInputChange('document_type', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value="SSN">SSN - Social Security Number</option>
-            <option value="EIN">EIN - Employer Identification Number</option>
-            <option value="ITIN">ITIN - Individual Taxpayer ID</option>
-            <option value="PASSPORT">Passport</option>
+            <option value="SSN">{t('customerForm.docSSN')}</option>
+            <option value="EIN">{t('customerForm.docEIN')}</option>
+            <option value="ITIN">{t('customerForm.docITIN')}</option>
+            <option value="PASSPORT">{t('customerForm.docPassport')}</option>
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Número de Documento
+            {t('customerForm.documentNumber')}
           </label>
           <input
             type="text"
             value={formData.document_number}
             onChange={(e) => handleInputChange('document_number', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="123-45-6789 o 12-3456789"
+            placeholder={t('customerForm.documentNumberPlaceholder')}
           />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Tipo de Negocio / Actividad
+          {t('customerForm.businessActivity')}
         </label>
         <input
           type="text"
           value={formData.business_type}
           onChange={(e) => handleInputChange('business_type', e.target.value)}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-          placeholder="Ej: Desarrollo de Software, Consultoría, Retail"
+          placeholder={t('customerForm.businessActivityPlaceholder')}
         />
       </div>
     </div>
@@ -235,7 +237,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Email Principal
+            {t('customerForm.primaryEmail')}
           </label>
           <input
             type="email"
@@ -243,21 +245,21 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             onChange={(e) => handleInputChange('email', e.target.value)}
             className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.email ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
               } focus:outline-none`}
-            placeholder="ejemplo@email.com"
+            placeholder={t('customerForm.placeholderEmail')}
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Email Secundario
+            {t('customerForm.secondaryEmail')}
           </label>
           <input
             type="email"
             value={formData.email_secondary}
             onChange={(e) => handleInputChange('email_secondary', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="secundario@email.com"
+            placeholder={t('customerForm.placeholderSecondaryEmail')}
           />
         </div>
       </div>
@@ -265,7 +267,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Teléfono Principal
+            {t('customerForm.primaryPhone')}
           </label>
           <input
             type="tel"
@@ -280,7 +282,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Teléfono Secundario
+            {t('customerForm.secondaryPhone')}
           </label>
           <input
             type="tel"
@@ -297,73 +299,72 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
   const renderAddressTab = () => (
     <div className="space-y-4">
       <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4 mb-4">
-        <h4 className="text-blue-300 font-medium mb-2">🌟 Autocompletado de Direcciones</h4>
+        <h4 className="text-blue-300 font-medium mb-2">{t('customerForm.autoCompleteTitle')}</h4>
         <p className="text-blue-200 text-sm">
-          Busca por ciudad, estado o código postal. Incluye más de 400 ciudades principales de Estados Unidos.
-          Usa APIs gratuitas de OpenStreetMap para sugerir direcciones adicionales.
+          {t('customerForm.autoCompleteHelpExtended')}
         </p>
       </div>
 
       {/* Autocompletado de direcciones */}
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Buscar Ciudad/Estado/Código Postal
+          {t('customerForm.autoCompleteTitle')}
         </label>
         <AddressAutocomplete
           value={formData.address_line1}
           onChange={(addr) => handleInputChange('address_line1', addr)}
           onAddressSelect={handleAddressSelect}
-          placeholder="Empiece a escribir una dirección..."
+          placeholder={t('customerForm.autoCompletePlaceholder')}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
         />
         <p className="text-xs text-slate-500 mt-1">
-          💡 Tip: Escribe al menos 2 caracteres. Funciona con ciudades, estados y códigos postales de todo Estados Unidos
+          {t('customerForm.autoCompleteTip')}
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Dirección Línea 1 *
+          {t('customerForm.addressLine1')}
         </label>
         <input
           type="text"
           value={formData.address_line1}
           onChange={(e) => handleInputChange('address_line1', e.target.value)}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-          placeholder="1234 Main Street"
+          placeholder={t('customerForm.placeholderAddress1')}
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Dirección Línea 2
+          {t('customerForm.addressLine2')}
         </label>
         <input
           type="text"
           value={formData.address_line2}
           onChange={(e) => handleInputChange('address_line2', e.target.value)}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-          placeholder="Apt 101, Suite 200, etc."
+          placeholder={t('customerForm.placeholderAddress2')}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Ciudad *
+            {t('customerForm.city')}
           </label>
           <input
             type="text"
             value={formData.city}
             onChange={(e) => handleInputChange('city', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="Miami"
+            placeholder={t('customerForm.placeholderCity')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Estado *
+            {t('customerForm.state')}
           </label>
           <select
             value={formData.state}
@@ -380,7 +381,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Código Postal *
+            {t('customerForm.zipCode')}
           </label>
           <input
             type="text"
@@ -388,12 +389,12 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             onChange={(e) => handleZipCodeChange(e.target.value)}
             className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.zip_code ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
               } focus:outline-none`}
-            placeholder="33101"
+            placeholder={t('customerForm.placeholderZip')}
             maxLength={10}
           />
           {errors.zip_code && <p className="text-red-400 text-sm mt-1">{errors.zip_code}</p>}
           <p className="text-xs text-slate-500 mt-1">
-            💡 Tip: Al escribir un código postal de 5 dígitos, se completarán automáticamente ciudad y estado
+            {t('customerForm.zipCodeTip')}
           </p>
         </div>
       </div>
@@ -402,7 +403,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       {formData.state === 'FL' && (
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Condado de Florida *
+            {t('customerForm.county')}
           </label>
           <select
             value={formData.florida_county}
@@ -417,21 +418,21 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             ))}
           </select>
           <p className="text-xs text-slate-500 mt-1">
-            Requerido para el cálculo correcto de impuestos de Florida
+            {t('customerForm.countyHelp')}
           </p>
         </div>
       )}
 
       {/* Información adicional */}
       <div className="bg-slate-900 rounded-lg p-4 mt-6">
-        <h4 className="text-slate-400 font-medium mb-2">ℹ️ Autocompletado de Direcciones</h4>
+        <h4 className="text-slate-400 font-medium mb-2">{t('customerForm.infoTitle')}</h4>
         <div className="text-sm text-slate-500 space-y-1">
-          <p>• <strong>Funciona con 2+ caracteres:</strong> Escribe ciudad, estado o código postal</p>
-          <p>• <strong>Cobertura nacional:</strong> Más de 400 ciudades principales de Estados Unidos</p>
-          <p>• <strong>APIs gratuitas:</strong> Usa OpenStreetMap Nominatim (sin costos recurrentes)</p>
-          <p>• <strong>Ejemplos:</strong> "Miami", "NY", "90210", "Chicago", "Los Angeles"</p>
-          <p>• <strong>Florida:</strong> El condado se selecciona automáticamente cuando es posible</p>
-          <p>• Todos los campos marcados con * son obligatorios</p>
+          <p>• <strong>{t('customerForm.infoItem1')}</strong></p>
+          <p>• <strong>{t('customerForm.infoItem2')}</strong></p>
+          <p>• <strong>{t('customerForm.infoItem3')}</strong></p>
+          <p>• <strong>{t('customerForm.infoItem4')}</strong></p>
+          <p>• <strong>{t('customerForm.infoItem5')}</strong></p>
+          <p>• {t('common.requiredField')}</p>
         </div>
       </div>
     </div>
@@ -441,7 +442,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Límite de Crédito ($)
+            {t('customerForm.creditLimit')}
           </label>
           <input
             type="number"
@@ -456,19 +457,19 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Términos de Pago (días)
+            {t('customerForm.paymentTerms')}
           </label>
           <select
             value={formData.payment_terms}
             onChange={(e) => handleInputChange('payment_terms', parseInt(e.target.value))}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value={0}>Pago inmediato</option>
-            <option value={15}>15 días</option>
-            <option value={30}>30 días</option>
-            <option value={45}>45 días</option>
-            <option value={60}>60 días</option>
-            <option value={90}>90 días</option>
+            <option value={0}>{t('customerForm.immediatePayment')}</option>
+            <option value={15}>{t('customerForm.days', { n: 15 })}</option>
+            <option value={30}>{t('customerForm.days', { n: 30 })}</option>
+            <option value={45}>{t('customerForm.days', { n: 45 })}</option>
+            <option value={60}>{t('customerForm.days', { n: 60 })}</option>
+            <option value={90}>{t('customerForm.days', { n: 90 })}</option>
           </select>
         </div>
       </div>
@@ -476,27 +477,27 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Tax ID / Número de Impuestos
+            {t('customerForm.taxId')}
           </label>
           <input
             type="text"
             value={formData.tax_id}
             onChange={(e) => handleInputChange('tax_id', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="12-3456789"
+            placeholder={t('customerForm.placeholderTaxId')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Vendedor Asignado
+            {t('customerForm.salesperson')}
           </label>
           <select
             value={formData.assigned_salesperson}
             onChange={(e) => handleInputChange('assigned_salesperson', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value="">Sin asignar</option>
+            <option value="">{t('customerForm.unassigned')}</option>
             <option value="Ana García">Ana García</option>
             <option value="Carlos López">Carlos López</option>
             <option value="María Rodríguez">María Rodríguez</option>
@@ -508,16 +509,16 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Estado del Cliente
+            {t('customerForm.status')}
           </label>
           <select
             value={formData.status}
             onChange={(e) => handleInputChange('status', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-            <option value="suspended">Suspendido</option>
+            <option value="active">{t('common.active')}</option>
+            <option value="inactive">{t('common.inactive')}</option>
+            <option value="suspended">{t('common.suspended')}</option>
           </select>
         </div>
 
@@ -530,21 +531,21 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             className="w-4 h-4 text-blue-600 bg-white/5 border-white/10 rounded focus:ring-blue-500"
           />
           <label htmlFor="tax_exempt" className="text-sm font-medium text-slate-400">
-            Exento de Impuestos
+            {t('customerForm.taxExempt')}
           </label>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Notas Adicionales
+          {t('customerForm.notes')}
         </label>
         <textarea
           value={formData.notes}
           onChange={(e) => handleInputChange('notes', e.target.value)}
           rows={3}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-          placeholder="Notas adicionales sobre el cliente..."
+          placeholder={t('customerForm.notesPlaceholder')}
         />
       </div>
     </div>
@@ -555,12 +556,12 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
         {isEditing ? (
           <>
             <Save className="w-5 h-5 text-blue-500" />
-            Editar Cliente
+            {t('customerForm.titleEdit')}
           </>
         ) : (
           <>
             <Plus className="w-5 h-5 text-green-500" />
-            Nuevo Cliente
+            {t('customerForm.titleNew')}
           </>
         )}
       </h2>
@@ -605,7 +606,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
                 }}
                 className="px-4 py-2 bg-gray-600 hover:bg-white/5 text-white rounded-md transition-colors"
               >
-                Anterior
+                {t('common.previous')}
               </button>
             )}
 
@@ -620,7 +621,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
               >
-                Siguiente
+                {t('common.next')}
               </button>
             )}
           </div>
@@ -633,7 +634,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
                 className="px-4 py-2 bg-gray-600 hover:bg-white/5 text-white rounded-md transition-colors flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
-                Cancelar
+                {t('common.cancel')}
               </button>
             )}
             <button
@@ -646,12 +647,12 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
               {isEditing ? (
                 <>
                   <Save className="w-4 h-4" />
-                  Actualizar Cliente
+                  {t('customerForm.updateCustomer')}
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  Crear Cliente
+                  {t('customerForm.createCustomer')}
                 </>
               )}
             </button>

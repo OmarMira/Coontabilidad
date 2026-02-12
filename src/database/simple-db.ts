@@ -11255,6 +11255,7 @@ export const createUser = async (userData: {
   display_name: string;
   password: string;
   role_id: number;
+  picture?: string;
 }): Promise<{ success: boolean; message: string; userId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
@@ -11271,15 +11272,16 @@ export const createUser = async (userData: {
 
     // Insertar usuario
     db.run(`
-      INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active)
-VALUES(?, ?, ?, ?, ?, ?, 1)
+      INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active, picture)
+      VALUES(?, ?, ?, ?, ?, ?, 1, ?)
     `, [
       userData.username,
       userData.email || userData.username,
       userData.full_name || userData.display_name,
       userData.display_name,
       passwordHash,
-      userData.role_id
+      userData.role_id,
+      userData.picture || null
     ]);
 
     const result = db.exec('SELECT last_insert_rowid() as id');
@@ -11376,6 +11378,7 @@ export const updateUser = (id: number, updates: {
   role_id?: number;
   is_active?: boolean;
   last_login?: string;
+  picture?: string;
 }): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
@@ -11406,6 +11409,10 @@ export const updateUser = (id: number, updates: {
     if (updates.last_login !== undefined) {
       setParts.push('last_login = ?');
       values.push(updates.last_login);
+    }
+    if (updates.picture !== undefined) {
+      setParts.push('picture = ?');
+      values.push(updates.picture);
     }
 
     setParts.push('updated_at = CURRENT_TIMESTAMP');

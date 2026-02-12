@@ -287,6 +287,7 @@ export class DatabaseService {
         DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_import_batch_status ON import_batches(status);`);
         DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_import_temp_batch ON import_transactions_temp(batch_id);`);
         DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_ml_training_category ON ml_training_data(category);`);
+        DatabaseService.dbInstance.run(`CREATE INDEX IF NOT EXISTS idx_tax_trans_date ON tax_transactions(transaction_date);`);
     }
 
     private static async ensureSchemaCompatibility() {

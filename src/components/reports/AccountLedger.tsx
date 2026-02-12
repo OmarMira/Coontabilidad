@@ -3,8 +3,10 @@ import { PieChart, Search, Calendar, RefreshCw, AlertCircle, ArrowLeftRight, Fil
 import { getAccountLedger, getChartOfAccounts } from '../../database/simple-db';
 import { ReportExporter } from './ReportExporter';
 import { logger } from '../../core/logging/SystemLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 export const AccountLedger: React.FC = () => {
+    const { t } = useLocale();
     const [accounts, setAccounts] = useState<any[]>([]);
     const [selectedAccount, setSelectedAccount] = useState<string>('');
     const [data, setData] = useState<any>(null);
@@ -30,7 +32,7 @@ export const AccountLedger: React.FC = () => {
             setData(result);
             logger.info('AccountLedger', 'load_success', `Auxiliar cargado: ${selectedAccount}`);
         } catch (e) {
-            setError('Error al cargar el auxiliar de cuenta');
+            setError(t('reportsDashboard.accountLedger.loadError') || 'Error loading account ledger');
             logger.error('AccountLedger', 'load_failed', 'Fallo al cargar ledger', { accountCode: selectedAccount }, e as Error);
         } finally {
             setLoading(false);
@@ -57,10 +59,10 @@ export const AccountLedger: React.FC = () => {
         ]);
 
         // Add Summary Row
-        rows.push(['---', '---', 'TOTALES DEL PERIODO', formatCurrency(data.totalDebit), formatCurrency(data.totalCredit), '']);
+        rows.push(['---', '---', t('reportsDashboard.accountLedger.periodTotals') || 'PERIOD TOTALS', formatCurrency(data.totalDebit), formatCurrency(data.totalCredit), '']);
 
         return {
-            headers: ['Fecha', 'Ref', 'Descripción', 'Débito', 'Crédito', 'Saldo'],
+            headers: [t('common.date'), t('accounting.reference') || 'Ref', t('common.description'), t('accounting.debit'), t('accounting.credit'), t('accounting.balance') || 'Balance'],
             rows,
             fileName: `Auxiliar_${selectedAccount}_${dateRange.from}_a_${dateRange.to}`
         };
@@ -75,9 +77,9 @@ export const AccountLedger: React.FC = () => {
                         <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
                             <PieChart className="w-8 h-8 text-blue-400" />
                         </div>
-                        Auxiliares de Cuentas
+                        {t('reportsDashboard.accountLedger.title')}
                     </h2>
-                    <p className="text-slate-500 mt-2 font-medium">Historial detallado y conciliación por cuenta contable.</p>
+                    <p className="text-slate-500 mt-2 font-medium">{t('reportsDashboard.accountLedger.subtitle')}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -104,7 +106,7 @@ export const AccountLedger: React.FC = () => {
                             onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
                             className="bg-transparent text-white text-xs font-black focus:outline-none underline decoration-blue-500/30"
                         />
-                        <span className="text-slate-600 text-xs">A</span>
+                        <span className="text-slate-600 text-xs uppercase font-black">{t('reportsDashboard.accountLedger.dateFrom') || 'TO'}</span>
                         <input
                             type="date"
                             value={dateRange.to}
@@ -124,15 +126,15 @@ export const AccountLedger: React.FC = () => {
                     {/* Info Cards */}
                     <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="card-elite !p-6 flex flex-col justify-between border-l-4 border-l-blue-500">
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Saldo Inicial</span>
+                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('reportsDashboard.accountLedger.startingBalance')}</span>
                             <div className="text-2xl font-black text-white mt-1">{formatCurrency(data.startingBalance)}</div>
                         </div>
                         <div className="card-elite !p-6 flex flex-col justify-between border-l-4 border-l-emerald-500">
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Movimientos Netos</span>
+                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('reportsDashboard.accountLedger.netMovements')}</span>
                             <div className="text-2xl font-black text-emerald-400 mt-1">{formatCurrency(data.totalDebit - data.totalCredit)}</div>
                         </div>
                         <div className="card-elite !p-6 flex flex-col justify-between border-l-4 border-l-white">
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Saldo Final</span>
+                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('reportsDashboard.accountLedger.endingBalance')}</span>
                             <div className="text-2xl font-black text-white mt-1">{formatCurrency(data.endingBalance)}</div>
                         </div>
                     </div>
@@ -141,7 +143,7 @@ export const AccountLedger: React.FC = () => {
                     <div className="lg:col-span-8">
                         <div className="card-elite !p-0">
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                                <h3 className="text-table-header">Libro Auxiliar de Cuenta</h3>
+                                <h3 className="text-table-header">{t('reportsDashboard.accountLedger.ledgerTitle')}</h3>
                                 <div className="flex items-center gap-2">
                                     <span className="badge-elite bg-blue-500/10 text-blue-400 border-blue-500/20">{data.account.account_code}</span>
                                     <span className="text-xs font-black text-white">{data.account.account_name}</span>
@@ -152,12 +154,12 @@ export const AccountLedger: React.FC = () => {
                                 <table className="w-full text-left">
                                     <thead className="bg-white/5">
                                         <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                            <th className="px-6 py-4">Fecha</th>
-                                            <th className="px-6 py-4">Referencia</th>
-                                            <th className="px-6 py-4">Descripción</th>
-                                            <th className="px-6 py-4 text-right">Débito</th>
-                                            <th className="px-6 py-4 text-right">Crédito</th>
-                                            <th className="px-6 py-4 text-right">Saldo</th>
+                                            <th className="px-6 py-4">{t('common.date')}</th>
+                                            <th className="px-6 py-4">{t('accounting.reference') || 'Referencia'}</th>
+                                            <th className="px-6 py-4">{t('common.description')}</th>
+                                            <th className="px-6 py-4 text-right">{t('accounting.debit')}</th>
+                                            <th className="px-6 py-4 text-right">{t('accounting.credit')}</th>
+                                            <th className="px-6 py-4 text-right">{t('accounting.balance') || 'Saldo'}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
@@ -176,14 +178,14 @@ export const AccountLedger: React.FC = () => {
                                             <tr>
                                                 <td colSpan={6} className="px-6 py-20 text-center">
                                                     <FileBarChart className="w-12 h-12 text-slate-700 mx-auto mb-4 opacity-20" />
-                                                    <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">No hay movimientos en este periodo</p>
+                                                    <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">{t('reportsDashboard.accountLedger.noMovements') || 'No movements in this period'}</p>
                                                 </td>
                                             </tr>
                                         )}
                                     </tbody>
                                     <tfoot className="bg-white/5">
                                         <tr className="text-xs font-black text-white">
-                                            <td colSpan={3} className="px-6 py-4 text-right uppercase tracking-widest text-slate-600">Totales Periodo</td>
+                                            <td colSpan={3} className="px-6 py-4 text-right uppercase tracking-widest text-slate-600">{t('reportsDashboard.accountLedger.periodTotals')}</td>
                                             <td className="px-6 py-4 text-right">{formatCurrency(data.totalDebit)}</td>
                                             <td className="px-6 py-4 text-right">{formatCurrency(data.totalCredit)}</td>
                                             <td className="px-6 py-4 text-right text-emerald-400">{formatCurrency(data.endingBalance)}</td>
@@ -197,13 +199,13 @@ export const AccountLedger: React.FC = () => {
                     {/* Export & Actions Side */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="card-elite !p-6">
-                            <h3 className="text-table-header mb-6">Herramientas</h3>
+                            <h3 className="text-table-header mb-6">{t('common.tools')}</h3>
                             <ReportExporter
                                 data={getExportData()}
                                 header={{
-                                    title: 'Libro Auxiliar de Cuenta',
+                                    title: t('reportsDashboard.accountLedger.ledgerTitle'),
                                     subtitle: `${data.account.account_code} - ${data.account.account_name}`,
-                                    dateRange: `${dateRange.from} al ${dateRange.to}`
+                                    dateRange: `${dateRange.from} ${t('reportsDashboard.accountLedger.dateFrom')} ${dateRange.to}`
                                 }}
                             />
                         </div>
@@ -211,14 +213,14 @@ export const AccountLedger: React.FC = () => {
                         <div className="card-elite !p-6 space-y-4">
                             <div className="flex items-center gap-3">
                                 <ArrowLeftRight className="w-5 h-5 text-blue-400" />
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Naturaleza</h3>
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest">{t('reportsDashboard.accountLedger.nature')}</h3>
                             </div>
                             <div className="flex justify-between items-center text-xs">
-                                <span className="text-slate-600">Saldo Normal:</span>
+                                <span className="text-slate-600">{t('reportsDashboard.accountLedger.normalBalance')}:</span>
                                 <span className="badge-elite bg-blue-500/10 text-blue-400 uppercase">{data.account.normal_balance}</span>
                             </div>
                             <div className="flex justify-between items-center text-xs">
-                                <span className="text-slate-600">Tipo de Cuenta:</span>
+                                <span className="text-slate-600">{t('accounting.accountType')}:</span>
                                 <span className="badge-elite bg-white/5 text-white uppercase">{data.account.account_type}</span>
                             </div>
                         </div>
@@ -230,7 +232,7 @@ export const AccountLedger: React.FC = () => {
                 <div className="p-8 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center gap-4">
                     <AlertCircle className="w-8 h-8 text-rose-400" />
                     <div>
-                        <span className="text-white font-bold block">Error al cargar datos</span>
+                        <span className="text-white font-bold block">{t('common.error')}</span>
                         <p className="text-sm text-slate-600">{error}</p>
                     </div>
                 </div>

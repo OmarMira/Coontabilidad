@@ -13,11 +13,10 @@ import {
     ArrowRightLeft,
     ShieldCheck
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { ManualJournalEntries } from '../ManualJournalEntries';
 import { GeneralLedger } from '../GeneralLedger';
-import { TrialBalanceReport } from './TrialBalanceReport';
+import { ManualJournalEntries } from '../ManualJournalEntries';
 import { AccountLedger } from '../reports/AccountLedger';
+import { useLocale } from '../../i18n/useLocale';
 
 type HubTab = 'summary' | 'journal' | 'ledger' | 'auxiliary';
 
@@ -27,6 +26,7 @@ interface LedgerHubProps {
 }
 
 export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNavigate }) => {
+    const { t } = useLocale();
     const [activeTab, setActiveTab] = useState<HubTab>('summary');
     const [hasError, setHasError] = useState(false);
 
@@ -41,24 +41,24 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                     <ShieldCheck className="w-12 h-12 text-red-500" />
                 </div>
                 <div className="space-y-2">
-                    <h3 className="font-black text-2xl text-white uppercase tracking-tighter">Inconsistencia en el Módulo</h3>
-                    <p className="text-red-200/60 font-bold max-w-md mx-auto italic">El motor de renderizado detectó un fallo crítico en la carga de libros auxiliares.</p>
+                    <h3 className="font-black text-2xl text-white uppercase tracking-tighter">{t('ledgerHub.errorTitle')}</h3>
+                    <p className="text-red-200/60 font-bold max-w-md mx-auto italic">{t('ledgerHub.errorDesc')}</p>
                 </div>
                 <button
                     onClick={() => window.location.reload()}
                     className="bg-red-600 hover:bg-red-500 text-white font-black uppercase text-xs tracking-widest px-8 py-3 rounded-xl transition-all shadow-xl shadow-red-900/30"
                 >
-                    Reiniciar Protocolos
+                    {t('ledgerHub.restartProtocols')}
                 </button>
             </div>
         );
     }
 
     const tabs = [
-        { id: 'summary', label: 'Centro de Control', icon: PieChartIcon },
-        { id: 'journal', label: 'Asientos Diario', icon: BookOpen },
-        { id: 'ledger', label: 'Validación Mayor', icon: Book },
-        { id: 'auxiliary', label: 'Auxiliares / Terceros', icon: Layers },
+        { id: 'summary', label: t('ledgerHub.controlCenter'), icon: PieChartIcon },
+        { id: 'journal', label: t('ledgerHub.journalEntries'), icon: BookOpen },
+        { id: 'ledger', label: t('ledgerHub.ledgerValidation'), icon: Book },
+        { id: 'auxiliary', label: t('ledgerHub.auxiliaries'), icon: Layers },
     ];
 
     return (
@@ -72,10 +72,10 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                         </div>
                         <div>
                             <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">
-                                Unidad Contable
+                                {t('ledgerHub.title')}
                             </h2>
                             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-1">
-                                Ledger Control & Audit Hub
+                                {t('ledgerHub.subtitle')}
                             </p>
                         </div>
                     </div>
@@ -117,12 +117,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                                     <BookOpen className="w-8 h-8 text-blue-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Libro Diario</h3>
-                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">Registro cronológico de asientos. Visibilidad total de transacciones financieras.</p>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('ledgerHub.dailyBook')}</h3>
+                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">{t('ledgerHub.dailyBookDesc')}</p>
                                 </div>
                                 <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sincronizado en Tiempo Real</span>
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('ledgerHub.realTimeSync')}</span>
                                 </div>
                             </div>
                         </div>
@@ -139,12 +139,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                                     <Book className="w-8 h-8 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Libro Mayor</h3>
-                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">Agregación de saldos por cuenta contable. Base indispensable para reportes fiscales.</p>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('ledgerHub.generalLedger')}</h3>
+                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">{t('ledgerHub.generalLedgerDesc')}</p>
                                 </div>
                                 <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
                                     <History className="w-3.5 h-3.5 text-slate-600" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Último Cierre: Dic 2024</span>
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('ledgerHub.lastClosure', { date: 'Dic 2024' })}</span>
                                 </div>
                             </div>
                         </div>
@@ -161,12 +161,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                                     <Layers className="w-8 h-8 text-purple-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Auxiliares</h3>
-                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">Seguimiento detallado por tercero, cliente y proveedor. Precisión micrométrica.</p>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('ledgerHub.auxiliariesTitle')}</h3>
+                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">{t('ledgerHub.auxiliariesDesc')}</p>
                                 </div>
                                 <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
                                     <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Validación US GAAP Activa</span>
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('ledgerHub.validatedUsGaap')}</span>
                                 </div>
                             </div>
                         </div>

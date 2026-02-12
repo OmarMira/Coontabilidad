@@ -150,6 +150,7 @@ export class SchemaRepairService {
                         last_login DATETIME,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        picture TEXT,
                         FOREIGN KEY (role_id) REFERENCES user_roles(id)
                     )
                 `);
@@ -212,6 +213,17 @@ export class SchemaRepairService {
                         VALUES ('demo', 'demo@empresa.com', ?, 'Usuario Demo', 'Demo', ?, 1)
                      `, [newHash, adminRoleId]);
                     logs.push("✅ Usuario Demo creado");
+                }
+                logs.push("✅ Usuario Demo creado");
+            }
+
+            // 4.5 ADD PICTURE COLUMN IF MISSING
+            if (userCols.length > 0 && !userCols.includes('picture')) {
+                try {
+                    await this.db.run("ALTER TABLE users ADD COLUMN picture TEXT");
+                    logs.push("✅ Columna 'picture' agregada a tabla users");
+                } catch (e) {
+                    logs.push(`⚠️ Error agregando columna picture: ${(e as Error).message}`);
                 }
             }
 

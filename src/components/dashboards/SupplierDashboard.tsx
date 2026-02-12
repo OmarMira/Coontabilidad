@@ -17,6 +17,7 @@ import {
     Maximize2
 } from 'lucide-react';
 import { getSuppliers, getBills } from '../../database/simple-db';
+import { useLocale } from '../../i18n/useLocale';
 
 interface SupplierStats {
     totalSuppliers: number;
@@ -43,6 +44,7 @@ interface APAgingBucket {
 }
 
 export const SupplierDashboard: React.FC = () => {
+    const { t } = useLocale();
     const [stats, setStats] = useState<SupplierStats>({
         totalSuppliers: 0,
         newThisMonth: 0,
@@ -94,7 +96,7 @@ export const SupplierDashboard: React.FC = () => {
             bills.forEach(bill => {
                 if (!supplierExpenses[bill.supplier_id]) {
                     const supplier = suppliers.find(s => s.id === bill.supplier_id);
-                    supplierExpenses[bill.supplier_id] = { name: supplier?.name || 'Proveedor Desconocido', expenses: 0, count: 0 };
+                    supplierExpenses[bill.supplier_id] = { name: supplier?.name || t('supplierDashboard.unknownSupplier'), expenses: 0, count: 0 };
                 }
                 supplierExpenses[bill.supplier_id].expenses += bill.total_amount;
                 supplierExpenses[bill.supplier_id].count++;
@@ -112,10 +114,10 @@ export const SupplierDashboard: React.FC = () => {
                 .slice(0, 10));
 
             const aging: APAgingBucket[] = [
-                { range: 'CORRIENTE', amount: 0, count: 0, color: '#3b82f6' },
-                { range: '31-60 DÍAS', amount: 0, count: 0, color: '#f59e0b' },
-                { range: '61-90 DÍAS', amount: 0, count: 0, color: '#ef4444' },
-                { range: '90+ DÍAS', amount: 0, count: 0, color: '#7f1d1d' }
+                { range: t('supplierDashboard.aging.current'), amount: 0, count: 0, color: '#3b82f6' },
+                { range: t('supplierDashboard.aging.31-60'), amount: 0, count: 0, color: '#f59e0b' },
+                { range: t('supplierDashboard.aging.61-90'), amount: 0, count: 0, color: '#ef4444' },
+                { range: t('supplierDashboard.aging.90+'), amount: 0, count: 0, color: '#7f1d1d' }
             ];
 
             unpaidBills.forEach(bill => {
@@ -140,7 +142,7 @@ export const SupplierDashboard: React.FC = () => {
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-screen bg-slate-950">
             <div className="w-16 h-16 border-4 border-blue-600/20 border-t-rose-500 rounded-full animate-spin mb-6"></div>
-            <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Analyzing Supply Chain...</span>
+            <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">{t('supplierDashboard.analyzing')}</span>
         </div>
     );
 
@@ -153,9 +155,9 @@ export const SupplierDashboard: React.FC = () => {
                         <Building2 className="w-10 h-10 text-rose-500 group-hover:-rotate-6 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Matriz de Suministros</h1>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('supplierDashboard.title')}</h1>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> Accounts Payable Strategic Monitor
+                            <Zap className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> {t('supplierDashboard.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -163,15 +165,15 @@ export const SupplierDashboard: React.FC = () => {
 
             {/* Stats Matrix */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <EliteStatCard title="Total Aliados" value={stats.totalSuppliers.toString()} label={`${stats.newThisMonth} Nuevos este Mes`} icon={Building2} color="blue" />
-                <EliteStatCard title="Salida de Capital" value={formatCurrency(stats.totalExpenses)} label={`Ticket Prom: ${formatCurrency(stats.averageBillValue)}`} icon={DollarSign} color="rose" />
-                <EliteStatCard title="Cuentas por Pagar" value={formatCurrency(stats.totalAP)} label={`${((stats.totalAP / stats.totalExpenses) * 100).toFixed(1)}% del Gasto`} icon={Clock} color="amber" />
-                <EliteStatCard title="AP Crítico" value={formatCurrency(stats.overdueAP)} label={`${((stats.overdueAP / stats.totalAP) * 100).toFixed(1)}% Vencido`} icon={TrendingDown} color="emerald" />
+                <EliteStatCard title={t('supplierDashboard.totalPartners')} value={stats.totalSuppliers.toString()} label={t('supplierDashboard.newThisMonth', { count: stats.newThisMonth })} icon={Building2} color="blue" />
+                <EliteStatCard title={t('supplierDashboard.capitalOutflow')} value={formatCurrency(stats.totalExpenses)} label={`${t('supplierDashboard.avgTicket')}: ${formatCurrency(stats.averageBillValue)}`} icon={DollarSign} color="rose" />
+                <EliteStatCard title={t('supplierDashboard.accountsPayable')} value={formatCurrency(stats.totalAP)} label={`${((stats.totalAP / stats.totalExpenses) * 100).toFixed(1)}% ${t('supplierDashboard.ofExpense')}`} icon={Clock} color="amber" />
+                <EliteStatCard title={t('supplierDashboard.criticalAP')} value={formatCurrency(stats.overdueAP)} label={`${((stats.overdueAP / stats.totalAP) * 100).toFixed(1)}% ${t('supplierDashboard.overdue')}`} icon={TrendingDown} color="emerald" />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                 {/* Top Suppliers Vertical Chart */}
-                <AnalysisBox title="Concentración de Costo" subtitle="Top 10 Proveedores por Volumen de Operación">
+                <AnalysisBox title={t('supplierDashboard.costConcentration')} subtitle={t('supplierDashboard.top10Volume')}>
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={topSuppliers} layout="vertical" margin={{ right: 40, left: 20 }}>
                             <defs>
@@ -194,7 +196,7 @@ export const SupplierDashboard: React.FC = () => {
                 </AnalysisBox>
 
                 {/* AP Aging Pie */}
-                <AnalysisBox title="Aging de Deuda" subtitle="Distribución temporal de pagos pendientes">
+                <AnalysisBox title={t('supplierDashboard.debtAging')} subtitle={t('supplierDashboard.pendingDistribution')}>
                     <div className="flex flex-col lg:flex-row items-center justify-center gap-10 h-full">
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
@@ -248,8 +250,8 @@ export const SupplierDashboard: React.FC = () => {
                             <Target className="w-5 h-5 text-rose-500" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">Mapping de Proveedores Élite</h3>
-                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Detalle cronológico de erogaciones y performance</p>
+                            <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">{t('supplierDashboard.eliteMapping')}</h3>
+                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{t('supplierDashboard.performanceDetail')}</p>
                         </div>
                     </div>
                     <button className="p-3 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all text-slate-600 hover:text-white">
@@ -261,7 +263,7 @@ export const SupplierDashboard: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-slate-950/50">
                             <tr>
-                                {['Ranking', 'Proveedor / Razon Social', 'Gasto Total', 'Facturas', 'Ticket Prom', 'Impacto'].map(h => (
+                                {[t('supplierDashboard.ranking'), t('supplierDashboard.supplierLegalName'), t('supplierDashboard.totalExpense'), t('supplierDashboard.bills'), t('customerDashboard.avgTicket'), t('supplierDashboard.impact')].map(h => (
                                     <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                                 ))}
                             </tr>

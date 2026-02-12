@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Users, FileStack, TrendingUp, CheckCircle, Search, UserMinus, PlusCircle, ArrowRight } from 'lucide-react';
 import { getARDCustomerSummary } from '../../database/simple-db';
 import { ARDCustomerSummary } from '../../modules/ard/ARD.types';
+import { useLocale } from '../../i18n/useLocale';
 
 export const ARDCustomerPanel: React.FC = () => {
+    const { t } = useLocale();
     const [summaries, setSummaries] = useState<ARDCustomerSummary[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -31,7 +33,7 @@ export const ARDCustomerPanel: React.FC = () => {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                     <input
                         type="text"
-                        placeholder="Buscar por cliente asignado..."
+                        placeholder={t('ard.searchCustomerPlaceholder')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all font-medium"
@@ -39,7 +41,7 @@ export const ARDCustomerPanel: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-6">
                     <div className="text-right">
-                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">Clientes Activos ARD</div>
+                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{t('ard.activeARDCustomers')}</div>
                         <div className="text-xl font-black text-white">{summaries.length}</div>
                     </div>
                 </div>
@@ -64,32 +66,32 @@ export const ARDCustomerPanel: React.FC = () => {
 
                         <div className="p-6 grid grid-cols-2 gap-4 bg-white/[0.01]">
                             <div className="space-y-1">
-                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">Docs Totales</span>
+                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">{t('ard.totalDocs')}</span>
                                 <div className="flex items-center gap-2">
                                     <FileStack className="w-3 h-3 text-indigo-400/50" />
                                     <span className="text-sm font-black text-white">{client.total_docs}</span>
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">Liquidez Bruta</span>
+                                <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest block">{t('ard.grossLiquidity')}</span>
                                 <div className="text-sm font-black text-indigo-400 tabular-nums">{formatCurrency(client.total_volume)}</div>
                             </div>
                         </div>
 
                         <div className="p-4 bg-black/20 flex items-center justify-between">
                             <div className="flex gap-4">
-                                <div className="flex items-center gap-1.5" title="Pendientes de Conversión">
+                                <div className="flex items-center gap-1.5" title={t('ard.pendingConversionTooltip')}>
                                     <div className="w-1.5 h-1.5 rounded-full bg-sun-orange animate-pulse"></div>
                                     <span className="text-[10px] font-black text-slate-500">{client.pending_conversion}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5" title="Convertidos">
+                                <div className="flex items-center gap-1.5" title={t('ard.convertedTooltip')}>
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                                     <span className="text-[10px] font-black text-slate-500">{client.total_converted}</span>
                                 </div>
                             </div>
 
                             <button className="flex items-center gap-1 text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest transition-colors">
-                                Ver Detalles <ArrowRight className="w-3 h-3" />
+                                {t('ard.viewDetails')} <ArrowRight className="w-3 h-3" />
                             </button>
                         </div>
                     </div>
@@ -98,8 +100,8 @@ export const ARDCustomerPanel: React.FC = () => {
                 {summaries.length === 0 && (
                     <div className="col-span-full py-20 text-center card-elite border-dashed border-2 border-white/5 opacity-50">
                         <UserMinus className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                        <p className="text-slate-600 font-black uppercase tracking-[0.2em] text-xs">No hay clientes vinculados a documentos ARD aún</p>
-                        <p className="text-slate-700 text-[10px] font-bold mt-2 italic">Asigne clientes a sus escaneos en la pestaña GESTIÓN GAR</p>
+                        <p className="text-slate-600 font-black uppercase tracking-[0.2em] text-xs">{t('ard.noLinkedCustomers')}</p>
+                        <p className="text-slate-700 text-[10px] font-bold mt-2 italic">{t('ard.assignCustomersGarHint')}</p>
                     </div>
                 )}
             </div>

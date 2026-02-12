@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '../database/simple-db';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '../i18n/useLocale';
 
 interface JournalEntryLine {
   id: string;
@@ -52,6 +53,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
   chartOfAccounts,
   onEntryCreated
 }) => {
+  const { t } = useLocale();
   const [entries, setEntries] = useState<ManualJournalEntry[]>([]);
   const [showEntryForm, setShowEntryForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +91,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
       setEntries(mappedEntries);
     } catch (error) {
       console.error('Error loading entries:', error);
-      toast.error('Fallo en sincronización de diario');
+      toast.error(t('journal.syncError'));
     }
   };
 
@@ -151,7 +153,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentEntry.is_balanced) {
-      toast.error('El asiento no cumple con partida doble');
+      toast.error(t('journal.doubleEntryError'));
       return;
     }
 
@@ -175,7 +177,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
       const result = createJournalEntry(entryData, details);
       if (result.success) {
-        toast.success('Asiento registrado y validado');
+        toast.success(t('journal.registeredSuccess'));
         loadJournalEntries();
         setShowEntryForm(false);
         resetForm();
@@ -184,7 +186,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         toast.error(result.message);
       }
     } catch (error: any) {
-      toast.error('Error crítico en persistencia: ' + error.message);
+      toast.error(t('journal.persistenceError') + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -211,8 +213,8 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
             <History className="w-8 h-8 text-blue-500" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Libro Diario</h2>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Registros Auxiliares e Historial de Auditoría</p>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{t('journal.title')}</h2>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{t('journal.subtitle')}</p>
           </div>
         </div>
         <div className="p-4 w-full md:w-auto">
@@ -221,7 +223,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
             className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-widest px-8 py-4 rounded-2xl transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-3"
           >
             <Plus className="w-5 h-5" />
-            Nuevo Registro Manual
+            {t('journal.newEntry')}
           </button>
         </div>
       </div>
@@ -231,12 +233,12 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         <div className="px-10 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
           <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            Asientos Verificados
+            {t('journal.verifiedEntries')}
           </h3>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded-xl border border-slate-800">
               <Search className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Filtrar Historial</span>
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('journal.filterHistory')}</span>
             </div>
           </div>
         </div>
@@ -244,19 +246,19 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         {entries.length === 0 ? (
           <div className="text-center py-24 opacity-30">
             <FileText className="mx-auto h-20 w-20 text-slate-700 mb-6" />
-            <p className="font-black text-slate-500 uppercase tracking-widest text-xs">Cero registros en este nodo</p>
+            <p className="font-black text-slate-500 uppercase tracking-widest text-xs">{t('journal.noEntries')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-950/50 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
-                  <th className="px-10 py-5 text-left">Fecha Fiscal</th>
-                  <th className="px-10 py-5 text-left">Ref. Auditoría</th>
-                  <th className="px-10 py-5 text-left">Glosa / Descripción</th>
-                  <th className="px-10 py-5 text-right w-32">Total DR</th>
-                  <th className="px-10 py-5 text-right w-32">Total CR</th>
-                  <th className="px-10 py-5 text-center w-24">Estado</th>
+                  <th className="px-10 py-5 text-left">{t('journal.fiscalDate')}</th>
+                  <th className="px-10 py-5 text-left">{t('journal.auditRef')}</th>
+                  <th className="px-10 py-5 text-left">{t('journal.description')}</th>
+                  <th className="px-10 py-5 text-right w-32">{t('journal.totalDR')}</th>
+                  <th className="px-10 py-5 text-right w-32">{t('journal.totalCR')}</th>
+                  <th className="px-10 py-5 text-center w-24">{t('journal.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
@@ -303,8 +305,8 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                   <Calculator className="w-8 h-8 text-blue-500" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Iniciador de Folio</h3>
-                  <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mt-1">Sincronización de Partida Doble • US GAAP Standard</p>
+                  <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{t('journal.folioInitiator')}</h3>
+                  <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mt-1">{t('journal.standardUSGAAP')}</p>
                 </div>
               </div>
               <button onClick={() => setShowEntryForm(false)} className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-all active:scale-90 shadow-lg">
@@ -316,7 +318,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5" /> Fecha Fiscal
+                    <Calendar className="w-3.5 h-3.5" /> {t('journal.fiscalDate')}
                   </label>
                   <input
                     type="date"
@@ -328,27 +330,27 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 flex items-center gap-2">
-                    <Hash className="w-3.5 h-3.5" /> Referencia Interna
+                    <Hash className="w-3.5 h-3.5" /> {t('journal.internalRef')}
                   </label>
                   <input
                     type="text"
                     value={currentEntry.reference}
                     onChange={(e) => setCurrentEntry(prev => ({ ...prev, reference: e.target.value }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-black text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all uppercase"
-                    placeholder="Ej: AST-001"
+                    placeholder={t('journal.internalRefPlaceholder')}
                     required
                   />
                 </div>
                 <div className="md:col-span-2 space-y-3">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5" /> Glosa General
+                    <FileText className="w-3.5 h-3.5" /> {t('journal.generalGloss')}
                   </label>
                   <input
                     type="text"
                     value={currentEntry.description}
                     onChange={(e) => setCurrentEntry(prev => ({ ...prev, description: e.target.value }))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    placeholder="Descripción detallada del movimiento contable..."
+                    placeholder={t('journal.generalGlossPlaceholder')}
                     required
                   />
                 </div>
@@ -358,10 +360,10 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-950/80 text-[9px] font-black text-slate-600 uppercase tracking-widest border-b border-slate-800">
                     <tr>
-                      <th className="px-8 py-5">Cuenta Contable</th>
-                      <th className="px-8 py-5">Detalle Línea</th>
-                      <th className="px-8 py-5 text-right w-40">Débito (DR)</th>
-                      <th className="px-8 py-5 text-right w-40">Abono (CR)</th>
+                      <th className="px-8 py-5">{t('journal.account')}</th>
+                      <th className="px-8 py-5">{t('journal.lineDetail')}</th>
+                      <th className="px-8 py-5 text-right w-40">{t('journal.debit')}</th>
+                      <th className="px-8 py-5 text-right w-40">{t('journal.credit')}</th>
                       <th className="py-5 w-16"></th>
                     </tr>
                   </thead>
@@ -375,7 +377,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                             className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-black text-white focus:border-blue-500 outline-none transition-all uppercase"
                             required
                           >
-                            <option value="">-- SELECCIONAR NODO --</option>
+                            <option value="">{t('journal.selectNode')}</option>
                             {chartOfAccounts.map((account) => (
                               <option key={account.id} value={account.id}>
                                 {account.account_code} • {account.account_name}
@@ -389,7 +391,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                             value={line.description}
                             onChange={(e) => updateLine(line.id, 'description', e.target.value)}
                             className="w-full bg-transparent border-b border-slate-800 focus:border-blue-500 text-xs font-bold text-slate-400 p-2 outline-none transition-all"
-                            placeholder="Concepto por línea..."
+                            placeholder={t('journal.lineDetailPlaceholder')}
                             required
                           />
                         </td>
@@ -431,7 +433,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                           onClick={addNewLine}
                           className="flex items-center gap-2 text-blue-500 hover:text-white bg-blue-500/5 hover:bg-blue-600 px-6 py-3 border border-blue-500/20 rounded-2xl font-black uppercase tracking-widest text-[9px] transition-all"
                         >
-                          <Plus className="w-4 h-4" /> Expandir Asiento
+                          <Plus className="w-4 h-4" /> {t('journal.expandEntry')}
                         </button>
                       </td>
                       <td className="px-8 py-8 text-right bg-slate-900/40">
@@ -455,9 +457,9 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                   }`}>
                   {currentEntry.is_balanced ? <CheckCircle className="w-6 h-6" /> : <AlertCircle className="w-6 h-6" />}
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">{currentEntry.is_balanced ? 'Protocolo Validado' : 'Fuera de Balance'}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">{currentEntry.is_balanced ? t('journal.validatedProtocol') : t('journal.outOfBalance')}</p>
                     {!currentEntry.is_balanced && (
-                      <p className="text-xs font-bold font-mono tracking-tighter">DESCUADRE: ${Math.abs(currentEntry.total_debits - currentEntry.total_credits).toFixed(2)}</p>
+                      <p className="text-xs font-bold font-mono tracking-tighter">{t('journal.imbalance')} ${Math.abs(currentEntry.total_debits - currentEntry.total_credits).toFixed(2)}</p>
                     )}
                   </div>
                 </div>
@@ -468,7 +470,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                     onClick={() => setShowEntryForm(false)}
                     className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-black uppercase text-[10px] tracking-widest px-10 py-5 rounded-2xl transition-all"
                   >
-                    Descartar
+                    {t('journal.discard')}
                   </button>
                   <button
                     type="submit"
@@ -476,7 +478,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                     className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-widest px-12 py-5 rounded-2xl transition-all shadow-2xl shadow-blue-900/60 disabled:opacity-20 flex items-center justify-center gap-3"
                   >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    Sincronizar Ledger
+                    {t('journal.syncLedger')}
                   </button>
                 </div>
               </div>

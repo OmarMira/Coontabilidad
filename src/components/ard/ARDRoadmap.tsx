@@ -1,12 +1,14 @@
 import React from 'react';
 import { Rocket, Target, Zap, Shield, Cpu, Globe, CheckCircle2, Circle, Clock } from 'lucide-react';
 
+import { useLocale } from '../../i18n/useLocale';
 export const ARDRoadmap: React.FC = () => {
+    const { t } = useLocale();
     const steps = [
         {
             phase: 'Fase 4',
-            title: 'Digitalización & Conversión',
-            description: 'Generación de PDFs forenses y conversión automática a Ventas/Cobros.',
+            title: t('ard.roadmap.phases.4.title'),
+            description: t('ard.roadmap.phases.4.desc'),
             status: 'completed',
             icon: CheckCircle2,
             color: 'text-emerald-400',
@@ -14,8 +16,8 @@ export const ARDRoadmap: React.FC = () => {
         },
         {
             phase: 'Fase 5',
-            title: 'Integración CORE',
-            description: 'Sincronización con Contabilidad Central e Inventario Dinámico.',
+            title: t('ard.roadmap.phases.5.title'),
+            description: t('ard.roadmap.phases.5.desc'),
             status: 'current',
             icon: Target,
             color: 'text-indigo-400',
@@ -23,8 +25,8 @@ export const ARDRoadmap: React.FC = () => {
         },
         {
             phase: 'Fase 6',
-            title: 'Conciliación Smart AI',
-            description: 'Motor de matching automático entre banco y documentos registrados.',
+            title: t('ard.roadmap.phases.6.title'),
+            description: t('ard.roadmap.phases.6.desc'),
             status: 'upcoming',
             icon: Cpu,
             color: 'text-amber-400',
@@ -32,8 +34,8 @@ export const ARDRoadmap: React.FC = () => {
         },
         {
             phase: 'Fase 7',
-            title: 'Cumplimiento Multijurisdiccional',
-            description: 'Adaptación automática a regulaciones de otros estados y países.',
+            title: t('ard.roadmap.phases.7.title'),
+            description: t('ard.roadmap.phases.7.desc'),
             status: 'upcoming',
             icon: Globe,
             color: 'text-blue-400',
@@ -41,8 +43,8 @@ export const ARDRoadmap: React.FC = () => {
         },
         {
             phase: 'Fase 8',
-            title: 'AccountExpress Mobile ARD',
-            description: 'App nativa para escaneo en el punto de venta con procesamiento local.',
+            title: t('ard.roadmap.phases.8.title'),
+            description: t('ard.roadmap.phases.8.desc'),
             status: 'upcoming',
             icon: Rocket,
             color: 'text-rose-400',
@@ -57,8 +59,8 @@ export const ARDRoadmap: React.FC = () => {
                     <Rocket className="w-10 h-10 text-indigo-400 animate-pulse" />
                 </div>
                 <div className="relative z-10">
-                    <h3 className="text-3xl font-black text-white tracking-tighter uppercase">Hoja de Ruta: ARD Evolution</h3>
-                    <p className="text-slate-500 font-medium text-sm mt-1">Plan de despliegue para el motor de inteligencia documental más avanzado de Florida.</p>
+                    <h3 className="text-3xl font-black text-white tracking-tighter uppercase">{t('ard.roadmap.title')}</h3>
+                    <p className="text-slate-500 font-medium text-sm mt-1">{t('ard.roadmap.subtitle')}</p>
                 </div>
                 <Zap className="absolute -right-20 -top-20 w-80 h-80 text-white/5 rotate-45" />
             </div>
@@ -76,7 +78,7 @@ export const ARDRoadmap: React.FC = () => {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                 <div className="space-y-2">
                                     <div className={`text-[10px] font-black uppercase tracking-[0.3em] ${step.color}`}>
-                                        {step.phase} — {step.status === 'completed' ? 'Finalizada' : step.status === 'current' ? 'En Desarrollo' : 'Próximamente'}
+                                        {step.phase} — {step.status === 'completed' ? t('ard.roadmap.status.completed') : step.status === 'current' ? t('ard.roadmap.status.current') : t('ard.roadmap.status.upcoming')}
                                     </div>
                                     <h4 className="text-xl font-black text-white uppercase tracking-tight">{step.title}</h4>
                                     <p className="text-slate-600 text-sm font-medium leading-relaxed max-w-2xl">{step.description}</p>
@@ -93,11 +95,11 @@ export const ARDRoadmap: React.FC = () => {
 
             <div className="p-8 bg-white/5 rounded-[32px] border border-white/10 text-center">
                 <p className="text-slate-600 font-bold text-xs uppercase tracking-widest">
-                    ¿Tienes una idea para la siguiente fase? Contacta al equipo de desarrollo de AccountExpress.
+                    {t('ard.roadmap.feedback')}
                 </p>
                 <div className="mt-4 flex justify-center gap-4">
-                    <span className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[9px] font-black text-indigo-400 uppercase">Prioridad: Cliente-Driven</span>
-                    <span className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-black text-emerald-400 uppercase">Updates: Semanales</span>
+                    <span className="px-4 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[9px] font-black text-indigo-400 uppercase">{t('ard.roadmap.priority')}</span>
+                    <span className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-black text-emerald-400 uppercase">{t('ard.roadmap.updates')}</span>
                 </div>
             </div>
         </div>

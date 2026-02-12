@@ -14,6 +14,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Customer } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface CustomerDetailViewProps {
   customer: Customer;
@@ -32,13 +33,14 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   onNavigateToKardex,
   onNavigateToInvoice
 }) => {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
-    { id: 'overview', label: 'Resumen', icon: User },
-    { id: 'invoices', label: 'Facturas', icon: FileText },
-    { id: 'payments', label: 'Pagos', icon: CreditCard },
-    { id: 'products', label: 'Productos/Servicios', icon: Package }
+    { id: 'overview', label: t('common.overview'), icon: User },
+    { id: 'invoices', label: t('common.invoices'), icon: FileText },
+    { id: 'payments', label: t('common.payments'), icon: CreditCard },
+    { id: 'products', label: t('common.productsServices'), icon: Package }
   ];
 
   // Datos de ejemplo para las pestañas
@@ -118,11 +120,11 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
 
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
-      case 'cash': return 'Efectivo';
-      case 'check': return 'Cheque';
-      case 'credit_card': return 'Tarjeta de Crédito';
-      case 'bank_transfer': return 'Transferencia Bancaria';
-      default: return 'Otro';
+      case 'cash': return t('paymentMethods.cash');
+      case 'check': return t('paymentMethods.check');
+      case 'credit_card': return t('paymentMethods.creditCard');
+      case 'bank_transfer': return t('paymentMethods.bankTransfer');
+      default: return t('paymentMethods.other');
     }
   };
   const renderOverviewTab = () => (
@@ -132,26 +134,26 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
         <div className="bg-slate-900 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <User className="w-5 h-5 text-blue-400" />
-            Información Personal
+            {t('customerDetail.personalInfo')}
           </h3>
           <div className="space-y-3">
             <div>
-              <p className="text-sm text-slate-500">Nombre/Razón Social</p>
+              <p className="text-sm text-slate-500">{t('customerDetail.name')}</p>
               <p className="text-white font-medium">{customer.name}</p>
             </div>
             {customer.business_name && (
               <div>
-                <p className="text-sm text-slate-500">Nombre Comercial</p>
+                <p className="text-sm text-slate-500">{t('customerDetail.businessName')}</p>
                 <p className="text-white">{customer.business_name}</p>
               </div>
             )}
             <div>
-              <p className="text-sm text-slate-500">Documento</p>
+              <p className="text-sm text-slate-500">{t('customerDetail.document')}</p>
               <p className="text-white">{customer.document_type}: {customer.document_number}</p>
             </div>
             {customer.business_type && (
               <div>
-                <p className="text-sm text-slate-500">Tipo de Negocio</p>
+                <p className="text-sm text-slate-500">{t('customerDetail.businessType')}</p>
                 <p className="text-white">{customer.business_type}</p>
               </div>
             )}
@@ -161,7 +163,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
         <div className="bg-slate-900 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Phone className="w-5 h-5 text-green-400" />
-            Contacto
+            {t('customerDetail.contact')}
           </h3>
           <div className="space-y-3">
             {customer.email && (
@@ -169,7 +171,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                 <Mail className="w-4 h-4 text-slate-500" />
                 <div>
                   <p className="text-white">{customer.email}</p>
-                  <p className="text-xs text-slate-500">Email Principal</p>
+                  <p className="text-xs text-slate-500">{t('customerDetail.primaryEmail')}</p>
                 </div>
               </div>
             )}
@@ -178,7 +180,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                 <Mail className="w-4 h-4 text-slate-500" />
                 <div>
                   <p className="text-white">{customer.email_secondary}</p>
-                  <p className="text-xs text-slate-500">Email Secundario</p>
+                  <p className="text-xs text-slate-500">{t('customerDetail.secondaryEmail')}</p>
                 </div>
               </div>
             )}
@@ -187,7 +189,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                 <Phone className="w-4 h-4 text-slate-500" />
                 <div>
                   <p className="text-white">{customer.phone}</p>
-                  <p className="text-xs text-slate-500">Teléfono Principal</p>
+                  <p className="text-xs text-slate-500">{t('customerDetail.primaryPhone')}</p>
                 </div>
               </div>
             )}
@@ -196,7 +198,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                 <Phone className="w-4 h-4 text-slate-500" />
                 <div>
                   <p className="text-white">{customer.phone_secondary}</p>
-                  <p className="text-xs text-slate-500">Teléfono Secundario</p>
+                  <p className="text-xs text-slate-500">{t('customerDetail.secondaryPhone')}</p>
                 </div>
               </div>
             )}
@@ -209,7 +211,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
         <div className="bg-slate-900 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-red-400" />
-            Dirección
+            {t('customerDetail.address')}
           </h3>
           <div className="space-y-2">
             {customer.address_line1 && <p className="text-white">{customer.address_line1}</p>}
@@ -217,40 +219,40 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
             <p className="text-white">
               {customer.city}, {customer.state} {customer.zip_code}
             </p>
-            <p className="text-slate-500">Condado: {customer.florida_county}</p>
+            <p className="text-slate-500">{t('customerDetail.county')}: {customer.florida_county}</p>
           </div>
         </div>
 
         <div className="bg-slate-900 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Building className="w-5 h-5 text-purple-400" />
-            Datos Comerciales
+            {t('customerDetail.commercialData')}
           </h3>
           <div className="space-y-3">
             <div>
-              <p className="text-sm text-slate-500">Límite de Crédito</p>
+              <p className="text-sm text-slate-500">{t('customerDetail.creditLimit')}</p>
               <p className="text-white font-medium">${customer.credit_limit?.toLocaleString() || '0.00'}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Términos de Pago</p>
-              <p className="text-white">{customer.payment_terms || 30} días</p>
+              <p className="text-sm text-slate-500">{t('customerDetail.paymentTerms')}</p>
+              <p className="text-white">{t('common.days', { n: customer.payment_terms || 30 })}</p>
             </div>
             {customer.assigned_salesperson && (
               <div>
-                <p className="text-sm text-slate-500">Vendedor Asignado</p>
+                <p className="text-sm text-slate-500">{t('customerDetail.salesperson')}</p>
                 <p className="text-white">{customer.assigned_salesperson}</p>
               </div>
             )}
             <div>
-              <p className="text-sm text-slate-500">Estado</p>
+              <p className="text-sm text-slate-500">{t('common.status')}</p>
               <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(customer.status || 'active')}`}>
-                {customer.status === 'active' ? 'Activo' : customer.status === 'inactive' ? 'Inactivo' : 'Suspendido'}
+                {customer.status === 'active' ? t('common.active') : customer.status === 'inactive' ? t('common.inactive') : t('common.suspended')}
               </span>
             </div>
             {customer.tax_exempt && (
               <div className="flex items-center gap-2">
                 <span className="inline-flex px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-yellow-900/30 text-yellow-400 border border-yellow-700/50">
-                  Exento de Impuestos
+                  {t('customerDetail.taxExempt')}
                 </span>
               </div>
             )}
@@ -261,7 +263,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
       {/* Notas */}
       {customer.notes && (
         <div className="bg-slate-900 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Notas</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('common.notes')}</h3>
           <p className="text-slate-400">{customer.notes}</p>
         </div>
       )}
@@ -270,10 +272,10 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   const renderInvoicesTab = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Facturas del Cliente</h3>
+        <h3 className="text-lg font-semibold text-white">{t('customerDetail.customerInvoices')}</h3>
         <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
           <FileText className="w-4 h-4" />
-          Nueva Factura
+          {t('customerDetail.newInvoice')}
         </button>
       </div>
 
@@ -282,23 +284,23 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
           <table className="w-full">
             <thead className="bg-white/10">
               <tr>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Número
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('customerDetail.invoiceNumber')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Fecha
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.date')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Vencimiento
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('customerDetail.dueDate')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Monto
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.amount')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Estado
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.status')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Acciones
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -319,7 +321,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getInvoiceStatusColor(invoice.status)}`}>
-                      {invoice.status === 'paid' ? 'Pagada' : invoice.status === 'sent' ? 'Enviada' : 'Borrador'}
+                      {invoice.status === 'paid' ? t('invoiceList.paid') : invoice.status === 'sent' ? t('invoiceList.sent') : t('invoiceList.draft')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -327,9 +329,9 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                       onClick={() => onNavigateToInvoice && onNavigateToInvoice(invoice.id)}
                       className="text-blue-400 hover:text-blue-300 mr-3"
                     >
-                      Ver
+                      {t('common.view')}
                     </button>
-                    <button className="text-green-400 hover:text-green-300">Editar</button>
+                    <button className="text-green-400 hover:text-green-300">{t('common.edit')}</button>
                   </td>
                 </tr>
               ))}
@@ -343,10 +345,10 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   const renderPaymentsTab = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Historial de Pagos</h3>
+        <h3 className="text-lg font-semibold text-white">{t('customerDetail.paymentHistory')}</h3>
         <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
           <CreditCard className="w-4 h-4" />
-          Registrar Pago
+          {t('customerDetail.registerPayment')}
         </button>
       </div>
 
@@ -355,23 +357,23 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
           <table className="w-full">
             <thead className="bg-white/10">
               <tr>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Número
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('customerDetail.invoiceNumber')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Fecha
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.date')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Monto
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.amount')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Método
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('customerDetail.paymentMethod')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Referencia
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('customerDetail.reference')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Acciones
+                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {t('common.actions')}
                 </th>
               </tr>
             </thead>
@@ -394,8 +396,8 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                     {payment.reference}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button className="text-blue-400 hover:text-blue-300 mr-3">Ver</button>
-                    <button className="text-green-400 hover:text-green-300">Editar</button>
+                    <button className="text-blue-400 hover:text-blue-300 mr-3">{t('common.view')}</button>
+                    <button className="text-green-400 hover:text-green-300">{t('common.edit')}</button>
                   </td>
                 </tr>
               ))}
@@ -408,7 +410,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   const renderProductsTab = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Productos y Servicios Comprados</h3>
+        <h3 className="text-lg font-semibold text-white">{t('customerDetail.purchasedProducts')}</h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -418,7 +420,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
               <div>
                 <h4 className="text-white font-medium">{product.name}</h4>
                 <p className="text-sm text-slate-500">
-                  Última compra: {new Date(product.lastPurchase).toLocaleDateString()}
+                  {t('customerDetail.lastPurchase')}: {new Date(product.lastPurchase).toLocaleDateString()}
                 </p>
               </div>
               <Package className="w-5 h-5 text-blue-400" />
@@ -426,11 +428,11 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
 
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-slate-500">Total compras:</span>
+                <span className="text-slate-500">{t('customerDetail.totalPurchases')}:</span>
                 <span className="text-white font-medium">{product.totalPurchases}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Monto total:</span>
+                <span className="text-slate-500">{t('customerDetail.totalAmount')}:</span>
                 <span className="text-green-400 font-medium">${product.totalAmount.toLocaleString()}</span>
               </div>
               {onNavigateToKardex && (
@@ -439,7 +441,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
                   className="w-full mt-4 flex items-center justify-center gap-2 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-xs font-bold"
                 >
                   <Package className="w-3.5 h-3.5" />
-                  VER HISTORIAL MOVIMIENTOS
+                  {t('customerDetail.viewMovements')}
                 </button>
               )}
             </div>
@@ -450,7 +452,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
       {sampleProducts.length === 0 && (
         <div className="bg-slate-900 rounded-lg p-8 text-center">
           <Package className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-          <p className="text-slate-500">Este cliente aún no ha comprado productos o servicios.</p>
+          <p className="text-slate-500">{t('customerDetail.noProducts')}</p>
         </div>
       )}
     </div>
@@ -480,7 +482,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
         >
           <Edit className="w-4 h-4" />
-          Editar Cliente
+          {t('customerDetail.editCustomer')}
         </button>
       </div>
 

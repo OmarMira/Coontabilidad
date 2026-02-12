@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Save, X, Calculator, User, Calendar } from 'lucide-react';
 import { Customer, Product, Invoice, InvoiceItem, getFloridaTaxRate } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceFormProps {
   onSubmit: (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[]) => void;
@@ -35,6 +36,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { t } = useLocale();
   const [formData, setFormData] = useState<FormData>({
     customer_id: initialData?.customer_id || '',
     issue_date: initialData?.issue_date || new Date().toISOString().split('T')[0],
@@ -117,32 +119,32 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.customer_id) {
-      newErrors.customer_id = 'Customer is required';
+      newErrors.customer_id = t('invoiceForm.errorCustomer');
     }
 
     if (!formData.issue_date) {
-      newErrors.issue_date = 'Issue date is required';
+      newErrors.issue_date = t('invoiceForm.errorIssueDate');
     }
 
     if (!formData.due_date) {
-      newErrors.due_date = 'Due date is required';
+      newErrors.due_date = t('invoiceForm.errorDueDate');
     }
 
     // Validar que la fecha de vencimiento sea posterior a la fecha de emisión
     if (formData.issue_date && formData.due_date && formData.due_date < formData.issue_date) {
-      newErrors.due_date = 'Due date must be after issue date';
+      newErrors.due_date = t('invoiceForm.errorDateOrder');
     }
 
     // Validar items
     items.forEach((item, index) => {
       if (!item.description.trim()) {
-        newErrors[`item_${index}_description`] = 'Description is required';
+        newErrors[`item_${index}_description`] = t('invoiceForm.errorDescription');
       }
       if (item.quantity <= 0) {
-        newErrors[`item_${index}_quantity`] = 'Quantity must be greater than 0';
+        newErrors[`item_${index}_quantity`] = t('invoiceForm.errorQuantity');
       }
       if (item.unit_price < 0) {
-        newErrors[`item_${index}_unit_price`] = 'Unit price cannot be negative';
+        newErrors[`item_${index}_unit_price`] = t('invoiceForm.errorUnitPrice');
       }
     });
 
@@ -184,7 +186,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-white flex items-center gap-2">
           <Calculator className="w-5 h-5 text-blue-400" />
-          {isEditing ? 'Editar Factura' : 'Nueva Factura'}
+          {isEditing ? t('forms.editInvoice') : t('forms.newInvoice')}
         </h2>
         {onCancel && (
           <button
@@ -201,7 +203,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">
-              Customer *
+              {t('invoiceForm.customer')}
             </label>
             <select
               value={formData.customer_id}
@@ -209,7 +211,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.customer_id ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
                 } focus:outline-none`}
             >
-              <option value="">Select Customer</option>
+              <option value="">{t('invoiceForm.selectCustomer')}</option>
               {customers.map(customer => (
                 <option key={customer.id} value={customer.id}>
                   {customer.business_name || customer.name}
@@ -221,7 +223,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">
-              Issue Date *
+              {t('invoiceForm.issueDate')}
             </label>
             <input
               type="date"
@@ -235,7 +237,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">
-              Due Date *
+              {t('invoiceForm.dueDate')}
             </label>
             <input
               type="date"
@@ -252,24 +254,24 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
           <div className="bg-slate-900 rounded-lg p-4 border border-white/10">
             <h3 className="text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
               <User className="w-4 h-4" />
-              Información del Cliente
+              {t('invoiceForm.customerInfo')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-slate-500">Name:</p>
+                <p className="text-slate-500">{t('customerDetail.name')}:</p>
                 <p className="text-white">{selectedCustomer.business_name || selectedCustomer.name}</p>
               </div>
               <div>
-                <p className="text-slate-500">Email:</p>
+                <p className="text-slate-500">{t('customerDetail.contact')}:</p>
                 <p className="text-white">{selectedCustomer.email}</p>
               </div>
               <div>
-                <p className="text-slate-500">Phone:</p>
+                <p className="text-slate-500">{t('customerDetail.primaryPhone')}:</p>
                 <p className="text-white">{selectedCustomer.phone}</p>
               </div>
               <div>
-                <p className="text-slate-500">Payment Terms:</p>
-                <p className="text-white">{selectedCustomer.payment_terms} days</p>
+                <p className="text-slate-500">{t('customerDetail.paymentTerms')}:</p>
+                <p className="text-white">{t('common.days', { n: selectedCustomer.payment_terms || 0 })}</p>
               </div>
             </div>
           </div>
@@ -278,14 +280,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         {/* Invoice Items */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black tracking-tight text-white">Invoice Items</h3>
+            <h3 className="text-lg font-black tracking-tight text-white">{t('invoiceForm.items')}</h3>
             <button
               type="button"
               onClick={addItem}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Item
+              {t('invoiceForm.addItem')}
             </button>
           </div>
 
@@ -295,14 +297,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                   <div className="md:col-span-2">
                     <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">
-                      Product (Optional)
+                      {t('invoiceForm.product')}
                     </label>
                     <select
                       value={item.product_id}
                       onChange={(e) => handleItemChange(index, 'product_id', parseInt(e.target.value) || '')}
                       className="w-full bg-white/5 text-white px-3 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none text-sm"
                     >
-                      <option value="">Select Product</option>
+                      <option value="">{t('invoiceForm.selectProduct')}</option>
                       {products.map(product => (
                         <option key={product.id} value={product.id}>
                           {product.name} - ${product.price}
@@ -313,7 +315,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
                   <div className="md:col-span-2">
                     <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">
-                      Description *
+                      {t('invoiceForm.description')}
                     </label>
                     <input
                       type="text"
@@ -330,7 +332,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">
-                      Quantity *
+                      {t('invoiceForm.quantity')}
                     </label>
                     <input
                       type="number"
@@ -348,7 +350,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">
-                      Unit Price *
+                      {t('invoiceForm.unitPrice')}
                     </label>
                     <input
                       type="number"
@@ -367,7 +369,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
                       <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">
-                        Taxable
+                        {t('invoiceForm.taxable')}
                       </label>
                       <label className="flex items-center">
                         <input
@@ -376,7 +378,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           onChange={(e) => handleItemChange(index, 'taxable', e.target.checked)}
                           className="w-4 h-4 text-blue-600 bg-white/5 border-white/10 rounded focus:ring-blue-500"
                         />
-                        <span className="ml-2 text-sm text-slate-400">Tax</span>
+                        <span className="ml-2 text-sm text-slate-400">{t('invoiceForm.tax')}</span>
                       </label>
                     </div>
                     {items.length > 1 && (
@@ -393,7 +395,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 </div>
 
                 <div className="mt-2 text-right">
-                  <span className="text-sm text-slate-500">Line Total: </span>
+                  <span className="text-sm text-slate-500">{t('invoiceForm.lineTotal')}: </span>
                   <span className="text-white font-medium">
                     ${(item.quantity * item.unit_price).toFixed(2)}
                   </span>
@@ -404,14 +406,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         </div>
         {/* Invoice Totals */}
         <div className="bg-slate-900 rounded-lg p-4 border border-white/10">
-          <h3 className="text-lg font-black tracking-tight text-white mb-4">Invoice Summary</h3>
+          <h3 className="text-lg font-black tracking-tight text-white mb-4">{t('invoiceForm.summary')}</h3>
           <div className="space-y-2">
             <div className="flex justify-between text-slate-400">
-              <span>Subtotal:</span>
+              <span>{t('invoiceForm.subtotal')}:</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-slate-400">
-              <span>Tax ({(getFloridaTaxRate(selectedCustomer?.florida_county || 'Miami-Dade') * 100).toFixed(1)}% FL):</span>
+              <span>{t('invoiceForm.tax')} ({(getFloridaTaxRate(selectedCustomer?.florida_county || 'Miami-Dade') * 100).toFixed(1)}% FL):</span>
               <span>${taxAmount.toFixed(2)}</span>
             </div>
             <div className="border-t border-white/10 pt-2">
@@ -427,24 +429,24 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">
-              Status
+              {t('common.status')}
             </label>
             <select
               value={formData.status}
               onChange={(e) => handleInputChange('status', e.target.value)}
               className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
             >
-              <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="draft">{t('invoiceList.draft')}</option>
+              <option value="sent">{t('invoiceList.sent')}</option>
+              <option value="paid">{t('invoiceList.paid')}</option>
+              <option value="overdue">{t('invoiceList.overdue')}</option>
+              <option value="cancelled">{t('invoiceList.cancelled')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">
-              Notes
+              {t('common.notes')}
             </label>
             <textarea
               value={formData.notes}
@@ -464,7 +466,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               onClick={onCancel}
               className="px-4 py-2 text-slate-500 hover:text-white transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
           )}
           <button
@@ -472,7 +474,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
           >
             <Save className="w-4 h-4" />
-            {isEditing ? 'Update Invoice' : 'Create Invoice'}
+            {isEditing ? t('invoiceForm.updateInvoice') : t('invoiceForm.createInvoice')}
           </button>
         </div>
       </form>

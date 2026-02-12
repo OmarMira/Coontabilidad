@@ -2,12 +2,14 @@ import React, { useState, useCallback } from 'react';
 import { Upload, File, X, Sparkles, Loader2 } from 'lucide-react';
 import { saveARDDocument, updateARDDocumentStatus } from '../../database/simple-db';
 import { ARDDocument } from '../../modules/ard/ARD.types';
+import { useLocale } from '../../i18n/useLocale';
 
 interface ARDScannerProps {
     onDocumentProcessed: () => void;
 }
 
 export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) => {
+    const { t } = useLocale();
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
 
@@ -78,25 +80,25 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
 
             <div className="space-y-2">
                 <h3 className="text-2xl font-black text-white tracking-tight">
-                    {uploading ? 'Analizando Documento...' : 'Digitalización Inteligente'}
+                    {uploading ? t('ard.analyzingDoc') : t('ard.smartDigitalization')}
                 </h3>
                 <p className="text-slate-600 font-medium text-sm max-w-sm mx-auto">
                     {uploading
-                        ? 'Nuestro motor de visión está extrayendo montos e impuestos. Por favor espere.'
-                        : 'Arrastre sus recibos, facturas o capturas de pantalla aquí para procesarlos instantáneamente.'}
+                        ? t('ard.visionEngineProgress')
+                        : t('ard.dropFilesHint')}
                 </p>
             </div>
 
             {uploading && (
                 <div className="mt-8 flex items-center gap-3 px-6 py-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl animate-pulse">
                     <Sparkles className="w-4 h-4 text-indigo-400" />
-                    <span className="text-xs font-black text-indigo-300 uppercase tracking-widest">Motor OCR IA Activo</span>
+                    <span className="text-xs font-black text-indigo-300 uppercase tracking-widest">{t('ard.activeIAOCR')}</span>
                 </div>
             )}
 
             {!uploading && (
                 <label className="mt-8 px-8 py-3 bg-white text-black font-black text-xs rounded-2xl cursor-pointer hover:bg-slate-200 transition-colors uppercase tracking-widest">
-                    Seleccionar Archivo
+                    {t('ard.selectFile')}
                     <input type="file" className="hidden" onChange={(e) => e.target.files && processFile(e.target.files[0])} />
                 </label>
             )}

@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import { diagnoseAccountingSystem } from '../database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
+import { useLocale } from '../i18n/useLocale';
 
 export function AccountingDiagnosis() {
+  const { t } = useLocale();
   const [diagnosis, setDiagnosis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,9 +59,9 @@ export function AccountingDiagnosis() {
             <Cpu className="w-10 h-10 text-blue-500" />
           </div>
           <div>
-            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Terminal de Diagnóstico</h2>
+            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('accountingDiagnosis.title')}</h2>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> IA-Audit Infrastructure • Kernels & Schemas
+              <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('accountingDiagnosis.subtitle')}
             </p>
           </div>
         </div>
@@ -70,7 +72,7 @@ export function AccountingDiagnosis() {
           className="flex items-center gap-3 px-10 py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-[0_15px_40px_rgba(37,99,235,0.2)] active:scale-95 disabled:scale-100"
         >
           <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Sincronizando...' : 'Ejecutar Deep Diagnosis'}
+          {loading ? t('accountingDiagnosis.syncing') : t('accountingDiagnosis.runDeepDiagnosis')}
         </button>
       </div>
 
@@ -82,8 +84,8 @@ export function AccountingDiagnosis() {
             <Activity className="absolute inset-0 m-auto w-6 h-6 text-blue-500 animate-pulse" />
           </div>
           <div className="text-center space-y-2">
-            <p className="font-black text-white uppercase tracking-[0.4em] text-xs">Escaneando Infraestructura SQL</p>
-            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Verificando integridad de nodos contables...</p>
+            <p className="font-black text-white uppercase tracking-[0.4em] text-xs">{t('accountingDiagnosis.scanningSql')}</p>
+            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{t('accountingDiagnosis.verifyingIntegrity')}</p>
           </div>
         </div>
       ) : error ? (
@@ -92,7 +94,7 @@ export function AccountingDiagnosis() {
             <AlertCircle className="w-10 h-10 text-rose-500" />
           </div>
           <div className="text-center">
-            <h3 className="text-2xl font-black text-rose-400 uppercase tracking-tighter mb-2">Fallo Crítico de Red</h3>
+            <h3 className="text-2xl font-black text-rose-400 uppercase tracking-tighter mb-2">{t('accountingDiagnosis.criticalNetworkFailure')}</h3>
             <p className="text-slate-400 font-bold leading-relaxed max-w-md mx-auto">{error}</p>
           </div>
         </div>
@@ -101,43 +103,43 @@ export function AccountingDiagnosis() {
           {/* Main Status Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
-              title="Arquitectura SQL"
+              title={t('accountingDiagnosis.sqlArchitecture')}
               value={`${diagnosis.details.existingTables?.length || 0}/3`}
-              status={diagnosis.details.tablesExist ? 'VALIDO' : 'ERROR'}
+              status={diagnosis.details.tablesExist ? t('accountingDiagnosis.valid') : t('accountingDiagnosis.errorStatus')}
               icon={Server}
               color={diagnosis.details.tablesExist ? 'blue' : 'rose'}
-              description="Tablas de Sistema Detectadas"
+              description={t('accountingDiagnosis.systemTablesDetected')}
             />
             <StatCard
-              title="Entidades Plan"
+              title={t('accountingDiagnosis.planEntities')}
               value={diagnosis.details.accountsCount || 0}
-              status="OPTIMO"
+              status={t('accountingDiagnosis.optimal')}
               icon={Network}
               color="emerald"
-              description="Cuentas Maestras en Memoria"
+              description={t('accountingDiagnosis.masterAccountsInMemory')}
             />
             <StatCard
-              title="Integridad Red"
+              title={t('accountingDiagnosis.networkIntegrity')}
               value={`${diagnosis.details.mainAccounts || 0}/5`}
-              status={diagnosis.details.mainAccounts >= 5 ? 'COMPLETO' : 'ALTO'}
+              status={diagnosis.details.mainAccounts >= 5 ? t('accountingDiagnosis.complete') : t('accountingDiagnosis.high')}
               icon={ShieldCheck}
               color="indigo"
-              description="Cuentas de Control Múltiple"
+              description={t('accountingDiagnosis.multipleControlAccounts')}
             />
             <StatCard
-              title="Registro Ledger"
+              title={t('accountingDiagnosis.ledgerRegistry')}
               value={diagnosis.details.journalCount || 0}
-              status="ACTIVO"
+              status={t('accountingDiagnosis.active')}
               icon={HardDrive}
               color="amber"
-              description="Asientos Históricos Indexados"
+              description={t('accountingDiagnosis.historicalEntriesIndexed')}
             />
           </div>
 
           {/* Symmetrical Summary Bar */}
           <div className={`p-10 rounded-[3rem] border-2 shadow-2xl backdrop-blur-3xl transition-all duration-700 transform flex flex-col md:flex-row items-center justify-between gap-10 ${diagnosis.success
-              ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
-              : 'bg-rose-500/5 border-rose-500/40 text-rose-400 animate-pulse'
+            ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'
+            : 'bg-rose-500/5 border-rose-500/40 text-rose-400 animate-pulse'
             }`}>
             <div className="flex items-center gap-8">
               <div className={`p-6 rounded-[2rem] border shadow-2xl ${diagnosis.success ? 'bg-emerald-500/10 border-emerald-500/20 shadow-emerald-900/20' : 'bg-rose-500/10 border-rose-500/20 shadow-rose-900/20'}`}>
@@ -145,15 +147,15 @@ export function AccountingDiagnosis() {
               </div>
               <div>
                 <h3 className="text-3xl font-black uppercase tracking-tighter">
-                  {diagnosis.success ? 'Diagnóstico de Red: NOMINAL' : 'Diagnóstico de Red: ALERTA'}
+                  {diagnosis.success ? t('accountingDiagnosis.diagnosisNominal') : t('accountingDiagnosis.diagnosisAlert')}
                 </h3>
                 <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60">
-                  Protocolo auditado por IronCore System • Status: {diagnosis.success ? 'Alpha 1.0 Online' : 'Review Required'}
+                  {t('accountingDiagnosis.auditProtocolLabel')} {diagnosis.success ? t('accountingDiagnosis.alphaOnline') : t('accountingDiagnosis.reviewRequired')}
                 </p>
               </div>
             </div>
             <div className="text-right border-l border-white/10 pl-10 hidden md:block">
-              <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-50">Sincronización</p>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-50">{t('accountingDiagnosis.synchronization')}</p>
               <p className="text-xl font-black font-mono tracking-tighter">99.9% Uptime</p>
             </div>
           </div>
@@ -165,7 +167,7 @@ export function AccountingDiagnosis() {
               <header className="px-10 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
                 <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  Control de Cuentas Principales
+                  {t('accountingDiagnosis.mainAccountsControl')}
                 </h4>
                 <ChevronRight className="w-4 h-4 text-slate-600" />
               </header>
@@ -198,7 +200,7 @@ export function AccountingDiagnosis() {
                 <pre className="whitespace-pre-wrap">{JSON.stringify(diagnosis.details, null, 2)}</pre>
               </div>
               <footer className="p-6 text-center border-t border-slate-800">
-                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">End of Audit Trace</p>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{t('accountingDiagnosis.endOfAuditTrace')}</p>
               </footer>
             </div>
           </div>

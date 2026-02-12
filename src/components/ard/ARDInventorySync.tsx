@@ -3,12 +3,14 @@ import { Package, RefreshCw, AlertCircle, CheckCircle2, ArrowRightLeft, Info, Se
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { updateProductStock, getProducts, Product } from '../../database/simple-db';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '../../i18n/useLocale';
 
 interface ARDInventorySyncProps {
     documents: ARDDocument[];
 }
 
 export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents }) => {
+    const { t } = useLocale();
     const [searchTerm, setSearchTerm] = useState('');
     const [syncing, setSyncing] = useState<string | null>(null);
     const [showProductPicker, setShowProductPicker] = useState<string | null>(null);
@@ -31,12 +33,12 @@ export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents })
 
             const result = updateProductStock(productId, 1, 'add');
             if (result.success) {
-                toast.success(`Inventario actualizado: +1 unidad.`);
+                toast.success(t('ard.inventoryUpdatedToast'));
             } else {
                 toast.error(result.message);
             }
         } catch (e) {
-            toast.error('Error al sincronizar inventario');
+            toast.error(t('ard.syncErrorToast'));
         } finally {
             setSyncing(null);
             setShowProductPicker(null);
@@ -52,15 +54,15 @@ export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents })
                         <Package className="w-8 h-8 text-blue-400" />
                     </div>
                     <div>
-                        <h3 className="text-2xl font-black text-white tracking-tight">Enlace de Inventario ARD</h3>
-                        <p className="text-slate-500 font-medium text-sm mt-1">Sincronice sus compras y ventas directamente con el stock físico.</p>
+                        <h3 className="text-2xl font-black text-white tracking-tight">{t('ard.inventoryEnlace')}</h3>
+                        <p className="text-slate-500 font-medium text-sm mt-1">{t('ard.inventorySubtitle')}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <div className="text-right">
-                        <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Sincronización</div>
-                        <div className="text-white font-black text-xl tabular-nums">{syncableDocs.length} Pendientes</div>
+                        <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{t('ard.syncStatus')}</div>
+                        <div className="text-white font-black text-xl tabular-nums">{t('ard.pendingSyncDocs', { count: syncableDocs.length })}</div>
                     </div>
                     <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-blue-400 animate-spin-slow">
                         <RefreshCw className="w-5 h-5" />
@@ -74,10 +76,9 @@ export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents })
                     <Info className="w-4 h-4 text-indigo-400" />
                 </div>
                 <div>
-                    <h4 className="text-xs font-black text-white uppercase tracking-widest mb-1">Nota de Integración</h4>
+                    <h4 className="text-xs font-black text-white uppercase tracking-widest mb-1">{t('ard.integrationNote')}</h4>
                     <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                        Este módulo utiliza el motor de inteligencia de AccountExpress para detectar productos en sus documentos.
-                        Al sincronizar, el sistema ajustará automáticamente las cantidades en su almacén central.
+                        {t('ard.integrationDesc')}
                     </p>
                 </div>
             </div>
@@ -105,11 +106,11 @@ export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents })
 
                             <div className="p-4 bg-black/40 rounded-2xl border border-white/5 space-y-3 mb-6">
                                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-600 pb-2 border-b border-white/5">
-                                    <span>Producto Detectado (IA)</span>
-                                    <span>Cantidad</span>
+                                    <span>{t('ard.detectedProductAI')}</span>
+                                    <span>{t('ard.quantity')}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs text-indigo-400 font-bold uppercase">{analysis.vendor || 'Cargos Varios'}</span>
+                                    <span className="text-xs text-indigo-400 font-bold uppercase">{analysis.vendor || t('ard.variousCharges')}</span>
                                     <span className="text-xs text-white font-black">1.00 Unit</span>
                                 </div>
                             </div>
@@ -124,12 +125,12 @@ export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents })
                                 ) : (
                                     <RefreshCw className="w-3 h-3" />
                                 )}
-                                {syncing === doc.id ? 'Sincronizando...' : 'Sincronizar Existencias'}
+                                {syncing === doc.id ? t('ard.syncingProgress') : t('ard.syncStockBtn')}
                             </button>
 
                             {showProductPicker === doc.id && (
                                 <div className="mt-4 p-4 bg-slate-800 rounded-2xl border border-white/10 animate-in slide-in-from-top-2">
-                                    <h5 className="text-[9px] font-black text-white uppercase mb-3">Seleccionar Producto del Inventario</h5>
+                                    <h5 className="text-[9px] font-black text-white uppercase mb-3">{t('ard.selectInventoryProduct')}</h5>
                                     <div className="max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
                                         {allProducts.map(p => (
                                             <button
@@ -151,7 +152,7 @@ export const ARDInventorySync: React.FC<ARDInventorySyncProps> = ({ documents })
                 {syncableDocs.length === 0 && (
                     <div className="col-span-2 py-20 text-center card-elite border-dashed border-2 opacity-50">
                         <Package className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                        <p className="text-slate-600 font-black uppercase tracking-[0.2em] text-xs">No hay productos pendientes de sincronización</p>
+                        <p className="text-slate-600 font-black uppercase tracking-[0.2em] text-xs">{t('ard.noItemsToSync')}</p>
                     </div>
                 )}
             </div>

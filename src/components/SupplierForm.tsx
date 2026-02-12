@@ -3,6 +3,7 @@ import { Plus, Save, X, User, MapPin, CreditCard, FileText } from 'lucide-react'
 import { FLORIDA_COUNTIES } from '../database/simple-db';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import { addressService } from '../services/addressService';
+import { useLocale } from '../i18n/useLocale';
 
 interface SupplierFormProps {
   onSubmit: (supplierData: any) => void;
@@ -11,12 +12,13 @@ interface SupplierFormProps {
   isEditing?: boolean;
 }
 
-export const SupplierForm: React.FC<SupplierFormProps> = ({ 
-  onSubmit, 
-  onCancel, 
+export const SupplierForm: React.FC<SupplierFormProps> = ({
+  onSubmit,
+  onCancel,
   initialData,
-  isEditing = false 
+  isEditing = false
 }) => {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
     // Información personal
@@ -25,13 +27,13 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     document_type: initialData?.document_type || 'EIN',
     document_number: initialData?.document_number || '',
     business_type: initialData?.business_type || '',
-    
+
     // Datos de contacto
     email: initialData?.email || '',
     email_secondary: initialData?.email_secondary || '',
     phone: initialData?.phone || '',
     phone_secondary: initialData?.phone_secondary || '',
-    
+
     // Dirección
     address_line1: initialData?.address_line1 || '',
     address_line2: initialData?.address_line2 || '',
@@ -39,14 +41,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     state: initialData?.state || 'FL',
     zip_code: initialData?.zip_code || '',
     florida_county: initialData?.florida_county || 'Miami-Dade',
-    
+
     // Datos comerciales
     credit_limit: initialData?.credit_limit || 0,
     payment_terms: initialData?.payment_terms || 30,
     tax_exempt: initialData?.tax_exempt || false,
     tax_id: initialData?.tax_id || '',
     assigned_buyer: initialData?.assigned_buyer || '',
-    
+
     // Metadatos
     status: initialData?.status || 'active',
     notes: initialData?.notes || ''
@@ -76,29 +78,29 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   ];
 
   const tabs = [
-    { id: 'personal', label: 'Información del Proveedor', icon: User },
-    { id: 'contact', label: 'Contacto', icon: FileText },
-    { id: 'address', label: 'Dirección', icon: MapPin },
-    { id: 'commercial', label: 'Datos Comerciales', icon: CreditCard }
+    { id: 'personal', label: t('supplierForm.info'), icon: User },
+    { id: 'contact', label: t('customerDetail.contact'), icon: FileText },
+    { id: 'address', label: t('customerDetail.address'), icon: MapPin },
+    { id: 'commercial', label: t('customerDetail.commercialData'), icon: CreditCard }
   ];
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'El nombre es requerido';
+      newErrors.name = t('customerForm.errorName');
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = t('common.invalidEmail');
     }
 
     if (formData.phone && !/^[\d\s\-\(\)\+]+$/.test(formData.phone)) {
-      newErrors.phone = 'Teléfono inválido';
+      newErrors.phone = t('common.invalidPhone');
     }
 
     if (formData.zip_code && !/^\d{5}(-\d{4})?$/.test(formData.zip_code)) {
-      newErrors.zip_code = 'Código postal inválido (formato: 12345 o 12345-6789)';
+      newErrors.zip_code = t('customerForm.errorInvalidZip');
     }
 
     setErrors(newErrors);
@@ -107,10 +109,10 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       onSubmit(formData);
-      
+
       // Reset form if not editing
       if (!isEditing) {
         setFormData({
@@ -127,7 +129,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -136,22 +138,22 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
   const handleAddressSelect = async (addressDetails: any) => {
     console.log('Address selected:', addressDetails);
-    
+
     // Actualizar los campos de dirección con los datos seleccionados
     setFormData(prev => ({
       ...prev,
       city: addressDetails.city,
       state: addressDetails.state,
       zip_code: addressDetails.zipCode,
-      florida_county: addressDetails.state === 'FL' ? 
-        addressService.getFloridaCounty(addressDetails.county || '', addressDetails.city) : 
+      florida_county: addressDetails.state === 'FL' ?
+        addressService.getFloridaCounty(addressDetails.county || '', addressDetails.city) :
         prev.florida_county
     }));
   };
 
   const handleZipCodeChange = async (zipCode: string) => {
     handleInputChange('zip_code', zipCode);
-    
+
     // Si el código postal tiene 5 dígitos, buscar automáticamente
     if (zipCode.length === 5 && /^\d{5}$/.test(zipCode)) {
       try {
@@ -176,16 +178,15 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Nombre del Proveedor / Razón Social *
+            {t('supplierForm.name')}
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
-            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.name ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
-            } focus:outline-none`}
-            placeholder="Ej: Tech Solutions Inc o ABC Corp LLC"
+            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.name ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
+              } focus:outline-none`}
+            placeholder={t('supplierForm.namePlaceholder')}
             required
           />
           {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
@@ -193,14 +194,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Nombre Comercial
+            {t('supplierForm.businessName')}
           </label>
           <input
             type="text"
             value={formData.business_name}
             onChange={(e) => handleInputChange('business_name', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="Nombre comercial o DBA"
+            placeholder={t('supplierForm.businessNamePlaceholder')}
           />
         </div>
       </div>
@@ -208,7 +209,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Tipo de Documento
+            {t('supplierForm.documentType')}
           </label>
           <select
             value={formData.document_type}
@@ -224,28 +225,28 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Número de Documento
+            {t('supplierForm.documentNumber')}
           </label>
           <input
             type="text"
             value={formData.document_number}
             onChange={(e) => handleInputChange('document_number', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="12-3456789 o 123-45-6789"
+            placeholder={t('supplierForm.documentNumberPlaceholder')}
           />
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Tipo de Negocio / Actividad
+          {t('supplierForm.businessActivity')}
         </label>
         <input
           type="text"
           value={formData.business_type}
           onChange={(e) => handleInputChange('business_type', e.target.value)}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-          placeholder="Ej: Suministros de Oficina, Tecnología, Servicios Profesionales"
+          placeholder={t('supplierForm.businessActivityPlaceholder')}
         />
       </div>
     </div>
@@ -256,15 +257,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Email Principal
+            {t('customerForm.primaryEmail')}
           </label>
           <input
             type="email"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
-            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.email ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.email ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="contacto@proveedor.com"
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
@@ -272,7 +272,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Email Secundario
+            {t('customerForm.secondaryEmail')}
           </label>
           <input
             type="email"
@@ -287,15 +287,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Teléfono Principal
+            {t('customerForm.primaryPhone')}
           </label>
           <input
             type="tel"
             value={formData.phone}
             onChange={(e) => handleInputChange('phone', e.target.value)}
-            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.phone ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.phone ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="(305) 555-0123"
           />
           {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
@@ -303,7 +302,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Teléfono Secundario
+            {t('customerForm.secondaryPhone')}
           </label>
           <input
             type="tel"
@@ -320,9 +319,9 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   const renderAddressTab = () => (
     <div className="space-y-4">
       <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4 mb-4">
-        <h4 className="text-blue-300 font-medium mb-2">🌟 Autocompletado de Direcciones</h4>
+        <h4 className="text-blue-300 font-medium mb-2">{t('customerForm.autoCompleteTitle')}</h4>
         <p className="text-blue-200 text-sm">
-          Busca por ciudad, estado o código postal. Incluye más de 400 ciudades principales de Estados Unidos. 
+          {t('customerForm.autoCompleteHelp')}
           Usa APIs gratuitas de OpenStreetMap para sugerir direcciones adicionales.
         </p>
       </div>
@@ -330,21 +329,21 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       {/* Autocompletado de direcciones */}
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Buscar Ciudad/Estado/Código Postal
+          {t('customerForm.autoCompleteTitle')}
         </label>
         <AddressAutocomplete
           onAddressSelect={handleAddressSelect}
-          placeholder="Ej: Miami, New York, 33101, Los Angeles, Chicago..."
+          placeholder={t('customerForm.autoCompletePlaceholder')}
           className="mb-4"
         />
         <p className="text-xs text-slate-500 mt-1">
-          💡 Tip: Escribe al menos 2 caracteres. Funciona con ciudades, estados y códigos postales de todo Estados Unidos
+          {t('customerForm.autoCompleteTip')}
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Dirección Línea 1 *
+          {t('customerForm.addressLine1')}
         </label>
         <input
           type="text"
@@ -357,7 +356,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Dirección Línea 2
+          {t('customerForm.addressLine2')}
         </label>
         <input
           type="text"
@@ -371,7 +370,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Ciudad *
+            {t('customerForm.city')}
           </label>
           <input
             type="text"
@@ -384,7 +383,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Estado *
+            {t('customerForm.state')}
           </label>
           <select
             value={formData.state}
@@ -401,15 +400,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Código Postal *
+            {t('customerForm.zipCode')}
           </label>
           <input
             type="text"
             value={formData.zip_code}
             onChange={(e) => handleZipCodeChange(e.target.value)}
-            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${
-              errors.zip_code ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
-            } focus:outline-none`}
+            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.zip_code ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
+              } focus:outline-none`}
             placeholder="33101"
             maxLength={10}
           />
@@ -421,7 +419,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       {formData.state === 'FL' && (
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Condado de Florida *
+            {t('customerForm.county')}
           </label>
           <select
             value={formData.florida_county}
@@ -436,7 +434,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
             ))}
           </select>
           <p className="text-xs text-slate-500 mt-1">
-            Requerido para el cálculo correcto de impuestos de Florida
+            {t('customerForm.countyHelp')}
           </p>
         </div>
       )}
@@ -448,7 +446,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Límite de Crédito ($)
+            {t('customerForm.creditLimit')}
           </label>
           <input
             type="number"
@@ -463,19 +461,19 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Términos de Pago (días)
+            {t('customerForm.paymentTerms')}
           </label>
           <select
             value={formData.payment_terms}
             onChange={(e) => handleInputChange('payment_terms', parseInt(e.target.value))}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value={0}>Pago inmediato</option>
-            <option value={15}>15 días</option>
-            <option value={30}>30 días</option>
-            <option value={45}>45 días</option>
-            <option value={60}>60 días</option>
-            <option value={90}>90 días</option>
+            <option value={0}>{t('customerForm.immediatePayment')}</option>
+            <option value={15}>{t('customerForm.days', { n: 15 })}</option>
+            <option value={30}>{t('customerForm.days', { n: 30 })}</option>
+            <option value={45}>{t('customerForm.days', { n: 45 })}</option>
+            <option value={60}>{t('customerForm.days', { n: 60 })}</option>
+            <option value={90}>{t('customerForm.days', { n: 90 })}</option>
           </select>
         </div>
       </div>
@@ -483,7 +481,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Tax ID / Número de Impuestos
+            {t('customerForm.taxId')}
           </label>
           <input
             type="text"
@@ -496,14 +494,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Comprador Asignado
+            {t('supplierForm.assignedBuyer')}
           </label>
           <select
             value={formData.assigned_buyer}
             onChange={(e) => handleInputChange('assigned_buyer', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value="">Sin asignar</option>
+            <option value="">{t('customerForm.unassigned')}</option>
             <option value="Ana García">Ana García</option>
             <option value="Carlos López">Carlos López</option>
             <option value="María Rodríguez">María Rodríguez</option>
@@ -515,16 +513,16 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">
-            Estado del Proveedor
+            {t('supplierForm.status')}
           </label>
           <select
             value={formData.status}
             onChange={(e) => handleInputChange('status', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
-            <option value="active">Activo</option>
-            <option value="inactive">Inactivo</option>
-            <option value="suspended">Suspendido</option>
+            <option value="active">{t('common.active')}</option>
+            <option value="inactive">{t('common.inactive')}</option>
+            <option value="suspended">{t('common.suspended')}</option>
           </select>
         </div>
 
@@ -537,21 +535,21 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
             className="w-4 h-4 text-blue-600 bg-white/5 border-white/10 rounded focus:ring-blue-500"
           />
           <label htmlFor="tax_exempt" className="text-sm font-medium text-slate-400">
-            Exento de Impuestos
+            {t('customerForm.taxExempt')}
           </label>
         </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-slate-400 mb-1">
-          Notas Adicionales
+          {t('customerForm.notes')}
         </label>
         <textarea
           value={formData.notes}
           onChange={(e) => handleInputChange('notes', e.target.value)}
           rows={3}
           className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-          placeholder="Notas adicionales sobre el proveedor..."
+          placeholder={t('supplierForm.notesPlaceholder')}
         />
       </div>
     </div>
@@ -563,34 +561,33 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         {isEditing ? (
           <>
             <Save className="w-5 h-5 text-blue-500" />
-            Editar Proveedor
+            {t('supplierForm.titleEdit')}
           </>
         ) : (
           <>
             <Plus className="w-5 h-5 text-green-500" />
-            Nuevo Proveedor
+            {t('supplierForm.titleNew')}
           </>
         )}
       </h2>
-      
+
       {/* Pestañas */}
       <div className="flex space-x-1 mb-6 bg-slate-900 p-1 rounded-lg">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${
-              activeTab === tab.id
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:bg-white/5 hover:text-white'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${activeTab === tab.id
+              ? 'bg-blue-600 text-white'
+              : 'text-slate-400 hover:bg-white/5 hover:text-white'
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
           </button>
         ))}
       </div>
-      
+
       <form onSubmit={handleSubmit}>
         {/* Contenido de las pestañas */}
         <div className="min-h-[400px]">
@@ -614,10 +611,10 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 }}
                 className="px-4 py-2 bg-gray-600 hover:bg-white/5 text-white rounded-md transition-colors"
               >
-                Anterior
+                {t('common.previous')}
               </button>
             )}
-            
+
             {activeTab !== 'commercial' && (
               <button
                 type="button"
@@ -629,7 +626,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
               >
-                Siguiente
+                {t('common.next')}
               </button>
             )}
           </div>
@@ -642,26 +639,25 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 className="px-4 py-2 bg-gray-600 hover:bg-white/5 text-white rounded-md transition-colors flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
-                Cancelar
+                {t('common.cancel')}
               </button>
             )}
             <button
               type="submit"
-              className={`px-6 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                isEditing
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}
+              className={`px-6 py-2 rounded-md transition-colors flex items-center gap-2 ${isEditing
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
             >
               {isEditing ? (
                 <>
                   <Save className="w-4 h-4" />
-                  Actualizar Proveedor
+                  {t('supplierForm.updateSupplier')}
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  Crear Proveedor
+                  {t('supplierForm.createSupplier')}
                 </>
               )}
             </button>

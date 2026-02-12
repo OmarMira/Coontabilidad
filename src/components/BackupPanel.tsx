@@ -3,8 +3,10 @@ import { BackupService } from '../services/BackupService';
 import { BackupLocationSelector } from './backup/BackupLocationSelector';
 import { BackupLocation } from '../services/BackupLocationService';
 import { Download, Upload, Shield, Loader2, AlertTriangle, FileJson, CheckCircle, FolderOpen } from 'lucide-react';
+import { useLocale } from '../i18n/useLocale';
 
 export const BackupPanel: React.FC = () => {
+    const { t } = useLocale();
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState('');
     const [error, setError] = useState('');
@@ -18,25 +20,25 @@ export const BackupPanel: React.FC = () => {
     const handleLocationSelected = async (location: BackupLocation, customPath?: string) => {
         setShowLocationSelector(false);
         setLoading(true);
-        setStatus('Iniciando protocolo de cifrado (L4)...');
+        setStatus(t('backupPanel.startingEncryptionProtocol'));
         setError('');
-        
+
         try {
             // Delay visual para UX
             await new Promise(r => setTimeout(r, 800));
 
-            setStatus(`Guardando backup en: ${customPath || location}...`);
-            
+            setStatus(`${t('backupPanel.savingBackupAt')} ${customPath || location}...`);
+
             // Usar el nuevo sistema de selección de ubicación
             const success = await BackupService.createBackupWithLocationChoice();
 
             if (success) {
-                setStatus(`✅ Respaldo .aex cifrado generado y guardado en: ${customPath || location}`);
+                setStatus(`${t('backupPanel.backupGeneratedAndSaved')} ${customPath || location}`);
             } else {
-                setError('Usuario canceló la operación o hubo un error');
+                setError(t('backupPanel.userCancelledOrError'));
             }
         } catch (e: any) {
-            setError('Error al generar respaldo: ' + e.message);
+            setError(t('backupPanel.errorGeneratingBackup') + e.message);
             setStatus('');
         } finally {
             setLoading(false);
@@ -46,29 +48,29 @@ export const BackupPanel: React.FC = () => {
     const handleRestore = async () => {
         setError('');
 
-        if (!window.confirm("⚠️ ADVERTENCIA CRÍTICA DE SEGURIDAD ⚠️\n\nEsta acción eliminará TODOS los datos actuales y los reemplazará con el contenido del respaldo.\n\nEsta acción es irreversible.\n\n¿Estás absolutamente seguro de continuar?")) {
+        if (!window.confirm(t('backupPanel.criticalSecurityWarning'))) {
             return;
         }
 
         setLoading(true);
-        setStatus('Esperando selección de archivo...');
+        setStatus(t('backupPanel.waitingForFile'));
 
         try {
-            setStatus('Verificando firma criptográfica e integridad...');
-            
+            setStatus(t('backupPanel.verifyingSignature'));
+
             // Usar el nuevo sistema de selección de archivo
             const success = await BackupService.restoreBackupWithFileChoice();
 
             if (success) {
-                setStatus('Restauración completada. El sistema se reiniciará.');
+                setStatus(t('backupPanel.restoreComplete'));
                 setTimeout(() => window.location.reload(), 2000);
             } else {
-                setError('Usuario canceló la operación o hubo un error');
+                setError(t('backupPanel.userCancelledOrError'));
                 setLoading(false);
             }
 
         } catch (e: any) {
-            setError('FALLO CRÍTICO DE RESTAURACIÓN: ' + e.message);
+            setError(t('backupPanel.criticalRestoreFailure') + e.message);
             setLoading(false);
             setStatus('');
         }
@@ -82,8 +84,8 @@ export const BackupPanel: React.FC = () => {
                     <Shield className="w-8 h-8 text-violet-400" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-black text-white tracking-tight">Centro de Seguridad</h1>
-                    <p className="text-slate-400">Gestión de Respaldos Cifrados (.aex) - Nivel NASA</p>
+                    <h1 className="text-3xl font-black text-white tracking-tight">{t('backupPanel.securityCenter')}</h1>
+                    <p className="text-slate-400">{t('backupPanel.subtitle')}</p>
                 </div>
             </div>
 
@@ -92,7 +94,7 @@ export const BackupPanel: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-slate-900 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-800 shadow-2xl">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-black tracking-tight text-white">Seleccionar Ubicación del Backup</h2>
+                            <h2 className="text-2xl font-black tracking-tight text-white">{t('backupPanel.selectBackupLocation')}</h2>
                             <button
                                 onClick={() => setShowLocationSelector(false)}
                                 className="text-slate-400 hover:text-white transition-colors"
@@ -121,9 +123,9 @@ export const BackupPanel: React.FC = () => {
                             <Download className="w-6 h-6" />
                         </div>
 
-                        <h3 className="text-xl font-black tracking-tight text-white mb-2">Exportar Copia Maestra</h3>
+                        <h3 className="text-xl font-black tracking-tight text-white mb-2">{t('backupPanel.exportMasterCopy')}</h3>
                         <p className="text-sm text-slate-400 mb-6 min-h-[40px]">
-                            Genera un archivo <code>.aex</code> cifrado militarmente. Elige dónde guardarlo: Descargas, Disco Local, Google Drive o Pendrive.
+                            {t('backupPanel.exportDesc')}
                         </p>
 
                         <button
@@ -132,7 +134,7 @@ export const BackupPanel: React.FC = () => {
                             className="w-full py-4 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-violet-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FolderOpen className="w-5 h-5" />}
-                            {loading ? 'Procesando...' : 'Elegir Ubicación y Guardar'}
+                            {loading ? t('backupPanel.processing') : t('backupPanel.chooseLocationAndSave')}
                         </button>
                     </div>
                 </div>
@@ -146,9 +148,9 @@ export const BackupPanel: React.FC = () => {
                             <Upload className="w-6 h-6" />
                         </div>
 
-                        <h3 className="text-xl font-black tracking-tight text-white mb-2">Restaurar Copia</h3>
+                        <h3 className="text-xl font-black tracking-tight text-white mb-2">{t('backupPanel.restoreCopy')}</h3>
                         <p className="text-sm text-slate-400 mb-6 min-h-[40px]">
-                            Recupera el sistema desde un archivo <code>.aex</code> desde cualquier ubicación. Sobrescribirá los datos actuales.
+                            {t('backupPanel.restoreDesc')}
                         </p>
 
                         <button
@@ -157,7 +159,7 @@ export const BackupPanel: React.FC = () => {
                             className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl font-bold transition-all border border-slate-700 hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                            {loading ? 'Restaurando...' : 'Elegir Archivo y Restaurar'}
+                            {loading ? t('backupPanel.restoring') : t('backupPanel.chooseFileAndRestore')}
                         </button>
                     </div>
                 </div>
@@ -169,7 +171,7 @@ export const BackupPanel: React.FC = () => {
                 <div className={`p-4 rounded-xl border flex items-start gap-3 ${error ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
                     {error ? <AlertTriangle className="w-5 h-5 shrink-0" /> : <CheckCircle className="w-5 h-5 shrink-0" />}
                     <div>
-                        <p className="font-bold text-sm">{error ? 'Error de Operación' : 'Estado del Procesador'}</p>
+                        <p className="font-bold text-sm">{error ? t('backupPanel.operationError') : t('backupPanel.processorStatus')}</p>
                         <p className="text-xs opacity-80 mt-1">{error || status}</p>
                     </div>
                 </div>

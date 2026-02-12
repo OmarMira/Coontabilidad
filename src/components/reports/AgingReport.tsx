@@ -3,8 +3,10 @@ import { Clock, Filter, AlertCircle, RefreshCw, ChevronRight, User, Calendar, Cr
 import { getAgingReport } from '../../database/simple-db';
 import { ReportExporter } from './ReportExporter';
 import { logger } from '../../core/logging/SystemLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 export const AgingReport: React.FC = () => {
+    const { t } = useLocale();
     const [reportType, setReportType] = useState<'receivable' | 'payable'>('receivable');
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ export const AgingReport: React.FC = () => {
             setData(result);
             logger.info('AgingReport', 'load_success', `Generado aging report: ${reportType}`);
         } catch (e) {
-            setError('Error al generar el reporte de antigüedad');
+            setError(t('reportsDashboard.agingReport.loadError') || 'Error generating aging report');
             logger.error('AgingReport', 'load_failed', 'Fallo al generar aging report', null, e as Error);
         } finally {
             setLoading(false);
@@ -37,7 +39,7 @@ export const AgingReport: React.FC = () => {
         if (!data) return { headers: [], rows: [], fileName: '' };
         const rows = data.details.map((d: any) => [d.name, d.bucket, d.days, formatCurrency(d.amount)]);
         return {
-            headers: ['Nombre', 'Rango', 'Días', 'Monto'],
+            headers: [t('reportsDashboard.agingReport.entity'), t('reportsDashboard.agingReport.aging'), t('reportsDashboard.agingReport.days'), formatCurrency(0).replace('0.00', '')],
             rows,
             fileName: `Aging_${reportType}_${new Date().toISOString().split('T')[0]}`
         };
@@ -63,9 +65,11 @@ export const AgingReport: React.FC = () => {
                         <div className="p-3 bg-sun-orange/10 rounded-2xl border border-sun-orange/20">
                             <Clock className="w-8 h-8 text-sun-orange" />
                         </div>
-                        Antigüedad de Cuentas (Aging)
+                        {t('reportsDashboard.agingReport.title')}
                     </h2>
-                    <p className="text-slate-500 mt-2 font-medium">Análisis de vencimientos para {reportType === 'receivable' ? 'Cuentas por Cobrar' : 'Cuentas por Pagar'}.</p>
+                    <p className="text-slate-500 mt-2 font-medium">
+                        {t('reportsDashboard.agingReport.subtitle', { type: reportType === 'receivable' ? t('reportsDashboard.agingReport.receivable') : t('reportsDashboard.agingReport.payable') })}
+                    </p>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -74,13 +78,13 @@ export const AgingReport: React.FC = () => {
                             onClick={() => setReportType('receivable')}
                             className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${reportType === 'receivable' ? 'bg-blue-500 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
                         >
-                            POR COBRAR
+                            {t('reportsDashboard.agingReport.receivableBtn')}
                         </button>
                         <button
                             onClick={() => setReportType('payable')}
                             className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${reportType === 'payable' ? 'bg-sun-orange text-white shadow-lg shadow-sun-orange/40' : 'text-slate-600 hover:text-white'}`}
                         >
-                            POR PAGAR
+                            {t('reportsDashboard.agingReport.payableBtn')}
                         </button>
                     </div>
                     <button onClick={loadData} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 transition-colors">
@@ -98,7 +102,7 @@ export const AgingReport: React.FC = () => {
                             return (
                                 <div key={key} className="card-elite !p-6 flex flex-col justify-between">
                                     <div>
-                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{key === 'current' ? 'CORRIENTE' : `${key} DÍAS`}</span>
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{key === 'current' ? t('reportsDashboard.agingReport.current').toUpperCase() : `${key} ${t('common.date').toUpperCase()}S`}</span>
                                         <div className="text-2xl font-black text-white mt-1">{formatCurrency(bucket.amount)}</div>
                                     </div>
                                     <div className="mt-4 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
@@ -116,17 +120,19 @@ export const AgingReport: React.FC = () => {
                     <div className="lg:col-span-8">
                         <div className="card-elite !p-0 overflow-hidden">
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                                <h3 className="text-table-header">Detalle de {reportType === 'receivable' ? 'Clientes' : 'Proveedores'}</h3>
-                                <span className="text-xs font-black text-white">Total: {formatCurrency(data.total || 0)}</span>
+                                <h3 className="text-table-header">
+                                    {t('reportsDashboard.agingReport.entityDetail', { type: reportType === 'receivable' ? t('reportsDashboard.agingReport.customers') : t('reportsDashboard.agingReport.suppliers') })}
+                                </h3>
+                                <span className="text-xs font-black text-white">{t('common.total')}: {formatCurrency(data.total || 0)}</span>
                             </div>
 
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-white/5">
                                         <tr className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                            <th className="px-8 py-5">Entidad</th>
-                                            <th className="px-8 py-5">Antigüedad</th>
-                                            <th className="px-8 py-5 text-right">Monto Pendiente</th>
+                                            <th className="px-8 py-5">{t('reportsDashboard.agingReport.entity')}</th>
+                                            <th className="px-8 py-5">{t('reportsDashboard.agingReport.aging')}</th>
+                                            <th className="px-8 py-5 text-right">{t('reportsDashboard.agingReport.pendingAmount')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
@@ -143,9 +149,9 @@ export const AgingReport: React.FC = () => {
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-3">
                                                         <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${getBucketColor(detail.bucket)}`}>
-                                                            {detail.bucket === 'current' ? 'Corriente' : `${detail.bucket} Días`}
+                                                            {detail.bucket === 'current' ? t('reportsDashboard.agingReport.current') : `${detail.bucket} ${t('common.date')}s`}
                                                         </span>
-                                                        <span className="text-[10px] text-slate-600 font-bold">{detail.days > 0 ? `${detail.days} días de retraso` : 'Al día'}</span>
+                                                        <span className="text-[10px] text-slate-600 font-bold">{detail.days > 0 ? `${detail.days} ${t('reportsDashboard.agingReport.days')}` : t('reportsDashboard.agingReport.onTime')}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
@@ -158,7 +164,7 @@ export const AgingReport: React.FC = () => {
                                             <tr>
                                                 <td colSpan={3} className="px-8 py-20 text-center">
                                                     <CreditCard className="w-12 h-12 text-slate-700 mx-auto mb-4 opacity-20" />
-                                                    <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">No hay cuentas pendientes</p>
+                                                    <p className="text-slate-600 font-bold uppercase tracking-widest text-xs">{t('reportsDashboard.agingReport.noPending')}</p>
                                                 </td>
                                             </tr>
                                         )}
@@ -171,13 +177,13 @@ export const AgingReport: React.FC = () => {
                     {/* Export Side */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="card-elite !p-6">
-                            <h3 className="text-table-header mb-6">Acciones de Reporte</h3>
+                            <h3 className="text-table-header mb-6">{t('reportsDashboard.common.actions') || 'Report Actions'}</h3>
                             <ReportExporter
                                 data={getExportData()}
                                 header={{
-                                    title: `Antigüedad de ${reportType === 'receivable' ? 'Cuentas por Cobrar' : 'Cuentas por Pagar'}`,
-                                    subtitle: 'Reporte de Antigüedad Consolidado',
-                                    dateRange: `Al ${new Date().toLocaleDateString()}`
+                                    title: t('reportsDashboard.agingReport.title'),
+                                    subtitle: t('reportsDashboard.agingReport.subtitle', { type: reportType === 'receivable' ? t('reportsDashboard.agingReport.receivable') : t('reportsDashboard.agingReport.payable') }),
+                                    dateRange: `${t('common.date')} ${new Date().toLocaleDateString()}`
                                 }}
                             />
                         </div>
@@ -185,12 +191,12 @@ export const AgingReport: React.FC = () => {
                         <div className="card-elite !p-6 bg-blue-500/5 border-blue-500/10">
                             <div className="flex items-center gap-3 mb-4">
                                 <AlertCircle className="w-5 h-5 text-blue-400" />
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Alerta de Riesgo</h3>
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest">{t('reportsDashboard.agingReport.riskAlert')}</h3>
                             </div>
                             <p className="text-xs text-slate-600 font-medium leading-relaxed">
                                 {data.buckets['90+']?.amount > 0
-                                    ? `Urgente: Tiene ${formatCurrency(data.buckets['90+'].amount)} en la categoría de 90+ días. Se recomienda gestión de cobro inmediata.`
-                                    : 'Excelente: No hay cuentas con antigüedad superior a 90 días.'
+                                    ? t('reportsDashboard.agingReport.riskUrgent', { amount: formatCurrency(data.buckets['90+'].amount) })
+                                    : t('reportsDashboard.agingReport.riskExcellent')
                                 }
                             </p>
                         </div>

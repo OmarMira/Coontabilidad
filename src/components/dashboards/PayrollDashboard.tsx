@@ -15,6 +15,7 @@ import {
   Cpu,
   Fingerprint
 } from 'lucide-react';
+import { useLocale } from '../../i18n/useLocale';
 
 interface PayrollStats {
   totalEmployees: number;
@@ -39,6 +40,7 @@ interface MonthlyPayroll {
 }
 
 export const PayrollDashboard: React.FC = () => {
+  const { t, language } = useLocale();
   const [stats, setStats] = useState<PayrollStats>({
     totalEmployees: 0,
     activeEmployees: 0,
@@ -53,7 +55,7 @@ export const PayrollDashboard: React.FC = () => {
 
   useEffect(() => {
     loadPayrollData();
-  }, []);
+  }, [language]);
 
   const loadPayrollData = () => {
     try {
@@ -68,11 +70,11 @@ export const PayrollDashboard: React.FC = () => {
       };
 
       const mockDepartments: DepartmentData[] = [
-        { name: 'ADMINISTRACIÓN', employees: 5, totalSalary: 35000, averageSalary: 7000 },
-        { name: 'VENTAS', employees: 8, totalSalary: 40000, averageSalary: 5000 },
-        { name: 'OPERACIONES', employees: 7, totalSalary: 28000, averageSalary: 4000 },
-        { name: 'IT', employees: 3, totalSalary: 18000, averageSalary: 6000 },
-        { name: 'CONTABILIDAD', employees: 2, totalSalary: 14000, averageSalary: 7000 }
+        { name: t('payrollDashboard.department') + ' A', employees: 5, totalSalary: 35000, averageSalary: 7000 },
+        { name: t('payrollDashboard.department') + ' B', employees: 8, totalSalary: 40000, averageSalary: 5000 },
+        { name: t('payrollDashboard.department') + ' C', employees: 7, totalSalary: 28000, averageSalary: 4000 },
+        { name: t('payrollDashboard.department') + ' D', employees: 3, totalSalary: 18000, averageSalary: 6000 },
+        { name: t('payrollDashboard.department') + ' E', employees: 2, totalSalary: 14000, averageSalary: 7000 }
       ];
 
       setStats(mockStats);
@@ -88,13 +90,27 @@ export const PayrollDashboard: React.FC = () => {
   const getNextPayrollDate = (): string => {
     const today = new Date();
     const currentDay = today.getDate();
-    return currentDay < 15
-      ? new Date(today.getFullYear(), today.getMonth(), 15).toLocaleDateString('es-ES')
-      : new Date(today.getFullYear(), today.getMonth() + 1, 0).toLocaleDateString('es-ES');
+    const date = currentDay < 15
+      ? new Date(today.getFullYear(), today.getMonth(), 15)
+      : new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return date.toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US');
   };
 
   const generateMockMonthlyData = (): MonthlyPayroll[] => {
-    const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+    const months = [
+      t('financialDashboard.months.jan'),
+      t('financialDashboard.months.feb'),
+      t('financialDashboard.months.mar'),
+      t('financialDashboard.months.abr'),
+      t('financialDashboard.months.may'),
+      t('financialDashboard.months.jun'),
+      t('financialDashboard.months.jul'),
+      t('financialDashboard.months.ago'),
+      t('financialDashboard.months.sep'),
+      t('financialDashboard.months.oct'),
+      t('financialDashboard.months.nov'),
+      t('financialDashboard.months.dic')
+    ];
     const currentMonth = new Date().getMonth();
     return Array.from({ length: 12 }, (_, i) => {
       const monthIndex = (currentMonth - 11 + i + 12) % 12;
@@ -111,7 +127,7 @@ export const PayrollDashboard: React.FC = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-screen bg-slate-950">
       <div className="w-16 h-16 border-4 border-emerald-600/20 border-t-emerald-500 rounded-full animate-spin mb-6 shadow-[0_0_20px_rgba(16,185,129,0.3)]"></div>
-      <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">Processing Human Capital...</span>
+      <span className="text-xs font-black text-slate-500 uppercase tracking-[0.4em] animate-pulse">{t('payrollDashboard.processing')}</span>
     </div>
   );
 
@@ -124,9 +140,9 @@ export const PayrollDashboard: React.FC = () => {
             <Fingerprint className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Nómina Neuronal</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payrollDashboard.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Human Resources Intelligence Core
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollDashboard.subtitle')}
             </p>
           </div>
         </div>
@@ -136,23 +152,23 @@ export const PayrollDashboard: React.FC = () => {
           <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
           <AlertCircle className="w-5 h-5 text-emerald-400 animate-pulse" />
           <div>
-            <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Modo de Simulación Activo</p>
-            <p className="text-[9px] text-slate-500 font-black uppercase mt-1 leading-none">Sincronización con PayrollProcessor en proceso...</p>
+            <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{t('payrollDashboard.simulationMode')}</p>
+            <p className="text-[9px] text-slate-500 font-black uppercase mt-1 leading-none">{t('payrollDashboard.syncInProgress')}</p>
           </div>
         </div>
       </div>
 
       {/* Stats Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <EliteStatCard title="Capital Humano" value={stats.totalEmployees.toString()} label={`${stats.activeEmployees} Tokens Activos`} icon={Users} color="blue" />
-        <EliteStatCard title="Pasivo Mensual" value={formatCurrency(stats.totalPayroll)} label={`Prom: ${formatCurrency(stats.averageSalary)}`} icon={DollarSign} color="emerald" />
-        <EliteStatCard title="Siguiente Ciclo" value={stats.nextPayrollDate} label={`Prev: ${formatCurrency(stats.lastPayrollAmount)}`} icon={Calendar} color="amber" />
-        <EliteStatCard title="Costo Anual Proyectado" value={formatCurrency(stats.totalPayroll * 12)} label="Impacto en P&L 12m" icon={TrendingUp} color="emerald" />
+        <EliteStatCard title={t('payrollDashboard.humanCapital')} value={stats.totalEmployees.toString()} label={`${stats.activeEmployees} ${t('payrollDashboard.activeTokens')}`} icon={Users} color="blue" />
+        <EliteStatCard title={t('payrollDashboard.monthlyLiability')} value={formatCurrency(stats.totalPayroll)} label={`${t('payrollDashboard.avg')}: ${formatCurrency(stats.averageSalary)}`} icon={DollarSign} color="emerald" />
+        <EliteStatCard title={t('payrollDashboard.nextCycle')} value={stats.nextPayrollDate} label={`${t('payrollDashboard.prev')}: ${formatCurrency(stats.lastPayrollAmount)}`} icon={Calendar} color="amber" />
+        <EliteStatCard title={t('payrollDashboard.projectedAnnualCost')} value={formatCurrency(stats.totalPayroll * 12)} label={t('payrollDashboard.plImpact')} icon={TrendingUp} color="emerald" />
       </div>
 
       {/* Analysis Matrix */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-        <AnalysisBox title="Distribución Operativa" subtitle="Carga salarial por departamento funcional">
+        <AnalysisBox title={t('payrollDashboard.operationalDistribution')} subtitle={t('payrollDashboard.salaryLoadByDept')}>
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={departmentData} margin={{ top: 20, right: 30, left: 10, bottom: 0 }}>
               <defs>
@@ -162,8 +178,8 @@ export const PayrollDashboard: React.FC = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} dy={10} />
-              <YAxis stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+              <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} dy={10} />
+              <YAxis stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
               <Tooltip
                 cursor={{ fill: 'rgba(16,185,129,0.03)' }}
                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1.2rem' }}
@@ -174,12 +190,12 @@ export const PayrollDashboard: React.FC = () => {
           </ResponsiveContainer>
         </AnalysisBox>
 
-        <AnalysisBox title="Vector de Crecimiento" subtitle="Evolución histórica del pasivo laboral">
+        <AnalysisBox title={t('payrollDashboard.growthVector')} subtitle={t('payrollDashboard.historicalEvolution')}>
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={monthlyPayroll}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="month" stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} dy={10} />
-              <YAxis stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+              <XAxis dataKey="month" stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} dy={10} />
+              <YAxis stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1.2rem' }}
                 itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: '900' }}
@@ -205,8 +221,8 @@ export const PayrollDashboard: React.FC = () => {
               <ShieldCheck className="w-5 h-5 text-emerald-500" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">Certificación de Nómina</h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">Auditoría por centro de costo y eficiencia operativa</p>
+              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">{t('payrollDashboard.payrollCertification')}</h3>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{t('payrollDashboard.auditByCostCenter')}</p>
             </div>
           </div>
           <button className="p-3 bg-slate-950 border border-slate-800 rounded-2xl hover:bg-slate-800 transition-all">
@@ -218,7 +234,7 @@ export const PayrollDashboard: React.FC = () => {
           <table className="w-full text-left">
             <thead className="bg-slate-950/50">
               <tr>
-                {['Departamento', 'Fza Laboral', 'Costo Mensual', 'Salario Med', 'Impacto', 'Costo Anual'].map(h => (
+                {[t('payrollDashboard.department'), t('payrollDashboard.workforce'), t('payrollDashboard.monthlyCost'), t('payrollDashboard.avgSalary'), t('payrollDashboard.impact'), t('payrollDashboard.annualCost')].map(h => (
                   <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>

@@ -1,5 +1,6 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { JournalEntrySchema, type JournalEntry, type JournalLine } from './Accounting.types';
+import { AccountingEngine } from './AccountingEngine';
 
 export class GeneralLedgerService {
     private engine: SQLiteEngine;
@@ -15,20 +16,14 @@ export class GeneralLedgerService {
         // 1. Validation
         const validEntry = JournalEntrySchema.parse(entry);
 
-        // 2. Check Balance
-        let totalDebit = 0;
-        let totalCredit = 0;
-        for (const line of validEntry.details) {
-            totalDebit += line.debit;
-            totalCredit += line.credit;
+        // 2. Check Balance via Engine
+        const validation = AccountingEngine.validateDoubleEntry(validEntry.details);
+
+        if (!validation.isValid) {
+            throw new Error(`Unbalanced Entry: Debits (${validation.totalDebit}) !== Credits (${validation.totalCredit}). Difference: ${validation.difference}`);
         }
 
-        // Allow small float precision diff (e.g. 0.001)
-        if (Math.abs(totalDebit - totalCredit) > 0.009) {
-            throw new Error(`Unbalanced Entry: Debits (${totalDebit}) !== Credits (${totalCredit})`);
-        }
-
-        const entryTotal = totalDebit; // Or credit, they are equal
+        const entryTotal = validation.totalDebit;
 
         // 3. Persist Header
         const headQuery = `

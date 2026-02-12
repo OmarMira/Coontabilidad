@@ -1,5 +1,6 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { type TrialBalanceRow } from './Accounting.types';
+import { AccountingEngine } from './AccountingEngine';
 
 export class TrialBalanceService {
     private engine: SQLiteEngine;
@@ -21,14 +22,14 @@ export class TrialBalanceService {
                 a.account_type,
                 a.normal_balance,
                 -- Saldo anterior (suma de todo lo previo al inicio del período)
-                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as previous_debit,
-                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as previous_credit,
+                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit ELSE 0 END), 0) as previous_debit,
+                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit ELSE 0 END), 0) as previous_credit,
                 -- Movimientos del período
-                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
-                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
+                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit ELSE 0 END), 0) as period_debit,
+                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit ELSE 0 END), 0) as period_credit
             FROM chart_of_accounts a
             LEFT JOIN journal_details jd ON a.account_code = jd.account_code
-            LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
+            LEFT JOIN journal_entries je ON jd.journal_id = je.id
             WHERE a.is_active = 1
             GROUP BY a.account_code, a.account_name, a.account_type, a.normal_balance
             ORDER BY a.account_code;
@@ -40,64 +41,21 @@ export class TrialBalanceService {
             periodStart, periodEnd    // Para period_credit
         ]);
 
-        return results.map((row: any) => {
-            const prevDebit = Number(row.previous_debit) || 0;
-            const prevCredit = Number(row.previous_credit) || 0;
-            const perDebit = Number(row.period_debit) || 0;
-            const perCredit = Number(row.period_credit) || 0;
-
-            // Saldo inicial (Anterior)
-            let initial_balance = 0;
-            if (row.normal_balance === 'debit') {
-                initial_balance = prevDebit - prevCredit;
-            } else {
-                initial_balance = prevCredit - prevDebit;
-            }
-
-            // Totales acumulados
-            const total_debit = prevDebit + perDebit;
-            const total_credit = prevCredit + perCredit;
-
-            // Saldo final
-            let final_balance = 0;
-            if (row.normal_balance === 'debit') {
-                final_balance = total_debit - total_credit;
-            } else {
-                final_balance = total_credit - total_debit;
-            }
-
-            return {
-                account_code: row.account_code,
-                account_name: row.account_name,
-                account_type: row.account_type,
-                normal_balance: row.normal_balance as 'debit' | 'credit',
-                previous_debit: prevDebit,
-                previous_credit: prevCredit,
-                period_debit: perDebit,
-                period_credit: perCredit,
-                total_debit,
-                total_credit,
-                initial_balance,
-                final_balance
-            };
-        });
+        return AccountingEngine.mapTrialBalanceResults(results);
     }
 
     /**
      * Valida que la ecuación contable se cumpla (Débitos = Créditos)
      */
     validateAccountingEquation(data: TrialBalanceRow[]): { isValid: boolean; difference: number; errors: string[] } {
-        const sumDebit = data.reduce((acc, row) => acc + row.period_debit, 0);
-        const sumCredit = data.reduce((acc, row) => acc + row.period_credit, 0);
-        const difference = Math.abs(sumDebit - sumCredit);
-        const isValid = difference < 0.001; // Tolerancia estricta para asegurar balance exacto
-
+        const check = AccountingEngine.verifyAccountingEquation(data);
         const errors: string[] = [];
-        if (!isValid) {
-            errors.push(`Desbalance detectado en movimientos del período: Débitos ($${sumDebit.toLocaleString()}) != Créditos ($${sumCredit.toLocaleString()})`);
+
+        if (!check.isBalanced) {
+            errors.push(`Desbalance detectado en movimientos del período. Diferencia: ${check.difference}`);
         }
 
-        return { isValid, difference, errors };
+        return { isValid: check.isBalanced, difference: check.difference, errors };
     }
 
     /**

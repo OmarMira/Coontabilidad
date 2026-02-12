@@ -44,8 +44,10 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { PayrollSettings as PayrollSettingsTab } from './PayrollSettings';
 import { PayrollEntryList } from './PayrollEntryList';
+import { useLocale } from '../../i18n/useLocale';
 
 export const PayrollProcessor: React.FC = () => {
+    const { t, locale } = useLocale();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
     const [settings, setSettings] = useState<PayrollSetting[]>([]);
@@ -58,7 +60,7 @@ export const PayrollProcessor: React.FC = () => {
     // Selection and Form State
     const [selectedEmployees, setSelectedEmployees] = useState<Record<number, boolean>>({});
     const [periodMeta, setPeriodMeta] = useState({
-        name: `Nómina - ${new Date().toLocaleString('es-ES', { month: 'long' })} ${new Date().getFullYear()}`,
+        name: `${t('accounting.payroll') || 'Payroll'} - ${new Date().toLocaleString(locale === 'es' ? 'es-ES' : 'en-US', { month: 'long' })} ${new Date().getFullYear()}`,
         start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
         end_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
         pay_date: new Date().toISOString().split('T')[0],
@@ -109,7 +111,7 @@ export const PayrollProcessor: React.FC = () => {
 
     const handleProcessPayroll = async () => {
         if (Object.values(selectedEmployees).filter(v => v).length === 0) {
-            toast.error('Seleccione al menos un empleado para procesar');
+            toast.error(t('payrollProcessor.messages.selectEmployee'));
             return;
         }
 
@@ -139,7 +141,7 @@ export const PayrollProcessor: React.FC = () => {
                     deductions_amount: calc.deductionsAmount,
                     net_amount: calc.netAmount,
                     status: 'paid',
-                    notes: `Pago de nómina ${periodMeta.name}`
+                    notes: `${t('common.payment')} - ${periodMeta.name}`
                 }, calc.lineItems);
             }
 
@@ -157,11 +159,11 @@ export const PayrollProcessor: React.FC = () => {
                 { account_code: '1101', debit_amount: 0, credit_amount: totalNet, description: 'Sueldos por Pagar / Banco' }
             ]);
 
-            toast.success('¡Nómina procesada e integrada a contabilidad con éxito!');
+            toast.success(t('payrollProcessor.messages.success'));
             setActiveTab('periods');
             loadData();
         } catch (error: any) {
-            toast.error(`Error en procesamiento: ${error.message}`);
+            toast.error(`${t('payrollProcessor.messages.error')}: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -176,17 +178,17 @@ export const PayrollProcessor: React.FC = () => {
                         <Calculator className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Motor de Nómina</h1>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payrollProcessor.title')}</h1>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Kinetic Calculation Engine v4.0
+                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollProcessor.subtitle')}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
-                    <TabButton active={activeTab === 'periods'} onClick={() => { setActiveTab('periods'); setSelectedPeriodId(null); }} label="Cronología" icon={History} />
-                    <TabButton active={activeTab === 'process'} onClick={() => { setActiveTab('process'); setSelectedPeriodId(null); }} label="Ejecución" icon={Play} />
-                    <TabButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setSelectedPeriodId(null); }} label="Protocolos" icon={Settings} />
+                    <TabButton active={activeTab === 'periods'} onClick={() => { setActiveTab('periods'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.history')} icon={History} />
+                    <TabButton active={activeTab === 'process'} onClick={() => { setActiveTab('process'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.process')} icon={Play} />
+                    <TabButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.settings')} icon={Settings} />
                 </div>
             </div>
 
@@ -198,67 +200,69 @@ export const PayrollProcessor: React.FC = () => {
                         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] pointer-events-none"></div>
 
                         <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between">
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Historial de Ciclos</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('payrollProcessor.historyTitle')}</h3>
                             <button onClick={() => setActiveTab('process')} className="px-6 py-2.5 bg-emerald-600/10 border border-emerald-500/20 text-emerald-500 rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-emerald-600 hover:text-white transition-all">
-                                Nuevo Ciclo
+                                {t('payrollProcessor.newCycle')}
                             </button>
                         </div>
 
                         {selectedPeriodId ? (
                             <PayrollEntryList periodId={selectedPeriodId} onBack={() => setSelectedPeriodId(null)} />
                         ) : (
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-950/50">
-                                    <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
-                                        <th className="px-8 py-5">Periodo Devengado</th>
-                                        <th className="px-8 py-5">Rango Temporal</th>
-                                        <th className="px-8 py-5">Vencimiento</th>
-                                        <th className="px-8 py-5">Estatus</th>
-                                        <th className="px-8 py-5 text-right">Liquidación Total</th>
-                                        <th className="px-8 py-5">Ficha</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-800/40">
-                                    {periods.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={6} className="px-8 py-20 text-center">
-                                                <div className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Protocolos no encontrados encriptados.</div>
-                                            </td>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-950/50">
+                                        <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
+                                            <th className="px-8 py-5">{t('payrollProcessor.table.period')}</th>
+                                            <th className="px-8 py-5">{t('payrollProcessor.table.range')}</th>
+                                            <th className="px-8 py-5">{t('payrollProcessor.table.dueDate')}</th>
+                                            <th className="px-8 py-5">{t('payrollProcessor.table.status')}</th>
+                                            <th className="px-8 py-5 text-right">{t('payrollProcessor.table.totalLiquidation')}</th>
+                                            <th className="px-8 py-5">{t('payrollProcessor.table.file')}</th>
                                         </tr>
-                                    ) : (
-                                        periods.map(period => (
-                                            <tr key={period.id} className="hover:bg-white/[0.02] transition-colors group/row">
-                                                <td className="px-8 py-6">
-                                                    <span className="text-sm font-black text-white uppercase tracking-tighter group-hover/row:text-emerald-400 transition-colors">{period.name}</span>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 font-mono">
-                                                        <span>{period.start_date}</span>
-                                                        <ChevronRight className="w-3 h-3 text-slate-700" />
-                                                        <span>{period.end_date}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{period.pay_date}</span>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <span className="px-2.5 py-0.5 rounded-lg border text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-                                                        {period.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-8 py-6 text-right font-mono font-black text-white text-base">
-                                                    ${period.total_net.toLocaleString()}
-                                                </td>
-                                                <td className="px-8 py-6 text-center">
-                                                    <button onClick={() => setSelectedPeriodId(period.id)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-emerald-400 hover:border-emerald-500/50 transition-all shadow-lg">
-                                                        <FileSearch className="w-4 h-4" />
-                                                    </button>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800/40">
+                                        {periods.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={6} className="px-8 py-20 text-center">
+                                                    <div className="text-[10px] font-black text-slate-700 uppercase tracking-widest">{t('payrollProcessor.table.noData')}</div>
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                        ) : (
+                                            periods.map(period => (
+                                                <tr key={period.id} className="hover:bg-white/[0.02] transition-colors group/row">
+                                                    <td className="px-8 py-6">
+                                                        <span className="text-sm font-black text-white uppercase tracking-tighter group-hover/row:text-emerald-400 transition-colors">{period.name}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 font-mono">
+                                                            <span>{period.start_date}</span>
+                                                            <ChevronRight className="w-3 h-3 text-slate-700" />
+                                                            <span>{period.end_date}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{period.pay_date}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className="px-2.5 py-0.5 rounded-lg border text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
+                                                            {period.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right font-mono font-black text-white text-base">
+                                                        ${period.total_net.toLocaleString()}
+                                                    </td>
+                                                    <td className="px-8 py-6 text-center">
+                                                        <button onClick={() => setSelectedPeriodId(period.id)} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500 hover:text-emerald-400 hover:border-emerald-500/50 transition-all shadow-lg">
+                                                            <FileSearch className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -269,48 +273,50 @@ export const PayrollProcessor: React.FC = () => {
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] pointer-events-none"></div>
 
                             <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between">
-                                <h3 className="text-xl font-black text-white uppercase tracking-tighter">Previsualización de Liquidación</h3>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('payrollProcessor.preview.title')}</h3>
                                 <div className="flex items-center gap-3">
                                     <BrainCircuit className="w-4 h-4 text-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">Heurística Activa</span>
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{t('payrollProcessor.preview.heuristic')}</span>
                                 </div>
                             </div>
 
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-950/50">
-                                    <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
-                                        <th className="px-8 py-5">Colaborador / Rango</th>
-                                        <th className="px-8 py-5 text-right">Devengado Bruto</th>
-                                        <th className="px-8 py-5 text-right">Deducciones Fiscales</th>
-                                        <th className="px-8 py-5 text-right">Neto a Liquidar</th>
-                                        <th className="px-8 py-5 text-center">Protocolo</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-800/40">
-                                    {employees.filter(e => e.status === 'active').map(emp => {
-                                        const calc = calculateEmployeePayroll(emp, settings, brackets);
-                                        const isSelected = !!selectedEmployees[emp.id];
-                                        return (
-                                            <tr key={emp.id} className={`hover:bg-white/[0.02] transition-all group/row ${!isSelected ? 'opacity-30 grayscale' : ''}`}>
-                                                <td className="px-8 py-6">
-                                                    <div className="font-black text-white uppercase tracking-tighter text-sm mb-1 group-hover/row:text-emerald-400 transition-colors">{emp.first_name} {emp.last_name}</div>
-                                                    <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">{emp.position}</div>
-                                                </td>
-                                                <td className="px-8 py-6 text-right font-mono font-bold text-slate-400 text-sm">${calc.grossAmount.toLocaleString()}</td>
-                                                <td className="px-8 py-6 text-right font-mono font-bold text-rose-500 text-sm">-${calc.deductionsAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td className="px-8 py-6 text-right font-mono font-black text-emerald-400 text-base tracking-tighter">${calc.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                <td className="px-8 py-6 text-center">
-                                                    <label className="relative inline-flex items-center cursor-pointer group/toggle mx-auto">
-                                                        <input type="checkbox" checked={isSelected} onChange={() => toggleEmployee(emp.id)} className="sr-only" />
-                                                        <div className={`w-10 h-5 rounded-full transition-colors duration-300 ${isSelected ? 'bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-800'}`}></div>
-                                                        <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-300 ${isSelected ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                                                    </label>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-950/50">
+                                        <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
+                                            <th className="px-8 py-5">{t('payrollProcessor.preview.collab')}</th>
+                                            <th className="px-8 py-5 text-right">{t('payrollProcessor.preview.gross')}</th>
+                                            <th className="px-8 py-5 text-right">{t('payrollProcessor.preview.deductions')}</th>
+                                            <th className="px-8 py-5 text-right">{t('payrollProcessor.preview.net')}</th>
+                                            <th className="px-8 py-5 text-center">{t('payrollProcessor.preview.protocol')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800/40">
+                                        {employees.filter(e => e.status === 'active').map(emp => {
+                                            const calc = calculateEmployeePayroll(emp, settings, brackets);
+                                            const isSelected = !!selectedEmployees[emp.id];
+                                            return (
+                                                <tr key={emp.id} className={`hover:bg-white/[0.02] transition-all group/row ${!isSelected ? 'opacity-30 grayscale' : ''}`}>
+                                                    <td className="px-8 py-6">
+                                                        <div className="font-black text-white uppercase tracking-tighter text-sm mb-1 group-hover/row:text-emerald-400 transition-colors">{emp.first_name} {emp.last_name}</div>
+                                                        <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">{emp.position}</div>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right font-mono font-bold text-slate-400 text-sm">${calc.grossAmount.toLocaleString()}</td>
+                                                    <td className="px-8 py-6 text-right font-mono font-bold text-rose-500 text-sm">-${calc.deductionsAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    <td className="px-8 py-6 text-right font-mono font-black text-emerald-400 text-base tracking-tighter">${calc.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    <td className="px-8 py-6 text-center">
+                                                        <label className="relative inline-flex items-center cursor-pointer group/toggle mx-auto">
+                                                            <input type="checkbox" checked={isSelected} onChange={() => toggleEmployee(emp.id)} className="sr-only" />
+                                                            <div className={`w-10 h-5 rounded-full transition-colors duration-300 ${isSelected ? 'bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-800'}`}></div>
+                                                            <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform duration-300 ${isSelected ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                                        </label>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div className="p-8 bg-amber-500/5 border border-amber-500/10 rounded-[2.5rem] flex gap-6 group">
@@ -319,10 +325,10 @@ export const PayrollProcessor: React.FC = () => {
                             </div>
                             <div>
                                 <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                    <Target className="w-3.5 h-3.5" /> Advertencia de Integridad Sincrónica
+                                    <Target className="w-3.5 h-3.5" /> {t('payrollProcessor.alerts.integrity')}
                                 </h4>
                                 <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                                    El proceso generará un registro inmutable en el Libro Mayor. Todas las deducciones son calculadas bajo la jurisdicción federal vigente. Los asientos se agruparán por centros de costo definidos en el protocolo de configuración.
+                                    {t('payrollProcessor.alerts.integrityDesc')}
                                 </p>
                             </div>
                         </div>
@@ -333,33 +339,33 @@ export const PayrollProcessor: React.FC = () => {
                             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[80px] pointer-events-none"></div>
 
                             <div className="p-8 border-b border-slate-800">
-                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] block mb-2">Protocolo de Cierre</span>
-                                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Consolidar Ciclo</h3>
+                                <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] block mb-2">{t('payrollProcessor.alerts.closing')}</span>
+                                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t('payrollProcessor.alerts.consolidate')}</h3>
                             </div>
 
                             <CardContent className="p-8 space-y-8 relative z-10">
-                                <PremiumInputMini label="Descriptor de Nómina" value={periodMeta.name} onChange={(v) => setPeriodMeta(p => ({ ...p, name: v }))} icon={FileText} />
+                                <PremiumInputMini label={t('payrollProcessor.form.descriptor')} value={periodMeta.name} onChange={(v) => setPeriodMeta(p => ({ ...p, name: v }))} icon={FileText} />
 
                                 <div className="grid grid-cols-2 gap-6">
-                                    <PremiumInputMini label="Fecha Liquidación" value={periodMeta.pay_date} onChange={(v) => setPeriodMeta(p => ({ ...p, pay_date: v }))} icon={Calendar} type="date" />
-                                    <PremiumInputMini label="Referencia Transaccional" value={periodMeta.reference} onChange={(v) => setPeriodMeta(p => ({ ...p, reference: v }))} icon={ShieldCheck} />
+                                    <PremiumInputMini label={t('payrollProcessor.form.payDate')} value={periodMeta.pay_date} onChange={(v) => setPeriodMeta(p => ({ ...p, pay_date: v }))} icon={Calendar} type="date" />
+                                    <PremiumInputMini label={t('payrollProcessor.form.reference')} value={periodMeta.reference} onChange={(v) => setPeriodMeta(p => ({ ...p, reference: v }))} icon={ShieldCheck} />
                                 </div>
 
                                 <div className="p-8 bg-slate-950/50 rounded-[3rem] border border-slate-800 space-y-6 shadow-inner relative overflow-hidden">
                                     <div className="absolute inset-0 bg-emerald-500/[0.02] animate-pulse"></div>
                                     <div className="relative">
                                         <div className="flex justify-between items-center mb-1">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Devengado Bruto</span>
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('payrollProcessor.form.totals.gross')}</span>
                                             <span className="text-sm font-black text-white font-mono">${totalGross.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center mb-6">
-                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Deducciones Acumuladas</span>
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('payrollProcessor.form.totals.deductions')}</span>
                                             <span className="text-sm font-black text-rose-500 font-mono">-${totalDeductions.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                         </div>
                                         <div className="h-px bg-slate-800 mb-6"></div>
                                         <div className="flex justify-between items-end">
                                             <div>
-                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] block mb-2">Liquidación Líquida</span>
+                                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] block mb-2">{t('payrollProcessor.form.totals.net')}</span>
                                                 <span className="text-3xl font-black text-emerald-400 tracking-tighter font-mono">${totalNet.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                             </div>
                                             <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
@@ -380,14 +386,14 @@ export const PayrollProcessor: React.FC = () => {
                                     ) : (
                                         <div className="flex items-center justify-center gap-4 text-sm tracking-tighter">
                                             <Play className="w-5 h-5 fill-white" />
-                                            <span>EJECUTAR DESPLIEGUE DE NÓMINA</span>
+                                            <span>{t('payrollProcessor.form.execute')}</span>
                                         </div>
                                     )}
                                 </button>
 
                                 <div className="flex items-center justify-center gap-3 text-[9px] text-slate-600 font-black uppercase tracking-[0.3em]">
                                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                                    Sincronización GL v1.4
+                                    {t('payrollProcessor.form.sync')}
                                 </div>
                             </CardContent>
                         </Card>

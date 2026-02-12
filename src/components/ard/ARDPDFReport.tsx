@@ -147,9 +147,10 @@ const styles = StyleSheet.create({
 
 interface ARDPDFReportProps {
     document: ARDDocument;
+    t: (key: string) => string;
 }
 
-export const ARDPDFReport: React.FC<ARDPDFReportProps> = ({ document }) => {
+export const ARDPDFReport: React.FC<ARDPDFReportProps> = ({ document, t }) => {
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
     };
@@ -163,32 +164,32 @@ export const ARDPDFReport: React.FC<ARDPDFReportProps> = ({ document }) => {
                 <View style={styles.header}>
                     <View style={styles.logoSection}>
                         <Text style={styles.title}>AccountExpress</Text>
-                        <Text style={styles.subtitle}>Reporte Forense ARD</Text>
+                        <Text style={styles.subtitle}>{t('ard.report.title')}</Text>
                     </View>
                     <View style={styles.dateBox}>
-                        <Text style={styles.dateLabel}>Fecha de Procesamiento</Text>
+                        <Text style={styles.dateLabel}>{t('ard.report.processingDate')}</Text>
                         <Text style={styles.dateValue}>{new Date(document.uploadDate).toLocaleString()}</Text>
                     </View>
                 </View>
 
                 {/* Metadata del Documento */}
                 <View style={styles.infoSection}>
-                    <Text style={styles.sectionTitle}>Metadatos del Documento</Text>
+                    <Text style={styles.sectionTitle}>{t('ard.report.metadataTitle')}</Text>
                     <View style={styles.grid}>
                         <View style={styles.field}>
-                            <Text style={styles.label}>ID de Rastreo</Text>
+                            <Text style={styles.label}>{t('ard.report.trackingId')}</Text>
                             <Text style={styles.value}>{document.id}</Text>
                         </View>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Nombre de Archivo</Text>
+                            <Text style={styles.label}>{t('ard.report.fileName')}</Text>
                             <Text style={styles.value}>{document.name}</Text>
                         </View>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Tipo Detectado</Text>
-                            <Text style={styles.value}>{document.type === 'invoice_in' ? 'Factura de Compra' : 'Recibo / Ticket'}</Text>
+                            <Text style={styles.label}>{t('ard.report.detectedType')}</Text>
+                            <Text style={styles.value}>{document.type === 'invoice_in' ? t('ard.report.typeInvoice') : t('ard.report.typeReceipt')}</Text>
                         </View>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Tamaño Original</Text>
+                            <Text style={styles.label}>{t('ard.report.originalSize')}</Text>
                             <Text style={styles.value}>{(document.fileSize / 1024).toFixed(2)} KB</Text>
                         </View>
                     </View>
@@ -196,36 +197,36 @@ export const ARDPDFReport: React.FC<ARDPDFReportProps> = ({ document }) => {
 
                 {/* Resultado Financiero IA */}
                 <View style={styles.financialCard}>
-                    <Text style={styles.sectionTitle}>Extracción de Datos IA</Text>
+                    <Text style={styles.sectionTitle}>{t('ard.report.aiExtractionTitle')}</Text>
 
                     <View style={styles.amountRow}>
                         <View>
-                            <Text style={styles.label}>Monto Total Detectado</Text>
-                            <Text style={{ fontSize: 9, color: '#6366F1', marginTop: 2 }}>Confianza OCR: 98.42%</Text>
+                            <Text style={styles.label}>{t('ard.report.totalDetectedAmount')}</Text>
+                            <Text style={{ fontSize: 9, color: '#6366F1', marginTop: 2 }}>{t('ard.report.ocrConfidence')}</Text>
                         </View>
                         <Text style={styles.bigAmount}>{formatCurrency(document.detected_amount || 0)}</Text>
                     </View>
 
                     <View style={styles.taxRow}>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Impuestos (Tax)</Text>
+                            <Text style={styles.label}>{t('ard.report.tax')}</Text>
                             <Text style={styles.value}>{formatCurrency(document.detected_tax || 0)}</Text>
                         </View>
                         <View style={styles.field}>
-                            <Text style={styles.label}>Fecha del Documento</Text>
-                            <Text style={styles.value}>{document.detected_date || 'No Detectada'}</Text>
+                            <Text style={styles.label}>{t('ard.report.docDate')}</Text>
+                            <Text style={styles.value}>{document.detected_date || t('ard.report.notDetected')}</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Detalles del Vendedor */}
                 <View style={[styles.infoSection, { backgroundColor: '#FFFFFF' }]}>
-                    <Text style={styles.sectionTitle}>Entidad Emisora</Text>
+                    <Text style={styles.sectionTitle}>{t('ard.report.issuerEntity')}</Text>
                     <View style={styles.grid}>
                         <View style={[styles.field, { width: '100%' }]}>
-                            <Text style={styles.label}>Vendedor / Establecimiento</Text>
+                            <Text style={styles.label}>{t('ard.report.vendorEstab')}</Text>
                             <Text style={[styles.value, { fontSize: 14, fontFamily: 'Helvetica-Bold' }]}>
-                                {analysis.vendor || 'No Identificado'}
+                                {analysis.vendor || t('ard.report.notIdentified')}
                             </Text>
                         </View>
                     </View>
@@ -233,18 +234,17 @@ export const ARDPDFReport: React.FC<ARDPDFReportProps> = ({ document }) => {
 
                 {/* Sello Forense Anti-Tamper */}
                 <View style={styles.forensicBox}>
-                    <Text style={styles.forensicTitle}>SELLO FORENSE IRON CORE</Text>
+                    <Text style={styles.forensicTitle}>{t('ard.report.forensicSeal')}</Text>
                     <Text style={styles.hash}>
                         HASH: {document.id}_FS_{analysis.vendor?.substring(0, 3).toUpperCase() || 'NA'}_{new Date().getTime()}
                     </Text>
                     <Text style={[styles.hash, { marginTop: 4, color: '#94A3B8' }]}>
-                        Este documento ha sido validado mediante el motor de integridad criptográfica de AccountExpress.
-                        Cualquier alteración de los montos detectados invalidará este reporte.
+                        {t('ard.report.forensicDisclaimer')}
                     </Text>
                 </View>
 
                 <Text style={styles.footer}>
-                    Generado automáticamente por el Módulo ARD de AccountExpress - Florida, USA
+                    {t('ard.report.footer')}
                 </Text>
             </Page>
         </Document>

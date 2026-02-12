@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Lock, User, AlertCircle, Loader2, Zap, ShieldCheck } from 'lucide-react';
 import { GoogleLoginButton } from './GoogleLoginButton';
+import { useLocale } from '../../i18n/useLocale';
+import { LanguageSelector } from '../LanguageSelector';
 
 // Verificar si Google está configurado (Soporte VITE/REACT_APP)
 const isGoogleConfigured = () => {
@@ -17,6 +19,7 @@ const LoginForm: React.FC = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login, loginWithGoogle, loginAsGuest } = useAuth();
+    const { t } = useLocale();
     const showGoogleLogin = true; // Forzar mostrar botón de Google
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +33,7 @@ const LoginForm: React.FC = () => {
                 setError('Usuario o contraseña incorrectos');
             }
         } catch (err) {
-            setError('Error al iniciar sesión. Por favor intenta de nuevo.');
+            setError(t('login.error'));
             console.error('Login error:', err);
         } finally {
             setLoading(false);
@@ -76,7 +79,11 @@ const LoginForm: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 relative">
+            {/* Language Selector (Top Right) */}
+            <div className="absolute top-6 right-6 z-50">
+                <LanguageSelector variant="compact" />
+            </div>
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
 
@@ -90,6 +97,7 @@ const LoginForm: React.FC = () => {
                     <p className="text-blue-300 text-sm mt-2 font-medium">Enterprise Management System</p>
                 </div>
 
+
                 {/* Login Card */}
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom duration-500">
 
@@ -101,7 +109,7 @@ const LoginForm: React.FC = () => {
                     >
                         <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-[-20deg]"></div>
                         <Zap className="w-6 h-6 animate-pulse" />
-                        <span className="text-lg tracking-wider">ACCESO RÁPIDO DEMO</span>
+                        <span className="text-lg tracking-wider uppercase">{t('login.fastDemoAccess')}</span>
                     </button>
 
                     {/* Error Message */}
@@ -126,7 +134,7 @@ const LoginForm: React.FC = () => {
                             <div className="w-full border-t border-white/20"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white/15 text-white/60 font-semibold text-xs uppercase tracking-widest">O credenciales locales</span>
+                            <span className="px-4 bg-white/15 text-white/60 font-semibold text-xs uppercase tracking-widest">{t('login.orLocalCredentials')}</span>
                         </div>
                     </div>
 
@@ -135,14 +143,14 @@ const LoginForm: React.FC = () => {
                         <div className="space-y-2">
                             <label className="text-white/80 text-xs font-black uppercase tracking-widest flex items-center gap-2">
                                 <User className="w-3 h-3" />
-                                Usuario
+                                {t('login.user')}
                             </label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="usuario"
+                                placeholder={t('login.userPlaceholder')}
                                 required
                             />
                         </div>
@@ -150,7 +158,7 @@ const LoginForm: React.FC = () => {
                         <div className="space-y-2">
                             <label className="text-white/80 text-xs font-black uppercase tracking-widest flex items-center gap-2">
                                 <Lock className="w-3 h-3" />
-                                Contraseña
+                                {t('login.password')}
                             </label>
                             <input
                                 type="password"
@@ -167,7 +175,7 @@ const LoginForm: React.FC = () => {
                             disabled={loading}
                             className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-2"
                         >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Iniciar Sesión'}
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('login.signIn')}
                         </button>
                     </form>
 

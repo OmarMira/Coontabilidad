@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useLocale } from '../i18n/useLocale';
 import { Shield, Search, FileText, CheckCircle, Hash, User, Clock } from 'lucide-react';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { AuditChainService } from '../core/audit/AuditChainService';
@@ -15,6 +16,7 @@ interface AuditRecord {
 }
 
 export const TransactionAudit: React.FC = () => {
+    const { t, language } = useLocale();
     const [logs, setLogs] = useState<AuditRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [verifying, setVerifying] = useState(false);
@@ -55,10 +57,10 @@ export const TransactionAudit: React.FC = () => {
                 <div>
                     <h1 className="text-2xl font-black tracking-tight text-gray-800 dark:text-white flex items-center gap-2">
                         <Shield className="w-8 h-8 text-blue-600" />
-                        AuditorÃ­a de Transacciones (Blockchain)
+                        {t('transactionAudit.title')}
                     </h1>
                     <p className="text-slate-600 dark:text-slate-500 mt-1">
-                        Registro inmutable de todas las operaciones financieras. Cada evento estÃ¡ encadenado criptogrÃ¡ficamente.
+                        {t('transactionAudit.subtitle')}
                     </p>
                 </div>
                 <button
@@ -68,11 +70,11 @@ export const TransactionAudit: React.FC = () => {
                         }`}
                 >
                     {verifying ? (
-                        <>Verificando CriptografÃ­a...</>
+                        <>{t('transactionAudit.verifying')}</>
                     ) : integrityStatus === 'valid' ? (
-                        <><CheckCircle className="w-5 h-5" /> Integridad Verificada</>
+                        <><CheckCircle className="w-5 h-5" /> {t('transactionAudit.verified')}</>
                     ) : (
-                        <><Hash className="w-5 h-5" /> Verificar Integridad</>
+                        <><Hash className="w-5 h-5" /> {t('transactionAudit.verifyIntegrity')}</>
                     )}
                 </button>
             </div>
@@ -82,19 +84,19 @@ export const TransactionAudit: React.FC = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-500 text-xs uppercase tracking-wider">
-                                <th className="p-4 font-semibold border-b dark:border-white/10">ID</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Evento</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Entidad</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Usuario</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Fecha/Hora</th>
-                                <th className="p-4 font-semibold border-b dark:border-white/10">Hash (Firma)</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('transactionAudit.id')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('transactionAudit.event')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('transactionAudit.entity')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('transactionAudit.user')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('transactionAudit.dateTime')}</th>
+                                <th className="p-4 font-semibold border-b dark:border-white/10">{t('transactionAudit.hash')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
                             {loading ? (
-                                <tr><td colSpan={6} className="p-8 text-center text-slate-500">Cargando cadena de bloques...</td></tr>
+                                <tr><td colSpan={6} className="p-8 text-center text-slate-500">{t('transactionAudit.loading')}</td></tr>
                             ) : logs.length === 0 ? (
-                                <tr><td colSpan={6} className="p-8 text-center text-slate-500">La cadena estÃ¡ vacÃ­a (Genesis).</td></tr>
+                                <tr><td colSpan={6} className="p-8 text-center text-slate-500">{t('transactionAudit.emptyChain')}</td></tr>
                             ) : (
                                 logs.map((log) => (
                                     <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-white/10/50 transition-colors">
@@ -111,7 +113,7 @@ export const TransactionAudit: React.FC = () => {
                                         <td className="p-4 text-slate-700 dark:text-slate-500">
                                             <div className="flex items-center gap-2">
                                                 <Clock className="w-3 h-3" />
-                                                {new Date(log.created_at).toLocaleString()}
+                                                {new Date(log.created_at).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
                                             </div>
                                         </td>
                                         <td className="p-4 font-mono text-xs text-slate-500 truncate max-w-[150px]" title={log.chain_hash}>

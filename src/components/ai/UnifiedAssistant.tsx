@@ -21,8 +21,7 @@ import {
     HelpCircle,
     Lightbulb
 } from 'lucide-react';
-import { ConversationalIAService, ConversationResponse } from '../../services/ConversationalIAService';
-import { iaService, IAResponse } from '../../services/IAService';
+import { AIFactory, AIResponse } from '../../services/ai/AIFactory';
 import { SYSTEM_GUIDES, QUICK_OPERATIONS } from '../../knowledge/SystemKnowledge';
 import { logger } from '../../core/logging/SystemLogger';
 
@@ -75,7 +74,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [analysis, setAnalysis] = useState<IAResponse | null>(null);
+    const [analysis, setAnalysis] = useState<AIResponse | null>(null);
     const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -98,8 +97,8 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
     const loadDashboardAnalysis = async () => {
         setIsLoading(true);
         try {
-            const result = await iaService.analyzeFinancialHealth();
-            setAnalysis(result);
+            const result = await AIFactory.processQuery('resumen salud financiera');
+            setAnalysis(result as any);
             logger.info('UnifiedAssistant', 'dashboard_loaded', 'Análisis cargado exitosamente');
         } catch (error) {
             logger.error('UnifiedAssistant', 'dashboard_error', 'Error cargando análisis', {}, error as Error);
@@ -125,8 +124,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
         setIsLoading(true);
 
         try {
-            const service = ConversationalIAService.getInstance();
-            const response = await service.processQuery(input);
+            const response = await AIFactory.processQuery(input);
 
             const assistantMessage: Message = {
                 id: Date.now() + 1,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Users, UserPlus, CheckCircle2 } from 'lucide-react';
 import { getCustomers, assignCustomerToARDDocument, Customer } from '../../database/simple-db';
+import { useLocale } from '../../i18n/useLocale';
 
 interface ARDAssignCustomerModalProps {
     documentId: string;
@@ -9,6 +10,7 @@ interface ARDAssignCustomerModalProps {
 }
 
 export const ARDAssignCustomerModal: React.FC<ARDAssignCustomerModalProps> = ({ documentId, onClose, onSuccess }) => {
+    const { t } = useLocale();
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -39,8 +41,8 @@ export const ARDAssignCustomerModal: React.FC<ARDAssignCustomerModalProps> = ({ 
                             <Users className="w-6 h-6 text-indigo-400" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-white">Asignar Cliente</h3>
-                            <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mt-1">Sincronización de Entidad ARD</p>
+                            <h3 className="text-xl font-black text-white">{t('ard.assign.modalTitle')}</h3>
+                            <p className="text-slate-600 text-[10px] font-black uppercase tracking-widest mt-1">{t('ard.assign.modalSubtitle')}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-600 hover:text-white">
@@ -53,7 +55,7 @@ export const ARDAssignCustomerModal: React.FC<ARDAssignCustomerModalProps> = ({ 
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                         <input
                             type="text"
-                            placeholder="Escriba el nombre o ID del cliente..."
+                            placeholder={t('ard.assign.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all"
@@ -83,7 +85,7 @@ export const ARDAssignCustomerModal: React.FC<ARDAssignCustomerModalProps> = ({ 
 
                         {filteredCustomers.length === 0 && (
                             <div className="py-12 text-center text-slate-700 font-bold uppercase tracking-widest text-xs">
-                                No se encontraron clientes coincidentes
+                                {t('ard.assign.noMatches')}
                             </div>
                         )}
                     </div>
@@ -94,14 +96,14 @@ export const ARDAssignCustomerModal: React.FC<ARDAssignCustomerModalProps> = ({ 
                         onClick={onClose}
                         className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-500 font-black text-[10px] uppercase tracking-widest"
                     >
-                        Cancelar
+                        {t('ard.assign.cancel')}
                     </button>
                     <button
                         onClick={handleAssign}
                         disabled={!selectedId}
                         className="flex-2 flex items-center justify-center gap-3 px-12 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-900/40 disabled:opacity-50 disabled:bg-white/5 disabled:shadow-none"
                     >
-                        <UserPlus className="w-4 h-4" /> Finalizar Asignación
+                        <UserPlus className="w-4 h-4" /> {t('ard.assign.confirm')}
                     </button>
                 </div>
             </div>
