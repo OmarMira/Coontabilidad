@@ -3,8 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Plus, Trash2, Save, Calculator, AlertCircle, Hash, History, CheckCircle2 } from 'lucide-react';
 import { type JournalEntry, type JournalLine } from '../../modules/accounting/Accounting.types';
+import { useLocale } from '../../i18n/useLocale';
 
 export const JournalEntryForm: React.FC = () => {
+    const { t } = useLocale();
     const [description, setDescription] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [lines, setLines] = useState<JournalLine[]>([
@@ -40,28 +42,28 @@ export const JournalEntryForm: React.FC = () => {
                     </div>
                     <div>
                         <CardTitle className="text-2xl font-black text-white uppercase tracking-tighter">
-                            Nuevo Folio Diario
+                            {t('journalEntry.newFolio')}
                         </CardTitle>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-2">
                             <History className="w-3.5 h-3.5" />
-                            Entrada de Datos Manual • US GAAP v2025
+                            {t('journalEntry.manualEntrySubtitle')}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-3 w-full md:w-auto">
                     <div className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 border shadow-lg transition-all ${balanced
-                            ? 'bg-emerald-900/10 border-emerald-500/30 text-emerald-400'
-                            : 'bg-red-900/10 border-red-500/30 text-red-500 animate-pulse'
+                        ? 'bg-emerald-900/10 border-emerald-500/30 text-emerald-400'
+                        : 'bg-red-900/10 border-red-500/30 text-red-500 animate-pulse'
                         }`}>
                         {balanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                        {balanced ? 'BALANCEADO' : `DESCUADRE: $${difference.toFixed(2)}`}
+                        {balanced ? t('journalEntry.balanced') : `${t('journalEntry.unbalanced')}: $${difference.toFixed(2)}`}
                     </div>
                     <Button
                         disabled={!balanced || !description}
                         className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-widest px-8 py-6 rounded-2xl shadow-xl shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-20 flex items-center gap-2"
                     >
-                        <Save className="w-5 h-5" /> Contabilizar Asiento
+                        <Save className="w-5 h-5" /> {t('journalEntry.postEntry')}
                     </Button>
                 </div>
             </CardHeader>
@@ -72,11 +74,11 @@ export const JournalEntryForm: React.FC = () => {
                     <div className="md:col-span-2 space-y-3">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                             <FileText className="w-3.5 h-3.5" />
-                            Glosa / Descripción General
+                            {t('journalEntry.descriptionLabel')}
                         </label>
                         <input
                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-700"
-                            placeholder="Ej: Ajuste de amortización mensual - Activos Fijos..."
+                            placeholder={t('journalEntry.descriptionPlaceholder')}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
@@ -84,7 +86,7 @@ export const JournalEntryForm: React.FC = () => {
                     <div className="space-y-3">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                             <Calculator className="w-3.5 h-3.5" />
-                            Fecha de Registro
+                            {t('journalEntry.dateLabel')}
                         </label>
                         <input
                             type="date"
@@ -102,11 +104,11 @@ export const JournalEntryForm: React.FC = () => {
                             <tr className="bg-slate-950/80 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
                                 <th className="py-5 px-6 text-left flex items-center gap-2 font-black">
                                     <Hash className="w-3.5 h-3.5" />
-                                    Cuenta / Código
+                                    {t('journalEntry.accountCodeHeader')}
                                 </th>
-                                <th className="py-5 px-6 text-left">Detalle de Línea</th>
-                                <th className="py-5 px-6 text-right w-32">Cargos (DR)</th>
-                                <th className="py-5 px-6 text-right w-32">Abonos (CR)</th>
+                                <th className="py-5 px-6 text-left">{t('journalEntry.lineDetailHeader')}</th>
+                                <th className="py-5 px-6 text-right w-32">{t('journalEntry.debitsHeader')}</th>
+                                <th className="py-5 px-6 text-right w-32">{t('journalEntry.creditsHeader')}</th>
                                 <th className="py-5 px-6 w-16"></th>
                             </tr>
                         </thead>
@@ -115,7 +117,7 @@ export const JournalEntryForm: React.FC = () => {
                                 <tr key={idx} className="hover:bg-slate-800/20 transition-colors group">
                                     <td className="p-4">
                                         <input
-                                            placeholder="Cuenta..."
+                                            placeholder={t('journalEntry.accountPlaceholder')}
                                             className="w-full bg-transparent border-b border-slate-800 focus:border-blue-500 outline-none p-2 text-white font-black uppercase tracking-tight text-xs transition-colors"
                                             value={line.account_code}
                                             onChange={e => updateLine(idx, 'account_code', e.target.value)}
@@ -123,7 +125,7 @@ export const JournalEntryForm: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                         <input
-                                            placeholder="Descripción opcional..."
+                                            placeholder={t('journalEntry.descPlaceholder')}
                                             className="w-full bg-transparent border-b border-slate-800 focus:border-blue-500 outline-none p-2 text-slate-400 font-bold italic text-xs transition-colors"
                                             value={line.description}
                                             onChange={e => updateLine(idx, 'description', e.target.value)}
@@ -157,7 +159,7 @@ export const JournalEntryForm: React.FC = () => {
                                         <button
                                             onClick={() => removeLine(idx)}
                                             className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
-                                            title="Eliminar Línea"
+                                            title={t('journalEntry.deleteLineTitle')}
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
@@ -172,15 +174,15 @@ export const JournalEntryForm: React.FC = () => {
                                         onClick={addLine}
                                         className="flex items-center gap-2 text-blue-500 hover:text-blue-400 font-black uppercase text-[10px] tracking-widest bg-blue-500/5 hover:bg-blue-500/10 px-4 py-2 rounded-xl border border-blue-500/20 transition-all"
                                     >
-                                        <Plus className="w-4 h-4" /> Agregar Nueva Línea
+                                        <Plus className="w-4 h-4" /> {t('journalEntry.addLine')}
                                     </button>
                                 </td>
                                 <td className="p-6 text-right font-mono text-lg text-emerald-400">
-                                    <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Cargos</div>
+                                    <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">{t('journalEntry.debitsHeader')}</div>
                                     {totalDebit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td className="p-6 text-right font-mono text-lg text-orange-400">
-                                    <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Abonos</div>
+                                    <div className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">{t('journalEntry.creditsHeader')}</div>
                                     {totalCredit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </td>
                                 <td></td>
@@ -193,9 +195,9 @@ export const JournalEntryForm: React.FC = () => {
                 <div className="bg-blue-600/5 border border-blue-500/10 rounded-3xl p-6 flex items-start gap-4">
                     <History className="w-6 h-6 text-blue-500 mt-1 shrink-0" />
                     <div>
-                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Pauta de Auditoría</p>
+                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{t('journalEntry.auditGuideline')}</p>
                         <p className="text-xs font-bold text-slate-400 leading-relaxed italic">
-                            Toda entrada manual queda registrada con marca de tiempo inmutable y hash de integridad. El descuadre de céntimos no está permitido bajo protocolos US GAAP configurados en el sistema.
+                            {t('journalEntry.auditText')}
                         </p>
                     </div>
                 </div>

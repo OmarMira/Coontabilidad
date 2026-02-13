@@ -10,6 +10,8 @@ import TrialBalanceStep from './wizard-steps/TrialBalanceStep';
 import ConfirmationStep from './wizard-steps/ConfirmationStep';
 
 // ============================================================================
+import { useLocale } from '../../i18n/useLocale';
+
 // INTERFACES Y TIPOS
 // ============================================================================
 
@@ -55,44 +57,13 @@ interface PeriodClosureWizardProps {
 // DEFINICIÓN DE PASOS
 // ============================================================================
 
-const WIZARD_STEPS: WizardStep[] = [
-  {
-    id: 1,
-    title: 'Validación de Transacciones',
-    description: 'Verificar que todas las transacciones estén registradas',
-    canSkip: false
-  },
-  {
-    id: 2,
-    title: 'Conciliación Bancaria',
-    description: 'Verificar que la conciliación bancaria esté completa',
-    canSkip: false
-  },
-  {
-    id: 3,
-    title: 'Validación de Nómina',
-    description: 'Verificar que las nóminas estén procesadas y aprobadas',
-    canSkip: false
-  },
-  {
-    id: 4,
-    title: 'Ajustes Contables',
-    description: 'Verificar depreciaciones y asientos de ajuste',
-    canSkip: false
-  },
-  {
-    id: 5,
-    title: 'Balance de Comprobación',
-    description: 'Generar y verificar el balance de comprobación',
-    canSkip: false
-  },
-  {
-    id: 6,
-    title: 'Confirmación y Cierre',
-    description: 'Revisar resumen y confirmar el cierre del período',
-    canSkip: false
-  }
-];
+//   {
+//     id: 6,
+//     title: 'Confirmación y Cierre',
+//     description: 'Revisar resumen y confirmar el cierre del período',
+//     canSkip: false
+//   }
+// ];
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -104,6 +75,50 @@ export default function PeriodClosureWizard({
   onClose,
   onComplete
 }: PeriodClosureWizardProps) {
+  const { t } = useLocale();
+
+  // ============================================================================
+  // DEFINICIÓN DE PASOS (Inside component to use 't')
+  // ============================================================================
+  const WIZARD_STEPS: WizardStep[] = [
+    {
+      id: 1,
+      title: t('periodClosure.steps.transactions'),
+      description: t('periodClosure.steps.transactionsDesc'),
+      canSkip: false
+    },
+    {
+      id: 2,
+      title: t('periodClosure.steps.bankReconciliation'),
+      description: t('periodClosure.steps.bankReconciliationDesc'),
+      canSkip: false
+    },
+    {
+      id: 3,
+      title: t('periodClosure.steps.payroll'),
+      description: t('periodClosure.steps.payrollDesc'),
+      canSkip: false
+    },
+    {
+      id: 4,
+      title: t('periodClosure.steps.adjustments'),
+      description: t('periodClosure.steps.adjustmentsDesc'),
+      canSkip: false
+    },
+    {
+      id: 5,
+      title: t('periodClosure.steps.trialBalance'),
+      description: t('periodClosure.steps.trialBalanceDesc'),
+      canSkip: false
+    },
+    {
+      id: 6,
+      title: t('periodClosure.steps.confirmation'),
+      description: t('periodClosure.steps.confirmationDesc'),
+      canSkip: false
+    }
+  ];
+
   // Estado del wizard
   const [wizardState, setWizardState] = useState<WizardState>({
     currentStep: 1,
@@ -149,7 +164,7 @@ export default function PeriodClosureWizard({
     if (periods.length > 0) {
       setPeriod(periods[0]);
     } else {
-      setError('No se encontró el período contable');
+      setError(t('periodClosure.periodNotFound'));
     }
   };
 
@@ -192,16 +207,16 @@ export default function PeriodClosureWizard({
       const result = accountingPeriodService.closePeriod(
         periodId,
         1,
-        'Cierre realizado mediante wizard'
+        t('periodClosure.wizardCloseNote')
       );
 
       if (result.success) {
         onComplete();
       } else {
-        setError(result.message || 'Error al cerrar el período');
+        setError(result.message || t('periodClosure.closeError'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('periodClosure.errorUnknown'));
     } finally {
       setWizardState(prev => ({ ...prev, isProcessing: false }));
     }
@@ -222,11 +237,11 @@ export default function PeriodClosureWizard({
             </div>
             <div>
               <h2 className="text-2xl font-black text-white tracking-tighter uppercase">
-                Asistente de Cierre: <span className="text-blue-500 font-serif italic lowercase tracking-tight">{period?.name || 'Procesando...'}</span>
+                {t('periodClosure.wizardTitle')}: <span className="text-blue-500 font-serif italic lowercase tracking-tight">{period?.name || t('periodClosure.processing')}</span>
               </h2>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-2">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Auditoría Industrial Activada • {period && `${period.start_date} a ${period.end_date}`}
+                {t('periodClosure.auditActivated')} • {period && `${period.start_date} a ${period.end_date}`}
               </p>
             </div>
           </div>
@@ -247,10 +262,10 @@ export default function PeriodClosureWizard({
                 <div className="flex flex-col items-center">
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all duration-300 shadow-lg ${wizardState.currentStep === step.id
-                        ? 'bg-blue-600 text-white scale-110 ring-4 ring-blue-500/20'
-                        : wizardState.currentStep > step.id
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-800 text-slate-500'
+                      ? 'bg-blue-600 text-white scale-110 ring-4 ring-blue-500/20'
+                      : wizardState.currentStep > step.id
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 text-slate-500'
                       }`}
                   >
                     {wizardState.currentStep > step.id ? (
@@ -267,8 +282,8 @@ export default function PeriodClosureWizard({
                 {index < WIZARD_STEPS.length - 1 && (
                   <div
                     className={`h-1 flex-1 mx-2 rounded-full transition-all duration-500 ${wizardState.currentStep > step.id
-                        ? 'bg-emerald-600'
-                        : 'bg-slate-800'
+                      ? 'bg-emerald-600'
+                      : 'bg-slate-800'
                       }`}
                   />
                 )}
@@ -291,7 +306,7 @@ export default function PeriodClosureWizard({
             <div className="mb-8 p-5 bg-red-900/10 border-2 border-red-500/30 rounded-2xl flex items-start animate-in slide-in-from-top-4 shadow-xl shadow-red-950/20">
               <AlertCircle className="w-6 h-6 text-red-500 mr-4 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-black text-red-500 uppercase tracking-widest">Error del Sistema</p>
+                <p className="text-xs font-black text-red-500 uppercase tracking-widest">{t('periodClosure.systemError')}</p>
                 <p className="text-sm font-bold text-red-200 mt-1">{error}</p>
               </div>
             </div>
@@ -348,11 +363,11 @@ export default function PeriodClosureWizard({
             className="group flex items-center px-6 py-3 text-slate-400 font-black uppercase text-xs tracking-widest bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg"
           >
             <ChevronLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Vuelve
+            {t('periodClosure.back')}
           </button>
 
           <div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">
-            Hito {wizardState.currentStep} <span className="mx-2 text-slate-800">/</span> {wizardState.totalSteps}
+            {t('periodClosure.milestone')} {wizardState.currentStep} <span className="mx-2 text-slate-800">/</span> {wizardState.totalSteps}
           </div>
 
           {wizardState.currentStep < wizardState.totalSteps ? (
@@ -361,7 +376,7 @@ export default function PeriodClosureWizard({
               disabled={!wizardState.canProceed || wizardState.isProcessing}
               className="flex items-center px-8 py-3.5 text-white bg-blue-600 font-black uppercase text-xs tracking-[0.2em] rounded-xl hover:bg-blue-700 disabled:opacity-20 disabled:grayscale transition-all active:scale-95 shadow-xl shadow-blue-900/30 group"
             >
-              Continuar
+              {t('periodClosure.continue')}
               <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </button>
           ) : (
@@ -373,12 +388,12 @@ export default function PeriodClosureWizard({
               {wizardState.isProcessing ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin mr-3" />
-                  CERRANDO...
+                  {t('periodClosure.closing')}
                 </>
               ) : (
                 <>
                   <Flag className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
-                  EJECUTAR CIERRE
+                  {t('periodClosure.executeClosing')}
                 </>
               )}
             </button>

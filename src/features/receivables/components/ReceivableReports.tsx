@@ -3,8 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, Users, DollarSign, Clock, Filter, Printer, Download } from 'lucide-react';
 import { getInvoices, Invoice, getCustomers, Customer } from '@/database/simple-db';
+import { useLocale } from '../../../i18n/useLocale';
 
 export const ReceivableReports: React.FC = () => {
+    const { t, formatCurrency } = useLocale();
     const [loading, setLoading] = useState(false);
     const [receivables, setReceivables] = useState<any[]>([]);
 
@@ -47,50 +49,46 @@ export const ReceivableReports: React.FC = () => {
         setReceivables(reportData);
     }, []);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-    };
-
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
                 <div>
-                    <h2 className="text-section-title">Reportes de Cuentas por Cobrar</h2>
-                    <p className="text-standard-body opacity-80">Antigüedad de saldos y análisis de cartera</p>
+                    <h2 className="text-section-title">{t('receivableReports.title')}</h2>
+                    <p className="text-standard-body opacity-80">{t('receivableReports.subtitle')}</p>
                 </div>
                 <div className="flex gap-3 no-print">
                     <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white" onClick={() => window.print()}>
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir
+                        <Printer className="w-4 h-4 mr-2" /> {t('receivableReports.print')}
                     </Button>
                     <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white">
-                        <Download className="w-4 h-4 mr-2" /> Exportar
+                        <Download className="w-4 h-4 mr-2" /> {t('receivableReports.export')}
                     </Button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <StatCard title="Total por Cobrar" value={formatCurrency(receivables.reduce((s, r) => s + r.totalDue, 0))} icon={DollarSign} color="blue" />
-                <StatCard title="Clientes con Deuda" value={receivables.length.toString()} icon={Users} color="purple" />
-                <StatCard title="Vencido > 90 días" value={formatCurrency(receivables.reduce((s, r) => s + r.aging.days90plus, 0))} icon={Clock} color="rose" />
-                <StatCard title="Cobros Hoy" value={formatCurrency(receivables.reduce((s, r) => s + r.aging.current, 0))} icon={TrendingUp} color="emerald" />
+                <StatCard title={t('receivableReports.totalReceivable')} value={formatCurrency(receivables.reduce((s, r) => s + r.totalDue, 0))} icon={DollarSign} color="blue" />
+                <StatCard title={t('receivableReports.customersWithDebt')} value={receivables.length.toString()} icon={Users} color="purple" />
+                <StatCard title={t('receivableReports.overdue90')} value={formatCurrency(receivables.reduce((s, r) => s + r.aging.days90plus, 0))} icon={Clock} color="rose" />
+                <StatCard title={t('receivableReports.collectionsToday')} value={formatCurrency(receivables.reduce((s, r) => s + r.aging.current, 0))} icon={TrendingUp} color="emerald" />
             </div>
 
             <Card className="bg-slate-950 border-slate-800 shadow-2xl overflow-hidden rounded-2xl">
                 <CardHeader className="bg-slate-900 border-b border-slate-800 flex flex-row items-center justify-between py-4">
-                    <CardTitle className="text-item-title">Detalle de Cartera por Cliente</CardTitle>
-                    <Button variant="ghost" size="sm" className="text-slate-400"><Filter className="w-4 h-4 mr-2" /> Filtrar</Button>
+                    <CardTitle className="text-item-title">{t('receivableReports.portfolioDetail')}</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-slate-400"><Filter className="w-4 h-4 mr-2" /> {t('receivableReports.filter')}</Button>
                 </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead className="bg-slate-900/50 text-slate-500 text-xs font-black uppercase tracking-widest border-b border-slate-800">
                                 <tr>
-                                    <th className="px-6 py-4">Cliente</th>
-                                    <th className="px-6 py-4 text-right">Al Corriente</th>
-                                    <th className="px-6 py-4 text-right">1-30 Días</th>
-                                    <th className="px-6 py-4 text-right">31-60 Días</th>
-                                    <th className="px-6 py-4 text-right">61+ Días</th>
-                                    <th className="px-6 py-4 text-right">Total Deuda</th>
+                                    <th className="px-6 py-4">{t('receivableReports.table.customer')}</th>
+                                    <th className="px-6 py-4 text-right">{t('receivableReports.table.current')}</th>
+                                    <th className="px-6 py-4 text-right">{t('receivableReports.table.days1_30')}</th>
+                                    <th className="px-6 py-4 text-right">{t('receivableReports.table.days31_60')}</th>
+                                    <th className="px-6 py-4 text-right">{t('receivableReports.table.days61_plus')}</th>
+                                    <th className="px-6 py-4 text-right">{t('receivableReports.table.totalDebt')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
@@ -110,7 +108,7 @@ export const ReceivableReports: React.FC = () => {
                                 {receivables.length === 0 && (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-12 text-center text-slate-500 font-medium italic">
-                                            No hay cuentas por cobrar pendientes.
+                                            {t('receivableReports.table.empty')}
                                         </td>
                                     </tr>
                                 )}

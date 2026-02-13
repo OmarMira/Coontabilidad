@@ -3,8 +3,10 @@ import { History, Search, Filter, User, Activity, Clock, Database } from 'lucide
 import AuditTrailService from '../../services/AuditTrailService';
 import { AuditEntry } from '../../types/user.types';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocale } from '../../i18n/useLocale';
 
 export const AuditTrailTable: React.FC = () => {
+    const { t } = useLocale();
     const { user: currentUser } = useAuth();
     const [entries, setEntries] = useState<AuditEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -55,8 +57,8 @@ export const AuditTrailTable: React.FC = () => {
                         <History className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white">Trazabilidad</h1>
-                        <p className="text-slate-400 text-sm">Historial de cambios y acceso al sistema</p>
+                        <h1 className="text-2xl font-black text-white">{t('auditTrailTable.title')}</h1>
+                        <p className="text-slate-400 text-sm">{t('auditTrailTable.subtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -64,35 +66,35 @@ export const AuditTrailTable: React.FC = () => {
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-4">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Entidad</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">{t('auditTrailTable.filter.entity')}</label>
                     <select
                         value={filter.entityType}
                         onChange={(e) => setFilter({ ...filter, entityType: e.target.value })}
                         className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="">Todas las Entidades</option>
-                        <option value="customer">Clientes</option>
-                        <option value="invoice">Facturas</option>
-                        <option value="bill">Ventas</option>
-                        <option value="product">Productos</option>
-                        <option value="account">Plan de Cuentas</option>
-                        <option value="journal">Asientos</option>
-                        <option value="user">Usuarios</option>
+                        <option value="">{t('auditTrailTable.entity.all')}</option>
+                        <option value="customer">{t('auditTrailTable.entity.customer')}</option>
+                        <option value="invoice">{t('auditTrailTable.entity.invoice')}</option>
+                        <option value="bill">{t('auditTrailTable.entity.bill')}</option>
+                        <option value="product">{t('auditTrailTable.entity.product')}</option>
+                        <option value="account">{t('auditTrailTable.entity.account')}</option>
+                        <option value="journal">{t('auditTrailTable.entity.journal')}</option>
+                        <option value="user">{t('auditTrailTable.entity.user')}</option>
                     </select>
                 </div>
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Acción</label>
+                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">{t('auditTrailTable.filter.action')}</label>
                     <select
                         value={filter.action}
                         onChange={(e) => setFilter({ ...filter, action: e.target.value })}
                         className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                        <option value="">Todas las Acciones</option>
-                        <option value="CREATE">Creación</option>
-                        <option value="UPDATE">Modificación</option>
-                        <option value="DELETE">Eliminación</option>
-                        <option value="LOGIN">Inicio Sesión</option>
-                        <option value="LOGOUT">Cierre Sesión</option>
+                        <option value="">{t('auditTrailTable.action.all')}</option>
+                        <option value="CREATE">{t('auditTrailTable.action.create')}</option>
+                        <option value="UPDATE">{t('auditTrailTable.action.update')}</option>
+                        <option value="DELETE">{t('auditTrailTable.action.delete')}</option>
+                        <option value="LOGIN">{t('auditTrailTable.action.login')}</option>
+                        <option value="LOGOUT">{t('auditTrailTable.action.logout')}</option>
                     </select>
                 </div>
                 <div className="md:col-span-2 flex items-end">
@@ -101,7 +103,7 @@ export const AuditTrailTable: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition-all border border-slate-700"
                     >
                         <Search className="w-4 h-4" />
-                        Actualizar
+                        {t('auditTrailTable.button.refresh')}
                     </button>
                 </div>
             </div>
@@ -112,11 +114,11 @@ export const AuditTrailTable: React.FC = () => {
                     <table className="w-full">
                         <thead className="bg-slate-800/50 border-b border-slate-700">
                             <tr>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha/Hora</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Usuario</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Acción</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Entidad</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalles</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.datetime')}</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.user')}</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.action')}</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.entity')}</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.details')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
@@ -124,14 +126,14 @@ export const AuditTrailTable: React.FC = () => {
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                                         <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                                        Cargando trazabilidad...
+                                        {t('auditTrailTable.loading')}
                                     </td>
                                 </tr>
                             ) : entries.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                                         <Activity className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                        No se encontraron registros de auditoría
+                                        {t('auditTrailTable.empty')}
                                     </td>
                                 </tr>
                             ) : (
@@ -148,7 +150,7 @@ export const AuditTrailTable: React.FC = () => {
                                                 <div className="w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-black text-slate-400">
                                                     ID {entry.user_id}
                                                 </div>
-                                                <span className="text-sm text-white font-medium">Usuario #{entry.user_id}</span>
+                                                <span className="text-sm text-white font-medium">{t('auditTrailTable.table.userId').replace('{id}', entry.user_id.toString())}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">

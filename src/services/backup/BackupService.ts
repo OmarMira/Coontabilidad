@@ -930,18 +930,29 @@ export class BackupService {
 
         // Helper function to create HMAC
         const hmac = async (key: ArrayBuffer | Uint8Array, message: string): Promise<ArrayBuffer> => {
+            // Always convert to standard Uint8Array to satisfy BufferSource type requirement
+            const keyData = key instanceof ArrayBuffer
+                ? new Uint8Array(key)
+                : new Uint8Array(key.buffer, key.byteOffset, key.byteLength);
+
             const cryptoKey = await crypto.subtle.importKey(
                 'raw',
-                key,
+                keyData as BufferSource,
                 { name: 'HMAC', hash: 'SHA-256' },
                 false,
                 ['sign']
             );
-            return await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(message));
+            // Normalize encoder.encode output to standard Uint8Array
+            const messageData = encoder.encode(message);
+            const normalizedMessage = new Uint8Array(messageData.buffer.slice(messageData.byteOffset, messageData.byteOffset + messageData.byteLength));
+            return await crypto.subtle.sign('HMAC', cryptoKey, normalizedMessage);
         };
 
-        // Derive signing key
-        const kDate = await hmac(encoder.encode(`AWS4${secretKey}`), datestamp);
+        // Derive signing key - convert initial encoder.encode to standard Uint8Array
+        const initialKey = encoder.encode(`AWS4${secretKey}`);
+        const normalizedInitialKey = new Uint8Array(initialKey.buffer.slice(initialKey.byteOffset, initialKey.byteOffset + initialKey.byteLength));
+
+        const kDate = await hmac(normalizedInitialKey, datestamp);
         const kRegion = await hmac(kDate, region);
         const kService = await hmac(kRegion, 's3');
         const kSigning = await hmac(kService, 'aws4_request');

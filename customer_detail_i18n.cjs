@@ -65,7 +65,20 @@ const esUpdates = {
     "paymentMethods.check": "Cheque",
     "paymentMethods.creditCard": "Tarjeta de Crédito",
     "paymentMethods.bankTransfer": "Transferencia Bancaria",
-    "paymentMethods.other": "Otro"
+    "paymentMethods.other": "Otro",
+
+    "financialDashboard.title": "Panel Financiero",
+    "financialDashboard.subtitle": "Análisis financiero en tiempo real",
+    "financialDashboard.revenue": "Ingresos",
+    "financialDashboard.operatingExpenses": "Gastos Operativos",
+    "financialDashboard.profit": "Ganancia",
+    "financialDashboard.profitMargin": "Margen de Ganancia",
+    "financialDashboard.incomeVsExpenses": "Ingresos vs Gastos",
+    "financialDashboard.monthlyCashFlow": "Flujo de Caja Mensual",
+    "financialDashboard.profitTrend": "Tendencia de Ganancia",
+    "financialDashboard.profitMarginPerformance": "Rendimiento del Margen de Ganancia",
+    "financialDashboard.periods.6m": "6 Meses",
+    "financialDashboard.periods.4m": "4 Meses"
 };
 
 const enUpdates = {
@@ -129,7 +142,20 @@ const enUpdates = {
     "paymentMethods.check": "Check",
     "paymentMethods.creditCard": "Credit Card",
     "paymentMethods.bankTransfer": "Bank Transfer",
-    "paymentMethods.other": "Other"
+    "paymentMethods.other": "Other",
+
+    "financialDashboard.title": "Financial Dashboard",
+    "financialDashboard.subtitle": "Real-time financial analysis",
+    "financialDashboard.revenue": "Revenue",
+    "financialDashboard.operatingExpenses": "Operating Expenses",
+    "financialDashboard.profit": "Profit",
+    "financialDashboard.profitMargin": "Profit Margin",
+    "financialDashboard.incomeVsExpenses": "Income vs Expenses",
+    "financialDashboard.monthlyCashFlow": "Monthly Cash Flow",
+    "financialDashboard.profitTrend": "Profit Trend",
+    "financialDashboard.profitMarginPerformance": "Profit Margin Performance",
+    "financialDashboard.periods.6m": "6 Months",
+    "financialDashboard.periods.4m": "4 Months"
 };
 
 function update(file, updates) {

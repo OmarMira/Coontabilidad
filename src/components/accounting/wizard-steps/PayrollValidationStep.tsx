@@ -17,32 +17,35 @@ interface PayrollSummary {
   totalTaxes: number;
 }
 
+import { useLocale } from '../../../i18n/useLocale';
+
 export default function PayrollValidationStep({
   periodId,
   onValidationComplete
 }: PayrollValidationStepProps) {
+  const { t } = useLocale();
   const [checks, setChecks] = useState<ChecklistItem[]>([
     {
       id: 'payroll-processed',
-      label: 'Nóminas del período procesadas',
+      label: t('payrollValidation.checks.processed'),
       status: 'pending',
       message: undefined
     },
     {
       id: 'no-pending-payroll',
-      label: 'No hay nóminas pendientes de aprobar',
+      label: t('payrollValidation.checks.noPending'),
       status: 'pending',
       message: undefined
     },
     {
       id: 'payroll-journal-entries',
-      label: 'Asientos contables de nómina generados',
+      label: t('payrollValidation.checks.entriesGenerated'),
       status: 'pending',
       message: undefined
     },
     {
       id: 'payroll-taxes-calculated',
-      label: 'Impuestos de nómina calculados correctamente',
+      label: t('payrollValidation.checks.taxesCalculated'),
       status: 'pending',
       message: undefined
     }
@@ -109,31 +112,31 @@ export default function PayrollValidationStep({
         const updatedChecks: ChecklistItem[] = [
           {
             id: 'payroll-processed',
-            label: 'Nóminas del período procesadas',
+            label: t('payrollValidation.checks.processed'),
             status: totalPayrolls > 0 ? 'passed' : 'warning',
-            message: totalPayrolls > 0 ? `${totalPayrolls} nóminas detectadas` : 'Sin nóminas en el rango',
+            message: totalPayrolls > 0 ? t('payrollValidation.messages.detected', { count: totalPayrolls }) : t('payrollValidation.messages.noneInRange'),
           },
           {
             id: 'no-pending-payroll',
-            label: 'Estado de aprobación de nómina',
+            label: t('payrollValidation.checks.approvalStatus'),
             status: pendingPayrolls === 0 ? 'passed' : 'warning',
-            message: pendingPayrolls === 0 ? 'Flujo de aprobación completo' : `${pendingPayrolls} por aprobar`,
+            message: pendingPayrolls === 0 ? t('payrollValidation.messages.flowComplete') : t('payrollValidation.messages.pendingCount', { count: pendingPayrolls }),
             action: pendingPayrolls > 0 ? {
-              label: 'Revisar Nóminas',
+              label: t('payrollValidation.checks.reviewPayrolls'),
               onClick: () => window.location.href = '/payroll/review'
             } : undefined
           },
           {
             id: 'payroll-journal-entries',
-            label: 'Sincronización con Libro Mayor',
+            label: t('payrollValidation.checks.ledgerSync'),
             status: totalPayrolls === 0 || payrollsWithJournals === approvedPayrolls ? 'passed' : 'warning',
-            message: payrollsWithJournals === approvedPayrolls ? 'Asientos vinculados correctamente' : 'Faltan asientos contables',
+            message: payrollsWithJournals === approvedPayrolls ? t('payrollValidation.messages.entriesLinked') : t('payrollValidation.messages.entriesMissing'),
           },
           {
             id: 'payroll-taxes-calculated',
-            label: 'Cálculo impositivo validado',
+            label: t('payrollValidation.checks.taxValidation'),
             status: totalPayrolls === 0 || totalTaxes > 0 ? 'passed' : 'warning',
-            message: totalTaxes > 0 ? `$${totalTaxes.toFixed(2)} en impuestos FL/Federal` : 'Sin cálculos impositivos',
+            message: totalTaxes > 0 ? t('payrollValidation.messages.taxAmount', { amount: totalTaxes.toFixed(2) }) : t('payrollValidation.messages.noTaxes'),
           }
         ];
 
@@ -151,15 +154,15 @@ export default function PayrollValidationStep({
     };
 
     runValidations();
-  }, [periodId, onValidationComplete]);
+  }, [periodId, onValidationComplete, t]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="bg-blue-600/10 border-l-4 border-blue-500 rounded-xl p-5 flex items-start gap-4">
         <Users className="w-6 h-6 text-blue-500 mt-0.5 shrink-0" />
         <p className="text-sm font-bold text-blue-200/80 leading-relaxed">
-          <span className="text-white font-black uppercase tracking-tighter mr-2">Validación Laboral:</span>
-          Verificamos que todos los pasivos laborales estén registrados y los impuestos de nómina cuadrados con el Departamento de Rentas (IRS/DOR).
+          <span className="text-white font-black uppercase tracking-tighter mr-2">{t('payrollValidation.phaseTitle')}:</span>
+          {t('payrollValidation.phaseDesc')}
         </p>
       </div>
 
@@ -167,32 +170,32 @@ export default function PayrollValidationStep({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl group hover:border-blue-500/30 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ejecuciones</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payrollValidation.stats.executions')}</span>
               <Users className="w-4 h-4 text-blue-500" />
             </div>
             <div className="text-3xl font-black text-white">{payrollSummary.totalPayrolls}</div>
             <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase">
-              <span className="text-emerald-500">{payrollSummary.approvedPayrolls} OK</span> •
-              <span className="text-orange-500 ml-1">{payrollSummary.pendingPayrolls} PND</span>
+              <span className="text-emerald-500">{payrollSummary.approvedPayrolls} {t('payrollValidation.messages.ok')}</span> •
+              <span className="text-orange-500 ml-1">{payrollSummary.pendingPayrolls} {t('payrollValidation.messages.pnd')}</span>
             </p>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl group hover:border-emerald-500/30 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Masa Salarial Bruta</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payrollValidation.stats.grossPay')}</span>
               <Wallet className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="text-3xl font-black text-white tabular-nums">${payrollSummary.totalGrossPay.toLocaleString()}</div>
-            <p className="text-[10px] font-bold text-emerald-500/50 mt-2 uppercase">Neto: ${payrollSummary.totalNetPay.toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-emerald-500/50 mt-2 uppercase">{t('payrollValidation.stats.net')}: ${payrollSummary.totalNetPay.toLocaleString()}</p>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl group hover:border-orange-500/30 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Carga Impositiva</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payrollValidation.stats.taxLoad')}</span>
               <Calculator className="w-4 h-4 text-orange-500" />
             </div>
             <div className="text-3xl font-black text-white tabular-nums">${payrollSummary.totalTaxes.toLocaleString()}</div>
-            <p className="text-[10px] font-bold text-orange-500/50 mt-2 uppercase">Retenciones Federales + FICA</p>
+            <p className="text-[10px] font-bold text-orange-500/50 mt-2 uppercase">{t('payrollValidation.stats.withholdings')}</p>
           </div>
         </div>
       )}
@@ -208,15 +211,10 @@ export default function PayrollValidationStep({
       <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800 shadow-inner group">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="w-4 h-4 text-orange-500" />
-          <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">Directrices de Nómina</h5>
+          <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{t('payrollValidation.guidelinesTitle')}</h5>
         </div>
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            'Todas las nóminas deben estar en estado "Paid" o "Approved".',
-            'Al menos un asiento de diario debe estar vinculado a cada nómina.',
-            'Los impuestos deben haber sido liquidados o provisionados.',
-            'Si no hubo operaciones en el mes, marca este paso como validado.'
-          ].map((tip, i) => (
+          {t<string[]>('payrollValidation.tips').map((tip, i) => (
             <li key={i} className="flex items-center gap-3 text-xs font-bold text-slate-400">
               <div className="w-1.5 h-1.5 rounded-full bg-blue-500/30 group-hover:bg-blue-500 transition-all shadow-lg" />
               {tip}
@@ -229,9 +227,9 @@ export default function PayrollValidationStep({
         <div className="bg-orange-900/10 border-2 border-orange-500/30 rounded-2xl p-6 flex items-start animate-pulse">
           <AlertTriangle className="w-6 h-6 text-orange-500 mr-4 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-black text-orange-500 uppercase tracking-widest">Acción Crítica Requerida</p>
+            <p className="text-xs font-black text-orange-500 uppercase tracking-widest">{t('payrollValidation.criticalAction')}</p>
             <p className="text-sm font-bold text-orange-200/80 mt-1">
-              Existen nónimas sin aprobar. El cierre contable no puede consolidar pasivos laborales pendientes.
+              {t('payrollValidation.pendingPayrollsWarning')}
             </p>
           </div>
         </div>

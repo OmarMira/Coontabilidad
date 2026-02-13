@@ -157,10 +157,11 @@ export class HybridEncryptionSystem {
     }
 
     private encryptWithSJCL(data: any, password: string): EncryptedPackage {
-        // Implementación SJCL
+        // Implementación SJCL - convert result to JSON string for type compatibility
+        const encrypted = sjcl.encrypt(password, JSON.stringify(data));
         return {
             method: 'sjcl',
-            data: sjcl.encrypt(password, JSON.stringify(data))
+            data: typeof encrypted === 'string' ? encrypted : JSON.stringify(encrypted)
         };
     }
 

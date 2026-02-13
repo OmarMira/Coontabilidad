@@ -89,7 +89,7 @@ export const IncomeStatement: React.FC = () => {
 
             autoTable(doc, {
                 startY: finalY + 8,
-                head: [['COD', 'CUENTA', 'MONTO (USD)']],
+                head: [[t('incomeStatement.pdfCode'), t('incomeStatement.pdfAccount'), t('incomeStatement.pdfAmount')]],
                 body: body,
                 theme: 'grid',
                 headStyles: { fillColor: color, textColor: 255, fontStyle: 'bold' },
@@ -99,7 +99,7 @@ export const IncomeStatement: React.FC = () => {
 
             finalY = (doc as any).lastAutoTable.finalY + 10;
             doc.setFont('helvetica', 'bold');
-            doc.text(`TOTAL ${title.toUpperCase()}:`, 120, finalY);
+            doc.text(`${t('incomeStatement.pdfTotal')} ${title.toUpperCase()}:`, 120, finalY);
             doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
             finalY += 15;
         };

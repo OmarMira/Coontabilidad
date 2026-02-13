@@ -59,12 +59,59 @@ export class TranslationEngine {
         return this.currentLanguage;
     }
 
+    private debug: boolean = true;
+    private fallbackLng: Language = 'en';
+
     /**
-     * Función de traducción núcleo.
+     * Función de traducción núcleo con Fallback.
      */
-    public t(key: string): string {
-        const dictionary = this.dictionaries[this.currentLanguage];
-        return dictionary[key as TranslationKey] || key;
+    public t(key: string): any {
+        // Convert key to lowercase for case-insensitive lookup
+        const normalizedKey = key.toLowerCase();
+        let value = this.getValueFromDictionary(this.dictionaries[this.currentLanguage], normalizedKey);
+
+        // Fallback a inglés si no se encuentra en el idioma actual
+        if (value === normalizedKey && this.currentLanguage !== this.fallbackLng) {
+            if (this.debug) {
+                console.warn(`[i18n] Missing key '${key}' in '${this.currentLanguage}'. Falling back to '${this.fallbackLng}'.`);
+            }
+            value = this.getValueFromDictionary(this.dictionaries[this.fallbackLng], normalizedKey);
+        }
+
+        return value;
+    }
+
+    private getValueFromDictionary(dictionary: any, key: string): any {
+        // First, try exact match for flat keys (e.g., "navigation.dashboard")
+        // This handles case where JSON keys contain dots
+        const exactMatch = Object.keys(dictionary).find(k => k.toLowerCase() === key.toLowerCase());
+        if (exactMatch) {
+            return dictionary[exactMatch];
+        }
+
+        // If not found as flat key, try nested traversal
+        const keys = key.split('.');
+        let value = dictionary;
+
+        for (const k of keys) {
+            if (value && typeof value === 'object') {
+                // Try exact match first
+                if (k in value) {
+                    value = value[k];
+                } else {
+                    // Try case-insensitive match
+                    const matchingKey = Object.keys(value).find(objKey => objKey.toLowerCase() === k.toLowerCase());
+                    if (matchingKey) {
+                        value = value[matchingKey];
+                    } else {
+                        return key;
+                    }
+                }
+            } else {
+                return key;
+            }
+        }
+        return value;
     }
 
     /**

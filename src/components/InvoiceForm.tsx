@@ -211,9 +211,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.customer_id ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
                 } focus:outline-none`}
             >
-              <option value="">{t('invoiceForm.selectCustomer')}</option>
+              <option value="" style={{ color: 'black' }}>{t('invoiceForm.selectCustomer')}</option>
               {customers.map(customer => (
-                <option key={customer.id} value={customer.id}>
+                <option key={customer.id} value={customer.id} style={{ color: 'black' }}>
                   {customer.business_name || customer.name}
                 </option>
               ))}
@@ -304,9 +304,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       onChange={(e) => handleItemChange(index, 'product_id', parseInt(e.target.value) || '')}
                       className="w-full bg-white/5 text-white px-3 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none text-sm"
                     >
-                      <option value="">{t('invoiceForm.selectProduct')}</option>
+                      <option value="" style={{ color: 'black' }}>{t('invoiceForm.selectProduct')}</option>
                       {products.map(product => (
-                        <option key={product.id} value={product.id}>
+                        <option key={product.id} value={product.id} style={{ color: 'black' }}>
                           {product.name} - ${product.price}
                         </option>
                       ))}
@@ -323,7 +323,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                       className={`w-full bg-white/5 text-white px-3 py-2 rounded-md border text-sm transition-colors ${errors[`item_${index}_description`] ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
                         } focus:outline-none`}
-                      placeholder="Item description"
+                      placeholder={t('invoiceForm.itemDescriptionPlaceholder')}
                     />
                     {errors[`item_${index}_description`] && (
                       <p className="text-red-400 text-xs mt-1">{errors[`item_${index}_description`]}</p>
@@ -418,7 +418,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </div>
             <div className="border-t border-white/10 pt-2">
               <div className="flex justify-between text-white font-semibold text-lg">
-                <span>Total:</span>
+                <span>{t('invoiceForm.total')}:</span>
                 <span>${total.toFixed(2)}</span>
               </div>
             </div>
@@ -436,11 +436,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               onChange={(e) => handleInputChange('status', e.target.value)}
               className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
             >
-              <option value="draft">{t('invoiceList.draft')}</option>
-              <option value="sent">{t('invoiceList.sent')}</option>
-              <option value="paid">{t('invoiceList.paid')}</option>
-              <option value="overdue">{t('invoiceList.overdue')}</option>
-              <option value="cancelled">{t('invoiceList.cancelled')}</option>
+              <option value="draft" style={{ color: 'black' }}>{t('invoiceList.draft')}</option>
+              <option value="sent" style={{ color: 'black' }}>{t('invoiceList.sent')}</option>
+              <option value="paid" style={{ color: 'black' }}>{t('invoiceList.paid')}</option>
+              <option value="overdue" style={{ color: 'black' }}>{t('invoiceList.overdue')}</option>
+              <option value="cancelled" style={{ color: 'black' }}>{t('invoiceList.cancelled')}</option>
             </select>
           </div>
 
@@ -453,7 +453,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
               onChange={(e) => handleInputChange('notes', e.target.value)}
               rows={3}
               className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
-              placeholder="Additional notes or terms..."
+              placeholder={t('invoiceForm.notesPlaceholder')}
             />
           </div>
         </div>

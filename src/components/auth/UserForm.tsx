@@ -1,5 +1,9 @@
+import React, { useState, useEffect } from 'react';
+import { X, Save, Lock, Shield, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../i18n/useLocale';
+import UserService from '../../services/UserService';
+import type { User, UserRole } from '../../types/user.types';
 
 interface UserFormProps {
     user?: User | null;

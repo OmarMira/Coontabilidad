@@ -1,20 +1,23 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useLocale } from '../../i18n/useLocale';
 
 export const PayableReports: React.FC = () => {
+    const { t } = useLocale();
+
     const data = [
-        { name: '0-30 Días', amount: 1500 },
-        { name: '31-60 Días', amount: 300 },
-        { name: '61-90 Días', amount: 0 },
-        { name: '90+ Días', amount: 100 },
+        { name: t('payableReports.days030'), amount: 1500 },
+        { name: t('payableReports.days3160'), amount: 300 },
+        { name: t('payableReports.days6190'), amount: 0 },
+        { name: t('payableReports.days90plus'), amount: 100 },
     ];
 
     return (
         <div className="grid grid-cols-1 gap-6">
             <Card className="bg-slate-900 border-white/5 text-white w-full">
                 <CardHeader>
-                    <CardTitle>Antigüedad de Saldos (Proveedores)</CardTitle>
+                    <CardTitle>{t('payableReports.agingBalance')}</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">

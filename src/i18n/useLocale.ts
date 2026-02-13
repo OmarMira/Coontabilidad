@@ -9,18 +9,25 @@ import { translationEngine } from '../core/i18n/TranslationEngine';
 export const useLocale = () => {
     const { language } = useLanguage();
 
-    const t = useCallback((key: string, params?: Record<string, string | number>): string => {
+    const t = useCallback(<T = string>(key: string, params?: Record<string, string | number>): T => {
         let value = translationEngine.t(key);
 
-        // Interpolación de parámetros {{param}} o {param}
-        if (params && value !== key) {
+        // Interpolación de parámetros {{param}} o {param} solo si es string
+        if (typeof value === 'string' && params) {
             return value.replace(/\{{1,2}(\w+)\}{1,2}/g, (match, paramKey) => {
                 return paramKey in params ? String(params[paramKey]) : match;
-            });
+            }) as unknown as T;
         }
 
-        return value;
+        return value as T;
     }, [language]);
 
-    return { t, language };
+    const formatCurrency = useCallback((amount: number) => {
+        return new Intl.NumberFormat(language === 'es' ? 'es-ES' : 'en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(amount);
+    }, [language]);
+
+    return { t, language, formatCurrency };
 };

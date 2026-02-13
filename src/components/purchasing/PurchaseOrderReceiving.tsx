@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Truck, CheckCircle, Package } from 'lucide-react';
 import { PurchaseOrder, receivePurchaseOrder } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '../../i18n/useLocale';
 
 interface Props {
     order: PurchaseOrder;
@@ -12,10 +13,11 @@ interface Props {
 }
 
 export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSuccess }) => {
+    const { t } = useLocale();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleReceive = async () => {
-        if (!confirm(`¿Confirmar recepción de mercancía para Orden #${order.order_number}? Esto aumentará el stock de los productos.`)) {
+        if (!confirm(t('poReceiving.confirmDialog').replace('{number}', order.order_number))) {
             return;
         }
 
@@ -25,13 +27,13 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
             const result = receivePurchaseOrder(order.id, 1);
 
             if (result.success) {
-                toast.success('Mercancía recibida e inventario actualizado');
+                toast.success(t('poReceiving.success'));
                 onSuccess();
             } else {
-                toast.error('Error al recibir: ' + result.message);
+                toast.error(t('poReceiving.error') + result.message);
             }
         } catch (error) {
-            toast.error('Error inesperado');
+            toast.error(t('poReceiving.error unexpected'));
             console.error(error);
         } finally {
             setIsSubmitting(false);
@@ -44,21 +46,21 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
                 <CardHeader className="border-b border-slate-800">
                     <CardTitle className="flex items-center gap-2 text-xl">
                         <Truck className="w-6 h-6 text-blue-400" />
-                        Recepción de Mercancía
+                        {t('poReceiving.title')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 pt-6">
                     <div className="bg-slate-800/50 p-4 rounded-lg space-y-2">
                         <div className="flex justify-between">
-                            <span className="text-slate-400">Orden de Compra:</span>
+                            <span className="text-slate-400">{t('poReceiving.order')}</span>
                             <span className="font-mono text-blue-300 font-bold">{order.order_number}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-slate-400">Proveedor:</span>
+                            <span className="text-slate-400">{t('poReceiving.supplier')}</span>
                             <span>{order.supplier_name}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-slate-400">Total Orden:</span>
+                            <span className="text-slate-400">{t('poReceiving.total')}</span>
                             <span className="font-mono">${order.total_amount.toFixed(2)}</span>
                         </div>
                     </div>
@@ -67,14 +69,14 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
                         <div className="flex items-start gap-3 p-3 bg-amber-900/10 border border-amber-900/30 rounded-lg text-amber-200 text-sm">
                             <Package className="w-5 h-5 shrink-0 mt-0.5" />
                             <p>
-                                Al confirmar, el sistema registrará la entrada de inventario automáticamente en el Kardex y actualizará las existencias disponibles de todos los productos en la orden.
+                                {t('poReceiving.info')}
                             </p>
                         </div>
                     </div>
                 </CardContent>
                 <div className="flex justify-end gap-3 border-t border-slate-800 pt-4 p-6">
                     <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
-                        Cancelar
+                        {t('poReceiving.cancel')}
                     </Button>
                     <Button
                         onClick={handleReceive}
@@ -82,11 +84,11 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
                         className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20"
                     >
                         {isSubmitting ? (
-                            <span className="animate-pulse">Procesando...</span>
+                            <span className="animate-pulse">{t('poReceiving.processing')}</span>
                         ) : (
                             <>
                                 <CheckCircle className="w-4 h-4 mr-2" />
-                                Confirmar Recepción
+                                {t('poReceiving.confirm')}
                             </>
                         )}
                     </Button>

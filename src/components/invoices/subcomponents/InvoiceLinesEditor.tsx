@@ -52,9 +52,9 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
                                 onChange={(e) => handleProductSelect(index, Number(e.target.value))}
                                 className="w-full bg-white/10 text-sm text-white border border-white/10 rounded px-2 py-1 mb-1"
                             >
-                                <option value={0}>Select Product...</option>
+                                <option value={0} style={{ color: 'black' }}>Select Product...</option>
                                 {products.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                    <option key={p.id} value={p.id} style={{ color: 'black' }}>{p.name}</option>
                                 ))}
                             </select>
                             <input

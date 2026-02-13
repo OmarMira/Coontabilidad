@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, AlertCircle, AlertTriangle, Clock, Loader, Activity, ChevronRight } from 'lucide-react';
+import { useLocale } from '../../i18n/useLocale';
 
 // ============================================================================
 // INTERFACES Y TIPOS
@@ -45,6 +46,7 @@ export default function ClosureChecklist({
   onValidationStart,
   onValidationComplete
 }: ClosureChecklistProps) {
+  const { t } = useLocale();
   const [checks, setChecks] = useState<ChecklistItem[]>(initialChecks);
   const [isRunning, setIsRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
@@ -168,29 +170,29 @@ export default function ClosureChecklist({
         <div className="space-y-3">
           <h4 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
             <Activity className="w-5 h-5 text-blue-500" />
-            Checklist de Validaciones
+            {t('closure.checklist.title')}
           </h4>
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
               <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">{summary.passed} PASADAS</span>
+              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">{summary.passed} {t('closure.checklist.passed')}</span>
             </div>
             {summary.warning > 0 && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-500/10 rounded-full border border-orange-500/20">
                 <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
-                <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">{summary.warning} ALERTAS</span>
+                <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">{summary.warning} {t('closure.checklist.warnings')}</span>
               </div>
             )}
             {summary.error > 0 && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/10 rounded-full border border-red-500/20">
                 <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-                <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">{summary.error} ERRORES</span>
+                <span className="text-[10px] font-black text-red-400 uppercase tracking-widest">{summary.error} {t('closure.checklist.errors')}</span>
               </div>
             )}
             {summary.pending > 0 && (
               <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-800/50 rounded-full border border-slate-700/50">
                 <Clock className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{summary.pending} PENDIENTES</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{summary.pending} {t('closure.checklist.pending')}</span>
               </div>
             )}
           </div>
@@ -205,12 +207,12 @@ export default function ClosureChecklist({
             {isRunning ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                Validando...
+                {t('closure.checklist.validating')}
               </>
             ) : (
               <>
                 <CheckCircle className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                Ejecutar Validaciones
+                {t('closure.checklist.runValidations')}
               </>
             )}
           </button>
@@ -261,7 +263,7 @@ export default function ClosureChecklist({
                   <details className="mt-4 group/details">
                     <summary className="text-[10px] font-black text-slate-600 uppercase tracking-widest cursor-pointer hover:text-slate-400 transition-colors list-none flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-open/details:bg-blue-500" />
-                      Auditoría Técnica
+                      {t('closure.checklist.technicalAudit')}
                     </summary>
                     <div className="mt-3 p-4 bg-slate-950 rounded-xl border border-slate-800/50 overflow-x-auto">
                       <pre className="text-xs font-mono text-blue-400 font-bold leading-relaxed">
@@ -282,29 +284,29 @@ export default function ClosureChecklist({
           }`}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left space-y-2">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado Final del Paso</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('closure.checklist.stepStatus')}</p>
               <h3 className="text-2xl font-black text-white tracking-tight">
-                {summary.passed} de {summary.total} validaciones completadas
+                {summary.passed} {t('common.of')} {summary.total} {t('closure.checklist.completedValidations')}
               </h3>
             </div>
             <div className="flex flex-col items-center md:items-end gap-2">
               {summary.error > 0 ? (
                 <div className="flex items-center gap-3 px-6 py-3 bg-red-500 text-white rounded-xl font-black shadow-lg shadow-red-900/20">
                   <AlertCircle className="w-6 h-6" />
-                  ERROR: ACCIÓN REQUERIDA
+                  {t('closure.checklist.errorActionRequired')}
                 </div>
               ) : summary.warning > 0 ? (
                 <div className="flex items-center gap-3 px-6 py-3 bg-orange-600 text-white rounded-xl font-black shadow-lg shadow-orange-900/20">
                   <AlertTriangle className="w-6 h-6" />
-                  ADVERTENCIAS DETECTADAS
+                  {t('closure.checklist.warningsDetected')}
                 </div>
               ) : (
                 <div className="flex items-center gap-3 px-6 py-3 bg-emerald-600 text-white rounded-xl font-black shadow-lg shadow-emerald-900/20">
                   <CheckCircle className="w-6 h-6" />
-                  LISTO PARA CONTINUAR
+                  {t('closure.checklist.readyToContinue')}
                 </div>
               )}
-              <p className="text-xs font-bold text-slate-500">Resultados registrados en la auditoría inmutable</p>
+              <p className="text-xs font-bold text-slate-500">{t('closure.checklist.auditRecorded')}</p>
             </div>
           </div>
         </div>

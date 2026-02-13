@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X, Building2, AlertCircle, ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Landmark, Layers, Info } from 'lucide-react';
 import { BankAccount } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface BankAccountFormProps {
     initialData?: BankAccount;
@@ -13,6 +14,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
     onSubmit,
     onCancel
 }) => {
+    const { t } = useLocale();
     const [formData, setFormData] = useState<Omit<BankAccount, 'id' | 'created_at'>>({
         account_name: '',
         bank_name: '',
@@ -51,9 +53,9 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
 
     const validate = () => {
         const newErrors: Record<string, string> = {};
-        if (!formData.account_name.trim()) newErrors.account_name = 'Nombre mandatorio';
-        if (!formData.bank_name.trim()) newErrors.bank_name = 'Entidad mandatoria';
-        if (!formData.account_number.trim()) newErrors.account_number = 'Identificador mandatorio';
+        if (!formData.account_name.trim()) newErrors.account_name = t('bankAccountForm.error.nameRequired');
+        if (!formData.bank_name.trim()) newErrors.bank_name = t('bankAccountForm.error.bankRequired');
+        if (!formData.account_number.trim()) newErrors.account_number = t('bankAccountForm.error.accountIdRequired');
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -84,10 +86,10 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                         </div>
                         <div>
                             <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
-                                {initialData ? 'Ajustar Bóveda' : 'Sincronizar Nueva Cuenta'}
+                                {initialData ? t('bankAccountForm.title.edit') : t('bankAccountForm.title.create')}
                             </h2>
                             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Banking Forensic Protocol v5.1
+                                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.subtitle')}
                             </p>
                         </div>
                     </div>
@@ -98,12 +100,12 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
 
                 <form onSubmit={handleSubmit} className="p-10 space-y-12 relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <PremiumInput label="Alias de la Cuenta" icon={Building2} value={formData.account_name} error={errors.account_name} onChange={(v) => handleChange('account_name', v)} placeholder="CUENTA OPERATIVA ALPHA" required />
-                        <PremiumInput label="Entidad Bancaria" icon={Landmark} value={formData.bank_name} error={errors.bank_name} onChange={(v) => handleChange('bank_name', v)} placeholder="CHASE / BOFA / WELLS" required />
+                        <PremiumInput label={t('bankAccountForm.label.accountAlias')} icon={Building2} value={formData.account_name} error={errors.account_name} onChange={(v) => handleChange('account_name', v)} placeholder={t('bankAccountForm.placeholder.accountAlias')} required t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.bankEntity')} icon={Landmark} value={formData.bank_name} error={errors.bank_name} onChange={(v) => handleChange('bank_name', v)} placeholder={t('bankAccountForm.placeholder.bankEntity')} required t={t} />
 
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                                <Layers className="w-3.5 h-3.5 text-blue-500" /> Clasificación
+                                <Layers className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.label.classification')}
                             </label>
                             <select
                                 name="account_type"
@@ -111,16 +113,16 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                                 onChange={(e) => handleChange('account_type', e.target.value)}
                                 className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer h-[58px]"
                             >
-                                <option value="checking">CUENTA CORRIENTE (CHECKING)</option>
-                                <option value="savings">CUENTA DE AHORROS (SAVINGS)</option>
-                                <option value="credit">TARJETA DE CRÉDITO</option>
-                                <option value="other">OTRO ACTIVO</option>
+                                <option value="checking">{t('bankAccountForm.type.checking')}</option>
+                                <option value="savings">{t('bankAccountForm.type.savings')}</option>
+                                <option value="credit">{t('bankAccountForm.type.credit')}</option>
+                                <option value="other">{t('bankAccountForm.type.other')}</option>
                             </select>
                         </div>
 
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                                <Zap className="w-3.5 h-3.5 text-blue-500" /> Divisa
+                                <Zap className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.label.currency')}
                             </label>
                             <select
                                 name="currency"
@@ -128,16 +130,16 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                                 onChange={(e) => handleChange('currency', e.target.value)}
                                 className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer h-[58px]"
                             >
-                                <option value="USD">USD - DÓLAR AMERICANO</option>
-                                <option value="EUR">EUR - EURO</option>
-                                <option value="MXN">MXN - PESO MEXICANO</option>
+                                <option value="USD">{t('bankAccountForm.currency.usd')}</option>
+                                <option value="EUR">{t('bankAccountForm.currency.eur')}</option>
+                                <option value="MXN">{t('bankAccountForm.currency.mxn')}</option>
                             </select>
                         </div>
 
-                        <PremiumInput label="Identificador de Cuenta" icon={Layers} value={formData.account_number} error={errors.account_number} onChange={(v) => handleChange('account_number', v)} placeholder="XXXX-XXXX-XXXX" required />
-                        <PremiumInput label="Número de Ruta (Routing)" icon={ShieldCheck} value={formData.routing_number} onChange={(v) => handleChange('routing_number', v)} placeholder="XXXXXXXXX" />
+                        <PremiumInput label={t('bankAccountForm.label.accountId')} icon={Layers} value={formData.account_number} error={errors.account_number} onChange={(v) => handleChange('account_number', v)} placeholder={t('bankAccountForm.placeholder.accountId')} required t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.routing')} icon={ShieldCheck} value={formData.routing_number} onChange={(v) => handleChange('routing_number', v)} placeholder={t('bankAccountForm.placeholder.routing')} t={t} />
 
-                        <PremiumInput label="Saldo Inicial" icon={DollarSign} value={formData.balance.toString()} onChange={(v) => handleChange('balance', parseFloat(v) || 0)} type="number" />
+                        <PremiumInput label={t('bankAccountForm.label.initialBalance')} icon={DollarSign} value={formData.balance.toString()} onChange={(v) => handleChange('balance', parseFloat(v) || 0)} type="number" t={t} />
 
                         <div className="flex items-center gap-6 p-6 bg-slate-950 border border-slate-800 rounded-3xl h-[58px] self-end">
                             <label className="flex items-center gap-4 cursor-pointer group">
@@ -151,21 +153,21 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                                     <div className={`w-12 h-6 rounded-full transition-colors duration-300 ${formData.is_active ? 'bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-800'}`}></div>
                                     <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${formData.is_active ? 'translate-x-6' : 'translate-x-0'}`}></div>
                                 </div>
-                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.is_active ? 'text-white' : 'text-slate-500'}`}>Estado: {formData.is_active ? 'ACTIVA' : 'INACTIVA'}</span>
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${formData.is_active ? 'text-white' : 'text-slate-500'}`}>{t('bankAccountForm.status.label')} {formData.is_active ? t('bankAccountForm.status.active') : t('bankAccountForm.status.inactive')}</span>
                             </label>
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                            <Info className="w-3.5 h-3.5 text-blue-500" /> Memorándum Interno
+                            <Info className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.label.memo')}
                         </label>
                         <textarea
                             name="notes"
                             value={formData.notes}
                             onChange={(e) => handleChange('notes', e.target.value)}
                             rows={3}
-                            placeholder="NOTAS TÉCNICAS DE AUDITORÍA..."
+                            placeholder={t('bankAccountForm.placeholder.memo')}
                             className="w-full bg-slate-950 text-white px-8 py-6 rounded-[2rem] border border-slate-800 focus:border-blue-500 focus:outline-none font-medium text-sm transition-all placeholder:text-slate-800 resize-none"
                         />
                     </div>
@@ -176,7 +178,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                             onClick={onCancel}
                             className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg"
                         >
-                            Abortar Proceso
+                            {t('bankAccountForm.button.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -188,7 +190,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                             ) : (
                                 <Save className="w-5 h-5" />
                             )}
-                            {initialData ? 'Confirmar Ajustes' : 'Sincronizar Bóveda'}
+                            {initialData ? t('bankAccountForm.button.update') : t('bankAccountForm.button.save')}
                         </button>
                     </footer>
                 </form>
@@ -197,7 +199,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
     );
 };
 
-const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required }: any) => (
+const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required, t }: any) => (
     <div className="space-y-4">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
             <Icon className={`w-3.5 h-3.5 ${error ? 'text-rose-500' : 'text-blue-500'}`} /> {label} {required && '*'}

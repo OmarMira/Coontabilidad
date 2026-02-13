@@ -296,7 +296,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                             Alertas
                                         </h4>
                                         <div className="space-y-2">
-                                            {analysis.alerts.map((alert, i) => (
+                                            {(analysis.alerts || []).map((alert, i) => (
                                                 <p key={i} className="text-sm text-white bg-red-800/30 p-2 rounded">{alert}</p>
                                             ))}
                                         </div>

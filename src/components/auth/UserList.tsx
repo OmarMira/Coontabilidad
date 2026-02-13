@@ -5,8 +5,10 @@ import type { User } from '../../types/user.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserForm } from './UserForm';
 import { RolesDiagnostic } from './RolesDiagnostic';
+import { useLocale } from '../../i18n/useLocale';
 
 export const UserList: React.FC = () => {
+    const { t } = useLocale();
     const { user: currentUser } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export const UserList: React.FC = () => {
     };
 
     const handleDeactivate = async (userId: number) => {
-        if (!confirm('¿Está seguro de desactivar este usuario?')) return;
+        if (!confirm(t('userList.confirmDeactivate'))) return;
 
         const result = UserService.deactivateUser(userId, currentUser?.id);
         if (result.success) {
@@ -69,8 +71,8 @@ export const UserList: React.FC = () => {
                         <Users className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white">Gestión de Usuarios</h1>
-                        <p className="text-slate-400 text-sm">Administrar usuarios y permisos del sistema</p>
+                        <h1 className="text-2xl font-black text-white">{t('userList.title')}</h1>
+                        <p className="text-slate-400 text-sm">{t('userList.subtitle')}</p>
                     </div>
                 </div>
                 <button
@@ -81,7 +83,7 @@ export const UserList: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/50 hover:scale-105"
                 >
                     <Plus className="w-5 h-5" />
-                    Nuevo Usuario
+                    {t('userList.newUser')}
                 </button>
             </div>
 
@@ -89,7 +91,7 @@ export const UserList: React.FC = () => {
             <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-4">
                 <input
                     type="text"
-                    placeholder="Buscar usuarios..."
+                    placeholder={t('userList.search')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -103,22 +105,22 @@ export const UserList: React.FC = () => {
                         <thead className="bg-slate-800/50 border-b border-slate-700">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    Usuario
+                                    {t('userList.table.user')}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    Nombre
+                                    {t('userList.table.name')}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    Rol
+                                    {t('userList.table.role')}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    Estado
+                                    {t('userList.table.status')}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    Último Acceso
+                                    {t('userList.table.lastAccess')}
                                 </th>
                                 <th className="px-6 py-4 text-right text-xs font-black text-slate-400 uppercase tracking-wider">
-                                    Acciones
+                                    {t('userList.table.actions')}
                                 </th>
                             </tr>
                         </thead>
@@ -143,19 +145,19 @@ export const UserList: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${getRoleBadgeColor(user.role_level)}`}>
-                                            {user.role_name || 'Sin rol'}
+                                            {user.role_name || t('userList.noRole')}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         {user.is_active ? (
                                             <span className="flex items-center gap-2 text-emerald-400">
                                                 <CheckCircle className="w-4 h-4" />
-                                                <span className="text-sm font-semibold">Activo</span>
+                                                <span className="text-sm font-semibold">{t('userList.status.active')}</span>
                                             </span>
                                         ) : (
                                             <span className="flex items-center gap-2 text-red-400">
                                                 <XCircle className="w-4 h-4" />
-                                                <span className="text-sm font-semibold">Inactivo</span>
+                                                <span className="text-sm font-semibold">{t('userList.status.inactive')}</span>
                                             </span>
                                         )}
                                     </td>
@@ -168,7 +170,7 @@ export const UserList: React.FC = () => {
                                                 hour: '2-digit',
                                                 minute: '2-digit'
                                             })
-                                            : 'Nunca'}
+                                            : t('userList.never')}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -178,7 +180,7 @@ export const UserList: React.FC = () => {
                                                     setShowForm(true);
                                                 }}
                                                 className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
-                                                title="Editar usuario"
+                                                title={t('userList.editUser')}
                                             >
                                                 <Edit className="w-4 h-4" />
                                             </button>
@@ -186,7 +188,7 @@ export const UserList: React.FC = () => {
                                                 <button
                                                     onClick={() => handleDeactivate(user.id)}
                                                     className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
-                                                    title="Desactivar usuario"
+                                                    title={t('userList.deactivateUser')}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -202,9 +204,9 @@ export const UserList: React.FC = () => {
                 {filteredUsers.length === 0 && (
                     <div className="text-center py-12">
                         <Users className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                        <p className="text-slate-400 text-lg font-semibold">No se encontraron usuarios</p>
+                        <p className="text-slate-400 text-lg font-semibold">{t('userList.noUsers')}</p>
                         <p className="text-slate-500 text-sm mt-2">
-                            {searchTerm ? 'Intenta con otro término de búsqueda' : 'Crea tu primer usuario'}
+                            {searchTerm ? t('userList.noUsersSearch') : t('userList.noUsersCreate')}
                         </p>
                     </div>
                 )}
@@ -218,7 +220,7 @@ export const UserList: React.FC = () => {
                             <Users className="w-6 h-6 text-blue-400" />
                         </div>
                         <div>
-                            <p className="text-slate-400 text-sm">Total Usuarios</p>
+                            <p className="text-slate-400 text-sm">{t('userList.stats.total')}</p>
                             <p className="text-white text-2xl font-black">{users.length}</p>
                         </div>
                     </div>
@@ -229,7 +231,7 @@ export const UserList: React.FC = () => {
                             <CheckCircle className="w-6 h-6 text-emerald-400" />
                         </div>
                         <div>
-                            <p className="text-slate-400 text-sm">Activos</p>
+                            <p className="text-slate-400 text-sm">{t('userList.stats.active')}</p>
                             <p className="text-white text-2xl font-black">
                                 {users.filter(u => u.is_active).length}
                             </p>
@@ -242,7 +244,7 @@ export const UserList: React.FC = () => {
                             <Shield className="w-6 h-6 text-purple-400" />
                         </div>
                         <div>
-                            <p className="text-slate-400 text-sm">Administradores</p>
+                            <p className="text-slate-400 text-sm">{t('userList.stats.admins')}</p>
                             <p className="text-white text-2xl font-black">
                                 {users.filter(u => u.role_level === 100).length}
                             </p>

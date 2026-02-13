@@ -4,6 +4,7 @@ import {
   Zap, Activity, ShieldCheck, Target, Building2
 } from 'lucide-react';
 import { Supplier } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface SupplierListProps {
   suppliers: Supplier[];
@@ -20,6 +21,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
   onDelete,
   onAddSupplier
 }) => {
+  const { t } = useLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCounty, setSelectedCounty] = useState('');
 
@@ -41,12 +43,12 @@ export const SupplierList: React.FC<SupplierListProps> = ({
         day: 'numeric'
       });
     } catch (error) {
-      return 'Fecha inválida';
+      return t('supplierList.date.invalid');
     }
   };
 
   const handleDelete = (supplier: Supplier) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar a ${supplier.name}?`)) {
+    if (window.confirm(t('supplierList.delete.confirm', { name: supplier.name }))) {
       onDelete(supplier.id);
     }
   };
@@ -60,9 +62,9 @@ export const SupplierList: React.FC<SupplierListProps> = ({
             <Building2 className="w-10 h-10 text-orange-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Matriz de Aliados</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('supplierList.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> Supply Chain Intelligence Matrix
+              <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> {t('supplierList.subtitle')}
             </p>
           </div>
         </div>
@@ -72,7 +74,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
             <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
             <input
               type="text"
-              placeholder="BUSCAR ALIADO / SKU..."
+              placeholder={t('supplierList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all focus:shadow-[0_0_20px_rgba(245,158,11,0.1)]"
@@ -84,7 +86,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
             onChange={(e) => setSelectedCounty(e.target.value)}
             className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
           >
-            <option value="">TODAS LAS ZONAS</option>
+            <option value="">{t('supplierList.filter.allZones')}</option>
             {uniqueCounties.map(county => (
               <option key={county} value={county}>{county?.toUpperCase()}</option>
             ))}
@@ -95,7 +97,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
             className="flex items-center gap-3 px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-orange-900/40 hover:-translate-y-1"
           >
             <Plus className="w-4 h-4" />
-            Registrar Aliado
+            {t('supplierList.button.register')}
           </button>
         </div>
       </div>
@@ -105,9 +107,9 @@ export const SupplierList: React.FC<SupplierListProps> = ({
           <div className="w-24 h-24 bg-slate-950 rounded-[2rem] border border-slate-800 flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-500">
             <Target className="w-10 h-10 text-slate-700 group-hover:text-orange-500 transition-colors" />
           </div>
-          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">Suministro no Detectado</h3>
+          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">{t('supplierList.empty.title')}</h3>
           <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">
-            No se han sincronizado proveedores bajo los parámetros de búsqueda actuales.
+            {t('supplierList.empty.message')}
           </p>
         </div>
       ) : (
@@ -196,16 +198,16 @@ export const SupplierList: React.FC<SupplierListProps> = ({
                 <Activity className="w-10 h-10 text-orange-500" />
               </div>
               <div>
-                <h4 className="text-2xl font-black text-white uppercase tracking-tighter">Sincronización de Red</h4>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">Status global del pool de proveedores</p>
+                <h4 className="text-2xl font-black text-white uppercase tracking-tighter">{t('supplierList.analytics.title')}</h4>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{t('supplierList.analytics.subtitle')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 w-full md:w-auto">
-              <IntelMiniStat value={suppliers.length} label="Total Aliados" color="orange" />
-              <IntelMiniStat value={suppliers.filter(s => s.email).length} label="Puertos de Enlace" color="emerald" />
-              <IntelMiniStat value={suppliers.filter(s => s.phone).length} label="Canales Activos" color="amber" />
-              <IntelMiniStat value={uniqueCounties.length} label="Zonas Juris" color="rose" />
+              <IntelMiniStat value={suppliers.length} label={t('supplierList.analytics.totalAllies')} color="orange" />
+              <IntelMiniStat value={suppliers.filter(s => s.email).length} label={t('supplierList.analytics.linkPorts')} color="emerald" />
+              <IntelMiniStat value={suppliers.filter(s => s.phone).length} label={t('supplierList.analytics.activeChannels')} color="amber" />
+              <IntelMiniStat value={uniqueCounties.length} label={t('supplierList.analytics.jurisZones')} color="rose" />
             </div>
           </div>
         </div>

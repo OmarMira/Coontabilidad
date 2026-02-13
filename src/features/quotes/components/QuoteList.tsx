@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Quote } from '@/database/simple-db';
 import { FileText, Eye, Edit, Trash2, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { useLocale } from '../../../i18n/useLocale';
 
 interface QuoteListProps {
   quotes: Quote[];
@@ -17,6 +18,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
   onDelete,
   onConvert
 }) => {
+  const { t } = useLocale();
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const filteredQuotes = quotes.filter(quote => {
@@ -26,12 +28,12 @@ export const QuoteList: React.FC<QuoteListProps> = ({
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      draft: { label: 'Borrador', color: 'bg-slate-600', icon: FileText },
-      sent: { label: 'Enviada', color: 'bg-blue-600', icon: Clock },
-      accepted: { label: 'Aceptada', color: 'bg-green-600', icon: CheckCircle },
-      rejected: { label: 'Rechazada', color: 'bg-red-600', icon: XCircle },
-      expired: { label: 'Expirada', color: 'bg-orange-600', icon: Clock },
-      converted: { label: 'Convertida', color: 'bg-purple-600', icon: ArrowRight }
+      draft: { label: t('quotes.status.draft'), color: 'bg-slate-600', icon: FileText },
+      sent: { label: t('quotes.status.sent'), color: 'bg-blue-600', icon: Clock },
+      accepted: { label: t('quotes.status.accepted'), color: 'bg-green-600', icon: CheckCircle },
+      rejected: { label: t('quotes.status.rejected'), color: 'bg-red-600', icon: XCircle },
+      expired: { label: t('quotes.status.expired'), color: 'bg-orange-600', icon: Clock },
+      converted: { label: t('quotes.status.converted'), color: 'bg-purple-600', icon: ArrowRight }
     };
 
     const badge = badges[status as keyof typeof badges] || badges.draft;
@@ -47,11 +49,11 @@ export const QuoteList: React.FC<QuoteListProps> = ({
 
   const handleConvert = (quote: Quote) => {
     if (quote.status !== 'accepted') {
-      alert('Solo se pueden convertir cotizaciones aceptadas');
+      alert(t('quotes.alerts.onlyAccepted'));
       return;
     }
 
-    if (confirm(`¿Convertir la cotización ${quote.quote_number} en factura?`)) {
+    if (confirm(t('quotes.alerts.confirmConvert', { number: quote.quote_number }))) {
       onConvert(quote.id);
     }
   };
@@ -61,22 +63,22 @@ export const QuoteList: React.FC<QuoteListProps> = ({
       {/* Filtros */}
       <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
         <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-slate-300">Filtrar por estado:</label>
+          <label className="text-sm font-medium text-slate-300">{t('quotes.filterStatus')}:</label>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">Todas</option>
-            <option value="draft">Borrador</option>
-            <option value="sent">Enviadas</option>
-            <option value="accepted">Aceptadas</option>
-            <option value="rejected">Rechazadas</option>
-            <option value="expired">Expiradas</option>
-            <option value="converted">Convertidas</option>
+            <option value="all">{t('quotes.status.all')}</option>
+            <option value="draft">{t('quotes.status.draft')}</option>
+            <option value="sent">{t('quotes.status.sent')}</option>
+            <option value="accepted">{t('quotes.status.accepted')}</option>
+            <option value="rejected">{t('quotes.status.rejected')}</option>
+            <option value="expired">{t('quotes.status.expired')}</option>
+            <option value="converted">{t('quotes.status.converted')}</option>
           </select>
           <span className="text-sm text-slate-400">
-            {filteredQuotes.length} cotización(es)
+            {t('quotes.count', { count: filteredQuotes.length })}
           </span>
         </div>
       </div>
@@ -85,7 +87,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
       {filteredQuotes.length === 0 ? (
         <div className="bg-slate-800 p-12 rounded-lg border border-slate-700 text-center">
           <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 text-lg">No hay cotizaciones para mostrar</p>
+          <p className="text-slate-400 text-lg">{t('quotes.emptyList')}</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -105,23 +107,23 @@ export const QuoteList: React.FC<QuoteListProps> = ({
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-slate-400">Cliente:</span>
+                      <span className="text-slate-400">{t('quotes.customer')}:</span>
                       <p className="text-white font-medium">{(quote as any).customer_name || 'N/A'}</p>
                     </div>
                     <div>
-                      <span className="text-slate-400">Fecha Emisión:</span>
+                      <span className="text-slate-400">{t('quotes.issueDate')}:</span>
                       <p className="text-white font-medium">
                         {new Date(quote.issue_date).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <span className="text-slate-400">Fecha Expiración:</span>
+                      <span className="text-slate-400">{t('quotes.expirationDate')}:</span>
                       <p className="text-white font-medium">
                         {new Date(quote.expiration_date).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <span className="text-slate-400">Total:</span>
+                      <span className="text-slate-400">{t('quotes.total')}:</span>
                       <p className="text-white font-bold text-lg">
                         ${quote.total_amount.toFixed(2)}
                       </p>
@@ -130,7 +132,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
 
                   {quote.notes && (
                     <div className="mt-3 text-sm text-slate-400">
-                      <span className="font-medium">Notas:</span> {quote.notes}
+                      <span className="font-medium">{t('quotes.notes')}:</span> {quote.notes}
                     </div>
                   )}
                 </div>
@@ -139,7 +141,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
                   <button
                     onClick={() => onView(quote)}
                     className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    title="Ver detalles"
+                    title={t('quotes.actions.view')}
                   >
                     <Eye className="w-5 h-5" />
                   </button>
@@ -149,7 +151,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
                       <button
                         onClick={() => onEdit(quote)}
                         className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                        title="Editar"
+                        title={t('quotes.actions.edit')}
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -158,7 +160,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
                         <button
                           onClick={() => handleConvert(quote)}
                           className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                          title="Convertir a factura"
+                          title={t('quotes.actions.convert')}
                         >
                           <ArrowRight className="w-5 h-5" />
                         </button>
@@ -166,12 +168,12 @@ export const QuoteList: React.FC<QuoteListProps> = ({
 
                       <button
                         onClick={() => {
-                          if (confirm('¿Estás seguro de eliminar esta cotización?')) {
+                          if (confirm(t('quotes.alerts.confirmDelete'))) {
                             onDelete(quote.id);
                           }
                         }}
                         className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                        title="Eliminar"
+                        title={t('quotes.actions.delete')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

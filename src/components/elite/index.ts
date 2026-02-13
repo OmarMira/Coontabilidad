@@ -16,9 +16,6 @@ export { EliteTable } from './EliteTable';
 export { EliteSearchBar } from './EliteSearchBar';
 export { EliteBadge } from './EliteBadge';
 
-// Re-export types
-export type { default as ElitePageHeaderProps } from './ElitePageHeader';
-export type { default as EliteStatsCardProps } from './EliteStatsCard';
-export type { default as EliteTableProps, EliteTableColumn } from './EliteTable';
-export type { default as EliteSearchBarProps } from './EliteSearchBar';
-export type { default as EliteBadgeProps } from './EliteBadge';
+// Re-export types (these components export their own types)
+export type { EliteTableColumn } from './EliteTable';
+

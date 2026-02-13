@@ -4,6 +4,7 @@ import {
   Filter, Plus, Zap, ShieldAlert, ArrowUpRight, Activity, Clock, Search
 } from 'lucide-react';
 import { Bill } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface BillListProps {
   bills: Bill[];
@@ -20,17 +21,18 @@ export const BillList: React.FC<BillListProps> = ({
   onDelete,
   onAddBill
 }) => {
+  const { t } = useLocale();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'draft': return { label: 'BORRADOR', color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: '📝' };
-      case 'received': return { label: 'RECIBIDA', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: '📥' };
-      case 'approved': return { label: 'APROBADA', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: '✅' };
-      case 'paid': return { label: 'PAGADA', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: '💰' };
-      case 'overdue': return { label: 'VENCIDA', color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: '⚠️' };
-      case 'cancelled': return { label: 'CANCELADA', color: 'text-slate-600', bg: 'bg-slate-800/50', border: 'border-slate-700/50', icon: '❌' };
+      case 'draft': return { label: t('billList.status.draft'), color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: '📝' };
+      case 'received': return { label: t('billList.status.received'), color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: '📥' };
+      case 'approved': return { label: t('billList.status.approved'), color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: '✅' };
+      case 'paid': return { label: t('billList.status.paid'), color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: '💰' };
+      case 'overdue': return { label: t('billList.status.overdue'), color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: '⚠️' };
+      case 'cancelled': return { label: t('billList.status.cancelled'), color: 'text-slate-600', bg: 'bg-slate-800/50', border: 'border-slate-700/50', icon: '❌' };
       default: return { label: status.toUpperCase(), color: 'text-slate-400', bg: 'bg-slate-900', border: 'border-slate-800', icon: '📄' };
     }
   };
@@ -47,10 +49,10 @@ export const BillList: React.FC<BillListProps> = ({
 
   const handleDelete = (bill: Bill) => {
     if (bill.status === 'paid') {
-      alert('⚠️ No se pueden eliminar facturas con estatus PAGADA');
+      alert(t('billList.delete.paidWarning'));
       return;
     }
-    if (window.confirm(`¿Estás seguro de que quieres eliminar la factura ${bill.bill_number}?`)) {
+    if (window.confirm(t('billList.delete.confirm', { billNumber: bill.bill_number }))) {
       onDelete(bill.id);
     }
   };
@@ -66,9 +68,9 @@ export const BillList: React.FC<BillListProps> = ({
             <FileText className="w-10 h-10 text-orange-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Cuentas por Pagar</h1>
+            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('billList.title')}</h1>
             <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> Matriz de Pasivos y Obligaciones
+              <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> {t('billList.subtitle')}
             </p>
           </div>
         </div>
@@ -78,7 +80,7 @@ export const BillList: React.FC<BillListProps> = ({
             <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
             <input
               type="text"
-              placeholder="BUSCAR FACTURA / PROVEEDOR..."
+              placeholder={t('billList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none w-80 font-black uppercase tracking-widest text-[10px] transition-all"
@@ -90,7 +92,7 @@ export const BillList: React.FC<BillListProps> = ({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
           >
-            <option value="all">TODOS LOS ESTADOS</option>
+            <option value="all">{t('billList.filter.allStatuses')}</option>
             {['draft', 'received', 'approved', 'paid', 'overdue', 'cancelled'].map(s => (
               <option key={s} value={s}>{s.toUpperCase()}</option>
             ))}
@@ -101,7 +103,7 @@ export const BillList: React.FC<BillListProps> = ({
             className="flex items-center gap-3 px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-orange-900/40 hover:-translate-y-1"
           >
             <Plus className="w-4 h-4" />
-            Nueva Obligación
+            {t('billList.button.newObligation')}
           </button>
         </div>
       </div>
@@ -109,8 +111,8 @@ export const BillList: React.FC<BillListProps> = ({
       {filteredBills.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-[3.5rem] p-24 text-center border-dashed group opacity-60">
           <FileText className="w-20 h-20 text-slate-800 mx-auto mb-8 group-hover:scale-110 transition-transform duration-500" />
-          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">No se detectan obligaciones</h3>
-          <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">Pool de pasivos vacío para los criterios aplicados.</p>
+          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">{t('billList.empty.title')}</h3>
+          <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">{t('billList.empty.message')}</p>
         </div>
       ) : (
         <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-4 shadow-2xl relative group overflow-hidden">
@@ -144,7 +146,7 @@ export const BillList: React.FC<BillListProps> = ({
                         </div>
                         <div>
                           <p className="text-xs font-black text-white uppercase truncate max-w-[150px]">{bill.supplier?.business_name || bill.supplier?.name}</p>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Aliado Estratégico</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{t('billList.label.strategicAlly')}</p>
                         </div>
                       </div>
 
@@ -153,8 +155,8 @@ export const BillList: React.FC<BillListProps> = ({
                           <Calendar className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-xs font-black text-white font-mono uppercase">Vence: {bill.due_date ? new Date(bill.due_date).toLocaleDateString() : '-'}</p>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Emitida: {bill.issue_date ? new Date(bill.issue_date).toLocaleDateString() : '-'}</p>
+                          <p className="text-xs font-black text-white font-mono uppercase">{t('billList.label.dueDate')} {bill.due_date ? new Date(bill.due_date).toLocaleDateString() : '-'}</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">{t('billList.label.issueDate')} {bill.issue_date ? new Date(bill.issue_date).toLocaleDateString() : '-'}</p>
                         </div>
                       </div>
 
@@ -164,7 +166,7 @@ export const BillList: React.FC<BillListProps> = ({
                         </div>
                         <div>
                           <p className="text-base font-black text-orange-400 font-mono tracking-tighter">{formatCurrency(bill.total_amount || 0)}</p>
-                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Carga Financiera</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">{t('billList.label.financialLoad')}</p>
                         </div>
                       </div>
                     </div>
@@ -190,7 +192,7 @@ export const BillList: React.FC<BillListProps> = ({
                     <div className="mt-6 p-4 bg-rose-600/10 border border-rose-500/20 rounded-2xl flex items-center gap-4 animate-pulse">
                       <ShieldAlert className="w-5 h-5 text-rose-500" />
                       <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">
-                        ALERTA CRÍTICA: Obligación vencida{bill.due_date ? ` por ${Math.ceil((Date.now() - new Date(bill.due_date).getTime()) / (1000 * 60 * 60 * 24))} ciclos operativos` : ' sin fecha definida'}
+                        {bill.due_date ? t('billList.alert.overdue', { days: Math.ceil((Date.now() - new Date(bill.due_date).getTime()) / (1000 * 60 * 60 * 24)) }) : t('billList.alert.overdueNoDate')}
                       </span>
                     </div>
                   )}
@@ -211,18 +213,18 @@ export const BillList: React.FC<BillListProps> = ({
               <Activity className="w-10 h-10 text-orange-500" />
             </div>
             <div>
-              <h4 className="text-2xl font-black text-white uppercase tracking-tighter">Malla de Pasivos</h4>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">Monitoreo histórico de obligaciones</p>
+              <h4 className="text-2xl font-black text-white uppercase tracking-tighter">{t('billList.analytics.title')}</h4>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{t('billList.analytics.subtitle')}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 w-full md:w-auto">
-            <IntelMiniStat value={filteredBills.length} label="Documentos" color="orange" />
-            <IntelMiniStat value={formatCurrency(filteredBills.reduce((sum, b) => sum + b.total_amount, 0))} label="Volumen Total" color="emerald" isCurrency />
-            <IntelMiniStat value={filteredBills.filter(b => b.status === 'paid').length} label="Saldadas" color="emerald" />
+            <IntelMiniStat value={filteredBills.length} label={t('billList.analytics.documents')} color="orange" />
+            <IntelMiniStat value={formatCurrency(filteredBills.reduce((sum, b) => sum + b.total_amount, 0))} label={t('billList.analytics.totalVolume')} color="emerald" isCurrency />
+            <IntelMiniStat value={filteredBills.filter(b => b.status === 'paid').length} label={t('billList.analytics.settled')} color="emerald" />
             <IntelMiniStat
               value={formatCurrency(filteredBills.filter(b => b.status !== 'paid' && b.status !== 'cancelled').reduce((sum, b) => sum + b.total_amount, 0))}
-              label="Pendiente"
+              label={t('billList.analytics.pending')}
               color="rose"
               isCurrency
             />

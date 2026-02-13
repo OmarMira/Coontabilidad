@@ -4,8 +4,10 @@ import { getCompanyData, updateCompanyData, checkAccountingDataAssociation, Comp
 import { logger } from '../core/logging/SystemLogger';
 import { LogoUploader } from './LogoUploader';
 import { BackupService } from '../services/BackupService';
+import { useLocale } from '../i18n/useLocale';
 
 export function CompanyDataForm() {
+  const { t } = useLocale();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [formData, setFormData] = useState<Partial<CompanyData>>({});
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export function CompanyDataForm() {
 
   const handleCloudLink = () => {
     if (isCloudLinked) {
-      if (window.confirm('¿Desea desvincular Google Drive? Las copias de seguridad automáticas se detendrán.')) {
+      if (window.confirm(t('companyData.cloud.confirmDisconnect'))) {
         localStorage.removeItem('gdrive_token');
         setIsCloudLinked(false);
       }
@@ -146,7 +148,7 @@ export function CompanyDataForm() {
         <div className="relative mb-6">
           <div className="h-16 w-16 rounded-full border-4 border-slate-800 border-t-blue-500 animate-spin"></div>
         </div>
-        <p className="text-slate-300 font-black uppercase tracking-widest text-xs">Cargando Estructura Corporativa...</p>
+        <p className="text-slate-300 font-black uppercase tracking-widest text-xs">{t('companyData.loading')}</p>
       </div>
     );
   }
@@ -157,7 +159,7 @@ export function CompanyDataForm() {
         <div className="p-4 bg-rose-500/20 rounded-2xl mb-4">
           <AlertTriangle className="h-8 w-8 text-rose-400" />
         </div>
-        <h3 className="text-xl font-black text-rose-300 mb-2">Error Crítico</h3>
+        <h3 className="text-xl font-black text-rose-300 mb-2">{t('companyData.error')}</h3>
         <p className="text-rose-200/70 font-medium max-w-md">{error}</p>
       </div>
     );
@@ -172,8 +174,8 @@ export function CompanyDataForm() {
             <Building2 className="h-10 w-10 text-blue-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-white tracking-tight">Datos Corporativos</h1>
-            <p className="text-slate-400 font-medium">Configuración de la entidad titular del sistema</p>
+            <h1 className="text-2xl font-black text-white">{t('companyData.title')}</h1>
+            <p className="text-slate-400 text-sm">{t('companyData.subtitle')}</p>
           </div>
         </div>
         <button
@@ -186,7 +188,7 @@ export function CompanyDataForm() {
           ) : (
             <Save className="h-5 w-5" />
           )}
-          <span>{saving ? 'Procesando...' : 'Guardar Cambios'}</span>
+          <span>{saving ? t('companyData.saving') : t('companyData.saveButton')}</span>
         </button>
       </div>
 
@@ -201,36 +203,36 @@ export function CompanyDataForm() {
               <Shield className="h-6 w-6 text-amber-400" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-black text-amber-400 mb-1">Entidad con Operaciones Activas</h3>
+              <h3 className="text-lg font-black text-amber-400 mb-1">{t('companyData.alert.title')}</h3>
               <p className="text-amber-200/70 font-medium mb-6 text-sm leading-relaxed">
-                Se detectaron registros contables asociados. La modificación de campos fiscales afectará la integridad histórica de los reportes.
+                {t('companyData.alert.description')}
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <Users className="h-3.5 w-3.5 text-blue-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">Clientes</span>
+                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.customers')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.customers}</span>
                 </div>
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <Building2 className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">Aliados</span>
+                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.suppliers')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.suppliers}</span>
                 </div>
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <FileText className="h-3.5 w-3.5 text-purple-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">Facturas</span>
+                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.invoices')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.invoices}</span>
                 </div>
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <Receipt className="h-3.5 w-3.5 text-orange-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">Compras</span>
+                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.bills')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.bills}</span>
                 </div>
@@ -264,9 +266,9 @@ export function CompanyDataForm() {
           <div className="bg-slate-950/50 px-6 pt-6 border-b border-slate-800">
             <nav className="flex space-x-6">
               {[
-                { id: 'empresa', label: 'Estructura Legal', icon: Building2 },
-                { id: 'finanzas', label: 'Parámetros Financieros', icon: Receipt },
-                { id: 'usuarios', label: 'Acceso y Seguridad', icon: Shield }
+                { id: 'empresa', label: t('companyData.tab.company'), icon: Building2 },
+                { id: 'finanzas', label: t('companyData.tab.finance'), icon: Receipt },
+                { id: 'usuarios', label: t('companyData.tab.users'), icon: Shield }
               ].map((tab: any) => (
                 <button
                   key={tab.id}
@@ -294,7 +296,7 @@ export function CompanyDataForm() {
                 <div className="lg:col-span-4 space-y-6">
                   <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    Identidad Visual
+                    {t('companyData.visual.title')}
                   </h3>
                   <div className="bg-slate-950/50 p-6 rounded-3xl border border-slate-800 border-dashed hover:border-blue-500/30 transition-colors">
                     <LogoUploader
@@ -308,17 +310,17 @@ export function CompanyDataForm() {
                   <div className="pt-6 border-t border-slate-800">
                     <h3 className="text-xs font-black text-blue-500 uppercase tracking-widest flex items-center gap-2 mb-4">
                       <Shield className="w-3 h-3" />
-                      Cloud Vault™ (Backup)
+                      {t('companyData.cloud.title')}
                     </h3>
                     <div className={`p-4 rounded-2xl border ${isCloudLinked ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-slate-900 border-slate-800'}`}>
                       <div className="flex items-center gap-3 mb-3">
                         {isCloudLinked ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <AlertTriangle className="w-5 h-5 text-slate-500" />}
                         <span className={`text-sm font-bold ${isCloudLinked ? 'text-emerald-400' : 'text-slate-400'}`}>
-                          {isCloudLinked ? 'Sincronización Activa' : 'Sin Respaldo Nube'}
+                          {isCloudLinked ? t('companyData.cloud.linked') : t('companyData.cloud.notLinked')}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-                        {isCloudLinked ? 'Sus datos se cifran y respaldan automáticamente en su Google Drive privado.' : 'Conecte su cuenta para activar el respaldo híbrido automático y proteger su información.'}
+                        {isCloudLinked ? t('companyData.cloud.linkedDesc') : t('companyData.cloud.notLinkedDesc')}
                       </p>
                       <button
                         type="button"
@@ -328,7 +330,7 @@ export function CompanyDataForm() {
                           : 'bg-blue-600 text-white hover:bg-blue-700'
                           }`}
                       >
-                        {isCloudLinked ? 'Desvincular Cuenta' : 'Conectar Google Drive'}
+                        {isCloudLinked ? t('companyData.cloud.disconnect') : t('companyData.cloud.connect')}
                       </button>
                     </div>
                   </div>
@@ -338,7 +340,7 @@ export function CompanyDataForm() {
                 <div className="lg:col-span-8 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.companyName')}</label>
                       <input
                         type="text"
                         value={formData.company_name || ''}
@@ -347,7 +349,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Razón Social</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.legalName')}</label>
                       <input
                         type="text"
                         value={formData.legal_name || ''}
@@ -359,7 +361,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ID Fiscal</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.taxId')}</label>
                       <input
                         type="text"
                         value={formData.tax_id || ''}
@@ -368,7 +370,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dirección Física</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.address')}</label>
                       <input
                         type="text"
                         value={formData.address || ''}
@@ -380,7 +382,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="space-y-2 col-span-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Ciudad</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.city')}</label>
                       <input
                         type="text"
                         value={formData.city || ''}
@@ -389,7 +391,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Estado</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.state')}</label>
                       <select
                         value={formData.state || 'FL'}
                         onChange={(e) => handleInputChange('state', e.target.value)}
@@ -402,7 +404,7 @@ export function CompanyDataForm() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">ZIP / Postal</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.zipCode')}</label>
                       <input
                         type="text"
                         value={formData.zip_code || ''}
@@ -414,7 +416,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Teléfono</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.phone')}</label>
                       <input
                         type="tel"
                         value={formData.phone || ''}
@@ -423,7 +425,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.email')}</label>
                       <input
                         type="email"
                         value={formData.email || ''}
@@ -440,13 +442,13 @@ export function CompanyDataForm() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                 <div className="space-y-10">
                   <div>
-                    <h3 className="text-xl font-black text-white tracking-tight mb-2">Ventas & Distribución</h3>
-                    <p className="text-slate-500 font-medium text-sm mb-8 tracking-tight">Reglas globales</p>
+                    <h3 className="text-xl font-black text-white tracking-tight mb-2">{t('companyData.finance.sales')}</h3>
+                    <p className="text-slate-500 font-medium text-sm mb-8 tracking-tight">{t('companyData.finance.salesDesc')}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Comisión %</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.commission')}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -456,7 +458,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tarifa Envío $</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.shipping')}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -470,13 +472,13 @@ export function CompanyDataForm() {
 
                 <div className="space-y-10">
                   <div>
-                    <h3 className="text-xl font-black text-white tracking-tight mb-2">Contabilidad</h3>
-                    <p className="text-slate-500 font-medium text-sm mb-8 tracking-tight">Libro mayor</p>
+                    <h3 className="text-xl font-black text-white tracking-tight mb-2">{t('companyData.finance.accounting')}</h3>
+                    <p className="text-slate-500 font-medium text-sm mb-8 tracking-tight">{t('companyData.finance.accountingDesc')}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mora %</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.lateFee')}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -486,7 +488,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Gracia (Días)</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.gracePeriod')}</label>
                       <input
                         type="number"
                         value={formData.grace_period_days || 0}
@@ -505,20 +507,20 @@ export function CompanyDataForm() {
                   <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Shield className="h-10 w-10 text-amber-500" />
                   </div>
-                  <h3 className="text-2xl font-black text-white mb-4">Modalidad Single-User</h3>
+                  <h3 className="text-2xl font-black text-white mb-4">{t('companyData.users.title')}</h3>
                   <p className="text-slate-400 font-medium mb-10 leading-relaxed">
-                    El sistema está configurado en modo local mono-usuario. La gestión de roles adicionales está inhabilitada en está versión.
+                    {t('companyData.users.description')}
                   </p>
 
                   <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800 inline-flex flex-col md:flex-row items-center gap-8 text-left">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Perfil Actual</span>
-                      <span className="text-lg font-black text-white tracking-tight">Root Administrator</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">{t('companyData.users.currentProfile')}</span>
+                      <span className="text-lg font-black text-white tracking-tight">{t('companyData.users.profileName')}</span>
                     </div>
                     <div className="w-px h-10 bg-slate-800 hidden md:block"></div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Permisos</span>
-                      <span className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase">Total Control (R/W)</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">{t('companyData.users.permissions')}</span>
+                      <span className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase">{t('companyData.users.access')}</span>
                     </div>
                   </div>
                 </div>
@@ -535,17 +537,17 @@ export function CompanyDataForm() {
             <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="h-10 w-10 text-amber-500" />
             </div>
-            <h3 className="text-2xl font-black text-white mb-4">¡Cambio Crítico!</h3>
+            <h3 className="text-2xl font-black text-white mb-4">{t('companyData.warning.title')}</h3>
             <p className="text-slate-400 font-medium mb-8 leading-relaxed">
-              Está modificando identificadores fiscales con registros contables activos.
+              {t('companyData.warning.description')}
             </p>
 
             <div className="space-y-3">
               <button onClick={confirmSaveWithWarning} className="w-full py-4 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl font-black">
-                Proceder (Riesgos Conocidos)
+                {t('companyData.warning.proceed')}
               </button>
               <button onClick={cancelSaveWithWarning} className="w-full py-4 bg-slate-800 text-slate-400 rounded-2xl font-bold">
-                Cancelar
+                {t('companyData.warning.cancel')}
               </button>
             </div>
           </div>

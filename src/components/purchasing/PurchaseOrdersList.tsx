@@ -5,8 +5,10 @@ import { Eye, Plus, ShoppingCart, RefreshCw, Truck, FileText } from 'lucide-reac
 import { PurchaseOrder, getPurchaseOrders, getSuppliers, getProducts } from '@/database/simple-db';
 import { PurchaseOrderReceiving } from './PurchaseOrderReceiving';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '../../i18n/useLocale';
 
 export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateToKardex?: (refId: number) => void }> = ({ onCreateNew, onNavigateToKardex }) => {
+    const { t } = useLocale();
     const [orders, setOrders] = useState<PurchaseOrder[]>([]);
     const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null);
 
@@ -27,17 +29,17 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
         const hasProducts = products.length > 0;
 
         if (!hasSuppliers && !hasProducts) {
-            toast.error("Faltan Proveedores y Productos. Registre ambos antes de crear una orden.");
+            toast.error(t('purchaseOrders.validation.missingResources'));
             return;
         }
 
         if (!hasSuppliers) {
-            toast.error("Faltan Proveedores. Registre al menos un proveedor.");
+            toast.error(t('purchaseOrders.validation.missingSuppliers'));
             return;
         }
 
         if (!hasProducts) {
-            toast.error("Faltan Productos. Registre al menos un producto.");
+            toast.error(t('purchaseOrders.validation.missingProducts'));
             return;
         }
 
@@ -48,13 +50,23 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
         loadOrders();
     }, []);
 
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'draft': return t('purchaseOrders.status.draft');
+            case 'approved': return t('purchaseOrders.status.approved');
+            case 'received': return t('purchaseOrders.status.received');
+            case 'cancelled': return t('purchaseOrders.status.cancelled');
+            default: return status;
+        }
+    };
+
     return (
         <>
             <Card className="bg-slate-900 border-white/5 text-white w-full">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <ShoppingCart className="w-5 h-5 text-blue-400" />
-                        Órdenes de Compra
+                        {t('purchaseOrders.title')}
                     </CardTitle>
                     <div className="flex gap-2">
                         <Button variant="outline" size="icon" onClick={loadOrders} className="border-slate-700 text-slate-400">
@@ -65,7 +77,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                             className="bg-blue-600 hover:bg-blue-700"
                         >
                             <Plus className="w-4 h-4 mr-2" />
-                            Nueva Orden
+                            {t('purchaseOrders.newOrder')}
                         </Button>
                     </div>
                 </CardHeader>
@@ -74,11 +86,11 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                         <table className="w-full text-sm">
                             <thead className="bg-white/10 text-slate-500 text-left">
                                 <tr>
-                                    <th className="p-3"># Orden</th>
-                                    <th className="p-3">Proveedor</th>
-                                    <th className="p-3">Fecha</th>
-                                    <th className="p-3 text-right">Total</th>
-                                    <th className="p-3 text-center">Estado</th>
+                                    <th className="p-3">{t('purchaseOrders.col.order')}</th>
+                                    <th className="p-3">{t('purchaseOrders.col.supplier')}</th>
+                                    <th className="p-3">{t('purchaseOrders.col.date')}</th>
+                                    <th className="p-3 text-right">{t('purchaseOrders.col.total')}</th>
+                                    <th className="p-3 text-center">{t('purchaseOrders.col.status')}</th>
                                     <th className="p-3"></th>
                                 </tr>
                             </thead>
@@ -86,14 +98,14 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                                 {orders.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="p-8 text-center text-slate-600">
-                                            No hay órdenes de compra registradas.
+                                            {t('purchaseOrders.empty')}
                                         </td>
                                     </tr>
                                 ) : (
                                     orders.map(o => (
                                         <tr key={o.id} className="hover:bg-white/10/50">
                                             <td className="p-3 font-mono text-blue-300">{o.order_number}</td>
-                                            <td className="p-3">{o.supplier_name || 'Desconocido'}</td>
+                                            <td className="p-3">{o.supplier_name || t('supplierPayments.unknownSupplier')}</td>
                                             <td className="p-3 text-slate-500">{o.order_date}</td>
                                             <td className="p-3 text-right font-mono">${o.total_amount.toFixed(2)}</td>
                                             <td className="p-3 text-center">
@@ -102,7 +114,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                                                         o.status === 'received' ? 'bg-green-900/30 text-green-400 border-green-800' :
                                                             'bg-red-900/30 text-red-400 border-red-800'
                                                     }`}>
-                                                    {o.status}
+                                                    {getStatusLabel(o.status)}
                                                 </span>
                                             </td>
                                             <td className="p-3 text-right space-x-2">
@@ -112,7 +124,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                                                         size="sm"
                                                         className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
                                                         onClick={() => setReceivingOrder(o)}
-                                                        title="Recibir Mercancía (Demo Shortcut)"
+                                                        title={t('purchaseOrders.tooltip.receive')}
                                                     >
                                                         <Truck className="w-4 h-4" />
                                                     </Button>
@@ -123,7 +135,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                                                         size="sm"
                                                         className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
                                                         onClick={() => setReceivingOrder(o)}
-                                                        title="Recibir Mercancía"
+                                                        title={t('purchaseOrders.tooltip.receive')}
                                                     >
                                                         <Truck className="w-4 h-4" />
                                                     </Button>
@@ -134,7 +146,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
                                                         size="sm"
                                                         className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/20"
                                                         onClick={() => onNavigateToKardex(o.id)}
-                                                        title="Ver Movimientos"
+                                                        title={t('purchaseOrders.tooltip.viewMovements')}
                                                     >
                                                         <FileText className="w-4 h-4" />
                                                     </Button>

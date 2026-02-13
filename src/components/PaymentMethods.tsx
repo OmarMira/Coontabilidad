@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CreditCard, Check, X, AlertCircle } from 'lucide-react';
 import { PaymentMethod, getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface PaymentMethodsProps {
   onPaymentMethodsChange?: () => void;
 }
 
 export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethodsChange }) => {
+  const { t } = useLocale();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null);
@@ -31,7 +33,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       setPaymentMethods(methods);
     } catch (error) {
       console.error('Error loading payment methods:', error);
-      setError('Error al cargar los métodos de pago');
+      setError(t('paymentMethods.error.load'));
     }
   };
 
@@ -72,7 +74,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       }
     } catch (error) {
       console.error('Error saving payment method:', error);
-      setError('Error al guardar el método de pago');
+      setError(t('paymentMethods.error.save'));
     } finally {
       setIsLoading(false);
     }
@@ -93,11 +95,11 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
     const deleteCheck = canDeletePaymentMethod(method.id);
 
     if (!deleteCheck.canDelete) {
-      setError(deleteCheck.reason || 'No se puede eliminar el método de pago');
+      setError(deleteCheck.reason || t('paymentMethods.error.cannotDelete'));
       return;
     }
 
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar el método de pago "${method.method_name}"?`)) {
+    if (!window.confirm(`${t('paymentMethods.confirmDelete')} "${method.method_name}"?`)) {
       return;
     }
 
@@ -115,17 +117,17 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       }
     } catch (error) {
       console.error('Error deleting payment method:', error);
-      setError('Error al eliminar el método de pago');
+      setError(t('paymentMethods.error.delete'));
     }
   };
 
   const getMethodTypeLabel = (type: string) => {
     const labels = {
-      cash: 'Efectivo',
-      check: 'Cheque',
-      credit_card: 'Tarjeta de Crédito',
-      bank_transfer: 'Transferencia Bancaria',
-      other: 'Otro'
+      cash: t('paymentMethods.type.cash'),
+      check: t('paymentMethods.type.check'),
+      credit_card: t('paymentMethods.type.creditCard'),
+      bank_transfer: t('paymentMethods.type.bankTransfer'),
+      other: t('paymentMethods.type.other')
     };
     return labels[type as keyof typeof labels] || type;
   };
@@ -146,18 +148,18 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+          <h2 className="text-2xl font-black text-white flex items-center gap-3">
             <CreditCard className="w-8 h-8 text-blue-500" />
-            Métodos de Pago
+            {t('paymentMethods.title')}
           </h2>
-          <p className="text-slate-400 font-medium ml-11">Gestiona las opciones de cobro y pago disponibles</p>
+          <p className="text-slate-400 text-sm">{t('paymentMethods.subtitle')}</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center space-x-2 transition-all font-bold shadow-lg shadow-blue-900/40"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Nuevo Método
+          {t('paymentMethods.newMethod')}
         </button>
       </div>
 
@@ -191,10 +193,10 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50">
           <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-            Configuraciones Activas
+            {t('paymentMethods.activeConfigurations')}
           </h3>
           <p className="text-slate-400 text-sm font-medium mt-1">
-            {paymentMethods.length} métodos de pago registrados en el motor
+            {paymentMethods.length} {t('paymentMethods.registeredMethods')}
           </p>
         </div>
 
@@ -203,16 +205,16 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
             <div className="bg-slate-800 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-slate-700">
               <CreditCard className="h-8 w-8 text-slate-500" />
             </div>
-            <h3 className="text-lg font-black text-white">No hay registros</h3>
+            <h3 className="text-lg font-black text-white">{t('paymentMethods.noMethods')}</h3>
             <p className="mt-1 text-slate-400 font-medium">
-              Comienza configurando tu primer método de cobro.
+              {t('paymentMethods.noMethodsDesc')}
             </p>
             <button
               onClick={() => setShowForm(true)}
               className="mt-6 inline-flex items-center px-6 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 transition-all font-bold"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Agregar Método
+              {t('paymentMethods.addMethod')}
             </button>
           </div>
         ) : (
@@ -234,7 +236,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                         </span>
                         {!method.is_active && (
                           <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                            Inactivo
+                            {t('common.inactive')}
                           </span>
                         )}
                       </div>
@@ -242,7 +244,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                         {method.requires_reference && (
                           <span className="flex items-center gap-1.5 text-blue-400/70 bg-blue-400/5 px-2 py-0.5 rounded-md border border-blue-400/10">
                             <AlertCircle className="w-3 h-3" />
-                            Requiere Referencia
+                            {t('paymentMethods.requiresReference')}
                           </span>
                         )}
                         <span className="opacity-60 text-[10px] uppercase font-bold tracking-widest">
@@ -255,14 +257,14 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                     <button
                       onClick={() => handleEdit(method)}
                       className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl transition-all"
-                      title="Editar"
+                      title={t('common.edit')}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(method)}
                       className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
-                      title="Eliminar"
+                      title={t('common.delete')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -282,9 +284,9 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-2xl font-black text-white tracking-tight">
-                    {editingMethod ? 'Actualizar Método' : 'Nuevo Método de Pago'}
+                    {editingMethod ? t('paymentMethods.form.titleEdit') : t('paymentMethods.form.titleNew')}
                   </h3>
-                  <p className="text-slate-400 font-medium text-sm">Configura las reglas de validación para esta vía de pago</p>
+                  <p className="text-slate-400 font-medium text-sm">{t('paymentMethods.form.subtitle')}</p>
                 </div>
                 <button
                   onClick={resetForm}
@@ -297,13 +299,13 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                    Nombre Descriptivo
+                    {t('paymentMethods.form.name')}
                   </label>
                   <input
                     type="text"
                     value={formData.method_name}
                     onChange={(e) => setFormData(prev => ({ ...prev, method_name: e.target.value }))}
-                    placeholder="Ej: Transferencia Zelle, Efectivo USD..."
+                    placeholder={t('paymentMethods.form.namePlaceholder')}
                     className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium"
                     required
                     autoFocus
@@ -312,7 +314,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                    Tipo de Transacción
+                    {t('paymentMethods.form.type')}
                   </label>
                   <select
                     value={formData.method_type}
@@ -333,7 +335,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                     onClick={() => setFormData(prev => ({ ...prev, is_active: !prev.is_active }))}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${formData.is_active ? 'bg-blue-500/10 border-blue-500/30' : 'bg-slate-950 border-slate-800'}`}
                   >
-                    <span className={`text-sm font-bold ${formData.is_active ? 'text-blue-400' : 'text-slate-500'}`}>Habilitado</span>
+                    <span className={`text-sm font-bold ${formData.is_active ? 'text-blue-400' : 'text-slate-500'}`}>{t('paymentMethods.form.enabled')}</span>
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.is_active ? 'border-blue-400 bg-blue-400' : 'border-slate-700'}`}>
                       {formData.is_active && <Check className="w-3 h-3 text-slate-950 font-black" />}
                     </div>
@@ -343,7 +345,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                     onClick={() => setFormData(prev => ({ ...prev, requires_reference: !prev.requires_reference }))}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${formData.requires_reference ? 'bg-blue-500/10 border-blue-500/30' : 'bg-slate-950 border-slate-800'}`}
                   >
-                    <span className={`text-sm font-bold ${formData.requires_reference ? 'text-blue-400' : 'text-slate-500'}`}>Referencia Oblig.</span>
+                    <span className={`text-sm font-bold ${formData.requires_reference ? 'text-blue-400' : 'text-slate-500'}`}>{t('paymentMethods.form.requiresRef')}</span>
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.requires_reference ? 'border-blue-400 bg-blue-400' : 'border-slate-700'}`}>
                       {formData.requires_reference && <Check className="w-3 h-3 text-slate-950 font-black" />}
                     </div>
@@ -356,14 +358,14 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                     onClick={resetForm}
                     className="flex-1 py-3 bg-slate-800 text-slate-300 rounded-2xl font-bold hover:bg-slate-700 transition-colors"
                   >
-                    Descartar
+                    {t('common.discard')}
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
                     className="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/40 disabled:opacity-50"
                   >
-                    {isLoading ? 'Guardando...' : editingMethod ? 'Guardar Cambios' : 'Confirmar Registro'}
+                    {isLoading ? t('common.saving') : editingMethod ? t('common.saveChanges') : t('paymentMethods.form.confirm')}
                   </button>
                 </div>
               </form>

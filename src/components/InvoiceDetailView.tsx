@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Edit, FileText, Calendar, DollarSign, User, MapPin, Phone, Mail } from 'lucide-react';
 import { Invoice } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceDetailViewProps {
   invoice: Invoice;
@@ -15,6 +16,8 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
   onBack,
   onEdit
 }) => {
+  const { t } = useLocale();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-600 text-gray-200';
@@ -67,7 +70,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
           >
             <Edit className="w-4 h-4" />
-            Editar Factura
+            {t('invoiceList.editInvoice')}
           </button>
         </div>
       </div>
@@ -78,14 +81,14 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
         <div className="bg-white/10 rounded-lg p-6 border border-white/10">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <User className="w-5 h-5 text-blue-400" />
-            Información del Cliente
+            {t('invoiceForm.customerInfo')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <p className="text-slate-500 text-sm">Customer Name</p>
+              <p className="text-slate-500 text-sm">{t('customerDetail.name')}</p>
               <p className="text-white font-medium">
-                {invoice.customer?.business_name || invoice.customer?.name || 'Unknown Customer'}
+                {invoice.customer?.business_name || invoice.customer?.name || t('invoiceList.unknownCustomer')}
               </p>
             </div>
 
@@ -93,7 +96,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-slate-500" />
                 <div>
-                  <p className="text-slate-500 text-sm">Email</p>
+                  <p className="text-slate-500 text-sm">{t('customerDetail.primaryEmail')}</p>
                   <p className="text-white">{invoice.customer.email}</p>
                 </div>
               </div>
@@ -103,7 +106,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-slate-500" />
                 <div>
-                  <p className="text-slate-500 text-sm">Phone</p>
+                  <p className="text-slate-500 text-sm">{t('customerDetail.primaryPhone')}</p>
                   <p className="text-white">{invoice.customer.phone}</p>
                 </div>
               </div>
@@ -113,7 +116,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-slate-500 mt-1" />
                 <div>
-                  <p className="text-slate-500 text-sm">Address</p>
+                  <p className="text-slate-500 text-sm">{t('customerDetail.address')}</p>
                   <div className="text-white">
                     <p>{invoice.customer.address_line1}</p>
                     <p>{invoice.customer.city}, {invoice.customer.state} {invoice.customer.zip_code}</p>
@@ -128,34 +131,34 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
         <div className="bg-white/10 rounded-lg p-6 border border-white/10">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-400" />
-            Invoice Details
+            {t('invoiceList.title')}
           </h2>
 
           <div className="space-y-3">
             <div>
-              <p className="text-slate-500 text-sm">Invoice Number</p>
+              <p className="text-slate-500 text-sm">{t('customerDetail.invoiceNumber')}</p>
               <p className="text-white font-medium">{invoice.invoice_number}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-slate-500 text-sm">Issue Date</p>
+                <p className="text-slate-500 text-sm">{t('invoiceList.issueDate')}</p>
                 <p className="text-white">{new Date(invoice.issue_date).toLocaleDateString()}</p>
               </div>
               <div>
-                <p className="text-slate-500 text-sm">Due Date</p>
+                <p className="text-slate-500 text-sm">{t('invoiceList.dueDate')}</p>
                 <p className="text-white">{new Date(invoice.due_date).toLocaleDateString()}</p>
               </div>
             </div>
 
             <div>
-              <p className="text-slate-500 text-sm">Created</p>
+              <p className="text-slate-500 text-sm">{t('invoiceList.created')}</p>
               <p className="text-white">{new Date(invoice.created_at).toLocaleString()}</p>
             </div>
 
             {invoice.notes && (
               <div>
-                <p className="text-slate-500 text-sm">Notes</p>
+                <p className="text-slate-500 text-sm">{t('invoiceList.note')}</p>
                 <p className="text-white">{invoice.notes}</p>
               </div>
             )}
@@ -167,7 +170,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
         <div className="p-6 border-b border-white/10">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-400" />
-            Invoice Items
+            {t('invoiceForm.items')}
           </h2>
         </div>
 
@@ -175,11 +178,11 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
           <table className="w-full">
             <thead className="bg-slate-900">
               <tr>
-                <th className="text-left p-4 text-slate-400 font-medium">Description</th>
-                <th className="text-right p-4 text-slate-400 font-medium">Quantity</th>
-                <th className="text-right p-4 text-slate-400 font-medium">Unit Price</th>
-                <th className="text-center p-4 text-slate-400 font-medium">Taxable</th>
-                <th className="text-right p-4 text-slate-400 font-medium">Line Total</th>
+                <th className="text-left p-4 text-slate-400 font-medium">{t('invoiceForm.description')}</th>
+                <th className="text-right p-4 text-slate-400 font-medium">{t('invoiceForm.quantity')}</th>
+                <th className="text-right p-4 text-slate-400 font-medium">{t('invoiceForm.unitPrice')}</th>
+                <th className="text-center p-4 text-slate-400 font-medium">{t('invoiceForm.taxable')}</th>
+                <th className="text-right p-4 text-slate-400 font-medium">{t('invoiceForm.lineTotal')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
@@ -222,23 +225,23 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
           <div className="w-full max-w-sm space-y-3">
             <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-blue-400" />
-              Invoice Summary
+              {t('invoiceForm.summary')}
             </h2>
 
             <div className="space-y-2">
               <div className="flex justify-between text-slate-400">
-                <span>Subtotal:</span>
+                <span>{t('invoiceForm.subtotal')}:</span>
                 <span>${invoice.subtotal.toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between text-slate-400">
-                <span>Tax (FL):</span>
+                <span>{t('invoiceList.tax')} (FL):</span>
                 <span>${invoice.tax_amount.toFixed(2)}</span>
               </div>
 
               <div className="border-t border-white/10 pt-2">
                 <div className="flex justify-between text-white font-semibold text-xl">
-                  <span>Total:</span>
+                  <span>{t('invoiceList.totalAmount')}:</span>
                   <span>${invoice.total_amount.toFixed(2)}</span>
                 </div>
               </div>
@@ -253,10 +256,11 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-red-400 text-xl">⚠️</span>
             <div>
-              <h3 className="text-red-300 font-medium">Factura Vencida</h3>
+              <h3 className="text-red-300 font-medium">{t('invoiceDetail.overdueAlertTitle')}</h3>
               <p className="text-red-200 text-sm">
-                Esta factura está vencida por {Math.ceil((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))} días.
-                Por favor, comuníquese con el cliente para el pago.
+                {t('invoiceDetail.overdueAlertMessage', {
+                  days: Math.ceil((Date.now() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24))
+                })}
               </p>
             </div>
           </div>
@@ -268,9 +272,9 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-green-400 text-xl">✅</span>
             <div>
-              <h3 className="text-green-300 font-medium">Factura Pagada</h3>
+              <h3 className="text-green-300 font-medium">{t('invoiceDetail.paidAlertTitle')}</h3>
               <p className="text-green-200 text-sm">
-                Esta factura ha sido marcada como pagada. ¡Gracias por su negocio!
+                {t('invoiceDetail.paidAlertMessage')}
               </p>
             </div>
           </div>

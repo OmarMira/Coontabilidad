@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, DollarSign, FileText, Search, Filter, Plus, Check, X, Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Bill, Supplier, getPaymentMethods, PaymentMethod, addPayment } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface SupplierPayment {
   id: number;
@@ -26,6 +27,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
   suppliers,
   onPaymentCreated
 }) => {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [payments, setPayments] = useState<SupplierPayment[]>([]);
   const [pendingBills, setPendingBills] = useState<Bill[]>([]);
@@ -81,7 +83,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
   const getSupplierName = (supplierId: number) => {
     const supplier = suppliers.find(s => s.id === supplierId);
-    return supplier ? supplier.name : 'Proveedor desconocido';
+    return supplier ? supplier.name : t('supplierPayments.unknownSupplier');
   };
 
   const filteredBills = pendingBills.filter(bill => {
@@ -178,8 +180,8 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-white">Pagos a Proveedores</h2>
-          <p className="text-slate-400">Gestiona los pagos realizados a proveedores</p>
+          <h2 className="text-2xl font-black tracking-tight text-white">{t('supplierPayments.title')}</h2>
+          <p className="text-slate-400">{t('supplierPayments.subtitle')}</p>
         </div>
       </div>
 
@@ -191,7 +193,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Buscar por proveedor o número de factura..."
+                placeholder={t('supplierPayments.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -204,9 +206,9 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
               onChange={(e) => setFilterStatus(e.target.value as any)}
               className="px-3 py-2 bg-white/5 border border-white/10 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="pending">Pendientes</option>
-              <option value="paid">Pagadas</option>
-              <option value="all">Todas</option>
+              <option value="pending" style={{ color: 'black' }}>{t('supplierPayments.filter.pending')}</option>
+              <option value="paid" style={{ color: 'black' }}>{t('supplierPayments.filter.paid')}</option>
+              <option value="all" style={{ color: 'black' }}>{t('supplierPayments.filter.all')}</option>
             </select>
           </div>
         </div>
@@ -215,7 +217,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
       {/* Lista de facturas pendientes */}
       <div className="bg-white/10 rounded-lg shadow-sm border border-white/10">
         <div className="px-6 py-4 border-b border-white/10">
-          <h3 className="text-lg font-black tracking-tight text-white">Facturas Pendientes de Pago</h3>
+          <h3 className="text-lg font-black tracking-tight text-white">{t('supplierPayments.listTitle')}</h3>
         </div>
 
         <div className="overflow-x-auto">
@@ -223,22 +225,22 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
             <thead className="bg-white/5">
               <tr>
                 <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Factura
+                  {t('supplierPayments.col.bill')}
                 </th>
                 <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Proveedor
+                  {t('supplierPayments.col.supplier')}
                 </th>
                 <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Fecha
+                  {t('supplierPayments.col.date')}
                 </th>
                 <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Monto
+                  {t('supplierPayments.col.amount')}
                 </th>
                 <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Vencimiento
+                  {t('supplierPayments.col.dueDate')}
                 </th>
                 <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
-                  Acciones
+                  {t('supplierPayments.col.actions')}
                 </th>
               </tr>
             </thead>
@@ -280,10 +282,10 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
                           : 'bg-green-100 text-green-800'
                         }`}>
                         {daysUntilDue < 0
-                          ? `Vencida ${Math.abs(daysUntilDue)} días`
+                          ? t('supplierPayments.status.overdue', { days: Math.abs(daysUntilDue) })
                           : daysUntilDue === 0
-                            ? 'Vence hoy'
-                            : `${daysUntilDue} días`
+                            ? t('supplierPayments.status.dueToday')
+                            : t('supplierPayments.status.daysLeft', { days: daysUntilDue })
                         }
                       </span>
                     </td>
@@ -293,7 +295,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
                         className="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                       >
                         <CreditCard className="w-4 h-4 mr-1" />
-                        Pagar
+                        {t('supplierPayments.action.pay')}
                       </button>
                     </td>
                   </tr>
@@ -305,11 +307,11 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
           {filteredBills.length === 0 && (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-slate-500" />
-              <h3 className="mt-2 text-sm font-medium text-white">No hay facturas</h3>
+              <h3 className="mt-2 text-sm font-medium text-white">{t('supplierPayments.empty.title')}</h3>
               <p className="mt-1 text-sm text-slate-400">
                 {filterStatus === 'pending'
-                  ? 'No hay facturas pendientes de pago'
-                  : 'No se encontraron facturas con los filtros aplicados'
+                  ? t('supplierPayments.empty.pending')
+                  : t('supplierPayments.empty.filtered')
                 }
               </p>
             </div>
@@ -324,7 +326,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-black tracking-tight text-white">
-                  Registrar Pago a Proveedor
+                  {t('paymentModal.title')}
                 </h3>
                 <button
                   onClick={() => setShowPaymentForm(false)}
@@ -336,20 +338,20 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
               <div className="mb-4 p-3 bg-white/5 rounded-md">
                 <p className="text-sm text-slate-400">
-                  <strong className="text-white">Factura:</strong> {selectedBill.bill_number}
+                  <strong className="text-white">{t('paymentModal.bill')}</strong> {selectedBill.bill_number}
                 </p>
                 <p className="text-sm text-slate-400">
-                  <strong className="text-white">Proveedor:</strong> {getSupplierName(selectedBill.supplier_id)}
+                  <strong className="text-white">{t('paymentModal.supplier')}</strong> {getSupplierName(selectedBill.supplier_id)}
                 </p>
                 <p className="text-sm text-slate-400">
-                  <strong className="text-white">Monto Total:</strong> ${selectedBill.total_amount.toFixed(2)}
+                  <strong className="text-white">{t('paymentModal.totalAmount')}</strong> ${selectedBill.total_amount.toFixed(2)}
                 </p>
               </div>
 
               <form onSubmit={handlePaymentSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">
-                    Monto del Pago
+                    {t('paymentModal.paymentAmount')}
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -366,7 +368,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">
-                    Fecha de Pago
+                    {t('paymentModal.paymentDate')}
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -382,7 +384,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">
-                    Método de Pago
+                    {t('paymentModal.paymentMethod')}
                   </label>
                   <select
                     value={paymentForm.payment_method}
@@ -390,43 +392,43 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">Seleccionar método...</option>
+                    <option value="" style={{ color: 'black' }}>{t('paymentModal.selectMethod')}</option>
                     {paymentMethods.map((method) => (
-                      <option key={method.id} value={method.method_name}>
+                      <option key={method.id} value={method.method_name} style={{ color: 'black' }}>
                         {method.method_name}
                       </option>
                     ))}
                   </select>
                   {paymentMethods.length === 0 && (
                     <p className="mt-1 text-sm text-red-400">
-                      No hay métodos de pago configurados. Ve a Archivo → Métodos de Pago para agregar algunos.
+                      {t('paymentModal.noMethods')}
                     </p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">
-                    Referencia/Número
+                    {t('paymentModal.reference')}
                   </label>
                   <input
                     type="text"
                     value={paymentForm.reference}
                     onChange={(e) => setPaymentForm(prev => ({ ...prev, reference: e.target.value }))}
-                    placeholder="Número de transferencia, cheque, etc."
+                    placeholder={t('paymentModal.referencePlaceholder')}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-white mb-1">
-                    Notas (Opcional)
+                    {t('paymentModal.notes')}
                   </label>
                   <textarea
                     value={paymentForm.notes}
                     onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
                     rows={3}
                     className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Notas adicionales sobre el pago..."
+                    placeholder={t('paymentModal.notesPlaceholder')}
                   />
                 </div>
 
@@ -436,14 +438,14 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
                     onClick={() => setShowPaymentForm(false)}
                     className="px-4 py-2 border border-white/10 rounded-md text-sm font-medium text-slate-400 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Cancelar
+                    {t('paymentModal.cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                   >
-                    {isLoading ? 'Procesando...' : 'Registrar Pago'}
+                    {isLoading ? t('paymentModal.processing') : t('paymentModal.submit')}
                   </button>
                 </div>
               </form>

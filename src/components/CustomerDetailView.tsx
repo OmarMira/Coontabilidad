@@ -9,9 +9,7 @@ import {
   Phone,
   Mail,
   MapPin,
-  Building,
-  Calendar,
-  DollarSign
+  Building
 } from 'lucide-react';
 import { Customer } from '../database/simple-db';
 import { useLocale } from '../i18n/useLocale';
@@ -119,14 +117,16 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
   };
 
   const getPaymentMethodLabel = (method: string) => {
+    // Basic mapping, assuming keys might exist or fall back to capitalized string
     switch (method) {
-      case 'cash': return t('paymentMethods.cash');
-      case 'check': return t('paymentMethods.check');
-      case 'credit_card': return t('paymentMethods.creditCard');
-      case 'bank_transfer': return t('paymentMethods.bankTransfer');
-      default: return t('paymentMethods.other');
+      case 'cash': return t('ard.payment.methods.cash') || 'Cash';
+      case 'check': return t('ard.payment.methods.check') || 'Check';
+      case 'credit_card': return t('ard.payment.methods.card') || 'Credit Card';
+      case 'bank_transfer': return t('ard.payment.methods.transfer') || 'Bank Transfer';
+      default: return method;
     }
   };
+
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Información básica */}
@@ -269,6 +269,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
       )}
     </div>
   );
+
   const renderInvoicesTab = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -407,6 +408,7 @@ export const CustomerDetailView: React.FC<CustomerDetailViewProps> = ({
       </div>
     </div>
   );
+
   const renderProductsTab = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">

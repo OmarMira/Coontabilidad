@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AuditChainVerifier } from '@/modules/audit/AuditChainVerifier';
 import { Shield, ShieldAlert, ShieldCheck, RefreshCw, Activity } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 interface AuditStatus {
     status: 'secure' | 'compromised' | 'verifying' | 'unknown';
@@ -13,6 +14,7 @@ interface AuditStatus {
 }
 
 export const AuditTrailMonitor: React.FC = () => {
+    const { t } = useLocale();
     const [status, setStatus] = useState<AuditStatus>({
         status: 'unknown',
         lastHash: '...',
@@ -47,7 +49,7 @@ export const AuditTrailMonitor: React.FC = () => {
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <Activity className="w-5 h-5 text-blue-400" />
-                        Monitor de Integridad
+                        {t('auditTrail.title')}
                     </CardTitle>
                     <Button
                         variant="ghost"
@@ -74,28 +76,28 @@ export const AuditTrailMonitor: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="font-bold text-lg">
-                            {status.status === 'secure' && 'Cadena Segura'}
-                            {status.status === 'compromised' && 'Integridad Comprometida'}
-                            {status.status === 'verifying' && 'Verificando...'}
-                            {status.status === 'unknown' && 'Estado Desconocido'}
+                            {status.status === 'secure' && t('auditTrail.status.secure')}
+                            {status.status === 'compromised' && t('auditTrail.status.compromised')}
+                            {status.status === 'verifying' && t('auditTrail.status.verifying')}
+                            {status.status === 'unknown' && t('auditTrail.status.unknown')}
                         </h3>
-                        {status.status === 'secure' && <p className="text-xs text-green-400">Verificación SHA-256 Exitosa</p>}
-                        {status.status === 'compromised' && <p className="text-xs text-red-400">Se detectaron {status.errors.length} errores</p>}
-                        {status.status === 'verifying' && <p className="text-xs text-blue-400">Calculando hashes...</p>}
+                        {status.status === 'secure' && <p className="text-xs text-green-400">{t('auditTrail.verification.success')}</p>}
+                        {status.status === 'compromised' && <p className="text-xs text-red-400">{t('auditTrail.verification.errors').replace('{count}', status.errors.length.toString())}</p>}
+                        {status.status === 'verifying' && <p className="text-xs text-blue-400">{t('auditTrail.verification.calculating')}</p>}
                     </div>
                 </div>
 
                 <div className="space-y-2 text-xs font-mono text-slate-600 bg-black/30 p-3 rounded">
                     <div className="flex justify-between">
-                        <span>Eventos:</span>
+                        <span>{t('auditTrail.table.description')}:</span>
                         <span className="text-white">{status.totalEvents}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>Último Hash:</span>
+                        <span>{t('auditTrail.details')}:</span>
                         <span className="text-white">{status.lastHash}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>Verificado:</span>
+                        <span>{t('auditTrail.table.timestamp')}:</span>
                         <span className="text-white">{status.lastVerified.toLocaleTimeString()}</span>
                     </div>
                 </div>

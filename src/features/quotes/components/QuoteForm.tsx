@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Quote, QuoteLine, Customer, Product } from '@/database/simple-db';
+import { Quote, QuoteLine, Customer, Product } from '../../../database/simple-db';
 import { X, Plus, Trash2, Save, Calculator } from 'lucide-react';
+import { useLocale } from '../../../i18n/useLocale';
 
 interface QuoteFormProps {
   quote?: Quote;
@@ -17,13 +18,15 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
   onSave,
   onCancel
 }) => {
+  const { t, formatCurrency } = useLocale();
+
   const [formData, setFormData] = useState<Partial<Quote>>({
     customer_id: quote?.customer_id || 0,
     issue_date: quote?.issue_date || new Date().toISOString().split('T')[0],
     expiration_date: quote?.expiration_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     status: quote?.status || 'draft',
     notes: quote?.notes || '',
-    terms: quote?.terms || 'Válido por 30 días. Precios sujetos a cambio sin previo aviso.'
+    terms: quote?.terms || t('termsDefault', { defaultValue: 'Válido por 30 días. Precios sujetos a cambio sin previo aviso.' })
   });
 
   const [items, setItems] = useState<Partial<QuoteLine>[]>(
@@ -96,12 +99,12 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
     e.preventDefault();
 
     if (!formData.customer_id) {
-      alert('Por favor selecciona un cliente');
+      alert(t('quotes.form.alerts.selectCustomer'));
       return;
     }
 
     if (items.length === 0 || !items[0].description) {
-      alert('Por favor agrega al menos un item');
+      alert(t('quotes.form.alerts.addItem'));
       return;
     }
 
@@ -115,7 +118,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
           <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
             <Calculator className="w-7 h-7" />
-            {quote ? 'Editar Cotización' : 'Nueva Cotización'}
+            {quote ? t('quotes.form.editTitle') : t('quotes.form.newTitle')}
           </h2>
           <button
             onClick={onCancel}
@@ -130,7 +133,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Cliente *
+                {t('quotes.form.customer')}
               </label>
               <select
                 value={formData.customer_id}
@@ -138,7 +141,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value={0}>Seleccionar cliente...</option>
+                <option value={0}>{t('quotes.form.selectCustomer')}</option>
                 {customers.map(customer => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name}
@@ -149,24 +152,24 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Estado
+                {t('quotes.form.statusLabel')}
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
               >
-                <option value="draft">Borrador</option>
-                <option value="sent">Enviada</option>
-                <option value="accepted">Aceptada</option>
-                <option value="rejected">Rechazada</option>
-                <option value="expired">Expirada</option>
+                <option value="draft">{t('quotes.form.status.draft')}</option>
+                <option value="sent">{t('quotes.form.status.sent')}</option>
+                <option value="accepted">{t('quotes.form.status.accepted')}</option>
+                <option value="rejected">{t('quotes.form.status.rejected')}</option>
+                <option value="expired">{t('quotes.form.status.expired')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Fecha de Emisión
+                {t('quotes.form.issueDate')}
               </label>
               <input
                 type="date"
@@ -178,7 +181,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Fecha de Expiración
+                {t('quotes.form.expirationDate')}
               </label>
               <input
                 type="date"
@@ -192,14 +195,14 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
           {/* Items */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Items de la Cotización</h3>
+              <h3 className="text-lg font-semibold text-white">{t('quotes.form.itemsTitle')}</h3>
               <button
                 type="button"
                 onClick={handleAddItem}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Agregar Item
+                {t('quotes.form.addItem')}
               </button>
             </div>
 
@@ -208,13 +211,13 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                 <div key={index} className="bg-slate-800 p-4 rounded-lg border border-slate-700">
                   <div className="grid grid-cols-12 gap-4">
                     <div className="col-span-4">
-                      <label className="block text-xs text-slate-400 mb-1">Producto</label>
+                      <label className="block text-xs text-slate-400 mb-1">{t('quotes.form.product')}</label>
                       <select
                         value={item.product_id || ''}
                         onChange={(e) => handleProductSelect(index, Number(e.target.value))}
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm"
                       >
-                        <option value="">Seleccionar...</option>
+                        <option value="">{t('quotes.form.selectProduct')}</option>
                         {products.map(product => (
                           <option key={product.id} value={product.id}>
                             {product.name} - ${product.price}
@@ -224,7 +227,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                     </div>
 
                     <div className="col-span-3">
-                      <label className="block text-xs text-slate-400 mb-1">Descripción</label>
+                      <label className="block text-xs text-slate-400 mb-1">{t('quotes.form.description')}</label>
                       <input
                         type="text"
                         value={item.description}
@@ -235,7 +238,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                     </div>
 
                     <div className="col-span-1">
-                      <label className="block text-xs text-slate-400 mb-1">Cant.</label>
+                      <label className="block text-xs text-slate-400 mb-1">{t('quotes.form.quantity')}</label>
                       <input
                         type="number"
                         value={item.quantity}
@@ -247,7 +250,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-xs text-slate-400 mb-1">Precio Unit.</label>
+                      <label className="block text-xs text-slate-400 mb-1">{t('quotes.form.unitPrice')}</label>
                       <input
                         type="number"
                         value={item.unit_price}
@@ -259,7 +262,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
                     </div>
 
                     <div className="col-span-1">
-                      <label className="block text-xs text-slate-400 mb-1">Desc. %</label>
+                      <label className="block text-xs text-slate-400 mb-1">{t('quotes.form.discount')}</label>
                       <input
                         type="number"
                         value={item.discount_percentage}
@@ -292,16 +295,16 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
             <div className="flex justify-end">
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-slate-300">
-                  <span>Subtotal:</span>
-                  <span className="font-semibold">${totals.subtotal.toFixed(2)}</span>
+                  <span>{t('quotes.form.subtotal')}</span>
+                  <span className="font-semibold">{formatCurrency(totals.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-300">
-                  <span>Impuestos:</span>
-                  <span className="font-semibold">${totals.tax.toFixed(2)}</span>
+                  <span>{t('quotes.form.tax')}</span>
+                  <span className="font-semibold">{formatCurrency(totals.tax)}</span>
                 </div>
                 <div className="flex justify-between text-white text-xl font-black tracking-tight border-t border-slate-700 pt-2">
-                  <span>Total:</span>
-                  <span>${totals.total.toFixed(2)}</span>
+                  <span>{t('quotes.form.total')}</span>
+                  <span>{formatCurrency(totals.total)}</span>
                 </div>
               </div>
             </div>
@@ -311,27 +314,27 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Notas
+                {t('quotes.form.notes')}
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
                 rows={3}
-                placeholder="Notas adicionales..."
+                placeholder={t('quotes.form.notesPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Términos y Condiciones
+                {t('quotes.form.terms')}
               </label>
               <textarea
                 value={formData.terms}
                 onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
                 rows={3}
-                placeholder="Términos y condiciones..."
+                placeholder={t('quotes.form.termsPlaceholder')}
               />
             </div>
           </div>
@@ -343,14 +346,14 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({
               onClick={onCancel}
               className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
             >
-              Cancelar
+              {t('quotes.form.cancel')}
             </button>
             <button
               type="submit"
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
             >
               <Save className="w-5 h-5" />
-              {quote ? 'Actualizar' : 'Crear'} Cotización
+              {quote ? t('quotes.form.update') : t('quotes.form.create')} {t('quotes.form.quote')}
             </button>
           </div>
         </form>

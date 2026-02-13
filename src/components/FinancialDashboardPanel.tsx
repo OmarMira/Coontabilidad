@@ -9,9 +9,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart3, 
-  RefreshCw, 
+import {
+  BarChart3,
+  RefreshCw,
   MessageSquare,
   AlertTriangle,
   DollarSign,
@@ -60,7 +60,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
   // Cargar datos del dashboard
   useEffect(() => {
     loadDashboardData();
-    
+
     // Actualizar cada 2 minutos
     const interval = setInterval(() => {
       loadDashboardData();
@@ -73,13 +73,13 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
   const loadDashboardData = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       logger.info('FinancialDashboard', 'load_data', 'Cargando datos del dashboard financiero');
-      
+
       // Obtener análisis completo del sistema restaurado
       const analysis = await iaService.analyzeFinancialHealth();
-      
+
       // Convertir a formato de dashboard
       const dashboardData: DashboardData = {
         totalBalance: calculateTotalBalance(analysis.data),
@@ -92,13 +92,13 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
         alerts: convertAlertsToFormat(analysis.alerts),
         accountingStructure: analysis.data.financial || [],
         recommendedActions: analysis.actions,
-        periodAnalysis: analysis.analysis
+        periodAnalysis: analysis.content
       };
-      
+
       setDashboardData(dashboardData);
-      
+
       logger.info('FinancialDashboard', 'load_success', 'Dashboard financiero cargado exitosamente');
-      
+
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMsg);
@@ -147,9 +147,9 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
   };
 
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -306,10 +306,9 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
               <div className="space-y-2">
                 {dashboardData.alerts.map(alert => (
                   <div key={alert.id} className="flex items-center space-x-2 text-sm">
-                    <div className={`w-2 h-2 rounded-full ${
-                      alert.priority === 'high' ? 'bg-red-400' : 
-                      alert.priority === 'medium' ? 'bg-orange-400' : 'bg-blue-400'
-                    }`} />
+                    <div className={`w-2 h-2 rounded-full ${alert.priority === 'high' ? 'bg-red-400' :
+                        alert.priority === 'medium' ? 'bg-orange-400' : 'bg-blue-400'
+                      }`} />
                     <span className="text-red-200">{alert.message}</span>
                   </div>
                 ))}

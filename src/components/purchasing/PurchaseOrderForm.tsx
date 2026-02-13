@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, Plus, Save, Trash2, X } from 'lucide-react';
 import { getSuppliers, getActiveProducts, createPurchaseOrder, Supplier, Product } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '../../i18n/useLocale';
 
 interface PurchaseOrderItemRow {
     product_id: number;
@@ -14,6 +15,7 @@ interface PurchaseOrderItemRow {
 }
 
 export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: () => void }> = ({ onCancel, onSuccess }) => {
+    const { t } = useLocale();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
 
@@ -77,11 +79,11 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
 
     const handleSave = () => {
         if (!formData.supplier_id) {
-            toast.error('Seleccione un proveedor');
+            toast.error(t('poForm.validation.selectSupplier'));
             return;
         }
         if (items.length === 0) {
-            toast.error('Agregue al menos un producto');
+            toast.error(t('poForm.validation.addItems'));
             return;
         }
 
@@ -106,10 +108,10 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
         });
 
         if (result.success) {
-            toast.success('Orden de Compra creada');
+            toast.success(t('poForm.success.created'));
             if (onSuccess) onSuccess();
         } else {
-            toast.error('Error al crear orden: ' + result.message);
+            toast.error(t('poForm.error.create') + result.message);
         }
     };
 
@@ -120,15 +122,15 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
             <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
                 <CardTitle className="flex items-center gap-2">
                     <ShoppingCart className="w-5 h-5 text-blue-400" />
-                    Nueva Orden de Compra
+                    {t('poForm.title')}
                 </CardTitle>
                 <div className="flex gap-2">
                     <Button variant="ghost" onClick={onCancel} className="text-slate-500 hover:text-white">
-                        <X className="w-4 h-4 mr-2" /> Cancelar
+                        <X className="w-4 h-4 mr-2" /> {t('poForm.cancel')}
                     </Button>
                     <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20">
                         <Save className="w-4 h-4 mr-2" />
-                        Guardar Borrador
+                        {t('poForm.saveDraft')}
                     </Button>
                 </div>
             </CardHeader>
@@ -136,24 +138,24 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                 {/* Header Inputs */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Proveedor</label>
+                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('poForm.supplier')}</label>
                         <select
                             className="w-full bg-white/10 border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             value={formData.supplier_id}
                             onChange={e => setFormData({ ...formData, supplier_id: Number(e.target.value) })}
                         >
-                            <option value={0}>Seleccionar...</option>
-                            {suppliers.length === 0 && <option disabled>No hay proveedores registrados</option>}
+                            <option value={0}>{t('poForm.selectSupplier')}</option>
+                            {suppliers.length === 0 && <option disabled>{t('poForm.noSuppliers')}</option>}
                             {suppliers.map(s => (
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>
                         {suppliers.length === 0 && (
-                            <p className="text-xs text-red-400 mt-1">⚠️ Debe crear proveedores primero en el módulo de Compras.</p>
+                            <p className="text-xs text-red-400 mt-1">{t('poForm.warning.createSuppliers')}</p>
                         )}
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Fecha Emisión</label>
+                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('poForm.issueDate')}</label>
                         <input
                             type="date"
                             className="w-full bg-white/10 border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
@@ -162,7 +164,7 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Fecha Esperada</label>
+                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('poForm.expectedDate')}</label>
                         <input
                             type="date"
                             className="w-full bg-white/10 border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
@@ -175,10 +177,10 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                 {/* Items Section */}
                 <div className="border border-white/5 rounded-xl overflow-hidden bg-white/10/20">
                     <div className="p-3 bg-white/10/50 border-b border-white/5 flex gap-4 items-center font-medium text-sm text-slate-500">
-                        <div className="flex-1">Producto</div>
-                        <div className="w-24 text-right">Cantidad</div>
-                        <div className="w-32 text-right">Costo Unit.</div>
-                        <div className="w-32 text-right">Total</div>
+                        <div className="flex-1">{t('poForm.col.product')}</div>
+                        <div className="w-24 text-right">{t('poForm.col.quantity')}</div>
+                        <div className="w-32 text-right">{t('poForm.col.unitCost')}</div>
+                        <div className="w-32 text-right">{t('poForm.col.total')}</div>
                         <div className="w-10"></div>
                     </div>
 
@@ -206,21 +208,21 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                                 value={newItem.product_id}
                                 onChange={e => setNewItem({ ...newItem, product_id: Number(e.target.value) })}
                             >
-                                <option value={0}>Agregar producto...</option>
-                                {products.length === 0 && <option disabled>No hay productos activos</option>}
+                                <option value={0}>{t('poForm.addProductPlaceholder')}</option>
+                                {products.length === 0 && <option disabled>{t('poForm.noProducts')}</option>}
                                 {products.map(p => (
                                     <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>
                                 ))}
                             </select>
                             {products.length === 0 && (
-                                <p className="text-xs text-red-400 mt-1">⚠️ No hay productos. Registre productos en Inventario.</p>
+                                <p className="text-xs text-red-400 mt-1">{t('poForm.warning.createProducts')}</p>
                             )}
                         </div>
                         <div className="w-24">
                             <input
                                 type="number"
                                 className="w-full bg-slate-900 border-white/10 rounded p-2 text-sm text-right text-white"
-                                placeholder="Cant"
+                                placeholder={t('poForm.qtyPlaceholder')}
                                 min="1"
                                 value={newItem.quantity}
                                 onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
@@ -230,7 +232,7 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                             <input
                                 type="number"
                                 className="w-full bg-slate-900 border-white/10 rounded p-2 text-sm text-right text-white"
-                                placeholder="Costo"
+                                placeholder={t('poForm.costPlaceholder')}
                                 min="0"
                                 step="0.01"
                                 value={newItem.unit_price}
@@ -248,21 +250,21 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
 
                 <div className="grid grid-cols-2 gap-8 pt-4">
                     <div>
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2 block">Notas / Comentarios</label>
+                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2 block">{t('poForm.notesLabel')}</label>
                         <textarea
                             className="w-full bg-white/10 border-white/10 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
-                            placeholder="Instrucciones para el proveedor..."
+                            placeholder={t('poForm.notesPlaceholder')}
                             value={formData.notes}
                             onChange={e => setFormData({ ...formData, notes: e.target.value })}
                         />
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-500">Subtotal</span>
+                            <span className="text-slate-500">{t('poForm.subtotal')}</span>
                             <span className="text-white font-mono">${total.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center border-t border-white/5 pt-3">
-                            <span className="text-blue-400 font-bold text-lg">Total Orden</span>
+                            <span className="text-blue-400 font-bold text-lg">{t('poForm.totalOrder')}</span>
                             <span className="text-2xl font-black tracking-tight text-white font-mono">${total.toFixed(2)}</span>
                         </div>
                     </div>

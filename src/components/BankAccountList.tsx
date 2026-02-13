@@ -5,6 +5,7 @@ import {
     ArrowUpRight, Wallet, Landmark
 } from 'lucide-react';
 import { BankAccount } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface BankAccountListProps {
     accounts: BankAccount[];
@@ -19,6 +20,7 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
     onEditAccount,
     onDeleteAccount
 }) => {
+    const { t } = useLocale();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
 
@@ -33,10 +35,10 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
 
     const getAccountTypeConfig = (type: string) => {
         switch (type) {
-            case 'checking': return { label: 'CORRIENTE', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
-            case 'savings': return { label: 'AHORROS', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
-            case 'credit': return { label: 'CRÉDITO', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
-            default: return { label: 'GENERAL', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
+            case 'checking': return { label: t('bankAccountList.type.checking'), color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+            case 'savings': return { label: t('bankAccountList.type.savings'), color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+            case 'credit': return { label: t('bankAccountList.type.credit'), color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+            default: return { label: t('bankAccountList.type.general'), color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
         }
     };
 
@@ -56,10 +58,8 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                         <Landmark className="w-10 h-10 text-blue-500 group-hover:-rotate-12 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Matriz Bancaria</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> Asset Liquidity Controller v5.0
-                        </p>
+                        <h1 className="text-2xl font-black text-white">{t('bankAccountList.title')}</h1>
+                        <p className="text-slate-400 text-sm">{t('bankAccountList.subtitle')}</p>
                     </div>
                 </div>
 
@@ -68,47 +68,47 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                         <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="BUSCAR CUENTA / ENTIDAD..."
+                            placeholder={t('bankAccountList.search')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all"
+                            className="pl-12 pr-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm"
                         />
                     </div>
 
                     <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
-                        className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
+                        className="px-4 py-3 bg-slate-800/50 text-white rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer"
                     >
-                        <option value="all">TODOS LOS TIPOS</option>
-                        <option value="checking">CORRIENTE</option>
-                        <option value="savings">AHORROS</option>
-                        <option value="credit">CRÉDITO</option>
+                        <option value="all">{t('bankAccountList.filterAll')}</option>
+                        <option value="checking">{t('bankAccountList.type.checking')}</option>
+                        <option value="savings">{t('bankAccountList.type.savings')}</option>
+                        <option value="credit">{t('bankAccountList.type.credit')}</option>
                     </select>
 
                     <button
                         onClick={onAddAccount}
-                        className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/50 hover:scale-105"
                     >
-                        <Plus className="w-4 h-4" />
-                        Sincronizar Bóveda
+                        <Plus className="w-5 h-5" />
+                        {t('bankAccountList.syncVault')}
                     </button>
                 </div>
             </div>
 
             {/* Intelligence Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <EliteMiniCard title="Cuentas Activas" value={accounts.filter(a => a.is_active).length.toString()} icon={ShieldCheck} color="blue" />
-                <EliteMiniCard title="Liquidez Total" value={formatCurrency(accounts.reduce((sum, a) => sum + a.balance, 0), 'USD')} icon={BadgeDollarSign} color="emerald" />
-                <EliteMiniCard title="Líneas de Crédito" value={accounts.filter(a => a.account_type === 'credit').length.toString()} icon={CreditCard} color="amber" />
-                <EliteMiniCard title="Entidades" value={Array.from(new Set(accounts.map(a => a.bank_name))).length.toString()} icon={Landmark} color="rose" />
+                <EliteMiniCard title={t('bankAccountList.stats.activeAccounts')} value={accounts.filter(a => a.is_active).length.toString()} icon={ShieldCheck} color="blue" />
+                <EliteMiniCard title={t('bankAccountList.stats.totalLiquidity')} value={formatCurrency(accounts.reduce((sum, a) => sum + a.balance, 0), 'USD')} icon={BadgeDollarSign} color="emerald" />
+                <EliteMiniCard title={t('bankAccountList.stats.creditLines')} value={accounts.filter(a => a.account_type === 'credit').length.toString()} icon={CreditCard} color="amber" />
+                <EliteMiniCard title={t('bankAccountList.stats.entities')} value={Array.from(new Set(accounts.map(a => a.bank_name))).length.toString()} icon={Landmark} color="rose" />
             </div>
 
             {filteredAccounts.length === 0 ? (
                 <div className="bg-slate-900 border border-slate-800 rounded-[3.5rem] p-24 text-center border-dashed group opacity-60">
                     <Landmark className="w-20 h-20 text-slate-800 mx-auto mb-8 group-hover:scale-110 transition-transform duration-500" />
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">Bóveda no Detectada</h3>
-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">No se han mapeado cuentas bancarias bajo estos parámetros.</p>
+                    <h3 className="text-lg font-semibold text-slate-400">{t('bankAccountList.empty.title')}</h3>
+                    <p className="text-slate-500 text-sm mt-2">{t('bankAccountList.empty.desc')}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -147,7 +147,7 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
 
                                     <div className="space-y-6 pt-6 border-t border-slate-800/50">
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Posición Líquida</p>
+                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">{t('bankAccountList.card.liquidPosition')}</p>
                                             <p className={`text-3xl font-black font-mono tracking-tighter ${account.balance >= 0 ? 'text-white' : 'text-rose-500'}`}>
                                                 {formatCurrency(account.balance, account.currency)}
                                             </p>

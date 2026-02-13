@@ -4,8 +4,10 @@ import { BankTransactionMatcher } from './BankTransactionMatcher';
 import { Button } from '@/components/ui/button';
 import { getBankTransactions, BankTransaction, BankAccount, db } from '@/database/simple-db';
 import { Upload, Scale, Building2 } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export const BankingModule: React.FC = () => {
+    const { t } = useLocale();
     const [activeTab, setActiveTab] = useState<'import' | 'match'>('import');
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
@@ -91,9 +93,9 @@ export const BankingModule: React.FC = () => {
             <div className="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-800">
                 <div>
                     <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                        Conciliación Bancaria
+                        {t('bankAccounts.title')}
                     </h1>
-                    <p className="text-slate-400 text-sm">Tesorería Inteligente</p>
+                    <p className="text-slate-400 text-sm">{t('bankAccounts.subtitle')}</p>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -107,7 +109,7 @@ export const BankingModule: React.FC = () => {
                             value={selectedAccountId || ''}
                             onChange={(e) => setSelectedAccountId(Number(e.target.value))}
                         >
-                            {accounts.length === 0 && <option value="">No hay cuentas activas</option>}
+                            {accounts.length === 0 && <option value="">{t('bankAccounts.noAccounts')}</option>}
                             {accounts.map(acc => (
                                 <option key={acc.id} value={acc.id}>{acc.bank_name} - {acc.account_name}</option>
                             ))}
@@ -123,14 +125,14 @@ export const BankingModule: React.FC = () => {
                     className={activeTab === 'import' ? 'bg-blue-600' : 'text-slate-400'}
                     onClick={() => setActiveTab('import')}
                 >
-                    <Upload className="w-4 h-4 mr-2" /> Importar
+                    <Upload className="w-4 h-4 mr-2" /> {t('bankAccounts.table.actions')}
                 </Button>
                 <Button
                     variant={activeTab === 'match' ? 'default' : 'ghost'}
                     className={activeTab === 'match' ? 'bg-purple-600 hover:bg-purple-500' : 'text-slate-400'}
                     onClick={() => setActiveTab('match')}
                 >
-                    <Scale className="w-4 h-4 mr-2" /> Conciliar ({transactions.filter(t => t.status === 'pending').length})
+                    <Scale className="w-4 h-4 mr-2" /> {t('bankAccounts.form.title')} ({transactions.filter(t => t.status === 'pending').length})
                 </Button>
             </div>
 
@@ -157,7 +159,7 @@ export const BankingModule: React.FC = () => {
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-slate-500">
-                                Selecciona una cuenta bancaria para comenzar
+                                {t('bankAccounts.search')}
                             </div>
                         )}
                     </div>

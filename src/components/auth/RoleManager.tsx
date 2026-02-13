@@ -2,88 +2,91 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Plus, Edit, Trash2, Save, X, AlertCircle, Check } from 'lucide-react';
 import { getUserRoles, createUserRole, updateUserRole, deleteUserRole } from '../../database/simple-db';
 import type { UserRole } from '../../types/user.types';
-
-const AVAILABLE_MODULES = [
-    {
-        id: 'dashboard',
-        label: 'Dashboard',
-        actions: ([{ id: 'view', label: 'Ver' }])
-    },
-    {
-        id: 'customers',
-        label: 'Clientes',
-        actions: ([
-            { id: 'view', label: 'Ver' },
-            { id: 'create', label: 'Crear' },
-            { id: 'edit', label: 'Editar' },
-            { id: 'delete', label: 'Eliminar' }
-        ])
-    },
-    {
-        id: 'suppliers',
-        label: 'Proveedores',
-        actions: ([
-            { id: 'view', label: 'Ver' },
-            { id: 'create', label: 'Crear' },
-            { id: 'edit', label: 'Editar' },
-            { id: 'delete', label: 'Eliminar' }
-        ])
-    },
-    {
-        id: 'products',
-        label: 'Productos',
-        actions: ([
-            { id: 'view', label: 'Ver' },
-            { id: 'create', label: 'Crear' },
-            { id: 'edit', label: 'Editar' },
-            { id: 'delete', label: 'Eliminar' }
-        ])
-    },
-    {
-        id: 'invoices',
-        label: 'Ventas/Facturas',
-        actions: ([
-            { id: 'view', label: 'Ver' },
-            { id: 'create', label: 'Crear' },
-            { id: 'edit', label: 'Editar' },
-            { id: 'delete', label: 'Eliminar' },
-            { id: 'approve', label: 'Aprobar' }
-        ])
-    },
-    {
-        id: 'bills',
-        label: 'Compras/Gastos',
-        actions: ([
-            { id: 'view', label: 'Ver' },
-            { id: 'create', label: 'Crear' },
-            { id: 'edit', label: 'Editar' },
-            { id: 'delete', label: 'Eliminar' },
-            { id: 'approve', label: 'Aprobar' }
-        ])
-    },
-    {
-        id: 'accounting',
-        label: 'Contabilidad',
-        actions: ([
-            { id: 'view_chart_of_accounts', label: 'Ver Plan Ctas' },
-            { id: 'create_journal', label: 'Crear Asiento' },
-            { id: 'edit_journal', label: 'Editar Asiento' },
-            { id: 'view_reports', label: 'Ver Reportes' },
-            { id: 'close_period', label: 'Cierre Periodo' }
-        ])
-    },
-    {
-        id: 'settings',
-        label: 'Configuración',
-        actions: ([
-            { id: 'view_company', label: 'Ver Empresa' },
-            { id: 'manage_users', label: 'Usuarios' },
-            { id: 'manage_roles', label: 'Roles' }
-        ])
-    }
-];
+import { useLocale } from '../../i18n/useLocale';
 
 export const RoleManager: React.FC = () => {
+    const { t } = useLocale();
+
+    const AVAILABLE_MODULES = [
+        {
+            id: 'dashboard',
+            label: t('roleManager.modules.dashboard'),
+            actions: ([{ id: 'view', label: t('roleManager.actions.view') }])
+        },
+        {
+            id: 'customers',
+            label: t('roleManager.modules.customers'),
+            actions: ([
+                { id: 'view', label: t('roleManager.actions.view') },
+                { id: 'create', label: t('roleManager.actions.create') },
+                { id: 'edit', label: t('roleManager.actions.edit') },
+                { id: 'delete', label: t('roleManager.actions.delete') }
+            ])
+        },
+        {
+            id: 'suppliers',
+            label: t('roleManager.modules.suppliers'),
+            actions: ([
+                { id: 'view', label: t('roleManager.actions.view') },
+                { id: 'create', label: t('roleManager.actions.create') },
+                { id: 'edit', label: t('roleManager.actions.edit') },
+                { id: 'delete', label: t('roleManager.actions.delete') }
+            ])
+        },
+        {
+            id: 'products',
+            label: t('roleManager.modules.products'),
+            actions: ([
+                { id: 'view', label: t('roleManager.actions.view') },
+                { id: 'create', label: t('roleManager.actions.create') },
+                { id: 'edit', label: t('roleManager.actions.edit') },
+                { id: 'delete', label: t('roleManager.actions.delete') }
+            ])
+        },
+        {
+            id: 'invoices',
+            label: t('roleManager.modules.invoices'),
+            actions: ([
+                { id: 'view', label: t('roleManager.actions.view') },
+                { id: 'create', label: t('roleManager.actions.create') },
+                { id: 'edit', label: t('roleManager.actions.edit') },
+                { id: 'delete', label: t('roleManager.actions.delete') },
+                { id: 'approve', label: t('roleManager.actions.approve') }
+            ])
+        },
+        {
+            id: 'bills',
+            label: t('roleManager.modules.bills'),
+            actions: ([
+                { id: 'view', label: t('roleManager.actions.view') },
+                { id: 'create', label: t('roleManager.actions.create') },
+                { id: 'edit', label: t('roleManager.actions.edit') },
+                { id: 'delete', label: t('roleManager.actions.delete') },
+                { id: 'approve', label: t('roleManager.actions.approve') }
+            ])
+        },
+        {
+            id: 'accounting',
+            label: t('roleManager.modules.accounting'),
+            actions: ([
+                { id: 'view_chart_of_accounts', label: t('roleManager.actions.viewChartOfAccounts') },
+                { id: 'create_journal', label: t('roleManager.actions.createJournal') },
+                { id: 'edit_journal', label: t('roleManager.actions.editJournal') },
+                { id: 'view_reports', label: t('roleManager.actions.viewReports') },
+                { id: 'close_period', label: t('roleManager.actions.closePeriod') }
+            ])
+        },
+        {
+            id: 'settings',
+            label: t('roleManager.modules.settings'),
+            actions: ([
+                { id: 'view_company', label: t('roleManager.actions.viewCompany') },
+                { id: 'manage_users', label: t('roleManager.actions.manageUsers') },
+                { id: 'manage_roles', label: t('roleManager.actions.manageRoles') }
+            ])
+        }
+    ];
+
     const [roles, setRoles] = useState<UserRole[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [editingRole, setEditingRole] = useState<UserRole | null>(null);
@@ -96,6 +99,7 @@ export const RoleManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
+
     useEffect(() => {
         loadRoles();
     }, []);
@@ -105,7 +109,7 @@ export const RoleManager: React.FC = () => {
             const allRoles = getUserRoles();
             setRoles(allRoles as UserRole[]);
         } catch (err) {
-            setError('Error al cargar roles');
+            setError(t('roleManager.error.load'));
             console.error(err);
         }
     };
@@ -186,7 +190,7 @@ export const RoleManager: React.FC = () => {
     };
 
     const handleDelete = (role: UserRole) => {
-        if (!confirm(`¿Está seguro de eliminar el rol "${role.name}"?`)) return;
+        if (!confirm(`${t('roleManager.deleteConfirm')} "${role.name}"?`)) return;
 
         const result = deleteUserRole(role.id);
         if (result.success) {
@@ -217,8 +221,8 @@ export const RoleManager: React.FC = () => {
                         <Shield className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white">Gestión de Roles</h1>
-                        <p className="text-slate-400 text-sm">Crear, modificar y eliminar roles del sistema</p>
+                        <h1 className="text-2xl font-black text-white">{t('roleManager.title')}</h1>
+                        <p className="text-slate-400 text-sm">{t('roleManager.subtitle')}</p>
                     </div>
                 </div>
                 <button
@@ -229,7 +233,7 @@ export const RoleManager: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-purple-900/50 hover:scale-105"
                 >
                     <Plus className="w-5 h-5" />
-                    Nuevo Rol
+                    {t('roleManager.newRole')}
                 </button>
             </div>
 
@@ -254,16 +258,16 @@ export const RoleManager: React.FC = () => {
                     <thead className="bg-slate-800/50 border-b border-slate-700">
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                Nombre
+                                {t('roleManager.table.name')}
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                Descripción
+                                {t('roleManager.table.description')}
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
-                                Nivel
+                                {t('roleManager.table.level')}
                             </th>
                             <th className="px-6 py-4 text-right text-xs font-black text-slate-400 uppercase tracking-wider">
-                                Acciones
+                                {t('roleManager.table.actions')}
                             </th>
                         </tr>
                     </thead>
@@ -278,7 +282,7 @@ export const RoleManager: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4">
                                     <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${getLevelBadgeColor(role.level)}`}>
-                                        Nivel {role.level}
+                                        {t('roleManager.table.levelBadge').replace('{level}', role.level.toString())}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 text-right">
@@ -286,7 +290,7 @@ export const RoleManager: React.FC = () => {
                                         <button
                                             onClick={() => handleEdit(role)}
                                             className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
-                                            title="Editar rol"
+                                            title={t('roleManager.tooltip.editRole')}
                                         >
                                             <Edit className="w-4 h-4" />
                                         </button>
@@ -294,7 +298,7 @@ export const RoleManager: React.FC = () => {
                                             <button
                                                 onClick={() => handleDelete(role)}
                                                 className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
-                                                title="Eliminar rol"
+                                                title={t('roleManager.tooltip.deleteRole')}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -309,8 +313,8 @@ export const RoleManager: React.FC = () => {
                 {roles.length === 0 && (
                     <div className="text-center py-12">
                         <Shield className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                        <p className="text-slate-400 text-lg font-semibold">No hay roles creados</p>
-                        <p className="text-slate-500 text-sm mt-2">Crea tu primer rol personalizado</p>
+                        <p className="text-slate-400 text-lg font-semibold">{t('roleManager.empty.title')}</p>
+                        <p className="text-slate-500 text-sm mt-2">{t('roleManager.empty.desc')}</p>
                     </div>
                 )}
             </div>
@@ -325,7 +329,7 @@ export const RoleManager: React.FC = () => {
                                     <Shield className="w-5 h-5 text-white" />
                                 </div>
                                 <h2 className="text-xl font-black text-white">
-                                    {editingRole ? 'Editar Rol' : 'Nuevo Rol'}
+                                    {editingRole ? t('roleManager.modal.editRole') : t('roleManager.modal.newRole')}
                                 </h2>
                             </div>
                             <button
@@ -342,27 +346,27 @@ export const RoleManager: React.FC = () => {
                         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
                             <div>
                                 <label className="block text-sm font-bold text-slate-300 mb-2">
-                                    Nombre del Rol
+                                    {t('roleManager.form.roleName')}
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    placeholder="ej: manager, supervisor"
+                                    placeholder={t('roleManager.form.namePlaceholder')}
                                     required
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-bold text-slate-300 mb-2">
-                                    Descripción
+                                    {t('roleManager.form.description')}
                                 </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                    placeholder="Descripción del rol"
+                                    placeholder={t('roleManager.form.descPlaceholder')}
                                     rows={2}
                                     required
                                 />
@@ -370,7 +374,7 @@ export const RoleManager: React.FC = () => {
 
                             <div>
                                 <label className="block text-sm font-bold text-slate-300 mb-2">
-                                    Nivel de Acceso (0-100)
+                                    {t('roleManager.form.accessLevel')}
                                 </label>
                                 <input
                                     type="number"
@@ -382,13 +386,13 @@ export const RoleManager: React.FC = () => {
                                     required
                                 />
                                 <p className="mt-2 text-xs text-slate-500">
-                                    0-10: Solo lectura | 11-50: Usuario estándar | 51-99: Avanzado | 100: Administrador
+                                    {t('roleManager.form.levelHelp')}
                                 </p>
                             </div>
 
                             <div className="pt-2">
                                 <label className="block text-sm font-bold text-slate-300 mb-3">
-                                    Permisos del Sistema
+                                    {t('roleManager.form.systemPermissions')}
                                 </label>
                                 <div className="space-y-4 bg-slate-800/30 p-4 rounded-xl border border-slate-800">
                                     {AVAILABLE_MODULES.map((module) => (
@@ -441,14 +445,14 @@ export const RoleManager: React.FC = () => {
                                     }}
                                     className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
                                 >
-                                    Cancelar
+                                    {t('common.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-purple-900/50"
                                 >
                                     <Save className="w-5 h-5" />
-                                    {editingRole ? 'Actualizar' : 'Crear Rol'}
+                                    {editingRole ? t('roleManager.button.update') : t('roleManager.button.createRole')}
                                 </button>
                             </div>
                         </form>

@@ -4,6 +4,7 @@ import {
   ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Info, Layers, Clock
 } from 'lucide-react';
 import { Supplier, Product, Bill, BillItem, getFloridaTaxRate } from '../database/simple-db';
+import { useLocale } from '../i18n/useLocale';
 
 interface BillFormProps {
   onSubmit: (billData: Partial<Bill>, items: Partial<BillItem>[]) => void;
@@ -38,6 +39,7 @@ export const BillForm: React.FC<BillFormProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { t } = useLocale();
   const [formData, setFormData] = useState<FormData>({
     supplier_id: initialData?.supplier_id || '',
     issue_date: initialData?.issue_date || new Date().toISOString().split('T')[0],
@@ -111,18 +113,18 @@ export const BillForm: React.FC<BillFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-      // Validación: asegurar que hay proveedor seleccionado
-      if (!formData.supplier_id) {
-        alert('⚠️ Debes seleccionar un proveedor');
-        return;
-      }
-    
-      // Validación: asegurar que hay al menos un item
-      if (!items || items.length === 0) {
-        alert('⚠️ Debes agregar al menos un item a la factura');
-        return;
-      }
-    
+    // Validación: asegurar que hay proveedor seleccionado
+    if (!formData.supplier_id) {
+      alert(t('billForm.validation.supplier'));
+      return;
+    }
+
+    // Validación: asegurar que hay al menos un item
+    if (!items || items.length === 0) {
+      alert(t('billForm.validation.items'));
+      return;
+    }
+
     const billData: Partial<Bill> = { ...formData, supplier_id: formData.supplier_id as number };
     const billItems = items.map(item => ({ ...item, product_id: item.product_id || undefined }));
     onSubmit(billData, billItems);
@@ -143,10 +145,10 @@ export const BillForm: React.FC<BillFormProps> = ({
             </div>
             <div>
               <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
-                {isEditing ? 'Ajustar Obligación' : 'Registrar Factura de Compra'}
+                {isEditing ? t('billForm.titleEdit') : t('billForm.titleNew')}
               </h2>
               <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5 text-orange-500" /> AP Forensic Protocol v2.5
+                <ShieldCheck className="w-3.5 h-3.5 text-orange-500" /> {t('billForm.protocol')}
               </p>
             </div>
           </div>
@@ -163,7 +165,7 @@ export const BillForm: React.FC<BillFormProps> = ({
               <div className="xl:col-span-1 space-y-8">
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                    <Truck className="w-3.5 h-3.5 text-orange-500" /> Aliado Primario
+                    <Truck className="w-3.5 h-3.5 text-orange-500" /> {t('billForm.primarySupplier')}
                   </label>
                   <select
                     value={formData.supplier_id}
@@ -171,7 +173,7 @@ export const BillForm: React.FC<BillFormProps> = ({
                     className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px] transition-all appearance-none cursor-pointer"
                     required
                   >
-                    <option value="">SELECCIONAR ALIADO</option>
+                    <option value="">{t('billForm.selectSupplier')}</option>
                     {suppliers.map(s => <option key={s.id} value={s.id}>{(s.business_name || s.name).toUpperCase()}</option>)}
                   </select>
                 </div>
@@ -180,15 +182,15 @@ export const BillForm: React.FC<BillFormProps> = ({
                   <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 relative group overflow-hidden">
                     <div className="absolute top-0 left-0 w-1 h-full bg-orange-500/50"></div>
                     <div className="space-y-4 relative z-10">
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Metadata Aliado</p>
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('billForm.supplierMetadata')}</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-[8px] font-bold text-slate-600 uppercase">Jurisdicción</p>
+                          <p className="text-[8px] font-bold text-slate-600 uppercase">{t('billForm.jurisdiction')}</p>
                           <p className="text-[10px] font-black text-white">{selectedSupplier.florida_county.toUpperCase()}</p>
                         </div>
                         <div>
-                          <p className="text-[8px] font-bold text-slate-600 uppercase">Términos</p>
-                          <p className="text-[10px] font-black text-orange-500">{selectedSupplier.payment_terms} DÍAS</p>
+                          <p className="text-[8px] font-bold text-slate-600 uppercase">{t('billForm.terms')}</p>
+                          <p className="text-[10px] font-black text-orange-500">{selectedSupplier.payment_terms} {t('billForm.days')}</p>
                         </div>
                       </div>
                     </div>
@@ -197,12 +199,12 @@ export const BillForm: React.FC<BillFormProps> = ({
               </div>
 
               <div className="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-10">
-                <PremiumInput label="Eje Temporal: Emisión" icon={Calendar} value={formData.issue_date} onChange={(v) => handleInputChange('issue_date', v)} type="date" required />
-                <PremiumInput label="Eje Temporal: Vencimiento" icon={Clock} value={formData.due_date} onChange={(v) => handleInputChange('due_date', v)} type="date" required />
+                <PremiumInput label={t('billForm.issueDate')} icon={Calendar} value={formData.issue_date} onChange={(v: any) => handleInputChange('issue_date', v)} type="date" required />
+                <PremiumInput label={t('billForm.dueDate')} icon={Clock} value={formData.due_date} onChange={(v: any) => handleInputChange('due_date', v)} type="date" required />
 
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                    <Zap className="w-3.5 h-3.5 text-orange-500" /> Estatus Operativo
+                    <Zap className="w-3.5 h-3.5 text-orange-500" /> {t('billForm.operationalStatus')}
                   </label>
                   <div className="flex bg-slate-950 rounded-2xl p-1 border border-slate-800">
                     {['draft', 'received', 'approved', 'paid'].map(s => (
@@ -220,13 +222,13 @@ export const BillForm: React.FC<BillFormProps> = ({
 
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                    <Info className="w-3.5 h-3.5 text-orange-500" /> Notas de Auditoría
+                    <Info className="w-3.5 h-3.5 text-orange-500" /> {t('billForm.auditNotes')}
                   </label>
                   <input
                     type="text"
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
-                    placeholder="MEMORANDUM INTERNO..."
+                    placeholder={t('billForm.notesPlaceholder')}
                     className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
                   />
                 </div>
@@ -237,10 +239,10 @@ export const BillForm: React.FC<BillFormProps> = ({
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
-                  <Layers className="w-6 h-6 text-orange-500" /> Matriz de Transacciones
+                  <Layers className="w-6 h-6 text-orange-500" /> {t('billForm.transactionMatrix')}
                 </h3>
                 <button type="button" onClick={addItem} className="px-6 py-3 bg-orange-600/10 border border-orange-500/20 text-orange-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all">
-                  Adjuntar Nueva Línea
+                  {t('billForm.addLine')}
                 </button>
               </div>
 
@@ -253,7 +255,7 @@ export const BillForm: React.FC<BillFormProps> = ({
                         onChange={(e) => handleItemChange(index, 'product_id', parseInt(e.target.value) || '')}
                         className="w-full bg-slate-900 text-white px-4 py-3 rounded-xl border border-slate-800 focus:border-orange-500 focus:outline-none text-[10px] font-black uppercase tracking-widest"
                       >
-                        <option value="">PRODUCTO / SKU</option>
+                        <option value="">{t('billForm.productSku')}</option>
                         {products.map(p => <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>)}
                       </select>
                     </div>
@@ -262,7 +264,7 @@ export const BillForm: React.FC<BillFormProps> = ({
                         type="text"
                         value={item.description}
                         onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                        placeholder="DESCRIPCIÓN TÉCNICA..."
+                        placeholder={t('billForm.description')}
                         className="w-full bg-slate-900 text-white px-4 py-3 rounded-xl border border-slate-800 focus:border-orange-500 focus:outline-none text-[10px] font-black uppercase tracking-widest"
                       />
                     </div>
@@ -301,21 +303,21 @@ export const BillForm: React.FC<BillFormProps> = ({
           <footer className="p-10 border-t border-slate-800 bg-slate-950/80 relative z-10">
             <div className="flex flex-col md:flex-row items-center justify-between gap-12">
               <div className="flex gap-16 order-2 md:order-1">
-                <ConsolidationStat label="Subtotal Neto" value={formatCurrency(subtotal)} />
-                <ConsolidationStat label="Impuesto Florida" value={formatCurrency(taxAmount)} />
+                <ConsolidationStat label={t('billForm.netSubtotal')} value={formatCurrency(subtotal)} />
+                <ConsolidationStat label={t('billForm.taxFlorida')} value={formatCurrency(taxAmount)} />
                 <div className="group">
-                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.3em] mb-3">Total Obligado</p>
+                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.3em] mb-3">{t('billForm.totalObligated')}</p>
                   <p className="text-5xl font-black text-white font-mono tracking-tighter group-hover:scale-105 transition-transform origin-left">{formatCurrency(total)}</p>
                 </div>
               </div>
 
               <div className="flex gap-6 w-full md:w-auto order-1 md:order-2">
                 <button type="button" onClick={onCancel} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
-                  Abortar Protocolo
+                  {t('billForm.abortProtocol')}
                 </button>
                 <button type="submit" className="flex-1 md:flex-none px-12 py-5 bg-orange-600 hover:bg-orange-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-orange-900/40 hover:-translate-y-1 active:scale-95">
                   <Save className="w-5 h-5" />
-                  {isEditing ? 'Confirmar Ajuste' : 'Registrar Obligación'}
+                  {isEditing ? t('billForm.confirmAdjustment') : t('billForm.registerObligation')}
                 </button>
               </div>
             </div>

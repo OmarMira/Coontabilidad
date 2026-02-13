@@ -29,9 +29,9 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                 value={selectedCustomer?.id || ''}
                 onChange={handleChange}
             >
-                <option value="">Seleccionar Cliente...</option>
+                <option value="" style={{ color: 'black' }}>Seleccionar Cliente...</option>
                 {MOCK_CUSTOMERS.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id} style={{ color: 'black' }}>{c.name}</option>
                 ))}
             </select>
         </div>

@@ -76,8 +76,8 @@ import { JournalEntryForm } from './components/accounting/JournalEntryForm';
 import { TrialBalanceReport } from './components/accounting/TrialBalanceReport';
 import { FinancialStatements } from './components/accounting/FinancialStatements';
 import { QuotesList, ReceivableReports } from './components/invoices/ARComponents';
-import { QuoteForm } from './components/quotes/QuoteForm';
-import { QuoteDetailView } from './components/quotes/QuoteDetailView';
+import { QuoteForm } from './features/quotes/components/QuoteForm';
+import { QuoteDetailView } from './features/quotes/components/QuoteDetailView';
 import { TaxCalendar, TaxReports } from './components/dr15/TaxComponents';
 import { BackupPanel } from './components/BackupPanel';
 import { LiveVerification } from './pages/LiveVerification';
@@ -95,7 +95,7 @@ import { ChartOfAccounts } from './components/ChartOfAccounts';
 import { AccountingDiagnosis } from './components/AccountingDiagnosis';
 import { JournalEntryTest } from './components/JournalEntryTest';
 import { BankingModule } from './components/banking/BankingModule';
-import { CustomerPayments } from './components/CustomerPayments';
+import { CustomerPayments } from './features/receivables/components/CustomerPayments';
 import { SupplierPayments } from './components/SupplierPayments';
 import { ProductForm } from './components/ProductForm';
 import { ProductList } from './components/ProductList';
@@ -108,7 +108,7 @@ import { BackupRestore } from './components/BackupRestore';
 import { TransactionAudit } from './components/TransactionAudit';
 import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
-import { SalesInvoiceForm } from './components/SalesInvoiceForm';
+import { SalesInvoiceForm } from './features/sales/components/SalesInvoiceForm';
 import { BankStatementImporter } from './components/BankStatementImporter';
 import { BankImport } from './components/banking/BankImport';
 import { ManualJournalEntries } from './components/ManualJournalEntries';
@@ -214,7 +214,7 @@ interface AppState {
 
 function App() {
   const { user } = useAuth();
-  const { t } = useLocale();
+  const { t, language } = useLocale();
   const [showUnifiedAssistant, setShowUnifiedAssistant] = useState(false);
   const [state, setState] = useState<AppState>({
     isLoading: true,
@@ -1889,11 +1889,13 @@ function App() {
                 <>
                   {state.showingBankAccountForm ? (
                     <BankAccountForm
+                      key={language}
                       onSubmit={handleCreateBankAccount}
                       onCancel={() => setState(prev => ({ ...prev, showingBankAccountForm: false }))}
                     />
                   ) : state.editingBankAccount ? (
                     <BankAccountForm
+                      key={language}
                       initialData={state.editingBankAccount}
                       onSubmit={handleUpdateBankAccount}
                       onCancel={handleCancelBankAccountEdit}

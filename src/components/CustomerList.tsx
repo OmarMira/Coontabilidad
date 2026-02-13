@@ -86,9 +86,9 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             onChange={(e) => setSelectedCounty(e.target.value)}
             className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
           >
-            <option value="">{t('customerList.allCounties')}</option>
+            <option value="" style={{ color: 'black' }}>{t('customerList.allCounties')}</option>
             {uniqueCounties.map(county => (
-              <option key={county} value={county}>{county?.toUpperCase()}</option>
+              <option key={county} value={county} style={{ color: 'black' }}>{county?.toUpperCase()}</option>
             ))}
           </select>
 

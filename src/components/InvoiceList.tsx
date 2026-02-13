@@ -132,12 +132,12 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-white/5 text-white px-3 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
             >
-              <option value="all">{t('invoiceList.allStatuses')}</option>
-              <option value="draft">{t('invoiceList.draft')}</option>
-              <option value="sent">{t('invoiceList.sent')}</option>
-              <option value="paid">{t('invoiceList.paid')}</option>
-              <option value="overdue">{t('invoiceList.overdue')}</option>
-              <option value="cancelled">{t('invoiceList.cancelled')}</option>
+              <option value="all" style={{ color: 'black' }}>{t('invoiceList.allStatuses')}</option>
+              <option value="draft" style={{ color: 'black' }}>{t('invoiceList.draft')}</option>
+              <option value="sent" style={{ color: 'black' }}>{t('invoiceList.sent')}</option>
+              <option value="paid" style={{ color: 'black' }}>{t('invoiceList.paid')}</option>
+              <option value="overdue" style={{ color: 'black' }}>{t('invoiceList.overdue')}</option>
+              <option value="cancelled" style={{ color: 'black' }}>{t('invoiceList.cancelled')}</option>
             </select>
           </div>
         </div>

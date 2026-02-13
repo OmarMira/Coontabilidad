@@ -255,6 +255,11 @@ export const FloridaTaxReport: React.FC = () => {
   }, []);
 
   const exportToCSV = async () => {
+    if (!currentReport) {
+      setError(t('floridaTaxReport.noReportToExport'));
+      return;
+    }
+
     if (!selectedPeriod) {
       setError(t('floridaTaxReport.selectPeriodError'));
       return;

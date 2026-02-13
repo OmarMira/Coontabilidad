@@ -1,5 +1,4 @@
-import React from 'react';
-import { Quote } from '@/database/simple-db';
+import { Quote } from '../../../database/simple-db';
 import { X, FileText, Calendar, User, DollarSign, ArrowRight, Download } from 'lucide-react';
 
 interface QuoteDetailViewProps {
