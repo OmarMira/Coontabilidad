@@ -1,6 +1,6 @@
 // Deprecado. El sistema ahora usa 'BackupPanel.tsx' y 'BackupService' (Iron Core v1.0).
 import React from 'react';
-import { useLocale } from '../i18n/useLocale';
+import { useLocale } from '../../i18n/useLocale';
 
 export const BackupRestore: React.FC = () => {
   const { t } = useLocale();
