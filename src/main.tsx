@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import { DynamicErrorBoundary } from '@/components/error/DynamicErrorBoundary';
 import { DatabaseHealthChecker } from '@/core/DatabaseHealthChecker';
 import { NuclearCleanExecution } from '@/core/NuclearCleanExecution';
@@ -82,7 +82,11 @@ async function initializeApplication(): Promise<void> {
     const { AuthProvider } = await import('./contexts/AuthContext');
     const { SystemIntegrityGate } = await import('./components/security/SystemIntegrityGate');
 
-    ReactDOM.createRoot(document.getElementById('root')!).render(
+    const rootElement = document.getElementById('root');
+    if (!rootElement) throw new Error('Failed to find the root element');
+    const root = createRoot(rootElement);
+
+    root.render(
       <React.StrictMode>
         <DynamicErrorBoundary>
           <SystemIntegrityGate>
@@ -95,6 +99,7 @@ async function initializeApplication(): Promise<void> {
         </DynamicErrorBoundary>
       </React.StrictMode>
     );
+
   } catch (error: any) {
     logger.critical('Fallo en inicialización', { error: error.message }, error, 'Main', 'startup_error');
 
