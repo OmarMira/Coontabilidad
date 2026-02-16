@@ -7,12 +7,13 @@
 import React, { useEffect, useState } from 'react';
 import { getHealthStatus, HealthCheckResponse } from '../api/health';
 import { IntegrityService } from '../services/integrity/IntegrityService';
-import { 
-    Activity, 
-    CheckCircle, 
-    XCircle, 
-    AlertTriangle, 
-    RefreshCw, 
+import { useLocale } from '../i18n/useLocale';
+import {
+    Activity,
+    CheckCircle,
+    XCircle,
+    AlertTriangle,
+    RefreshCw,
     Wrench,
     Shield,
     Clock,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export const SystemStatusDashboard: React.FC = () => {
+    const { t } = useLocale();
     const [health, setHealth] = useState<HealthCheckResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [repairing, setRepairing] = useState(false);
@@ -92,7 +94,7 @@ export const SystemStatusDashboard: React.FC = () => {
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
                 <div className="text-center">
                     <Activity className="w-12 h-12 text-blue-400 animate-pulse mx-auto mb-4" />
-                    <p className="text-slate-300">Cargando estado del sistema...</p>
+                    <p className="text-slate-300">{t('systemStatus.loading')}</p>
                 </div>
             </div>
         );
@@ -103,13 +105,13 @@ export const SystemStatusDashboard: React.FC = () => {
             <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
                 <div className="max-w-md bg-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-800">
                     <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white text-center mb-2">Error</h1>
+                    <h1 className="text-2xl font-bold text-white text-center mb-2">{t('common.error')}</h1>
                     <p className="text-slate-400 text-center">{error}</p>
                     <button
                         onClick={loadHealth}
                         className="mt-6 w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                     >
-                        Reintentar
+                        {t('common.retry')}
                     </button>
                 </div>
             </div>
@@ -128,9 +130,9 @@ export const SystemStatusDashboard: React.FC = () => {
                             <Shield className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Estado del Sistema</h1>
+                            <h1 className="text-3xl font-bold text-white">{t('systemStatus.title')}</h1>
                             <p className="text-slate-400 text-sm mt-1">
-                                Iron Core v{health.version} • Última actualización: {lastUpdate.toLocaleTimeString('es-ES')}
+                                Iron Core v{health.version} • {t('systemStatus.lastUpdate')} {lastUpdate.toLocaleTimeString()}
                             </p>
                         </div>
                     </div>
@@ -142,7 +144,7 @@ export const SystemStatusDashboard: React.FC = () => {
                                 onChange={(e) => setAutoRefresh(e.target.checked)}
                                 className="rounded"
                             />
-                            Auto-actualizar (30s)
+                            {t('systemStatus.autoRefresh')} (30s)
                         </label>
                         <button
                             onClick={loadHealth}
@@ -150,7 +152,7 @@ export const SystemStatusDashboard: React.FC = () => {
                             className="px-4 py-2 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-700 disabled:opacity-50 transition-colors flex items-center gap-2"
                         >
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            Actualizar
+                            {t('common.refresh')}
                         </button>
                         {health.summary.failed > 0 && (
                             <button
@@ -159,7 +161,7 @@ export const SystemStatusDashboard: React.FC = () => {
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
                             >
                                 <Wrench className="w-4 h-4" />
-                                {repairing ? 'Reparando...' : 'Reparar Todo'}
+                                {repairing ? t('systemStatus.repairing') : t('systemStatus.repairAll')}
                             </button>
                         )}
                     </div>
@@ -170,19 +172,17 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-2">
                             <div className={`w-3 h-3 rounded-full ${getStatusColor(health.status)}`}></div>
-                            <p className="text-sm text-slate-400">Estado General</p>
+                            <p className="text-sm text-slate-400">{t('systemStatus.generalStatus')}</p>
                         </div>
                         <p className={`text-2xl font-bold capitalize ${getStatusTextColor(health.status)}`}>
-                            {health.status === 'healthy' ? 'Saludable' :
-                             health.status === 'degraded' ? 'Degradado' :
-                             'Crítico'}
+                            {t(`systemStatus.status.${health.status}`)}
                         </p>
                     </div>
 
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-2">
                             <CheckCircle className="w-5 h-5 text-green-500" />
-                            <p className="text-sm text-slate-400">Checks Exitosos</p>
+                            <p className="text-sm text-slate-400">{t('systemStatus.passedChecks')}</p>
                         </div>
                         <p className="text-2xl font-bold text-green-500">{health.summary.passed}</p>
                     </div>
@@ -190,7 +190,7 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-2">
                             <XCircle className="w-5 h-5 text-red-500" />
-                            <p className="text-sm text-slate-400">Checks Fallidos</p>
+                            <p className="text-sm text-slate-400">{t('systemStatus.failedChecks')}</p>
                         </div>
                         <p className="text-2xl font-bold text-red-500">{health.summary.failed}</p>
                     </div>
@@ -198,7 +198,7 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-2">
                             <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                            <p className="text-sm text-slate-400">Advertencias</p>
+                            <p className="text-sm text-slate-400">{t('systemStatus.warnings')}</p>
                         </div>
                         <p className="text-2xl font-bold text-yellow-500">{health.summary.warnings}</p>
                     </div>
@@ -206,7 +206,7 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-2">
                             <Clock className="w-5 h-5 text-blue-500" />
-                            <p className="text-sm text-slate-400">Tiempo Respuesta</p>
+                            <p className="text-sm text-slate-400">{t('systemStatus.responseTime')}</p>
                         </div>
                         <p className="text-2xl font-bold text-blue-500">{health.uptime.toFixed(0)}ms</p>
                     </div>
@@ -215,15 +215,15 @@ export const SystemStatusDashboard: React.FC = () => {
                 {/* Checks Detail */}
                 <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-white">Verificaciones de Integridad</h2>
+                        <h2 className="text-xl font-bold text-white">{t('systemStatus.integrityChecks')}</h2>
                         <span className="text-sm text-slate-400">
-                            {health.summary.total} checks totales
+                            {health.summary.total} {t('systemStatus.totalChecksSuffix')}
                         </span>
                     </div>
                     <div className="divide-y divide-slate-800">
                         {health.checks.map((check) => (
-                            <div 
-                                key={check.id} 
+                            <div
+                                key={check.id}
                                 className="px-6 py-4 hover:bg-slate-800/50 transition-colors"
                             >
                                 <div className="flex items-start gap-4">
@@ -237,12 +237,11 @@ export const SystemStatusDashboard: React.FC = () => {
                                         <p className="text-sm text-slate-400 mt-1">{check.message}</p>
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                            check.status === 'passed' 
-                                                ? 'bg-green-500/20 text-green-400' 
-                                                : 'bg-red-500/20 text-red-400'
-                                        }`}>
-                                            {check.status === 'passed' ? 'PASS' : 'FAIL'}
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${check.status === 'passed'
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : 'bg-red-500/20 text-red-400'
+                                            }`}>
+                                            {check.status === 'passed' ? t('systemStatus.pass') : t('systemStatus.fail')}
                                         </span>
                                         <span className="text-xs text-slate-500">
                                             {check.executionTime.toFixed(0)}ms
@@ -259,21 +258,21 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-4">
                             <Database className="w-6 h-6 text-blue-500" />
-                            <h3 className="text-lg font-bold text-white">Información del Sistema</h3>
+                            <h3 className="text-lg font-bold text-white">{t('systemStatus.systemInfo')}</h3>
                         </div>
                         <div className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-slate-400">Versión</span>
+                                <span className="text-slate-400">{t('systemStatus.version')}</span>
                                 <span className="text-white font-semibold">{health.version}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-400">Timestamp</span>
+                                <span className="text-slate-400">{t('systemStatus.timestamp')}</span>
                                 <span className="text-white font-mono text-sm">
-                                    {new Date(health.timestamp).toLocaleString('es-ES')}
+                                    {new Date(health.timestamp).toLocaleString()}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-400">Total Checks</span>
+                                <span className="text-slate-400">{t('systemStatus.totalChecksLabel')}</span>
                                 <span className="text-white font-semibold">{health.summary.total}</span>
                             </div>
                         </div>
@@ -282,24 +281,23 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-4">
                             <TrendingUp className="w-6 h-6 text-green-500" />
-                            <h3 className="text-lg font-bold text-white">Métricas de Rendimiento</h3>
+                            <h3 className="text-lg font-bold text-white">{t('systemStatus.performanceMetrics')}</h3>
                         </div>
                         <div className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-slate-400">Tiempo de Verificación</span>
+                                <span className="text-slate-400">{t('systemStatus.verificationTime')}</span>
                                 <span className="text-white font-semibold">{health.uptime.toFixed(2)}ms</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-400">Tasa de Éxito</span>
+                                <span className="text-slate-400">{t('systemStatus.successRate')}</span>
                                 <span className="text-white font-semibold">
                                     {((health.summary.passed / health.summary.total) * 100).toFixed(1)}%
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-400">Checks Críticos Fallidos</span>
-                                <span className={`font-semibold ${
-                                    health.summary.criticalFailures > 0 ? 'text-red-500' : 'text-green-500'
-                                }`}>
+                                <span className="text-slate-400">{t('systemStatus.criticalFailures')}</span>
+                                <span className={`font-semibold ${health.summary.criticalFailures > 0 ? 'text-red-500' : 'text-green-500'
+                                    }`}>
                                     {health.summary.criticalFailures}
                                 </span>
                             </div>
@@ -310,3 +308,4 @@ export const SystemStatusDashboard: React.FC = () => {
         </div>
     );
 };
+

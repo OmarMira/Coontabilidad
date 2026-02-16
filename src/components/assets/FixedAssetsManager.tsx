@@ -21,6 +21,7 @@ import { AssetDisposalForm } from './AssetDisposalForm';
 import { AssetRegisterReport } from './reports/AssetRegisterReport';
 import { DepreciationScheduleReport } from './reports/DepreciationScheduleReport';
 import { DisposalSummaryReport } from './reports/DisposalSummaryReport';
+import { useLocale } from '@/i18n/useLocale';
 
 interface FixedAssetsManagerProps {
   db: any; // Database instance passed from App
@@ -36,6 +37,7 @@ interface FixedAssetsManagerProps {
  * - Category management
  */
 export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) => {
+  const { t } = useLocale();
   const [assets, setAssets] = useState<FixedAsset[]>([]);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [summary, setSummary] = useState({
@@ -81,7 +83,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
 
     } catch (err) {
       console.error('Error loading fixed assets:', err);
-      setError(err instanceof Error ? err.message : 'Error al cargar activos fijos');
+      setError(err instanceof Error ? err.message : t('fixedAssets.loading'));
     } finally {
       setLoading(false);
     }
@@ -106,7 +108,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
 
     } catch (err) {
       console.error('Error running depreciation:', err);
-      setError(err instanceof Error ? err.message : 'Error al procesar depreciación');
+      setError(err instanceof Error ? err.message : t('fixedAssets.messages.depreciationError'));
     } finally {
       setLoading(false);
     }
@@ -136,7 +138,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-slate-400">Cargando activos fijos...</p>
+          <p className="text-slate-400">{t('fixedAssets.loading')}</p>
         </div>
       </div>
     );
@@ -149,9 +151,9 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <Package className="w-8 h-8 text-blue-400" />
-            Gestión de Activos Fijos
+            {t('fixedAssets.management')}
           </h1>
-          <p className="text-slate-400 mt-1">Administración y depreciación de activos</p>
+          <p className="text-slate-400 mt-1">{t('fixedAssets.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <Button
@@ -160,7 +162,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             <Play className="w-4 h-4 mr-2" />
-            Ejecutar Depreciación
+            {t('fixedAssets.runDepreciation')}
           </Button>
           <Button
             onClick={() => {
@@ -170,7 +172,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Nuevo Activo
+            {t('fixedAssets.newAsset')}
           </Button>
         </div>
       </div>
@@ -179,14 +181,14 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       {error && (
         <Alert className="bg-red-950/20 border-red-900/50 text-red-200">
           <AlertTriangle className="w-4 h-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t('common.error')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
         <Alert className="bg-green-950/20 border-green-900/50 text-green-200">
-          <AlertTitle>Éxito</AlertTitle>
+          <AlertTitle>{t('common.success')}</AlertTitle>
           <AlertDescription>{success}</AlertDescription>
         </Alert>
       )}
@@ -197,14 +199,14 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              Costo Total
+              {t('fixedAssets.totalCost')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black tracking-tight text-blue-400 font-mono">
               ${(summary.total_cost / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Costo de adquisición</p>
+            <p className="text-xs text-slate-500 mt-1">{t('fixedAssets.acquisitionCost')}</p>
           </CardContent>
         </Card>
 
@@ -212,14 +214,14 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
               <TrendingDown className="w-4 h-4" />
-              Depreciación Acumulada
+              {t('fixedAssets.accumulatedDepreciation')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black tracking-tight text-amber-400 font-mono">
               ${(summary.total_depreciation / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Total depreciado</p>
+            <p className="text-xs text-slate-500 mt-1">{t('fixedAssets.totalDepreciated')}</p>
           </CardContent>
         </Card>
 
@@ -227,14 +229,14 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
               <Package className="w-4 h-4" />
-              Valor en Libros
+              {t('fixedAssets.bookValue')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black tracking-tight text-green-400 font-mono">
               ${(summary.net_book_value / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Valor neto actual</p>
+            <p className="text-xs text-slate-500 mt-1">{t('fixedAssets.netBookValue')}</p>
           </CardContent>
         </Card>
 
@@ -242,14 +244,14 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Activos Activos
+              {t('fixedAssets.activeAssets')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black tracking-tight text-slate-200">
               {summary.active_assets}
             </div>
-            <p className="text-xs text-slate-500 mt-1">En depreciación</p>
+            <p className="text-xs text-slate-500 mt-1">{t('fixedAssets.inDepreciation')}</p>
           </CardContent>
         </Card>
       </div>
@@ -264,7 +266,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
             }`}
         >
           <Package className="w-4 h-4 inline mr-2" />
-          Activos
+          {t('fixedAssets.assetList')}
         </button>
         <button
           onClick={() => setActiveTab('categories')}
@@ -274,7 +276,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
             }`}
         >
           <Settings className="w-4 h-4 inline mr-2" />
-          Categorías
+          {t('fixedAssets.categories')}
         </button>
         <button
           onClick={() => setActiveTab('reports')}
@@ -284,7 +286,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
             }`}
         >
           <FileText className="w-4 h-4 inline mr-2" />
-          Reportes
+          {t('common.reports')}
         </button>
       </div>
 
@@ -293,13 +295,13 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
         {activeTab === 'assets' && (
           <Card className="bg-slate-900 border-slate-800 text-white">
             <CardHeader>
-              <CardTitle>Lista de Activos</CardTitle>
+              <CardTitle>{t('fixedAssets.assetList')}</CardTitle>
             </CardHeader>
             <CardContent>
               {assets.length === 0 ? (
                 <div className="text-center py-12">
                   <Package className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-400 mb-4">No hay activos fijos registrados</p>
+                  <p className="text-slate-400 mb-4">{t('fixedAssets.noAssets')}</p>
                   <Button
                     onClick={() => {
                       setEditingAsset(null);
@@ -308,7 +310,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Agregar Primer Activo
+                    {t('fixedAssets.addAsset')}
                   </Button>
                 </div>
               ) : (
@@ -317,12 +319,12 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                     <thead>
                       <tr className="border-b border-slate-800">
                         <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Tag</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Nombre</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Categoría</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Costo</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Depreciación</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Valor Neto</th>
-                        <th className="text-center py-3 px-4 text-sm font-medium text-slate-400">Estado</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('common.name')}</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('common.category')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('common.cost')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('fixedAssets.accumulatedDepreciation')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('fixedAssets.netValue')}</th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-slate-400">{t('common.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -367,7 +369,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
         {activeTab === 'categories' && (
           <Card className="bg-slate-900 border-slate-800 text-white">
             <CardHeader>
-              <CardTitle>Categorías de Activos</CardTitle>
+              <CardTitle>{t('fixedAssets.categories')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -380,20 +382,20 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                       </div>
                       <span className={`px-2 py-1 rounded text-xs ${category.is_active ? 'bg-green-900/30 text-green-400' : 'bg-slate-700 text-slate-400'
                         }`}>
-                        {category.is_active ? 'Activa' : 'Inactiva'}
+                        {category.is_active ? t('fixedAssets.active') : t('fixedAssets.inactive')}
                       </span>
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Método:</span>
+                        <span className="text-slate-400">{t('fixedAssets.method')}:</span>
                         <span className="text-slate-200">{category.default_depreciation_method}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Vida Útil:</span>
-                        <span className="text-slate-200">{category.default_useful_life_months} meses</span>
+                        <span className="text-slate-400">{t('fixedAssets.usefulLife')}:</span>
+                        <span className="text-slate-200">{category.default_useful_life_months} {t('fixedAssets.months')}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Cuenta Activo:</span>
+                        <span className="text-slate-400">{t('fixedAssets.assetAccount')}:</span>
                         <span className="text-slate-200 font-mono">{category.gl_asset_account}</span>
                       </div>
                     </div>
@@ -407,7 +409,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
         {activeTab === 'reports' && (
           <Card className="bg-slate-900 border-slate-800 text-white">
             <CardHeader>
-              <CardTitle>Reportes de Activos Fijos</CardTitle>
+              <CardTitle>{t('common.reports')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -416,24 +418,24 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                   className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
                 >
                   <FileText className="w-8 h-8 text-blue-400 mb-3" />
-                  <h3 className="font-medium text-white mb-1">Registro de Activos</h3>
-                  <p className="text-sm text-slate-400">Lista completa con valores actuales</p>
+                  <h3 className="font-medium text-white mb-1">{t('fixedAssets.assetRegister')}</h3>
+                  <p className="text-sm text-slate-400">{t('fixedAssets.reports.fullList')}</p>
                 </button>
                 <button
                   onClick={() => setActiveReport('schedule')}
                   className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
                 >
                   <Calendar className="w-8 h-8 text-amber-400 mb-3" />
-                  <h3 className="font-medium text-white mb-1">Calendario de Depreciación</h3>
-                  <p className="text-sm text-slate-400">Proyección mensual de gastos</p>
+                  <h3 className="font-medium text-white mb-1">{t('fixedAssets.depreciationSchedule')}</h3>
+                  <p className="text-sm text-slate-400">{t('fixedAssets.reports.monthlyProjection')}</p>
                 </button>
                 <button
                   onClick={() => setActiveReport('disposals')}
                   className="p-6 border border-slate-800 rounded-lg hover:border-blue-500/50 hover:bg-slate-800/50 transition-all text-left"
                 >
                   <TrendingDown className="w-8 h-8 text-green-400 mb-3" />
-                  <h3 className="font-medium text-white mb-1">Resumen de Disposiciones</h3>
-                  <p className="text-sm text-slate-400">Activos vendidos o dados de baja</p>
+                  <h3 className="font-medium text-white mb-1">{t('fixedAssets.disposalSummary')}</h3>
+                  <p className="text-sm text-slate-400">{t('fixedAssets.reports.soldOrDisposed')}</p>
                 </button>
               </div>
             </CardContent>
@@ -452,7 +454,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                   setShowAssetForm(false);
                   setEditingAsset(null);
                   await loadData();
-                  setSuccess(editingAsset ? 'Asset updated successfully' : 'Asset created successfully');
+                  setSuccess(editingAsset ? t('fixedAssets.messages.updateSuccess') : t('fixedAssets.messages.createSuccess'));
                   setTimeout(() => setSuccess(null), 3000);
                 }}
                 onCancel={() => {
@@ -476,28 +478,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                 onDispose={async () => {
                   setDisposingAsset(null);
                   await loadData();
-                  setSuccess('Asset disposed successfully');
-                  setTimeout(() => setSuccess(null), 3000);
-                }}
-                onCancel={() => setDisposingAsset(null)}
-                db={db}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Asset Disposal Modal */}
-      {disposingAsset && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-          <div className="bg-slate-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <AssetDisposalForm
-                asset={disposingAsset}
-                onDispose={async () => {
-                  setDisposingAsset(null);
-                  await loadData();
-                  setSuccess('Asset disposed successfully');
+                  setSuccess(t('fixedAssets.messages.disposeSuccess'));
                   setTimeout(() => setSuccess(null), 3000);
                 }}
                 onCancel={() => setDisposingAsset(null)}

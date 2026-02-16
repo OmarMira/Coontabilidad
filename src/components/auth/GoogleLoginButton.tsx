@@ -15,19 +15,16 @@ interface GoogleLoginButtonProps {
     onError: () => void;
 }
 
-// 1. Intentar leer del entorno (puede fallar si .env está corrupto)
-const ENV_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-    import.meta.env.REACT_APP_GOOGLE_CLIENT_ID ||
-    import.meta.env.REACT_APP_CLIENT_ID;
-
-// 2. Clave recuperada forensemente (actualizada)
+// 1. Intentar leer del entorno (Prioridad: VITE_GOOGLE_CLIENT_ID > REACT_APP_GOOGLE_CLIENT_ID)
 const RECOVERED_ID = '385613242210-7uthrm6ctsvjeauo8tb3kubfgqd7edr4.apps.googleusercontent.com';
 
-// 3. Selección Final (Prioridad: Environment > Recovered)
-const FINAL_CLIENT_ID = (ENV_ID && ENV_ID.length > 10) ? ENV_ID : RECOVERED_ID;
+const FINAL_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    import.meta.env.REACT_APP_GOOGLE_CLIENT_ID ||
+    RECOVERED_ID; // Recurso forense como fallback
+
 
 const GoogleLoginInner: React.FC<GoogleLoginButtonProps & { isConfigured: boolean }> = ({ onSuccess, onError, isConfigured }) => {
-    const { t } = useLocale();
+    const { t, language } = useLocale();
 
     useGoogleOneTapLogin({
         onSuccess: (credentialResponse) => {
@@ -72,7 +69,8 @@ const GoogleLoginInner: React.FC<GoogleLoginButtonProps & { isConfigured: boolea
                 shape="rectangular"
                 logo_alignment="left"
                 width="100%"
-                prompt="select_account" // Force account selection
+
+
             />
         </div>
     );

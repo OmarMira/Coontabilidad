@@ -2095,6 +2095,20 @@ const initializeSchema = async (db: any) => {
   `);
 
 
+  // Tabla de transacciones borrador (AI Proposals) - Phase 3 Iron Clad
+  db.run(`
+    CREATE TABLE IF NOT EXISTS draft_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        module TEXT NOT NULL,
+        operation TEXT,
+        payload TEXT,
+        ai_proposal_reason TEXT,
+        status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'approved', 'rejected')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Tabla de facturas de compra (bills)
   db.run(`
     CREATE TABLE IF NOT EXISTS bills(
@@ -2263,7 +2277,11 @@ const initializeSchema = async (db: any) => {
     other_costs DECIMAL(10, 2) DEFAULT 0.00,
     chart_of_accounts_name TEXT DEFAULT 'Plan de Cuenta Ejemplo',
     date_format TEXT DEFAULT 'MM/DD/AAAA',
+    tax_frequency TEXT DEFAULT 'monthly', --monthly, quarterly
+    sales_tax_method TEXT DEFAULT 'accrual', --accrual, cash
+    dr15_filing_day INTEGER DEFAULT 20,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT 1
   )
@@ -3223,10 +3241,10 @@ GROUP BY ba.id
 
       // 2. Usuarios
       const usersToVerify = [
-        { username: 'admin', email: 'admin@empresa.com', display_name: 'Administrador Principal', password: 'admin123', role: 'admin' },
-        { username: 'demo', email: 'demo@empresa.com', display_name: 'Usuario Demo', password: 'demo123', role: 'admin' },
-        { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Vendedor Test', password: 'vendedor123', role: 'vendedor' },
-        { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Contador Test', password: 'contador123', role: 'contador' },
+        { username: 'admin', email: 'admin@empresa.com', display_name: 'Main Administrator', password: 'admin123', role: 'admin' },
+        { username: 'demo', email: 'demo@empresa.com', display_name: 'Demo User', password: 'demo123', role: 'admin' },
+        { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Sales Rep Test', password: 'vendedor123', role: 'vendedor' },
+        { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Accountant Test', password: 'contador123', role: 'contador' },
         { username: 'auditor1', email: 'auditor1@empresa.com', display_name: 'Auditor Test', password: 'auditor123', role: 'auditor' }
       ];
 
@@ -4717,6 +4735,9 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
       }
     }
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return {
       success: true,
       message: `Invoice ${invoiceNumber} created successfully`,
@@ -4833,6 +4854,9 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
     // Registrar en auditoría
     logAuditAction('invoices', id, 'UPDATE', currentInvoice, invoiceData, userId);
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return { success: true, message: 'Invoice updated successfully' };
 
   } catch (error) {
@@ -4868,6 +4892,9 @@ export const deleteInvoice = (id: number, userId?: number): { success: boolean; 
 
     // Registrar en auditoría
     logAuditAction('invoices', id, 'DELETE', invoice, null, userId);
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return { success: true, message: 'Invoice deleted successfully' };
 
@@ -5196,6 +5223,9 @@ export const createQuote = (
       status: quoteData.status || 'draft'
     }, userId);
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return {
       success: true,
       message: `Cotizaci�n ${quoteNumber} creada exitosamente`,
@@ -5330,6 +5360,9 @@ export const updateQuote = (
 
     // Registrar en auditor�a
     logAuditAction('quotes', id, 'UPDATE', currentQuote, quoteData, userId);
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return { success: true, message: 'Cotizaci�n actualizada exitosamente' };
 
@@ -6109,6 +6142,9 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
         }
       }
     }
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return {
       success: true,
@@ -7700,6 +7736,10 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
 
     db.run('COMMIT');
     logger.info('Payments', 'add_payment_success', 'Pago a proveedor registrado', { paymentId, userId });
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return { success: true, message: 'Pago registrado correctamente', paymentId };
 
   } catch (error) {
@@ -8392,11 +8432,15 @@ company_name = ?,
       warnings_count: warnings.length
     });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 500);
+
     return {
       success: true,
       message: 'Datos de la empresa actualizados correctamente',
       warnings: warnings.length > 0 ? warnings : undefined
     };
+
 
   } catch (error) {
     logger.error('CompanyData', 'update_failed', 'Error al actualizar datos de empresa', null, error as Error);
@@ -9013,6 +9057,9 @@ export function createProduct(productData: Omit<Product, 'id' | 'created_at' | '
 
     logger.info('Products', 'create_success', 'Producto creado', { id: productId, sku: productData.sku });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return {
       success: true,
       message: `Producto "${productData.name}" creado correctamente`,
@@ -9118,6 +9165,9 @@ sku = COALESCE(?, sku),
 
     logger.info('Products', 'update_success', 'Producto actualizado', { id });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return {
       success: true,
       message: 'Producto actualizado correctamente'
@@ -9173,6 +9223,9 @@ export function deleteProduct(id: number, userId?: number): { success: boolean; 
     logAuditEvent('products', id, 'DELETE', JSON.stringify(currentResult[0]?.values[0]), null, userId);
 
     logger.info('Products', 'delete_success', 'Producto eliminado', { id });
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return {
       success: true,
@@ -9267,6 +9320,9 @@ export function updateProductStock(productId: number, quantity: number, operatio
       operation,
       quantity
     });
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return {
       success: true,
@@ -9523,6 +9579,9 @@ VALUES(?, ?, ?, ?, ?, ?)
       reportId
     });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return {
       success: true,
       message: `Reporte DR - 15 para ${report.period} guardado correctamente`,
@@ -9642,6 +9701,26 @@ export function getAllFloridaTaxRates(): { id: number; county: string; stateRate
 }
 
 /**
+ * Actualiza una tasa de impuesto de Florida
+ */
+export function updateFloridaTaxRate(id: number, discretionaryRate: number): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Base de datos no disponible' };
+  try {
+    const totalRate = 0.06 + discretionaryRate;
+    db.run(`UPDATE florida_tax_rates SET county_rate = ?, total_rate = ? WHERE id = ?`, [discretionaryRate, totalRate, id]);
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 500);
+
+    return { success: true, message: 'Tasa actualizada correctamente' };
+  } catch (error) {
+    console.error('Error updating tax rate:', error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
+  }
+}
+
+
+/**
  * Marca un reporte DR-15 como presentado
  */
 export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { success: boolean; message: string } {
@@ -9659,6 +9738,9 @@ export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { su
   `, [filedBy, period]);
 
     logger.info('DR15', 'mark_filed_success', 'Reporte marcado como presentado', { period });
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return {
       success: true,
@@ -9917,7 +9999,11 @@ VALUES(?, ?, ?, ?, ?, ?)
       method_name: methodData.method_name
     });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return {
+
       success: true,
       message: `Método de pago "${methodData.method_name}" creado correctamente`,
       id: newId
@@ -10016,6 +10102,10 @@ VALUES(?, ?, ?, ?, ?, ?)
     ]);
 
     logger.info('PaymentMethods', 'update_success', 'Método de pago actualizado correctamente', { id });
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
 
     return {
       success: true,
@@ -10304,6 +10394,9 @@ VALUES(?, ?, ?, ?, ?, ?)
     ]);
 
     logger.info('BankAccounts', 'create_success', 'Cuenta bancaria creada', { id });
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return { success: true, message: 'Cuenta bancaria creada correctamente', id };
   } catch (error) {
     logger.error('BankAccounts', 'create_failed', 'Error al crear cuenta bancaria', null, error as Error);
@@ -10356,6 +10449,9 @@ VALUES(?, ?, ?, ?, ?, ?)
     ]);
 
     logger.info('BankAccounts', 'update_success', 'Cuenta bancaria actualizada', { id });
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return { success: true, message: 'Cuenta bancaria actualizada correctamente' };
   } catch (error) {
     logger.error('BankAccounts', 'update_failed', 'Error al actualizar cuenta bancaria', { id }, error as Error);
@@ -10395,6 +10491,9 @@ VALUES(?, ?, ?, ?, ?, ?)
     ]);
 
     logger.info('BankAccounts', 'delete_success', 'Cuenta bancaria desactivada/eliminada', { id });
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
     return { success: true, message: 'Cuenta bancaria eliminada correctamente' };
   } catch (error) {
     logger.error('BankAccounts', 'delete_failed', 'Error al eliminar cuenta bancaria', { id }, error as Error);
@@ -10454,6 +10553,9 @@ export function createReconciliationStatement(data: Omit<ReconciliationStatement
 
     const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
     stmt.free();
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
 
     return { success: true, message: 'Estado de conciliaci�n creado', id };
   } catch (e: any) {
@@ -10539,6 +10641,8 @@ export function createReconciliationMatch(data: Omit<ReconciliationMatch, 'id' |
     db.run("UPDATE bank_transactions SET status = 'matched' WHERE id = ?", [data.bank_transaction_id]);
 
     db.run("COMMIT");
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
     return { success: true, message: 'Match de conciliaci�n creado', id };
   } catch (e: any) {
     db.run("ROLLBACK");
@@ -11289,7 +11393,11 @@ export const createUser = async (userData: {
 
     logger.info('Users', 'user_created', `Usuario creado: ${userData.username} `, { userId });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 500);
+
     return { success: true, message: 'Usuario creado correctamente', userId };
+
   } catch (error) {
     logger.error('Users', 'create_user_failed', 'Error creating user', { username: userData.username }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
@@ -11427,7 +11535,11 @@ export const updateUser = (id: number, updates: {
 
     logger.info('Users', 'user_updated', `Usuario actualizado: ${id} `, { updates });
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 500);
+
     return { success: true, message: 'Usuario actualizado correctamente' };
+
   } catch (error) {
     logger.error('Users', 'update_user_failed', 'Error updating user', { id, updates }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
@@ -11445,7 +11557,11 @@ export const deactivateUser = (id: number): { success: boolean; message: string 
 
     logger.info('Users', 'user_deactivated', `Usuario desactivado: ${id} `);
 
+    // Auto-save
+    setTimeout(() => saveDatabase(), 500);
+
     return { success: true, message: 'Usuario desactivado correctamente' };
+
   } catch (error) {
     logger.error('Users', 'deactivate_user_failed', 'Error deactivating user', { id }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
@@ -13352,5 +13468,97 @@ export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
   } catch (error) {
     console.error('Error getting annual payrolls:', error);
     return [];
+  }
+}
+
+/**
+ * Obtiene la configuración fiscal actual
+ */
+export function getFiscalSettings(): FiscalSettings {
+  try {
+    const data = getCompanyData();
+    if (!data) {
+      return {
+        tax_year_start: '2025-01-01',
+        tax_frequency: 'monthly',
+        sales_tax_method: 'accrual',
+        default_tax_rate: 0.06,
+        dr15_filing_day: 20,
+        active: true
+      };
+    }
+
+    return {
+      id: data.id,
+      tax_year_start: (data as any).fiscal_year_start ? `2025-${(data as any).fiscal_year_start}` : '2025-01-01',
+      tax_frequency: (data as any).tax_frequency || 'monthly',
+      sales_tax_method: (data as any).sales_tax_method || 'accrual',
+      default_tax_rate: 0.06,
+      dr15_filing_day: (data as any).dr15_filing_day || 20,
+      active: (data as any).is_active ?? true
+    };
+  } catch (error) {
+    console.error('Error getting fiscal settings:', error);
+    return {
+      tax_year_start: '2025-01-01',
+      tax_frequency: 'monthly',
+      sales_tax_method: 'accrual',
+      default_tax_rate: 0.06,
+      dr15_filing_day: 20,
+      active: true
+    };
+  }
+}
+
+/**
+ * Interfaz para configuración fiscal
+ */
+export interface FiscalSettings {
+  id?: number;
+  tax_year_start?: string;
+  tax_frequency?: string;
+  sales_tax_method?: string;
+  dr15_filing_day?: number;
+  default_tax_rate?: number;
+  active?: boolean;
+}
+
+/**
+ * Actualiza la configuración fiscal
+ */
+export function updateFiscalSettings(settings: Partial<FiscalSettings>): { success: boolean; message: string } {
+  if (!db) return { success: false, message: 'Base de datos no disponible' };
+  try {
+    const current = getCompanyData();
+    if (!current) throw new Error('No company data found');
+
+    const updateData: any = {};
+    if (settings.tax_year_start) {
+      // Extract MM-DD
+      const parts = settings.tax_year_start.split('-');
+      if (parts.length >= 3) {
+        updateData.fiscal_year_start = `${parts[1]}-${parts[2]}`;
+      }
+    }
+    if (settings.tax_frequency) updateData.tax_frequency = settings.tax_frequency;
+    if (settings.sales_tax_method) updateData.sales_tax_method = settings.sales_tax_method;
+    if (settings.dr15_filing_day) updateData.dr15_filing_day = settings.dr15_filing_day;
+
+    if (Object.keys(updateData).length === 0) return { success: true, message: 'Sin cambios' };
+
+    const keys = Object.keys(updateData);
+    const setClause = keys.map(k => `${k} = ?`).join(', ');
+    const params = keys.map(k => updateData[k]);
+    params.push(current.id);
+
+    db.run(`UPDATE company_data SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, params);
+
+    // Auto-save
+    setTimeout(() => saveDatabase(), 1000);
+
+    return { success: true, message: 'Configuración fiscal actualizada correctamente' };
+  } catch (error) {
+    console.error('Error updating fiscal settings:', error);
+    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 }

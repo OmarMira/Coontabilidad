@@ -5,7 +5,8 @@ import { logger } from '../core/logging/SystemLogger';
 import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
 import { BackupLocationService, BackupLocation } from './BackupLocationService';
 
-const BACKUP_SECRET = "IRON-CORE-MASTER-KEY-2026-FLORIDA";
+const BACKUP_SECRET = import.meta.env.VITE_BACKUP_SECRET || "IRON-CORE-MASTER-KEY-2026-FLORIDA";
+
 
 // Cloud Vault Configuration (Hybrid Persistence)
 interface CloudVaultConfig {
@@ -93,7 +94,7 @@ export class BackupService {
 
       // Permitir al usuario elegir ubicación
       const destination = await BackupLocationService.chooseBackupLocation();
-      
+
       if (!destination) {
         // Usuario canceló
         logger.info('BackupService', 'backup_cancelled', 'Usuario canceló selección de ubicación');
@@ -102,7 +103,7 @@ export class BackupService {
 
       // Guardar en la ubicación elegida
       const success = await BackupLocationService.saveBackup(backupJson, filename, destination);
-      
+
       if (success) {
         logger.info('BackupService', 'backup_success', `Backup guardado exitosamente en: ${destination.type}`);
         return true;
@@ -124,7 +125,7 @@ export class BackupService {
     try {
       // Permitir al usuario elegir archivo
       const file = await BackupLocationService.chooseBackupFile();
-      
+
       if (!file) {
         // Usuario canceló
         logger.info('BackupService', 'restore_cancelled', 'Usuario canceló selección de archivo');
@@ -133,10 +134,10 @@ export class BackupService {
 
       // Leer contenido del archivo
       const content = await file.text();
-      
+
       // Restaurar
       const success = await this.restoreBackupLegacy(content);
-      
+
       if (success) {
         logger.info('BackupService', 'restore_success', `Backup restaurado exitosamente desde: ${file.name}`);
         return true;

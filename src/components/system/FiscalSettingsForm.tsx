@@ -3,18 +3,27 @@ import { useLocale } from '../../i18n/useLocale';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calculator, AlertTriangle } from 'lucide-react';
-import { type FiscalSettings } from '../../modules/system/System.types';
+import { getFiscalSettings, updateFiscalSettings, type FiscalSettings } from '../../database/simple-db';
+import { toast } from 'react-hot-toast';
 
 export const FiscalSettingsForm: React.FC = () => {
     const { t } = useLocale();
-    const [settings, setSettings] = useState<FiscalSettings>({
-        tax_year_start: '2025-01-01',
-        tax_frequency: 'monthly',
-        sales_tax_method: 'accrual',
-        default_tax_rate: 0.06,
-        dr15_filing_day: 20,
-        active: true
-    });
+    const [settings, setSettings] = useState<FiscalSettings>(getFiscalSettings());
+
+    const handleSave = async () => {
+        const loading = toast.loading('Guardando configuración fiscal...');
+        try {
+            const res = updateFiscalSettings(settings);
+            if (res.success) {
+                toast.success('✅ Configuración aplicada y guardada', { id: loading });
+            } else {
+                toast.error(`❌ ${res.message} `, { id: loading });
+            }
+        } catch (e: any) {
+            toast.error(`Error: ${e.message} `, { id: loading });
+        }
+    };
+
 
     return (
         <Card className="bg-slate-900 border-white/5 text-white w-full max-w-2xl mx-auto">
@@ -85,9 +94,13 @@ export const FiscalSettingsForm: React.FC = () => {
                     </div>
                 </div>
 
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button
+                    className="w-full bg-blue-600 hover:bg-blue-700 font-bold"
+                    onClick={handleSave}
+                >
                     {t('fiscalSettings.saveSettings')}
                 </Button>
+
             </CardContent>
         </Card>
     );

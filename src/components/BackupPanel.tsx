@@ -179,7 +179,7 @@ export const BackupPanel: React.FC = () => {
 
             <div className="text-center">
                 <p className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">
-                    Iron Core Security Protocol v2.0 NASA • AES-256-GCM Encryption • Multi-Location Backup
+                    {t('backupPanelStrings.securityFooter')}
                 </p>
             </div>
 

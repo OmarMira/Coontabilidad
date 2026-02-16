@@ -1,4 +1,7 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import { saveDatabase, forceSaveDB } from '../../database/simple-db';
+
+
 
 /**
  * Asset Category Model
@@ -114,8 +117,15 @@ export class AssetCategoryService {
 
         // Get the last inserted ID
         const result = await this.db.select('SELECT last_insert_rowid() as id');
-        return result[0].id as number;
+        const categoryId = result[0].id as number;
+
+        // Persistencia forzada
+        await saveDatabase();
+
+
+        return categoryId;
     }
+
 
     /**
      * Update existing category
@@ -174,8 +184,12 @@ export class AssetCategoryService {
                 `UPDATE asset_categories SET ${updates.join(', ')} WHERE id = ?`,
                 values
             );
+
+            // Persistencia forzada
+            await forceSaveDB();
         }
     }
+
 
     /**
      * Deactivate category (soft delete)
@@ -185,7 +199,12 @@ export class AssetCategoryService {
             'UPDATE asset_categories SET is_active = 0 WHERE id = ?',
             [id]
         );
+
+        // Persistencia forzada
+        await saveDatabase();
+
     }
+
 
     /**
      * Reactivate category
@@ -195,7 +214,12 @@ export class AssetCategoryService {
             'UPDATE asset_categories SET is_active = 1 WHERE id = ?',
             [id]
         );
+
+        // Persistencia forzada
+        await saveDatabase();
+
     }
+
 
     /**
      * Delete category (only if no assets exist)
@@ -214,7 +238,12 @@ export class AssetCategoryService {
         }
 
         await this.db.run('DELETE FROM asset_categories WHERE id = ?', [id]);
+
+        // Persistencia forzada
+        await saveDatabase();
+
     }
+
 
     /**
      * Validate that GL accounts exist in chart of accounts

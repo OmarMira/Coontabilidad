@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { BudgetList } from './BudgetList';
 import { BudgetForm } from './BudgetForm';
 import { BudgetDetailView } from './BudgetDetailView';
+import { useLocale } from '@/i18n/useLocale';
 
 /**
  * BudgetManager
@@ -33,6 +34,7 @@ import { BudgetDetailView } from './BudgetDetailView';
  * - Budget detail view
  */
 export const BudgetManager: React.FC = () => {
+  const { t } = useLocale();
   const { user } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ export const BudgetManager: React.FC = () => {
 
     } catch (err) {
       console.error('Error loading budgets:', err);
-      setError(err instanceof Error ? err.message : 'Error al cargar presupuestos');
+      setError(err instanceof Error ? err.message : t('budgets.loading'));
     } finally {
       setLoading(false);
     }
@@ -142,14 +144,14 @@ export const BudgetManager: React.FC = () => {
   };
 
   const handleBudgetSaved = () => {
-    setSuccess('Presupuesto guardado exitosamente');
+    setSuccess(t('budgets.saveSuccess'));
     setActiveView('list');
     loadData();
     setTimeout(() => setSuccess(null), 3000);
   };
 
   const handleBudgetDeleted = () => {
-    setSuccess('Presupuesto eliminado exitosamente');
+    setSuccess(t('budgets.deleteSuccess'));
     setActiveView('list');
     loadData();
     setTimeout(() => setSuccess(null), 3000);
@@ -166,7 +168,7 @@ export const BudgetManager: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-slate-700">Cargando presupuestos...</p>
+          <p className="mt-4 text-slate-700">{t('budgets.loading')}</p>
         </div>
       </div>
     );
@@ -177,18 +179,18 @@ export const BudgetManager: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white">Presupuestos</h1>
-          <p className="text-slate-400 mt-1">Gestión y control de presupuestos</p>
+          <h1 className="text-3xl font-bold text-white">{t('budgets.title')}</h1>
+          <p className="text-slate-400 mt-1">{t('budgets.subtitle')}</p>
         </div>
         {activeView === 'list' && canCreate && (
           <Button onClick={handleCreateBudget} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Nuevo Presupuesto
+            {t('budgets.new')}
           </Button>
         )}
         {activeView !== 'list' && (
           <Button onClick={handleBackToList} variant="outline">
-            Volver a Lista
+            {t('common.back')}
           </Button>
         )}
       </div>
@@ -197,14 +199,14 @@ export const BudgetManager: React.FC = () => {
       {error && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t('common.error')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {success && (
         <Alert className="bg-green-50 border-green-200">
-          <AlertTitle className="text-green-800">Éxito</AlertTitle>
+          <AlertTitle className="text-green-800">{t('common.success')}</AlertTitle>
           <AlertDescription className="text-green-700">{success}</AlertDescription>
         </Alert>
       )}
@@ -216,7 +218,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">Total Presupuestos</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.total')}</p>
                   <p className="text-2xl font-black tracking-tight text-white">{stats.total_budgets}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500" />
@@ -228,7 +230,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">Activos</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.active')}</p>
                   <p className="text-2xl font-black tracking-tight text-green-400">{stats.active_budgets}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-green-500" />
@@ -240,7 +242,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">Total Presupuestado</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.totalBudgeted')}</p>
                   <p className="text-2xl font-black tracking-tight text-white">
                     ${(stats.total_budgeted / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
@@ -254,7 +256,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">Total Ejecutado</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.executed')}</p>
                   <p className="text-2xl font-black tracking-tight text-white">
                     ${(stats.total_actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
@@ -268,7 +270,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">En Riesgo</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.atRisk')}</p>
                   <p className="text-2xl font-black tracking-tight text-red-400">{stats.budgets_at_risk}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-500" />

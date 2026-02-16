@@ -2,7 +2,7 @@ import { SemanticQueryAnalyzer } from './SemanticQueryAnalyzer';
 import { IntelligentSQLGenerator } from './IntelligentSQLGenerator';
 import { logger } from '../../core/logging/SystemLogger';
 import { db } from '../../database/simple-db';
-import { translationEngine } from '../../core/i18n/TranslationEngine';
+import { translationEngine } from '@/features/i18n/TranslationEngine';
 
 /**
  * AI FACTORY (FACADE PATTERN)

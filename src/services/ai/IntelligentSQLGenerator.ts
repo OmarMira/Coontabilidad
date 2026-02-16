@@ -8,9 +8,9 @@ export class IntelligentSQLGenerator {
         'PRODUCT': 'products',
         'INVOICE': 'invoices',
         'ACCOUNT': 'chart_of_accounts',
-        'ASSET': 'assets',
-        'EXPENSE': 'expenses',
-        'REVENUE': 'invoices' // En este sistema, revenue viene de invoices o tax_ledger
+        'ASSET': 'fixed_assets',
+        'EXPENSE': 'bills',
+        'REVENUE': 'invoices' // En este sistema, revenue viene de invoices o tax_ledger. Verified mapping.
     };
 
     private static readonly COLUMN_MAP: Record<string, string> = {
@@ -19,8 +19,8 @@ export class IntelligentSQLGenerator {
         'products': 'price',
         'invoices': 'total_amount',
         'chart_of_accounts': 'balance',
-        'assets': 'value',
-        'expenses': 'amount'
+        'fixed_assets': 'acquisition_cost',
+        'bills': 'total_amount'
     };
 
     generateSQL(analysis: QueryAnalysis): { sql: string, type: 'COUNT' | 'SUM' | 'SELECT' | 'VALUATION' } {

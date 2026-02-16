@@ -3,6 +3,7 @@ import {
     Upload, FileText, Check, AlertCircle, Sparkles, ArrowRight, Table,
     Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock
 } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 interface BankTransaction {
     id: string;
@@ -15,6 +16,7 @@ interface BankTransaction {
 }
 
 export const BankStatementImporter: React.FC = () => {
+    const { t } = useLocale();
     const [isDragging, setIsDragging] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [step, setStep] = useState<'upload' | 'analysis' | 'review'>('upload');
@@ -54,9 +56,9 @@ export const BankStatementImporter: React.FC = () => {
                         <Sparkles className="w-10 h-10 text-emerald-500 group-hover:rotate-12 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Importador Neural</h1>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('bankStatementImport.title')}</h1>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> AI Bank Smart Bridge v6.2
+                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('bankStatementImport.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -85,11 +87,11 @@ export const BankStatementImporter: React.FC = () => {
                     <div className="p-8 bg-emerald-600/10 rounded-full mb-8 border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 shadow-xl">
                         <Upload className="w-14 h-14 text-emerald-500" />
                     </div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Inyectar Resumen Bancario (CSV)</h3>
-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-10">Compatibilidad: CHASE, BOFA, WELLS FARGO, AMEX, STRIPE</p>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('bankStatementImport.injectCSV')}</h3>
+                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-10">{t('bankStatementImport.compatibility')}</p>
 
                     <label className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-2xl shadow-emerald-900/40 cursor-pointer flex items-center gap-3 hover:-translate-y-1">
-                        Seleccionar Protocolo CSV
+                        {t('bankStatementImport.selectProtocol')}
                         <input type="file" className="hidden" accept=".csv" onChange={handleFileUpload} />
                     </label>
                 </div>
@@ -102,8 +104,8 @@ export const BankStatementImporter: React.FC = () => {
                         <div className="w-32 h-32 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin"></div>
                         <Cpu className="w-10 h-10 text-emerald-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                     </div>
-                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ejecutando Heurística Neural...</h3>
-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">Mapeando descripciones a códigos contables US GAAP y detectando anomalías en tiempo real.</p>
+                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">{t('bankStatementImport.executingHeuristics')}</h3>
+                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">{t('bankStatementImport.mappingDesc')}</p>
 
                     <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner">
                         <div className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-[loading_2.5s_ease-in-out_infinite]"></div>
@@ -114,9 +116,9 @@ export const BankStatementImporter: React.FC = () => {
             {step === 'review' && (
                 <div className="space-y-10 animate-in slide-in-from-bottom-6 duration-700">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <StatusCard label="Transacciones" value={`${transactions.length} ITEMS`} icon={Layers} color="blue" />
-                        <StatusCard label="Confianza IA" value="Confidencial (98.4%)" icon={ShieldCheck} color="emerald" />
-                        <StatusCard label="Eficiencia" value="+45 MIN SALVADOS" icon={Clock} color="amber" />
+                        <StatusCard label={t('bankStatementImport.transactions')} value={`${transactions.length} ${t('bankStatementImport.items')}`} icon={Layers} color="blue" />
+                        <StatusCard label={t('bankStatementImport.aiConfidence')} value={`${t('bankStatementImport.confidential')} (98.4%)`} icon={ShieldCheck} color="emerald" />
+                        <StatusCard label={t('bankStatementImport.efficiency')} value={`+45 ${t('bankStatementImport.savedTime')}`} icon={Clock} color="amber" />
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden relative group">
@@ -125,11 +127,11 @@ export const BankStatementImporter: React.FC = () => {
                         <table className="w-full text-left">
                             <thead className="bg-slate-950/50">
                                 <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
-                                    <th className="px-8 py-5">Forensic Status</th>
-                                    <th className="px-8 py-5">Temporalidad / Descripción</th>
-                                    <th className="px-8 py-5">Valorización</th>
-                                    <th className="px-8 py-5">Categoría IA</th>
-                                    <th className="px-8 py-5">Vínculo Contable</th>
+                                    <th className="px-8 py-5">{t('bankStatementImport.forensicStatus')}</th>
+                                    <th className="px-8 py-5">{t('bankStatementImport.temporalityDesc')}</th>
+                                    <th className="px-8 py-5">{t('bankStatementImport.valuation')}</th>
+                                    <th className="px-8 py-5">{t('bankStatementImport.aiCategory')}</th>
+                                    <th className="px-8 py-5">{t('bankStatementImport.accountingLink')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/40">
@@ -178,10 +180,10 @@ export const BankStatementImporter: React.FC = () => {
 
                     <div className="flex justify-end gap-6 pt-10 border-t border-slate-800 flex-wrap">
                         <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
-                            Abortar Sincronización
+                            {t('bankStatementImport.abortSync')}
                         </button>
                         <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
-                            Consolidar {transactions.length} Transacciones
+                            {t('bankStatementImport.consolidate')} {transactions.length} {t('bankStatementImport.transactions')}
                             <Zap className="w-5 h-5 text-emerald-200" />
                         </button>
                     </div>

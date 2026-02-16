@@ -325,7 +325,7 @@ export const SupplierDetailView: React.FC<SupplierDetailViewProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getBillStatusColor(bill.status)}`}>
-                      {billDetail.status[bill.status] || bill.status}
+                      {t(`bill.status.${bill.status}`) || bill.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">

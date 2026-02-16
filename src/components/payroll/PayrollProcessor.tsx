@@ -47,7 +47,7 @@ import { PayrollEntryList } from './PayrollEntryList';
 import { useLocale } from '../../i18n/useLocale';
 
 export const PayrollProcessor: React.FC = () => {
-    const { t, locale } = useLocale();
+    const { t, language } = useLocale();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
     const [settings, setSettings] = useState<PayrollSetting[]>([]);
@@ -60,7 +60,7 @@ export const PayrollProcessor: React.FC = () => {
     // Selection and Form State
     const [selectedEmployees, setSelectedEmployees] = useState<Record<number, boolean>>({});
     const [periodMeta, setPeriodMeta] = useState({
-        name: `${t('accounting.payroll') || 'Payroll'} - ${new Date().toLocaleString(locale === 'es' ? 'es-ES' : 'en-US', { month: 'long' })} ${new Date().getFullYear()}`,
+        name: `${t('accounting.payroll') || 'Payroll'} - ${new Date().toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { month: 'long' })} ${new Date().getFullYear()}`,
         start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
         end_date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
         pay_date: new Date().toISOString().split('T')[0],

@@ -1,20 +1,21 @@
-import es from '../../assets/locales/es.json';
-import en from '../../assets/locales/en.json';
-import { logger } from '../logging/SystemLogger';
+import es from '@/assets/locales/es.json';
+import en from '@/assets/locales/en.json';
+import { logger } from '@/core/logging/SystemLogger';
+
 
 export type Language = 'es' | 'en';
 export type Dictionary = typeof es;
 export type TranslationKey = keyof Dictionary;
 
 /**
- * TRANSLATION ENGINE (CORE LAYER 1)
+ * TRANSLATION ENGINE (CORE LAYER 1 - RECONECTADO)
  * 
  * Motor singleton para la gestión de idiomas y localización.
  * Implementa persistencia automática y carga reactiva de diccionarios.
  */
 export class TranslationEngine {
     private static instance: TranslationEngine;
-    private currentLanguage: Language = 'en';
+    private currentLanguage: Language = 'es'; // Forzado a ES por defecto
     private dictionaries: Record<Language, any> = { es, en };
 
     private constructor() {
@@ -35,9 +36,12 @@ export class TranslationEngine {
         const saved = localStorage.getItem('app_language');
         if (saved === 'es' || saved === 'en') {
             this.currentLanguage = saved;
+        } else {
+            this.currentLanguage = 'es'; // Asegurar default
         }
         document.documentElement.lang = this.currentLanguage;
     }
+
 
     /**
      * Cambia el idioma global y persiste la elección.

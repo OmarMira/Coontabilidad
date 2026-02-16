@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Database, Download, Upload, Loader2, Check } from 'lucide-react';
 import { BackupManager } from '@/modules/backup/BackupManager';
 import { SQLiteEngine } from '@/core/database/SQLiteEngine';
+import { useLocale } from '@/i18n/useLocale';
 
 const ProgressProps = ({ value }: { value: number }) => (
     <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
@@ -12,6 +13,7 @@ const ProgressProps = ({ value }: { value: number }) => (
 );
 
 export const BackupRestoreWidget: React.FC = () => {
+    const { t } = useLocale();
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState<string>('');
@@ -20,15 +22,16 @@ export const BackupRestoreWidget: React.FC = () => {
 
     const handleBackup = async () => {
         setLoading(true);
-        setStatus('Creating encrypted backup...');
+        setStatus(t('forensic.backupWidget.creating'));
         setProgress(30);
 
         try {
-            const backupPath = await backupManager.createBackup();
+            const backupResult = await backupManager.createBackup();
             setProgress(100);
-            setStatus(`Backup saved to: ${backupPath}`);
+            // backupResult is an object, using placeholder for path
+            setStatus(t('forensic.backupWidget.saved', { path: 'Downloads' }));
         } catch (error) {
-            setStatus('Backup Failed');
+            setStatus(t('forensic.backupWidget.failed'));
             console.error(error);
         } finally {
             setTimeout(() => {
@@ -43,28 +46,28 @@ export const BackupRestoreWidget: React.FC = () => {
         if (!file) return;
 
         setLoading(true);
-        setStatus('Reading backup file...');
+        setStatus(t('forensic.backupWidget.reading'));
         setProgress(20);
 
         try {
             const arrayBuffer = await file.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
 
-            setStatus('Decrypting and Restoring...');
+            setStatus(t('forensic.backupWidget.decrypting'));
             setProgress(50);
 
             // Assuming default password for now or prompting - for MVP executing with default
             await backupManager.restoreBackup(uint8Array, 'default-system-key');
 
             setProgress(100);
-            setStatus('System successfully restored!');
+            setStatus(t('forensic.backupWidget.success'));
 
             // Reload to reflect changes
             setTimeout(() => window.location.reload(), 2000);
 
         } catch (error) {
             console.error(error);
-            setStatus('Restore Failed: Invalid file or password');
+            setStatus(t('forensic.backupWidget.restoreFailed'));
         } finally {
             setLoading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -76,14 +79,14 @@ export const BackupRestoreWidget: React.FC = () => {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Database className="w-5 h-5 text-blue-500" />
-                    Secure Backup & Restore
+                    {t('forensic.backupWidget.title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <Button onClick={handleBackup} disabled={loading} className="w-full">
                         {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                        Backup
+                        {t('forensic.backupWidget.backupBtn')}
                     </Button>
                     <Button
                         variant="outline"
@@ -92,7 +95,7 @@ export const BackupRestoreWidget: React.FC = () => {
                         onClick={() => fileInputRef.current?.click()}
                     >
                         <Upload className="w-4 h-4 mr-2" />
-                        Restore
+                        {t('forensic.backupWidget.restoreBtn')}
                     </Button>
                     <input
                         type="file"

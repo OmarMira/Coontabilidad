@@ -25,7 +25,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { iaService, IAResponse } from '../services/IAService';
+import { iaService } from '../services/IAService';
 import { logger } from '../core/logging/SystemLogger';
 
 interface DashboardData {
@@ -89,9 +89,9 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
         criticalStockCount: calculateCriticalStock(analysis.data),
         pendingCollections: calculatePendingCollections(analysis.data),
         overdueInvoices: calculateOverdueInvoices(analysis.data),
-        alerts: convertAlertsToFormat(analysis.alerts),
+        alerts: convertAlertsToFormat(analysis.alerts || []),
         accountingStructure: analysis.data.financial || [],
-        recommendedActions: analysis.actions,
+        recommendedActions: analysis.actions || [],
         periodAnalysis: analysis.content
       };
 
@@ -307,7 +307,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
                 {dashboardData.alerts.map(alert => (
                   <div key={alert.id} className="flex items-center space-x-2 text-sm">
                     <div className={`w-2 h-2 rounded-full ${alert.priority === 'high' ? 'bg-red-400' :
-                        alert.priority === 'medium' ? 'bg-orange-400' : 'bg-blue-400'
+                      alert.priority === 'medium' ? 'bg-orange-400' : 'bg-blue-400'
                       }`} />
                     <span className="text-red-200">{alert.message}</span>
                   </div>

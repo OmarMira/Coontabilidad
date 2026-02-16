@@ -309,7 +309,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                             Acciones Recomendadas
                                         </h4>
                                         <div className="space-y-2">
-                                            {analysis.actions.map((action, i) => (
+                                            {(analysis.actions || []).map((action, i) => (
                                                 <p key={i} className="text-sm text-white bg-green-800/30 p-2 rounded">{action}</p>
                                             ))}
                                         </div>
@@ -321,7 +321,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                             <Search className="w-5 h-5 mr-2 text-purple-400" />
                                             Análisis Detallado
                                         </h4>
-                                        <p className="text-sm text-white whitespace-pre-line">{analysis.analysis}</p>
+                                        <p className="text-sm text-white whitespace-pre-line">{analysis.content}</p>
                                     </div>
                                 </div>
                             ) : (

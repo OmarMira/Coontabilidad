@@ -100,6 +100,15 @@ async function initializeApplication(): Promise<void> {
 
     // Renderizar pantalla de error en lugar de pantalla negra
     const root = document.getElementById('root');
+    const isSpanish = (localStorage.getItem('account_express_locale') || 'es') === 'es';
+
+    const messages = {
+      title: isSpanish ? 'Error de Inicialización' : 'Initialization Error',
+      reload: isSpanish ? 'Recargar Aplicación' : 'Reload Application',
+      contact: isSpanish ? 'Si el problema persiste, contacta al soporte técnico' : 'If the problem persists, contact technical support',
+      unknown: isSpanish ? 'Error desconocido al inicializar la aplicación' : 'Unknown initialization error'
+    };
+
     if (root) {
       root.innerHTML = `
         <div style="min-height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif;">
@@ -109,12 +118,12 @@ async function initializeApplication(): Promise<void> {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
               </svg>
             </div>
-            <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 12px;">Error de Inicialización</h1>
-            <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6;">${error.message || 'Error desconocido al inicializar la aplicación'}</p>
+            <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 12px;">${messages.title}</h1>
+            <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6;">${error.message || messages.unknown}</p>
             <button onclick="window.location.reload()" style="background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 16px; transition: background 0.2s;">
-              Recargar Aplicación
+              ${messages.reload}
             </button>
-            <p style="margin-top: 16px; font-size: 12px; color: #9ca3af;">Si el problema persiste, contacta al soporte técnico</p>
+            <p style="margin-top: 16px; font-size: 12px; color: #9ca3af;">${messages.contact}</p>
           </div>
         </div>
       `;

@@ -107,7 +107,7 @@ export const InventoryDashboard: React.FC = () => {
 
       const categoryMap: Record<string, { value: number; count: number }> = {};
       products.forEach(p => {
-        const catName = p.category?.name || t('inventoryDashboard.uncategorized');
+        const catName = p.category?.name || t('inventoryDashboard.uncategorized') || 'Uncategorized';
         if (!categoryMap[catName]) categoryMap[catName] = { value: 0, count: 0 };
         categoryMap[catName].value += p.stock_quantity * p.price;
         categoryMap[catName].count++;

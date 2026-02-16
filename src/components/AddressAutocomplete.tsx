@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Search, Loader2, Check } from 'lucide-react';
+import { useLocale } from '../i18n/useLocale';
 import { addressService, AddressSuggestion, AddressDetails } from '../services/addressService';
 
 interface AddressAutocompleteProps {
@@ -12,16 +13,17 @@ interface AddressAutocompleteProps {
 export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   onAddressSelect,
   initialValue = '',
-  placeholder = 'Ingresa una dirección en Estados Unidos...',
+  placeholder,
   className = ''
 }) => {
+  const { t } = useLocale();
   const [query, setQuery] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [hasSelected, setHasSelected] = useState(false);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
@@ -49,11 +51,11 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         console.log('🔍 Starting address search for:', query);
         const results = await addressService.searchAddresses(query);
         console.log('📍 Search results:', results.length, results);
-        
+
         setSuggestions(results);
         setIsOpen(results.length > 0);
         setSelectedIndex(-1);
-        
+
         if (results.length === 0) {
           console.log('⚠️ No results found for query:', query);
         }
@@ -99,12 +101,12 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     try {
       setIsLoading(true);
       const details = await addressService.getAddressDetails(suggestion);
-      
+
       setQuery(suggestion.display_name);
       setHasSelected(true);
       setIsOpen(false);
       setSelectedIndex(-1);
-      
+
       onAddressSelect(details);
     } catch (error) {
       console.error('Error selecting address:', error);
@@ -119,25 +121,25 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < suggestions.length - 1 ? prev + 1 : 0
         );
         break;
-      
+
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev > 0 ? prev - 1 : suggestions.length - 1
         );
         break;
-      
+
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
           handleSuggestionClick(suggestions[selectedIndex]);
         }
         break;
-      
+
       case 'Escape':
         setIsOpen(false);
         setSelectedIndex(-1);
@@ -167,13 +169,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               setIsOpen(true);
             }
           }}
-          placeholder={placeholder}
+          placeholder={placeholder || t('addressAutocomplete.placeholder')}
           className={`w-full bg-white/5 text-white px-4 py-2 pl-10 pr-10 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none ${className}`}
         />
-        
+
         {/* Search icon */}
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-        
+
         {/* Loading/Success icon */}
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           {isLoading ? (
@@ -192,16 +194,15 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         >
           {suggestions.map((suggestion, index) => {
             const { street, location } = formatSuggestionText(suggestion);
-            
+
             return (
               <div
                 key={suggestion.id}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className={`px-4 py-3 cursor-pointer transition-colors border-b border-white/10 last:border-b-0 ${
-                  index === selectedIndex
-                    ? 'bg-blue-600 text-white'
-                    : 'hover:bg-white/5 text-slate-400'
-                }`}
+                className={`px-4 py-3 cursor-pointer transition-colors border-b border-white/10 last:border-b-0 ${index === selectedIndex
+                  ? 'bg-blue-600 text-white'
+                  : 'hover:bg-white/5 text-slate-400'
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
@@ -225,12 +226,12 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         <div className="absolute z-50 w-full mt-1 bg-white/10 border border-white/10 rounded-md shadow-lg p-4 text-center">
           <div className="text-slate-500">
             <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No se encontraron direcciones para "{query}"</p>
-            <p className="text-sm mt-1">Intenta con:</p>
+            <p>{t('addressAutocomplete.noResults')} "{query}"</p>
+            <p className="text-sm mt-1">{t('addressAutocomplete.tryWith')}</p>
             <ul className="text-xs mt-2 space-y-1">
-              <li>• Nombre de ciudad: "Miami", "New York"</li>
-              <li>• Estado: "FL", "California"</li>
-              <li>• Código postal: "33101", "10001"</li>
+              <li>• {t('addressAutocomplete.tipCity')}</li>
+              <li>• {t('addressAutocomplete.tipState')}</li>
+              <li>• {t('addressAutocomplete.tipZip')}</li>
             </ul>
           </div>
         </div>

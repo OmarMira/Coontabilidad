@@ -13,20 +13,20 @@
 | Métrica | Valor | Estado |
 |---------|-------|--------|
 | **Completitud** | 100% ⬆️ | ✅ Operacional |
-| **Persistencia** | IndexedDB | ✅ Robusta |
-| **Integridad DB** | SHA-256 | ✅ Verificada |
-| **Auditoría Externa** | RFC 3161 🆕 | ✅ Certificable |
-| **Cloud Sync** | Google Drive + S3 🆕 | ✅ Completo |
+| **Persistencia** | SQLite (OPFS) + Auto-save 1s | ✅ Nivel NASA |
+| **Integridad DB** | SHA-256 + Forensic Audit | ✅ Inmutable |
+| **Auditoría Externa** | RFC 3161 (TSA) | ✅ Certificable |
+| **Cloud Sync** | Google Drive (V3) | ✅ Integrado |
+| **I18n** | Multi-lenguaje (ES/EN) | ✅ Centralizado |
 | **Florida Compliance** | 100% | ✅ Certificado |
-| **Módulos Implementados** | 20/20 | ✅ Completo |
-| **Auto-Reparación** | Frontend | ✅ Activa |
-| **Test Coverage** | 86% ⬆️ | ✅ Excelente |
+| **Auto-Reparación** | SchemaRepairService | ✅ Activa |
 
 ---
 
 ## 🎯 Características Principales
 
 ### ✅ Sistema Contable Completo
+
 - **Plan de Cuentas US GAAP** (1xxx-5xxx)
 - **Partida Doble Validada** con auditoría inmutable
 - **Reportes Financieros:** Balance General, Estado de Resultados, Flujo de Caja
@@ -39,6 +39,7 @@
   - Certificable y verificable externamente
 
 ### ✅ Florida Tax Compliance
+
 - **Motor DR-15** funcionando al 100%
 - **Cálculo por Condado** (67 condados de Florida)
 - **Generación de PDFs Fiscales** automática
@@ -48,6 +49,7 @@
 ### ✅ Módulos Operacionales
 
 #### 📦 Inventario
+
 - Movimientos de stock (FIFO/LIFO)
 - Ajustes de inventario
 - Análisis ABC de rotación ✨ NUEVO
@@ -55,6 +57,7 @@
 - Gestión de ubicaciones
 
 #### 💼 Ventas (Cuentas por Cobrar)
+
 - Clientes y contactos
 - Facturas de venta
 - Cotizaciones
@@ -63,6 +66,7 @@
 - Reportes de aging
 
 #### 🏢 Compras (Cuentas por Pagar)
+
 - Proveedores
 - Facturas de compra
 - Órdenes de compra
@@ -70,6 +74,7 @@
 - Reportes de payables
 
 #### 👥 Nómina
+
 - Gestión de empleados
 - Procesamiento de nómina
 - Cálculo de impuestos (Federal, FICA, Medicare)
@@ -77,6 +82,7 @@
 - Integración contable
 
 #### 🏦 Banca
+
 - Cuentas bancarias
 - Conciliación automática
 - Análisis de discrepancias
@@ -87,21 +93,21 @@
 ## 🏗️ Arquitectura Técnica
 
 ### Base de Datos
-### Base de Datos
-- **Motor Híbrido:** sql.js (In-Memory para velocidad) + PersistenceLayer (IndexedDB para almacenamiento)
-- **Esquema:** 45 tablas normalizadas con integridad referencial estricta
-- **Auto-Reparación:** Sistema inteligente `SchemaRepairService` con capacidad de reconstrucción
-- **Auditoría:** Inmutable SHA-256 (Iron Core)
-- **Vistas:** Optimizadas para consumo por Agentes IA
+
+- **Motor Híbrido:** sql.js (WASM) + **OPFS (Origin Private File System)** para persistencia real ultra-rápida.
+- **Auto-Save:** La base de datos se vuelca al sistema de archivos de forma asíncrona cada 1000ms después de cualquier cambio.
+- **Esquema:** 45+ tablas normalizadas con integridad referencial y `SchemaRepairService`.
+- **Auditoría:** Cadena forense inmutable con SHA-256 y RFC 3161 timestamps.
 
 ### Frontend
-- **React 18** + TypeScript
-- **Tailwind CSS** para UI
-- **116 componentes** modulares
-- **Vite** para build optimizado
-- **45 Skills especializados** en `.agent/skills/`
+
+- **React 18** + TypeScript + Vite.
+- **I18n Engine:** Sistema de traducción centralizado en `src/features/i18n` con carga reactiva de diccionarios.
+- **Design System:** Interfaz premium con Dark Mode y visualización financiera avanzada.
+- **Workers:** Orquestación masiva para generación de PDFs y reportes pesados.
 
 ### Workers (Procesamiento Asíncrono)
+
 - **WorkerOrchestrator** - Sistema centralizado de gestión
 - **WorkerPoolManager** - Pool reutilizable de workers
 - **AsyncPDFService** - Generación de PDFs sin bloquear UI
@@ -110,6 +116,7 @@
 - **DR15PDFGenerator** - Reportes fiscales de Florida
 
 ### AI Repair System
+
 - **AIRepairService** - Reparación asistida por IA
   - Detección automática de problemas
   - Propuestas con preview antes de ejecutar
@@ -120,6 +127,7 @@
   - Audit trail completo
 
 ### Cloud Backup Integration 🆕
+
 - **Google Drive** - Upload con API v3 (multipart)
 - **AWS S3** - Dual auth (Pre-signed URL + IAM)
 - **REST API** - Servidor personalizado
@@ -132,6 +140,7 @@
 ## 🚀 Inicio Rápido
 
 ### Requisitos
+
 - Node.js 18+
 - npm 9+
 
@@ -178,6 +187,7 @@ await generateMassiveTestData({
 ## 📚 Documentación
 
 ### Guías Disponibles
+
 - [📘 MANUAL_USUARIO_COMPLETO.md](./MANUAL_USUARIO_COMPLETO.md) - Manual completo de usuario y operaciones (ES/EN)
 - [🔐 MANUAL_AUDITORIA_RFC3161.md](./MANUAL_AUDITORIA_RFC3161.md) - Manual de auditoría RFC 3161
 - [📊 DATA_GENERATOR_GUIDE.md](./DATA_GENERATOR_GUIDE.md) - Generador de datos masivos
@@ -192,6 +202,7 @@ await generateMassiveTestData({
 ## 🎯 Roadmap
 
 ### ✅ Completado (90%)
+
 - [x] Sistema contable completo
 - [x] Florida Tax Compliance (DR-15)
 - [x] Módulo de inventario con análisis ABC
@@ -203,11 +214,13 @@ await generateMassiveTestData({
 - [x] 45 Skills especializados
 
 ### 🚧 En Progreso (10%)
+
 - [ ] Optimización de bundle size (1.1 MB → 600 KB)
 - [ ] Activos fijos (tablas DB + UI completa)
 - [ ] Test coverage (45% → 80%)
 
 ### 🔮 Futuro
+
 - [ ] Sistema de presupuestos
 - [ ] Reportes avanzados con BI
 - [ ] API REST para integraciones
@@ -248,6 +261,7 @@ Este es un proyecto privado. Para contribuir:
 ### [1.0.1] - 2026-02-09 (19:45 hrs)
 
 #### 🌐 Agregado - CLOUD BACKUP INTEGRATION
+
 - **Google Drive Integration** - Upload completo con API v3
 - **AWS S3 Integration** - Dual auth (Pre-signed URL + IAM)
 - **AWS Signature V4** - Implementación nativa sin SDKs
@@ -256,6 +270,7 @@ Este es un proyecto privado. Para contribuir:
 - **Environment Variables** - .env.example actualizado
 
 #### ⬆️ Mejorado
+
 - Score del sistema: 9.2 → 9.7 (+0.5)
 - Completitud: 92% → 100% (+8%)
 - Sincronización: 60% → 100% (+40%)
@@ -264,6 +279,7 @@ Este es un proyecto privado. Para contribuir:
 - Documentación: 7/10 → 9/10
 
 #### 🔧 Corregido
+
 - Eliminados todos los `throw new Error('not yet implemented')`
 - BackupService.uploadToGoogleDrive() ahora funcional
 - BackupService.uploadToS3() ahora funcional
@@ -271,6 +287,7 @@ Este es un proyecto privado. Para contribuir:
 ### [4.1.1] - 2026-02-05 (21:00 hrs)
 
 #### 🆕 Agregado - CRÍTICO
+
 - **RFC 3161 Timestamp Service** implementado
 - Conexión real a FreeTSA.org para timestamps externos
 - Generador ASN.1 manual (evita 2MB de librerías)
@@ -278,18 +295,21 @@ Este es un proyecto privado. Para contribuir:
 - Fallback gracioso si TSA no responde
 
 #### ⬆️ Mejorado
+
 - Score del sistema: 8.7 → 9.2 (+0.5)
 - Test coverage: 55% → 86% (+31%)
 - Auditoría NASA: Parcial → Completa (100%)
 - Seguridad: 70% → 80% (+10%)
 
 #### 🔧 Corregido
+
 - Eliminado archivo duplicado de ExternalTimestampService
 - Consolidada implementación RFC 3161 en src/services/
 
 ### [4.0.0] - 2026-01-31
 
 #### ✨ Agregado
+
 - Análisis ABC de rotación de inventario
 - Generador de datos masivos completamente funcional
 - Sistema de nómina completo con cálculo de impuestos
@@ -297,12 +317,14 @@ Este es un proyecto privado. Para contribuir:
 - Módulo de cotizaciones con conversión a facturas
 
 #### 🔧 Corregido
+
 - Nombres de columnas en generador de datos
 - CHECK constraints en bank_accounts
 - Verificación de plan de cuentas antes de journal_entries
 - Botón de Rotación de Inventario ahora funcional
 
 #### 🗑️ Eliminado
+
 - Referencias a tablas inexistentes (fixed_assets, asset_categories)
 - Badge "BETA" de Rotación de Inventario
 
@@ -325,7 +347,8 @@ Con asistencia de **Kiro AI** para desarrollo y optimización.
 ## 🆘 Soporte
 
 Para reportar bugs o solicitar features:
-- 📧 Email: support@accountexpress.com
+
+- 📧 Email: <support@accountexpress.com>
 - 🐛 Issues: [GitHub Issues](https://github.com/OmarMira/Coontabilidad/issues)
 - 📖 Docs: [Wiki del Proyecto](https://github.com/OmarMira/Coontabilidad/wiki)
 

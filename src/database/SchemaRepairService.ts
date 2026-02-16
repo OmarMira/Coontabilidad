@@ -63,9 +63,13 @@ export class SchemaRepairService {
                         shipping_rate REAL DEFAULT 0,
                         late_fee_percentage REAL DEFAULT 0,
                         grace_period_days INTEGER DEFAULT 0,
+                        tax_frequency TEXT DEFAULT 'monthly',
+                        sales_tax_method TEXT DEFAULT 'accrual',
+                        dr15_filing_day INTEGER DEFAULT 20,
                         is_active BOOLEAN DEFAULT 1,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
                     )
                 `);
                 logs.push("✅ Tabla company_data creada");
@@ -77,7 +81,11 @@ export class SchemaRepairService {
                     { name: 'late_fee_percentage', type: 'REAL', default: "0" },
                     { name: 'grace_period_days', type: 'INTEGER', default: "0" },
                     { name: 'fiscal_year_start', type: 'TEXT', default: "'01-01'" },
+                    { name: 'tax_frequency', type: 'TEXT', default: "'monthly'" },
+                    { name: 'sales_tax_method', type: 'TEXT', default: "'accrual'" },
+                    { name: 'dr15_filing_day', type: 'INTEGER', default: "20" },
                     { name: 'is_active', type: 'BOOLEAN', default: "1" }
+
                 ];
                 for (const col of requiredColumns) {
                     if (!companyCols.includes(col.name)) {

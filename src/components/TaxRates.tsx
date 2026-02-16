@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { getAllFloridaTaxRates } from '../database/simple-db';
+import { getAllFloridaTaxRates, updateFloridaTaxRate } from '../database/simple-db';
 import { useLocale } from '../i18n/useLocale';
+import toast from 'react-hot-toast';
+
 
 interface CountyTaxRate {
     id?: string | number;
@@ -50,6 +52,22 @@ export const TaxRates: React.FC = () => {
         setRates(rates.map(r => r.id === id ? { ...r, active: !r.active } : r));
     };
 
+    const handleSaveAll = async () => {
+        const loadingToast = toast.loading(t('taxRates.syncing'));
+        try {
+            for (const rate of rates) {
+                if (rate.id !== undefined) {
+                    const res = updateFloridaTaxRate(Number(rate.id), rate.surtaxRate);
+                    if (!res.success) throw new Error(res.message);
+                }
+            }
+            toast.success(t('taxRates.syncSuccess'), { id: loadingToast });
+        } catch (error: any) {
+            toast.error(`${t('common.error')}: ${error.message}`, { id: loadingToast });
+        }
+    };
+
+
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <div className="bg-white dark:bg-white/10 rounded-lg shadow-md border border-gray-100 dark:border-white/10 overflow-hidden">
@@ -63,10 +81,14 @@ export const TaxRates: React.FC = () => {
                             {t('taxRates.subtitle')}
                         </p>
                     </div>
-                    <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm">
+                    <button
+                        onClick={handleSaveAll}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+                    >
                         <Save className="w-4 h-4" />
                         {t('taxRates.saveChanges')}
                     </button>
+
                 </div>
 
                 <div className="overflow-x-auto">

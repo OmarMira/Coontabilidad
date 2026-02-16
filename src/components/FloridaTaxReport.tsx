@@ -278,13 +278,13 @@ export const FloridaTaxReport: React.FC = () => {
 
       // Preparar datos para el worker
       const headers = [
-        'Período',
-        'Condado',
-        'Tasa de Impuesto (%)',
-        'Base Imponible ($)',
-        'Impuesto Calculado ($)',
-        'Ventas Exentas ($)',
-        'Impuesto Neto a Pagar ($)'
+        t('floridaTaxReport.period'),
+        t('floridaTaxReport.county'),
+        `${t('floridaTaxReport.rate')} (%)`,
+        `${t('floridaTaxReport.taxableSales')} ($)`,
+        `${t('floridaTaxReport.taxes')} ($)`,
+        `${t('floridaTaxReport.exemptSales')} ($)`,
+        `${t('floridaTaxReport.netTaxDue')} ($)`
       ];
 
       const rows = currentReport.countyBreakdown.map(county => [
@@ -299,8 +299,8 @@ export const FloridaTaxReport: React.FC = () => {
 
       // Agregar fila de totales
       rows.push([
-        'TOTAL',
-        `${currentReport.countyBreakdown.length} condados`,
+        t('common.total').toUpperCase(),
+        `${currentReport.countyBreakdown.length} ${t('floridaTaxReport.countiesIncluded')}`,
         '',
         currentReport.totalTaxableSales.toFixed(2),
         currentReport.totalTaxCollected.toFixed(2),

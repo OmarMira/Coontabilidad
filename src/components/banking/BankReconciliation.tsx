@@ -38,8 +38,10 @@ import {
 import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 import { ReconciliationTask, ReconciliationResult } from '../../workers/reconciliation.worker';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '@/i18n/useLocale';
 
 export const BankReconciliation: React.FC = () => {
+    const { t } = useLocale();
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [statements, setStatements] = useState<ReconciliationStatement[]>([]);
     const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
@@ -140,9 +142,9 @@ export const BankReconciliation: React.FC = () => {
                         <Calculator className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Conciliación Bancaria</h1>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('bankReconciliation.title')}</h1>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> Sincronización Bancaria Automática
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('bankReconciliation.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -153,7 +155,7 @@ export const BankReconciliation: React.FC = () => {
                         className="flex items-center gap-3 px-10 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/40 hover:-translate-y-1"
                     >
                         <Calendar className="w-4 h-4" />
-                        Nueva Conciliación
+                        {t('bankReconciliation.newReconciliation')}
                     </button>
                 )}
             </div>
@@ -163,7 +165,7 @@ export const BankReconciliation: React.FC = () => {
                 <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-2xl overflow-hidden group">
                     <div className="px-10 py-8 border-b border-slate-800">
                         <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                            <Landmark className="w-5 h-5 text-blue-500" /> Bóvedas Activas
+                            <Landmark className="w-5 h-5 text-blue-500" /> {t('bankReconciliation.activeVaults')}
                         </h3>
                     </div>
                     <div className="p-4 space-y-3">
@@ -191,7 +193,7 @@ export const BankReconciliation: React.FC = () => {
                         {accounts.length === 0 && (
                             <div className="py-20 text-center opacity-20">
                                 <Database className="w-12 h-12 mx-auto mb-4" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">Sin registros</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest">{t('bankReconciliation.noRecords')}</p>
                             </div>
                         )}
                     </div>
@@ -213,7 +215,7 @@ export const BankReconciliation: React.FC = () => {
                                                     <Target className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Parámetros de Ciclo</h3>
+                                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t('bankReconciliation.cycleParams')}</h3>
                                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 italic">{selectedAccount.account_name}</p>
                                                 </div>
                                             </div>
@@ -225,17 +227,17 @@ export const BankReconciliation: React.FC = () => {
                                         <div className="p-12 relative z-10">
                                             <form onSubmit={handleCreateStatement} className="space-y-12">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                                    <PremiumInputMini label="Fecha Recorte" icon={Calendar} value={newStatement.statement_date} onChange={(v: string) => setNewStatement(prev => ({ ...prev, statement_date: v }))} type="date" />
-                                                    <PremiumInputMini label="Fondo Bóveda (DOR)" icon={DollarSign} value={newStatement.statement_balance.toString()} onChange={(v: string) => setNewStatement(prev => ({ ...prev, statement_balance: parseFloat(v) || 0 }))} type="number" />
-                                                    <PremiumInputMini label="Fondo Sistema" icon={Cpu} value={newStatement.system_balance.toString()} onChange={(v: string) => setNewStatement(prev => ({ ...prev, system_balance: parseFloat(v) || 0 }))} type="number" />
+                                                    <PremiumInputMini label={t('bankReconciliation.cutoffDate')} icon={Calendar} value={newStatement.statement_date} onChange={(v: string) => setNewStatement(prev => ({ ...prev, statement_date: v }))} type="date" />
+                                                    <PremiumInputMini label={t('bankReconciliation.dorFund')} icon={DollarSign} value={newStatement.statement_balance.toString()} onChange={(v: string) => setNewStatement(prev => ({ ...prev, statement_balance: parseFloat(v) || 0 }))} type="number" />
+                                                    <PremiumInputMini label={t('bankReconciliation.kernelFund')} icon={Cpu} value={newStatement.system_balance.toString()} onChange={(v: string) => setNewStatement(prev => ({ ...prev, system_balance: parseFloat(v) || 0 }))} type="number" />
                                                 </div>
 
                                                 <footer className="flex justify-end gap-6 pt-10 border-t border-slate-800">
                                                     <button type="button" onClick={() => setShowNewStatementForm(false)} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800">
-                                                        Abortar
+                                                        {t('bankReconciliation.abort')}
                                                     </button>
                                                     <button type="submit" className="px-12 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/40 hover:-translate-y-1">
-                                                        Certificar Apertura
+                                                        {t('bankReconciliation.certifyOpening')}
                                                     </button>
                                                 </footer>
                                             </form>
@@ -249,10 +251,10 @@ export const BankReconciliation: React.FC = () => {
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] pointer-events-none transition-all duration-700 group-hover:bg-blue-500/10"></div>
 
                                 <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between">
-                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Cronología de Conciliación</h3>
+                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('bankReconciliation.timelineTitle')}</h3>
                                     <div className="flex items-center gap-3">
                                         <Activity className="w-4 h-4 text-blue-500 animate-pulse" />
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">Status Hub Ready</span>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{t('bankReconciliation.statusHub')}</span>
                                     </div>
                                 </div>
 
@@ -260,12 +262,12 @@ export const BankReconciliation: React.FC = () => {
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-950 text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">
                                             <tr>
-                                                <th className="px-8 py-6">Timestamp Ciclo</th>
-                                                <th className="px-8 py-6 text-right">Fondo Dorado</th>
-                                                <th className="px-8 py-6 text-right">Fondo Kernel</th>
-                                                <th className="px-8 py-6 text-right">Diferencial</th>
-                                                <th className="px-8 py-6 text-center">Protocolo</th>
-                                                <th className="px-8 py-6 text-right">Terminal</th>
+                                                <th className="px-8 py-6">{t('bankReconciliation.cycleTimestamp')}</th>
+                                                <th className="px-8 py-6 text-right">{t('bankReconciliation.bankBalance')}</th>
+                                                <th className="px-8 py-6 text-right">{t('bankReconciliation.systemBalance')}</th>
+                                                <th className="px-8 py-6 text-right">{t('bankReconciliation.differential')}</th>
+                                                <th className="px-8 py-6 text-center">{t('bankReconciliation.protocol')}</th>
+                                                <th className="px-8 py-6 text-right">{t('bankReconciliation.terminal')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-800/40">
@@ -310,7 +312,7 @@ export const BankReconciliation: React.FC = () => {
                                             {statements.length === 0 && (
                                                 <tr>
                                                     <td colSpan={6} className="px-8 py-20 text-center">
-                                                        <div className="text-[10px] font-black text-slate-700 uppercase tracking-widest italic">Archivos de ciclo no detectados encriptados.</div>
+                                                        <div className="text-[10px] font-black text-slate-700 uppercase tracking-widest italic">{t('bankReconciliation.noCycleFiles')}</div>
                                                     </td>
                                                 </tr>
                                             )}
@@ -325,19 +327,19 @@ export const BankReconciliation: React.FC = () => {
                                     <div className="px-10 py-8 border-b border-rose-500/20 bg-rose-500/[0.02] flex items-center justify-between">
                                         <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
                                             <AlertTriangle className="w-6 h-6 text-rose-500 animate-pulse" />
-                                            Excepciones Maestro ({unreconciledTransactions.length})
+                                            {t('bankReconciliation.exceptionsMaster')} ({unreconciledTransactions.length})
                                         </h3>
-                                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.3em] font-mono">Consistencia Crítica</span>
+                                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.3em] font-mono">{t('bankReconciliation.criticalConsistency')}</span>
                                     </div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left">
                                             <thead className="bg-slate-950 text-slate-500 font-black uppercase tracking-[0.2em] text-[10px]">
                                                 <tr>
-                                                    <th className="px-8 py-6">Timestamp</th>
-                                                    <th className="px-8 py-6">Descriptor</th>
-                                                    <th className="px-8 py-6 text-right">Monto</th>
-                                                    <th className="px-8 py-6">Referencia</th>
-                                                    <th className="px-8 py-6 text-center">Status Operativo</th>
+                                                    <th className="px-8 py-6">{t('bankReconciliation.timestamp')}</th>
+                                                    <th className="px-8 py-6">{t('bankReconciliation.descriptor')}</th>
+                                                    <th className="px-8 py-6 text-right">{t('bankReconciliation.amount')}</th>
+                                                    <th className="px-8 py-6">{t('bankReconciliation.reference')}</th>
+                                                    <th className="px-8 py-6 text-center">{t('bankReconciliation.opStatus')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-800/40">
@@ -352,7 +354,7 @@ export const BankReconciliation: React.FC = () => {
                                                         <td className="px-8 py-6 text-xs font-bold text-slate-600 font-mono italic">{transaction.reference_number || 'NULL_PTR'}</td>
                                                         <td className="px-8 py-6 text-center">
                                                             <span className="px-3 py-1.5 rounded-xl border text-[8px] font-black uppercase tracking-[0.2em] bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-lg">
-                                                                SINCRO-PEND
+                                                                {t('bankReconciliation.statusPending')}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -360,7 +362,7 @@ export const BankReconciliation: React.FC = () => {
                                                 {unreconciledTransactions.length > 10 && (
                                                     <tr>
                                                         <td colSpan={5} className="px-8 py-6 text-center text-[10px] font-black text-slate-700 uppercase tracking-widest bg-slate-950/20">
-                                                            ... EXTRAPOLANDO {unreconciledTransactions.length - 10} REGISTROS ADICIONALES
+                                                            ... {t('bankReconciliation.extrapolating')} {unreconciledTransactions.length - 10} {t('bankReconciliation.additionalRecords')}
                                                         </td>
                                                     </tr>
                                                 )}
@@ -375,8 +377,8 @@ export const BankReconciliation: React.FC = () => {
                             <div className="w-24 h-24 bg-slate-950 rounded-[2.5rem] border border-slate-800 flex items-center justify-center mx-auto mb-10 shadow-2xl group-hover:scale-110 group-hover:border-blue-500/50 transition-all duration-700">
                                 <Landmark className="w-10 h-10 text-slate-800 group-hover:text-blue-500 transition-colors" />
                             </div>
-                            <h3 className="text-2xl font-black text-slate-500 uppercase tracking-[0.2em]">Selección de Bóveda Requerida</h3>
-                            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mt-4">ELIGE UNA ENTIDAD BANCARIA PARA DESPLEGAR EL PROTOCOLO DE CONCILIACIÓN</p>
+                            <h3 className="text-2xl font-black text-slate-500 uppercase tracking-[0.2em]">{t('bankReconciliation.vaultSelectionRequired')}</h3>
+                            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mt-4">{t('bankReconciliation.chooseEntity')}</p>
                         </div>
                     )}
                 </div>
@@ -402,11 +404,12 @@ const PremiumInputMini = ({ label, icon: Icon, value, onChange, type = "text" }:
 );
 
 const StatusBadge = ({ status }: { status: string }) => {
+    const { t } = useLocale();
     const config: any = {
-        reconciled: { label: 'CERTIFICADO', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircle },
-        in_progress: { label: 'SYNC-ACTIVE', color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: Activity },
-        discrepancy: { label: 'DISCREPANCIA', color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: AlertTriangle },
-        pending: { label: 'SINCRO-PEND', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Clock },
+        reconciled: { label: t('bankReconciliation.statusCertified'), color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircle },
+        in_progress: { label: t('bankReconciliation.statusSyncActive'), color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: Activity },
+        discrepancy: { label: t('bankReconciliation.statusDiscrepancy'), color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: AlertTriangle },
+        pending: { label: t('bankReconciliation.statusPending'), color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Clock },
     };
 
     const { label, color, bg, border, icon: Icon } = config[status] || { label: status, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', icon: Target };

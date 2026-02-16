@@ -1,0 +1,21 @@
+
+> coontabilidad@1.0.0 build
+> tsc && vite build
+
+src/components/ard/ARDCollectionManager.tsx(113,115): error TS2322: Type 'string | undefined' is not assignable to type 'string | number'.
+  Type 'undefined' is not assignable to type 'string | number'.
+src/components/ard/ARDSaleConversionModal.tsx(65,55): error TS2345: Argument of type '{ description: () => never; quantity: number; unit_price: number; line_total: number; taxable: boolean; }[]' is not assignable to parameter of type 'Partial<InvoiceItem>[]'.
+  Type '{ description: () => never; quantity: number; unit_price: number; line_total: number; taxable: boolean; }' is not assignable to type 'Partial<InvoiceItem>'.
+    Types of property 'description' are incompatible.
+      Type '() => never' is not assignable to type 'string'.
+src/components/ard/ARDSaleConversionModal.tsx(197,33): error TS2322: Type '() => never' is not assignable to type 'string | number | readonly string[] | undefined'.
+src/components/ard/ARDSaleConversionModal.tsx(198,65): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<() => never>'.
+src/components/auth/GoogleLoginButton.tsx(73,17): error TS2322: Type '{ onSuccess: (credentialResponse: CredentialResponse) => void; onError: () => void; theme: "filled_black"; size: "large"; text: "signin_with"; shape: "rectangular"; logo_alignment: "left"; width: string; locale: Language; }' is not assignable to type 'IntrinsicAttributes & { onSuccess: (credentialResponse: CredentialResponse) => void; onError?: (() => void) | undefined; promptMomentNotification?: MomentListener | undefined; useOneTap?: boolean | undefined; containerProps?: Omit<...> | undefined; } & Omit<...> & GsiButtonConfiguration'.
+  Property 'locale' does not exist on type 'IntrinsicAttributes & { onSuccess: (credentialResponse: CredentialResponse) => void; onError?: (() => void) | undefined; promptMomentNotification?: MomentListener | undefined; useOneTap?: boolean | undefined; containerProps?: Omit<...> | undefined; } & Omit<...> & GsiButtonConfiguration'.
+src/components/elite/index.ts(20,15): error TS2459: Module '"./EliteTable"' declares 'EliteTableColumn' locally, but it is not exported.
+src/components/FinancialDashboardPanel.tsx(28,21): error TS2614: Module '"../services/IAService"' has no exported member 'IAResponse'. Did you mean to use 'import IAResponse from "../services/IAService"' instead?
+src/components/FinancialDashboardPanel.tsx(92,39): error TS2345: Argument of type 'string[] | undefined' is not assignable to parameter of type 'string[]'.
+  Type 'undefined' is not assignable to type 'string[]'.
+src/components/FinancialDashboardPanel.tsx(94,9): error TS2322: Type 'string[] | undefined' is not assignable to type 'string[]'.
+  Type 'undefined' is not assignable to type 'string[]'.
+src/components/SupplierDetailView.tsx(328,24): error TS2304: Cannot find name 'billDetail'.

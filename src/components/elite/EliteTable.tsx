@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 
-interface EliteTableColumn {
+export interface EliteTableColumn {
     /** Clave única de la columna */
     key: string;
     /** Texto del header */

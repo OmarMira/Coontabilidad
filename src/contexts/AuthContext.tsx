@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { translationEngine } from '../core/i18n/TranslationEngine';
+import { translationEngine } from '@/features/i18n/TranslationEngine';
 import UserService from '../services/UserService';
 import { createUser, getUserByUsername, hasUsers } from '../database/simple-db';
 import type { User as DBUser } from '../types/user.types';
@@ -178,7 +178,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     email: googleUser.email,
                     full_name: googleUser.name,
                     password: `google_${googleUser.sub}_${Date.now()}`, // Password aleatorio (no se usará)
-                    display_name: googleUser.name,
                     display_name: googleUser.name,
                     role_id: assignedRole.id,
                     picture: googleUser.picture

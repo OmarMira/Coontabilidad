@@ -24,8 +24,10 @@ import {
 } from 'lucide-react';
 import { getEmployees, createEmployee, updateEmployee, Employee } from '../../database/simple-db';
 import { toast } from 'react-hot-toast';
+import { useLocale } from '../../i18n/useLocale';
 
 export const EmployeeManager: React.FC = () => {
+    const { t } = useLocale();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -109,10 +111,10 @@ export const EmployeeManager: React.FC = () => {
 
     const getStatusConfig = (status: string) => {
         switch (status) {
-            case 'active': return { label: 'ACTIVO', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
-            case 'inactive': return { label: 'INACTIVO', color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
-            case 'on_leave': return { label: 'LICENCIA', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
-            default: return { label: 'GENERAL', color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
+            case 'active': return { label: t('employeeManager.status.active'), color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+            case 'inactive': return { label: t('employeeManager.status.inactive'), color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/20' };
+            case 'on_leave': return { label: t('employeeManager.status.onLeave'), color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+            default: return { label: t('employeeManager.status.general'), color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' };
         }
     };
 
@@ -125,9 +127,9 @@ export const EmployeeManager: React.FC = () => {
                         <Users className="w-10 h-10 text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Gestión de Empleados</h1>
+                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('employeeManager.title')}</h1>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> Control de Capital Humano
+                            <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t('employeeManager.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -137,7 +139,7 @@ export const EmployeeManager: React.FC = () => {
                         <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="BUSCAR COLABORADOR / ID..."
+                            placeholder={t('employeeManager.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all"
@@ -148,17 +150,17 @@ export const EmployeeManager: React.FC = () => {
                         className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-indigo-900/40 hover:-translate-y-1"
                     >
                         <UserPlus className="w-4 h-4" />
-                        Reclutar Activo
+                        {t('employeeManager.recruitActive')}
                     </button>
                 </div>
             </div>
 
             {/* Intelligence Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <EliteMiniCard title="Total Fuerza Laboral" value={employees.length.toString()} icon={Users} color="indigo" />
-                <EliteMiniCard title="Activos Operativos" value={employees.filter(e => e.status === 'active').length.toString()} icon={ShieldCheck} color="emerald" />
-                <EliteMiniCard title="Costo Mensual Est." value={`$${employees.reduce((sum, e) => sum + (e.salary_type === 'monthly' ? e.salary_rate : 0), 0).toLocaleString()}`} icon={DollarSign} color="amber" />
-                <EliteMiniCard title="Departamentos" value={Array.from(new Set(employees.map(e => e.department))).length.toString()} icon={Layers} color="rose" />
+                <EliteMiniCard title={t('employeeManager.totalWorkforce')} value={employees.length.toString()} icon={Users} color="indigo" />
+                <EliteMiniCard title={t('employeeManager.activeOperatives')} value={employees.filter(e => e.status === 'active').length.toString()} icon={ShieldCheck} color="emerald" />
+                <EliteMiniCard title={t('employeeManager.estMonthlyCost')} value={`$${employees.reduce((sum, e) => sum + (e.salary_type === 'monthly' ? e.salary_rate : 0), 0).toLocaleString()}`} icon={DollarSign} color="amber" />
+                <EliteMiniCard title={t('employeeManager.departments')} value={Array.from(new Set(employees.map(e => e.department))).length.toString()} icon={Layers} color="rose" />
             </div>
 
             {showForm && (
@@ -173,10 +175,10 @@ export const EmployeeManager: React.FC = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
-                                        {editingEmployee ? 'Optimizar Registro' : 'Registrar Nuevo Activo'}
+                                        {editingEmployee ? t('employeeManager.optimizeRecord') : t('employeeManager.registerNew')}
                                     </h2>
                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" /> Human Capital Forensic Protocol v4.0
+                                        <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" /> {t('employeeManager.protocol')}
                                     </p>
                                 </div>
                             </div>
@@ -187,16 +189,16 @@ export const EmployeeManager: React.FC = () => {
 
                         <form onSubmit={handleSubmit} className="p-10 space-y-12 relative z-10">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                                <PremiumInput label="Nombre(s)" icon={UserPlus} value={formData.first_name} onChange={(v: string) => handleInputChange('first_name', v)} placeholder="JOHN / JANE" required />
-                                <PremiumInput label="Apellidos" icon={Target} value={formData.last_name} onChange={(v: string) => handleInputChange('last_name', v)} placeholder="DOE / SMITH" required />
-                                <PremiumInput label="Email Corporativo" icon={Mail} value={formData.email} onChange={(v: string) => handleInputChange('email', v)} placeholder="JOHN@CORP.COM" />
-                                <PremiumInput label="Teléfono Enlace" icon={Phone} value={formData.phone} onChange={(v: string) => handleInputChange('phone', v)} placeholder="+1 XXX XXX XXXX" />
-                                <PremiumInput label="Departamento" icon={Layers} value={formData.department} onChange={(v: string) => handleInputChange('department', v)} placeholder="VENTAS / TECNOLOGÍA" />
-                                <PremiumInput label="Cargo Oficial" icon={Briefcase} value={formData.position} onChange={(v: string) => handleInputChange('position', v)} placeholder="PROJECT MANAGER" />
+                                <PremiumInput label={t('employeeManager.form.firstName')} icon={UserPlus} value={formData.first_name} onChange={(v: string) => handleInputChange('first_name', v)} placeholder="JOHN / JANE" required />
+                                <PremiumInput label={t('employeeManager.form.lastName')} icon={Target} value={formData.last_name} onChange={(v: string) => handleInputChange('last_name', v)} placeholder="DOE / SMITH" required />
+                                <PremiumInput label={t('employeeManager.form.email')} icon={Mail} value={formData.email} onChange={(v: string) => handleInputChange('email', v)} placeholder="JOHN@CORP.COM" />
+                                <PremiumInput label={t('employeeManager.form.phone')} icon={Phone} value={formData.phone} onChange={(v: string) => handleInputChange('phone', v)} placeholder="+1 XXX XXX XXXX" />
+                                <PremiumInput label={t('employeeManager.form.department')} icon={Layers} value={formData.department} onChange={(v: string) => handleInputChange('department', v)} placeholder="VENTAS / TECNOLOGÍA" />
+                                <PremiumInput label={t('employeeManager.form.position')} icon={Briefcase} value={formData.position} onChange={(v: string) => handleInputChange('position', v)} placeholder="PROJECT MANAGER" />
 
                                 <div className="space-y-4">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                                        <Activity className="w-3.5 h-3.5 text-indigo-500" /> Clasificación Salarial
+                                        <Activity className="w-3.5 h-3.5 text-indigo-500" /> {t('employeeManager.form.salaryClassification')}
                                     </label>
                                     <select
                                         name="salary_type"
@@ -204,16 +206,16 @@ export const EmployeeManager: React.FC = () => {
                                         onChange={(e) => handleInputChange('salary_type', e.target.value)}
                                         className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none font-black uppercase tracking-widest text-[10px] h-[58px] appearance-none cursor-pointer"
                                     >
-                                        <option value="monthly">SALARIO MENSUAL</option>
-                                        <option value="hourly">TASA POR HORA</option>
+                                        <option value="monthly">{t('employeeManager.form.monthlySalary')}</option>
+                                        <option value="hourly">{t('employeeManager.form.hourlyRate')}</option>
                                     </select>
                                 </div>
 
-                                <PremiumInput label="Monto Bruto" icon={DollarSign} value={formData.salary_rate?.toString()} onChange={(v: string) => handleInputChange('salary_rate', parseFloat(v) || 0)} type="number" />
+                                <PremiumInput label={t('employeeManager.form.grossAmount')} icon={DollarSign} value={formData.salary_rate?.toString()} onChange={(v: string) => handleInputChange('salary_rate', parseFloat(v) || 0)} type="number" />
 
                                 <div className="space-y-4">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
-                                        <Activity className="w-3.5 h-3.5 text-indigo-500" /> Estado Operativo
+                                        <Activity className="w-3.5 h-3.5 text-indigo-500" /> {t('employeeManager.form.operationalStatus')}
                                     </label>
                                     <select
                                         name="status"
@@ -221,20 +223,20 @@ export const EmployeeManager: React.FC = () => {
                                         onChange={(e) => handleInputChange('status', e.target.value)}
                                         className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none font-black uppercase tracking-widest text-[10px] h-[58px] appearance-none cursor-pointer"
                                     >
-                                        <option value="active">ACTIVO</option>
-                                        <option value="inactive">INACTIVO</option>
-                                        <option value="on_leave">LICENCIA</option>
+                                        <option value="active">{t('employeeManager.status.active')}</option>
+                                        <option value="inactive">{t('employeeManager.status.inactive')}</option>
+                                        <option value="on_leave">{t('employeeManager.status.onLeave')}</option>
                                     </select>
                                 </div>
                             </div>
 
                             <footer className="flex justify-end gap-6 pt-10 border-t border-slate-800">
                                 <button type="button" onClick={() => setShowForm(false)} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
-                                    Abortar Registro
+                                    {t('employeeManager.form.abort')}
                                 </button>
                                 <button type="submit" disabled={isLoading} className="px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-indigo-900/40 hover:-translate-y-1 active:scale-95 disabled:opacity-50">
                                     {isLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <CheckCircle className="w-5 h-5" />}
-                                    {editingEmployee ? 'Sincronizar Cambios' : 'Desplegar Activo'}
+                                    {editingEmployee ? t('employeeManager.form.sync') : t('employeeManager.form.deploy')}
                                 </button>
                             </footer>
                         </form>
@@ -246,7 +248,7 @@ export const EmployeeManager: React.FC = () => {
                 {filteredEmployees.length === 0 ? (
                     <div className="col-span-full bg-slate-900/20 border border-dashed border-slate-800 rounded-[3rem] py-32 text-center group">
                         <Users className="w-20 h-20 text-slate-800 mx-auto mb-6 group-hover:scale-110 transition-transform duration-500" />
-                        <h3 className="text-xl font-black text-slate-500 uppercase tracking-[0.2em]">Fuerza Laboral no Detectada</h3>
+                        <h3 className="text-xl font-black text-slate-500 uppercase tracking-[0.2em]">{t('employeeManager.notFoundTitle')}</h3>
                     </div>
                 ) : (
                     filteredEmployees.map(emp => {
@@ -272,24 +274,24 @@ export const EmployeeManager: React.FC = () => {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 mb-8">
-                                        <EmployeeStat label="Posición" value={emp.position || 'N/A'} icon={Briefcase} />
-                                        <EmployeeStat label="Dpto" value={emp.department || 'N/A'} icon={Layers} />
+                                        <EmployeeStat label={t('employeeManager.card.position')} value={emp.position || 'N/A'} icon={Briefcase} />
+                                        <EmployeeStat label={t('employeeManager.card.dept')} value={emp.department || 'N/A'} icon={Layers} />
                                     </div>
 
                                     <div className="space-y-4 pt-6 border-t border-slate-800/60">
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2 text-slate-500">
                                                 <DollarSign className="w-3.5 h-3.5" />
-                                                <span className="text-[10px] font-black uppercase tracking-wider">Compensación</span>
+                                                <span className="text-[10px] font-black uppercase tracking-wider">{t('employeeManager.card.compensation')}</span>
                                             </div>
                                             <div className="text-lg font-black text-white font-mono tracking-tighter">
-                                                ${emp.salary_rate.toLocaleString()} <span className="text-[8px] text-slate-500">{emp.salary_type === 'monthly' ? '/MES' : '/HR'}</span>
+                                                ${emp.salary_rate.toLocaleString()} <span className="text-[8px] text-slate-500">{emp.salary_type === 'monthly' ? t('employeeManager.form.monthlySalary') : t('employeeManager.form.hourlyRate')}</span>
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <div className="flex items-center gap-2 text-slate-500">
                                                 <Mail className="w-3.5 h-3.5" />
-                                                <span className="text-[10px] font-black uppercase tracking-wider">Contacto</span>
+                                                <span className="text-[10px] font-black uppercase tracking-wider">{t('employeeManager.card.contact')}</span>
                                             </div>
                                             <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{emp.email || 'N/A'}</span>
                                         </div>
@@ -300,7 +302,7 @@ export const EmployeeManager: React.FC = () => {
                                             onClick={() => { setEditingEmployee(emp); setFormData(emp); setShowForm(true); }}
                                             className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-950 border border-slate-800 rounded-xl text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest shadow-lg"
                                         >
-                                            <Edit className="w-3.5 h-3.5" /> Optimizar
+                                            <Edit className="w-3.5 h-3.5" /> {t('employeeManager.card.optimize')}
                                         </button>
                                         <button className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-rose-500 hover:bg-rose-600 hover:text-white transition-all shadow-lg">
                                             <Trash2 className="w-3.5 h-3.5" />

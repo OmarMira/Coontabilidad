@@ -265,7 +265,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
             onChange={(e) => handleInputChange('email', e.target.value)}
             className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.email ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
               } focus:outline-none`}
-            placeholder="contacto@proveedor.com"
+            placeholder={t('supplierForm.emailPlaceholder')}
           />
           {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
         </div>
@@ -279,7 +279,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
             value={formData.email_secondary}
             onChange={(e) => handleInputChange('email_secondary', e.target.value)}
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
-            placeholder="ventas@proveedor.com"
+            placeholder={t('supplierForm.emailSecondaryPlaceholder')}
           />
         </div>
       </div>

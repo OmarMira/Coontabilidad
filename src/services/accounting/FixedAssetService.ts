@@ -1,6 +1,9 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AssetCategoryService, AssetCategory } from './AssetCategoryService';
 import { DatabaseService } from '../../database/DatabaseService';
+import { saveDatabase, forceSaveDB } from '../../database/simple-db';
+
+
 
 /**
  * Fixed Asset Model
@@ -166,8 +169,13 @@ export class FixedAssetService {
             await this.activateAsset(assetId);
         }
 
+        // Persistencia forzada
+        await saveDatabase();
+
+
         return assetId;
     }
+
 
     /**
      * Activate an asset to begin depreciation
@@ -192,7 +200,12 @@ export class FixedAssetService {
             WHERE id = ?`,
             [startDate.toISOString().split('T')[0], assetId]
         );
+
+        // Persistencia forzada
+        await saveDatabase();
+
     }
+
 
     /**
      * Get asset by ID
@@ -307,8 +320,12 @@ export class FixedAssetService {
                 `UPDATE fixed_assets SET ${updates.join(', ')} WHERE id = ?`,
                 values
             );
+
+            // Persistencia forzada
+            await forceSaveDB();
         }
     }
+
 
     /**
      * Update accumulated depreciation and net book value
@@ -338,7 +355,12 @@ export class FixedAssetService {
             WHERE id = ?`,
             [accumulatedDepreciation, netBookValue, status, assetId]
         );
+
+        // Persistencia forzada
+        await saveDatabase();
+
     }
+
 
     /**
      * Generate unique asset tag based on category code and year

@@ -26,7 +26,7 @@ interface CompressionStream extends TransformStream {
 }
 
 interface CompressionStreamConstructor {
-  new (format: string): CompressionStream;
+  new(format: string): CompressionStream;
 }
 
 declare var CompressionStream: CompressionStreamConstructor;
@@ -54,7 +54,7 @@ declare module 'sql.js' {
 
   interface SqlJsStatic {
     Database: {
-      new (data?: ArrayLike<number> | Buffer | null): Database;
+      new(data?: ArrayLike<number> | Buffer | null): Database;
     };
   }
 
@@ -64,4 +64,14 @@ declare module 'sql.js' {
 
   function initSqlJs(options?: InitSqlJsOptions): Promise<SqlJsStatic>;
   export default initSqlJs;
+}
+
+interface ImportMetaEnv {
+  readonly VITE_GOOGLE_CLIENT_ID: string;
+  readonly VITE_BACKUP_SECRET: string;
+  readonly VITE_TSA_URL: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }

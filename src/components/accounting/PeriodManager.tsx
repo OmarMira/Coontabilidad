@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { useLocale } from '@/i18n/useLocale';
 import {
   Calendar,
   Lock,
@@ -29,6 +30,7 @@ import PeriodClosureWizard from './PeriodClosureWizard';
  * - Bloqueo de períodos
  */
 export const PeriodManager: React.FC = () => {
+  const { t } = useLocale();
   const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,21 +176,21 @@ export const PeriodManager: React.FC = () => {
         return (
           <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center gap-1.5 min-w-[90px]">
             <Unlock className="w-3 h-3" />
-            Abierto
+            {t('accountingPeriods.statusOpen')}
           </span>
         );
       case 'closed':
         return (
           <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center justify-center gap-1.5 min-w-[90px]">
             <CheckCircle className="w-3 h-3" />
-            Cerrado
+            {t('accountingPeriods.statusClosed')}
           </span>
         );
       case 'locked':
         return (
           <span className="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 flex items-center justify-center gap-1.5 min-w-[90px]">
             <Lock className="w-3 h-3" />
-            Bloqueado
+            {t('accountingPeriods.statusLocked')}
           </span>
         );
       default:
@@ -200,7 +202,7 @@ export const PeriodManager: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-96 flex-col gap-4">
         <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-        <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Sincronizando Períodos...</p>
+        <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">{t('accountingPeriods.sync')}</p>
       </div>
     );
   }
@@ -214,11 +216,11 @@ export const PeriodManager: React.FC = () => {
             <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
               <CalendarDays className="w-10 h-10 text-blue-500" />
             </div>
-            Gestión de Períodos
+            {t('accountingPeriods.title')}
           </h1>
           <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 flex items-center gap-2">
             <ShieldAlert className="w-3.5 h-3.5 text-blue-500" />
-            Control de Inmutabilidad Contable • Períodos Fiscales
+            {t('accountingPeriods.subtitle')}
           </p>
         </div>
         <button
@@ -226,7 +228,7 @@ export const PeriodManager: React.FC = () => {
           className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-xs tracking-widest px-8 py-4 rounded-2xl transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center gap-3"
         >
           <Plus className="w-5 h-5" />
-          Inicializar Año Fiscal
+          {t('accountingPeriods.initYear')}
         </button>
       </div>
 
@@ -238,7 +240,7 @@ export const PeriodManager: React.FC = () => {
             {error ? <AlertTriangle className="w-6 h-6 text-red-500" /> : <CheckCircle className="w-6 h-6 text-emerald-500" />}
             <div>
               <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${error ? 'text-red-500' : 'text-emerald-500'}`}>
-                {error ? 'Fallo del Sistema' : 'Operación Exitosa'}
+                {error ? t('common.error') : t('common.success')}
               </p>
               <p className={`text-sm font-bold ${error ? 'text-red-200/80' : 'text-emerald-200/80'}`}>{error || success}</p>
             </div>
@@ -250,40 +252,40 @@ export const PeriodManager: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl group hover:border-emerald-500/30 transition-all shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ejecución Abierta</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('accountingPeriods.openExecution')}</span>
             <Unlock className="w-5 h-5 text-emerald-500 group-hover:rotate-12 transition-transform" />
           </div>
           <div className="text-4xl font-black text-white">{periods.filter(p => p.status === 'open').length}</div>
-          <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-tight">Períodos habilitados para edición</p>
+          <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-tight">{t('accountingPeriods.openDesc')}</p>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl group hover:border-orange-500/30 transition-all shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Registros Cerrados</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('accountingPeriods.closedRecords')}</span>
             <CheckCircle className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-4xl font-black text-white">{periods.filter(p => p.status === 'closed').length}</div>
-          <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-tight">Consolidados y en espera de bloqueo</p>
+          <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-tight">{t('accountingPeriods.closedDesc')}</p>
         </div>
 
         <div className="bg-slate-900/80 border border-slate-800 p-8 rounded-3xl group hover:border-red-500/30 transition-all shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Inmutabilidad Total</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('accountingPeriods.totalImmutability')}</span>
             <Lock className="w-5 h-5 text-red-500 group-hover:-rotate-12 transition-transform" />
           </div>
           <div className="text-4xl font-black text-white">{periods.filter(p => p.status === 'locked').length}</div>
-          <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-tight">Bloqueados permanentemente</p>
+          <p className="text-[9px] font-bold text-slate-500 mt-2 uppercase tracking-tight">{t('accountingPeriods.lockedDesc')}</p>
         </div>
       </div>
 
       {/* Table Section */}
       <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm">
         <div className="px-8 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-lg font-black text-white uppercase tracking-tighter">Cronograma de Períodos</h2>
+          <h2 className="text-lg font-black text-white uppercase tracking-tighter">{t('accountingPeriods.scheduleTitle')}</h2>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded-lg border border-slate-800">
               <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Año: {new Date().getFullYear()}</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('accountingPeriods.year')}: {new Date().getFullYear()}</span>
             </div>
           </div>
         </div>
@@ -292,23 +294,23 @@ export const PeriodManager: React.FC = () => {
           {periods.length === 0 ? (
             <div className="text-center py-20 bg-grid-slate-950/20">
               <Calendar className="w-20 h-20 text-slate-800 mx-auto mb-6" />
-              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-6">Inicie el ciclo fiscal para continuar</p>
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-6">{t('accountingPeriods.initSubtitle')}</p>
               <button
                 onClick={() => setShowCreateForm(true)}
                 className="bg-slate-800 hover:bg-slate-700 text-white font-black uppercase text-[10px] tracking-widest px-6 py-3 rounded-xl transition-all"
               >
-                Generar Períodos 2025
+                {t('accountingPeriods.generatePeriods')}
               </button>
             </div>
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-950/20 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
-                  <th className="text-left py-5 px-8">Nombre Período</th>
-                  <th className="text-left py-5 px-8">Frecuencia</th>
-                  <th className="text-left py-5 px-8 font-serif italic lowercase tracking-normal text-sm">Rango Temporal</th>
-                  <th className="text-center py-5 px-8">Estado Legal</th>
-                  <th className="text-right py-5 px-8">Acciones Operativas</th>
+                  <th className="text-left py-5 px-8">{t('accountingPeriods.periodName')}</th>
+                  <th className="text-left py-5 px-8">{t('accountingPeriods.frequency')}</th>
+                  <th className="text-left py-5 px-8 font-serif italic lowercase tracking-normal text-sm">{t('accountingPeriods.timeRange')}</th>
+                  <th className="text-center py-5 px-8">{t('accountingPeriods.legalStatus')}</th>
+                  <th className="text-right py-5 px-8">{t('accountingPeriods.operationalActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
@@ -349,7 +351,7 @@ export const PeriodManager: React.FC = () => {
                               disabled={loading}
                             >
                               <Wand2 className="w-3.5 h-3.5" />
-                              Cerrar Wizard
+                              {t('accountingPeriods.closeWizard')}
                             </button>
                             <button
                               onClick={() => handleClosePeriod(period)}
@@ -357,7 +359,7 @@ export const PeriodManager: React.FC = () => {
                               disabled={loading}
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
-                              Forzar Cierre
+                              {t('accountingPeriods.forceClose')}
                             </button>
                           </>
                         )}
@@ -369,7 +371,7 @@ export const PeriodManager: React.FC = () => {
                               disabled={loading}
                             >
                               <Unlock className="w-3.5 h-3.5" />
-                              Reabrir
+                              {t('accountingPeriods.reopen')}
                             </button>
                             <button
                               onClick={() => handleLockPeriod(period)}
@@ -377,14 +379,14 @@ export const PeriodManager: React.FC = () => {
                               disabled={loading}
                             >
                               <Lock className="w-3.5 h-3.5" />
-                              Lock Total
+                              {t('accountingPeriods.fullLock')}
                             </button>
                           </>
                         )}
                         {period.status === 'locked' && (
                           <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
                             <History className="w-3 h-3" />
-                            Registro Finalizado
+                            {t('accountingPeriods.statusFinished')}
                           </span>
                         )}
                       </div>
@@ -406,13 +408,13 @@ export const PeriodManager: React.FC = () => {
                 <div className="w-16 h-16 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-center mx-auto mb-4">
                   <CalendarDays className="w-8 h-8 text-blue-500" />
                 </div>
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Inicializar Año</h3>
-                <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.2em]">Configurar períodos fiscales mensuales</p>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t('accountingPeriods.initTitle')}</h3>
+                <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.2em]">{t('accountingPeriods.initSubtitle')}</p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Año Fiscal Destino</label>
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">{t('accountingPeriods.targetFiscalYear')}</label>
                   <input
                     type="number"
                     value={fiscalYear}
@@ -430,14 +432,14 @@ export const PeriodManager: React.FC = () => {
                     disabled={loading}
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    Generar 12 Períodos
+                    {t('accountingPeriods.generatePeriods')}
                   </button>
                   <button
                     onClick={() => setShowCreateForm(false)}
                     className="w-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-black uppercase text-[10px] tracking-widest py-4 rounded-2xl transition-all"
                     disabled={loading}
                   >
-                    Cancelar Operación
+                    {t('accountingPeriods.abortOp')}
                   </button>
                 </div>
               </div>

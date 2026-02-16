@@ -5,8 +5,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldCheck, Loader2, AlertTriangle, FileCheck } from 'lucide-react';
 import { AuditChain } from '@/modules/audit/AuditChain';
 import { SQLiteEngine } from '@/core/database/SQLiteEngine';
+import { useLocale } from '@/i18n/useLocale';
 
 export const AuditChainStatus: React.FC = () => {
+    const { t } = useLocale();
     const [status, setStatus] = useState<'idle' | 'verifying' | 'secure' | 'compromised'>('idle');
     const [lastHash, setLastHash] = useState<string>('');
     const [eventCount, setEventCount] = useState<number>(0);
@@ -52,19 +54,19 @@ export const AuditChainStatus: React.FC = () => {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <ShieldCheck className={`w-5 h-5 ${status === 'secure' ? 'text-green-500' : 'text-gray-400'}`} />
-                    Audit Chain Security
+                    {t('forensic.auditChain.title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-muted rounded-lg border">
                     <div>
-                        <p className="text-sm font-medium text-muted-foreground">Chain Status</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('forensic.auditChain.status')}</p>
                         <p className={`text-lg font-bold ${status === 'secure' ? 'text-green-600' : 'text-yellow-600'}`}>
-                            {status === 'verifying' ? 'Verifying...' : status === 'secure' ? 'IMMUTABLE & SECURE' : 'UNVERIFIED'}
+                            {status === 'verifying' ? t('forensic.auditChain.verifying') : status === 'secure' ? t('forensic.auditChain.secure') : t('forensic.auditChain.unverified')}
                         </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={checkStatus} disabled={status === 'verifying'}>
-                        {status === 'verifying' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify Integrity'}
+                        {status === 'verifying' ? <Loader2 className="w-4 h-4 animate-spin" /> : t('forensic.auditChain.verifyBtn')}
                     </Button>
                 </div>
 
@@ -72,7 +74,7 @@ export const AuditChainStatus: React.FC = () => {
                     <Alert className="bg-slate-50">
                         <FileCheck className="w-4 h-4" />
                         <AlertDescription className="font-mono text-xs break-all">
-                            Latest Seal: {lastHash}
+                            {t('forensic.auditChain.latestSeal')}: {lastHash}
                         </AlertDescription>
                     </Alert>
                 )}

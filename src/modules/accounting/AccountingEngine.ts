@@ -1,5 +1,5 @@
 import { type JournalEntry, type JournalLine, type TrialBalanceRow } from './Accounting.types';
-import { translationEngine } from '../../core/i18n/TranslationEngine';
+import { translationEngine } from '@/features/i18n/TranslationEngine';
 
 /**
  * ACCOUNTING ENGINE (CORE LAYER 1)

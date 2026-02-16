@@ -110,7 +110,7 @@ export const ARDCollectionManager: React.FC<ARDCollectionManagerProps> = ({ docu
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="text-lg font-black text-white tabular-nums">{formatCurrency(doc.detected_amount || 0)}</div>
-                                        <div className="text-[10px] font-bold text-slate-600">{t('ard.docDate', { date: doc.detected_date })}</div>
+                                        <div className="text-[10px] font-bold text-slate-600">{t('ard.docDate', { date: doc.detected_date || '' })}</div>
                                     </td>
                                     <td className="px-8 py-6">
                                         {doc.status === 'converted' ? (

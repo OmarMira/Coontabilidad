@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { FileText, RefreshCw } from 'lucide-react';
 import { DR15Generator } from '@/modules/dr15/DR15Generator';
 import { SQLiteEngine } from '@/core/database/SQLiteEngine';
+import { useLocale } from '@/i18n/useLocale';
 
 export const TaxComplianceDashboard: React.FC = () => {
+    const { t } = useLocale();
     const [report, setReport] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [dr15Generator] = useState(() => new DR15Generator(new SQLiteEngine()));
@@ -36,32 +38,32 @@ export const TaxComplianceDashboard: React.FC = () => {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-indigo-500" />
-                    Florida DR-15 Compliance
+                    {t('forensic.taxCompliance.title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 {!report ? (
                     <div className="text-center py-6">
-                        <p className="text-sm text-muted-foreground mb-4">No report generated for current period.</p>
+                        <p className="text-sm text-muted-foreground mb-4">{t('forensic.taxCompliance.noReport')}</p>
                         <Button onClick={generateReport} disabled={loading}>
                             {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                            Generate Monthly Report
+                            {t('forensic.taxCompliance.generateBtn')}
                         </Button>
                     </div>
                 ) : (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-3 bg-secondary rounded-lg">
-                                <p className="text-xs text-muted-foreground">Taxable Sales</p>
+                                <p className="text-xs text-muted-foreground">{t('forensic.taxCompliance.taxableSales')}</p>
                                 <p className="text-lg font-bold">${report.taxableSales?.toFixed(2)}</p>
                             </div>
                             <div className="p-3 bg-secondary rounded-lg">
-                                <p className="text-xs text-muted-foreground">Tax Due</p>
+                                <p className="text-xs text-muted-foreground">{t('forensic.taxCompliance.taxDue')}</p>
                                 <p className="text-lg font-bold text-red-600">${report.totalTaxDue?.toFixed(2)}</p>
                             </div>
                         </div>
                         <Button variant="outline" className="w-full" onClick={() => setReport(null)}>
-                            Reset Form
+                            {t('forensic.taxCompliance.resetBtn')}
                         </Button>
                     </div>
                 )}

@@ -178,8 +178,8 @@ export const PayrollDashboard: React.FC = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} dy={10} />
-              <YAxis stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+              <XAxis dataKey="name" stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} dy={10} />
+              <YAxis stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
               <Tooltip
                 cursor={{ fill: 'rgba(16,185,129,0.03)' }}
                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1.2rem' }}
@@ -194,8 +194,8 @@ export const PayrollDashboard: React.FC = () => {
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={monthlyPayroll}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="month" stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} dy={10} />
-              <YAxis stroke="#475569" fontSize={9} fontWeights="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+              <XAxis dataKey="month" stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} dy={10} />
+              <YAxis stroke="#475569" fontSize={9} fontWeight="900" axisLine={false} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '1.2rem' }}
                 itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: '900' }}

@@ -9,6 +9,10 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { saveDatabase } from '../database/simple-db';
+
+import toast from 'react-hot-toast';
+
 
 import { useLocale } from '../i18n/useLocale';
 
@@ -315,7 +319,28 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       </nav>
 
       <div className="p-4 border-t border-slate-900/50 mt-auto space-y-2">
+        {/* Manual Save Button - Iron Clad Persistence */}
+        <button
+          onClick={async () => {
+            const loadingToast = toast.loading(t('common.savingChanges'));
+            try {
+              await saveDatabase();
+              toast.success(t('common.dataSaved'), { id: loadingToast });
+            } catch (error) {
+              toast.error(t('common.saveError'), { id: loadingToast });
+            }
+          }}
+
+          className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
+            bg-slate-900/50 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 border-slate-800 hover:border-blue-500/30 shadow-inner`}
+          title={t('sidebar.forceSaveTooltip')}
+        >
+          <HardDrive className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          {!isCollapsed && <span>{t('sidebar.saveLocal')}</span>}
+        </button>
+
         {user && (
+
           <button
             onClick={() => onNavigate('my-profile')}
             className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
