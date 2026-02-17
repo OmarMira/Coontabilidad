@@ -4103,6 +4103,37 @@
         "problemsCount": "{{count}} problema{{s}} crítico{{s}}",
         "warningsCount": "{{count}} advertencia{{s}}"
       }
+    },
+    "maintenance": {
+      "title": "Mantenimiento de Base de Datos",
+      "optimize": "Optimizar Base de Datos",
+      "repair": "Reparar Base de Datos",
+      "vacuum": "Limpiar Base de Datos",
+      "status": "Estado de Mantenimiento",
+      "lastMaintenance": "Último Mantenimiento",
+      "repairComplete": "Reparación Completa",
+      "repairSuccess": "Base de datos reparada exitosamente",
+      "needsRestart": "Reinicio requerido para aplicar cambios",
+      "close": "Cerrar",
+      "viewLog": "Ver Registro",
+      "runningAction": "Ejecutando: {{action}}...",
+      "dbNotAvailable": "Base de datos no disponible",
+      "completed": "Completado",
+      "error": "Error",
+      "executingSafeRepair": "Ejecutando reparación segura...",
+      "repairSchema": "Reparar Esquema",
+      "syncViews": "Sincronizar Vistas",
+      "validateIntegrity": "Validar Integridad",
+      "systemHealthy": "Sistema saludable. Sin errores FK.",
+      "dbOptimized": "Base de datos optimizada",
+      "lastRepair": "Última reparación: {{date}}",
+      "fixDbErrors": "SOLUCIONAR ERRORES DE BASE DE DATOS",
+      "advancedTools": "Herramientas Avanzadas",
+      "restorationFinished": "RESTAURACIÓN FINALIZADA",
+      "repairsApplied": "Reparaciones Aplicadas:",
+      "restartRecommended": "Reinicio Recomendado",
+      "restartHint": "Se realizaron cambios estructurales. Reiniciar garantiza que todos los componentes carguen correctamente.",
+      "restartSystem": "REINICIAR SISTEMA"
     }
   }
 }

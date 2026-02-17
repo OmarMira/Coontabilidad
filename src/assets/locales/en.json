@@ -4189,6 +4189,37 @@
         "problemsCount": "{{count}} critical problem{{s}}",
         "warningsCount": "{{count}} warning{{s}}"
       }
+    },
+    "maintenance": {
+      "title": "Database Maintenance",
+      "optimize": "Optimize Database",
+      "repair": "Repair Database",
+      "vacuum": "Vacuum Database",
+      "status": "Maintenance Status",
+      "lastMaintenance": "Last Maintenance",
+      "repairComplete": "Repair Complete",
+      "repairSuccess": "Database repaired successfully",
+      "needsRestart": "Restart required to apply changes",
+      "close": "Close",
+      "viewLog": "View Log",
+      "runningAction": "Running: {{action}}...",
+      "dbNotAvailable": "Database not available",
+      "completed": "Completed",
+      "error": "Error",
+      "executingSafeRepair": "Executing safe repair...",
+      "repairSchema": "Repair Schema",
+      "syncViews": "Sync Views",
+      "validateIntegrity": "Validate Integrity",
+      "systemHealthy": "Healthy system. No FK errors.",
+      "dbOptimized": "Database optimized",
+      "lastRepair": "Last repair: {{date}}",
+      "fixDbErrors": "FIX DATABASE ERRORS",
+      "advancedTools": "Advanced Tools",
+      "restorationFinished": "RESTORATION FINISHED",
+      "repairsApplied": "Repairs Applied:",
+      "restartRecommended": "Restart Recommended",
+      "restartHint": "Structural changes were made. Restarting ensures all components load correctly.",
+      "restartSystem": "RESTART SYSTEM"
     }
   }
 }

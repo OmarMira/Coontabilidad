@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 interface RepairCompleteModalProps {
     logs: string[];
@@ -10,6 +11,8 @@ interface RepairCompleteModalProps {
 }
 
 export const RepairCompleteModal: React.FC<RepairCompleteModalProps> = ({ logs, needsRestart, onClose }) => {
+    const { t } = useLocale();
+
     const handleRestart = () => {
         // Limpiar caché y recargar
         localStorage.clear();
@@ -23,12 +26,12 @@ export const RepairCompleteModal: React.FC<RepairCompleteModalProps> = ({ logs, 
                 <CardHeader className="bg-green-50 border-b">
                     <CardTitle className="flex items-center gap-2 text-green-700">
                         <CheckCircle className="w-6 h-6" />
-                        ✅ RESTAURACIÓN FINALIZADA
+                        {t('maintenance.restorationFinished')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                     <div className="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto">
-                        <h3 className="font-semibold mb-2 text-sm">Reparaciones Aplicadas:</h3>
+                        <h3 className="font-semibold mb-2 text-sm">{t('maintenance.repairsApplied')}</h3>
                         <ul className="space-y-1 text-xs font-mono">
                             {logs.map((log, i) => (
                                 <li key={i} className={
@@ -47,9 +50,9 @@ export const RepairCompleteModal: React.FC<RepairCompleteModalProps> = ({ logs, 
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                             <div className="flex-1">
-                                <p className="font-semibold text-blue-900 text-sm">Reinicio Recomendado</p>
+                                <p className="font-semibold text-blue-900 text-sm">{t('maintenance.restartRecommended')}</p>
                                 <p className="text-xs text-blue-700 mt-1">
-                                    Se realizaron cambios estructurales. Reiniciar garantiza que todos los componentes carguen correctamente.
+                                    {t('maintenance.restartHint')}
                                 </p>
                             </div>
                         </div>
@@ -59,11 +62,11 @@ export const RepairCompleteModal: React.FC<RepairCompleteModalProps> = ({ logs, 
                         {needsRestart ? (
                             <Button onClick={handleRestart} className="flex-1 flex items-center justify-center gap-2">
                                 <RefreshCw className="w-4 h-4" />
-                                🔄 REINICIAR SISTEMA
+                                {t('maintenance.restartSystem')}
                             </Button>
                         ) : (
                             <Button onClick={onClose} variant="outline" className="flex-1">
-                                Cerrar
+                                {t('maintenance.close')}
                             </Button>
                         )}
                     </div>
