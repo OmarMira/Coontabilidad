@@ -402,7 +402,19 @@
     "revenuelabel": "VENTAS",
     "subtitle": "ESTADO INTEGRAL Y VITALIDAD DE LA EMPRESA",
     "syncing": "SINCRONIZANDO MÉTRICAS FINANCIERAS...",
-    "title": "DASHBOARD FINANCIERO"
+    "title": "DASHBOARD FINANCIERO",
+    "askAssistant": "Preguntar al Asistente",
+    "totalBalances": "Saldos Totales",
+    "monthlyInvoicing": "Facturación Mensual",
+    "criticalStock": "Stock Crítico",
+    "accountsReceivable": "Por Cobrar",
+    "products": "productos",
+    "overdue": "vencidas",
+    "activeAlerts": "ALERTAS ACTIVAS",
+    "accountingStructure": "ESTRUCTURA CONTABLE",
+    "priorityActions": "ACCIONES PRIORITARIAS",
+    "periodAnalysis": "ANÁLISIS DEL PERÍODO",
+    "readOnlyDisclaimer": "Dashboard de solo-lectura • Datos actualizados automáticamente"
   },
   "low_stock": "Stock Bajo",
   "movements": "Movimientos",
@@ -997,17 +1009,66 @@
     "stats": {
       "activeAccounts": "Cuentas Activas",
       "creditLines": "Líneas de Crédito",
-      "entities": "Entidades",
       "totalLiquidity": "Liquidez Total"
     },
-    "subtitle": "Controlador de Liquidez de Activos v5.0",
-    "syncVault": "Sincronizar Bóveda",
-    "title": "Matriz Bancaria",
     "type": {
       "checking": "CORRIENTE",
       "credit": "CRÉDITO",
       "general": "GENERAL",
       "savings": "AHORROS"
+    },
+    "financialDashboard": {
+      "title": "Panel Financiero",
+      "subtitle": "Visión general de la salud financiera de su empresa",
+      "netIncome": "Ingresos Netos",
+      "revenue": "Ingresos",
+      "expenses": "Gastos",
+      "profitMargin": "Margen de Beneficio",
+      "cashFlow": "Flujo de Caja",
+      "accountsReceivable": "Cuentas por Cobrar",
+      "accountsPayable": "Cuentas por Pagar",
+      "currentAssets": "Activos Corrientes",
+      "currentLiabilities": "Pasivos Corrientes",
+      "equity": "Patrimonio Neto",
+      "last30Days": "Últimos 30 Días",
+      "thisMonth": "Este Mes",
+      "thisQuarter": "Este Trimestre",
+      "thisYear": "Este Año",
+      "viewReports": "Ver Reportes Completos"
+    },
+    "helpCenter": {
+      "title": "Centro de Ayuda",
+      "subtitle": "Documentación oficial y guías paso a paso del sistema",
+      "searchPlaceholder": "Buscar guías (ej: factura, reporte, cliente)...",
+      "categories": {
+        "home": "Inicio",
+        "sales": "ventas",
+        "purchases": "compras",
+        "inventory": "inventario",
+        "accounting": "contabilidad",
+        "taxes": "impuestos",
+        "system": "sistema"
+      },
+      "quickAccess": "Accesos Directos",
+      "availableGuides": "Guías Disponibles",
+      "noGuidesFound": "No se encontraron guías",
+      "tryOtherTerms": "Intenta con otros términos de búsqueda",
+      "clearFilters": "Limpiar filtros",
+      "faq": "Preguntas Frecuentes",
+      "guideTitle": "Guía del Sistema",
+      "backToHelp": "Volver al centro de ayuda",
+      "stepsToFollow": "Pasos a seguir",
+      "proTips": "Tips Profesionales",
+      "systemPath": "Ruta del sistema:"
+    },
+    "taxCompliance": {
+      "title": "Cumplimiento Fiscal Florida",
+      "status": "Estado Actual",
+      "upToDate": "AL DÍA",
+      "nextDue": "Próximo Vencimiento",
+      "estimatedTax": "Impuesto Estimado",
+      "prepareFiling": "Preparar Declaración",
+      "dr15Period": "Periodo DR-15"
     }
   },
   "bankAccounts": {

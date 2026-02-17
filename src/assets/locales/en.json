@@ -402,7 +402,19 @@
     "revenuelabel": "SALES",
     "subtitle": "COMPREHENSIVE COMPANY STATUS & VITALITY",
     "syncing": "SYNCING FINANCIAL METRICS...",
-    "title": "FINANCIAL DASHBOARD"
+    "title": "FINANCIAL DASHBOARD",
+    "askAssistant": "Ask the Assistant",
+    "totalBalances": "Total Balances",
+    "monthlyInvoicing": "Monthly Invoicing",
+    "criticalStock": "Critical Stock",
+    "accountsReceivable": "Accounts Receivable",
+    "products": "products",
+    "overdue": "overdue",
+    "activeAlerts": "ACTIVE ALERTS",
+    "accountingStructure": "ACCOUNTING STRUCTURE",
+    "priorityActions": "PRIORITY ACTIONS",
+    "periodAnalysis": "PERIOD ANALYSIS",
+    "readOnlyDisclaimer": "Read-only Dashboard • Data updated automatically"
   },
   "low_stock": "LOW_STOCK",
   "movements": "MOVEMENTS",
@@ -1009,6 +1021,56 @@
       "general": "GENERAL",
       "savings": "SAVINGS"
     }
+  },
+  "financialDashboard": {
+    "title": "Financial Dashboard",
+    "subtitle": "Real-time financial overview",
+    "totalRevenue": "Total Revenue",
+    "totalExpenses": "Total Expenses",
+    "netProfit": "Net Profit",
+    "cashFlow": "Cash Flow",
+    "accountsReceivable": "Accounts Receivable",
+    "accountsPayable": "Accounts Payable",
+    "profitLoss": "Profit & Loss",
+    "balanceSheet": "Balance Sheet",
+    "incomeStatement": "Income Statement",
+    "revenueByCustomer": "Revenue by Customer",
+    "expensesByCategory": "Expenses by Category",
+    "viewReports": "View Reports"
+  },
+  "helpCenter": {
+    "title": "Help Center",
+    "subtitle": "Official documentation and step-by-step guides",
+    "searchPlaceholder": "Search guides (e.g., invoice, report, customer)...",
+    "categories": {
+      "home": "Home",
+      "sales": "Sales",
+      "purchases": "Purchases",
+      "inventory": "Inventory",
+      "accounting": "Accounting",
+      "taxes": "Taxes",
+      "system": "System"
+    },
+    "quickAccess": "Quick Access",
+    "availableGuides": "Available Guides",
+    "noGuidesFound": "No guides found",
+    "tryOtherTerms": "Try with other search terms",
+    "clearFilters": "Clear filters",
+    "faq": "Frequently Asked Questions",
+    "guideTitle": "System Guide",
+    "backToHelp": "Back to help center",
+    "stepsToFollow": "Steps to follow",
+    "proTips": "Professional Tips",
+    "systemPath": "System path:"
+  },
+  "taxCompliance": {
+    "title": "Florida Tax Compliance",
+    "status": "Current Status",
+    "upToDate": "UP TO DATE",
+    "nextDue": "Next Due",
+    "estimatedTax": "Estimated Tax",
+    "prepareFiling": "Prepare Filing",
+    "dr15Period": "DR-15 Period"
   },
   "bankAccounts": {
     "activeAccounts": "Active Accounts",

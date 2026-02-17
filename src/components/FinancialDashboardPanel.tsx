@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { iaService } from '../services/IAService';
 import { logger } from '../core/logging/SystemLogger';
+import { useLocale } from '../i18n/useLocale';
 
 interface DashboardData {
   totalBalance: number;
@@ -52,6 +53,7 @@ interface FinancialDashboardPanelProps {
 }
 
 export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = ({ onOpenAssistant }) => {
+  const { t } = useLocale();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(false);
@@ -147,7 +149,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
   };
 
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('es-ES', {
+    return date.toLocaleTimeString(undefined, {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -231,11 +233,11 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
         <div className="header-left flex items-center space-x-4">
           <BarChart3 className="w-8 h-8 text-blue-400" />
           <div>
-            <h3 className="text-xl font-semibold text-slate-100">Dashboard Financiero</h3>
+            <h3 className="text-xl font-semibold text-slate-100">{t('financialDashboard.title')}</h3>
             <div className="flex items-center space-x-2 mt-1">
               <RefreshCw className={`w-3 h-3 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="text-xs text-slate-400">
-                Actualizado: {formatTime(lastUpdate)}
+                {t('reportsdashboard.compliance.statusgenerated')}: {formatTime(lastUpdate)}
               </span>
             </div>
           </div>
@@ -245,7 +247,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
         >
           <MessageSquare className="w-4 h-4" />
-          <span>Preguntar al Asistente</span>
+          <span>{t('financialDashboard.askAssistant')}</span>
         </button>
       </div>
 
@@ -260,7 +262,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
       {isLoading && (
         <div className="flex items-center justify-center p-8">
           <RefreshCw className="w-6 h-6 animate-spin text-blue-400 mr-2" />
-          <span className="text-slate-300">Cargando datos financieros...</span>
+          <span className="text-slate-300">{t('common.loading')}</span>
         </div>
       )}
 
@@ -270,31 +272,31 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           {/* RESUMEN RÁPIDO EN GRID */}
           <div className="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <DashboardCard
-              title="Saldos Totales"
+              title={t('financialDashboard.totalBalances')}
               icon={DollarSign}
               value={`$${dashboardData.totalBalance.toLocaleString()}`}
               trend={dashboardData.balanceTrend}
               color="green"
             />
             <DashboardCard
-              title="Facturación Mensual"
+              title={t('financialDashboard.monthlyInvoicing')}
               icon={FileText}
               value={`$${dashboardData.monthlyInvoicing.toLocaleString()}`}
               trend={dashboardData.invoicingTrend}
               color="blue"
             />
             <DashboardCard
-              title="Stock Crítico"
+              title={t('financialDashboard.criticalStock')}
               icon={Package}
               value={dashboardData.criticalStockCount}
-              subtitle="productos"
+              subtitle={t('financialDashboard.products')}
               color="orange"
             />
             <DashboardCard
-              title="Por Cobrar"
+              title={t('financialDashboard.accountsReceivable')}
               icon={CreditCard}
               value={`$${dashboardData.pendingCollections.toLocaleString()}`}
-              subtitle={`${dashboardData.overdueInvoices} vencidas`}
+              subtitle={`${dashboardData.overdueInvoices} ${t('financialDashboard.overdue')}`}
               color="red"
             />
           </div>
@@ -302,7 +304,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           {/* SECCIONES DETALLADAS */}
           <div className="dashboard-sections space-y-4">
             {/* ALERTAS */}
-            <DashboardSection title="⚠️ ALERTAS ACTIVAS" icon={AlertTriangle} type="alert">
+            <DashboardSection title={`⚠️ ${t('financialDashboard.activeAlerts')}`} icon={AlertTriangle} type="alert">
               <div className="space-y-2">
                 {dashboardData.alerts.map(alert => (
                   <div key={alert.id} className="flex items-center space-x-2 text-sm">
@@ -316,7 +318,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* DATOS FINANCIEROS */}
-            <DashboardSection title="📊 ESTRUCTURA CONTABLE" icon={PieChart} type="data">
+            <DashboardSection title={`📊 ${t('financialDashboard.accountingStructure')}`} icon={PieChart} type="data">
               <div className="grid grid-cols-2 gap-2">
                 {dashboardData.accountingStructure.map((item: any, index: number) => (
                   <div key={index} className="bg-slate-800 p-3 rounded">
@@ -328,7 +330,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* ACCIONES RECOMENDADAS */}
-            <DashboardSection title="👉 ACCIONES PRIORITARIAS" icon={Target} type="action">
+            <DashboardSection title={`👉 ${t('financialDashboard.priorityActions')}`} icon={Target} type="action">
               <div className="space-y-1">
                 {dashboardData.recommendedActions.map((action, index) => (
                   <p key={index} className="text-sm text-green-200">{action}</p>
@@ -337,7 +339,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* ANÁLISIS DEL PERÍODO */}
-            <DashboardSection title="🔍 ANÁLISIS DEL PERÍODO" icon={TrendingUp} type="analysis">
+            <DashboardSection title={`🔍 ${t('financialDashboard.periodAnalysis')}`} icon={TrendingUp} type="analysis">
               <div className="text-sm text-purple-200 whitespace-pre-line">
                 {dashboardData.periodAnalysis}
               </div>
@@ -347,7 +349,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           {/* DISCLAIMER */}
           <div className="text-xs text-slate-500 text-center bg-slate-800 p-3 rounded flex items-center justify-center space-x-2">
             <Shield className="w-3 h-3" />
-            <span>Dashboard de solo-lectura • Datos actualizados automáticamente</span>
+            <span>{t('financialDashboard.readOnlyDisclaimer')}</span>
           </div>
         </div>
       )}
