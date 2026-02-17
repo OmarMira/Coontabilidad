@@ -10,12 +10,14 @@ import { SystemIntegrityReport } from '../../types/integrity.types';
 import { SystemRepairPanel } from './SystemRepairPanel';
 import { SystemWarningBanner } from './SystemWarningBanner';
 import { Loader2, Shield } from 'lucide-react';
+import { useLocale } from '../../i18n/useLocale';
 
 interface Props {
     children: React.ReactNode;
 }
 
 export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
+    const { t } = useLocale();
     const [checking, setChecking] = useState(true);
     const [report, setReport] = useState<SystemIntegrityReport | null>(null);
     const [repairing, setRepairing] = useState(false);
@@ -30,7 +32,7 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
     const runIntegrityChecks = async () => {
         setChecking(true);
         setError(null);
-        
+
         try {
             const service = new IntegrityService();
             const result = await service.runAllChecks();
@@ -44,12 +46,12 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
 
     const handleRepair = async (checkId: string) => {
         if (!report) return;
-        
+
         setRepairing(true);
         try {
             const service = new IntegrityService();
             const success = await service.repairCheck(checkId);
-            
+
             // Si se reparó exitosamente, recargar la página
             if (success) {
                 setTimeout(() => {
@@ -68,12 +70,12 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
 
     const handleRepairAll = async () => {
         if (!report) return;
-        
+
         setRepairing(true);
         try {
             const service = new IntegrityService();
             const result = await service.repairAll();
-            
+
             // Si se reparó al menos un check, recargar la página para reinicializar todo
             if (result.repaired > 0) {
                 // Mostrar mensaje de éxito antes de recargar
@@ -96,8 +98,8 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
                 <div className="text-center">
                     <Shield className="w-20 h-20 text-blue-400 mx-auto mb-4 animate-pulse" />
-                    <h2 className="text-2xl font-black tracking-tight text-white mb-2">Verificando Integridad del Sistema</h2>
-                    <p className="text-blue-300 mb-4">Nivel NASA: Verificación de seguridad en progreso...</p>
+                    <h2 className="text-2xl font-black tracking-tight text-white mb-2">{t('security.messages.verifyingIntegrity')}</h2>
+                    <p className="text-blue-300 mb-4">{t('security.messages.nasaLevel')}</p>
                     <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
                 </div>
             </div>
@@ -112,13 +114,13 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Shield className="w-10 h-10 text-red-600" />
                     </div>
-                    <h2 className="text-2xl font-black tracking-tight text-gray-900 mb-2">Error Crítico</h2>
+                    <h2 className="text-2xl font-black tracking-tight text-gray-900 mb-2">{t('security.messages.criticalError')}</h2>
                     <p className="text-slate-700 mb-6">{error}</p>
                     <button
                         onClick={runIntegrityChecks}
                         className="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
                     >
-                        Reintentar Verificación
+                        {t('security.actions.retry')}
                     </button>
                 </div>
             </div>
