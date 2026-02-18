@@ -43,7 +43,7 @@ export default function ConfirmationStep({
 
     try {
       const summary = accountingPeriodService.getPeriodSummary(periodId);
-      if (!summary) throw new Error('Incapaz de consolidar resumen final.');
+      if (!summary) throw new Error(t('accounting.periods.errorLoading'));
 
       const result = accountingPeriodService.closePeriod(periodId, 1, notes || undefined);
       if (!result.success) throw new Error(result.message);
@@ -66,7 +66,7 @@ export default function ConfirmationStep({
       setReportData(reportData);
       setShowReport(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fallo crítico en el motor de cierre.');
+      setError(err instanceof Error ? err.message : t('common.errorUnknown'));
       setIsClosing(false);
     }
   };
@@ -97,8 +97,8 @@ export default function ConfirmationStep({
       <div className="bg-emerald-600/10 border-l-4 border-emerald-500 rounded-xl p-5 flex items-start gap-4">
         <CheckCircle2 className="w-6 h-6 text-emerald-500 mt-0.5 shrink-0" />
         <p className="text-sm font-bold text-emerald-200/80 leading-relaxed">
-          <span className="text-white font-black uppercase tracking-tighter mr-2">{t('confirmationStep.phaseTitle')}:</span>
-          {t('confirmationStep.phaseDesc')}
+          <span className="text-white font-black uppercase tracking-tighter mr-2">{t('accounting.closure.steps.confirmation.phaseTitle')}:</span>
+          {t('accounting.closure.steps.confirmation.phaseDesc')}
         </p>
       </div>
 
@@ -107,24 +107,24 @@ export default function ConfirmationStep({
         <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl space-y-4 hover:border-slate-700 transition-all">
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <Calendar className="w-4 h-4 text-blue-500" />
-            {t('confirmationStep.metaInfo')}
+            {t('accounting.closure.steps.confirmation.metaInfo')}
           </h3>
           <div className="grid grid-cols-2 gap-y-4 gap-x-6">
             <div>
-              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('confirmationStep.periodName')}</p>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.closure.steps.confirmation.periodName')}</p>
               <p className="text-sm font-black text-white">{period.name}</p>
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('confirmationStep.execution')}</p>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.closure.steps.confirmation.execution')}</p>
               <p className="text-sm font-black text-white capitalize">{period.period_type}</p>
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('confirmationStep.start')}</p>
-              <p className="text-sm font-black text-slate-400">{new Date(period.start_date).toLocaleDateString('es-ES')}</p>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.closure.steps.confirmation.start')}</p>
+              <p className="text-sm font-black text-slate-400">{new Date(period.start_date).toLocaleDateString()}</p>
             </div>
             <div>
-              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('confirmationStep.end')}</p>
-              <p className="text-sm font-black text-slate-400">{new Date(period.end_date).toLocaleDateString('es-ES')}</p>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.closure.steps.confirmation.end')}</p>
+              <p className="text-sm font-black text-slate-400">{new Date(period.end_date).toLocaleDateString()}</p>
             </div>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function ConfirmationStep({
         <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl space-y-4">
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <Activity className="w-4 h-4 text-emerald-500" />
-            {t('confirmationStep.auditPerformance')}
+            {t('accounting.closure.steps.confirmation.auditPerformance')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
@@ -160,9 +160,9 @@ export default function ConfirmationStep({
         <div className="bg-red-900/10 border-2 border-red-500/30 p-6 rounded-2xl flex items-center gap-4 animate-pulse">
           <AlertCircle className="w-8 h-8 text-red-500 shrink-0" />
           <div>
-            <p className="text-xs font-black text-red-500 uppercase tracking-widest">{t('confirmationStep.securityLock')}</p>
+            <p className="text-xs font-black text-red-500 uppercase tracking-widest">{t('accounting.closure.steps.confirmation.securityLock')}</p>
             <p className="text-sm font-bold text-red-200/80">
-              {t('confirmationStep.lockMsg', { count: errorChecks })}
+              {t('accounting.closure.steps.confirmation.lockMsg', { count: errorChecks })}
             </p>
           </div>
         </div>
@@ -172,12 +172,12 @@ export default function ConfirmationStep({
       <div className="space-y-3">
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
           <FileText className="w-3.5 h-3.5" />
-          {t('confirmationStep.notesLabel')}
+          {t('accounting.closure.steps.confirmation.notesLabel')}
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder={t('confirmationStep.notesPlaceholder')}
+          placeholder={t('accounting.closure.steps.confirmation.notesPlaceholder')}
           className="w-full px-5 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-700 resize-none"
           rows={4}
           disabled={isClosing}
@@ -198,9 +198,9 @@ export default function ConfirmationStep({
             <CheckCircle2 className="w-4 h-4 text-white absolute opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">{t('confirmationStep.certify')}</p>
+            <p className="text-sm font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">{t('accounting.closure.steps.confirmation.certify')}</p>
             <p className="text-xs font-bold text-slate-500 leading-relaxed italic">
-              {t('confirmationStep.certifyDesc')}
+              {t('accounting.closure.steps.confirmation.certifyDesc')}
             </p>
           </div>
         </label>
@@ -226,12 +226,12 @@ export default function ConfirmationStep({
           {isClosing ? (
             <>
               <Loader2 className="w-6 h-6 animate-spin" />
-              {t('confirmationStep.consolidating')}
+              {t('accounting.closure.steps.confirmation.consolidating')}
             </>
           ) : (
             <>
               <CheckCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-              {t('confirmationStep.confirmFinal')}
+              {t('accounting.closure.steps.confirmation.confirmFinal')}
             </>
           )}
         </button>

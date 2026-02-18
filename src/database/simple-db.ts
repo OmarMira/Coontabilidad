@@ -1088,6 +1088,44 @@ export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
   }
 }
 
+export interface PayrollFilter {
+  employee_id?: number;
+  status?: string;
+  year?: number;
+}
+
+export function getPayrolls(filters: PayrollFilter = {}): Payroll[] {
+  if (!db) return [];
+  try {
+    let query = "SELECT * FROM payroll WHERE 1=1";
+    const params: any[] = [];
+
+    if (filters.employee_id) {
+      query += " AND employee_id = ?";
+      params.push(filters.employee_id);
+    }
+
+    if (filters.status) {
+      query += " AND status = ?";
+      params.push(filters.status);
+    }
+
+    if (filters.year) {
+      query += " AND strftime('%Y', pay_date) = ?";
+      params.push(filters.year.toString());
+    }
+
+    query += " ORDER BY pay_date DESC";
+
+    const res = db.exec(query, params);
+    if (res.length === 0) return [];
+    return res[0].values.map((row: any) => rowToEntity<Payroll>(res[0].columns, row));
+  } catch (e) {
+    console.error('Error fetching payrolls:', e);
+    return [];
+  }
+}
+
 let isInitialized = false;
 const opfsRoot: FileSystemDirectoryHandle | null = null;
 const dbFile: FileSystemFileHandle | null = null;

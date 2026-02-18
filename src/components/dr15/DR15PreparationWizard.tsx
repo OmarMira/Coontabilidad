@@ -7,6 +7,7 @@ import { FileText, ChevronRight, CheckCircle, Calculator, AlertTriangle, Shield,
 import { dr15PDFGenerator } from '@/modules/dr15/DR15PDFGenerator';
 import { CountyBreakdownTable } from './CountyBreakdownTable';
 import { DORComplianceChecklist } from './DORComplianceChecklist';
+import { useLocale } from '@/i18n/useLocale';
 
 interface WizardStepProps {
     onNext: () => void;
@@ -38,11 +39,12 @@ interface DR15Data {
 }
 
 const StepSelectPeriod: React.FC<WizardStepProps> = ({ onNext, data, updateData }) => {
+    const { t } = useLocale();
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-black tracking-tight text-white">Paso 1: Seleccionar Periodo Fiscal</h3>
+            <h3 className="text-lg font-black tracking-tight text-white">{t('dr15.step1Title')}</h3>
             <div className="grid gap-2">
-                <label className="text-sm text-slate-500">Periodo (Mes/Año)</label>
+                <label className="text-sm text-slate-500">{t('dr15.periodLabel')}</label>
                 <input
                     type="month"
                     value={data.period}
@@ -52,60 +54,60 @@ const StepSelectPeriod: React.FC<WizardStepProps> = ({ onNext, data, updateData 
             </div>
             <div className="bg-blue-900/20 p-4 rounded border border-blue-900">
                 <p className="text-sm text-blue-200">
-                    Seleccione el mes para el cual desea generar el reporte DR-15.
-                    El sistema calculará automáticamente las ventas brutas basándose en las facturas emitidas en ese mes.
+                    {t('dr15.step1Hint')}
                 </p>
             </div>
             <Button onClick={onNext} disabled={!data.period} className="w-full">
-                Siguiente <ChevronRight className="w-4 h-4 ml-2" />
+                {t('dr15.next')} <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
         </div>
     );
 };
 
 const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, updateData, engine }) => {
+    const { t } = useLocale();
     const explanation = engine.explainDR15Summary({
         grossSales: data.grossSales,
         exemptSales: data.exemptSales,
         taxCollected: data.totalTaxDue
     });
 
-    // Validación DOR
+    // DOR Validation
     const validation = {
         isValid: data.totalTaxDue > 0 && data.taxableSales <= data.grossSales,
-        errors: data.totalTaxDue <= 0 ? ['No hay impuestos calculados para este período'] : [],
-        warnings: data.exemptSales > data.grossSales * 0.5 ? ['Más del 50% de ventas están exentas'] : []
+        errors: data.totalTaxDue <= 0 ? [t('dr15.errorNoTax')] : [],
+        warnings: data.exemptSales > data.grossSales * 0.5 ? [t('dr15.warningExempt50')] : []
     };
 
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-black tracking-tight text-white">Paso 2: Revisar Cifras Calculadas</h3>
+            <h3 className="text-lg font-black tracking-tight text-white">{t('dr15.step2Title')}</h3>
 
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white/10 p-3 rounded">
-                    <label className="text-xs text-slate-600 block">Ventas Brutas</label>
+                    <label className="text-xs text-slate-600 block">{t('dr15.grossSales')}</label>
                     <span className="text-xl font-mono text-white">${data.grossSales.toFixed(2)}</span>
                 </div>
                 <div className="bg-white/10 p-3 rounded">
-                    <label className="text-xs text-slate-600 block">Ventas Exentas</label>
+                    <label className="text-xs text-slate-600 block">{t('dr15.exemptSales')}</label>
                     <span className="text-xl font-mono text-green-400">${data.exemptSales.toFixed(2)}</span>
                 </div>
                 <div className="bg-white/10 p-3 rounded">
-                    <label className="text-xs text-slate-600 block">Ventas Gravables</label>
+                    <label className="text-xs text-slate-600 block">{t('dr15.taxableSales')}</label>
                     <span className="text-xl font-mono text-white">${data.taxableSales.toFixed(2)}</span>
                 </div>
                 <div className="bg-white/10 p-3 rounded bg-blue-900/20 border border-blue-800">
-                    <label className="text-xs text-blue-300 block">Impuesto Recaudado</label>
+                    <label className="text-xs text-blue-300 block">{t('dr15.taxCollected')}</label>
                     <span className="text-xl font-black tracking-tight font-mono text-blue-400">${data.totalTaxDue.toFixed(2)}</span>
                 </div>
             </div>
 
-            {/* Tabla de desglose por condado */}
+            {/* County breakdown table */}
             {data.countyBreakdown && data.countyBreakdown.length > 0 && (
                 <CountyBreakdownTable data={data.countyBreakdown} />
             )}
 
-            {/* Validación DOR */}
+            {/* DOR Validation */}
             <DORComplianceChecklist
                 validation={validation}
                 period={data.period}
@@ -117,21 +119,22 @@ const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, up
                 <div className="flex items-start gap-2">
                     <BotIcon className="w-5 h-5 text-purple-400 mt-0.5" />
                     <div>
-                        <h4 className="text-xs font-bold text-purple-400 uppercase">Explicación IA</h4>
+                        <h4 className="text-xs font-bold text-purple-400 uppercase">{t('dr15.aiExplanation')}</h4>
                         <p className="text-xs text-slate-400 leading-relaxed mt-1">{explanation}</p>
                     </div>
                 </div>
             </div>
 
             <div className="flex gap-2">
-                <Button variant="outline" onClick={onBack} className="flex-1">Atrás</Button>
-                <Button onClick={onNext} className="flex-1">Confirmar y Siguiente <ChevronRight className="w-4 h-4 ml-2" /></Button>
+                <Button variant="outline" onClick={onBack} className="flex-1">{t('dr15.back')}</Button>
+                <Button onClick={onNext} className="flex-1">{t('dr15.confirmAndNext')} <ChevronRight className="w-4 h-4 ml-2" /></Button>
             </div>
         </div>
     );
 };
 
 const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) => {
+    const { t } = useLocale();
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleDownloadPDF = async () => {
@@ -146,11 +149,10 @@ const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) =
                 zipCode: '33101'
             };
 
-            // Usamos la versión ASYNC que utiliza Workers (Zero Lag)
             await dr15PDFGenerator.downloadPDF(data, companyData);
         } catch (error) {
             console.error(error);
-            alert("Error generando PDF: " + (error as Error).message);
+            alert(t('dr15.pdfError') + ": " + (error as Error).message);
         } finally {
             setIsProcessing(false);
         }
@@ -167,12 +169,12 @@ const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) =
             </div>
             <div>
                 <h3 className="text-xl font-black tracking-tight text-white">
-                    {isProcessing ? 'Procesando en Segundo Plano...' : 'Listo para Generar'}
+                    {isProcessing ? t('dr15.processing') : t('dr15.readyToGenerate')}
                 </h3>
                 <p className="text-slate-500 mt-2">
                     {isProcessing
-                        ? 'El Worker está compilando el reporte sin congelar tu interfaz.'
-                        : <>El reporte DR-15 para el periodo <span className="text-white font-mono">{data.period}</span> está listo.</>}
+                        ? t('dr15.workerCompiling')
+                        : <>{t('dr15.reportReady')} <span className="text-white font-mono">{data.period}</span> {t('dr15.isReady')}.</>}
                 </p>
             </div>
 
@@ -180,19 +182,19 @@ const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) =
                 <div className="flex gap-2">
                     <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
                     <p className="text-xs text-yellow-200">
-                        Al confirmar, se registrará un evento inmutable en la cadena de auditoría SHA-256 certificando la generación de este reporte fiscal.
+                        {t('dr15.auditWarning')}
                     </p>
                 </div>
             </div>
 
-            {/* Botón de descarga PDF */}
+            {/* PDF download button */}
             <Button
                 onClick={handleDownloadPDF}
                 disabled={isProcessing}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <Download className={`w-4 h-4 mr-2 ${isProcessing ? 'animate-bounce' : ''}`} />
-                {isProcessing ? 'Generando PDF (Worker)...' : '📥 Descargar PDF DR-15'}
+                {isProcessing ? t('dr15.generatingPdf') : `📥 ${t('dr15.downloadPdf')}`}
             </Button>
 
             <Button
@@ -201,9 +203,9 @@ const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) =
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
                 <Shield className="w-4 h-4 mr-2" />
-                Finalizar y Firmar Reporte
+                {t('dr15.finalizeAndSign')}
             </Button>
-            <Button variant="ghost" onClick={isProcessing ? undefined : onBack} disabled={isProcessing} className="w-full text-slate-500">Volver a Revisar</Button>
+            <Button variant="ghost" onClick={isProcessing ? undefined : onBack} disabled={isProcessing} className="w-full text-slate-500">{t('dr15.reviewAgain')}</Button>
         </div>
     );
 };
@@ -229,6 +231,7 @@ const BotIcon = (props: any) => (
 )
 
 export const DR15PreparationWizard: React.FC = () => {
+    const { t } = useLocale();
     const [step, setStep] = useState(1);
     const [data, setData] = useState<DR15Data>({
         period: '',
@@ -281,13 +284,13 @@ export const DR15PreparationWizard: React.FC = () => {
             <Card className="w-full max-w-2xl mx-auto bg-slate-900 border-white/5">
                 <CardContent className="py-10 text-center space-y-4">
                     <Shield className="w-16 h-16 text-blue-500 mx-auto" />
-                    <h2 className="text-2xl font-black tracking-tight text-white">Reporte Generado Exitosamente</h2>
-                    <p className="text-slate-500">El reporte DR-15 ha sido generado y auditorizado.</p>
+                    <h2 className="text-2xl font-black tracking-tight text-white">{t('dr15.reportGenerated')}</h2>
+                    <p className="text-slate-500">{t('dr15.reportAudited')}</p>
                     <div className="bg-black/50 p-4 rounded font-mono text-xs text-slate-600 break-all max-w-md mx-auto">
                         Hash: {Array(64).fill('0').map((_, i) => (Math.random() * 16 | 0).toString(16)).join('')}
                     </div>
                     <Button onClick={() => { setStep(1); setData(prev => ({ ...prev, confirmed: false, period: '' })); }}>
-                        Crear Nuevo Reporte
+                        {t('dr15.createNewReport')}
                     </Button>
                 </CardContent>
             </Card>
@@ -300,10 +303,10 @@ export const DR15PreparationWizard: React.FC = () => {
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-xl flex items-center gap-2">
                         <FileText className="w-5 h-5 text-blue-400" />
-                        Preparación DR-15 Florida
+                        {t('dr15.wizardTitle')}
                     </CardTitle>
                     <div className="text-xs font-mono text-slate-600">
-                        Paso {step} de 3
+                        {t('dr15.stepOf', { current: step, total: 3 })}
                     </div>
                 </div>
                 {/* Progress Bar */}

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useLanguage } from './LanguageContext';
-import { translationEngine } from '@/features/i18n/TranslationEngine';
+import { translationEngine } from '../features/i18n/TranslationEngine';
 
 /**
  * Hook para usar traducciones desde el motor central.

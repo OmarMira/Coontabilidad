@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Download, AlertTriangle, CheckCircle2, ArrowRight, Copy } from 'lucide-react';
 import { BasicEncryption } from '../../../core/security/BasicEncryption';
+import { useLocale } from '@/i18n/useLocale';
 
 interface SecurityStepProps {
   data: any;
@@ -8,6 +9,7 @@ interface SecurityStepProps {
 }
 
 export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
+  const { t } = useLocale();
   const [masterKey, setMasterKey] = useState(data.masterKey || '');
   const [confirmed, setConfirmed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -27,7 +29,7 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
   };
 
   const handleDownload = () => {
-    const blob = new Blob([`AccountExpress Master Key\n\nKey: ${masterKey}\n\nFecha: ${new Date().toLocaleString()}\n\n⚠️ IMPORTANTE: Guarda esta clave en un lugar seguro. Si la pierdes, no podrás recuperar datos cifrados.`], { type: 'text/plain' });
+    const blob = new Blob([`AccountExpress Master Key\n\nKey: ${masterKey}\n\n${t('setup.security.downloadDate')}: ${new Date().toLocaleString()}\n\n⚠️ ${t('setup.security.downloadWarning')}`], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -51,18 +53,17 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-black tracking-tight text-white mb-2">Configuración de Seguridad</h2>
-        <p className="text-blue-200 text-sm">Master Key para cifrado de datos</p>
+        <h2 className="text-2xl font-black tracking-tight text-white mb-2">{t('setup.security.title')}</h2>
+        <p className="text-blue-200 text-sm">{t('setup.security.subtitle')}</p>
       </div>
 
       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="text-yellow-200 font-bold mb-1">⚠️ Importante</h3>
+            <h3 className="text-yellow-200 font-bold mb-1">⚠️ {t('setup.security.important')}</h3>
             <p className="text-yellow-200/80 text-sm">
-              Esta clave se muestra <strong>solo una vez</strong>. Si la pierdes, no podrás recuperar 
-              los datos cifrados. Guárdala en un lugar seguro (gestor de contraseñas, caja fuerte, etc.)
+              {t('setup.security.warningText')}
             </p>
           </div>
         </div>
@@ -80,14 +81,14 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
               className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded-lg transition-all flex items-center gap-2"
             >
               {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'Copiado' : 'Copiar'}
+              {copied ? t('setup.security.copied') : t('setup.security.copy')}
             </button>
             <button
               onClick={handleDownload}
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-all flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Descargar
+              {t('setup.security.download')}
             </button>
           </div>
         </div>
@@ -98,14 +99,14 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h3 className="text-white font-bold mb-3">Especificaciones Técnicas</h3>
+        <h3 className="text-white font-bold mb-3">{t('setup.security.techSpecs')}</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-blue-200">Algoritmo:</span>
+            <span className="text-blue-200">{t('setup.security.algorithm')}:</span>
             <span className="text-white font-mono">PBKDF2</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-blue-200">Iteraciones:</span>
+            <span className="text-blue-200">{t('setup.security.iterations')}:</span>
             <span className="text-white font-mono">600,000</span>
           </div>
           <div className="flex justify-between">
@@ -113,7 +114,7 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
             <span className="text-white font-mono">SHA-256</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-blue-200">Estándar:</span>
+            <span className="text-blue-200">{t('setup.security.standard')}:</span>
             <span className="text-white font-mono">NIST SP 800-63B</span>
           </div>
         </div>
@@ -128,7 +129,7 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
           className="mt-1 w-5 h-5 rounded border-white/20 bg-white/10 text-blue-600 focus:ring-2 focus:ring-blue-500"
         />
         <label htmlFor="confirm" className="text-white text-sm cursor-pointer">
-          He guardado la Master Key en un lugar seguro y entiendo que no podré recuperarla si la pierdo.
+          {t('setup.security.confirmCheckbox')}
         </label>
       </div>
 
@@ -137,7 +138,7 @@ export const SecurityStep: React.FC<SecurityStepProps> = ({ data, onNext }) => {
         disabled={!confirmed}
         className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
       >
-        Continuar
+        {t('setup.continue')}
         <ArrowRight className="w-5 h-5" />
       </button>
     </div>

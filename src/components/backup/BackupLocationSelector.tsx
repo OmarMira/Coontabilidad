@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { HardDrive, Download, Cloud, FolderOpen, Usb, AlertCircle } from 'lucide-react';
 import { BackupLocationService, BackupLocation } from '../../services/BackupLocationService';
+import { useLocale } from '../../i18n/useLocale';
 
 interface Props {
     onLocationSelected: (location: BackupLocation, customPath?: string) => void;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mode }) => {
+    const { t } = useLocale();
     const [selectedLocation, setSelectedLocation] = useState<BackupLocation>('downloads');
     const [customPath, setCustomPath] = useState<string>('');
     const [isSelecting, setIsSelecting] = useState(false);
@@ -30,14 +32,14 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
             try {
                 const destination = await BackupLocationService.chooseBackupLocation();
                 if (destination) {
-                    setCustomPath(destination.path || 'Ubicación personalizada');
+                    setCustomPath(destination.path || t('backup.locations.custom'));
                     onLocationSelected(location, destination.path);
                 } else {
                     // Usuario canceló
                     setSelectedLocation('downloads');
                 }
             } catch (e) {
-                setError('Error seleccionando ubicación. Intenta de nuevo.');
+                setError(t('common.error'));
                 setSelectedLocation('downloads');
             } finally {
                 setIsSelecting(false);
@@ -50,32 +52,32 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
     const locations = [
         {
             id: 'downloads' as BackupLocation,
-            name: 'Carpeta de Descargas',
-            description: 'Guardar en la carpeta de descargas del navegador',
+            name: t('backup.locations.downloads'),
+            description: t('backup.descriptions.downloads'),
             icon: Download,
             color: 'blue',
             available: true
         },
         {
             id: 'local-disk' as BackupLocation,
-            name: 'Disco Local',
-            description: 'Elegir una carpeta en tu disco duro',
+            name: t('backup.locations.localDisk'),
+            description: t('backup.descriptions.localDisk'),
             icon: HardDrive,
             color: 'green',
             available: isFileSystemSupported
         },
         {
             id: 'google-drive' as BackupLocation,
-            name: 'Google Drive',
-            description: 'Guardar en tu cuenta de Google Drive',
+            name: t('backup.locations.googleDrive'),
+            description: t('backup.descriptions.googleDrive'),
             icon: Cloud,
             color: 'purple',
             available: true
         },
         {
             id: 'custom' as BackupLocation,
-            name: 'Pendrive / Disco Externo',
-            description: 'Guardar en un dispositivo USB externo',
+            name: t('backup.locations.custom'),
+            description: t('backup.descriptions.custom'),
             icon: Usb,
             color: 'orange',
             available: isFileSystemSupported
@@ -86,12 +88,12 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
         <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                    {mode === 'save' ? '¿Dónde deseas guardar el backup?' : '¿Desde dónde deseas restaurar?'}
+                    {mode === 'save' ? t('backup.saveTitle') : t('backup.restoreTitle')}
                 </h3>
                 {!isFileSystemSupported && (
                     <div className="flex items-center text-sm text-amber-600">
                         <AlertCircle className="w-4 h-4 mr-1" />
-                        <span>Algunas opciones no disponibles en este navegador</span>
+                        <span>{t('backup.browserWarning')}</span>
                     </div>
                 )}
             </div>
@@ -109,12 +111,12 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
                             disabled={isDisabled || isSelecting}
                             className={`
                                 relative p-6 rounded-xl border-2 transition-all text-left
-                                ${isSelected 
-                                    ? `border-${location.color}-500 bg-${location.color}-50 shadow-lg` 
+                                ${isSelected
+                                    ? `border-${location.color}-500 bg-${location.color}-50 shadow-lg`
                                     : 'border-gray-200 hover:border-gray-300 bg-white'
                                 }
-                                ${isDisabled 
-                                    ? 'opacity-50 cursor-not-allowed' 
+                                ${isDisabled
+                                    ? 'opacity-50 cursor-not-allowed'
                                     : 'cursor-pointer hover:shadow-md'
                                 }
                                 ${isSelecting ? 'opacity-50 cursor-wait' : ''}
@@ -123,15 +125,15 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
                             <div className="flex items-start space-x-4">
                                 <div className={`
                                     p-3 rounded-lg
-                                    ${isSelected 
-                                        ? `bg-${location.color}-100` 
+                                    ${isSelected
+                                        ? `bg-${location.color}-100`
                                         : 'bg-gray-100'
                                     }
                                 `}>
                                     <Icon className={`
                                         w-6 h-6
-                                        ${isSelected 
-                                            ? `text-${location.color}-600` 
+                                        ${isSelected
+                                            ? `text-${location.color}-600`
                                             : 'text-slate-700'
                                         }
                                     `} />
@@ -151,7 +153,7 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
                                     )}
                                     {isDisabled && (
                                         <p className="mt-2 text-xs text-amber-600">
-                                            No disponible en este navegador
+                                            {t('backup.browserWarning')}
                                         </p>
                                     )}
                                 </div>
@@ -180,17 +182,17 @@ export const BackupLocationSelector: React.FC<Props> = ({ onLocationSelected, mo
             {isSelecting && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
-                    <p className="text-sm text-blue-800">Esperando selección de ubicación...</p>
+                    <p className="text-sm text-blue-800">{t('backup.selectingLocation')}</p>
                 </div>
             )}
 
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="text-sm font-semibold text-gray-900 mb-2">💡 Recomendaciones:</h4>
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">💡 {t('backup.recommendations')}:</h4>
                 <ul className="text-sm text-slate-700 space-y-1">
-                    <li>• <strong>Descargas:</strong> Rápido y simple, pero debes mover el archivo manualmente</li>
-                    <li>• <strong>Disco Local:</strong> Control total sobre la ubicación del archivo</li>
-                    <li>• <strong>Google Drive:</strong> Backup automático en la nube, accesible desde cualquier lugar</li>
-                    <li>• <strong>Pendrive:</strong> Ideal para backups físicos y portables</li>
+                    <li>• <strong>{t('backup.locations.downloads')}:</strong> {t('backup.tips.downloads')}</li>
+                    <li>• <strong>{t('backup.locations.localDisk')}:</strong> {t('backup.tips.localDisk')}</li>
+                    <li>• <strong>{t('backup.locations.googleDrive')}:</strong> {t('backup.tips.googleDrive')}</li>
+                    <li>• <strong>{t('backup.locations.custom')}:</strong> {t('backup.tips.pendrive')}</li>
                 </ul>
             </div>
         </div>

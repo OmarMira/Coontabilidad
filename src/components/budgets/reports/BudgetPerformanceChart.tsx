@@ -2,12 +2,15 @@ import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { getBudgetVarianceAnalysis, getBudgetSummary } from '@/database/simple-db';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetPerformanceChartProps {
   budgetId: number;
 }
 
 export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ budgetId }) => {
+  const { t } = useLocale();
+
   const data = useMemo(() => {
     try {
       const variance = getBudgetVarianceAnalysis(budgetId);
@@ -26,15 +29,15 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
     .slice(0, 10)
     .map(item => ({
       name: item.account_name.substring(0, 15) + '...',
-      Presupuestado: item.ytd_budget / 100,
-      Real: item.ytd_actual / 100,
+      [t('budgets.budgeted')]: item.ytd_budget / 100,
+      [t('budgets.actual')]: item.ytd_actual / 100,
     }));
 
   // Prepare data for pie chart (Status Distribution)
   const pieChartData = [
-    { name: 'En Presupuesto', value: data.summary?.lines_on_budget || 0, color: '#10B981' }, // green-500
-    { name: 'Bajo Presupuesto', value: data.summary?.lines_under_budget || 0, color: '#3B82F6' }, // blue-500
-    { name: 'Sobre Presupuesto', value: data.summary?.lines_over_budget || 0, color: '#EF4444' }, // red-500
+    { name: t('budgets.onBudget'), value: data.summary?.lines_on_budget || 0, color: '#10B981' }, // green-500
+    { name: t('budgets.underBudget'), value: data.summary?.lines_under_budget || 0, color: '#3B82F6' }, // blue-500
+    { name: t('budgets.overBudget'), value: data.summary?.lines_over_budget || 0, color: '#EF4444' }, // red-500
   ].filter(item => item.value > 0);
 
   return (
@@ -42,7 +45,7 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
       {/* Bar Chart */}
       <Card className="bg-slate-900 border-slate-800 text-white">
         <CardHeader>
-          <CardTitle>Presupuesto vs Real (Top 10 Cuentas)</CardTitle>
+          <CardTitle>{t('budgets.reports.actualVsBudgetTop10')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80 w-full">
@@ -74,8 +77,8 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
                 <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
                 />
-                <Bar dataKey="Presupuestado" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Real" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey={t('budgets.budgeted')} fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey={t('budgets.actual')} fill="#8B5CF6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -85,7 +88,7 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
       {/* Pie Chart */}
       <Card className="bg-slate-900 border-slate-800 text-white">
         <CardHeader>
-          <CardTitle>Estado de Cuentas</CardTitle>
+          <CardTitle>{t('budgets.reports.accountStatus')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-80 w-full flex items-center justify-center">
@@ -117,7 +120,7 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-slate-400">No hay datos suficientes para mostrar</div>
+              <div className="text-slate-400">{t('budgets.reports.insufficientData')}</div>
             )}
           </div>
         </CardContent>

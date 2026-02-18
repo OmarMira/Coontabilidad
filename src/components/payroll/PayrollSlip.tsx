@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     FileText,
     User,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { PayrollEntry, PayrollLineItem, Employee, PayrollPeriod } from '../../database/simple-db';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { useLocale } from '@/i18n/useLocale';
 
 interface PayrollSlipProps {
     entry: PayrollEntry;
@@ -21,6 +22,8 @@ interface PayrollSlipProps {
 }
 
 export const PayrollSlip: React.FC<PayrollSlipProps> = ({ entry, items, employee, period, onClose }) => {
+    const { t } = useLocale();
+
     return (
         <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
             <Card className="w-full max-w-4xl bg-white text-slate-900 border-none shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -31,15 +34,15 @@ export const PayrollSlip: React.FC<PayrollSlipProps> = ({ entry, items, employee
                         </div>
                         <div>
                             <h1 className="text-2xl font-black text-slate-900 tracking-tighter">Account Express Demo Inc.</h1>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nómina • Comprobante de Pago</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('payroll.slip.payrollPaystub')}</p>
                         </div>
                     </div>
                     <div className="flex gap-2">
                         <button className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all font-bold text-xs flex items-center gap-2">
-                            <Printer className="w-4 h-4" /> Imprimir
+                            <Printer className="w-4 h-4" /> {t('payroll.slip.print')}
                         </button>
                         <button onClick={onClose} className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all font-bold text-xs">
-                            Cerrar
+                            {t('payroll.slip.close')}
                         </button>
                     </div>
                 </div>
@@ -47,36 +50,36 @@ export const PayrollSlip: React.FC<PayrollSlipProps> = ({ entry, items, employee
                 <CardContent className="p-10">
                     <div className="grid grid-cols-2 gap-12 mb-12">
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Información del Empleado</h4>
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">{t('payroll.slip.employeeInfo')}</h4>
                             <div className="space-y-2">
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-slate-500 font-bold">Nombre Completo:</span>
+                                    <span className="text-xs text-slate-500 font-bold">{t('payroll.slip.fullName')}:</span>
                                     <span className="text-sm font-black text-slate-900">{employee.first_name} {employee.last_name}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-slate-500 font-bold">Código Empleado:</span>
+                                    <span className="text-xs text-slate-500 font-bold">{t('payroll.slip.employeeCode')}:</span>
                                     <span className="text-sm font-black text-blue-600">{employee.employee_number}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-slate-500 font-bold">Cargo:</span>
+                                    <span className="text-xs text-slate-500 font-bold">{t('payroll.slip.position')}:</span>
                                     <span className="text-sm font-bold text-slate-700">{employee.position}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Detalles del Período</h4>
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">{t('payroll.slip.periodDetails')}</h4>
                             <div className="space-y-2">
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-slate-500 font-bold">Período Fiscal:</span>
+                                    <span className="text-xs text-slate-500 font-bold">{t('payroll.slip.fiscalPeriod')}:</span>
                                     <span className="text-sm font-black text-slate-900">{period.name}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-slate-500 font-bold">Fechas:</span>
-                                    <span className="text-sm font-bold text-slate-700">{period.start_date} al {period.end_date}</span>
+                                    <span className="text-xs text-slate-500 font-bold">{t('payroll.slip.dates')}:</span>
+                                    <span className="text-sm font-bold text-slate-700">{period.start_date} {t('payroll.slip.to')} {period.end_date}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-xs text-slate-500 font-bold">Fecha de Pago:</span>
+                                    <span className="text-xs text-slate-500 font-bold">{t('payroll.slip.paymentDate')}:</span>
                                     <span className="text-sm font-black text-emerald-600">{period.pay_date}</span>
                                 </div>
                             </div>
@@ -87,9 +90,9 @@ export const PayrollSlip: React.FC<PayrollSlipProps> = ({ entry, items, employee
                         <table className="w-full">
                             <thead>
                                 <tr className="bg-slate-50">
-                                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Concepto / Descripción</th>
-                                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Percepciones</th>
-                                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Deducciones</th>
+                                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.slip.conceptDescription')}</th>
+                                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.slip.earnings')}</th>
+                                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.deductions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -107,7 +110,7 @@ export const PayrollSlip: React.FC<PayrollSlipProps> = ({ entry, items, employee
                             </tbody>
                             <tfoot>
                                 <tr className="bg-slate-900">
-                                    <td className="px-6 py-6 text-sm font-black text-slate-400 uppercase tracking-tighter">Totales de Nómina</td>
+                                    <td className="px-6 py-6 text-sm font-black text-slate-400 uppercase tracking-tighter">{t('payroll.slip.payrollTotals')}</td>
                                     <td className="px-6 py-6 text-right text-lg font-black text-white">${entry.gross_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                     <td className="px-6 py-6 text-right text-lg font-black text-rose-400">-${entry.deductions_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                 </tr>
@@ -117,14 +120,14 @@ export const PayrollSlip: React.FC<PayrollSlipProps> = ({ entry, items, employee
 
                     <div className="flex justify-end pt-6">
                         <div className="bg-blue-600 p-8 rounded-3xl text-white min-w-[300px] shadow-xl shadow-blue-200">
-                            <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Neto a Recibir</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">{t('payroll.slip.netToReceive')}</p>
                             <div className="flex items-end justify-between">
                                 <h2 className="text-4xl font-black tracking-tighter">${entry.net_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
                                 <div className="flex flex-col items-center">
                                     <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-2">
                                         <CheckCircle className="w-6 h-6 text-white" />
                                     </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest">Pagado</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest">{t('payroll.slip.paidLabel')}</span>
                                 </div>
                             </div>
                         </div>

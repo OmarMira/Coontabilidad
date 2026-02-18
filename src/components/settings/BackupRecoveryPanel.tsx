@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RecoveryService, BackupMetadata } from '../../services/RecoveryService';
+import { useLocale } from '@/i18n/useLocale';
 
 /**
  * BackupRecoveryPanel Component (Iron Clad Upgrade - Phase 1, Day 6)
@@ -14,6 +15,7 @@ import { RecoveryService, BackupMetadata } from '../../services/RecoveryService'
  */
 
 export function BackupRecoveryPanel() {
+    const { t, language } = useLocale();
     const [backups, setBackups] = useState<BackupMetadata[]>([]);
     const [loading, setLoading] = useState(false);
     const [restoring, setRestoring] = useState(false);
@@ -32,7 +34,7 @@ export function BackupRecoveryPanel() {
             setBackups(availableBackups);
         } catch (error: any) {
             console.error('Error loading backups:', error);
-            alert(`❌ Error al cargar backups: ${error.message}`);
+            alert(`❌ ${t('settings.restoreError')}: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -49,15 +51,15 @@ export function BackupRecoveryPanel() {
 
     const restoreFromCloud = async (filename: string) => {
         const confirmed = window.confirm(
-            `⚠️ ADVERTENCIA: Esta operación reemplazará tu base de datos actual.\n\n` +
-            `Se creará un backup de seguridad antes de continuar.\n\n` +
-            `¿Deseas restaurar desde: ${filename}?`
+            `⚠️ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
+            `${t('settings.backupPrompt')}\n\n` +
+            `¿${t('settings.restoreAction')} ${filename}?`
         );
 
         if (!confirmed) return;
 
         setRestoring(true);
-        setProgress({ percent: 0, message: 'Iniciando restauración...' });
+        setProgress({ percent: 0, message: t('settings.restoringHint') });
 
         try {
             await RecoveryService.restoreFromCloud(filename, {
@@ -67,11 +69,11 @@ export function BackupRecoveryPanel() {
                 }
             });
 
-            alert('✅ Restauración completada exitosamente!\n\nLa aplicación se recargará.');
+            alert(`✅ ${t('settings.restoreSuccess')}!\n\nLa aplicación se recargará.`);
             window.location.reload();
 
         } catch (error: any) {
-            alert(`❌ Error durante la restauración:\n\n${error.message}`);
+            alert(`❌ ${t('settings.restoreError')}:\n\n${error.message}`);
         } finally {
             setRestoring(false);
             setProgress({ percent: 0, message: '' });
@@ -83,9 +85,9 @@ export function BackupRecoveryPanel() {
         if (!file) return;
 
         const confirmed = window.confirm(
-            `⚠️ ADVERTENCIA: Esta operación reemplazará tu base de datos actual.\n\n` +
-            `Se creará un backup de seguridad antes de continuar.\n\n` +
-            `¿Deseas restaurar desde: ${file.name}?`
+            `⚠️ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
+            `${t('settings.backupPrompt')}\n\n` +
+            `¿${t('settings.restoreAction')} ${file.name}?`
         );
 
         if (!confirmed) {
@@ -94,7 +96,7 @@ export function BackupRecoveryPanel() {
         }
 
         setRestoring(true);
-        setProgress({ percent: 0, message: 'Iniciando restauración...' });
+        setProgress({ percent: 0, message: t('settings.restoringHint') });
 
         try {
             await RecoveryService.restoreFromFile(file, {
@@ -104,11 +106,11 @@ export function BackupRecoveryPanel() {
                 }
             });
 
-            alert('✅ Restauración completada exitosamente!\n\nLa aplicación se recargará.');
+            alert(`✅ ${t('settings.restoreSuccess')}!\n\nLa aplicación se recargará.`);
             window.location.reload();
 
         } catch (error: any) {
-            alert(`❌ Error durante la restauración:\n\n${error.message}`);
+            alert(`❌ ${t('settings.restoreError')}:\n\n${error.message}`);
         } finally {
             setRestoring(false);
             setProgress({ percent: 0, message: '' });
@@ -123,7 +125,7 @@ export function BackupRecoveryPanel() {
     };
 
     const formatDate = (date: Date): string => {
-        return new Intl.DateTimeFormat('es-ES', {
+        return new Intl.DateTimeFormat(language === 'es' ? 'es-ES' : 'en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -135,28 +137,28 @@ export function BackupRecoveryPanel() {
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.title}>🔄 Recuperación de Datos</h2>
+                <h2 style={styles.title}>🔄 {t('settings.recovery')}</h2>
                 <p style={styles.subtitle}>
-                    Restaura tu base de datos desde un backup en la nube o archivo local
+                    {t('settings.subtitle')}
                 </p>
             </div>
 
             {stats && (
                 <div style={styles.statsBox}>
                     <div style={styles.stat}>
-                        <span style={styles.statLabel}>Backups Disponibles:</span>
+                        <span style={styles.statLabel}>{t('settings.availableBackups')}</span>
                         <span style={styles.statValue}>{stats.cloudBackupsAvailable}</span>
                     </div>
                     <div style={styles.stat}>
-                        <span style={styles.statLabel}>Último Backup:</span>
+                        <span style={styles.statLabel}>{t('settings.lastSync')}:</span>
                         <span style={styles.statValue}>
                             {stats.latestBackup ? formatDate(stats.latestBackup.created) : 'N/A'}
                         </span>
                     </div>
                     <div style={styles.stat}>
-                        <span style={styles.statLabel}>Safety Backup:</span>
+                        <span style={styles.statLabel}>{t('settings.hasSafetyBackup')}</span>
                         <span style={styles.statValue}>
-                            {stats.hasSafetyBackup ? '✅ Disponible' : '❌ No disponible'}
+                            {stats.hasSafetyBackup ? `✅ ${t('settings.available')}` : `❌ ${t('settings.notAvailable')}`}
                         </span>
                     </div>
                 </div>
@@ -175,25 +177,25 @@ export function BackupRecoveryPanel() {
 
             <div style={styles.section}>
                 <div style={styles.sectionHeader}>
-                    <h3 style={styles.sectionTitle}>☁️ Backups en la Nube</h3>
+                    <h3 style={styles.sectionTitle}>☁️ {t('settings.backup')}</h3>
                     <button
                         onClick={loadBackups}
                         disabled={loading || restoring}
                         style={{ ...styles.button, ...styles.buttonSmall }}
                     >
-                        {loading ? '🔄 Cargando...' : '🔄 Actualizar'}
+                        {loading ? `🔄 ${t('settings.update')}...` : `🔄 ${t('settings.update')}`}
                     </button>
                 </div>
 
                 {loading ? (
-                    <p style={styles.loadingText}>Cargando backups...</p>
+                    <p style={styles.loadingText}>{t('settings.loadingBackups')}</p>
                 ) : backups.length === 0 ? (
                     <div style={styles.emptyState}>
                         <p style={styles.emptyText}>
-                            📭 No hay backups disponibles en la nube
+                            📭 {t('settings.noBackups')}
                         </p>
                         <small style={styles.emptyHint}>
-                            Configura el respaldo en la nube en la sección "Configuración"
+                            {t('settings.noBackupsHint')}
                         </small>
                     </div>
                 ) : (
@@ -202,7 +204,7 @@ export function BackupRecoveryPanel() {
                             <div key={backup.filename} style={styles.backupItem}>
                                 <div style={styles.backupInfo}>
                                     <div style={styles.backupName}>
-                                        {index === 0 && <span style={styles.badge}>Más reciente</span>}
+                                        {index === 0 && <span style={styles.badge}>{t('settings.mostRecent')}</span>}
                                         📦 {backup.filename}
                                     </div>
                                     <div style={styles.backupMeta}>
@@ -216,7 +218,7 @@ export function BackupRecoveryPanel() {
                                     disabled={restoring}
                                     style={{ ...styles.button, ...styles.buttonPrimary }}
                                 >
-                                    🔄 Restaurar
+                                    🔄 {t('settings.restoreAction')}
                                 </button>
                             </div>
                         ))}
@@ -227,9 +229,9 @@ export function BackupRecoveryPanel() {
             <div style={styles.divider}></div>
 
             <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>💾 Restaurar desde Archivo Local</h3>
+                <h3 style={styles.sectionTitle}>💾 {t('settings.restoreLocal')}</h3>
                 <p style={styles.sectionText}>
-                    Selecciona un archivo de backup (.aex) guardado en tu computadora
+                    {t('settings.loadBackup')}
                 </p>
                 <label style={styles.fileInputLabel}>
                     <input
@@ -240,19 +242,17 @@ export function BackupRecoveryPanel() {
                         style={styles.fileInput}
                     />
                     <span style={{ ...styles.button, ...styles.buttonSecondary }}>
-                        📁 Seleccionar Archivo
+                        📁 {t('settings.selectFile')}
                     </span>
                 </label>
             </div>
 
             <div style={styles.warningBox}>
-                <h4 style={styles.warningTitle}>⚠️ Advertencias Importantes</h4>
+                <h4 style={styles.warningTitle}>⚠️ {t('settings.securityWarning')}</h4>
                 <ul style={styles.warningList}>
-                    <li>La restauración reemplazará completamente tu base de datos actual</li>
-                    <li>Se creará un backup de seguridad automáticamente antes de restaurar</li>
-                    <li>Si la restauración falla, se revertirá al estado anterior automáticamente</li>
-                    <li>La aplicación se recargará después de una restauración exitosa</li>
-                    <li>Asegúrate de tener una conexión estable durante el proceso</li>
+                    {t<string[]>('settings.warningItems').map((item, i) => (
+                        <li key={i}>{item}</li>
+                    ))}
                 </ul>
             </div>
         </div>

@@ -1,13 +1,14 @@
 /**
- * CHECKLIST DE CUMPLIMIENTO DOR
+ * DOR COMPLIANCE CHECKLIST
  * 
- * Valida que el reporte DR-15 cumpla con los requisitos
- * del Florida Department of Revenue
+ * Validates DR-15 report compliance with
+ * Florida Department of Revenue requirements
  */
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { CheckCircle, XCircle, AlertTriangle, Shield } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export interface ValidationResult {
     isValid: boolean;
@@ -28,41 +29,43 @@ export const DORComplianceChecklist: React.FC<DORComplianceChecklistProps> = ({
     fein,
     totalTax
 }) => {
-    // Definir checks individuales
+    const { t } = useLocale();
+
+    // Individual checks
     const checks = [
         {
             id: 'period',
-            label: 'Período válido seleccionado',
+            label: t('dr15.compliance.validPeriod'),
             passed: !!period && period.length > 0,
             critical: true
         },
         {
             id: 'fein',
-            label: 'FEIN de la empresa registrado',
+            label: t('dr15.compliance.feinRegistered'),
             passed: !!fein && fein.length > 0,
             critical: true
         },
         {
             id: 'totals',
-            label: 'Totales de impuestos calculados',
+            label: t('dr15.compliance.taxCalculated'),
             passed: totalTax > 0,
             critical: true
         },
         {
             id: 'validation',
-            label: 'Validación matemática correcta',
+            label: t('dr15.compliance.mathValidation'),
             passed: validation.isValid,
             critical: true
         },
         {
             id: 'errors',
-            label: 'Sin errores críticos detectados',
+            label: t('dr15.compliance.noCriticalErrors'),
             passed: validation.errors.length === 0,
             critical: true
         },
         {
             id: 'warnings',
-            label: 'Sin advertencias pendientes',
+            label: t('dr15.compliance.noWarnings'),
             passed: validation.warnings.length === 0,
             critical: false
         }
@@ -80,16 +83,16 @@ export const DORComplianceChecklist: React.FC<DORComplianceChecklistProps> = ({
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Shield className={`w-6 h-6 ${allCriticalPassed ? 'text-green-400' : 'text-red-400'}`} />
-                    Validación de Cumplimiento DOR
+                    {t('dr15.compliance.title')}
                 </CardTitle>
                 <p className="text-sm text-slate-500">
-                    {passedChecks} de {totalChecks} verificaciones completadas
-                    {!allCriticalPassed && ' - Requiere atención'}
+                    {t('dr15.compliance.checksCompleted', { passed: passedChecks, total: totalChecks })}
+                    {!allCriticalPassed && ` - ${t('dr15.compliance.requiresAttention')}`}
                 </p>
             </CardHeader>
 
             <CardContent className="space-y-4">
-                {/* Barra de progreso */}
+                {/* Progress bar */}
                 <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
                     <div
                         className={`h-full transition-all duration-500 ${allCriticalPassed ? 'bg-green-500' : 'bg-yellow-500'
@@ -98,7 +101,7 @@ export const DORComplianceChecklist: React.FC<DORComplianceChecklistProps> = ({
                     />
                 </div>
 
-                {/* Lista de checks */}
+                {/* Check list */}
                 <div className="space-y-2">
                     {checks.map(check => (
                         <div
@@ -118,26 +121,26 @@ export const DORComplianceChecklist: React.FC<DORComplianceChecklistProps> = ({
                                 </p>
                                 {check.critical && !check.passed && (
                                     <p className="text-xs text-red-400 mt-1">
-                                        ⚠️ Requisito crítico - Debe corregirse antes de enviar
+                                        ⚠️ {t('dr15.compliance.criticalRequirement')}
                                     </p>
                                 )}
                             </div>
 
                             {check.critical && (
                                 <span className="text-xs bg-red-600 text-white px-2 py-1 rounded">
-                                    CRÍTICO
+                                    {t('dr15.compliance.critical')}
                                 </span>
                             )}
                         </div>
                     ))}
                 </div>
 
-                {/* Errores */}
+                {/* Errors */}
                 {validation.errors.length > 0 && (
                     <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <XCircle className="w-5 h-5 text-red-400" />
-                            <h4 className="font-semibold text-red-300">Errores Críticos</h4>
+                            <h4 className="font-semibold text-red-300">{t('dr15.compliance.criticalErrors')}</h4>
                         </div>
                         <ul className="list-disc list-inside space-y-1 text-sm text-red-200">
                             {validation.errors.map((error, index) => (
@@ -147,12 +150,12 @@ export const DORComplianceChecklist: React.FC<DORComplianceChecklistProps> = ({
                     </div>
                 )}
 
-                {/* Advertencias */}
+                {/* Warnings */}
                 {validation.warnings.length > 0 && (
                     <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <AlertTriangle className="w-5 h-5 text-yellow-400" />
-                            <h4 className="font-semibold text-yellow-300">Advertencias</h4>
+                            <h4 className="font-semibold text-yellow-300">{t('dr15.compliance.warnings')}</h4>
                         </div>
                         <ul className="list-disc list-inside space-y-1 text-sm text-yellow-200">
                             {validation.warnings.map((warning, index) => (
@@ -162,13 +165,13 @@ export const DORComplianceChecklist: React.FC<DORComplianceChecklistProps> = ({
                     </div>
                 )}
 
-                {/* Estado final */}
+                {/* Final status */}
                 {allCriticalPassed && validation.errors.length === 0 && (
                     <div className="bg-green-900/30 border border-green-700 rounded-lg p-4">
                         <div className="flex items-center gap-2">
                             <CheckCircle className="w-5 h-5 text-green-400" />
                             <p className="text-green-300 font-medium">
-                                ✅ Reporte listo para generar y enviar al DOR
+                                ✅ {t('dr15.compliance.readyToSubmit')}
                             </p>
                         </div>
                     </div>

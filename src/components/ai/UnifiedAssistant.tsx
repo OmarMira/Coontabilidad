@@ -24,6 +24,7 @@ import {
 import { AIFactory, AIResponse } from '../../services/ai/AIFactory';
 import { SYSTEM_GUIDES, QUICK_OPERATIONS } from '../../knowledge/SystemKnowledge';
 import { logger } from '../../core/logging/SystemLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 type AssistantMode = 'dashboard' | 'chat' | 'guide';
 
@@ -70,6 +71,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
     auditStatus,
     complianceMetrics
 }) => {
+    const { t } = useLocale();
     const [mode, setMode] = useState<AssistantMode>(initialMode);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
@@ -139,7 +141,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
             const errorMessage: Message = {
                 id: Date.now() + 1,
                 role: 'assistant',
-                content: `⚠️ Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+                content: `⚠️ Error: ${error instanceof Error ? error.message : t('aiAssistant.proposals.rejectError', { error: 'Unknown' })}`,
                 timestamp: new Date(),
                 type: 'error'
             };
@@ -169,12 +171,12 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
 
     const formatGuide = (guide: { title: string; steps: string[]; tips?: string[] }) => {
         let content = `📖 **${guide.title}**\n\n`;
-        content += `**Pasos:**\n`;
+        content += `**${t('aiAssistant.steps')}:**\n`;
         guide.steps.forEach((step, index) => {
             content += `${index + 1}. ${step}\n`;
         });
         if (guide.tips && guide.tips.length > 0) {
-            content += `\n💡 **Tips:**\n`;
+            content += `\n💡 **${t('aiAssistant.tips')}:**\n`;
             guide.tips.forEach(tip => {
                 content += `• ${tip}\n`;
             });
@@ -202,8 +204,8 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                             <Brain className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black tracking-tight text-white">Asistente Financiero IA</h2>
-                            <p className="text-sm text-slate-500">Solo lectura • Procesamiento local</p>
+                            <h2 className="text-xl font-black tracking-tight text-white">{t('aiAssistant.title')}</h2>
+                            <p className="text-sm text-slate-500">{t('aiAssistant.readOnly')}</p>
                         </div>
                     </div>
 
@@ -215,7 +217,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                 }`}
                         >
                             <BarChart3 className="w-4 h-4" />
-                            <span className="text-sm">Dashboard</span>
+                            <span className="text-sm">{t('aiAssistant.dashboard')}</span>
                         </button>
                         <button
                             onClick={() => setMode('chat')}
@@ -223,7 +225,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                 }`}
                         >
                             <MessageSquare className="w-4 h-4" />
-                            <span className="text-sm">Chat</span>
+                            <span className="text-sm">{t('aiAssistant.chat')}</span>
                         </button>
                         <button
                             onClick={() => setMode('guide')}
@@ -231,7 +233,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                 }`}
                         >
                             <BookOpen className="w-4 h-4" />
-                            <span className="text-sm">Guías</span>
+                            <span className="text-sm">{t('aiAssistant.guides')}</span>
                         </button>
                     </div>
 
@@ -249,19 +251,19 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                             {/* Real-time System Metrics */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="bg-white/10 p-4 rounded-xl border border-white/10">
-                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Clientes</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">{t('common.customers')}</p>
                                     <p className="text-2xl font-black tracking-tight text-white">{stats?.customers || 0}</p>
                                 </div>
                                 <div className="bg-white/10 p-4 rounded-xl border border-white/10">
-                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Ingresos</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">{t('common.revenue')}</p>
                                     <p className="text-2xl font-black tracking-tight text-green-400">${stats?.revenue.toLocaleString() || 0}</p>
                                 </div>
                                 <div className="bg-white/10 p-4 rounded-xl border border-white/10">
-                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Gastos</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">{t('common.expenses')}</p>
                                     <p className="text-2xl font-black tracking-tight text-red-400">${stats?.expenses.toLocaleString() || 0}</p>
                                 </div>
                                 <div className="bg-white/10 p-4 rounded-xl border border-white/10">
-                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">Salud Audit</p>
+                                    <p className="text-xs text-slate-500 uppercase font-bold mb-1">{t('aiAssistant.auditHealth')}</p>
                                     <p className={`text-2xl font-black tracking-tight ${auditStatus?.healthy ? 'text-blue-400' : 'text-yellow-400'}`}>
                                         {auditStatus?.integrityScore || 0}%
                                     </p>
@@ -270,8 +272,8 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
 
                             <div className="flex justify-between items-center bg-white/10/50 p-4 rounded-xl border border-white/10">
                                 <div>
-                                    <h3 className="text-lg font-semibold text-white">Análisis Financiero IA</h3>
-                                    <p className="text-xs text-slate-500">Última auditoría: {auditStatus?.lastEvent ? new Date(auditStatus.lastEvent).toLocaleTimeString() : 'N/A'}</p>
+                                    <h3 className="text-lg font-semibold text-white">{t('aiAssistant.analysisTitle')}</h3>
+                                    <p className="text-xs text-slate-500">{t('aiAssistant.lastAudit')}: {auditStatus?.lastEvent ? new Date(auditStatus.lastEvent).toLocaleTimeString() : 'N/A'}</p>
                                 </div>
                                 <button
                                     onClick={loadDashboardAnalysis}
@@ -279,7 +281,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                     className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                                 >
                                     <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                                    <span>Actualizar Análisis</span>
+                                    <span>{t('aiAssistant.updateAnalysis')}</span>
                                 </button>
                             </div>
 
@@ -293,7 +295,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                     <div className="bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-lg">
                                         <h4 className="font-semibold text-white mb-3 flex items-center">
                                             <AlertCircle className="w-5 h-5 mr-2 text-red-400" />
-                                            Alertas
+                                            {t('aiAssistant.proposals.title')}
                                         </h4>
                                         <div className="space-y-2">
                                             {(analysis.alerts || []).map((alert, i) => (
@@ -306,7 +308,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                     <div className="bg-green-900/20 border-l-4 border-green-500 p-4 rounded-r-lg">
                                         <h4 className="font-semibold text-white mb-3 flex items-center">
                                             <ChevronRight className="w-5 h-5 mr-2 text-green-400" />
-                                            Acciones Recomendadas
+                                            {t('aiAssistant.recommendedActions')}
                                         </h4>
                                         <div className="space-y-2">
                                             {(analysis.actions || []).map((action, i) => (
@@ -319,13 +321,13 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                     <div className="md:col-span-2 bg-purple-900/20 border-l-4 border-purple-500 p-4 rounded-r-lg">
                                         <h4 className="font-semibold text-white mb-3 flex items-center">
                                             <Search className="w-5 h-5 mr-2 text-purple-400" />
-                                            Análisis Detallado
+                                            {t('aiAssistant.detailedAnalysis')}
                                         </h4>
                                         <p className="text-sm text-white whitespace-pre-line">{analysis.content}</p>
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-slate-500 text-center py-8">No hay datos de análisis</p>
+                                <p className="text-slate-500 text-center py-8">{t('common.noRecords')}</p>
                             )}
                         </div>
                     )}
@@ -338,8 +340,8 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                 {messages.length === 0 && (
                                     <div className="text-center py-8">
                                         <Brain className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                                        <h3 className="text-lg font-black tracking-tight text-white mb-2">¿En qué puedo ayudarte?</h3>
-                                        <p className="text-slate-500 text-sm mb-6">Puedo analizar datos financieros, inventario, impuestos y más</p>
+                                        <h3 className="text-lg font-black tracking-tight text-white mb-2">{t('aiAssistant.howCanIHelp')}</h3>
+                                        <p className="text-slate-500 text-sm mb-6">{t('aiAssistant.capabilities')}</p>
 
                                         {/* Quick Questions */}
                                         <div className="flex flex-wrap justify-center gap-2">
@@ -396,7 +398,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyPress={handleKeyPress}
-                                        placeholder="Escribe tu pregunta..."
+                                        placeholder={t('aiAssistant.placeholder')}
                                         className="flex-1 bg-white/10 text-white px-4 py-3 rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                     <button
@@ -414,7 +416,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                     {/* GUIDE MODE */}
                     {mode === 'guide' && (
                         <div className="h-full overflow-y-auto p-6">
-                            <h3 className="text-lg font-semibold text-white mb-6">Guías del Sistema</h3>
+                            <h3 className="text-lg font-semibold text-white mb-6">{t('aiAssistant.systemGuides')}</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {Object.entries(SYSTEM_GUIDES).map(([key, guide]: [string, { title: string; steps: string[] }]) => (
@@ -437,7 +439,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                             </div>
 
                             {/* Quick Operations */}
-                            <h3 className="text-lg font-semibold text-white mt-8 mb-4">Operaciones Rápidas</h3>
+                            <h3 className="text-lg font-semibold text-white mt-8 mb-4">{t('aiAssistant.quickOperations')}</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {QUICK_OPERATIONS.map((op: { label: string; guide: string }, i: number) => (
                                     <button
@@ -457,7 +459,7 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
                 {/* Footer */}
                 <div className="p-3 border-t border-white/10 text-center">
                     <p className="text-xs text-slate-600">
-                        🔒 Acceso exclusivo a vistas _summary • No modifica datos • Procesamiento 100% local
+                        {t('aiAssistant.footerDisclaimer')}
                     </p>
                 </div>
             </div>

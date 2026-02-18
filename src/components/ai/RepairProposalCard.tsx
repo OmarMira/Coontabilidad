@@ -4,6 +4,7 @@ import {
     RepairSeverity
 } from '../../types/ai-repair';
 import { ProductionLogger } from '../../core/logging/ProductionLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 interface RepairProposalCardProps {
     proposal: RepairProposal;
@@ -20,6 +21,7 @@ export function RepairProposalCard({
     onApprove,
     onReject
 }: RepairProposalCardProps) {
+    const { t } = useLocale();
     const [isProcessing, setIsProcessing] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -32,7 +34,7 @@ export function RepairProposalCard({
             });
         } catch (error) {
             ProductionLogger.error('RepairProposalCard', 'Failed to approve proposal', error as Error);
-            alert(`Error al aprobar: ${(error as Error).message}`);
+            alert(t('aiAssistant.proposals.approveError', { error: (error as Error).message }));
         } finally {
             setIsProcessing(false);
         }
@@ -67,10 +69,10 @@ export function RepairProposalCard({
     };
 
     const severityLabels: Record<RepairSeverity, string> = {
-        low: 'Baja',
-        medium: 'Media',
-        high: 'Alta',
-        critical: 'Crítica'
+        low: t('aiAssistant.repair.severityLabel.low'),
+        medium: t('aiAssistant.repair.severityLabel.medium'),
+        high: t('aiAssistant.repair.severityLabel.high'),
+        critical: t('aiAssistant.repair.severityLabel.critical')
     };
 
     return (
@@ -82,8 +84,8 @@ export function RepairProposalCard({
                     <div>
                         <h3 className="font-bold text-lg">{proposal.issue.title}</h3>
                         <p className="text-sm text-slate-700">
-                            Severidad: {severityLabels[proposal.severity]} •
-                            Confianza: {(proposal.confidence * 100).toFixed(0)}%
+                            {t('aiAssistant.repair.severity')}: {severityLabels[proposal.severity]} •
+                            {t('aiAssistant.repair.confidence')}: {(proposal.confidence * 100).toFixed(0)}%
                         </p>
                     </div>
                 </div>
@@ -97,7 +99,7 @@ export function RepairProposalCard({
                 <p className="text-gray-700">{proposal.issue.description}</p>
                 {proposal.issue.affectedEntities.length > 0 && (
                     <div className="mt-2">
-                        <span className="text-sm font-semibold">Entidades afectadas:</span>
+                        <span className="text-sm font-semibold">{t('aiAssistant.repair.affectedEntities')}:</span>
                         <div className="flex flex-wrap gap-2 mt-1">
                             {proposal.issue.affectedEntities.map((entity, idx) => (
                                 <span
@@ -119,10 +121,10 @@ export function RepairProposalCard({
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
                     <h4 className="font-semibold text-green-700">
-                        💡 Solución Propuesta
+                        {t('aiAssistant.repair.solutionTitle')}
                     </h4>
                     <span className="text-sm text-slate-600">
-                        {isExpanded ? '▼' : '►'} Ver detalles
+                        {isExpanded ? '▼' : '►'} {t('aiAssistant.repair.viewDetails')}
                     </span>
                 </div>
                 <p className="text-sm text-gray-700 mt-1">{proposal.solution.summary}</p>
@@ -139,7 +141,7 @@ export function RepairProposalCard({
             {proposal.risks.length > 0 && (
                 <div className="mb-3 bg-yellow-100 border border-yellow-300 rounded p-2">
                     <div className="font-semibold text-sm text-yellow-800 mb-1">
-                        ⚠️ Advertencias:
+                        {t('aiAssistant.repair.warnings')}:
                     </div>
                     <ul className="text-sm text-yellow-900 list-disc list-inside">
                         {proposal.risks.map((risk, idx) => (
@@ -152,9 +154,9 @@ export function RepairProposalCard({
             {/* Metadata */}
             <div className="text-xs text-slate-700 mb-3">
                 <div className="flex gap-4">
-                    <span>Acciones: {proposal.solution.actions.length}</span>
-                    <span>Registros afectados: ~{proposal.affectedRecords}</span>
-                    <span>Duración estimada: {(proposal.solution.estimatedDuration / 1000).toFixed(1)}s</span>
+                    <span>{t('aiAssistant.repair.actionsCount')}: {proposal.solution.actions.length}</span>
+                    <span>{t('aiAssistant.repair.affectedRecords')}: ~{proposal.affectedRecords}</span>
+                    <span>{t('aiAssistant.repair.estimatedDuration')}: {(proposal.solution.estimatedDuration / 1000).toFixed(1)}s</span>
                 </div>
             </div>
 
@@ -166,14 +168,14 @@ export function RepairProposalCard({
                         disabled={isProcessing}
                         className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isProcessing ? 'Procesando...' : 'Rechazar'}
+                        {isProcessing ? t('common.processing') : t('aiAssistant.reject')}
                     </button>
                     <button
                         onClick={handleApprove}
                         disabled={isProcessing}
                         className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isProcessing ? 'Ejecutando...' : '✓ Aprobar y Ejecutar'}
+                        {isProcessing ? t('aiAssistant.executing') : t('aiAssistant.approveAndExecute')}
                     </button>
                 </div>
             )}
@@ -189,6 +191,7 @@ export function RepairProposalCard({
 }
 
 function StatusBadge({ status }: { status: RepairProposal['status'] }) {
+    const { t } = useLocale();
     const styles: Record<typeof status, string> = {
         pending: 'bg-gray-200 text-gray-700',
         approved: 'bg-blue-200 text-blue-800',
@@ -199,12 +202,12 @@ function StatusBadge({ status }: { status: RepairProposal['status'] }) {
     };
 
     const labels: Record<typeof status, string> = {
-        pending: 'Pendiente',
-        approved: 'Aprobado',
-        rejected: 'Rechazado',
-        executed: 'Ejecutado',
-        failed: 'Fallido',
-        rolled_back: 'Revertido'
+        pending: t('aiAssistant.repair.statusLabel.pending'),
+        approved: t('aiAssistant.repair.statusLabel.approved'),
+        rejected: t('aiAssistant.repair.statusLabel.rejected'),
+        executed: t('aiAssistant.repair.statusLabel.executed'),
+        failed: t('aiAssistant.repair.statusLabel.failed'),
+        rolled_back: t('aiAssistant.repair.statusLabel.rolled_back')
     };
 
     return (

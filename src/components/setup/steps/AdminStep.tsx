@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 interface AdminStepProps {
   data: any;
@@ -7,6 +8,7 @@ interface AdminStepProps {
 }
 
 export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
+  const { t } = useLocale();
   const [formData, setFormData] = useState({
     username: data.username || '',
     email: data.email || '',
@@ -38,27 +40,27 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.username || formData.username.length < 3) {
-      newErrors.username = 'El usuario debe tener al menos 3 caracteres';
+      newErrors.username = t('setup.admin.validation.usernameMin');
     }
 
     if (!formData.email || !formData.email.includes('@')) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = t('setup.admin.validation.invalidEmail');
     }
 
     if (!formData.fullName || formData.fullName.length < 2) {
-      newErrors.fullName = 'El nombre completo es requerido';
+      newErrors.fullName = t('setup.admin.validation.fullNameRequired');
     }
 
     if (!formData.displayName || formData.displayName.length < 2) {
-      newErrors.displayName = 'El nombre para mostrar es requerido';
+      newErrors.displayName = t('setup.admin.validation.displayNameRequired');
     }
 
     if (!formData.password || formData.password.length < 12) {
-      newErrors.password = 'La contraseña debe tener al menos 12 caracteres (NIST SP 800-63B)';
+      newErrors.password = t('setup.admin.validation.passwordMin');
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
+      newErrors.confirmPassword = t('setup.admin.validation.passwordMismatch');
     }
 
     setErrors(newErrors);
@@ -85,23 +87,23 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
   };
 
   const getStrengthText = () => {
-    if (passwordStrength < 40) return 'Débil';
-    if (passwordStrength < 70) return 'Media';
-    return 'Fuerte';
+    if (passwordStrength < 40) return t('setup.admin.strengthWeak');
+    if (passwordStrength < 70) return t('setup.admin.strengthMedium');
+    return t('setup.admin.strengthStrong');
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-black tracking-tight text-white mb-2">Crear Administrador</h2>
-        <p className="text-blue-200 text-sm">Este será el usuario principal del sistema</p>
+        <h2 className="text-2xl font-black tracking-tight text-white mb-2">{t('setup.admin.title')}</h2>
+        <p className="text-blue-200 text-sm">{t('setup.admin.subtitle')}</p>
       </div>
 
       {/* Username */}
       <div>
         <label className="text-white text-sm font-bold flex items-center gap-2 mb-2">
           <User className="w-4 h-4" />
-          Nombre de Usuario
+          {t('setup.admin.username')}
         </label>
         <input
           type="text"
@@ -129,7 +131,7 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="admin@empresa.com"
+          placeholder="admin@company.com"
         />
         {errors.email && (
           <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
@@ -141,13 +143,13 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
 
       {/* Full Name */}
       <div>
-        <label className="text-white text-sm font-bold mb-2 block">Nombre Completo</label>
+        <label className="text-white text-sm font-bold mb-2 block">{t('setup.admin.fullName')}</label>
         <input
           type="text"
           value={formData.fullName}
           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Juan Pérez"
+          placeholder="John Doe"
         />
         {errors.fullName && (
           <p className="text-red-400 text-xs mt-1">{errors.fullName}</p>
@@ -156,13 +158,13 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
 
       {/* Display Name */}
       <div>
-        <label className="text-white text-sm font-bold mb-2 block">Nombre para Mostrar</label>
+        <label className="text-white text-sm font-bold mb-2 block">{t('setup.admin.displayName')}</label>
         <input
           type="text"
           value={formData.displayName}
           onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Juan"
+          placeholder="John"
         />
         {errors.displayName && (
           <p className="text-red-400 text-xs mt-1">{errors.displayName}</p>
@@ -173,19 +175,19 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
       <div>
         <label className="text-white text-sm font-bold flex items-center gap-2 mb-2">
           <Lock className="w-4 h-4" />
-          Contraseña
+          {t('setup.admin.password')}
         </label>
         <input
           type="password"
           value={formData.password}
           onChange={(e) => handlePasswordChange(e.target.value)}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Mínimo 12 caracteres"
+          placeholder={t('setup.admin.placeholders.password')}
         />
         {formData.password && (
           <div className="mt-2">
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-white/60">Fortaleza:</span>
+              <span className="text-white/60">{t('setup.admin.strength')}:</span>
               <span className={`font-bold ${passwordStrength >= 70 ? 'text-green-400' : passwordStrength >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
                 {getStrengthText()}
               </span>
@@ -205,13 +207,13 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
 
       {/* Confirm Password */}
       <div>
-        <label className="text-white text-sm font-bold mb-2 block">Confirmar Contraseña</label>
+        <label className="text-white text-sm font-bold mb-2 block">{t('setup.admin.confirmPassword')}</label>
         <input
           type="password"
           value={formData.confirmPassword}
           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Repetir contraseña"
+          placeholder={t('setup.admin.placeholders.confirmPassword')}
         />
         {errors.confirmPassword && (
           <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>
@@ -219,7 +221,7 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
         {formData.password && formData.confirmPassword && formData.password === formData.confirmPassword && (
           <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3" />
-            Las contraseñas coinciden
+            {t('setup.admin.passwordsMatch')}
           </p>
         )}
       </div>
@@ -228,7 +230,7 @@ export const AdminStep: React.FC<AdminStepProps> = ({ data, onNext }) => {
         type="submit"
         className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-6"
       >
-        Continuar
+        {t('setup.continue')}
         <ArrowRight className="w-5 h-5" />
       </button>
     </form>

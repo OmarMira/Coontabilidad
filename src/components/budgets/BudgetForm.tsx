@@ -12,6 +12,7 @@ import {
   type BudgetLine
 } from '@/database/simple-db';
 import { BudgetLineEditor } from './BudgetLineEditor';
+import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetFormProps {
   budget: Budget | null;
@@ -20,6 +21,7 @@ interface BudgetFormProps {
 }
 
 export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel }) => {
+  const { t } = useLocale();
   const isEditing = !!budget;
 
   // Form state
@@ -54,32 +56,32 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
     const errors: string[] = [];
 
     if (!budgetName.trim()) {
-      errors.push('El nombre del presupuesto es requerido');
+      errors.push(t('budgets.validation.nameRequired'));
     }
 
     if (!startDate) {
-      errors.push('La fecha de inicio es requerida');
+      errors.push(t('budgets.validation.startDateRequired'));
     }
 
     if (!endDate) {
-      errors.push('La fecha de fin es requerida');
+      errors.push(t('budgets.validation.endDateRequired'));
     }
 
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      errors.push('La fecha de fin debe ser posterior a la fecha de inicio');
+      errors.push(t('budgets.validation.endDateAfterStartDate'));
     }
 
     if (lines.length === 0) {
-      errors.push('Debe agregar al menos una línea de presupuesto');
+      errors.push(t('budgets.validation.linesRequired'));
     }
 
     // Validate lines
     lines.forEach((line, index) => {
       if (!line.account_number) {
-        errors.push(`Línea ${index + 1}: Debe seleccionar una cuenta`);
+        errors.push(t('budgets.validation.lineAccountRequired', { index: index + 1 }));
       }
       if (!line.annual_amount || line.annual_amount <= 0) {
-        errors.push(`Línea ${index + 1}: El monto debe ser mayor a 0`);
+        errors.push(t('budgets.validation.lineAmountPositive', { index: index + 1 }));
       }
     });
 
@@ -126,7 +128,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
       onSave();
     } catch (err) {
       console.error('Error saving budget:', err);
-      setError(err instanceof Error ? err.message : 'Error al guardar presupuesto');
+      setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -137,7 +139,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
       {/* Header Information */}
       <Card className="bg-slate-900 border-slate-800 text-white">
         <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}</CardTitle>
+          <CardTitle>{isEditing ? t('budgets.editBudget') : t('budgets.newBudget')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Validation Errors */}
@@ -166,13 +168,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
             {/* Budget Name */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Nombre del Presupuesto *
+                {t('budgets.budgetName')} *
               </label>
               <Input
                 type="text"
                 value={budgetName}
                 onChange={(e) => setBudgetName(e.target.value)}
-                placeholder="Ej: Presupuesto Operativo 2026"
+                placeholder={t('budgets.placeholders.budgetName')}
                 required
                 className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
@@ -181,7 +183,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
             {/* Start Date */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Fecha de Inicio *
+                {t('budgets.startDate')} *
               </label>
               <Input
                 type="date"
@@ -195,7 +197,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
             {/* End Date */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Fecha de Fin *
+                {t('budgets.endDate')} *
               </label>
               <Input
                 type="date"
@@ -209,7 +211,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
             {/* Fiscal Year (auto-calculated) */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Año Fiscal
+                {t('budgets.fiscalYear')}
               </label>
               <Input
                 type="number"
@@ -222,13 +224,13 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
             {/* Department */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Departamento
+                {t('budgets.department')}
               </label>
               <Input
                 type="text"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                placeholder="Ej: Ventas, Operaciones"
+                placeholder={t('budgets.placeholders.department')}
                 className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
@@ -236,7 +238,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
             {/* Alert Threshold */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Umbral de Alerta (%)
+                {t('budgets.alertThreshold')}
               </label>
               <Input
                 type="number"
@@ -248,21 +250,21 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
                 className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
               <p className="text-xs text-slate-500 mt-1">
-                Se generará una alerta cuando la varianza exceda este porcentaje
+                {t('budgets.alertThresholdHelp')}
               </p>
             </div>
 
             {/* Notes */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Notas
+                {t('common.notes')}
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-md text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Notas adicionales sobre este presupuesto..."
+                placeholder={t('budgets.placeholders.notes')}
               />
             </div>
           </div>
@@ -286,7 +288,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
           className="text-slate-400 hover:text-white hover:bg-slate-800"
         >
           <X className="h-4 w-4 mr-2" />
-          Cancelar
+          {t('common.cancel')}
         </Button>
         <Button
           type="submit"
@@ -296,12 +298,12 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Guardando...
+              {t('common.saving')}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              {isEditing ? 'Actualizar' : 'Crear'} Presupuesto
+              {isEditing ? t('budgets.updateBudget') : t('budgets.createBudget')}
             </>
           )}
         </Button>

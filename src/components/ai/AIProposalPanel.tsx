@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DraftProposalService } from '../../services/DraftProposalService';
+import { useLocale } from '../../i18n/useLocale';
 
 interface Proposal {
     id: number;
@@ -19,6 +20,7 @@ interface Proposal {
 }
 
 export function AIProposalPanel() {
+    const { t } = useLocale();
     const [proposals, setProposals] = useState<Proposal[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedProposal, setSelectedProposal] = useState<number | null>(null);
@@ -44,25 +46,25 @@ export function AIProposalPanel() {
     };
 
     const handleApprove = async (id: number) => {
-        if (confirm('¿Aprobar esta propuesta de la IA?')) {
+        if (confirm(t('aiAssistant.proposals.approveConfirm'))) {
             try {
                 await DraftProposalService.approveProposal(id);
                 await loadProposals();
-                alert('✅ Propuesta aprobada y ejecutada');
+                alert(t('aiAssistant.proposals.approveSuccess'));
             } catch (error: any) {
-                alert(`❌ Error al aprobar: ${error.message}`);
+                alert(t('aiAssistant.proposals.approveError', { error: error.message }));
             }
         }
     };
 
     const handleReject = async (id: number) => {
-        if (confirm('¿Rechazar esta propuesta?')) {
+        if (confirm(t('aiAssistant.proposals.rejectConfirm'))) {
             try {
                 await DraftProposalService.rejectProposal(id);
                 await loadProposals();
-                alert('❌ Propuesta rechazada');
+                alert(t('aiAssistant.proposals.rejectSuccess'));
             } catch (error: any) {
-                alert(`❌ Error al rechazar: ${error.message}`);
+                alert(t('aiAssistant.proposals.rejectError', { error: error.message }));
             }
         }
     };
@@ -79,7 +81,7 @@ export function AIProposalPanel() {
         return (
             <div style={styles.loadingContainer}>
                 <div style={styles.spinner}></div>
-                <p>Cargando propuestas de la IA...</p>
+                <p>{t('aiAssistant.proposals.loading')}</p>
             </div>
         );
     }
@@ -88,9 +90,9 @@ export function AIProposalPanel() {
         return (
             <div style={styles.emptyState}>
                 <div style={styles.emptyIcon}>🤖</div>
-                <h3 style={styles.emptyTitle}>No hay propuestas pendientes</h3>
+                <h3 style={styles.emptyTitle}>{t('aiAssistant.proposals.emptyTitle')}</h3>
                 <p style={styles.emptyText}>
-                    La IA está monitoreando tu contabilidad y te notificará si detecta anomalías.
+                    {t('aiAssistant.proposals.emptyText')}
                 </p>
             </div>
         );
@@ -100,11 +102,11 @@ export function AIProposalPanel() {
         <div style={styles.container}>
             <div style={styles.header}>
                 <h2 style={styles.title}>
-                    🤖 Propuestas de la IA
+                    🤖 {t('aiAssistant.proposals.title')}
                     <span style={styles.badge}>{proposals.length}</span>
                 </h2>
                 <p style={styles.subtitle}>
-                    La IA ha detectado posibles problemas y propone las siguientes correcciones
+                    {t('aiAssistant.proposals.subtitle')}
                 </p>
             </div>
 
@@ -140,13 +142,13 @@ export function AIProposalPanel() {
                         <div style={styles.proposalReason}>
                             <div style={styles.reasonIcon}>💡</div>
                             <div>
-                                <strong style={styles.reasonLabel}>Razón:</strong>
+                                <strong style={styles.reasonLabel}>{t('aiAssistant.proposals.reason')}:</strong>
                                 <p style={styles.reasonText}>{proposal.ai_proposal_reason}</p>
                             </div>
                         </div>
 
                         <div style={styles.proposalPayload}>
-                            <strong style={styles.payloadLabel}>Cambios propuestos:</strong>
+                            <strong style={styles.payloadLabel}>{t('aiAssistant.proposals.changes')}:</strong>
                             <pre style={styles.payloadCode}>
                                 {JSON.stringify(parsePayload(proposal.payload), null, 2)}
                             </pre>
@@ -160,7 +162,7 @@ export function AIProposalPanel() {
                                     handleApprove(proposal.id);
                                 }}
                             >
-                                ✅ Aprobar
+                                ✅ {t('aiAssistant.apply')}
                             </button>
                             <button
                                 style={{ ...styles.button, ...styles.buttonReject }}
@@ -169,7 +171,7 @@ export function AIProposalPanel() {
                                     handleReject(proposal.id);
                                 }}
                             >
-                                ❌ Rechazar
+                                ❌ {t('aiAssistant.reject')}
                             </button>
                         </div>
                     </div>
@@ -178,7 +180,7 @@ export function AIProposalPanel() {
 
             <div style={styles.footer}>
                 <p style={styles.footerText}>
-                    💡 Tip: Revisa cuidadosamente cada propuesta antes de aprobarla
+                    💡 {t('aiAssistant.proposals.footerTip')}
                 </p>
             </div>
         </div>

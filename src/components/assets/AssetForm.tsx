@@ -6,6 +6,7 @@ import { getFixedAssetsController } from '../../controllers/FixedAssetsControlle
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import type { AssetCategory } from '../../services/accounting/AssetCategoryService';
 import type { AssetPurchaseData, FixedAsset } from '../../services/accounting/FixedAssetService';
+import { useLocale } from '../../i18n/useLocale';
 
 interface AssetFormProps {
     asset: FixedAsset | null;
@@ -15,6 +16,7 @@ interface AssetFormProps {
 }
 
 export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, db }) => {
+    const { t } = useLocale();
     const [categories, setCategories] = useState<AssetCategory[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<AssetCategory | null>(null);
     const [loading, setLoading] = useState(false);
@@ -79,33 +81,33 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
             const cats = await controller.getActiveCategories();
             setCategories(cats);
         } catch (err: any) {
-            setError('Error loading categories: ' + err.message);
+            setError(t('assets.form.errorLoadingCategories') + ': ' + err.message);
         }
     };
 
     const validateForm = (): boolean => {
         if (!formData.asset_name.trim()) {
-            setError('Asset name is required');
+            setError(t('assets.form.nameRequired'));
             return false;
         }
 
         if (!formData.category_id) {
-            setError('Please select a category');
+            setError(t('assets.form.categoryRequired'));
             return false;
         }
 
         if (formData.purchase_cost_dollars <= 0) {
-            setError('Purchase cost must be greater than zero');
+            setError(t('assets.form.costPositive'));
             return false;
         }
 
         if (formData.salvage_value_dollars >= formData.purchase_cost_dollars) {
-            setError('Salvage value must be less than purchase cost');
+            setError(t('assets.form.salvageLessCost'));
             return false;
         }
 
         if (formData.useful_life_months <= 0) {
-            setError('Useful life must be greater than zero');
+            setError(t('assets.form.lifePositive'));
             return false;
         }
 
@@ -146,7 +148,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
 
             onSave();
         } catch (err: any) {
-            setError(err.message || 'Failed to save asset');
+            setError(err.message || t('assets.form.saveError'));
         } finally {
             setLoading(false);
         }
@@ -181,10 +183,10 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                 <div>
                     <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
                         <Building2 className="w-8 h-8 text-indigo-500" />
-                        {isEdit ? 'Edit Fixed Asset' : 'New Fixed Asset'}
+                        {isEdit ? t('assets.editAsset') : t('assets.addAsset')}
                     </h2>
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-                        {isEdit ? `Asset Tag: ${asset.asset_tag}` : 'Purchase & Setup'}
+                        {isEdit ? `${t('assets.reports_ui.tag')}: ${asset.asset_tag}` : t('assets.form.purchaseSetup')}
                     </p>
                 </div>
                 <button
@@ -209,14 +211,14 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                     <CardContent className="p-6 space-y-4">
                         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
                             <Info className="w-5 h-5 text-indigo-400" />
-                            Basic Information
+                            {t('assets.form.basicInfo')}
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Asset Name */}
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Asset Name <span className="text-rose-500">*</span>
+                                    {t('assets.form.assetName')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -224,14 +226,14 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                     value={formData.asset_name}
                                     onChange={(e) => handleChange('asset_name', e.target.value)}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
-                                    placeholder="E.g: Dell Latitude 5520 Laptop"
+                                    placeholder={t('assets.form.assetNamePlaceholder')}
                                 />
                             </div>
 
                             {/* Category */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Category <span className="text-rose-500">*</span>
+                                    {t('assets.form.category')} <span className="text-rose-500">*</span>
                                 </label>
                                 <select
                                     required
@@ -240,17 +242,20 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
                                     disabled={isEdit} // Can't change category after creation
                                 >
-                                    <option value="">Select category</option>
+                                    <option value="">{t('assets.form.selectCategory')}</option>
                                     {categories.map(cat => (
                                         <option key={cat.id} value={cat.id}>
-                                            {cat.name} ({cat.default_useful_life_months / 12} years)
+                                            {cat.name} ({cat.default_useful_life_months / 12} {t('assets.form.years')})
                                         </option>
                                     ))}
                                 </select>
                                 {selectedCategory && !isEdit && (
                                     <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                                         <CheckCircle className="w-3 h-3" />
-                                        Auto-filled: {selectedCategory.default_useful_life_months} months, {selectedCategory.default_depreciation_method.replace('_', ' ')}
+                                        {t('assets.form.autoFilled', {
+                                            months: selectedCategory.default_useful_life_months,
+                                            method: selectedCategory.default_depreciation_method.replace('_', ' ')
+                                        })}
                                     </p>
                                 )}
                             </div>
@@ -258,7 +263,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                             {/* Purchase Date */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Purchase Date <span className="text-rose-500">*</span>
+                                    {t('assets.form.purchaseDate')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
@@ -275,14 +280,14 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                             {/* Description */}
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Description
+                                    {t('common.description')}
                                 </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => handleChange('description', e.target.value)}
                                     rows={2}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none resize-none"
-                                    placeholder="Additional details about the asset..."
+                                    placeholder={t('assets.form.descriptionPlaceholder')}
                                 />
                             </div>
                         </div>
@@ -294,14 +299,14 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                     <CardContent className="p-6 space-y-4">
                         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-emerald-400" />
-                            Financial Details
+                            {t('assets.form.financialInfo')}
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Purchase Cost */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Purchase Cost <span className="text-rose-500">*</span>
+                                    {t('assets.form.purchaseCost')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
@@ -321,7 +326,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                             {/* Salvage Value */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Salvage Value
+                                    {t('assets.form.salvageValue')}
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
@@ -340,7 +345,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                             {/* Useful Life */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Useful Life (Months) <span className="text-rose-500">*</span>
+                                    {t('assets.form.usefulLife')} <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="number"
@@ -352,14 +357,14 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                     placeholder="60"
                                 />
                                 <p className="text-xs text-slate-500 mt-1">
-                                    {formData.useful_life_months > 0 && `≈ ${(formData.useful_life_months / 12).toFixed(1)} years`}
+                                    {formData.useful_life_months > 0 && `≈ ${(formData.useful_life_months / 12).toFixed(1)} ${t('assets.form.years')}`}
                                 </p>
                             </div>
 
                             {/* Depreciation Method */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Depreciation Method
+                                    {t('assets.form.depreciationMethod')}
                                 </label>
                                 <select
                                     value={formData.depreciation_method}
@@ -367,11 +372,11 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
                                     disabled={isEdit && asset?.status !== 'PENDING'} // Locked after activation (IRS compliance)
                                 >
-                                    <option value="STRAIGHT_LINE">Straight-Line (Recommended)</option>
-                                    <option value="DECLINING_BALANCE_200">Declining Balance 200%</option>
+                                    <option value="STRAIGHT_LINE">{t('assets.form.methodStraightLine')}</option>
+                                    <option value="DECLINING_BALANCE_200">{t('assets.form.methodDeclining')}</option>
                                 </select>
                                 {isEdit && asset?.status !== 'PENDING' && (
-                                    <p className="text-xs text-amber-400 mt-1">🔒 Locked (IRS compliance)</p>
+                                    <p className="text-xs text-amber-400 mt-1">🔒 {t('assets.form.lockedIRS')}</p>
                                 )}
                             </div>
 
@@ -379,7 +384,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                             {!isEdit && (
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                        Payment Method
+                                        {t('assets.form.paymentMethod')}
                                     </label>
                                     <div className="flex gap-4">
                                         <label className="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 flex-1">
@@ -390,7 +395,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                                 onChange={(e) => handleChange('payment_method', 'CASH')}
                                                 className="text-indigo-500"
                                             />
-                                            <span className="text-white font-bold">Cash (DR 1000)</span>
+                                            <span className="text-white font-bold">{t('assets.form.paymentCash')}</span>
                                         </label>
                                         <label className="flex items-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-xl cursor-pointer hover:border-indigo-500 flex-1">
                                             <input
@@ -400,7 +405,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                                 onChange={(e) => handleChange('payment_method', 'PAYABLE')}
                                                 className="text-indigo-500"
                                             />
-                                            <span className="text-white font-bold">Accounts Payable (DR 2000)</span>
+                                            <span className="text-white font-bold">{t('assets.form.paymentPayable')}</span>
                                         </label>
                                     </div>
                                 </div>
@@ -412,21 +417,21 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                             <div className="mt-6 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
                                 <div className="flex items-center gap-2 mb-2">
                                     <TrendingDown className="w-4 h-4 text-indigo-400" />
-                                    <h4 className="text-sm font-black text-indigo-300">Depreciation Preview</h4>
+                                    <h4 className="text-sm font-black text-indigo-300">{t('assets.reports_ui.trend')}</h4>
                                 </div>
                                 <div className="grid grid-cols-3 gap-4 text-center">
                                     <div>
-                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Monthly</p>
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.reports_ui.avgMonthly')}</p>
                                         <p className="text-lg font-black text-white">${monthlyDepreciation.toFixed(2)}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Annual</p>
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.reports_ui.projected')}</p>
                                         <p className="text-lg font-black text-white">${(monthlyDepreciation * 12).toFixed(2)}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Method</p>
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.reports_ui.method')}</p>
                                         <p className="text-sm font-bold text-indigo-300">
-                                            {formData.depreciation_method === 'STRAIGHT_LINE' ? 'Linear' : 'Accelerated'}
+                                            {formData.depreciation_method === 'STRAIGHT_LINE' ? t('assets.reports_ui.linear') : t('assets.reports_ui.accelerated')}
                                         </p>
                                     </div>
                                 </div>
@@ -447,9 +452,9 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                     className="mt-1"
                                 />
                                 <div>
-                                    <p className="text-white font-bold">Activate asset immediately</p>
+                                    <p className="text-white font-bold">{t('assets.form.activateImmediately')}</p>
                                     <p className="text-xs text-slate-500 mt-1">
-                                        If checked, depreciation will start next month. Otherwise, asset will remain in PENDING status until manually activated.
+                                        {t('assets.form.activateImmediatelyHint')}
                                     </p>
                                 </div>
                             </label>
@@ -466,7 +471,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                         className="border-slate-800 text-slate-400 hover:text-white px-8 py-6 rounded-2xl font-bold"
                         disabled={loading}
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         type="submit"
@@ -474,7 +479,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                         disabled={loading}
                     >
                         <Save className="w-4 h-4 mr-2" />
-                        {loading ? 'Saving...' : isEdit ? 'Update Asset' : 'Create Asset'}
+                        {loading ? t('common.saving') : isEdit ? t('assets.form.updateBtn') : t('assets.form.createBtn')}
                     </Button>
                 </div>
             </form>

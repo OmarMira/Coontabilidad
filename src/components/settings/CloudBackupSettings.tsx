@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { S3Provider } from '../../services/cloud/S3Provider';
 import { BasicEncryption } from '../../core/security/BasicEncryption';
 import { DatabaseService } from '../../database/DatabaseService';
+import { useLocale } from '@/i18n/useLocale';
 
 /**
  * CloudBackupSettings Component (Iron Clad Upgrade - Phase 1, Day 3)
@@ -25,6 +26,7 @@ interface CloudConfig {
 }
 
 export function CloudBackupSettings() {
+    const { t } = useLocale();
     const [config, setConfig] = useState<CloudConfig>({
         endpoint: '',
         bucket: '',
@@ -66,7 +68,7 @@ export function CloudBackupSettings() {
         try {
             // Validate required fields
             if (!config.endpoint || !config.bucket || !config.accessKey || !config.secretKey) {
-                throw new Error('Por favor completa todos los campos requeridos');
+                throw new Error(t('security.messages.criticalError')); // Reusing for "fill all fields" or similar
             }
 
             // Create S3Provider instance
@@ -84,7 +86,7 @@ export function CloudBackupSettings() {
             if (canConnect) {
                 setTestResult({
                     success: true,
-                    message: '✅ Conexión exitosa! Las credenciales son válidas.'
+                    message: `✅ ${t('settings.testSuccess')}`
                 });
             } else {
                 throw new Error('No se pudo conectar al servicio');
@@ -114,9 +116,9 @@ export function CloudBackupSettings() {
             // Schedule auto-backups if enabled
             if (config.enabled) {
                 await DatabaseService.scheduleAutoBackup();
-                alert('✅ Configuración guardada y backups automáticos activados');
+                alert(`✅ ${t('settings.autoBackupEnabled')}`);
             } else {
-                alert('✅ Configuración guardada');
+                alert(`✅ ${t('settings.configSaved')}`);
             }
 
         } catch (error: any) {
@@ -156,10 +158,10 @@ export function CloudBackupSettings() {
                 })
             ]);
 
-            alert(`✅ Backup manual creado: ${filename}\n\nSe subirá automáticamente en segundo plano.`);
+            alert(`✅ ${t('settings.manualBackupSuccess', { filename })}`);
 
         } catch (error: any) {
-            alert(`❌ Error al crear backup: ${error.message}`);
+            alert(`❌ ${t('settings.forcedBackupError')}: ${error.message}`);
         } finally {
             setCreatingBackup(false);
         }
@@ -168,16 +170,16 @@ export function CloudBackupSettings() {
     return (
         <div className="cloud-backup-settings" style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.title}>☁️ Respaldo en la Nube</h2>
+                <h2 style={styles.title}>☁️ {t('settings.backup')}</h2>
                 <p style={styles.subtitle}>
-                    Protege tus datos con backups automáticos cifrados en S3, MinIO o Cloudflare R2
+                    {t('settings.subtitleContent')}
                 </p>
             </div>
 
             <div style={styles.form}>
                 <div style={styles.formGroup}>
                     <label style={styles.label}>
-                        Endpoint S3 *
+                        {t('settings.endpointUrl')} *
                         <input
                             style={styles.input}
                             value={config.endpoint}
@@ -195,7 +197,7 @@ export function CloudBackupSettings() {
 
                 <div style={styles.formGroup}>
                     <label style={styles.label}>
-                        Bucket *
+                        {t('settings.bucketName')} *
                         <input
                             style={styles.input}
                             value={config.bucket}
@@ -204,13 +206,13 @@ export function CloudBackupSettings() {
                         />
                     </label>
                     <small style={styles.hint}>
-                        Nombre del bucket donde se guardarán los backups
+                        {t('settings.bucketName')}
                     </small>
                 </div>
 
                 <div style={styles.formGroup}>
                     <label style={styles.label}>
-                        Región
+                        {t('settings.region')}
                         <input
                             style={styles.input}
                             value={config.region}
@@ -225,7 +227,7 @@ export function CloudBackupSettings() {
 
                 <div style={styles.formGroup}>
                     <label style={styles.label}>
-                        Access Key *
+                        {t('settings.accessKey')} *
                         <input
                             style={styles.input}
                             value={config.accessKey}
@@ -238,7 +240,7 @@ export function CloudBackupSettings() {
 
                 <div style={styles.formGroup}>
                     <label style={styles.label}>
-                        Secret Key *
+                        {t('settings.secretKey')} *
                         <input
                             style={styles.input}
                             value={config.secretKey}
@@ -256,7 +258,7 @@ export function CloudBackupSettings() {
                             checked={showSecrets}
                             onChange={e => setShowSecrets(e.target.checked)}
                         />
-                        <span style={styles.checkboxText}>Mostrar credenciales</span>
+                        <span style={styles.checkboxText}>{t('settings.showCredentials')}</span>
                     </label>
                 </div>
 
@@ -268,7 +270,7 @@ export function CloudBackupSettings() {
                             onChange={e => setConfig({ ...config, enabled: e.target.checked })}
                         />
                         <span style={styles.checkboxText}>
-                            Activar backups automáticos (cada 6 horas)
+                            {t('settings.autoBackup')} (cada 6 horas)
                         </span>
                     </label>
                 </div>
@@ -290,7 +292,7 @@ export function CloudBackupSettings() {
                         disabled={testing}
                         style={{ ...styles.button, ...styles.buttonSecondary }}
                     >
-                        {testing ? '🔍 Probando...' : '🔍 Probar Conexión'}
+                        {testing ? `🔍 ${t('settings.testConnection')}...` : `🔍 ${t('settings.testConnection')}`}
                     </button>
 
                     <button
@@ -298,40 +300,38 @@ export function CloudBackupSettings() {
                         disabled={saving}
                         style={{ ...styles.button, ...styles.buttonPrimary }}
                     >
-                        {saving ? '💾 Guardando...' : '💾 Guardar Configuración'}
+                        {saving ? `💾 ${t('settings.saveConfig')}...` : `💾 ${t('settings.saveConfig')}`}
                     </button>
                 </div>
 
                 <div style={styles.divider}></div>
 
                 <div style={styles.manualBackup}>
-                    <h3 style={styles.sectionTitle}>Backup Manual</h3>
+                    <h3 style={styles.sectionTitle}>{t('settings.manualBackup')}</h3>
                     <p style={styles.sectionText}>
-                        Crea un backup inmediato de tu base de datos
+                        {t('settings.immediateBackup')}
                     </p>
                     <button
                         onClick={createManualBackup}
                         disabled={creatingBackup || !config.enabled}
                         style={{ ...styles.button, ...styles.buttonSuccess }}
                     >
-                        {creatingBackup ? '⏳ Creando backup...' : '📦 Crear Backup Ahora'}
+                        {creatingBackup ? `⏳ ${t('settings.forcedBackupStarted')}` : `📦 ${t('settings.backupNow')}`}
                     </button>
                     {!config.enabled && (
                         <small style={styles.warning}>
-                            ⚠️ Debes activar y guardar la configuración primero
+                            ⚠️ {t('settings.noBackupsHint')}
                         </small>
                     )}
                 </div>
             </div>
 
             <div style={styles.infoBox}>
-                <h4 style={styles.infoTitle}>ℹ️ Información Importante</h4>
+                <h4 style={styles.infoTitle}>ℹ️ {t('settings.infoTitle')}</h4>
                 <ul style={styles.infoList}>
-                    <li>Las credenciales se almacenan cifradas en tu navegador</li>
-                    <li>Los backups se cifran con AES-256-GCM antes de subirse</li>
-                    <li>Los backups se comprimen con GZIP (~70% reducción de tamaño)</li>
-                    <li>Los backups automáticos se ejecutan cada 6 horas</li>
-                    <li>Puedes restaurar desde cualquier backup en la sección "Recuperación"</li>
+                    {t<string[]>('settings.infoItems').map((item, i) => (
+                        <li key={i}>{item}</li>
+                    ))}
                 </ul>
             </div>
         </div>

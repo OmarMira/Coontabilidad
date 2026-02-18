@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input'; // Assuming existence or standard HTML
 import { Label } from '@/components/ui/label'; // Assuming existence or standard HTML
 import { ClipboardEdit, Save, X } from 'lucide-react';
+import { useLocale } from '@/i18n/useLocale';
 
 export const InventoryAdjustments: React.FC = () => {
+    const { t } = useLocale();
     const [reason, setReason] = useState('');
     const [sku, setSku] = useState('');
     const [diff, setDiff] = useState(0);
@@ -15,37 +17,37 @@ export const InventoryAdjustments: React.FC = () => {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <ClipboardEdit className="w-5 h-5 text-orange-400" />
-                    Nuevo Ajuste de Inventario
+                    {t('inv.adjustments.title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-1">
-                    <Label className="text-slate-500">Motivo del Ajuste</Label>
+                    <Label className="text-slate-500">{t('inv.adjustments.adjustmentReason')}</Label>
                     <select
                         className="w-full bg-white/10 border-white/10 rounded p-2 text-white"
                         value={reason}
                         onChange={e => setReason(e.target.value)}
                     >
-                        <option value="">Seleccione...</option>
-                        <option value="damage">Mercancía Dañada</option>
-                        <option value="theft">Robo / Pérdida</option>
-                        <option value="count">Conteo Cíclico / Diferencia Física</option>
-                        <option value="expired">Producto Vencido</option>
+                        <option value="">{t('inv.adjustments.selectOption')}</option>
+                        <option value="damage">{t('inv.adjustments.damagedGoods')}</option>
+                        <option value="theft">{t('inv.adjustments.theftLoss')}</option>
+                        <option value="count">{t('inv.adjustments.cyclicCount')}</option>
+                        <option value="expired">{t('inv.adjustments.expiredProduct')}</option>
                     </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <Label className="text-slate-500">SKU / Producto</Label>
+                        <Label className="text-slate-500">{t('inv.adjustments.skuProduct')}</Label>
                         <input
-                            placeholder="Buscar producto..."
+                            placeholder={t('inv.adjustments.searchProduct')}
                             className="w-full bg-white/10 border-white/10 rounded p-2 text-white"
                             value={sku}
                             onChange={e => setSku(e.target.value)}
                         />
                     </div>
                     <div className="space-y-1">
-                        <Label className="text-slate-500">Diferencia (+/-)</Label>
+                        <Label className="text-slate-500">{t('inv.adjustments.difference')}</Label>
                         <input
                             type="number"
                             className="w-full bg-white/10 border-white/10 rounded p-2 text-white font-mono"
@@ -53,25 +55,25 @@ export const InventoryAdjustments: React.FC = () => {
                             onChange={e => setDiff(Number(e.target.value))}
                         />
                         <p className="text-xs text-slate-600">
-                            Use negativo para reducir stock (pérdida), positivo para añadir (hallazgo).
+                            {t('inv.adjustments.differenceHelp')}
                         </p>
                     </div>
                 </div>
 
                 <div className="bg-orange-900/20 p-3 rounded border border-orange-800/50">
                     <p className="text-xs text-orange-300">
-                        Este ajuste afectará inmediatamente el stock disponible y el valor del inventario. La acción quedará registrada en la auditoría.
+                        {t('inv.adjustments.warningMessage')}
                     </p>
                 </div>
 
                 <div className="flex gap-2 pt-2">
                     <Button className="flex-1 bg-green-600 hover:bg-green-700">
                         <Save className="w-4 h-4 mr-2" />
-                        Guardar Ajuste
+                        {t('inv.adjustments.saveAdjustment')}
                     </Button>
                     <Button variant="ghost" className="flex-1">
                         <X className="w-4 h-4 mr-2" />
-                        Cancelar
+                        {t('inv.adjustments.cancel')}
                     </Button>
                 </div>
             </CardContent>

@@ -5,12 +5,14 @@ import { getBudgetVarianceAnalysis, type BudgetVarianceAnalysis } from '@/databa
 import { Download, Filter } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetVarianceReportProps {
   budgetId: number;
 }
 
 export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budgetId }) => {
+  const { t } = useLocale();
   const [varianceData, setVarianceData] = useState<BudgetVarianceAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<'ALL' | 'OVER_BUDGET' | 'UNDER_BUDGET'>('ALL');
@@ -40,7 +42,14 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
   const totalVariance = filteredData.reduce((acc, item) => acc + item.ytd_variance, 0);
 
   const exportToCSV = () => {
-    const headers = ['Cuenta', 'Nombre', 'Presupuestado (YTD)', 'Real (YTD)', 'Varianza', 'Varianza %'];
+    const headers = [
+      t('budgets.account'),
+      t('budgets.account'),
+      t('budgets.budgetedYTD'),
+      t('budgets.actualYTD'),
+      t('budgets.variance'),
+      t('budgets.variancePercent')
+    ];
     const rows = filteredData.map(item => {
       const row = [
         item.account_number,
@@ -76,21 +85,28 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
 
     // Título del reporte
     doc.setFontSize(18);
-    doc.text('Reporte de Varianza Presupuestaria', 14, 22);
+    doc.text(t('budgets.reports.title'), 14, 22);
 
     // Fecha de generación
     doc.setFontSize(11);
     doc.setTextColor(100);
-    const date = new Date().toLocaleDateString('es-ES');
-    doc.text('Generado: ' + date, 14, 30);
+    const date = new Date().toLocaleDateString(t('common.localeCode') === 'es' ? 'es-ES' : 'en-US');
+    doc.text(t('budgets.reports.generated') + ' ' + date, 14, 30);
 
     // Resumen
     doc.setFontSize(12);
     doc.setTextColor(0);
-    doc.text('Total Varianza: $' + (totalVariance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }), 14, 40);
+    doc.text(t('budgets.reports.totalVariance') + ' $' + (totalVariance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 }), 14, 40);
 
     // Tabla de datos
-    const tableColumn = ["Cuenta", "Nombre", "Presupuestado", "Real", "Varianza", "%"];
+    const tableColumn = [
+      t('budgets.account'),
+      t('accounting.accountName'),
+      t('budgets.budgeted'),
+      t('budgets.actual'),
+      t('budgets.variance'),
+      "%"
+    ];
     const tableRowsBuffer: any[] = [];
 
     filteredData.forEach(item => {
@@ -121,7 +137,7 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
     return (
       <Card className="bg-slate-900 border-slate-800 text-white">
         <CardContent className="py-12 text-center text-slate-400">
-          Cargando reporte...
+          {t('common.loading')}
         </CardContent>
       </Card>
     );
@@ -131,7 +147,7 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
     <Card className="bg-slate-900 border-slate-800 text-white">
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <CardTitle>Reporte de Varianza</CardTitle>
+          <CardTitle>{t('budgets.reports.title')}</CardTitle>
           <div className="flex gap-2">
             <div className="flex items-center bg-slate-800 rounded-md border border-slate-700 p-1">
               <Filter className="h-4 w-4 text-slate-400 ml-2 mr-1" />
@@ -140,9 +156,9 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
                 onChange={(e) => setFilterType(e.target.value as any)}
                 className="bg-transparent border-none text-sm text-white focus:ring-0 cursor-pointer py-1"
               >
-                <option value="ALL">Todo</option>
-                <option value="OVER_BUDGET">Sobre Presupuesto</option>
-                <option value="UNDER_BUDGET">Bajo Presupuesto</option>
+                <option value="ALL">{t('common.all')}</option>
+                <option value="OVER_BUDGET">{t('budgets.overBudget')}</option>
+                <option value="UNDER_BUDGET">{t('budgets.underBudget')}</option>
               </select>
             </div>
             <Button variant="outline" size="sm" onClick={exportToCSV} className="border-slate-700 text-slate-300 hover:bg-slate-800">
@@ -160,13 +176,13 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
         {/* Summary Header */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
-            <p className="text-sm font-medium text-slate-400">Total Varianza (YTD)</p>
+            <p className="text-sm font-medium text-slate-400">{t('budgets.reports.totalVarianceYTD')}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className={`text-2xl font-black tracking-tight ${totalVariance > 0 ? 'text-red-400' : 'text-green-400'}`}>
                 ${Math.abs(totalVariance / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </span>
               <span className="text-sm text-slate-500">
-                {totalVariance > 0 ? 'Sobre presupuesto' : 'Bajo presupuesto'}
+                {totalVariance > 0 ? t('budgets.overBudget') : t('budgets.underBudget')}
               </span>
             </div>
           </div>
@@ -177,11 +193,11 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
           <table className="w-full text-sm">
             <thead className="bg-slate-950">
               <tr>
-                <th className="text-left py-3 px-4 font-semibold text-slate-400">Cuenta</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-400">Nombre</th>
-                <th className="text-right py-3 px-4 font-semibold text-slate-400">Presupuestado</th>
-                <th className="text-right py-3 px-4 font-semibold text-slate-400">Real</th>
-                <th className="text-right py-3 px-4 font-semibold text-slate-400">Varianza</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-400">{t('budgets.account')}</th>
+                <th className="text-left py-3 px-4 font-semibold text-slate-400">{t('budgets.account')}</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.budgeted')}</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.actual')}</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.variance')}</th>
                 <th className="text-right py-3 px-4 font-semibold text-slate-400">%</th>
               </tr>
             </thead>
@@ -210,7 +226,7 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
 
         {filteredData.length === 0 && (
           <div className="text-center py-8 text-slate-500">
-            <p>No hay datos para mostrar con los filtros seleccionados</p>
+            <p>{t('budgets.reports.noDataWithFilters')}</p>
           </div>
         )}
       </CardContent>

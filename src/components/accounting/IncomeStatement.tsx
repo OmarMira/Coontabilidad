@@ -55,6 +55,13 @@ export const IncomeStatement: React.FC = () => {
     const totalExpenses = expenses.reduce((s, i) => s + i.balance, 0);
     const netIncome = totalRevenue - totalExpenses;
 
+    const formatNumber = (num: number) => {
+        return new Intl.NumberFormat(language === 'es' ? 'es-ES' : 'en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
+    };
+
     const handleDownloadPDF = () => {
         const doc = new jsPDF();
         const [y, m] = month.split('-').map(Number);
@@ -67,12 +74,12 @@ export const IncomeStatement: React.FC = () => {
         doc.setTextColor(255);
         doc.text('ACCOUNT EXPRESS', 14, 20);
         doc.setFontSize(12);
-        doc.text(t('incomeStatement.pdfHeader'), 14, 30);
+        doc.text(t('accounting.incomeStatement.pdfHeader'), 14, 30);
 
         doc.setFontSize(10);
         doc.setTextColor(200);
-        doc.text(t('incomeStatement.fiscalCutoff', { month: monthName.toUpperCase(), year: y.toString() }), 145, 20);
-        doc.text(t('incomeStatement.reportId', { id: Math.random().toString(36).substring(7).toUpperCase() }), 145, 25);
+        doc.text(t('accounting.incomeStatement.fiscalCutoff', { month: monthName.toUpperCase(), year: y.toString() }), 145, 20);
+        doc.text(t('accounting.incomeStatement.reportId', { id: Math.random().toString(36).substring(7).toUpperCase() }), 145, 25);
 
         let finalY = 45;
 
@@ -84,12 +91,12 @@ export const IncomeStatement: React.FC = () => {
             const body = items.map(i => [
                 i.account_code,
                 i.account_name,
-                i.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                formatNumber(i.balance)
             ]);
 
             autoTable(doc, {
                 startY: finalY + 8,
-                head: [[t('incomeStatement.pdfCode'), t('incomeStatement.pdfAccount'), t('incomeStatement.pdfAmount')]],
+                head: [[t('accounting.incomeStatement.pdfCode'), t('accounting.incomeStatement.pdfAccount'), t('accounting.incomeStatement.pdfAmount')]],
                 body: body,
                 theme: 'grid',
                 headStyles: { fillColor: color, textColor: 255, fontStyle: 'bold' },
@@ -99,13 +106,13 @@ export const IncomeStatement: React.FC = () => {
 
             finalY = (doc as any).lastAutoTable.finalY + 10;
             doc.setFont('helvetica', 'bold');
-            doc.text(`${t('incomeStatement.pdfTotal')} ${title.toUpperCase()}:`, 120, finalY);
-            doc.text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
+            doc.text(`${t('accounting.incomeStatement.pdfTotal')} ${title.toUpperCase()}:`, 120, finalY);
+            doc.text(`$${formatNumber(total)}`, 195, finalY, { align: 'right' });
             finalY += 15;
         };
 
-        addTableSection(t('incomeStatement.pdfRevenue'), revenue, totalRevenue, [16, 185, 129]);
-        addTableSection(t('incomeStatement.pdfExpenses'), expenses, totalExpenses, [244, 63, 94]);
+        addTableSection(t('accounting.incomeStatement.pdfRevenue'), revenue, totalRevenue, [16, 185, 129]);
+        addTableSection(t('accounting.incomeStatement.pdfExpenses'), expenses, totalExpenses, [244, 63, 94]);
 
         doc.setDrawColor(30, 41, 59);
         doc.setLineWidth(1);
@@ -114,8 +121,8 @@ export const IncomeStatement: React.FC = () => {
 
         doc.setFontSize(16);
         doc.setTextColor(netIncome >= 0 ? 16 : 244, netIncome >= 0 ? 185 : 63, netIncome >= 0 ? 129 : 94);
-        doc.text(t('incomeStatement.pdfNetIncome'), 14, finalY);
-        doc.text(`$${netIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
+        doc.text(t('accounting.incomeStatement.pdfNetIncome'), 14, finalY);
+        doc.text(`$${formatNumber(netIncome)}`, 195, finalY, { align: 'right' });
 
         doc.save(`AEX_P&L_${month}.pdf`);
     };
@@ -129,9 +136,9 @@ export const IncomeStatement: React.FC = () => {
                         <PieChart className="w-10 h-10 text-emerald-500" />
                     </div>
                     <div>
-                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('incomeStatement.title')}</h2>
+                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('accounting.incomeStatement.title')}</h2>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <FileText className="w-3.5 h-3.5" /> {t('incomeStatement.performance')}
+                            <FileText className="w-3.5 h-3.5" /> {t('accounting.incomeStatement.performance')}
                         </p>
                     </div>
                 </div>
@@ -142,7 +149,7 @@ export const IncomeStatement: React.FC = () => {
                             <Calendar className="w-4 h-4 text-slate-500 group-hover:text-blue-500 transition-colors" />
                         </div>
                         <div className="flex flex-col pr-4">
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{t('incomeStatement.monthCutoff')}</span>
+                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.incomeStatement.monthCutoff')}</span>
                             <input
                                 type="month"
                                 value={month}
@@ -157,10 +164,10 @@ export const IncomeStatement: React.FC = () => {
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
                         <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
-                            <Printer className="w-4 h-4" /> {t('incomeStatement.print')}
+                            <Printer className="w-4 h-4" /> {t('accounting.incomeStatement.print')}
                         </button>
                         <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/30 active:scale-95">
-                            <Download className="w-4 h-4" /> {t('incomeStatement.export')}
+                            <Download className="w-4 h-4" /> {t('accounting.incomeStatement.export')}
                         </button>
                     </div>
                 </div>
@@ -175,7 +182,7 @@ export const IncomeStatement: React.FC = () => {
                             <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
                                 <ArrowUpCircle className="w-6 h-6 text-emerald-500" />
                             </div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('incomeStatement.revenue')}</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('accounting.incomeStatement.revenue')}</h3>
                         </div>
                         <span className="text-[10px] font-black text-emerald-500/60 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">NODO 4000</span>
                     </header>
@@ -184,10 +191,10 @@ export const IncomeStatement: React.FC = () => {
                         {loading ? (
                             <div className="py-20 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('incomeStatement.syncRevenue')}</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.incomeStatement.syncRevenue')}</p>
                             </div>
                         ) : revenue.length === 0 ? (
-                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('incomeStatement.noRevenue')}</div>
+                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('accounting.incomeStatement.noRevenue')}</div>
                         ) : (
                             revenue.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
@@ -197,7 +204,7 @@ export const IncomeStatement: React.FC = () => {
                                     </div>
                                     <div className="text-right">
                                         <span className="text-lg font-black text-emerald-400 font-mono">
-                                            ${item.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            ${formatNumber(item.balance)}
                                         </span>
                                     </div>
                                 </div>
@@ -207,11 +214,11 @@ export const IncomeStatement: React.FC = () => {
 
                     <footer className="p-10 bg-emerald-500/5 border-t border-emerald-500/10 flex justify-between items-center">
                         <div>
-                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">{t('incomeStatement.totalRevenue')}</p>
-                            <p className="text-xs text-slate-500 font-medium">{t('incomeStatement.auditPeriod')}</p>
+                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">{t('accounting.incomeStatement.totalRevenue')}</p>
+                            <p className="text-xs text-slate-500 font-medium">{t('accounting.incomeStatement.auditPeriod')}</p>
                         </div>
                         <p className="text-3xl font-black text-emerald-400 font-mono tracking-tighter">
-                            ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            ${formatNumber(totalRevenue)}
                         </p>
                     </footer>
                 </div>
@@ -223,7 +230,7 @@ export const IncomeStatement: React.FC = () => {
                             <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20">
                                 <ArrowDownCircle className="w-6 h-6 text-rose-500" />
                             </div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('incomeStatement.expenses')}</h3>
+                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('accounting.incomeStatement.expenses')}</h3>
                         </div>
                         <span className="text-[10px] font-black text-rose-500/60 bg-rose-500/5 px-3 py-1 rounded-full border border-rose-500/10">NODO 5000</span>
                     </header>
@@ -232,10 +239,10 @@ export const IncomeStatement: React.FC = () => {
                         {loading ? (
                             <div className="py-20 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('incomeStatement.syncExpenses')}</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.incomeStatement.syncExpenses')}</p>
                             </div>
                         ) : expenses.length === 0 ? (
-                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('incomeStatement.noExpenses')}</div>
+                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('accounting.incomeStatement.noExpenses')}</div>
                         ) : (
                             expenses.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
@@ -245,7 +252,7 @@ export const IncomeStatement: React.FC = () => {
                                     </div>
                                     <div className="text-right">
                                         <span className="text-lg font-black text-rose-400 font-mono">
-                                            ${item.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            ${formatNumber(item.balance)}
                                         </span>
                                     </div>
                                 </div>
@@ -255,11 +262,11 @@ export const IncomeStatement: React.FC = () => {
 
                     <footer className="p-10 bg-rose-500/5 border-t border-rose-500/10 flex justify-between items-center">
                         <div>
-                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">{t('incomeStatement.totalExpenses')}</p>
-                            <p className="text-xs text-slate-500 font-medium">{t('incomeStatement.resourceConsumption')}</p>
+                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">{t('accounting.incomeStatement.totalExpenses')}</p>
+                            <p className="text-xs text-slate-500 font-medium">{t('accounting.incomeStatement.resourceConsumption')}</p>
                         </div>
                         <p className="text-3xl font-black text-rose-400 font-mono tracking-tighter">
-                            ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            ${formatNumber(totalExpenses)}
                         </p>
                     </footer>
                 </div>
@@ -277,9 +284,9 @@ export const IncomeStatement: React.FC = () => {
                                 <DollarSign className="w-12 h-12" strokeWidth={3} />
                             </div>
                             <div>
-                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 px-1">{t('incomeStatement.managementResult')}</h4>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 px-1">{t('accounting.incomeStatement.managementResult')}</h4>
                                 <p className="text-4xl font-black text-white uppercase tracking-tighter">
-                                    {netIncome >= 0 ? t('incomeStatement.netProfit') : t('incomeStatement.netLoss')}
+                                    {netIncome >= 0 ? t('accounting.incomeStatement.netProfit') : t('accounting.incomeStatement.netLoss')}
                                 </p>
                             </div>
                         </div>
@@ -287,16 +294,17 @@ export const IncomeStatement: React.FC = () => {
                         <div className="text-right">
                             <div className="flex items-baseline gap-2 mb-1 justify-end">
                                 <span className={`text-6xl font-black font-mono tracking-tighter ${netIncome >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                    ${Math.abs(netIncome).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    ${formatNumber(Math.abs(netIncome))}
                                 </span>
                             </div>
                             <p className={`text-[11px] font-black uppercase tracking-widest ${netIncome >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
-                                {t('incomeStatement.cashFlowRealized')} {netIncome >= 0 ? 'E' : 'D'}
+                                {t('accounting.incomeStatement.cashFlowRealized')} {netIncome >= 0 ? 'E' : 'D'}
                             </p>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
+
     );
 };

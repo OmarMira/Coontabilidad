@@ -1,158 +1,155 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Plus, Store, Box, Archive, Save, X } from 'lucide-react';
-import { getLocations, createLocation } from '@/database/simple-db';
-import { toast } from 'react-hot-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { MapPin, Plus, Edit, X, Save } from 'lucide-react';
+import { createLocation, getLocations } from '@/database/simple-db';
+import toast from 'react-hot-toast';
+import { useLocale } from '@/i18n/useLocale';
+
+interface Location {
+    id?: number;
+    name: string;
+    code: string;
+    address?: string;
+    description?: string;
+    active?: boolean;
+}
 
 export const LocationsManager: React.FC = () => {
-    const [locations, setLocations] = useState<any[]>([]);
-    const [isCreating, setIsCreating] = useState(false);
-    const [newLocation, setNewLocation] = useState({
-        name: '',
-        code: '',
-        address: '',
-        type: 'warehouse', // warehouse, store, shelf
-        description: ''
-    });
-
-    const loadLocations = () => {
-        try {
-            const data = getLocations();
-            setLocations(data);
-        } catch (error) {
-            console.error('Error loading locations:', error);
-            toast.error('Error al cargar ubicaciones');
-        }
-    };
+    const { t } = useLocale();
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [showForm, setShowForm] = useState(false);
+    const [form, setForm] = useState<Location>({ name: '', code: '' });
 
     useEffect(() => {
         loadLocations();
     }, []);
 
+    const loadLocations = () => {
+        try {
+            const data = getLocations();
+            setLocations(data);
+        } catch (err) {
+            toast.error(t('inv.locations.errorLoadingLocations'));
+        }
+    };
+
     const handleSave = () => {
-        if (!newLocation.name || !newLocation.code) {
-            toast.error('Nombre y Código son requeridos');
+        if (!form.name || !form.code) {
+            toast.error(t('inv.locations.nameCodeRequired'));
             return;
         }
-
-        const result = createLocation({
-            name: newLocation.name,
-            code: newLocation.code,
-            address: newLocation.address,
-            description: newLocation.description,
-            is_active: true
-        });
-
-        if (result.success) {
-            toast.success('Ubicación creada exitosamente');
-            setIsCreating(false);
-            setNewLocation({ name: '', code: '', address: '', type: 'warehouse', description: '' });
+        try {
+            createLocation(form);
+            toast.success(t('inv.locations.locationCreated'));
+            setShowForm(false);
+            setForm({ name: '', code: '' });
             loadLocations();
-        } else {
-            toast.error('Error: ' + result.message);
+        } catch (err) {
+            console.error(err);
         }
     };
 
     return (
-        <Card className="bg-slate-900 border-white/5 text-white w-full max-w-4xl mx-auto">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-white/5">
-                <CardTitle className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-purple-400" />
-                    Gestión de Ubicaciones
-                </CardTitle>
-                {!isCreating && (
-                    <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={() => setIsCreating(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Nueva Ubicación
-                    </Button>
-                )}
-            </CardHeader>
-            <CardContent className="pt-4">
-                {isCreating && (
-                    <div className="mb-6 p-4 bg-white/10/50 border border-purple-500/30 rounded-lg animate-in fade-in slide-in-from-top-2">
-                        <h3 className="text-sm font-bold text-purple-300 mb-4 uppercase tracking-wider">Nueva Ubicación</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1">Nombre</label>
-                                <input
-                                    className="w-full bg-slate-900 border-white/10 rounded p-2 text-white focus:border-purple-500 outline-none"
-                                    value={newLocation.name}
-                                    onChange={e => setNewLocation({ ...newLocation, name: e.target.value })}
-                                    placeholder="Ej. Almacén Central"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-500 block mb-1">Código (Único)</label>
-                                <input
-                                    className="w-full bg-slate-900 border-white/10 rounded p-2 text-white focus:border-purple-500 outline-none font-mono"
-                                    value={newLocation.code}
-                                    onChange={e => setNewLocation({ ...newLocation, code: e.target.value.toUpperCase() })}
-                                    placeholder="Ej. WH-MIA-01"
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="text-xs text-slate-500 block mb-1">Dirección</label>
-                                <input
-                                    className="w-full bg-slate-900 border-white/10 rounded p-2 text-white focus:border-purple-500 outline-none"
-                                    value={newLocation.address}
-                                    onChange={e => setNewLocation({ ...newLocation, address: e.target.value })}
-                                    placeholder="Dirección física..."
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="text-xs text-slate-500 block mb-1">Descripción</label>
-                                <input
-                                    className="w-full bg-slate-900 border-white/10 rounded p-2 text-white focus:border-purple-500 outline-none"
-                                    value={newLocation.description}
-                                    onChange={e => setNewLocation({ ...newLocation, description: e.target.value })}
-                                    placeholder="Notas adicionales..."
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setIsCreating(false)}>
-                                <X className="w-4 h-4 mr-2" /> Cancelar
-                            </Button>
-                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={handleSave}>
-                                <Save className="w-4 h-4 mr-2" /> Guardar Ubicación
-                            </Button>
-                        </div>
-                    </div>
-                )}
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                    <MapPin className="w-8 h-8 text-blue-500" />
+                    {t('inv.locations.title')}
+                </h2>
+                <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t('inv.locations.newLocation')}
+                </Button>
+            </div>
 
-                <div className="grid gap-3">
-                    {locations.length === 0 ? (
-                        <div className="text-center p-8 text-slate-600 bg-white/10/20 rounded border border-white/5 border-dashed">
-                            No hay ubicaciones registradas.
+            {showForm && (
+                <Card className="bg-slate-900 border-blue-500/30 text-white max-w-lg">
+                    <CardHeader>
+                        <CardTitle className="text-lg font-bold">{t('inv.locations.newLocationTitle')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-1">
+                            <Label className="text-slate-500">{t('inv.locations.name')}</Label>
+                            <Input
+                                placeholder={t('inv.locations.nameExample')}
+                                value={form.name}
+                                onChange={e => setForm({ ...form, name: e.target.value })}
+                                className="bg-white/10 border-white/10 text-white"
+                            />
                         </div>
-                    ) : (
-                        locations.map(loc => (
-                            <div key={loc.id} className="flex items-center justify-between p-4 bg-white/10 rounded border border-white/10 hover:border-white/10 transition-colors group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center group-hover:bg-purple-900/30 group-hover:text-purple-400 transition-colors">
-                                        <Box className="w-5 h-5 text-slate-500 group-hover:text-purple-400" />
-                                    </div>
+                        <div className="space-y-1">
+                            <Label className="text-slate-500">{t('inv.locations.codeUnique')}</Label>
+                            <Input
+                                placeholder={t('inv.locations.codeExample')}
+                                value={form.code}
+                                onChange={e => setForm({ ...form, code: e.target.value })}
+                                className="bg-white/10 border-white/10 text-white font-mono"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-slate-500">{t('inv.locations.address')}</Label>
+                            <Input
+                                placeholder={t('inv.locations.addressPlaceholder')}
+                                value={form.address || ''}
+                                onChange={e => setForm({ ...form, address: e.target.value })}
+                                className="bg-white/10 border-white/10 text-white"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-slate-500">{t('inv.locations.description')}</Label>
+                            <Input
+                                placeholder={t('inv.locations.descriptionPlaceholder')}
+                                value={form.description || ''}
+                                onChange={e => setForm({ ...form, description: e.target.value })}
+                                className="bg-white/10 border-white/10 text-white"
+                            />
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                            <Button onClick={handleSave} className="flex-1 bg-green-600 hover:bg-green-700">
+                                <Save className="w-4 h-4 mr-2" /> {t('inv.locations.saveLocation')}
+                            </Button>
+                            <Button variant="ghost" onClick={() => { setShowForm(false); setForm({ name: '', code: '' }); }} className="flex-1 text-slate-400">
+                                <X className="w-4 h-4 mr-2" /> {t('inv.locations.cancel')}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {locations.length === 0 ? (
+                    <div className="col-span-full text-center py-12">
+                        <MapPin className="w-12 h-12 text-slate-800 mx-auto mb-3" />
+                        <p className="text-slate-500">{t('inv.locations.noLocations')}</p>
+                    </div>
+                ) : (
+                    locations.map(loc => (
+                        <Card key={loc.id} className="bg-slate-900 border-slate-800 text-white hover:border-blue-500/30 transition-colors group">
+                            <CardContent className="p-5">
+                                <div className="flex items-start justify-between">
                                     <div>
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="font-bold text-white">{loc.name}</h4>
-                                            <span className="text-xs font-mono bg-black/30 px-1.5 rounded text-slate-500">{loc.code}</span>
-                                        </div>
-                                        <p className="text-xs text-slate-500">{loc.address || 'Sin dirección'}</p>
+                                        <h4 className="font-bold text-white">{loc.name}</h4>
+                                        <p className="text-xs text-blue-400 font-mono mt-0.5">{loc.code}</p>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={`px-2 py-0.5 rounded text-xs border uppercase ${'bg-white/5 border-white/10 text-slate-400'
-                                        }`}>
-                                        ACTIVO
+                                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-black uppercase">
+                                        {t('inv.locations.active')}
                                     </span>
-                                    <Button variant="ghost" size="sm" className="text-slate-500 hover:text-white">Editar</Button>
                                 </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </CardContent>
-        </Card>
+                                <p className="text-sm text-slate-400 mt-3">{loc.address || t('inv.locations.noAddress')}</p>
+                                {loc.description && <p className="text-xs text-slate-500 mt-1 italic">{loc.description}</p>}
+                                <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-blue-400 text-xs">
+                                        <Edit className="w-3 h-3 mr-1" /> {t('inv.locations.edit')}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+        </div>
     );
 };

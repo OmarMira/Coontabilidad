@@ -206,8 +206,11 @@ export const PayrollProcessor: React.FC = () => {
                             </button>
                         </div>
 
-                        {selectedPeriodId ? (
-                            <PayrollEntryList periodId={selectedPeriodId} onBack={() => setSelectedPeriodId(null)} />
+                        {selectedPeriodId && periods.find(p => p.id === selectedPeriodId) ? (
+                            <PayrollEntryList
+                                period={periods.find(p => p.id === selectedPeriodId)!}
+                                onBack={() => setSelectedPeriodId(null)}
+                            />
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">

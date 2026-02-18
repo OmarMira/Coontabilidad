@@ -1,22 +1,14 @@
-/**
- * PayrollReportsPanel (Iron Clad Upgrade - Phase 2, Day 6)
- * 
- * Panel para generar reportes de nómina usando Web Workers.
- * Demuestra cómo usar los nuevos métodos async de PayrollReportGenerator.
- */
-
 import React, { useState } from 'react';
 import { payrollReportGenerator } from '../../services/payroll/PayrollReportGenerator';
 import { getCompanyData } from '../../database/simple-db';
+import { useLocale } from '@/i18n/useLocale';
 
 export function PayrollReportsPanel() {
+    const { t } = useLocale();
     const [isGenerating, setIsGenerating] = useState(false);
     const [progress, setProgress] = useState({ percent: 0, message: '' });
     const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, name: '' });
 
-    /**
-     * Generate Form 941 PDF
-     */
     const handleGenerateForm941 = async () => {
         setIsGenerating(true);
         setProgress({ percent: 0, message: 'Starting...' });
@@ -37,7 +29,6 @@ export function PayrollReportsPanel() {
                 }
             );
 
-            // Download PDF
             const url = URL.createObjectURL(pdfBlob);
             const link = document.createElement('a');
             link.href = url;
@@ -45,7 +36,7 @@ export function PayrollReportsPanel() {
             link.click();
             URL.revokeObjectURL(url);
 
-            alert('✅ Form 941 generated successfully!');
+            alert(`✅ ${t('payroll.reportsPanel.form941Success')}`);
         } catch (error: any) {
             alert(`❌ Error: ${error.message}`);
         } finally {
@@ -54,16 +45,13 @@ export function PayrollReportsPanel() {
         }
     };
 
-    /**
-     * Generate all W-2 PDFs for the year
-     */
     const handleGenerateAllW2s = async () => {
         setIsGenerating(true);
         setBatchProgress({ current: 0, total: 0, name: '' });
 
         try {
             const companyData = getCompanyData();
-            const currentYear = new Date().getFullYear() - 1; // Previous year for W-2s
+            const currentYear = new Date().getFullYear() - 1;
 
             const pdfs = await payrollReportGenerator.generateAllW2PDFs(
                 currentYear,
@@ -73,7 +61,6 @@ export function PayrollReportsPanel() {
                 }
             );
 
-            // Download all PDFs as a zip (simplified: download first one as example)
             if (pdfs.length > 0) {
                 const url = URL.createObjectURL(pdfs[0]);
                 const link = document.createElement('a');
@@ -83,7 +70,7 @@ export function PayrollReportsPanel() {
                 URL.revokeObjectURL(url);
             }
 
-            alert(`✅ Generated ${pdfs.length} W-2 forms successfully!`);
+            alert(`✅ ${t('payroll.reportsPanel.w2sSuccess').replace('{count}', String(pdfs.length))}`);
         } catch (error: any) {
             alert(`❌ Error: ${error.message}`);
         } finally {
@@ -94,13 +81,13 @@ export function PayrollReportsPanel() {
 
     return (
         <div style={styles.container}>
-            <h2 style={styles.title}>📊 Payroll Reports (Async)</h2>
+            <h2 style={styles.title}>{t('payroll.reportsPanel.title')}</h2>
             <p style={styles.subtitle}>
-                Generate payroll reports using Web Workers - UI stays responsive!
+                {t('payroll.reportsPanel.subtitle')}
             </p>
 
             <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>IRS Forms</h3>
+                <h3 style={styles.sectionTitle}>{t('payroll.reportsPanel.irsForms')}</h3>
 
                 <div style={styles.buttonGroup}>
                     <button
@@ -108,7 +95,7 @@ export function PayrollReportsPanel() {
                         disabled={isGenerating}
                         style={{ ...styles.button, ...styles.buttonPrimary }}
                     >
-                        {isGenerating ? '⏳ Generating...' : '📋 Generate Form 941'}
+                        {isGenerating ? `⏳ ${t('payroll.reportsPanel.generating')}` : `📋 ${t('payroll.reportsPanel.generateForm941')}`}
                     </button>
 
                     <button
@@ -116,7 +103,7 @@ export function PayrollReportsPanel() {
                         disabled={isGenerating}
                         style={{ ...styles.button, ...styles.buttonPrimary }}
                     >
-                        {isGenerating ? '⏳ Generating...' : '📄 Generate All W-2s'}
+                        {isGenerating ? `⏳ ${t('payroll.reportsPanel.generating')}` : `📄 ${t('payroll.reportsPanel.generateAllW2s')}`}
                     </button>
                 </div>
 
@@ -134,10 +121,10 @@ export function PayrollReportsPanel() {
                 {isGenerating && batchProgress.total > 0 && (
                     <div style={styles.batchProgress}>
                         <p style={styles.batchText}>
-                            Generating W-2 for: <strong>{batchProgress.name}</strong>
+                            {t('payroll.reportsPanel.generatingW2For')} <strong>{batchProgress.name}</strong>
                         </p>
                         <p style={styles.batchText}>
-                            Progress: {batchProgress.current} of {batchProgress.total}
+                            {t('payroll.reportsPanel.progressLabel')} {batchProgress.current} {t('payroll.reportsPanel.of')} {batchProgress.total}
                         </p>
                         <div style={styles.progressBar}>
                             <div style={{
@@ -150,13 +137,13 @@ export function PayrollReportsPanel() {
             </div>
 
             <div style={styles.infoBox}>
-                <h4 style={styles.infoTitle}>ℹ️ Benefits of Async Generation</h4>
+                <h4 style={styles.infoTitle}>{t('payroll.reportsPanel.benefitsTitle')}</h4>
                 <ul style={styles.infoList}>
-                    <li>UI remains responsive during PDF generation</li>
-                    <li>Real-time progress updates</li>
-                    <li>Can cancel operations if needed</li>
-                    <li>No browser freezing or "Not Responding" warnings</li>
-                    <li>Better user experience overall</li>
+                    <li>{t('payroll.reportsPanel.benefit1')}</li>
+                    <li>{t('payroll.reportsPanel.benefit2')}</li>
+                    <li>{t('payroll.reportsPanel.benefit3')}</li>
+                    <li>{t('payroll.reportsPanel.benefit4')}</li>
+                    <li>{t('payroll.reportsPanel.benefit5')}</li>
                 </ul>
             </div>
         </div>

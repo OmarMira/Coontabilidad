@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { FirstRunSetup } from '../../core/setup/FirstRunSetup';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import { useLocale } from '@/i18n/useLocale';
 
 /**
  * OnboardingWizard - First-run user experience
  * 
- * Guía al usuario en el setup inicial del sistema
+ * Guides the user through initial system setup
  */
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
     db,
     onComplete
 }) => {
+    const { t } = useLocale();
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [setupStatus, setSetupStatus] = useState<SetupStatus>({
@@ -67,10 +69,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                 {/* Header */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Welcome to Account Express
+                        {t('setup.onboarding.welcomeTitle')}
                     </h1>
                     <p className="text-slate-700">
-                        {currentStep === 0 ? 'Let\'s set up your accounting system' : 'Setting up...'}
+                        {currentStep === 0 ? t('setup.onboarding.letsSetup') : t('setup.onboarding.settingUp')}
                     </p>
                 </div>
 
@@ -79,16 +81,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                     <div className="space-y-6">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                             <h3 className="font-semibold text-blue-900 mb-2">
-                                ✨ Zero Configuration Required
+                                ✨ {t('setup.onboarding.zeroConfig')}
                             </h3>
                             <p className="text-blue-700 mb-4">
-                                Account Express will automatically:
+                                {t('setup.onboarding.autoWill')}:
                             </p>
                             <ul className="space-y-2 text-blue-700">
-                                <li>✅ Initialize your database</li>
-                                <li>✅ Load US GAAP chart of accounts</li>
-                                <li>✅ Configure AI assistant (works offline)</li>
-                                <li>✅ Set up Florida tax rates</li>
+                                <li>✅ {t('setup.onboarding.initDb')}</li>
+                                <li>✅ {t('setup.onboarding.loadGaap')}</li>
+                                <li>✅ {t('setup.onboarding.configAi')}</li>
+                                <li>✅ {t('setup.onboarding.setupTax')}</li>
                             </ul>
                         </div>
 
@@ -98,7 +100,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                                 disabled={isLoading}
                                 className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
-                                {isLoading ? 'Setting up...' : 'Start Using Account Express'}
+                                {isLoading ? t('setup.onboarding.settingUp') : t('setup.onboarding.startUsing')}
                             </button>
                         </div>
                     </div>
@@ -106,22 +108,22 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
 
                 {currentStep === 1 && (
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-gray-900 mb-4">Setup Progress</h3>
+                        <h3 className="font-semibold text-gray-900 mb-4">{t('setup.onboarding.setupProgress')}</h3>
 
                         <SetupProgress
-                            label="Database Initialization"
+                            label={t('setup.onboarding.dbInit')}
                             status={setupStatus.database}
                         />
 
                         <SetupProgress
-                            label="Chart of Accounts"
+                            label={t('setup.onboarding.chartOfAccounts')}
                             status={setupStatus.accounts}
                         />
 
                         <SetupProgress
-                            label="AI Assistant"
+                            label={t('setup.onboarding.aiAssistant')}
                             status={setupStatus.ai}
-                            description="Transformers.js - Works offline, no API key needed"
+                            description={t('setup.onboarding.aiDesc')}
                         />
 
                         {setupStatus.database === 'success' &&
@@ -129,7 +131,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({
                             setupStatus.ai === 'success' && (
                                 <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
                                     <p className="text-green-800 font-semibold">
-                                        ✅ Setup complete! Redirecting...
+                                        ✅ {t('setup.onboarding.setupComplete')}
                                     </p>
                                 </div>
                             )}

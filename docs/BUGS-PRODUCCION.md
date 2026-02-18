@@ -31,7 +31,35 @@
 
 ## 🟡 MEDIOS (Incómodo pero funciona)
 
-*Actualmente no hay bugs medios reportados.*
+### BUG-002: voidPayroll no exportado en simple-db
+
+- **Descripción**: La función `voidPayroll` existe en `PayrollProcessor.ts` pero no está exportada desde `simple-db.ts`, causando error de TypeScript
+- **Archivo**: `src/database/simple-db.ts`
+- **Tipo**: TypeScript / Arquitectura DB
+- **Severidad**: 🟡 Media
+- **Fecha detectado**: 2026-02-17
+- **Status**: [ ] Pendiente
+- **Nota**: Pre-existente, no introducido por i18n
+
+### BUG-003: PayrollResult con propiedades faltantes
+
+- **Descripción**: El tipo `PayrollResult` no incluye propiedades que se acceden en el código: `bonuses`, `commissions`, `socialSecurityTax`
+- **Archivo**: Definición de tipo PayrollResult
+- **Tipo**: TypeScript / Tipado incorrecto
+- **Severidad**: 🟡 Media  
+- **Fecha detectado**: 2026-02-17
+- **Status**: [ ] Pendiente
+- **Nota**: Pre-existente, no introducido por i18n
+
+### BUG-004: getPayrolls no implementado en simple-db
+
+- **Descripción**: La función `getPayrolls` es requerida por `PayrollReview.tsx` para el filtrado, pero no existe exportada en la base de datos.
+- **Archivo**: `src/database/simple-db.ts`
+- **Tipo**: TypeScript / Funcionalidad faltante
+- **Severidad**: 🟡 Media
+- **Fecha detectado**: 2026-02-17
+- **Status**: [ ] Pendiente
+- **Nota**: Pre-existente, detectado durante revisión de tipos
 
 ---
 
@@ -58,9 +86,9 @@
 | Categoría | Cantidad | Corregidos | Pendientes |
 |-----------|----------|------------|------------|
 | Críticos  | 0        | 0          | 0          |
-| Medios    | 0        | 0          | 0          |
+| Medios    | 3        | 0          | 3          |
 | Bajos     | 0        | 0          | 0          |
-| **TOTAL** | **0**    | **0**      | **0**      |
+| **TOTAL** | **3**    | **0**      | **3**      |
 
 ---
 

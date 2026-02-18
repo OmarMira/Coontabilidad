@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, Loader2, AlertCircle, Rocket } from 'lucide-react';
 import UserService from '@/services/UserService';
 import type { SetupData } from '../InitialSetupWizard';
+import { useLocale } from '@/i18n/useLocale';
 
 interface ConfirmationStepProps {
   data: SetupData;
@@ -9,6 +10,7 @@ interface ConfirmationStepProps {
 }
 
 export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext }) => {
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,7 +24,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
       const adminRole = roles.find(r => r.name === 'admin');
 
       if (!adminRole) {
-        throw new Error('Rol de administrador no encontrado');
+        throw new Error(t('setup.confirmation.adminRoleNotFound'));
       }
 
       const result = await UserService.createUser({
@@ -51,7 +53,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
       }, 1500);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : t('setup.confirmation.unknownError'));
       setLoading(false);
     }
   };
@@ -62,8 +64,8 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
         <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-full mb-4">
           <CheckCircle2 className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-2xl font-black tracking-tight text-white mb-2">¡Todo Listo!</h2>
-        <p className="text-blue-200 text-sm">Revisa la configuración antes de finalizar</p>
+        <h2 className="text-2xl font-black tracking-tight text-white mb-2">{t('setup.confirmation.title')}</h2>
+        <p className="text-blue-200 text-sm">{t('setup.confirmation.subtitle')}</p>
       </div>
 
       {/* Summary */}
@@ -71,11 +73,11 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
           <h3 className="text-white font-bold mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-400" />
-            Administrador
+            {t('setup.steps.admin')}
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-blue-200">Usuario:</span>
+              <span className="text-blue-200">{t('setup.confirmation.user')}:</span>
               <span className="text-white font-mono">{data.username}</span>
             </div>
             <div className="flex justify-between">
@@ -83,7 +85,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
               <span className="text-white">{data.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-blue-200">Nombre:</span>
+              <span className="text-blue-200">{t('setup.confirmation.name')}:</span>
               <span className="text-white">{data.fullName}</span>
             </div>
           </div>
@@ -92,16 +94,16 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
         <div className="bg-white/5 border border-white/10 rounded-xl p-4">
           <h3 className="text-white font-bold mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-400" />
-            Seguridad
+            {t('setup.steps.security')}
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-blue-200">Cifrado:</span>
+              <span className="text-blue-200">{t('setup.confirmation.encryption')}:</span>
               <span className="text-white">PBKDF2 600k</span>
             </div>
             <div className="flex justify-between">
               <span className="text-blue-200">Master Key:</span>
-              <span className="text-green-400">✓ Guardada</span>
+              <span className="text-green-400">✓ {t('setup.confirmation.saved')}</span>
             </div>
           </div>
         </div>
@@ -110,11 +112,11 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
             <h3 className="text-white font-bold mb-3 flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-400" />
-              Empresa
+              {t('setup.steps.company')}
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-blue-200">Nombre:</span>
+                <span className="text-blue-200">{t('setup.confirmation.name')}:</span>
                 <span className="text-white">{data.companyName}</span>
               </div>
               {data.taxId && (
@@ -143,18 +145,18 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ data, onNext
         {loading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            Configurando Sistema...
+            {t('setup.confirmation.configuring')}
           </>
         ) : (
           <>
             <Rocket className="w-5 h-5" />
-            Finalizar y Acceder al Sistema
+            {t('setup.confirmation.finishAndAccess')}
           </>
         )}
       </button>
 
       <p className="text-center text-blue-200 text-xs">
-        Serás redirigido a la pantalla de login automáticamente
+        {t('setup.confirmation.redirectNotice')}
       </p>
     </div>
   );

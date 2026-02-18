@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { db } from '@/database/simple-db';
 import { getFixedAssetsController } from '@/services/accounting/fixed-assets';
 import type { FixedAsset, AssetCategory, DepreciationEntry } from '@/services/accounting/fixed-assets';
+import { useLocale } from '@/i18n/useLocale';
 
 interface AssetDetailViewProps {
   asset: FixedAsset;
@@ -29,6 +30,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   onEdit,
   onDispose
 }) => {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<'overview' | 'depreciation' | 'history'>('overview');
   const [category, setCategory] = useState<AssetCategory | null>(null);
   const [depreciationHistory, setDepreciationHistory] = useState<DepreciationEntry[]>([]);
@@ -66,9 +68,9 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   };
 
   const tabs = [
-    { id: 'overview' as const, label: 'Resumen', icon: Package },
-    { id: 'depreciation' as const, label: 'Depreciación', icon: TrendingDown },
-    { id: 'history' as const, label: 'Historial', icon: FileText }
+    { id: 'overview' as const, label: t('assets.details.overview'), icon: Package },
+    { id: 'depreciation' as const, label: t('assets.details.depreciation'), icon: TrendingDown },
+    { id: 'history' as const, label: t('assets.details.history'), icon: FileText }
   ];
 
   const getStatusColor = (status: string) => {
@@ -91,7 +93,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('es-ES', {
+    return new Date(dateStr).toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -109,7 +111,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
             className="text-slate-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
+            {t('common.back')}
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -117,8 +119,8 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
               {asset.asset_name}
             </h1>
             <p className="text-slate-400 mt-1">
-              Tag: <span className="font-mono text-blue-400">{asset.asset_tag}</span>
-              {category && <span className="ml-4">Categoría: {category.name}</span>}
+              {t('assets.reports_ui.tag')}: <span className="font-mono text-blue-400">{asset.asset_tag}</span>
+              {category && <span className="ml-4">{t('assets.form.category')}: {category.name}</span>}
             </p>
           </div>
         </div>
@@ -130,14 +132,14 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Edit className="w-4 h-4 mr-2" />
-                Editar
+                {t('common.edit')}
               </Button>
               <Button
                 onClick={() => onDispose(asset)}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Disponer
+                {t('assets.disposal')}
               </Button>
             </>
           )}
@@ -147,11 +149,11 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
       {/* Status Badge */}
       <div className="flex items-center gap-4">
         <span className={`px-4 py-2 rounded-lg text-sm font-medium border ${getStatusColor(asset.status)}`}>
-          {asset.status}
+          {t(`assets.status.${asset.status.toLowerCase()}`)}
         </span>
         {asset.status === 'DISPOSED' && asset.disposal_date && (
           <span className="text-slate-400 text-sm">
-            Dispuesto el {formatDate(asset.disposal_date)}
+            {t('assets.details.disposedOn', { date: formatDate(asset.disposal_date) })}
           </span>
         )}
       </div>
@@ -162,11 +164,10 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${
-              activeTab === tab.id
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === tab.id
+              ? 'text-blue-400 border-b-2 border-blue-400'
+              : 'text-slate-400 hover:text-white'
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
@@ -183,33 +184,33 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5 text-blue-400" />
-                  Información del Activo
+                  {t('assets.details.assetInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Nombre:</span>
+                  <span className="text-slate-400">{t('assets.form.assetName')}:</span>
                   <span className="font-medium">{asset.asset_name}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Tag:</span>
+                  <span className="text-slate-400">{t('assets.reports_ui.tag')}:</span>
                   <span className="font-mono text-blue-400">{asset.asset_tag}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Categoría:</span>
+                  <span className="text-slate-400">{t('assets.form.category')}:</span>
                   <span>{category?.name || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Descripción:</span>
+                  <span className="text-slate-400">{t('common.description')}:</span>
                   <span className="text-right">{asset.description || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Fecha de Compra:</span>
+                  <span className="text-slate-400">{t('assets.form.purchaseDate')}:</span>
                   <span>{formatDate(asset.purchase_date)}</span>
                 </div>
                 {asset.start_depreciation_date && (
                   <div className="flex justify-between py-2 border-b border-slate-800">
-                    <span className="text-slate-400">Inicio Depreciación:</span>
+                    <span className="text-slate-400">{t('assets.details.startDepreciation')}:</span>
                     <span>{formatDate(asset.start_depreciation_date)}</span>
                   </div>
                 )}
@@ -221,37 +222,37 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-green-400" />
-                  Información Financiera
+                  {t('assets.form.financialInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Costo de Compra:</span>
+                  <span className="text-slate-400">{t('assets.form.purchaseCost')}:</span>
                   <span className="font-mono text-blue-400">{formatCurrency(asset.purchase_cost)}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Valor de Salvamento:</span>
+                  <span className="text-slate-400">{t('assets.form.salvageValue')}:</span>
                   <span className="font-mono">{formatCurrency(asset.salvage_value)}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Depreciación Acumulada:</span>
+                  <span className="text-slate-400">{t('assets.details.accumulated')}:</span>
                   <span className="font-mono text-amber-400">
                     {formatCurrency(asset.total_accumulated_depreciation)}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Valor en Libros:</span>
+                  <span className="text-slate-400">{t('assets.details.currentValue')}:</span>
                   <span className="font-mono text-green-400 text-lg font-bold">
                     {formatCurrency(asset.net_book_value || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-800">
-                  <span className="text-slate-400">Método de Depreciación:</span>
+                  <span className="text-slate-400">{t('assets.form.depreciationMethod')}:</span>
                   <span className="text-sm">{asset.depreciation_method}</span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span className="text-slate-400">Vida Útil:</span>
-                  <span>{asset.useful_life_months} meses</span>
+                  <span className="text-slate-400">{t('assets.form.usefulLife')}:</span>
+                  <span>{asset.useful_life_months} {t('assets.form.months')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -263,19 +264,19 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingDown className="w-5 h-5 text-amber-400" />
-                Historial de Depreciación
+                {t('assets.details.history')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8 text-slate-400">Cargando...</div>
+                <div className="text-center py-8 text-slate-400">{t('common.loading')}</div>
               ) : depreciationHistory.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-                  <p className="text-slate-400">No hay historial de depreciación</p>
+                  <p className="text-slate-400">{t('assets.details.noDepreciationHistory')}</p>
                   {asset.status === 'PENDING' && (
                     <p className="text-sm text-slate-500 mt-2">
-                      El activo debe ser activado para comenzar la depreciación
+                      {t('assets.details.activationRequired')}
                     </p>
                   )}
                 </div>
@@ -284,11 +285,11 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-slate-800">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Período</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Depreciación</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Acumulada</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Valor en Libros</th>
-                        <th className="text-center py-3 px-4 text-sm font-medium text-slate-400">Parcial</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('assets.reports_ui.period')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.depreciation')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.accumulated')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.currentValue')}</th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.partial')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -307,7 +308,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                           <td className="py-3 px-4 text-center">
                             {entry.is_partial_month && (
                               <span className="px-2 py-1 rounded text-xs bg-yellow-900/30 text-yellow-400">
-                                Parcial
+                                {t('assets.details.partial')}
                               </span>
                             )}
                           </td>
@@ -323,16 +324,16 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                 <div className="mt-8">
                   <h3 className="text-lg font-black tracking-tight text-white mb-4 flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-blue-400" />
-                    Proyección Futura
+                    {t('assets.details.futureProjection')}
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-slate-800">
-                          <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Período</th>
-                          <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Depreciación Estimada</th>
-                          <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Acumulada Proyectada</th>
-                          <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">Valor Proyectado</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">{t('assets.reports_ui.period')}</th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.estimatedDepreciation')}</th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.projectedAccumulated')}</th>
+                          <th className="text-right py-3 px-4 text-sm font-medium text-slate-400">{t('assets.details.projectedValue')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -364,7 +365,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-400" />
-                Historial de Transacciones
+                {t('assets.details.transactions')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -373,7 +374,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                 <div className="p-4 border border-slate-800 rounded-lg">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-medium text-white">Compra de Activo</h4>
+                      <h4 className="font-medium text-white">{t('assets.details.assetPurchase')}</h4>
                       <p className="text-sm text-slate-400 mt-1">
                         {formatDate(asset.purchase_date)}
                       </p>
@@ -392,13 +393,13 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                   <div className="p-4 border border-slate-800 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="font-medium text-white">Activación</h4>
+                        <h4 className="font-medium text-white">{t('assets.details.activation')}</h4>
                         <p className="text-sm text-slate-400 mt-1">
                           {formatDate(asset.start_depreciation_date)}
                         </p>
                       </div>
                       <span className="px-2 py-1 rounded text-xs bg-green-900/30 text-green-400">
-                        Depreciación Iniciada
+                        {t('assets.details.depreciationStarted')}
                       </span>
                     </div>
                   </div>
@@ -409,10 +410,8 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                   <div className="p-4 border border-slate-800 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="font-medium text-white">Disposición</h4>
-                        <p className="text-sm text-slate-400 mt-1">
-                          {formatDate(asset.disposal_date)} • {asset.disposal_method}
-                        </p>
+                        <h4 className="font-medium text-white">{t('assets.disposal')}</h4>
+                        {formatDate(asset.disposal_date)} • {asset.disposal_method && t(`assets.disposalForm.methods.${asset.disposal_method.toLowerCase()}`)}
                       </div>
                       {asset.disposal_amount && (
                         <span className="font-mono text-slate-400">
@@ -431,7 +430,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                 {depreciationHistory.length === 0 && !asset.disposal_date && (
                   <div className="text-center py-8">
                     <AlertCircle className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-                    <p className="text-slate-400">No hay transacciones adicionales</p>
+                    <p className="text-slate-400">{t('assets.details.noAdditionalTransactions')}</p>
                   </div>
                 )}
               </div>

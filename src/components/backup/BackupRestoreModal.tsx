@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { EnhancedBackupService, ProgressData, RestoreResult } from '../../services/backup/EnhancedBackupService';
 import '../../styles/backup-progress.css';
+import { useLocale } from '../../i18n/useLocale';
 
 interface BackupRestoreModalProps {
     isOpen: boolean;
@@ -9,6 +10,7 @@ interface BackupRestoreModalProps {
 }
 
 export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, onClose, selectedBackupId }) => {
+    const { t } = useLocale();
     const [progress, setProgress] = useState<ProgressData | null>(null);
     const [result, setResult] = useState<RestoreResult | null>(null);
     const [isRestoring, setIsRestoring] = useState(false);
@@ -61,7 +63,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
             <div className="bg-[#1f2937] border border-[#374151] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
                 <div className="p-6 border-b border-[#374151] flex justify-between items-center bg-[#111827]">
                     <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                        <span className="text-blue-500">🛡️</span> Restauración de Seguridad
+                        <span className="text-blue-500">🛡️</span> {t('backup.modal.title')}
                     </h2>
                     {!isRestoring && !result && (
                         <button onClick={onClose} className="text-slate-500 hover:text-white text-2xl">&times;</button>
@@ -72,34 +74,33 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                     {!isRestoring && !result ? (
                         <div className="text-center">
                             <div className="text-5xl mb-6">📦</div>
-                            <h3 className="text-lg font-semibold text-white mb-2">¿Confirmar restauración?</h3>
+                            <h3 className="text-lg font-semibold text-white mb-2">{t('backup.modal.confirmTitle')}</h3>
                             <p className="text-slate-500 mb-8">
-                                Estás a punto de restaurar el backup <span className="text-blue-400 font-mono">#{selectedBackupId}</span>.
-                                Los datos actuales serán reemplazados por esta versión anterior.
+                                {t('backup.modal.confirmMessage', { id: selectedBackupId })}
                             </p>
                             <div className="flex gap-4 justify-center">
                                 <button
                                     onClick={onClose}
                                     className="px-6 py-2.5 rounded-lg border border-[#374151] text-slate-400 hover:bg-[#374151] transition-colors"
                                 >
-                                    Cancelar
+                                    {t('common.cancel')}
                                 </button>
                                 <button
                                     onClick={startRestore}
                                     className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
                                 >
-                                    Confirmar y Restaurar
+                                    {t('backup.modal.confirmButton')}
                                 </button>
                             </div>
                         </div>
                     ) : result ? (
                         <div className={`completion-card ${result.success ? 'bg-green-900/10' : 'bg-red-900/10'}`}>
                             <div className="success-icon-animate">{result.success ? '✅' : '❌'}</div>
-                            <h3 className="text-white">{result.success ? '¡Proceso Exitoso!' : 'Error en el Proceso'}</h3>
+                            <h3 className="text-white">{result.success ? t('backup.modal.successTitle') : t('backup.modal.errorTitle')}</h3>
                             <p className="text-slate-500 mb-4">{result.message}</p>
                             {result.success && (
                                 <div className="redirect-hint animate-pulse">
-                                    Redirigiendo al dashboard de forma automática en breve...
+                                    {t('backup.modal.redirecting')}
                                 </div>
                             )}
                             {!result.success && (
@@ -107,7 +108,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                                     onClick={onClose}
                                     className="mt-4 px-6 py-2 rounded-lg bg-[#374151] text-white hover:bg-[#4b5563]"
                                 >
-                                    Cerrar y Revisar
+                                    {t('backup.modal.closeAndReview')}
                                 </button>
                             )}
                         </div>
@@ -116,7 +117,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                             <div className="progress-status-info">
                                 <div className="status-label-group">
                                     <span className="status-stage">{progress?.stage || 'INICIANDO'}</span>
-                                    <span className="status-message">{progress?.message || 'Iniciando proceso...'}</span>
+                                    <span className="status-message">{progress?.message || t('backup.modal.starting')}</span>
                                 </div>
                                 <div className="percentage-display">
                                     {progress?.percentage || 0}%
@@ -132,7 +133,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
 
                             <div className="loading-spinner-box">
                                 <div className="backup-spinner"></div>
-                                <span>Trabajando en la base de datos local de forma segura...</span>
+                                <span>{t('backup.modal.databaseWorking')}</span>
                             </div>
                         </div>
                     )}

@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/card';
 import { getFixedAssetsController } from '../../controllers/FixedAssetsController';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import type { FixedAsset } from '../../services/accounting/FixedAssetService';
+import { useLocale } from '../../i18n/useLocale';
 
 interface AssetDisposalFormProps {
     asset: FixedAsset;
@@ -21,6 +22,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
     onCancel,
     db
 }) => {
+    const { t } = useLocale();
     const [formData, setFormData] = useState({
         disposal_date: new Date().toISOString().split('T')[0],
         disposal_method: 'SALE' as DisposalMethod,
@@ -41,12 +43,12 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
 
         // Validation
         if (formData.disposal_method === 'SALE' && proceeds <= 0) {
-            setError('Sale proceeds must be greater than zero');
+            setError(t('assets.disposalForm.errorSaleProceeds'));
             return;
         }
 
         if (new Date(formData.disposal_date) < new Date(asset.purchase_date)) {
-            setError('Disposal date cannot be before purchase date');
+            setError(t('assets.disposalForm.errorDate'));
             return;
         }
 
@@ -63,7 +65,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
 
             onDispose();
         } catch (err: any) {
-            setError(err.message || 'Failed to dispose asset');
+            setError(err.message || t('assets.disposalForm.errorSubmit'));
         } finally {
             setLoading(false);
         }
@@ -80,7 +82,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
-                        Dispose Fixed Asset
+                        {t('assets.disposalForm.title')}
                     </h2>
                     <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
                         {asset.asset_tag} - {asset.asset_name}
@@ -98,10 +100,9 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
             <div className="bg-amber-500/10 border border-amber-500/50 rounded-xl p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
-                    <p className="text-amber-200 text-sm font-bold mb-1">Warning: Permanent Action</p>
+                    <p className="text-amber-200 text-sm font-bold mb-1">{t('assets.disposalForm.warningTitle')}</p>
                     <p className="text-amber-300/80 text-sm">
-                        Once disposed, this asset will be removed from active depreciation and cannot be reactivated.
-                        Final depreciation will be calculated up to the disposal date.
+                        {t('assets.disposalForm.warningText')}
                     </p>
                 </div>
             </div>
@@ -118,20 +119,20 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                 {/* Current Asset Summary */}
                 <Card className="bg-slate-900 border-slate-800">
                     <CardContent className="p-6">
-                        <h3 className="text-lg font-black text-white mb-4">Current Asset Value</h3>
+                        <h3 className="text-lg font-black text-white mb-4">{t('assets.details.currentValue')}</h3>
                         <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Original Cost</p>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.form.purchaseCost')}</p>
                                 <p className="text-lg font-black text-white">${(asset.purchase_cost / 100).toFixed(2)}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Accumulated Dep.</p>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.details.accumulated')}</p>
                                 <p className="text-lg font-black text-amber-400">
                                     ${(asset.total_accumulated_depreciation / 100).toFixed(2)}
                                 </p>
                             </div>
                             <div className="border-l-2 border-slate-700 pl-4">
-                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Net Book Value</p>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.details.currentValue')}</p>
                                 <p className="text-xl font-black text-emerald-400">${netBookValue.toFixed(2)}</p>
                             </div>
                         </div>
@@ -141,13 +142,13 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                 {/* Disposal Details */}
                 <Card className="bg-slate-900 border-slate-800">
                     <CardContent className="p-6 space-y-4">
-                        <h3 className="text-lg font-black text-white mb-4">Disposal Details</h3>
+                        <h3 className="text-lg font-black text-white mb-4">{t('assets.disposalForm.details')}</h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Disposal Date */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Disposal Date <span className="text-rose-500">*</span>
+                                    {t('assets.disposalForm.date')} <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
@@ -166,24 +167,24 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                             {/* Disposal Method */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Disposal Method <span className="text-rose-500">*</span>
+                                    {t('assets.disposalForm.method')} <span className="text-rose-500">*</span>
                                 </label>
                                 <select
                                     value={formData.disposal_method}
                                     onChange={(e) => handleChange('disposal_method', e.target.value as DisposalMethod)}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none"
                                 >
-                                    <option value="SALE">Sale</option>
-                                    <option value="RETIREMENT">Retirement (Scrap)</option>
-                                    <option value="TRADE_IN">Trade-In</option>
-                                    <option value="LOST">Lost/Stolen</option>
+                                    <option value="SALE">{t('assets.disposalForm.methods.sale')}</option>
+                                    <option value="RETIREMENT">{t('assets.disposalForm.methods.retirement')}</option>
+                                    <option value="TRADE_IN">{t('assets.disposalForm.methods.trade_in')}</option>
+                                    <option value="LOST">{t('assets.disposalForm.methods.lost')}</option>
                                 </select>
                             </div>
 
                             {/* Disposal Proceeds */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Proceeds Received {formData.disposal_method === 'SALE' && <span className="text-rose-500">*</span>}
+                                    {t('assets.disposalForm.proceeds')} {formData.disposal_method === 'SALE' && <span className="text-rose-500">*</span>}
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
@@ -199,20 +200,20 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                                     />
                                 </div>
                                 {formData.disposal_method !== 'SALE' && (
-                                    <p className="text-xs text-slate-500 mt-1">Enter amount if cash was received</p>
+                                    <p className="text-xs text-slate-500 mt-1">{t('assets.disposalForm.proceedsHint')}</p>
                                 )}
                             </div>
 
                             {/* Calculated Gain/Loss - Highlighted */}
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Calculated Gain/Loss
+                                    {t('assets.disposalForm.gainLossTitle')}
                                 </label>
                                 <div className={`p-3 rounded-xl border-2 ${gainLoss > 0
-                                        ? 'bg-emerald-500/10 border-emerald-500/30'
-                                        : gainLoss < 0
-                                            ? 'bg-rose-500/10 border-rose-500/30'
-                                            : 'bg-slate-800/50 border-slate-700'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                                    : gainLoss < 0
+                                        ? 'bg-rose-500/10 border-rose-500/30'
+                                        : 'bg-slate-800/50 border-slate-700'
                                     }`}>
                                     <div className="flex items-center justify-between">
                                         <span className={`text-2xl font-black font-mono ${gainLoss > 0 ? 'text-emerald-400' : gainLoss < 0 ? 'text-rose-400' : 'text-slate-400'
@@ -228,7 +229,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1">
-                                        {gainLoss > 0 ? 'Gain on Disposal' : gainLoss < 0 ? 'Loss on Disposal' : 'Break Even'}
+                                        {gainLoss > 0 ? t('assets.disposalForm.gain') : gainLoss < 0 ? t('assets.disposalForm.loss') : t('assets.disposalForm.breakEven')}
                                     </p>
                                 </div>
                             </div>
@@ -236,14 +237,14 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                             {/* Notes */}
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
-                                    Notes
+                                    {t('assets.form.notes')}
                                 </label>
                                 <textarea
                                     value={formData.notes}
                                     onChange={(e) => handleChange('notes', e.target.value)}
                                     rows={3}
                                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-indigo-500 outline-none resize-none"
-                                    placeholder="Reason for disposal, buyer information, etc..."
+                                    placeholder={t('assets.disposalForm.notesPlaceholder')}
                                 />
                             </div>
                         </div>
@@ -255,7 +256,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                     <CardContent className="p-6">
                         <h3 className="text-lg font-black text-white mb-4 flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-indigo-400" />
-                            Journal Entry Preview
+                            {t('assets.disposalForm.preview')}
                         </h3>
                         <div className="space-y-2 text-sm font-mono">
                             <div className="flex justify-between">
@@ -268,7 +269,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                             </div>
                             {gainLoss < 0 && (
                                 <div className="flex justify-between">
-                                    <span className="text-slate-400">DR Loss on Disposal (5900)</span>
+                                    <span className="text-slate-400">DR {t('assets.disposalForm.loss')} (5900)</span>
                                     <span className="text-rose-400">${Math.abs(gainLoss).toFixed(2)}</span>
                                 </div>
                             )}
@@ -278,7 +279,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                             </div>
                             {gainLoss > 0 && (
                                 <div className="flex justify-between">
-                                    <span className="text-slate-400">CR Gain on Disposal (4900)</span>
+                                    <span className="text-slate-400">CR {t('assets.disposalForm.gain')} (4900)</span>
                                     <span className="text-emerald-400">${gainLoss.toFixed(2)}</span>
                                 </div>
                             )}
@@ -295,14 +296,14 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                         className="border-slate-800 text-slate-400 hover:text-white px-8 py-6 rounded-2xl font-bold"
                         disabled={loading}
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </Button>
                     <Button
                         type="submit"
                         className="bg-rose-600 hover:bg-rose-700 text-white px-10 py-6 rounded-2xl font-black shadow-xl shadow-rose-900/20"
                         disabled={loading}
                     >
-                        {loading ? 'Processing...' : 'Confirm Disposal'}
+                        {loading ? t('common.processing') : t('assets.disposalForm.confirmBtn')}
                     </Button>
                 </div>
             </form>
