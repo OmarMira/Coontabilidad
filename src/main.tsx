@@ -89,13 +89,13 @@ async function initializeApplication(): Promise<void> {
     root.render(
       <React.StrictMode>
         <DynamicErrorBoundary>
-          <SystemIntegrityGate>
-            <LanguageProvider>
+          <LanguageProvider>
+            <SystemIntegrityGate>
               <AuthProvider>
                 <App />
               </AuthProvider>
-            </LanguageProvider>
-          </SystemIntegrityGate>
+            </SystemIntegrityGate>
+          </LanguageProvider>
         </DynamicErrorBoundary>
       </React.StrictMode>
     );

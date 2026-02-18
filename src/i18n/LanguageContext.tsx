@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { translationEngine, Language, TranslationKey } from '../features/i18n/TranslationEngine';
+import es from '@/assets/locales/es.json';
+import en from '@/assets/locales/en.json';
 
 interface LanguageContextType {
     language: Language;

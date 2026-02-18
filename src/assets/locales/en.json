@@ -4965,5 +4965,14 @@
   "view": "View",
   "warehouse": "warehouse",
   "warning": "Warning",
-  "yes": "Yes"
+  "yes": "Yes",
+  "login": {
+    "fastDemoAccess": "FAST DEMO ACCESS",
+    "orLocalCredentials": "OR LOCAL CREDENTIALS",
+    "user": "USER",
+    "userPlaceholder": "e.g.: admin.user",
+    "password": "PASSWORD",
+    "signIn": "SIGN IN",
+    "error": "Login error"
+  }
 }

@@ -4546,5 +4546,14 @@
   "view": "Ver",
   "warehouse": "Almacén",
   "warning": "Advertencia",
-  "yes": "Sí"
+  "yes": "Sí",
+  "login": {
+    "fastDemoAccess": "ACCESO RÁPIDO DEMO",
+    "orLocalCredentials": "O CREDENCIALES LOCALES",
+    "user": "USUARIO",
+    "userPlaceholder": "ej: admin.user",
+    "password": "CONTRASEÑA",
+    "signIn": "INICIAR SESIÓN",
+    "error": "Error de inicio de sesión"
+  }
 }
