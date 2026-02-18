@@ -4974,5 +4974,28 @@
     "password": "PASSWORD",
     "signIn": "SIGN IN",
     "error": "Login error"
+  },
+  "dr15": {
+    "businessName": "reportsDashboard.dr15.businessName",
+    "certificateNumber": "reportsDashboard.dr15.certificateNumber",
+    "certificationText": "reportsDashboard.dr15.certificationText",
+    "certificationTitle": "reportsDashboard.dr15.certificationTitle",
+    "collectionPeriod": "reportsDashboard.dr15.collectionPeriod",
+    "county": "reportsDashboard.dr15.county",
+    "digitalSeal": "reportsDashboard.dr15.digitalSeal",
+    "exemptSales": "reportsDashboard.dr15.exemptSales",
+    "generating": "reportsDashboard.dr15.generating",
+    "grossSales": "reportsDashboard.dr15.grossSales",
+    "officialUseOnly": "reportsDashboard.dr15.officialUseOnly",
+    "pdfButton": "reportsDashboard.dr15.pdfButton",
+    "subtitle": "reportsDashboard.dr15.subtitle",
+    "summaryTitle": "reportsDashboard.dr15.summaryTitle",
+    "surchargeBreakdown": "reportsDashboard.dr15.surchargeBreakdown",
+    "surchargeDue": "reportsDashboard.dr15.surchargeDue",
+    "taxableAmount": "reportsDashboard.dr15.taxableAmount",
+    "taxableSales": "reportsDashboard.dr15.taxableSales",
+    "title": "reportsDashboard.dr15.title",
+    "totalTaxCollected": "reportsDashboard.dr15.totalTaxCollected",
+    "xmlButton": "reportsDashboard.dr15.xmlButton"
   }
 }

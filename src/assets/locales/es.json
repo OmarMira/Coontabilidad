@@ -4555,5 +4555,28 @@
     "password": "CONTRASEÑA",
     "signIn": "INICIAR SESIÓN",
     "error": "Error de inicio de sesión"
+  },
+  "dr15": {
+    "businessName": "Nombre del Negocio",
+    "certificateNumber": "Número de Certificado",
+    "certificationText": "Certificación",
+    "certificationTitle": "Título de Certificación",
+    "collectionPeriod": "Período de Recaudación",
+    "county": "Condado",
+    "digitalSeal": "Sello Digital",
+    "exemptSales": "Ventas Exentas",
+    "generating": "Generando...",
+    "grossSales": "Ventas Brutas",
+    "officialUseOnly": "Uso Oficial Solamente",
+    "pdfButton": "PDF",
+    "subtitle": "Reporte DR-15",
+    "summaryTitle": "Resumen",
+    "surchargeBreakdown": "Desglose de Recargo",
+    "surchargeDue": "Recargo Adeudado",
+    "taxableAmount": "Monto Gravable",
+    "taxableSales": "Ventas Gravables",
+    "title": "DR-15",
+    "totalTaxCollected": "Total Impuestos Recaudados",
+    "xmlButton": "XML"
   }
 }
