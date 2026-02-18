@@ -4997,5 +4997,16 @@
     "title": "reportsDashboard.dr15.title",
     "totalTaxCollected": "reportsDashboard.dr15.totalTaxCollected",
     "xmlButton": "reportsDashboard.dr15.xmlButton"
+  },
+  "inv": {
+    "adjustments": {
+      "adjustmentReason": "Adjustment Reason",
+      "cancel": "Cancel",
+      "cyclicCount": "Cyclic Count",
+      "damagedGoods": "Damaged Goods",
+      "difference": "Difference",
+      "differenceHelp": "Difference Help",
+      "expiredProduct": "Expired Product"
+    }
   }
 }

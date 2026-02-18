@@ -4578,5 +4578,16 @@
     "title": "DR-15",
     "totalTaxCollected": "Total Impuestos Recaudados",
     "xmlButton": "XML"
+  },
+  "inv": {
+    "adjustments": {
+      "adjustmentReason": "Motivo del Ajuste",
+      "cancel": "Cancelar",
+      "cyclicCount": "Conteo Cíclico",
+      "damagedGoods": "Mercancía Dañada",
+      "difference": "Diferencia",
+      "differenceHelp": "Ayuda con Diferencias",
+      "expiredProduct": "Producto Caducado"
+    }
   }
 }
