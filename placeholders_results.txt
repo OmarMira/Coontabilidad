@@ -1,0 +1,59 @@
+
+📊 HALLAZGOS DE TRADUCCIÓN TÉCNICA/PLACEHOLDERS:
+❌ Total de valores sospechosos: 478
+
+⚠️  CATEGORÍA: Technical Path (420)
+
+   - accounting.periods.sync: "Sincronizando Períodos..."
+   - accounting.closure.warningDesc: "Cerrar el período {{period}} es una acción permanente. Todas las transacciones serán bloqueadas."
+   - accounting.closure.processing: "periodClosure.processing"
+   - accounting.closure.poweredBy: "Iron Core Forensic Engine v4.0"
+   - accounting.closure.steps.transactions.label: "periodClosure.steps.transactions"
+   - accounting.closure.steps.transactionsDesc: "periodClosure.steps.transactionsDesc"
+   - accounting.closure.steps.bankReconciliation: "periodClosure.steps.bankReconciliation"
+   - accounting.closure.steps.bankReconciliationDesc: "periodClosure.steps.bankReconciliationDesc"
+   - accounting.closure.steps.payroll.label: "periodClosure.steps.payroll"
+   - accounting.closure.steps.payrollDesc: "periodClosure.steps.payrollDesc"
+   - accounting.closure.steps.adjustments.label: "periodClosure.steps.adjustments"
+   - accounting.closure.steps.adjustmentsDesc: "periodClosure.steps.adjustmentsDesc"
+   - accounting.closure.steps.confirmation.label: "periodClosure.steps.confirmation"
+   - accounting.closure.steps.confirmationDesc: "periodClosure.steps.confirmationDesc"
+   - accounting.closure.back: "periodClosure.back"
+   - accounting.closure.auditActivated: "periodClosure.auditActivated"
+   - accounting.closure.systemError: "periodClosure.systemError"
+   - accounting.closure.errorUnknown: "periodClosure.errorUnknown"
+   - accounting.closure.milestone: "periodClosure.milestone"
+   - accounting.closure.continue: "periodClosure.continue"
+   ... y 400 más
+
+⚠️  CATEGORÍA: Generic Placeholder (56)
+
+   - accounting.closure.steps.transactions.desc: "Desc"
+   - accounting.closure.steps.transactions.title: "Title"
+   - accounting.closure.steps.payroll.desc: "Desc"
+   - accounting.closure.steps.payroll.title: "Title"
+   - accounting.closure.steps.adjustments.desc: "Desc"
+   - accounting.closure.steps.adjustments.title: "Title"
+   - accounting.closure.steps.trialBalance.desc: "Desc"
+   - accounting.closure.steps.trialBalance.title: "Title"
+   - accounting.closure.steps.confirmation.desc: "Desc"
+   - accounting.closure.steps.confirmation.title: "Title"
+   - accounting.closure.steps.reconciliation.desc: "Desc"
+   - accounting.closure.steps.reconciliation.title: "Title"
+   - accounting.closure.title: "Title"
+   - aiAssistant.history.title: "Title"
+   - aiAssistant.proposals.subtitle: "Subtitle"
+   - aiAssistant.proposals.title: "Title"
+   - aiAssistant.title: "Title"
+   - ard.quality.subtitle: "Subtitle"
+   - ard.quality.title: "Title"
+   - ard.roadmap.phases.4.desc: "Desc"
+   ... y 36 más
+
+⚠️  CATEGORÍA: Generic Placeholder Tag (1)
+
+   - aiAssistant.placeholder: "Placeholder"
+
+⚠️  CATEGORÍA: Generic Label (1)
+
+   - inv.locations.name: "Name"

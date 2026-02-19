@@ -107,7 +107,13 @@
       "statusLocked": "Bloqueado",
       "auditReason": "Audit Reason",
       "errorLoading": "Error Loading",
-      "fastClose": "Fast Close"
+      "fastClose": "Fast Close",
+      "closureConfirm": "¿Está seguro de cerrar este período? Esta acción es irreversible.",
+      "closureSuccess": "Período cerrado exitosamente.",
+      "creationSuccess": "Período creado correctamente.",
+      "lockConfirm": "¿Bloquear este período? No se podrán hacer más cambios.",
+      "lockSuccess": "Período bloqueado.",
+      "reopenSuccess": "Período reabierto correctamente."
     },
     "closure": {
       "wizardTitle": "Asistente de Cierre de Período",
@@ -139,11 +145,11 @@
             "invoicesRegistered": "Invoices Registered",
             "noPending": "No Pending"
           },
-          "desc": "Desc",
+          "desc": "Verificación de integridad de asientos",
           "guidelinesTitle": "Guidelines Title",
           "phaseDesc": "Phase Desc",
           "phaseTitle": "Phase Title",
-          "title": "Title"
+          "title": "Validación de Transacciones"
         },
         "transactionsDesc": "periodClosure.steps.transactionsDesc",
         "bankReconciliation": "periodClosure.steps.bankReconciliation",
@@ -161,7 +167,7 @@
             "taxesCalculated": "Taxes Calculated"
           },
           "criticalAction": "Critical Action",
-          "desc": "Desc",
+          "desc": "Verificación de aportes y retenciones",
           "guidelinesTitle": "Guidelines Title",
           "messages": {
             "entriesLinked": "Entries Linked",
@@ -182,7 +188,7 @@
             "taxLoad": "Tax Load",
             "withholdings": "Withholdings"
           },
-          "title": "Title"
+          "title": "Validación de Nómina"
         },
         "payrollDesc": "periodClosure.steps.payrollDesc",
         "adjustments": {
@@ -197,10 +203,10 @@
             "goToInventory": "Go To Inventory",
             "inventory": "Inventory"
           },
-          "desc": "Desc",
+          "desc": "Depreciaciones y conciliaciones finales",
           "phaseDesc": "Phase Desc",
           "phaseTitle": "Phase Title",
-          "title": "Title"
+          "title": "Ajustes de Cierre"
         },
         "adjustmentsDesc": "periodClosure.steps.adjustmentsDesc",
         "trialBalance": {
@@ -212,7 +218,7 @@
             "noUnbalanced": "No Unbalanced"
           },
           "controlPoints": "Control Points",
-          "desc": "Desc",
+          "desc": "Estado final de cuentas antes del cierre",
           "download": "Download",
           "mainAccount": "Main Account",
           "netPosition": "Net Position",
@@ -221,7 +227,7 @@
           "phaseTitle": "Phase Title",
           "preview": "Preview",
           "successMsg": "Success Msg",
-          "title": "Title",
+          "title": "Balance de Comprobación",
           "validating": "Validating"
         },
         "trialBalanceDesc": "Revisión de balance de comprobación",
@@ -233,7 +239,7 @@
           "check": "Check",
           "confirmFinal": "Confirm Final",
           "consolidating": "Consolidating",
-          "desc": "Desc",
+          "desc": "Certificación del cierre del período",
           "end": "End",
           "execution": "Execution",
           "metaInfo": "Meta Info",
@@ -244,7 +250,7 @@
           "phaseTitle": "Phase Title",
           "securityLock": "Security Lock",
           "start": "Start",
-          "title": "Title"
+          "title": "Confirmación Final"
         },
         "confirmationDesc": "periodClosure.steps.confirmationDesc",
         "reconciliation": {
@@ -294,7 +300,7 @@
       "wizardCloseNote": "Nota de Cierre",
       "finish": "Finish",
       "next": "Next",
-      "title": "Title",
+      "title": "Asistente de Cierre",
       "wizard": {
         "integrity": "Integrity",
         "phase": "Phase"
@@ -784,8 +790,8 @@
       "reason": "Reason",
       "rejectConfirm": "Reject Confirm",
       "rejectSuccess": "Reject Success",
-      "subtitle": "Subtitle",
-      "title": "Title"
+      "subtitle": "Acciones correctivas sugeridas por IA",
+      "title": "Propuestas de Reparación"
     },
     "quickOperations": "Quick Operations",
     "readOnly": "Read Only",
@@ -819,7 +825,7 @@
     "steps": "Steps",
     "systemGuides": "System Guides",
     "tips": "Tips",
-    "title": "Title",
+    "title": "Asistente IA Alpha Core",
     "updateAnalysis": "Update Analysis"
   },
   "amount": "Monto",
@@ -956,8 +962,8 @@
       "recommendationHigh": "Recommendation High",
       "recommendationLow": "Recommendation Low",
       "score": "Score",
-      "subtitle": "Subtitle",
-      "title": "Title"
+      "subtitle": "Métricas de integridad de datos comerciales",
+      "title": "Control de Calidad ARD"
     },
     "quantity": "Cant.",
     "recoveredARD": "Recuperado (ARD)",
@@ -1646,7 +1652,7 @@
       "activeAccounts": "Cuentas Activas",
       "creditLines": "Líneas de Crédito",
       "totalLiquidity": "Liquidez Total",
-      "entities": "Entities"
+      "entities": "Entidades"
     },
     "type": {
       "checking": "CORRIENTE",
@@ -1707,9 +1713,9 @@
       "prepareFiling": "Preparar Declaración",
       "dr15Period": "Periodo DR-15"
     },
-    "subtitle": "Subtitle",
-    "syncVault": "Sync Vault",
-    "title": "Title"
+    "subtitle": "Gestión estratégica de activos líquidos y bóvedas",
+    "syncVault": "Sincronizar Bóveda",
+    "title": "Cuentas Bancarias"
   },
   "bankAccounts": {
     "activeAccounts": "Cuentas Activas",
@@ -2324,7 +2330,8 @@
     },
     "percentOfTotal": "Percent Of Total",
     "processing": "Processing",
-    "year": "Year"
+    "year": "Year",
+    "periodMonths": "Meses del Período"
   },
   "companyData": {
     "alert": {
@@ -2793,7 +2800,8 @@
       "taxCalculated": "Tax Calculated",
       "title": "Title",
       "validPeriod": "Valid Period",
-      "warnings": "Warnings"
+      "warnings": "Warnings",
+      "checksCompleted": "Verificaciones de cumplimiento completadas"
     },
     "confirmAndNext": "Confirm And Next",
     "createNewReport": "Create New Report",
@@ -3293,59 +3301,59 @@
       "warningMessage": "Warning Message"
     },
     "dashboard": {
-      "attentionRequired": "Attention Required",
-      "auditInventory": "Audit Inventory",
-      "inventoryHealthy": "Inventory Healthy",
-      "lowStockAlerts": "Low Stock Alerts",
-      "minLevel": "Min Level",
-      "noRecentMovements": "No Recent Movements",
-      "productsBelowMinimum": "Products Below Minimum",
-      "recentMovements": "Recent Movements",
+      "attentionRequired": "Atención Requerida",
+      "auditInventory": "Auditar Inventario",
+      "inventoryHealthy": "Inventario Saludable",
+      "lowStockAlerts": "Alertas Stock Bajo",
+      "minLevel": "Nivel Mín.",
+      "noRecentMovements": "Sin Movimientos Recientes",
+      "productsBelowMinimum": "Productos bajo el mínimo",
+      "recentMovements": "Movimientos Recientes",
       "ref": "Ref",
       "stock": "Stock",
-      "totalInventoryValue": "Total Inventory Value",
-      "totalItemsInStock": "Total Items In Stock",
-      "viewAll": "View All",
-      "viewCriticalStock": "View Critical Stock",
-      "weightedAverageCost": "Weighted Average Cost"
+      "totalInventoryValue": "Valor Total Inventario",
+      "totalItemsInStock": "Total Ítems en Stock",
+      "viewAll": "Ver Todos",
+      "viewCriticalStock": "Ver Stock Crítico",
+      "weightedAverageCost": "Costo Promedio Ponderado"
     },
     "kardex": {
-      "adjustmentsFilter": "Adjustments Filter",
-      "all": "All",
-      "allProducts": "All Products",
-      "balanceCol": "Balance Col",
-      "date": "Date",
-      "entry": "Entry",
+      "adjustmentsFilter": "Ajustes",
+      "all": "Todos",
+      "allProducts": "Todos los Productos",
+      "balanceCol": "Saldo",
+      "date": "Fecha",
+      "entry": "Entrada",
       "errorLoading": "Error Loading",
-      "exit": "Exit",
-      "movementTypeFilter": "Movement Type Filter",
-      "noMovementsFound": "No Movements Found",
-      "product": "Product",
-      "productFilter": "Product Filter",
-      "purchase": "Purchase",
+      "exit": "Salida",
+      "movementTypeFilter": "Filtrar Tipo Movimiento",
+      "noMovementsFound": "No se encontraron movimientos",
+      "product": "Producto",
+      "productFilter": "Filtrar Producto",
+      "purchase": "Compra",
       "purchases": "Purchases",
       "ref": "Ref",
       "refresh": "Refresh",
       "returns": "Returns",
-      "sale": "Sale",
+      "sale": "Venta",
       "sales": "Sales",
-      "title": "Title",
-      "type": "Type",
-      "user": "User"
+      "title": "Kardex de Inventario",
+      "type": "Tipo",
+      "user": "Usuario"
     },
     "locations": {
-      "active": "Active",
-      "address": "Address",
+      "active": "Activo",
+      "address": "Dirección",
       "addressPlaceholder": "Address Placeholder",
-      "cancel": "Cancel",
+      "cancel": "Cancelar",
       "codeExample": "Code Example",
       "codeUnique": "Code Unique",
-      "description": "Description",
+      "description": "Descripción",
       "descriptionPlaceholder": "Description Placeholder",
-      "edit": "Edit",
-      "errorLoadingLocations": "Error Loading Locations",
-      "locationCreated": "Location Created",
-      "name": "Name",
+      "edit": "Editar",
+      "errorLoadingLocations": "Error al cargar ubicaciones",
+      "locationCreated": "Ubicación Creada",
+      "name": "Nombre",
       "nameCodeRequired": "Name Code Required",
       "nameExample": "Name Example",
       "newLocation": "New Location",
@@ -3353,7 +3361,7 @@
       "noAddress": "No Address",
       "noLocations": "No Locations",
       "saveLocation": "Save Location",
-      "title": "Title"
+      "title": "Ubicaciones de Inventario"
     },
     "movements": {
       "balance": "Balance",
@@ -3452,7 +3460,8 @@
       "valuationDesc": "Valuation Desc",
       "valuationReportSubtitle": "Valuation Report Subtitle",
       "valuationReportTitle": "Valuation Report Title",
-      "valuationTitle": "Valuation Title"
+      "valuationTitle": "Valuation Title",
+      "actionRequiredMsg": "Se requiere acción inmediata en ítems de stock crítico."
     }
   },
   "inventoryDashboard": {
@@ -3726,7 +3735,9 @@
     "syncViews": "Sync Views",
     "systemHealthy": "System Healthy",
     "title": "Title",
-    "validateIntegrity": "Validate Integrity"
+    "validateIntegrity": "Validate Integrity",
+    "lastRepair": "Última reparación ejecutada: {{date}}",
+    "runningAction": "Ejecutando acción de mantenimiento..."
   },
   "messages": {
     "bankAccountCreated": "Cuenta bancaria creada correctamente",
@@ -5019,7 +5030,8 @@
       "details": "Details",
       "dismiss": "Dismiss",
       "retry": "Retry",
-      "verify": "Verify"
+      "verify": "Verify",
+      "repairAll": "Reparar Todas las Vulnerabilidades"
     },
     "messages": {
       "attentionRequired": "Attention Required",
@@ -5029,7 +5041,11 @@
       "repairingSystem": "Repairing System",
       "systemHealthy": "System Healthy",
       "systemWarnings": "System Warnings",
-      "verifyingIntegrity": "Verifying Integrity"
+      "verifyingIntegrity": "Verifying Integrity",
+      "bannerWarning": "ATENCIÓN: Se detectaron inconsistencias de seguridad",
+      "lastCheck": "Última auditoría: {{date}}",
+      "problemsCount": "Problemas Críticos: {{count}}",
+      "warningsCount": "Advertencias: {{count}}"
     }
   },
   "securitySettings": {
@@ -5090,7 +5106,8 @@
     "subtitleContent": "Subtitle Content",
     "testConnection": "Test Connection",
     "testSuccess": "Test Success",
-    "update": "Update"
+    "update": "Update",
+    "manualBackupSuccess": "Copia de seguridad manual guardada con éxito."
   },
   "setup": {
     "title": "Configuración Inicial",
@@ -5722,5 +5739,14 @@
   },
   "❌ Error: ${error": {
     "message}": "Message}"
+  },
+  "termsDefault": "Net 30",
+  "compliance": {
+    "72_days_remaining": "72 DÍAS RESTANTES",
+    "next_deadline": "PRÓXIMO VENCIMIENTO",
+    "start_fiscal_cycle": "INICIAR CICLO FISCAL",
+    "facturación_forense_florida": "Facturación Forense Florida",
+    "guardar_con_auditoría": "Guardar con Auditoría",
+    "subtotal:_100": "Subtotal: 100"
   }
 }
