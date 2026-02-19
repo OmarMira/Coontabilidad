@@ -1,4 +1,17 @@
 {
+  "login": {
+    "fastDemoAccess": "FAST DEMO ACCESS",
+    "fastdemoaccess": "FAST DEMO ACCESS",
+    "orLocalCredentials": "OR LOCAL CREDENTIALS",
+    "orlocalcredentials": "OR LOCAL CREDENTIALS",
+    "user": "USER",
+    "userplaceholder": "e.g.: admin.user",
+    "userPlaceholder": "e.g.: admin.user",
+    "password": "PASSWORD",
+    "signIn": "SIGN IN",
+    "signin": "SIGN IN",
+    "error": "Login error"
+  },
   "1": {
     "0": {
       "0": "1.0.0"
@@ -3341,15 +3354,6 @@
   },
   "lineTotal": "Line Total",
   "loading": "Loading",
-  "login": {
-    "fastDemoAccess": "FAST DEMO ACCESS",
-    "orLocalCredentials": "OR LOCAL CREDENTIALS",
-    "user": "USER",
-    "userPlaceholder": "e.g.: admin.user",
-    "password": "PASSWORD",
-    "signIn": "SIGN IN",
-    "error": "Login error"
-  },
   "logout": "Log Out",
   "low_stock": "LOW_STOCK",
   "messages": {

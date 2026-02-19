@@ -8,82 +8,67 @@ interface LanguageSwitcherProps {
     className?: string;
 }
 
+/**
+ * LanguageSwitcher deshabilitado (Soporte solo Español).
+ * Mantenido para evitar errores de compilación.
+ */
 export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     variant = 'sidebar',
     className = ''
 }) => {
-    const { language, setLanguage } = useLanguage();
+    const { language } = useLanguage();
     const { t } = useLocale();
 
-    const toggleLanguage = () => {
-        setLanguage(language === 'es' ? 'en' : 'es');
-    };
-
-    const tooltip = language === 'es' ? t('common.switchToEnglish') : t('common.switchToSpanish');
+    const tooltip = "Próximamente: Inglés";
 
     // Variante para Sidebar (botón completo)
     if (variant === 'sidebar') {
         return (
-            <button
-                onClick={toggleLanguage}
-                className={`w-full flex items-center justify-between gap-3 px-4 py-3 bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-white rounded-xl font-bold transition-all border border-slate-800 group uppercase text-xs ${className}`}
+            <div
+                className={`w-full flex items-center justify-between gap-3 px-4 py-3 bg-slate-900/20 text-slate-600 rounded-xl font-bold border border-slate-800/50 opacity-50 cursor-not-allowed ${className}`}
                 title={tooltip}
             >
                 <div className="flex items-center gap-3">
-                    <Languages className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    <span>{language === 'es' ? t('common.spanish').toUpperCase() : t('common.english').toUpperCase()}</span>
+                    <Languages className="w-4 h-4" />
+                    <span>{t('common.spanish').toUpperCase()}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${language === 'es'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-800 text-slate-600'
-                        }`}>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black bg-blue-600/50 text-white/50">
                         ES
                     </span>
-                    <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${language === 'en'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-800 text-slate-600'
-                        }`}>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black bg-slate-800 text-slate-700">
                         EN
                     </span>
                 </div>
-            </button>
+            </div>
         );
     }
 
     // Variante para Header (compacto)
     if (variant === 'header') {
         return (
-            <button
-                onClick={toggleLanguage}
-                className={`flex items-center gap-2 px-3 py-2 bg-slate-900/50 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg font-bold transition-all border border-slate-800 group ${className}`}
+            <div
+                className={`flex items-center gap-2 px-3 py-2 bg-slate-900/20 text-slate-600 rounded-lg font-bold border border-slate-800/50 opacity-50 cursor-not-allowed ${className}`}
                 title={tooltip}
             >
                 <Languages className="w-4 h-4" />
                 <span className="text-xs font-black">{language.toUpperCase()}</span>
-            </button>
+            </div>
         );
     }
 
     // Variante compacta (solo banderas/códigos)
     return (
-        <button
-            onClick={toggleLanguage}
-            className={`flex items-center gap-1 p-2 bg-slate-900/50 hover:bg-slate-800 rounded-lg transition-all border border-slate-800 ${className}`}
+        <div
+            className={`flex items-center gap-1 p-2 bg-slate-900/20 rounded-lg border border-slate-800/50 opacity-50 cursor-not-allowed ${className}`}
             title={tooltip}
         >
-            <span className={`w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black transition-all ${language === 'es'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-600'
-                }`}>
+            <span className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black bg-blue-600/50 text-white/50">
                 ES
             </span>
-            <span className={`w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black transition-all ${language === 'en'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-600'
-                }`}>
+            <span className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-black bg-slate-800 text-slate-700">
                 EN
             </span>
-        </button>
+        </div>
     );
 };

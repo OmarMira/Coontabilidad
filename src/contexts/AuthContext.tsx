@@ -207,12 +207,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         expiresAt: Date.now() + 8 * 60 * 60 * 1000
                     }));
 
-                    // Sync Language Preference for New Users
-                    const browserLang = navigator.language.split('-')[0]; // 'es-ES' -> 'es'
-                    if (browserLang === 'es' || browserLang === 'en') {
-                        translationEngine.setLanguage(browserLang as 'es' | 'en');
-                        console.log(`🌍 Idioma sincronizado con navegador: ${browserLang}`);
-                    }
+                    // Sync Language Preference for New Users - Forzado a ES
+                    translationEngine.setLanguage('es');
+                    console.log(`🌍 Idioma sincronizado: es`);
 
                     console.log(`✅ Usuario de Google creado exitosamente con rol: ${assignedRole.name}`, userData);
                     return true;

@@ -2,7 +2,7 @@ import React from 'react';
 import { Wifi, WifiOff, Database, Shield, User as UserIcon, Zap, ShieldCheck, Activity, Cpu } from 'lucide-react';
 import { OnlineStatus } from './common/OnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
-import { LanguageSelector } from './LanguageSelector';
+// import { LanguageSelector } from './LanguageSelector';
 import { useLocale } from '../i18n/useLocale';
 
 interface HeaderProps {
@@ -64,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick }) => 
             </div>
           )}
 
-          <LanguageSelector />
+          {/* <LanguageSelector /> */}
           <OnlineStatus />
         </div>
       </div>

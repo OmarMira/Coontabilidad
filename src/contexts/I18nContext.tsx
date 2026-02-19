@@ -1,69 +1,34 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import esTranslations from '../locales/es.json';
-import enTranslations from '../locales/en.json';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import esTranslations from '../assets/locales/es.json';
 
-type Locale = 'es' | 'en';
-
+type Locale = 'es';
 type Translations = typeof esTranslations;
 
 interface I18nContextType {
     locale: Locale;
-    setLocale: (locale: Locale) => void;
     t: (key: string, params?: Record<string, string | number>) => string;
     translations: Translations;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
-const LOCALE_STORAGE_KEY = 'accountexpress_locale';
-
-const translations: Record<Locale, Translations> = {
-    es: esTranslations,
-    en: enTranslations
-};
-
+/**
+ * I18nProvider simplificado para soporte UNICAMENTE de español.
+ */
 export function I18nProvider({ children }: { children: ReactNode }) {
-    // Cargar idioma desde localStorage o usar español por defecto
-    const [locale, setLocaleState] = useState<Locale>(() => {
-        const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-        return (stored === 'es' || stored === 'en') ? stored : 'es';
-    });
-
-    // Persistir cambios de idioma en localStorage
-    useEffect(() => {
-        localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-        // Actualizar atributo lang del documento
-        document.documentElement.lang = locale;
-    }, [locale]);
-
-    const setLocale = (newLocale: Locale) => {
-        setLocaleState(newLocale);
-    };
+    const [locale] = useState<Locale>('es');
 
     // Función de traducción con soporte para interpolación
     const t = (key: string, params?: Record<string, string | number>): string => {
         const keys = key.split('.');
-        let value: any = translations[locale];
+        let value: any = esTranslations;
 
         // Navegar por el objeto de traducciones
         for (const k of keys) {
             if (value && typeof value === 'object' && k in value) {
                 value = value[k];
             } else {
-                // Fallback a español si no existe la clave en inglés
-                if (locale === 'en') {
-                    let fallbackValue: any = translations.es;
-                    for (const fk of keys) {
-                        if (fallbackValue && typeof fallbackValue === 'object' && fk in fallbackValue) {
-                            fallbackValue = fallbackValue[fk];
-                        } else {
-                            return key; // Si tampoco existe en español, devolver la clave
-                        }
-                    }
-                    value = fallbackValue;
-                } else {
-                    return key; // Devolver la clave si no se encuentra
-                }
+                return key;
             }
         }
 
@@ -84,9 +49,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
     const value: I18nContextType = {
         locale,
-        setLocale,
         t,
-        translations: translations[locale]
+        translations: esTranslations
     };
 
     return (
@@ -104,7 +68,6 @@ export function useI18n() {
     return context;
 }
 
-// Hook para obtener solo la función de traducción (más conveniente)
 export function useTranslation() {
     const { t, locale } = useI18n();
     return { t, locale };

@@ -8,7 +8,7 @@ import {
   History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
   CheckCircle
 } from 'lucide-react';
-import { LanguageSwitcher } from './LanguageSwitcher';
+// import { LanguageSwitcher } from './LanguageSwitcher';
 import { saveDatabase } from '../database/simple-db';
 
 import toast from 'react-hot-toast';
@@ -358,8 +358,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           </button>
         )}
 
-        {/* Language Switcher */}
-        {!isCollapsed && <LanguageSwitcher variant="sidebar" />}
+        {/* Language Switcher deshabilitado por simplificación i18n */}
+        {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
 
         <button
           onClick={() => {

@@ -1,9 +1,7 @@
-import es from '@/assets/locales/es.json';
-import en from '@/assets/locales/en.json';
-import { logger } from '@/core/logging/SystemLogger';
+import es from '../../assets/locales/es.json';
+import { logger } from '../../core/logging/SystemLogger';
 
-
-export type Language = 'es' | 'en';
+export type Language = 'es';
 export type Dictionary = typeof es;
 export type TranslationKey = keyof Dictionary;
 
@@ -12,14 +10,19 @@ export type TranslationKey = keyof Dictionary;
  * 
  * Motor singleton para la gestión de idiomas y localización.
  * Implementa persistencia automática y carga reactiva de diccionarios.
+ * SIMPLIFICADO: Solo soporte para español.
  */
 export class TranslationEngine {
     private static instance: TranslationEngine;
-    private currentLanguage: Language = 'es'; // Forzado a ES por defecto
-    private dictionaries: Record<Language, any> = { es, en };
+    private currentLanguage: Language = 'es';
+    public dictionaries: Record<Language, any> = { es };
 
     private constructor() {
         this.loadPreference();
+        // Exponer para debugging (Solo si es necesario para logs técnicos)
+        if (typeof window !== 'undefined') {
+            (window as any).translationEngine = this;
+        }
     }
 
     static getInstance(): TranslationEngine {
@@ -30,80 +33,59 @@ export class TranslationEngine {
     }
 
     /**
-     * Carga el idioma preferido desde localStorage.
+     * Carga el idioma preferido (fijo a es).
      */
     private loadPreference() {
-        const saved = localStorage.getItem('app_language');
-        if (saved === 'es' || saved === 'en') {
-            this.currentLanguage = saved;
-        } else {
-            this.currentLanguage = 'es'; // Asegurar default
+        this.currentLanguage = 'es';
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = this.currentLanguage;
         }
-        document.documentElement.lang = this.currentLanguage;
     }
 
 
     /**
-     * Cambia el idioma global y persiste la elección.
+     * Cambia el idioma global (fijo a es).
      */
     public setLanguage(lang: Language) {
-        this.currentLanguage = lang;
-        localStorage.setItem('app_language', lang);
-        document.documentElement.lang = lang;
-        logger.info('TranslationEngine', 'language_changed', `Idioma cambiado a: ${lang}`);
-
-        // Notificar a la app mediante evento global
-        window.dispatchEvent(new CustomEvent('languageChange', { detail: { language: lang } }));
+        this.currentLanguage = 'es';
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = 'es';
+        }
+        logger.info('TranslationEngine', 'language_changed', `Idioma fijado a: es`);
     }
 
     /**
      * Retorna el idioma activo.
      */
     public getLanguage(): Language {
-        return this.currentLanguage;
+        return 'es';
     }
 
-    private debug: boolean = true;
-    private fallbackLng: Language = 'en';
-
     /**
-     * Función de traducción núcleo con Fallback.
+     * Función de traducción núcleo.
      */
     public t(key: string): any {
-        // Convert key to lowercase for case-insensitive lookup
         const normalizedKey = key.toLowerCase();
         let value = this.getValueFromDictionary(this.dictionaries[this.currentLanguage], normalizedKey);
-
-        // Fallback a inglés si no se encuentra en el idioma actual
-        if (value === normalizedKey && this.currentLanguage !== this.fallbackLng) {
-            if (this.debug) {
-                console.warn(`[i18n] Missing key '${key}' in '${this.currentLanguage}'. Falling back to '${this.fallbackLng}'.`);
-            }
-            value = this.getValueFromDictionary(this.dictionaries[this.fallbackLng], normalizedKey);
-        }
-
         return value;
     }
 
     private getValueFromDictionary(dictionary: any, key: string): any {
-        // First, try exact match for flat keys (e.g., "navigation.dashboard")
-        // This handles case where JSON keys contain dots
+        // Primero, intentar coincidencia exacta para claves planas (ej. "navigation.dashboard")
         const exactMatch = Object.keys(dictionary).find(k => k.toLowerCase() === key.toLowerCase());
         if (exactMatch) {
             return dictionary[exactMatch];
         }
 
-        // If not found as flat key, try nested traversal
+        // Si no se encuentra como clave plana, intentar recorrido anidado
         const keys = key.split('.');
         let value = dictionary;
 
         for (const k of keys) {
             if (value && typeof value === 'object') {
-                // Try exact match first
                 if (k in value) {
                     value = value[k];
                 } else {
-                    // Try case-insensitive match
                     const matchingKey = Object.keys(value).find(objKey => objKey.toLowerCase() === k.toLowerCase());
                     if (matchingKey) {
                         value = value[matchingKey];
@@ -119,12 +101,11 @@ export class TranslationEngine {
     }
 
     /**
-     * Mapeo dinámico para entidades contables (Capa 1).
+     * Mapeo dinámico para entidades contables.
      */
     public translateEntity(entity: string): string {
-        // Mapeo especial para entidades que vienen de DB
         const entityMap: Record<string, string> = {
-            'asset': 'customer', // Ejemplo de mapeo si fuera necesario
+            'asset': 'customer',
             'liability': 'bill'
         };
         const key = entityMap[entity.toLowerCase()] || entity.toLowerCase();
