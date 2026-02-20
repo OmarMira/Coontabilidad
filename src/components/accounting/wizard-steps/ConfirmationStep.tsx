@@ -145,7 +145,7 @@ export default function ConfirmationStep({
               <p className="text-xl font-black text-white">{totalChecks}</p>
             </div>
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <p className="text-[9px] font-black text-slate-600 uppercase">Warning</p>
+              <p className="text-[9px] font-black text-slate-600 uppercase">Advertencia</p>
               <p className="text-xl font-black text-orange-400">{warningChecks}</p>
             </div>
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">

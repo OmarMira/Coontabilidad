@@ -154,7 +154,7 @@ export const PayrollProcessorUI: React.FC = () => {
               <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('payroll.processor.payrollInfo')}</h3>
               <div className="flex items-center gap-3">
                 <Zap className="w-4 h-4 text-blue-500 animate-pulse" />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">FL TAX ENGINE</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{t('payroll.processor.flTaxEngine')}</span>
               </div>
             </div>
 

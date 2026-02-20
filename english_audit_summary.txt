@@ -1,0 +1,62 @@
+
+🔍 TEXTOS EN INGLÉS ENCONTRADOS: 2800
+
+
+📊 Reporte detallado guardado en: english_hardcoded_report.json
+
+📄 src/components/AccountingDiagnosis.tsx (16 posibles ocurrencias)
+   Línea 12: Search,... [Detectado: "Search"]
+   Línea 25: const [loading, setLoading] = useState(false);... [Detectado: "loading"]
+   Línea 26: const [error, setError] = useState<string | null>(null);... [Detectado: "error"]
+   ... y 13 más
+
+📄 src/components/AddressAutocomplete.tsx (8 posibles ocurrencias)
+   Línea 62: } catch (error) {... [Detectado: "error"]
+   Línea 111: } catch (error) {... [Detectado: "error"]
+   Línea 153: street: '', // No tenemos calle en las sugerencias, el usuar... [Detectado: "No"]
+   ... y 5 más
+
+📄 src/components/AppRouter.tsx (1 posibles ocurrencias)
+   Línea 43: } catch (error) {... [Detectado: "error"]
+
+📄 src/components/BackupPanel.tsx (15 posibles ocurrencias)
+   Línea 10: const [loading, setLoading] = useState(false);... [Detectado: "loading"]
+   Línea 12: const [error, setError] = useState('');... [Detectado: "error"]
+   Línea 33: const success = await BackupService.createBackupWithLocation... [Detectado: "success"]
+   ... y 12 más
+
+📄 src/components/BalanceSheet.tsx (14 posibles ocurrencias)
+   Línea 37: const [loading, setLoading] = useState(false);... [Detectado: "loading"]
+   Línea 38: const [error, setError] = useState<string | null>(null);... [Detectado: "error"]
+   Línea 41: const loadBalanceSheet = async (date?: string) => {... [Detectado: "date"]
+   ... y 11 más
+
+📄 src/components/BankAccountForm.tsx (22 posibles ocurrencias)
+   Línea 8: onSubmit: (data: Omit<BankAccount, 'id' | 'created_at'>) => ... [Detectado: "Promise"]
+   Línea 24: balance: 0,... [Detectado: "balance"]
+   Línea 27: notes: ''... [Detectado: "notes"]
+   ... y 19 más
+
+📄 src/components/BankAccountList.tsx (13 posibles ocurrencias)
+   Línea 3: BadgeDollarSign, Edit, Trash2, Search, Plus,... [Detectado: "Edit"]
+   Línea 27: const filteredAccounts = accounts.filter(account => {... [Detectado: "filter"]
+   Línea 36: const getAccountTypeConfig = (type: string) => {... [Detectado: "type"]
+   ... y 10 más
+
+📄 src/components/BankStatementImporter.tsx (17 posibles ocurrencias)
+   Línea 4: Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Laye... [Detectado: "Search"]
+   Línea 10: date: string;... [Detectado: "date"]
+   Línea 23: const [transactions, setTransactions] = useState<BankTransac... [Detectado: "transactions"]
+   ... y 14 más
+
+📄 src/components/BillDetailView.tsx (10 posibles ocurrencias)
+   Línea 10: onDelete?: () => Promise<void>;... [Detectado: "Promise"]
+   Línea 73: <Edit className="w-4 h-4" />... [Detectado: "Edit"]
+   Línea 147: <p className="text-white">{new Date(bill.issue_date).toLocal... [Detectado: "new"]
+   ... y 7 más
+
+📄 src/components/BillForm.tsx (37 posibles ocurrencias)
+   Línea 3: Plus, Save, X, Calculator, Truck, Calendar,... [Detectado: "Save"]
+   Línea 13: products: Product[];... [Detectado: "Product"]
+   Línea 23: notes: string;... [Detectado: "notes"]
+   ... y 34 más

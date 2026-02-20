@@ -156,7 +156,7 @@ export function AccountingDiagnosis() {
             </div>
             <div className="text-right border-l border-white/10 pl-10 hidden md:block">
               <p className="text-[10px] font-black uppercase tracking-widest mb-1 opacity-50">{t('accountingDiagnosis.synchronization')}</p>
-              <p className="text-xl font-black font-mono tracking-tighter">99.9% Uptime</p>
+              <p className="text-xl font-black font-mono tracking-tighter">99.9% {t('accountingDiagnosis.uptime')}</p>
             </div>
           </div>
 
@@ -193,7 +193,7 @@ export function AccountingDiagnosis() {
             <div className="bg-slate-900/40 border border-slate-800 rounded-[3rem] flex flex-col shadow-xl">
               <header className="px-10 py-6 bg-slate-950/50 border-b border-slate-800 flex items-center justify-between">
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <Terminal className="w-4 h-4" /> SQL Raw Trace
+                  <Terminal className="w-4 h-4" /> {t('accountingDiagnosis.sqlRawTrace')}
                 </h4>
               </header>
               <div className="flex-1 p-8 font-mono text-[10px] text-slate-500 overflow-y-auto max-h-[400px] leading-relaxed scrollbar-hide">

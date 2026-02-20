@@ -211,7 +211,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                       {suggestion.city}, {suggestion.stateCode}
                     </div>
                     <div className="text-sm text-slate-500 truncate">
-                      {suggestion.zipCode} • {suggestion.county} County
+                      {suggestion.zipCode} • {suggestion.county}
                     </div>
                   </div>
                 </div>

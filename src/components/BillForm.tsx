@@ -286,7 +286,7 @@ export const BillForm: React.FC<BillFormProps> = ({
                     </div>
                     <div className="md:col-span-2 flex items-center justify-between gap-4">
                       <div className="text-right flex-1">
-                        <p className="text-[8px] font-black text-slate-600 uppercase">Subtotal</p>
+                        <p className="text-[8px] font-black text-slate-600 uppercase">{t('billForm.subtotal')}</p>
                         <p className="text-xs font-black text-white font-mono">{formatCurrency(item.quantity * item.unit_price)}</p>
                       </div>
                       <button type="button" onClick={() => removeItem(index)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover/line:opacity-100">

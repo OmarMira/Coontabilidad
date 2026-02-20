@@ -83,7 +83,7 @@ export const EmployeeManager: React.FC = () => {
                 toast.error(result.message);
             }
         } catch (error) {
-            toast.error('Error al procesar empleado');
+            toast.error(t('employeeManager.errorProcessing'));
         } finally {
             setIsLoading(false);
         }
