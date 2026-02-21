@@ -368,7 +368,7 @@ export const PayrollProcessorUI: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <FileText className="w-12 h-12 text-slate-700 mb-4" />
                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('payroll.processor.noPreview')}</p>
-                <p className="text-[9px] text-slate-700 mt-2 font-bold">{t('payroll.processor.configureAndCalculate')}</p>
+                <p className="text-[9px] text-slate-700 mt-2 font-black">{t('payroll.processor.configureAndCalculate')}</p>
               </div>
             )}
           </div>

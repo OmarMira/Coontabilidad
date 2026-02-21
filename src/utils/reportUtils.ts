@@ -48,7 +48,7 @@ export function generateReportHeader(reportTitle: string, includeDate: boolean =
 export function generateReportFooter(): string {
   try {
     const companyData = getCompanyData();
-    
+
     if (!companyData) {
       return '';
     }
@@ -77,8 +77,8 @@ export function generateReportFooter(): string {
  * Genera un reporte HTML completo con encabezado y pie de página
  */
 export function generateCompleteReport(
-  title: string, 
-  content: string, 
+  title: string,
+  content: string,
   includeDate: boolean = true
 ): string {
   const header = generateReportHeader(title, includeDate);
@@ -122,9 +122,7 @@ export function generateCompleteReport(
         .text-center {
           text-align: center;
         }
-        .font-bold {
-          font-weight: bold;
-        }
+        .font-black { font-weight: 900; }
         .text-green {
           color: #059669;
         }
@@ -156,17 +154,17 @@ export function generateCompleteReport(
 export function printReport(title: string, content: string, includeDate: boolean = true): void {
   try {
     const reportHtml = generateCompleteReport(title, content, includeDate);
-    
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(reportHtml);
       printWindow.document.close();
-      
+
       // Esperar a que se cargue el contenido antes de imprimir
       printWindow.onload = () => {
         printWindow.print();
       };
-      
+
       logger.info('ReportUtils', 'print_report', 'Reporte abierto para impresión', { title });
     } else {
       throw new Error('No se pudo abrir la ventana de impresión');
@@ -183,20 +181,20 @@ export function printReport(title: string, content: string, includeDate: boolean
 export function downloadReport(title: string, content: string, includeDate: boolean = true): void {
   try {
     const reportHtml = generateCompleteReport(title, content, includeDate);
-    
+
     const blob = new Blob([reportHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     URL.revokeObjectURL(url);
-    
+
     logger.info('ReportUtils', 'download_report', 'Reporte descargado', { title, filename: link.download });
   } catch (error) {
     logger.error('ReportUtils', 'download_failed', 'Error al descargar reporte', { title }, error as Error);

@@ -245,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
                 ? 'text-slate-500 hover:text-white mt-0 border-t border-slate-900/10 pt-1 font-bold'
                 : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
             }
-            ${level > 0 ? 'text-lg font-bold' : 'text-lg font-black uppercase tracking-wider'}
+            ${level > 0 ? 'text-xs font-black tracking-tight' : 'text-sm font-black uppercase tracking-[0.15em]'}
           `}
         >
           {isActive && !hasChildren && (
@@ -260,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
           {!isCollapsed && (
             <>
-              <span className={`flex-1 ${level === 0 ? 'text-lg font-black' : 'text-lg font-semibold'}`}>
+              <span className={`flex-1 ${level === 0 ? 'text-sm font-black' : 'text-xs font-black'}`}>
                 {item.label}
               </span>
 
@@ -319,44 +319,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       </nav>
 
       <div className="p-4 border-t border-slate-900/50 mt-auto space-y-2">
-        {/* Manual Save Button - Iron Clad Persistence */}
-        <button
-          onClick={async () => {
-            const loadingToast = toast.loading(t('common.savingChanges'));
-            try {
-              await saveDatabase();
-              toast.success(t('common.dataSaved'), { id: loadingToast });
-            } catch (error) {
-              toast.error(t('common.saveError'), { id: loadingToast });
-            }
-          }}
-
-          className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
-            bg-slate-900/50 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 border-slate-800 hover:border-blue-500/30 shadow-inner`}
-          title={t('sidebar.forceSaveTooltip')}
-        >
-          <HardDrive className="w-4 h-4 group-hover:scale-110 transition-transform" />
-          {!isCollapsed && <span>{t('sidebar.saveLocal')}</span>}
-        </button>
-
-        {user && (
-
-          <button
-            onClick={() => onNavigate('my-profile')}
-            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
-              ${currentSection === 'my-profile'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/40'
-                : 'bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-white border-slate-800'
-              }`}
-          >
-            {user.picture ? (
-              <img src={user.picture} alt="Profile" className="w-5 h-5 rounded-full object-cover border border-white/20 group-hover:scale-110 transition-transform" />
-            ) : (
-              <UserIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            )}
-            {!isCollapsed && <span>{t('navigation.myProfile')}</span>}
-          </button>
-        )}
 
         {/* Language Switcher deshabilitado por simplificación i18n */}
         {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
@@ -366,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
             console.log('🚪 Logout initiated by user');
             logout();
           }}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-black transition-all border border-red-600/20 group uppercase text-xs tracking-widest"
         >
           <Lock className="w-4 h-4 group-hover:rotate-12 transition-transform" />
           {!isCollapsed && <span>{t('navigation.logout')}</span>}

@@ -105,7 +105,7 @@ export const SystemStatusDashboard: React.FC = () => {
             <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
                 <div className="max-w-md bg-slate-900 rounded-2xl shadow-2xl p-8 border border-slate-800">
                     <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-white text-center mb-2">{t('common.error')}</h1>
+                    <h1 className="text-2xl font-black text-white text-center mb-2 tracking-tighter uppercase">{t('common.error')}</h1>
                     <p className="text-slate-400 text-center">{error}</p>
                     <button
                         onClick={loadHealth}
@@ -130,7 +130,7 @@ export const SystemStatusDashboard: React.FC = () => {
                             <Shield className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">{t('systemStatus.title')}</h1>
+                            <h1 className="text-3xl font-black text-white tracking-tighter uppercase">{t('systemStatus.title')}</h1>
                             <p className="text-slate-400 text-sm mt-1">
                                 Iron Core v{health.version} • {t('systemStatus.lastUpdate')} {lastUpdate.toLocaleTimeString()}
                             </p>
@@ -174,7 +174,7 @@ export const SystemStatusDashboard: React.FC = () => {
                             <div className={`w-3 h-3 rounded-full ${getStatusColor(health.status)}`}></div>
                             <p className="text-sm text-slate-400">{t('systemStatus.generalStatus')}</p>
                         </div>
-                        <p className={`text-2xl font-bold capitalize ${getStatusTextColor(health.status)}`}>
+                        <p className={`text-2xl font-black uppercase tracking-tighter ${getStatusTextColor(health.status)}`}>
                             {t(`systemStatus.status.${health.status}`)}
                         </p>
                     </div>
@@ -184,7 +184,7 @@ export const SystemStatusDashboard: React.FC = () => {
                             <CheckCircle className="w-5 h-5 text-green-500" />
                             <p className="text-sm text-slate-400">{t('systemStatus.passedChecks')}</p>
                         </div>
-                        <p className="text-2xl font-bold text-green-500">{health.summary.passed}</p>
+                        <p className="text-2xl font-black text-green-500 tracking-tighter tabular-nums">{health.summary.passed}</p>
                     </div>
 
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
@@ -192,7 +192,7 @@ export const SystemStatusDashboard: React.FC = () => {
                             <XCircle className="w-5 h-5 text-red-500" />
                             <p className="text-sm text-slate-400">{t('systemStatus.failedChecks')}</p>
                         </div>
-                        <p className="text-2xl font-bold text-red-500">{health.summary.failed}</p>
+                        <p className="text-2xl font-black text-red-500 tracking-tighter tabular-nums">{health.summary.failed}</p>
                     </div>
 
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
@@ -200,7 +200,7 @@ export const SystemStatusDashboard: React.FC = () => {
                             <AlertTriangle className="w-5 h-5 text-yellow-500" />
                             <p className="text-sm text-slate-400">{t('systemStatus.warnings')}</p>
                         </div>
-                        <p className="text-2xl font-bold text-yellow-500">{health.summary.warnings}</p>
+                        <p className="text-2xl font-black text-yellow-500 tracking-tighter tabular-nums">{health.summary.warnings}</p>
                     </div>
 
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
@@ -208,14 +208,14 @@ export const SystemStatusDashboard: React.FC = () => {
                             <Clock className="w-5 h-5 text-blue-500" />
                             <p className="text-sm text-slate-400">{t('systemStatus.responseTime')}</p>
                         </div>
-                        <p className="text-2xl font-bold text-blue-500">{health.uptime.toFixed(0)}ms</p>
+                        <p className="text-2xl font-black text-blue-500 tracking-tighter tabular-nums font-mono">{health.uptime.toFixed(0)}ms</p>
                     </div>
                 </div>
 
                 {/* Checks Detail */}
                 <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-white">{t('systemStatus.integrityChecks')}</h2>
+                        <h2 className="text-xl font-black text-white tracking-tighter uppercase">{t('systemStatus.integrityChecks')}</h2>
                         <span className="text-sm text-slate-400">
                             {health.summary.total} {t('systemStatus.totalChecksSuffix')}
                         </span>
@@ -258,7 +258,7 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-4">
                             <Database className="w-6 h-6 text-blue-500" />
-                            <h3 className="text-lg font-bold text-white">{t('systemStatus.systemInfo')}</h3>
+                            <h3 className="text-lg font-black text-white">{t('systemStatus.systemInfo')}</h3>
                         </div>
                         <div className="space-y-3">
                             <div className="flex justify-between">
@@ -281,7 +281,7 @@ export const SystemStatusDashboard: React.FC = () => {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
                         <div className="flex items-center gap-3 mb-4">
                             <TrendingUp className="w-6 h-6 text-green-500" />
-                            <h3 className="text-lg font-bold text-white">{t('systemStatus.performanceMetrics')}</h3>
+                            <h3 className="text-lg font-black text-white">{t('systemStatus.performanceMetrics')}</h3>
                         </div>
                         <div className="space-y-3">
                             <div className="flex justify-between">

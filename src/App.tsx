@@ -1243,7 +1243,12 @@ function App() {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto bg-slate-950/50">
+          <Header
+            dbStats={state.dbStats}
+            onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
+            onNavigate={handleNavigate}
+          />
           <InvoiceDetailView
             invoice={state.viewingInvoice}
             onBack={handleBackFromInvoiceDetail}
@@ -1261,7 +1266,12 @@ function App() {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto bg-slate-950/50">
+          <Header
+            dbStats={state.dbStats}
+            onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
+            onNavigate={handleNavigate}
+          />
           <SupplierDetailView
             supplier={state.viewingSupplier}
             onBack={handleBackFromSupplierDetail}
@@ -1278,7 +1288,12 @@ function App() {
     return (
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar currentSection={state.currentSection} onNavigate={handleNavigate} />
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto bg-slate-950/50">
+          <Header
+            dbStats={state.dbStats}
+            onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
+            onNavigate={handleNavigate}
+          />
           <BillDetailView
             bill={state.viewingBill}
             onBack={handleBackFromBillDetail}
@@ -1333,7 +1348,7 @@ function App() {
 
           {/* VOLATILE DEMO BANNER */}
           {isDemoActive && (
-            <div className="bg-orange-600 text-white text-[10px] font-bold text-center py-1 uppercase tracking-[0.2em] shadow-md z-50 select-none sticky top-0">
+            <div className="bg-orange-600 text-white text-[10px] font-black text-center py-1 uppercase tracking-[0.2em] shadow-md z-50 select-none sticky top-0">
               {t('demoMode.banner')}
             </div>
           )}
@@ -1341,6 +1356,7 @@ function App() {
           <Header
             dbStats={state.dbStats}
             onAssistantClick={() => setState(prev => ({ ...prev, showAssistant: true }))}
+            onNavigate={handleNavigate}
           />
 
           <main className="p-8 relative">
@@ -1349,7 +1365,7 @@ function App() {
                 <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center mr-3">
                   <span className="text-rose-400">⚠️</span>
                 </div>
-                <span className="font-bold">{state.error}</span>
+                <span className="font-black tracking-tight">{state.error}</span>
               </div>
             )}
 
@@ -1358,7 +1374,7 @@ function App() {
                 <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mr-3">
                   <span className="text-emerald-400">✅</span>
                 </div>
-                <span className="font-bold">{state.success}</span>
+                <span className="font-black tracking-tight">{state.success}</span>
               </div>
             )}
 
@@ -1408,7 +1424,7 @@ function App() {
                 <>
                   {state.showingCustomerForm ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.newCustomer')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.newCustomer')}</h2>
                       <CustomerFormAdvanced
                         onSubmit={handleAddCustomer}
                         onCancel={() => setState(prev => ({ ...prev, showingCustomerForm: false }))}
@@ -1416,7 +1432,7 @@ function App() {
                     </div>
                   ) : state.editingCustomer ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.editCustomer')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.editCustomer')}</h2>
                       <CustomerFormAdvanced
                         initialData={state.editingCustomer}
                         onSubmit={handleUpdateCustomer}
@@ -1449,7 +1465,7 @@ function App() {
                     </div>
                   ) : state.editingInvoice ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.editInvoice')} #{state.editingInvoice.invoice_number}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.editInvoice')} #{state.editingInvoice.invoice_number}</h2>
                       <InvoiceForm
                         initialData={state.editingInvoice}
                         onSubmit={handleUpdateInvoice}
@@ -1519,7 +1535,7 @@ function App() {
                   ) : (
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-3xl font-bold text-white">{t('sections.quotes')}</h2>
+                        <h2 className="text-3xl font-black text-white tracking-tighter uppercase">{t('sections.quotes')}</h2>
                         <button
                           onClick={() => setState(prev => ({ ...prev, showingQuoteForm: true }))}
                           className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
@@ -1547,7 +1563,7 @@ function App() {
                 <>
                   {state.showingSupplierForm ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.newSupplier')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.newSupplier')}</h2>
                       <SupplierForm
                         onSubmit={handleAddSupplier}
                         onCancel={() => setState(prev => ({ ...prev, showingSupplierForm: false }))}
@@ -1555,7 +1571,7 @@ function App() {
                     </div>
                   ) : state.editingSupplier ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.editSupplier')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.editSupplier')}</h2>
                       <SupplierForm
                         initialData={state.editingSupplier}
                         onSubmit={handleUpdateSupplier}
@@ -1578,7 +1594,7 @@ function App() {
                 <>
                   {state.showingBillForm ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.newBill')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.newBill')}</h2>
                       <BillForm
                         onSubmit={handleBillSave}
                         onCancel={() => setState(prev => ({ ...prev, showingBillForm: false }))}
@@ -1588,7 +1604,7 @@ function App() {
                     </div>
                   ) : state.editingBill ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.editBill')} #{state.editingBill.bill_number}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.editBill')} #{state.editingBill.bill_number}</h2>
                       <BillForm
                         initialData={state.editingBill}
                         onSubmit={handleBillSave}
@@ -1753,7 +1769,7 @@ function App() {
                 <>
                   {state.showingProductForm ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.newProduct')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.newProduct')}</h2>
                       <ProductForm
                         onSubmit={handleCreateProduct}
                         onCancel={() => setState(prev => ({ ...prev, showingProductForm: false }))}
@@ -1762,7 +1778,7 @@ function App() {
                     </div>
                   ) : state.editingProduct ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.editProduct')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.editProduct')}</h2>
                       <ProductForm
                         initialData={state.editingProduct}
                         onSubmit={handleUpdateProduct}
@@ -1794,7 +1810,7 @@ function App() {
                 <>
                   {state.showingProductCategoryForm ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.newCategory')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.newCategory')}</h2>
                       <ProductCategoryForm
                         onSubmit={handleCreateProductCategory}
                         onCancel={() => setState(prev => ({ ...prev, showingProductCategoryForm: false }))}
@@ -1802,7 +1818,7 @@ function App() {
                     </div>
                   ) : state.editingProductCategory ? (
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                      <h2 className="mb-4 text-xl font-bold text-gray-800 dark:text-white">{t('forms.editCategory')}</h2>
+                      <h2 className="mb-4 text-xl font-black text-white tracking-tighter uppercase">{t('forms.editCategory')}</h2>
                       <ProductCategoryForm
                         initialData={state.editingProductCategory}
                         onSubmit={handleUpdateProductCategory}

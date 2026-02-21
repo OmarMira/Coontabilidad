@@ -160,8 +160,8 @@ export default function PayrollValidationStep({
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="bg-blue-600/10 border-l-4 border-blue-500 rounded-xl p-5 flex items-start gap-4">
         <Users className="w-6 h-6 text-blue-500 mt-0.5 shrink-0" />
-        <p className="text-sm font-bold text-blue-200/80 leading-relaxed">
-          <span className="text-white font-black uppercase tracking-tighter mr-2">{t('accounting.closure.steps.payroll.phaseTitle')}:</span>
+        <p className="text-sm font-black text-blue-200/80 leading-relaxed tracking-tight">
+          <span className="text-white font-black tracking-tighter mr-2">{t('accounting.closure.steps.payroll.phaseTitle')}:</span>
           {t('accounting.closure.steps.payroll.phaseDesc')}
         </p>
       </div>
@@ -170,11 +170,11 @@ export default function PayrollValidationStep({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl group hover:border-blue-500/30 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.stats.executions')}</span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.stats.executions')}</span>
               <Users className="w-4 h-4 text-blue-500" />
             </div>
-            <div className="text-3xl font-black text-white">{payrollSummary.totalPayrolls}</div>
-            <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase">
+            <div className="text-3xl font-black text-white tracking-tighter">{payrollSummary.totalPayrolls}</div>
+            <p className="text-xs font-black text-slate-500 mt-2 uppercase tracking-tight">
               <span className="text-emerald-500">{payrollSummary.approvedPayrolls} {t('accounting.closure.steps.payroll.messages.ok')}</span> •
               <span className="text-orange-500 ml-1">{payrollSummary.pendingPayrolls} {t('accounting.closure.steps.payroll.messages.pnd')}</span>
             </p>
@@ -182,20 +182,20 @@ export default function PayrollValidationStep({
 
           <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl group hover:border-emerald-500/30 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.stats.grossPay')}</span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.stats.grossPay')}</span>
               <Wallet className="w-4 h-4 text-emerald-500" />
             </div>
-            <div className="text-3xl font-black text-white tabular-nums">${payrollSummary.totalGrossPay.toLocaleString()}</div>
-            <p className="text-[10px] font-bold text-emerald-500/50 mt-2 uppercase">{t('accounting.closure.steps.payroll.stats.net')}: ${payrollSummary.totalNetPay.toLocaleString()}</p>
+            <div className="text-3xl font-black text-white tabular-nums tracking-tighter">${payrollSummary.totalGrossPay.toLocaleString()}</div>
+            <p className="text-xs font-black text-emerald-500/60 mt-2 uppercase tracking-widest leading-none">{t('accounting.closure.steps.payroll.stats.net')}: ${payrollSummary.totalNetPay.toLocaleString()}</p>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl group hover:border-orange-500/30 transition-all">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.stats.taxLoad')}</span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.stats.taxLoad')}</span>
               <Calculator className="w-4 h-4 text-orange-500" />
             </div>
-            <div className="text-3xl font-black text-white tabular-nums">${payrollSummary.totalTaxes.toLocaleString()}</div>
-            <p className="text-[10px] font-bold text-orange-500/50 mt-2 uppercase">{t('accounting.closure.steps.payroll.stats.withholdings')}</p>
+            <div className="text-3xl font-black text-white tabular-nums tracking-tighter">${payrollSummary.totalTaxes.toLocaleString()}</div>
+            <p className="text-xs font-black text-orange-500/60 mt-2 uppercase tracking-widest leading-none">{t('accounting.closure.steps.payroll.stats.withholdings')}</p>
           </div>
         </div>
       )}
@@ -211,11 +211,11 @@ export default function PayrollValidationStep({
       <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800 shadow-inner group">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="w-4 h-4 text-orange-500" />
-          <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{t('accounting.closure.steps.payroll.guidelinesTitle')}</h5>
+          <h5 className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors tracking-[0.2em]">{t('accounting.closure.steps.payroll.guidelinesTitle')}</h5>
         </div>
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {t<string[]>('accounting.closure.steps.payroll.tips').map((tip, i) => (
-            <li key={i} className="flex items-center gap-3 text-xs font-bold text-slate-400">
+            <li key={i} className="flex items-center gap-3 text-xs font-medium text-slate-400">
               <div className="w-1.5 h-1.5 rounded-full bg-blue-500/30 group-hover:bg-blue-500 transition-all shadow-lg" />
               {tip}
             </li>
@@ -228,7 +228,7 @@ export default function PayrollValidationStep({
           <AlertTriangle className="w-6 h-6 text-orange-500 mr-4 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-xs font-black text-orange-500 uppercase tracking-widest">{t('accounting.closure.steps.payroll.criticalAction')}</p>
-            <p className="text-sm font-bold text-orange-200/80 mt-1">
+            <p className="text-sm font-black text-orange-200/80 mt-1 tracking-tight">
               {t('accounting.closure.steps.payroll.pendingPayrollsWarning')}
             </p>
           </div>

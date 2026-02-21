@@ -168,8 +168,8 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-white">{t('customerPayments.title')}</h2>
-          <p className="text-slate-400">{t('customerPayments.subtitle')}</p>
+          <h2 className="text-2xl font-black text-white tracking-tight leading-none">{t('customerPayments.title')}</h2>
+          <p className="text-slate-500 font-medium text-sm mt-2">{t('customerPayments.subtitle')}</p>
         </div>
       </div>
 
@@ -205,7 +205,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
       {/* Lista de facturas pendientes */}
       <div className="bg-white/10 rounded-lg shadow-sm border border-white/10">
         <div className="px-6 py-4 border-b border-white/10">
-          <h3 className="text-lg font-black tracking-tight text-white">{t('customerPayments.pendingInvoices')}</h3>
+          <h3 className="text-lg font-black text-white tracking-tight">{t('customerPayments.pendingInvoices')}</h3>
         </div>
 
         <div className="overflow-x-auto">
@@ -307,7 +307,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white/10 border-white/10">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-black tracking-tight text-white">
+                <h3 className="text-lg font-black text-white tracking-tight">
                   {t('customerPayments.modalTitle')}
                 </h3>
                 <button

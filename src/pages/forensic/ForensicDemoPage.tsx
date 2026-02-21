@@ -13,7 +13,7 @@ export const ForensicDemoPage: React.FC = () => {
         <div className="container mx-auto p-6 space-y-8 bg-background min-h-screen">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('forensic.title')}</h1>
+                    <h1 className="text-3xl font-black tracking-tighter text-white uppercase">{t('forensic.title')}</h1>
                     <p className="text-muted-foreground">{t('forensic.subtitle')}</p>
                 </div>
                 <div className="flex gap-2">

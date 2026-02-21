@@ -101,13 +101,13 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
       {/* Header with filters */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+          <h2 className="text-lg font-black text-white flex items-center gap-2 tracking-tight">
             <FileText className="w-5 h-5 text-blue-400" />
             {t('invoiceList.title')} ({filteredInvoices.length})
           </h2>
           <button
             onClick={onAddInvoice}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-bold text-sm"
           >
             <Plus className="w-4 h-4" />
             {t('invoiceList.newSale')}
@@ -132,12 +132,12 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-white/5 text-white px-3 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
             >
-              <option value="all" style={{ color: 'black' }}>{t('invoiceList.allStatuses')}</option>
-              <option value="draft" style={{ color: 'black' }}>{t('invoiceList.draft')}</option>
-              <option value="sent" style={{ color: 'black' }}>{t('invoiceList.sent')}</option>
-              <option value="paid" style={{ color: 'black' }}>{t('invoiceList.paid')}</option>
-              <option value="overdue" style={{ color: 'black' }}>{t('invoiceList.overdue')}</option>
-              <option value="cancelled" style={{ color: 'black' }}>{t('invoiceList.cancelled')}</option>
+              <option value="all" className="text-black">{t('invoiceList.allStatuses')}</option>
+              <option value="draft" className="text-black">{t('invoiceList.draft')}</option>
+              <option value="sent" className="text-black">{t('invoiceList.sent')}</option>
+              <option value="paid" className="text-black">{t('invoiceList.paid')}</option>
+              <option value="overdue" className="text-black">{t('invoiceList.overdue')}</option>
+              <option value="cancelled" className="text-black">{t('invoiceList.cancelled')}</option>
             </select>
           </div>
         </div>
@@ -149,7 +149,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-lg font-black tracking-tight text-white">
+                  <h3 className="text-base font-black tracking-tight text-white">
                     {invoice.invoice_number}
                   </h3>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>

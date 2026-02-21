@@ -1,0 +1,56 @@
+{
+  "al": {
+    "dateFrom": "Desde",
+    "endingBalance": "Saldo Final",
+    "ledgerTitle": "Libro Mayor",
+    "loadError": "Error de Carga",
+    "nature": "Naturaleza",
+    "netMovements": "Movimientos Netos",
+    "noMovements": "Sin Movimientos",
+    "normalBalance": "Saldo Normal",
+    "periodTotals": "Totales del Período",
+    "startingBalance": "Saldo Inicial",
+    "subtitle": "Movimientos detallados por cuenta",
+    "title": "Auxiliar de Cuenta"
+  },
+  "cf": {
+    "endingCash": "Efectivo Final",
+    "liquidityInfo": "Información de Liquidez",
+    "loadError": "Error de Carga",
+    "netIncrease": "Aumento Neto",
+    "operating": "Operativo",
+    "startingCash": "Efectivo Inicial",
+    "subtitle": "Flujo de Efectivo",
+    "summaryTitle": "Resumen",
+    "title": "Flujo de Caja"
+  },
+  "ar": {
+    "aging": "Antigüedad",
+    "current": "Corriente",
+    "customers": "Clientes",
+    "days": "Días",
+    "entity": "Entidad",
+    "entityDetail": "Detalle de Entidad",
+    "loadError": "Error de Carga",
+    "noPending": "Sin Pendientes",
+    "onTime": "A Tiempo",
+    "payable": "Por Pagar",
+    "payableBtn": "Cuentas por Pagar",
+    "pendingAmount": "Monto Pendiente",
+    "receivable": "Por Cobrar",
+    "receivableBtn": "Cuentas por Cobrar",
+    "riskAlert": "Alerta de Riesgo",
+    "riskExcellent": "Riesgo Excelente",
+    "riskUrgent": "Riesgo Urgente",
+    "subtitle": "Reporte de Antigüedad de Saldos",
+    "suppliers": "Proveedores",
+    "title": "Antigüedad de Deuda"
+  },
+  "c": {
+    "actions": "Acciones",
+    "excelError": "Error Excel",
+    "excelSuccess": "Excel Exitoso",
+    "pdfError": "Error PDF",
+    "pdfSuccess": "PDF Exitoso"
+  }
+}

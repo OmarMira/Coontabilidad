@@ -62,8 +62,8 @@ export const CustomerList: React.FC<CustomerListProps> = ({
             <Users className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('customerList.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('customerList.title')}</h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('customerList.subtitle')}
             </p>
           </div>
@@ -77,14 +77,14 @@ export const CustomerList: React.FC<CustomerListProps> = ({
               placeholder={t('customerList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none w-80 font-black uppercase tracking-widest text-[10px] transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+              className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none w-80 font-medium text-sm transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.1)]"
             />
           </div>
 
           <select
             value={selectedCounty}
             onChange={(e) => setSelectedCounty(e.target.value)}
-            className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
+            className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-medium text-sm appearance-none cursor-pointer"
           >
             <option value="" style={{ color: 'black' }}>{t('customerList.allCounties')}</option>
             {uniqueCounties.map(county => (
@@ -94,7 +94,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
 
           <button
             onClick={onAddCustomer}
-            className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
+            className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             {t('customerList.registerCustomer')}
@@ -107,8 +107,8 @@ export const CustomerList: React.FC<CustomerListProps> = ({
           <div className="w-24 h-24 bg-slate-950 rounded-[2rem] border border-slate-800 flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-500">
             <Target className="w-10 h-10 text-slate-700 group-hover:text-blue-500 transition-colors" />
           </div>
-          <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-4">{t('customerList.emptyTitle')}</h3>
-          <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">
+          <h3 className="text-xl font-black text-white tracking-tight mb-4">{t('customerList.emptyTitle')}</h3>
+          <p className="text-slate-500 font-medium text-xs max-w-sm mx-auto">
             {t('customerList.emptyMessage')}
           </p>
         </div>
@@ -124,7 +124,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
               <div className="relative z-10">
                 <div className="flex justify-between items-start mb-8">
                   <div className="flex-1">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-lg font-black text-white tracking-tight leading-none group-hover:text-blue-400 transition-colors">
                       {customer.name}
                     </h3>
                     <div className="flex items-center gap-3 mt-3">

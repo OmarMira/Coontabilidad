@@ -285,12 +285,12 @@ export function ChartOfAccounts() {
 
           {/* Tipo de cuenta */}
           <div className={`text-xs px-2 py-1 rounded ${getAccountTypeColor(account.account_type)} bg-white/5`}>
-            {account.account_type.toUpperCase()}
+            {t(`chartOfAccounts.type${account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}`)}
           </div>
 
           {/* Balance normal */}
-          <div className="w-16 text-xs text-center text-slate-500">
-            {account.normal_balance.toUpperCase()}
+          <div className="w-20 text-xs text-center text-slate-500">
+            {t(`chartOfAccounts.${account.normal_balance}`)}
           </div>
 
           {/* Estado */}
@@ -370,7 +370,7 @@ export function ChartOfAccounts() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center space-x-2 transition-all font-bold shadow-lg shadow-blue-900/20 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span>{t('chartOfAccounts.newAccount')}</span>
@@ -422,12 +422,12 @@ export function ChartOfAccounts() {
 
       {/* Tabla de cuentas */}
       <div className="bg-white/10 rounded-lg overflow-hidden">
-        <div className="bg-white/5 px-4 py-3 border-b border-white/10">
-          <div className="flex items-center text-sm font-medium text-slate-400" style={{ paddingLeft: '40px' }}>
+        <div className="bg-white/5 px-4 py-4 border-b border-white/10">
+          <div className="flex items-center text-xs font-bold text-slate-500 uppercase tracking-wider" style={{ paddingLeft: '40px' }}>
             <div className="w-20">{t('chartOfAccounts.colCode')}</div>
             <div className="flex-1 ml-3">{t('chartOfAccounts.colName')}</div>
             <div className="w-20 text-center">{t('chartOfAccounts.colType')}</div>
-            <div className="w-16 text-center">{t('chartOfAccounts.colBalance')}</div>
+            <div className="w-20 text-center">{t('chartOfAccounts.colBalance')}</div>
             <div className="w-16 text-center">{t('chartOfAccounts.colStatus')}</div>
             <div className="w-20 text-center">{t('chartOfAccounts.colActions')}</div>
           </div>
@@ -571,17 +571,17 @@ export function ChartOfAccounts() {
                 </label>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95"
                 >
                   {editingAccount ? t('chartOfAccounts.update') : t('chartOfAccounts.create')}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancelForm}
-                  className="flex-1 bg-gray-600 hover:bg-white/5 text-white py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 px-4 rounded-xl font-bold transition-all"
                 >
                   {t('chartOfAccounts.cancel')}
                 </button>

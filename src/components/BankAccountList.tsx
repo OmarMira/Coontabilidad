@@ -58,8 +58,8 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                         <Landmark className="w-10 h-10 text-blue-500 group-hover:-rotate-12 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white">{t('bankAccountList.title')}</h1>
-                        <p className="text-slate-400 text-sm">{t('bankAccountList.subtitle')}</p>
+                        <h1 className="text-2xl font-black text-white tracking-tight">{t('bankAccountList.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-1">{t('bankAccountList.subtitle')}</p>
                     </div>
                 </div>
 
@@ -71,14 +71,14 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                             placeholder={t('bankAccountList.search')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-12 pr-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm"
+                            className="pl-12 pr-6 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full text-sm font-medium"
                         />
                     </div>
 
                     <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
-                        className="px-4 py-3 bg-slate-800/50 text-white rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm cursor-pointer"
+                        className="px-4 py-3 bg-slate-800/50 text-white rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium cursor-pointer"
                     >
                         <option value="all">{t('bankAccountList.filterAll')}</option>
                         <option value="checking">{t('bankAccountList.type.checking')}</option>
@@ -137,27 +137,27 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                                     </div>
 
                                     <div className="mb-8">
-                                        <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2 truncate group-hover:text-blue-400 transition-colors">
+                                        <h3 className="text-xl font-black text-white tracking-tight leading-none mb-2 truncate group-hover:text-blue-400 transition-colors">
                                             {account.account_name}
                                         </h3>
-                                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                                        <p className="text-xs font-bold text-slate-500">
                                             {account.bank_name}
                                         </p>
                                     </div>
 
                                     <div className="space-y-6 pt-6 border-t border-slate-800/50">
                                         <div>
-                                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">{t('bankAccountList.card.liquidPosition')}</p>
-                                            <p className={`text-3xl font-black font-mono tracking-tighter ${account.balance >= 0 ? 'text-white' : 'text-rose-500'}`}>
+                                            <p className="text-xs font-bold text-slate-600 mb-2">{t('bankAccountList.card.liquidPosition')}</p>
+                                            <p className={`text-2xl font-black font-mono tracking-tight ${account.balance >= 0 ? 'text-white' : 'text-rose-500'}`}>
                                                 {formatCurrency(account.balance, account.currency)}
                                             </p>
                                         </div>
 
                                         <div className="flex justify-between items-center">
-                                            <div className={`px-3 py-1 rounded-[0.5rem] border text-[9px] font-black uppercase tracking-widest ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                                            <div className={`px-4 py-1.5 rounded-lg border text-xs font-bold ${cfg.bg} ${cfg.color} ${cfg.border}`}>
                                                 {cfg.label}
                                             </div>
-                                            <div className="text-[10px] font-black text-slate-500 font-mono tracking-widest">
+                                            <div className="text-xs font-bold text-slate-500 font-mono tracking-wider">
                                                 •••• {account.account_number.slice(-4)}
                                             </div>
                                         </div>
@@ -186,8 +186,8 @@ const EliteMiniCard = ({ title, value, icon: Icon, color }: any) => {
                 <Icon className="w-6 h-6" />
             </div>
             <div>
-                <div className="text-2xl font-black text-white tracking-tighter leading-none mb-1 font-mono uppercase truncate max-w-[150px]">{value}</div>
-                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{title}</div>
+                <div className="text-xl font-black text-white tracking-tight leading-none mb-2 font-mono truncate max-w-[150px]">{value}</div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">{title}</div>
             </div>
         </div>
     );

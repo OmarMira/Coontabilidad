@@ -125,14 +125,14 @@ export const LiveVerification: React.FC = () => {
                     IRON CORE VERIFICATION
                 </h1>
                 <div className="mb-10">
-                    <h2 className="text-xl font-bold mb-4 text-blue-400 flex items-center gap-2">
+                    <h2 className="text-xl font-black mb-4 text-blue-400 flex items-center gap-2 tracking-tighter uppercase">
                         <Activity className="w-5 h-5" />
                         NASA FORENSIC SENTINEL TELEMETRY
                     </h2>
                     <ForensicSentinelDashboard />
                 </div>
 
-                <h2 className="text-xl font-bold mb-4 text-slate-400 flex items-center gap-2">
+                <h2 className="text-xl font-black mb-4 text-slate-400 flex items-center gap-2 tracking-tighter uppercase">
                     <Shield className="w-5 h-5" />
                     SIMPLE SYSTEM DIAGNOSTICS
                 </h2>
@@ -143,7 +143,7 @@ export const LiveVerification: React.FC = () => {
                             r.status === 'fail' ? 'border-rose-500' : 'border-blue-500'
                             }`}>
                             <div>
-                                <div className={`text-sm font-bold uppercase tracking-wider mb-1 ${r.status === 'pass' ? 'text-emerald-400' :
+                                <div className={`text-sm font-black uppercase tracking-[0.15em] mb-1 ${r.status === 'pass' ? 'text-emerald-400' :
                                     r.status === 'fail' ? 'text-rose-400' : 'text-blue-400'
                                     }`}>
                                     {r.label}
@@ -163,7 +163,7 @@ export const LiveVerification: React.FC = () => {
                 <button
                     onClick={runVerification}
                     disabled={loading}
-                    className="mt-8 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold transition-all w-full border border-slate-600"
+                    className="mt-8 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-black tracking-tighter uppercase transition-all w-full border border-slate-600 text-white"
                 >
                     {loading ? 'Processing...' : 'Rerun Verification'}
                 </button>

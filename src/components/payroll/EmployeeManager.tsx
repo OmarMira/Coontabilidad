@@ -293,7 +293,7 @@ export const EmployeeManager: React.FC = () => {
                                                 <Mail className="w-3.5 h-3.5" />
                                                 <span className="text-[10px] font-black uppercase tracking-wider">{t('employeeManager.card.contact')}</span>
                                             </div>
-                                            <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{emp.email || 'N/A'}</span>
+                                            <span className="text-[10px] font-black text-slate-400 truncate max-w-[150px]">{emp.email || 'N/A'}</span>
                                         </div>
                                     </div>
 

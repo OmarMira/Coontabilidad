@@ -187,8 +187,8 @@ export const PayrollReview: React.FC<PayrollReviewProps> = ({ onViewPaystub }) =
             {payrolls.map(p => (
               <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
                 <td className="px-6 py-4 text-sm font-black text-white">{getEmployeeName(p.employee_id)}</td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-400">{p.pay_period_start} - {p.pay_period_end}</td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-400">{p.pay_date}</td>
+                <td className="px-6 py-4 text-xs font-black text-slate-400">{p.pay_period_start} - {p.pay_period_end}</td>
+                <td className="px-6 py-4 text-xs font-black text-slate-400">{p.pay_date}</td>
                 <td className="px-6 py-4 text-sm font-black text-white text-right">{formatCurrency(p.gross_pay)}</td>
                 <td className="px-6 py-4 text-sm font-black text-emerald-400 text-right">{formatCurrency(p.net_pay)}</td>
                 <td className="px-6 py-4 text-center">

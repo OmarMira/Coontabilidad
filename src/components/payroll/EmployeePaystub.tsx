@@ -74,7 +74,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
       <div className="p-6">
         <div className="bg-red-900/20 border-l-4 border-red-500 rounded-xl p-4 flex items-center gap-3">
           <FileText className="w-5 h-5 text-red-400" />
-          <p className="text-red-400 font-bold">{t('payroll.paystub.notFound')}</p>
+          <p className="text-red-400 font-black">{t('payroll.paystub.notFound')}</p>
         </div>
       </div>
     );
@@ -86,7 +86,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
       <div className="flex items-center justify-between print:hidden">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white font-bold transition-colors group"
+          className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white font-black transition-colors group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           {t('payroll.paystub.backToReview')}
@@ -116,7 +116,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <h1 className="text-3xl font-black text-white tracking-tighter uppercase print:text-black">{t('payroll.paystub.payStubTitle')}</h1>
-              <div className="flex items-center gap-2 text-slate-400 font-bold text-sm print:text-slate-700">
+              <div className="flex items-center gap-2 text-slate-400 font-black text-sm print:text-slate-700">
                 <Calendar className="w-4 h-4" />
                 {t('payroll.paystub.period')}: {formatDate(payroll.pay_period_start)} - {formatDate(payroll.pay_period_end)}
               </div>
@@ -200,24 +200,24 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
                     <tr className="text-sm">
-                      <td className="px-4 py-3 text-slate-400 font-bold">{t('payroll.paystub.regularPay')} ({payroll.regular_hours}h @ {formatCurrency(payroll.hourly_rate || 0)})</td>
+                      <td className="px-4 py-3 text-slate-400 font-black">{t('payroll.paystub.regularPay')} ({payroll.regular_hours}h @ {formatCurrency(payroll.hourly_rate || 0)})</td>
                       <td className="px-4 py-3 text-right font-black text-white">{formatCurrency(payroll.regular_pay)}</td>
                     </tr>
                     {payroll.overtime_hours > 0 && (
                       <tr className="text-sm bg-blue-500/5">
-                        <td className="px-4 py-3 text-blue-400 font-bold">{t('payroll.paystub.overtime')} ({payroll.overtime_hours}h @ {formatCurrency((payroll.hourly_rate || 0) * 1.5)})</td>
+                        <td className="px-4 py-3 text-blue-400 font-black">{t('payroll.paystub.overtime')} ({payroll.overtime_hours}h @ {formatCurrency((payroll.hourly_rate || 0) * 1.5)})</td>
                         <td className="px-4 py-3 text-right font-black text-blue-400">{formatCurrency(payroll.overtime_pay)}</td>
                       </tr>
                     )}
                     {(payroll.bonuses || 0) > 0 && (
                       <tr className="text-sm">
-                        <td className="px-4 py-3 text-slate-400 font-bold">{t('payroll.paystub.bonuses')}</td>
+                        <td className="px-4 py-3 text-slate-400 font-black">{t('payroll.paystub.bonuses')}</td>
                         <td className="px-4 py-3 text-right font-black text-white">{formatCurrency(payroll.bonuses || 0)}</td>
                       </tr>
                     )}
                     {(payroll.commissions || 0) > 0 && (
                       <tr className="text-sm">
-                        <td className="px-4 py-3 text-slate-400 font-bold">{t('payroll.paystub.commissions')}</td>
+                        <td className="px-4 py-3 text-slate-400 font-black">{t('payroll.paystub.commissions')}</td>
                         <td className="px-4 py-3 text-right font-black text-white">{formatCurrency(payroll.commissions || 0)}</td>
                       </tr>
                     )}
@@ -245,26 +245,26 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
                     <tr className="text-sm text-red-400/80">
-                      <td className="px-4 py-3 font-bold">{t('payroll.paystub.federalIncomeTax')}</td>
+                      <td className="px-4 py-3 font-black">{t('payroll.paystub.federalIncomeTax')}</td>
                       <td className="px-4 py-3 text-right font-black">-{formatCurrency(payroll.federal_income_tax)}</td>
                     </tr>
                     <tr className="text-sm text-red-400/80">
-                      <td className="px-4 py-3 font-bold">{t('payroll.paystub.socialSecurityFICA')}</td>
+                      <td className="px-4 py-3 font-black">{t('payroll.paystub.socialSecurityFICA')}</td>
                       <td className="px-4 py-3 text-right font-black">-{formatCurrency(payroll.social_security_tax)}</td>
                     </tr>
                     <tr className="text-sm text-red-400/80">
-                      <td className="px-4 py-3 font-bold">{t('payroll.paystub.medicareLabel')}</td>
+                      <td className="px-4 py-3 font-black">{t('payroll.paystub.medicareLabel')}</td>
                       <td className="px-4 py-3 text-right font-black">-{formatCurrency(payroll.medicare_tax)}</td>
                     </tr>
                     {(payroll.medicare_additional_tax || 0) > 0 && (
                       <tr className="text-sm text-red-400/80">
-                        <td className="px-4 py-3 font-bold">{t('payroll.paystub.additionalMedicare')}</td>
+                        <td className="px-4 py-3 font-black">{t('payroll.paystub.additionalMedicare')}</td>
                         <td className="px-4 py-3 text-right font-black">-{formatCurrency(payroll.medicare_additional_tax || 0)}</td>
                       </tr>
                     )}
                     {(payroll.other_deductions || 0) > 0 && (
                       <tr className="text-sm text-red-400/80">
-                        <td className="px-4 py-3 font-bold">{t('payroll.paystub.otherDeductionsLabel')}</td>
+                        <td className="px-4 py-3 font-black">{t('payroll.paystub.otherDeductionsLabel')}</td>
                         <td className="px-4 py-3 text-right font-black">-{formatCurrency(payroll.other_deductions || 0)}</td>
                       </tr>
                     )}
@@ -292,7 +292,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
               </div>
               <div className="text-center md:text-right">
                 <span className="text-4xl md:text-5xl font-black text-emerald-400 tabular-nums print:text-black">{formatCurrency(payroll.net_pay)}</span>
-                <p className="text-xs text-emerald-500/60 font-bold mt-1">{t('payroll.paystub.directDepositsProcessed')}</p>
+                <p className="text-xs text-emerald-500/60 font-black mt-1">{t('payroll.paystub.directDepositsProcessed')}</p>
               </div>
             </div>
           </div>
@@ -326,7 +326,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
             {t('payroll.paystub.computerGenerated')}
           </p>
-          <p className="text-[9px] text-slate-600 font-bold mt-1 uppercase tracking-wider">
+          <p className="text-[9px] text-slate-600 font-black mt-1 uppercase tracking-wider">
             {t('payroll.paystub.contactPayroll')}
           </p>
         </div>

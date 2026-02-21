@@ -55,11 +55,11 @@ export const TaxComplianceDashboard: React.FC = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="p-3 bg-secondary rounded-lg">
                                 <p className="text-xs text-muted-foreground">{t('forensic.taxCompliance.taxableSales')}</p>
-                                <p className="text-lg font-bold">${report.taxableSales?.toFixed(2)}</p>
+                                <p className="text-lg font-black tabular-nums tracking-tighter ring-1 ring-emerald-500/10 px-2 rounded-md">${report.taxableSales?.toFixed(2)}</p>
                             </div>
                             <div className="p-3 bg-secondary rounded-lg">
                                 <p className="text-xs text-muted-foreground">{t('forensic.taxCompliance.taxDue')}</p>
-                                <p className="text-lg font-bold text-red-600">${report.totalTaxDue?.toFixed(2)}</p>
+                                <p className="text-lg font-black text-red-600 tabular-nums tracking-tighter ring-1 ring-red-500/10 px-2 rounded-md">${report.totalTaxDue?.toFixed(2)}</p>
                             </div>
                         </div>
                         <Button variant="outline" className="w-full" onClick={() => setReport(null)}>

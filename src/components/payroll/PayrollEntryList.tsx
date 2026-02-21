@@ -113,8 +113,8 @@ export const PayrollEntryList: React.FC<PayrollEntryListProps> = ({ period, onBa
                                             {item.type === 'earning' ? t('payroll.entryList.earning') : t('payroll.entryList.deduction')}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-3 text-xs font-bold text-slate-400">{item.category}</td>
-                                    <td className="px-6 py-3 text-sm font-bold text-white">{item.description}</td>
+                                    <td className="px-6 py-3 text-xs font-black text-slate-400">{item.category}</td>
+                                    <td className="px-6 py-3 text-sm font-black text-white">{item.description}</td>
                                     <td className={`px-6 py-3 text-sm font-black text-right ${item.type === 'earning' ? 'text-emerald-400' : 'text-rose-400'}`}>
                                         {item.type === 'deduction' ? '-' : ''}{formatCurrency(item.amount)}
                                     </td>

@@ -1615,15 +1615,15 @@
       "routing": "Número de Ruta (Routing)"
     },
     "placeholder": {
-      "accountAlias": "CUENTA OPERATIVA ALPHA",
-      "accountId": "XXXX-XXXX-XXXX",
-      "bankEntity": "CHASE / BOFA / WELLS",
-      "memo": "NOTAS TÉCNICAS DE AUDITORÍA...",
-      "routing": "XXXXXXXXX"
+      "accountAlias": "Cuenta Operativa Principal",
+      "accountId": "xxxx-xxxx-xxxx",
+      "bankEntity": "Chase / BofA / Wells",
+      "memo": "Notas técnicas de auditoría...",
+      "routing": "xxxxxxxxx"
     },
     "status": {
-      "active": "ACTIVA",
-      "inactive": "INACTIVA",
+      "active": "Activa",
+      "inactive": "Inactiva",
       "label": "Estado:"
     },
     "subtitle": "Banking Forensic Protocol v5.1",
@@ -1632,10 +1632,10 @@
       "edit": "Ajustar Bóveda"
     },
     "type": {
-      "checking": "CUENTA CORRIENTE (CHECKING)",
-      "credit": "TARJETA DE CRÉDITO",
-      "other": "OTRO ACTIVO",
-      "savings": "CUENTA DE AHORROS (SAVINGS)"
+      "checking": "Cuenta corriente (Checking)",
+      "credit": "Tarjeta de crédito",
+      "other": "Otro activo",
+      "savings": "Cuenta de ahorros (Savings)"
     }
   },
   "bankAccountList": {
@@ -1646,8 +1646,8 @@
       "desc": "No se han mapeado cuentas bancarias bajo estos parámetros.",
       "title": "Bóveda no Detectada"
     },
-    "filterAll": "TODOS LOS TIPOS",
-    "search": "BUSCAR CUENTA / ENTIDAD...",
+    "filterAll": "Todos los tipos",
+    "search": "Buscar cuenta o entidad...",
     "stats": {
       "activeAccounts": "Cuentas Activas",
       "creditLines": "Líneas de Crédito",
@@ -1707,7 +1707,7 @@
     "taxCompliance": {
       "title": "Cumplimiento Fiscal Florida",
       "status": "Estado Actual",
-      "upToDate": "AL DÍA",
+      "upToDate": "Al día",
       "nextDue": "Próximo Vencimiento",
       "estimatedTax": "Impuesto Estimado",
       "prepareFiling": "Preparar Declaración",
@@ -1791,8 +1791,8 @@
     "amount": "Monto",
     "reference": "Referencia",
     "opStatus": "Status Operativo",
-    "extrapolating": "EXTRAPOLANDO",
-    "additionalRecords": "REGISTROS ADICIONALES",
+    "extrapolating": "Extrapolando",
+    "additionalRecords": "Registros adicionales",
     "vaultSelectionRequired": "Selección de Bóveda Requerida",
     "chooseEntity": "ELIGE UNA ENTIDAD BANCARIA PARA DESPLEGAR EL PROTOCOLO DE CONCILIACIÓN",
     "cycleParams": "Parámetros de Ciclo",
@@ -1801,10 +1801,10 @@
     "kernelFund": "Fondo Sistema",
     "abort": "Abortar",
     "certifyOpening": "Certificar Apertura",
-    "statusCertified": "CERTIFICADO",
-    "statusSyncActive": "SYNC-ACTIVE",
-    "statusDiscrepancy": "DISCREPANCIA",
-    "statusPending": "SINCRO-PEND",
+    "statusCertified": "Certificado",
+    "statusSyncActive": "Sincronizado",
+    "statusDiscrepancy": "Discrepancia",
+    "statusPending": "Pendiente",
     "checks": {
       "balanceMatches": "El saldo coincide",
       "noUnmatched": "Sin partidas no conciliadas",
@@ -1833,9 +1833,9 @@
     "accountingLink": "Vínculo Contable",
     "abortSync": "Abortar Sincronización",
     "consolidate": "Consolidar",
-    "items": "ITEMS",
+    "items": "Items",
     "confidential": "Confidencial",
-    "savedTime": "MIN SALVADOS"
+    "savedTime": "Min salvados"
   },
   "bill": {
     "label": "Factura de Compra",
@@ -1902,19 +1902,19 @@
     "addLine": "Adjuntar Nueva Línea",
     "auditNotes": "Notas de Auditoría",
     "confirmAdjustment": "Confirmar Ajuste",
-    "days": "DÍAS",
-    "description": "DESCRIPCIÓN TÉCNICA...",
+    "days": "Días",
+    "description": "Descripción técnica...",
     "dueDate": "Eje Temporal: Vencimiento",
     "issueDate": "Eje Temporal: Emisión",
     "jurisdiction": "Jurisdicción",
     "netSubtotal": "Subtotal Neto",
     "notesPlaceholder": "MEMORANDUM INTERNO...",
     "operationalStatus": "Estatus Operativo",
-    "primarySupplier": "Aliado Primario",
+    "primarySupplier": "Proveedor Primario",
     "productSku": "PRODUCTO / SKU",
     "protocol": "AP Forensic Protocol v2.5",
     "registerObligation": "Registrar Obligación",
-    "selectSupplier": "SELECCIONAR ALIADO",
+    "selectSupplier": "Seleccionar aliado",
     "subtotal": "Subtotal",
     "supplierMetadata": "Metadata Aliado",
     "taxFlorida": "Impuesto Florida",
@@ -1930,8 +1930,8 @@
   },
   "billList": {
     "alert": {
-      "overdue": "ALERTA CRÍTICA: Obligación vencida por {days} ciclos operativos",
-      "overdueNoDate": "ALERTA CRÍTICA: Obligación vencida sin fecha definida"
+      "overdue": "Alerta: Obligación vencida por {days} ciclos operativos",
+      "overdueNoDate": "Alerta: Obligación vencida sin fecha definida"
     },
     "analytics": {
       "documents": "Documentos",
@@ -1946,14 +1946,14 @@
     },
     "delete": {
       "confirm": "¿Estás seguro de que quieres eliminar la factura {billNumber}?",
-      "paidWarning": "⚠️ No se pueden eliminar facturas con estatus PAGADA"
+      "paidWarning": "⚠️ No se pueden eliminar facturas con estatus Pagada"
     },
     "empty": {
       "message": "Pool de pasivos vacío para los criterios aplicados.",
       "title": "No se detectan obligaciones"
     },
     "filter": {
-      "allStatuses": "TODOS LOS ESTADOS"
+      "allStatuses": "Todos los estados"
     },
     "label": {
       "dueDate": "Vence:",
@@ -1961,24 +1961,24 @@
       "issueDate": "Emitida:",
       "strategicAlly": "Aliado Estratégico"
     },
-    "searchPlaceholder": "BUSCAR FACTURA / PROVEEDOR...",
+    "searchPlaceholder": "Buscar factura / proveedor...",
     "status": {
-      "approved": "APROBADA",
-      "cancelled": "CANCELADA",
-      "draft": "BORRADOR",
-      "overdue": "VENCIDA",
-      "paid": "PAGADA",
-      "received": "RECIBIDA"
+      "approved": "Aprobada",
+      "cancelled": "Cancelada",
+      "draft": "Borrador",
+      "overdue": "Vencida",
+      "paid": "Pagada",
+      "received": "Recibida"
     },
     "subtitle": "Matriz de Pasivos y Obligaciones",
     "title": "Cuentas por Pagar",
     "col": {
-      "actions": "Actions",
-      "amount": "Amount",
-      "date": "Date",
-      "dueDate": "Due Date",
-      "number": "Number",
-      "status": "Status"
+      "bill": "Factura",
+      "supplier": "Proveedor",
+      "date": "Fecha",
+      "amount": "Monto",
+      "dueDate": "Vencimiento",
+      "actions": "Acciones"
     }
   },
   "bills": "Facturas de Compra",
@@ -2215,7 +2215,7 @@
       "auditTrail": "Rastro de Auditoría",
       "controls": "Controles",
       "ok": "OK",
-      "wrn": "ADVERTENCIA",
+      "wrn": "Advertencia",
       "passedStatus": "Passed",
       "additionalNotes": "Notas Adicionales",
       "reportId": "ID de Reporte",
@@ -2459,29 +2459,29 @@
       "current": "Al Corriente",
       "90+": "90+"
     },
-    "atRisk": "EN RIESGO",
-    "average": "PROMEDIO",
-    "avgTicket": "TICKET PROM.",
-    "debtAging": "ANTIGÜEDAD DE DEUDA",
-    "eliteMapping": "MAPEO ELITE",
-    "grossRevenue": "INGRESOS BRUTOS",
-    "impact": "IMPACTO",
-    "invoices": "FACTURAS",
-    "legalName": "RAZÓN SOCIAL",
-    "newThisMonth": "{count} NUEVOS ESTE MES",
-    "ofIncome": "DEL INGRESO",
-    "overdueAR": "VENCIDO",
-    "pendingDistribution": "DISTRIBUCIÓN PENDIENTE",
-    "performanceDetail": "DETALLE DE RENDIMIENTO",
-    "portfolioLeaders": "LÍDERES DEL PORTAFOLIO",
-    "ranking": "RANGO",
-    "receivables": "POR COBRAR",
-    "subtitle": "ANÁLISIS DE RENDIMIENTO DE CARTERA",
-    "syncing": "SINCRONIZANDO DATOS...",
-    "title": "DASHBOARD CLIENTES",
-    "top10Volume": "TOP 10 POR VOLUMEN",
-    "totalPortfolio": "CARTERA TOTAL",
-    "totalRevenue": "INGRESOS TOTALES",
+    "atRisk": "En riesgo",
+    "average": "Promedio",
+    "avgTicket": "Ticket prom.",
+    "debtAging": "Antigüedad de deuda",
+    "eliteMapping": "Mapeo de cartera",
+    "grossRevenue": "Ingresos brutos",
+    "impact": "Impacto",
+    "invoices": "Facturas",
+    "legalName": "Razón social",
+    "newThisMonth": "{count} nuevos este mes",
+    "ofIncome": "del ingreso",
+    "overdueAR": "Vencido",
+    "pendingDistribution": "Distribución pendiente",
+    "performanceDetail": "Detalle de rendimiento",
+    "portfolioLeaders": "Líderes del portafolio",
+    "ranking": "Rango",
+    "receivables": "Por cobrar",
+    "subtitle": "Análisis de rendimiento de cartera",
+    "syncing": "Sincronizando datos...",
+    "title": "Dashboard de Clientes",
+    "top10Volume": "Top 10 por volumen",
+    "totalPortfolio": "Cartera total",
+    "totalRevenue": "Ingresos totales",
     "unknownCustomer": "Cliente Desconocido"
   },
   "customerDetail": {
@@ -2648,32 +2648,32 @@
   "customers": "Clientes",
   "dashboard": {
     "label": "Panel de Control",
-    "accountingBooks": "Accounting Books",
-    "aiProposals": "Ai Proposals",
-    "complianceRadar": "Compliance Radar",
-    "coreHash": "Core Hash",
-    "customerPortfolio": "Customer Portfolio",
-    "daysRemaining": "Days Remaining",
-    "intelligentAssistant": "Intelligent Assistant",
-    "issueInvoice": "Issue Invoice",
-    "manualEntry": "Manual Entry",
-    "monitoring247": "Monitoring247",
-    "monthlySalesVsPurchases": "Monthly Sales Vs Purchases",
-    "netProfit": "Net Profit",
-    "nextDeadline": "Next Deadline",
-    "operationalTrend": "Operational Trend",
-    "pendingDocs": "Pending Docs",
-    "proposal": "Proposal",
-    "proposals": "Proposals",
-    "purchases": "Purchases",
-    "quickAccess": "Quick Access",
-    "sales": "Sales",
-    "startFiscalCycle": "Start Fiscal Cycle",
-    "sunbizReport": "Sunbiz Report",
-    "taxLiability": "Tax Liability",
-    "taxSettings": "Tax Settings",
-    "totalRevenue": "Total Revenue",
-    "vitalityMetrics": "Vitality Metrics"
+    "accountingBooks": "Libros Contables",
+    "aiProposals": "Propuestas de IA",
+    "complianceRadar": "RADAR DE CUMPLIMIENTO",
+    "coreHash": "Hash de Núcleo",
+    "customerPortfolio": "Portafolio de Clientes",
+    "daysRemaining": "DÍAS RESTANTES",
+    "intelligentAssistant": "Asistente Inteligente",
+    "issueInvoice": "Emitir Factura",
+    "manualEntry": "Asiento Manual",
+    "monitoring247": "Monitoreo 24/7",
+    "monthlySalesVsPurchases": "Ventas vs Compras Mensuales",
+    "netProfit": "Utilidad Neta",
+    "nextDeadline": "PRÓXIMO VENCIMIENTO",
+    "operationalTrend": "Tendencia Operativa",
+    "pendingDocs": "Docs Pendientes",
+    "proposal": "Propuesta",
+    "proposals": "Propuestas",
+    "purchases": "Compras",
+    "quickAccess": "Acceso Rápido",
+    "sales": "Ventas",
+    "startFiscalCycle": "INICIAR CICLO FISCAL",
+    "sunbizReport": "Reporte Sunbiz",
+    "taxLiability": "Obligación Fiscal",
+    "taxSettings": "Configuración de Impuestos",
+    "totalRevenue": "Ingresos Totales",
+    "vitalityMetrics": "Métricas de Vitalidad"
   },
   "dataHealth": {
     "avgTime": "Tiempo Promedio",
@@ -2887,7 +2887,7 @@
     },
     "subtitle": "Control de Capital Humano",
     "sync": "Sincronizar Cambios",
-    "title": "Gestión de Empleados",
+    "title": "GESTIÓN DE EMPLEADOS",
     "totalWorkforce": "Total Fuerza Laboral"
   },
   "enterDescription": "Ingrese descripción",
@@ -4036,8 +4036,8 @@
       "userNotAuthenticated": "Usuario no autenticado",
       "payrollApproved": "Nómina aprobada con éxito",
       "errorApproving": "Error al aprobar nómina",
-      "title": "Título",
-      "subtitle": "Subtítulo",
+      "title": "PROCESADOR DE NÓMINA",
+      "subtitle": "GESTIÓN Y CÁLCULO DE HABERES",
       "payrollInfo": "Información de Nómina",
       "selectedEmployee": "Selected Empleado",
       "selectActiveEmployee": "Seleccionar empleado activo",
@@ -4127,8 +4127,8 @@
       "pdfTotalSSTax": "Total Imp. Seg. Soc.",
       "pdfTotalMedicareWages": "Total Base Medicare",
       "pdfTotalMedicareTax": "Total Imp. Medicare",
-      "title": "Título",
-      "complianceProtocols": "Cumplimiento Protocolos",
+      "title": "REPORTES FISCALES",
+      "complianceProtocols": "PROTOCOLOS DE CUMPLIMIENTO",
       "form941Title": "Formulario 941 Título",
       "w2Title": "W2 Título",
       "w3Title": "W3 Título",
@@ -4194,8 +4194,8 @@
     "reportsPanel": {
       "form941Success": "Formulario 941 generado con éxito",
       "w2sSuccess": "Formularios W-2 generados con éxito",
-      "title": "Título",
-      "subtitle": "Subtítulo",
+      "title": "PANEL DE REPORTES",
+      "subtitle": "CUMPLIMIENTO Y ARCHIVOS FISCALES",
       "irsForms": "Formularios del IRS",
       "generating": "Generando...",
       "generateForm941": "Generar Formulario 941",
@@ -4219,8 +4219,8 @@
       "approved": "Aprobado",
       "paid": "Pagado",
       "voided": "Anulado",
-      "title": "Título",
-      "subtitle": "Subtítulo",
+      "title": "REVISIÓN DE NÓMINA",
+      "subtitle": "HISTORIAL Y ANULACIONES",
       "searchFilters": "Filtros de Búsqueda",
       "allEmployees": "Todos los Empleados",
       "status": "Estado",
@@ -4312,32 +4312,32 @@
       "selectEmployee": "Seleccionar Empleado",
       "success": "Éxito"
     },
-    "newCycle": "Nuevo Ciclo",
+    "newCycle": "NUEVO CICLO",
     "preview": {
-      "collab": "Colaborador",
-      "deductions": "Deducciones",
-      "gross": "Bruto",
-      "heuristic": "Heurística",
-      "net": "Neto",
-      "protocol": "Protocolo",
-      "title": "Vista Previa"
+      "collab": "COLABORADOR",
+      "deductions": "DEDUCCIONES",
+      "gross": "BRUTO",
+      "heuristic": "HEURÍSTICA",
+      "net": "NETO",
+      "protocol": "PROTOCOLO",
+      "title": "VISTA PREVIA"
     },
-    "subtitle": "Gestión de pagos y deducciones",
+    "subtitle": "GESTIÓN Y CÁLCULO DE HABERES",
     "table": {
-      "dueDate": "Vencimiento",
-      "file": "Archivo",
-      "noData": "Sin Datos",
-      "period": "Período",
-      "range": "Rango",
-      "status": "Estado",
-      "totalLiquidation": "Liquidación Total"
+      "dueDate": "VENCIMIENTO",
+      "file": "ARCHIVO",
+      "noData": "SIN DATOS",
+      "period": "PERÍODO",
+      "range": "RANGO",
+      "status": "ESTADO",
+      "totalLiquidation": "LIQUIDACIÓN TOTAL"
     },
     "tabs": {
-      "history": "Historial",
-      "process": "Procesar",
-      "settings": "Configuración"
+      "history": "HISTORIAL",
+      "process": "PROCESAR",
+      "settings": "CONFIGURACIÓN"
     },
-    "title": "Procesador de Nómina"
+    "title": "PROCESADOR DE NÓMINA"
   },
   "payrollValidation": {
     "phaseTitle": "Validación de Nómina",
@@ -5353,10 +5353,10 @@
       "linkPorts": "Puertos de Enlace",
       "subtitle": "Status global del pool de proveedores",
       "title": "Sincronización de Red",
-      "totalAllies": "Total Aliados"
+      "totalAllies": "Total Proveedores"
     },
     "button": {
-      "register": "Registrar Aliado"
+      "register": "Registrar Proveedor"
     },
     "date": {
       "invalid": "Fecha inválida"
@@ -5369,11 +5369,11 @@
       "title": "Suministro no Detectado"
     },
     "filter": {
-      "allZones": "TODAS LAS ZONAS"
+      "allZones": "Todas las Zonas"
     },
-    "searchPlaceholder": "BUSCAR ALIADO / SKU...",
+    "searchPlaceholder": "Buscar proveedor / SKU...",
     "subtitle": "Supply Chain Intelligence Matrix",
-    "title": "Matriz de Aliados"
+    "title": "Matriz de Proveedores"
   },
   "supplierManagement": "Gestión de Proveedores",
   "supplierPayments": {
@@ -5412,34 +5412,34 @@
     "unknownSupplier": "Proveedor desconocido"
   },
   "supplierdashboard": {
-    "accountspayable": "CUENTAS POR PAGAR",
+    "accountspayable": "Cuentas por pagar",
     "aging": {
-      "31-60": "31-60 DÍAS",
-      "61-90": "61-90 DÍAS",
-      "current": "AL CORRIENTE"
+      "31-60": "31-60 días",
+      "61-90": "61-90 días",
+      "current": "Al corriente"
     },
-    "analyzing": "ANALIZANDO CARTERA DE PROVEEDORES...",
-    "avgticket": "TICKET DE COMPRA PROM.",
-    "bills": "DOCUMENTOS",
-    "capitaloutflow": "FLUJO DE SALIDA DE CAPITAL",
-    "costconcentration": "CONCENTRACIÓN DE COSTOS",
-    "criticalap": "AP EN ESTADO CRÍTICO",
-    "debtaging": "ANTIGÜEDAD DE DEUDA (AP)",
-    "elitemapping": "MAPEO ELITE DE PROVEEDORES",
-    "impact": "IMPACTO OPERATIVO %",
-    "newthismonth": "{count} NUEVOS ESTE MES",
-    "ofexpense": "DEL GASTO TOTAL",
-    "overdue": "PAGOS VENCIDOS",
-    "pendingdistribution": "DISTRIBUCIÓN DE SALDOS PENDIENTES",
-    "performancedetail": "DETALLE DE RENDIMIENTO POR PROVEEDOR",
-    "ranking": "RANK",
-    "subtitle": "ANÁLISIS DE CUENTAS POR PAGAR Y EGRESOS",
-    "supplierlegalname": "RAZÓN SOCIAL",
-    "title": "DASHBOARD PROVEEDORES",
-    "top10volume": "TOP 10 PROVEEDORES POR VOLUMEN",
-    "totalexpense": "FACTURACIÓN TOTAL",
-    "totalpartners": "PROVEEDORES TOTALES",
-    "unknownsupplier": "PROVEEDOR NO IDENTIFICADO"
+    "analyzing": "Analizando cartera de proveedores...",
+    "avgticket": "Ticket de compra prom.",
+    "bills": "Documentos",
+    "capitaloutflow": "Flujo de salida de capital",
+    "costconcentration": "Concentración de costos",
+    "criticalap": "AP en estado crítico",
+    "debtaging": "Antigüedad de deuda (AP)",
+    "elitemapping": "Mapeo elite de proveedores",
+    "impact": "Impacto operativo %",
+    "newthismonth": "{count} nuevos este mes",
+    "ofexpense": "del gasto total",
+    "overdue": "Pagos vencidos",
+    "pendingdistribution": "Distribución de saldos pendientes",
+    "performancedetail": "Detalle de rendimiento por proveedor",
+    "ranking": "Rank",
+    "subtitle": "Análisis de cuentas por pagar y egresos",
+    "supplierlegalname": "Razón Social",
+    "title": "Dashboard de Proveedores",
+    "top10volume": "Top 10 proveedores por volumen",
+    "totalexpense": "Facturación total",
+    "totalpartners": "Proveedores totales",
+    "unknownsupplier": "Proveedor no identificado"
   },
   "suppliers": "Proveedores",
   "sync-recovery-start": "Inicio de Recuperación de Sincronización",
@@ -5742,9 +5742,9 @@
   },
   "termsDefault": "Net 30",
   "compliance": {
-    "72_days_remaining": "72 DÍAS RESTANTES",
-    "next_deadline": "PRÓXIMO VENCIMIENTO",
-    "start_fiscal_cycle": "INICIAR CICLO FISCAL",
+    "72_days_remaining": "72 días restantes",
+    "next_deadline": "Próximo vencimiento",
+    "start_fiscal_cycle": "Iniciar ciclo fiscal",
     "facturación_forense_florida": "Facturación Forense Florida",
     "guardar_con_auditoría": "Guardar con Auditoría",
     "subtotal:_100": "Subtotal: 100"

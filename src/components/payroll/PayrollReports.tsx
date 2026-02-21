@@ -502,7 +502,7 @@ export const PayrollReports: React.FC = () => {
                         <div className="col-span-2 bg-slate-900/50 p-8 rounded-[2rem] border border-slate-800 shadow-inner">
                           <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3">{t('payroll.reports.reportSubject')}</p>
                           <p className="text-lg font-black text-white uppercase tracking-tight">{w2Data.employeeName}</p>
-                          <p className="text-xs font-bold text-blue-500 font-mono mt-2 flex items-center gap-2">
+                          <p className="text-xs font-black text-blue-500 font-mono mt-2 flex items-center gap-2">
                             <Shield className="w-3 h-3" /> SSN: {w2Data.employeeSSN}
                           </p>
                         </div>

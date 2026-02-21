@@ -61,7 +61,7 @@ export const AuditChainStatus: React.FC = () => {
                 <div className="flex items-center justify-between p-4 bg-muted rounded-lg border">
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">{t('forensic.auditChain.status')}</p>
-                        <p className={`text-lg font-bold ${status === 'secure' ? 'text-green-600' : 'text-yellow-600'}`}>
+                        <p className={`text-lg font-black uppercase tracking-tighter ${status === 'secure' ? 'text-green-600' : 'text-yellow-600'}`}>
                             {status === 'verifying' ? t('forensic.auditChain.verifying') : status === 'secure' ? t('forensic.auditChain.secure') : t('forensic.auditChain.unverified')}
                         </p>
                     </div>

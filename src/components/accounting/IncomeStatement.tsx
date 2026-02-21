@@ -136,9 +136,9 @@ export const IncomeStatement: React.FC = () => {
                         <PieChart className="w-10 h-10 text-emerald-500" />
                     </div>
                     <div>
-                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('accounting.incomeStatement.title')}</h2>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <FileText className="w-3.5 h-3.5" /> {t('accounting.incomeStatement.performance')}
+                        <h2 className="text-3xl font-bold text-white tracking-tight">{t('accounting.incomeStatement.title')}</h2>
+                        <p className="text-slate-500 font-medium text-xs mt-1 flex items-center gap-2">
+                            <FileText className="w-3.5 h-3.5 text-emerald-500" /> {t('accounting.incomeStatement.performance')}
                         </p>
                     </div>
                 </div>
@@ -149,12 +149,12 @@ export const IncomeStatement: React.FC = () => {
                             <Calendar className="w-4 h-4 text-slate-500 group-hover:text-blue-500 transition-colors" />
                         </div>
                         <div className="flex flex-col pr-4">
-                            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.incomeStatement.monthCutoff')}</span>
+                            <span className="text-xs font-medium text-slate-500">{t('accounting.incomeStatement.monthCutoff')}</span>
                             <input
                                 type="month"
                                 value={month}
                                 onChange={(e) => setMonth(e.target.value)}
-                                className="bg-transparent text-white border-0 p-0 text-xs font-black outline-none focus:ring-0 uppercase cursor-pointer"
+                                className="bg-transparent text-white border-0 p-0 text-sm font-bold outline-none focus:ring-0 cursor-pointer"
                             />
                         </div>
                     </div>
@@ -163,10 +163,10 @@ export const IncomeStatement: React.FC = () => {
                         <button onClick={loadData} disabled={loading} className="p-3 hover:bg-slate-900 text-slate-500 hover:text-white rounded-xl transition-all">
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
-                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all">
+                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl font-bold text-[11px] transition-all">
                             <Printer className="w-4 h-4" /> {t('accounting.incomeStatement.print')}
                         </button>
-                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-blue-900/30 active:scale-95">
+                        <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-[11px] transition-all shadow-xl shadow-blue-900/30 active:scale-95">
                             <Download className="w-4 h-4" /> {t('accounting.incomeStatement.export')}
                         </button>
                     </div>
@@ -182,28 +182,28 @@ export const IncomeStatement: React.FC = () => {
                             <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
                                 <ArrowUpCircle className="w-6 h-6 text-emerald-500" />
                             </div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('accounting.incomeStatement.revenue')}</h3>
+                            <h3 className="text-xl font-bold text-white tracking-tight">{t('accounting.incomeStatement.revenue')}</h3>
                         </div>
-                        <span className="text-[10px] font-black text-emerald-500/60 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">NODO 4000</span>
+                        <span className="text-[10px] font-bold text-emerald-500/60 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">NODO 4000</span>
                     </header>
 
                     <div className="p-10 space-y-4">
                         {loading ? (
                             <div className="py-20 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.incomeStatement.syncRevenue')}</p>
+                                <p className="text-xs font-medium text-slate-600">{t('accounting.incomeStatement.syncRevenue')}</p>
                             </div>
                         ) : revenue.length === 0 ? (
-                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('accounting.incomeStatement.noRevenue')}</div>
+                            <div className="py-20 text-center opacity-20 italic font-bold text-slate-500 text-xs">{t('accounting.incomeStatement.noRevenue')}</div>
                         ) : (
                             revenue.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-[9px] font-black text-slate-600 font-mono tracking-widest">{item.account_code}</span>
-                                        <span className="text-sm font-bold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
+                                        <span className="text-xs font-bold text-slate-600 font-mono">{item.account_code}</span>
+                                        <span className="text-sm font-semibold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-lg font-black text-emerald-400 font-mono">
+                                        <span className="text-lg font-bold text-emerald-400 font-mono">
                                             ${formatNumber(item.balance)}
                                         </span>
                                     </div>
@@ -214,10 +214,10 @@ export const IncomeStatement: React.FC = () => {
 
                     <footer className="p-10 bg-emerald-500/5 border-t border-emerald-500/10 flex justify-between items-center">
                         <div>
-                            <p className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-1">{t('accounting.incomeStatement.totalRevenue')}</p>
+                            <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-1">{t('accounting.incomeStatement.totalRevenue')}</p>
                             <p className="text-xs text-slate-500 font-medium">{t('accounting.incomeStatement.auditPeriod')}</p>
                         </div>
-                        <p className="text-3xl font-black text-emerald-400 font-mono tracking-tighter">
+                        <p className="text-3xl font-bold text-emerald-400 font-mono tracking-tight">
                             ${formatNumber(totalRevenue)}
                         </p>
                     </footer>
@@ -230,28 +230,28 @@ export const IncomeStatement: React.FC = () => {
                             <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20">
                                 <ArrowDownCircle className="w-6 h-6 text-rose-500" />
                             </div>
-                            <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('accounting.incomeStatement.expenses')}</h3>
+                            <h3 className="text-xl font-bold text-white tracking-tight">{t('accounting.incomeStatement.expenses')}</h3>
                         </div>
-                        <span className="text-[10px] font-black text-rose-500/60 bg-rose-500/5 px-3 py-1 rounded-full border border-rose-500/10">NODO 5000</span>
+                        <span className="text-[10px] font-bold text-rose-500/60 bg-rose-500/5 px-3 py-1 rounded-full border border-rose-500/10">NODO 5000</span>
                     </header>
 
                     <div className="p-10 space-y-4">
                         {loading ? (
                             <div className="py-20 flex flex-col items-center gap-4">
                                 <Loader2 className="w-8 h-8 text-rose-500 animate-spin" />
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{t('accounting.incomeStatement.syncExpenses')}</p>
+                                <p className="text-xs font-medium text-slate-600">{t('accounting.incomeStatement.syncExpenses')}</p>
                             </div>
                         ) : expenses.length === 0 ? (
-                            <div className="py-20 text-center opacity-20 italic font-black text-slate-500 uppercase tracking-widest text-xs">{t('accounting.incomeStatement.noExpenses')}</div>
+                            <div className="py-20 text-center opacity-20 italic font-bold text-slate-500 text-xs">{t('accounting.incomeStatement.noExpenses')}</div>
                         ) : (
                             expenses.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-[9px] font-black text-slate-600 font-mono tracking-widest">{item.account_code}</span>
-                                        <span className="text-sm font-bold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
+                                        <span className="text-xs font-bold text-slate-600 font-mono">{item.account_code}</span>
+                                        <span className="text-sm font-semibold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-lg font-black text-rose-400 font-mono">
+                                        <span className="text-lg font-bold text-rose-400 font-mono">
                                             ${formatNumber(item.balance)}
                                         </span>
                                     </div>
@@ -262,10 +262,10 @@ export const IncomeStatement: React.FC = () => {
 
                     <footer className="p-10 bg-rose-500/5 border-t border-rose-500/10 flex justify-between items-center">
                         <div>
-                            <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mb-1">{t('accounting.incomeStatement.totalExpenses')}</p>
+                            <p className="text-xs font-bold text-rose-500 uppercase tracking-wider mb-1">{t('accounting.incomeStatement.totalExpenses')}</p>
                             <p className="text-xs text-slate-500 font-medium">{t('accounting.incomeStatement.resourceConsumption')}</p>
                         </div>
-                        <p className="text-3xl font-black text-rose-400 font-mono tracking-tighter">
+                        <p className="text-3xl font-bold text-rose-400 font-mono tracking-tight">
                             ${formatNumber(totalExpenses)}
                         </p>
                     </footer>
@@ -284,8 +284,8 @@ export const IncomeStatement: React.FC = () => {
                                 <DollarSign className="w-12 h-12" strokeWidth={3} />
                             </div>
                             <div>
-                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2 px-1">{t('accounting.incomeStatement.managementResult')}</h4>
-                                <p className="text-4xl font-black text-white uppercase tracking-tighter">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-1">{t('accounting.incomeStatement.managementResult')}</h4>
+                                <p className="text-4xl font-bold text-white tracking-tight">
                                     {netIncome >= 0 ? t('accounting.incomeStatement.netProfit') : t('accounting.incomeStatement.netLoss')}
                                 </p>
                             </div>
@@ -293,11 +293,11 @@ export const IncomeStatement: React.FC = () => {
 
                         <div className="text-right">
                             <div className="flex items-baseline gap-2 mb-1 justify-end">
-                                <span className={`text-6xl font-black font-mono tracking-tighter ${netIncome >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                <span className={`text-6xl font-bold font-mono tracking-tight ${netIncome >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                     ${formatNumber(Math.abs(netIncome))}
                                 </span>
                             </div>
-                            <p className={`text-[11px] font-black uppercase tracking-widest ${netIncome >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
+                            <p className={`text-xs font-bold uppercase tracking-wider ${netIncome >= 0 ? 'text-emerald-500/60' : 'text-rose-500/60'}`}>
                                 {t('accounting.incomeStatement.cashFlowRealized')} {netIncome >= 0 ? 'E' : 'D'}
                             </p>
                         </div>

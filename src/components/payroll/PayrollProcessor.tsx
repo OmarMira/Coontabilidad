@@ -238,7 +238,7 @@ export const PayrollProcessor: React.FC = () => {
                                                         <span className="text-sm font-black text-white uppercase tracking-tighter group-hover/row:text-emerald-400 transition-colors">{period.name}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 font-mono">
+                                                        <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 font-mono">
                                                             <span>{period.start_date}</span>
                                                             <ChevronRight className="w-3 h-3 text-slate-700" />
                                                             <span>{period.end_date}</span>
@@ -304,8 +304,8 @@ export const PayrollProcessor: React.FC = () => {
                                                         <div className="font-black text-white uppercase tracking-tighter text-sm mb-1 group-hover/row:text-emerald-400 transition-colors">{emp.first_name} {emp.last_name}</div>
                                                         <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">{emp.position}</div>
                                                     </td>
-                                                    <td className="px-8 py-6 text-right font-mono font-bold text-slate-400 text-sm">${calc.grossAmount.toLocaleString()}</td>
-                                                    <td className="px-8 py-6 text-right font-mono font-bold text-rose-500 text-sm">-${calc.deductionsAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    <td className="px-8 py-6 text-right font-mono font-black text-slate-400 text-sm">${calc.grossAmount.toLocaleString()}</td>
+                                                    <td className="px-8 py-6 text-right font-mono font-black text-rose-500 text-sm">-${calc.deductionsAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-8 py-6 text-right font-mono font-black text-emerald-400 text-base tracking-tighter">${calc.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-8 py-6 text-center">
                                                         <label className="relative inline-flex items-center cursor-pointer group/toggle mx-auto">

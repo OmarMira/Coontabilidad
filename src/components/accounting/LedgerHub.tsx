@@ -41,12 +41,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                     <ShieldCheck className="w-12 h-12 text-red-500" />
                 </div>
                 <div className="space-y-2">
-                    <h3 className="font-black text-2xl text-white uppercase tracking-tighter">{t('accounting.ledgerHub.errorTitle')}</h3>
-                    <p className="text-red-200/60 font-bold max-w-md mx-auto italic">{t('accounting.ledgerHub.errorDesc')}</p>
+                    <h3 className="font-bold text-2xl text-white tracking-tight">{t('accounting.ledgerHub.errorTitle')}</h3>
+                    <p className="text-red-200/60 font-medium max-w-md mx-auto italic">{t('accounting.ledgerHub.errorDesc')}</p>
                 </div>
                 <button
                     onClick={() => window.location.reload()}
-                    className="bg-red-600 hover:bg-red-500 text-white font-black uppercase text-xs tracking-widest px-8 py-3 rounded-xl transition-all shadow-xl shadow-red-900/30"
+                    className="bg-red-600 hover:bg-red-500 text-white font-bold text-sm px-8 py-3 rounded-xl transition-all shadow-xl shadow-red-900/30"
                 >
                     {t('accounting.ledgerHub.restartProtocols')}
                 </button>
@@ -71,10 +71,10 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                             <Book className="w-10 h-10 text-blue-500" />
                         </div>
                         <div>
-                            <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">
+                            <h2 className="text-3xl font-bold text-white tracking-tight">
                                 {t('accounting.ledgerHub.title')}
                             </h2>
-                            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-1">
+                            <p className="text-slate-500 font-medium text-xs mt-1">
                                 {t('accounting.ledgerHub.subtitle')}
                             </p>
                         </div>
@@ -87,7 +87,7 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as HubTab)}
                             className={`
-                                flex items-center gap-3 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                                flex items-center gap-3 px-6 py-3 rounded-xl text-xs font-bold transition-all duration-300
                                 ${activeTab === tab.id
                                     ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/40 translate-y-[-2px]'
                                     : 'text-slate-500 hover:text-white hover:bg-slate-900'}
@@ -117,12 +117,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                                     <BookOpen className="w-8 h-8 text-blue-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('accounting.ledgerHub.dailyBook')}</h3>
-                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">{t('accounting.ledgerHub.dailyBookDesc')}</p>
+                                    <h3 className="text-xl font-bold text-white tracking-tight mb-2">{t('accounting.ledgerHub.dailyBook')}</h3>
+                                    <p className="text-slate-400 font-medium text-sm leading-relaxed">{t('accounting.ledgerHub.dailyBookDesc')}</p>
                                 </div>
                                 <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('accounting.ledgerHub.realTimeSync')}</span>
+                                    <span className="text-xs font-medium text-slate-500">{t('accounting.ledgerHub.realTimeSync')}</span>
                                 </div>
                             </div>
                         </div>
@@ -139,12 +139,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                                     <Book className="w-8 h-8 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('accounting.ledgerHub.generalLedger')}</h3>
-                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">{t('accounting.ledgerHub.generalLedgerDesc')}</p>
+                                    <h3 className="text-xl font-bold text-white tracking-tight mb-2">{t('accounting.ledgerHub.generalLedger')}</h3>
+                                    <p className="text-slate-400 font-medium text-sm leading-relaxed">{t('accounting.ledgerHub.generalLedgerDesc')}</p>
                                 </div>
                                 <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
                                     <History className="w-3.5 h-3.5 text-slate-600" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('accounting.ledgerHub.lastClosure', { date: 'Dic 2024' })}</span>
+                                    <span className="text-xs font-medium text-slate-500">{t('accounting.ledgerHub.lastClosure', { date: 'Dic 2024' })}</span>
                                 </div>
                             </div>
                         </div>
@@ -161,12 +161,12 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
                                     <Layers className="w-8 h-8 text-purple-400" />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{t('accounting.ledgerHub.auxiliariesTitle')}</h3>
-                                    <p className="text-slate-400 font-bold text-sm leading-relaxed">{t('accounting.ledgerHub.auxiliariesDesc')}</p>
+                                    <h3 className="text-xl font-bold text-white tracking-tight mb-2">{t('accounting.ledgerHub.auxiliariesTitle')}</h3>
+                                    <p className="text-slate-400 font-medium text-sm leading-relaxed">{t('accounting.ledgerHub.auxiliariesDesc')}</p>
                                 </div>
                                 <div className="flex items-center gap-2 pt-4 border-t border-slate-800/50">
                                     <ShieldCheck className="w-3.5 h-3.5 text-slate-600" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{t('accounting.ledgerHub.validatedUsGaap')}</span>
+                                    <span className="text-xs font-medium text-slate-500">{t('accounting.ledgerHub.validatedUsGaap')}</span>
                                 </div>
                             </div>
                         </div>

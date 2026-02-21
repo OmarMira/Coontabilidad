@@ -95,13 +95,13 @@ export const ARDModule: React.FC = () => {
                         onClick={() => setActiveTab('quality')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quality' ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Gem className="w-4 h-4" /> {t('ard.quality')}
+                        <Gem className="w-4 h-4" /> {t('ard.quality.label')}
                     </button>
                     <button
                         onClick={() => setActiveTab('roadmap')}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'roadmap' ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
-                        <Rocket className="w-4 h-4" /> {t('ard.roadmap')}
+                        <Rocket className="w-4 h-4" /> {t('ard.roadmap.label')}
                     </button>
                 </div>
             </div>

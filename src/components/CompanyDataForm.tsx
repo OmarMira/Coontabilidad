@@ -181,7 +181,7 @@ export function CompanyDataForm() {
         <button
           onClick={() => handleSave()}
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 text-white px-8 py-3 rounded-2xl flex items-center space-x-3 transition-all font-black shadow-lg shadow-blue-900/40"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 text-white px-8 py-3 rounded-2xl flex items-center space-x-3 transition-all font-bold shadow-lg shadow-blue-900/40"
         >
           {saving ? (
             <RefreshCw className="h-5 w-5 animate-spin" />
@@ -211,28 +211,28 @@ export function CompanyDataForm() {
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <Users className="h-3.5 w-3.5 text-blue-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.customers')}</span>
+                    <span className="text-xs font-bold text-slate-500">{t('companyData.alert.customers')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.customers}</span>
                 </div>
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <Building2 className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.suppliers')}</span>
+                    <span className="text-xs font-bold text-slate-500">{t('companyData.alert.suppliers')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.suppliers}</span>
                 </div>
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <FileText className="h-3.5 w-3.5 text-purple-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.invoices')}</span>
+                    <span className="text-xs font-bold text-slate-500">{t('companyData.alert.invoices')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.invoices}</span>
                 </div>
                 <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
                   <div className="flex items-center gap-2 mb-1">
                     <Receipt className="h-3.5 w-3.5 text-orange-400" />
-                    <span className="text-[10px] font-black uppercase text-slate-500">{t('companyData.alert.bills')}</span>
+                    <span className="text-xs font-bold text-slate-500">{t('companyData.alert.bills')}</span>
                   </div>
                   <span className="text-lg font-black text-white leading-none">{accountingCheck.bills}</span>
                 </div>
@@ -273,7 +273,7 @@ export function CompanyDataForm() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-4 font-black text-xs uppercase tracking-widest transition-all relative ${activeTab === tab.id
+                  className={`flex items-center gap-2 py-4 px-4 font-bold text-sm transition-all relative ${activeTab === tab.id
                     ? 'text-blue-400'
                     : 'text-slate-500 hover:text-slate-300'
                     }`}
@@ -340,7 +340,7 @@ export function CompanyDataForm() {
                 <div className="lg:col-span-8 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.companyName')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.companyName')}</label>
                       <input
                         type="text"
                         value={formData.company_name || ''}
@@ -349,7 +349,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.legalName')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.legalName')}</label>
                       <input
                         type="text"
                         value={formData.legal_name || ''}
@@ -361,7 +361,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.taxId')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.taxId')}</label>
                       <input
                         type="text"
                         value={formData.tax_id || ''}
@@ -370,7 +370,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.address')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.address')}</label>
                       <input
                         type="text"
                         value={formData.address || ''}
@@ -382,7 +382,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="space-y-2 col-span-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.city')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.city')}</label>
                       <input
                         type="text"
                         value={formData.city || ''}
@@ -391,7 +391,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.state')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.state')}</label>
                       <select
                         value={formData.state || 'FL'}
                         onChange={(e) => handleInputChange('state', e.target.value)}
@@ -404,7 +404,7 @@ export function CompanyDataForm() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.zipCode')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.zipCode')}</label>
                       <input
                         type="text"
                         value={formData.zip_code || ''}
@@ -416,7 +416,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.phone')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.phone')}</label>
                       <input
                         type="tel"
                         value={formData.phone || ''}
@@ -425,7 +425,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.field.email')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.field.email')}</label>
                       <input
                         type="email"
                         value={formData.email || ''}
@@ -448,7 +448,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.commission')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.finance.commission')}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -458,7 +458,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.shipping')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.finance.shipping')}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -478,7 +478,7 @@ export function CompanyDataForm() {
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.lateFee')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.finance.lateFee')}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -488,7 +488,7 @@ export function CompanyDataForm() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">{t('companyData.finance.gracePeriod')}</label>
+                      <label className="text-xs font-medium text-slate-500">{t('companyData.finance.gracePeriod')}</label>
                       <input
                         type="number"
                         value={formData.grace_period_days || 0}
