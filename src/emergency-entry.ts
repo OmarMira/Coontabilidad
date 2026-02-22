@@ -5,6 +5,7 @@ import { logger } from './utils/logger';
 import { ViewManager } from './database/views/ViewManager';
 import { db } from './database/simple-db';
 
+
 /**
  * Punto de entrada de emergencia para la aplicación
  * Se activa ante errores fatales de integridad
@@ -13,6 +14,11 @@ export async function emergencyBoot(): Promise<void> {
     logger.emergency('INICIANDO FIX NUCLEAR DE EMERGENCIA DEFINITIVO', undefined, undefined, 'Boot', 'emergency');
 
     try {
+        // Verificar si el usuario tiene permisos para ejecutar el modo de emergencia
+        if (!user || user.role !== 'admin') {
+            throw new Error('Acceso denegado: Solo los administradores pueden ejecutar el modo de emergencia.');
+        }
+
         // 1. Ejecutar el Fix Definitivo Nuclear
         // Esto elimina todo y reconstruye con arquitectura de UUIDs
         await ForensicDatabaseDiagnostic.executeDefinitiveFix();

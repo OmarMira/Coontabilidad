@@ -477,14 +477,14 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
 // ===========================================
 
 export const QUICK_OPERATIONS = [
-    { label: 'Nueva Factura', guide: 'createInvoice' },
-    { label: 'Nuevo Cliente', guide: 'createCustomer' },
-    { label: 'Nuevo Producto', guide: 'createProduct' },
-    { label: 'Reporte DR-15', guide: 'generateDR15' },
-    { label: 'Balance General', guide: 'viewBalance' },
-    { label: 'Crear Respaldo', guide: 'createBackup' },
-    { label: 'Nueva Compra', guide: 'createBill' },
-    { label: 'Tasas Florida', guide: 'viewTaxRates' }
+    { label: 'Nueva Factura', labelKey: 'helpCenter.quickOps.newInvoice', guide: 'createInvoice' },
+    { label: 'Nuevo Cliente', labelKey: 'helpCenter.quickOps.newCustomer', guide: 'createCustomer' },
+    { label: 'Nuevo Producto', labelKey: 'helpCenter.quickOps.newProduct', guide: 'createProduct' },
+    { label: 'Reporte DR-15', labelKey: 'helpCenter.quickOps.dr15Report', guide: 'generateDR15' },
+    { label: 'Balance General', labelKey: 'helpCenter.quickOps.balanceSheet', guide: 'viewBalance' },
+    { label: 'Crear Respaldo', labelKey: 'helpCenter.quickOps.createBackup', guide: 'createBackup' },
+    { label: 'Nueva Compra', labelKey: 'helpCenter.quickOps.newPurchase', guide: 'createBill' },
+    { label: 'Tasas Florida', labelKey: 'helpCenter.quickOps.floridaRates', guide: 'viewTaxRates' }
 ];
 
 // ===========================================

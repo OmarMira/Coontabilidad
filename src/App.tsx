@@ -1485,7 +1485,7 @@ function App() {
                         setState(prev => ({
                           ...prev,
                           currentSection: 'inventory-kardex',
-                          kardexParams: { type: 'sale', productId: undefined /* We might want to filter by ref ID in future but KardexViewer mainly filters by product/type. Wait, we want to see movements for *this* invoice. KardexViewer current implementation filters by Product OR Type. It does not have Ref ID filter yet. I should add that to KardexViewer or just link to generic sales. For now, let's link to Sales type. UPDATE: The user requirement says "En factura generada: enlace a movimiento de salida en kardex". `getKardexMovements` HAS a filter for generic attributes but the UI `InventoryKardexViewer` currently only exposes Product and Type. I will update `InventoryKardexViewer` later to support reference filter if needed, but for now I will pass type='sale'. Ideally I should pass the invoice ID as a filter too. Let's start with type='sale'. Actually, filtering by specific invoice is better. I will add `referenceId` to `kardexParams` in AppState.*/ }
+                          kardexParams: { type: 'sale', productId: undefined /* We might want to filter by ref ID in future but KardexViewer mainly filters by product/type. It does not have Ref ID filter yet. I should add that to KardexViewer or just link to generic sales. For now, let's link to Sales type. UPDATE: The user requirement says "En factura generada: enlace a movimiento de salida en kardex". `getKardexMovements` HAS a filter for generic attributes but the UI `InventoryKardexViewer` currently only exposes Product and Type. It does not have Ref ID filter yet. I will update `InventoryKardexViewer` later to support reference filter if needed, but for now I will pass type='sale'. Ideally I should pass the invoice ID as a filter too. Let's start with type='sale'. Actually, filtering by specific invoice is better. I will add `referenceId` to `kardexParams` in AppState.*/ }
                         }));
                       }}
                     />
@@ -1978,7 +1978,7 @@ function App() {
               {/* --- HERRAMIENTAS --- */}
               {state.currentSection === 'accounting-diagnosis' && <AccountingDiagnosis />}
               {state.currentSection === 'journal-entry-test' && <JournalEntryTest />}
-              {state.currentSection === 'system-audit' && <SystemAudit />}
+              {(state.currentSection === 'system-audit' || state.currentSection === 'audit') && <SystemAudit />}
 
               {/* --- GESTIÓN DE USUARIOS --- */}
               {state.currentSection === 'admin-users' && <UserList />}

@@ -56,6 +56,8 @@ const LoginForm: React.FC = () => {
     };
 
 
+
+
     const handleGoogleSuccess = async (userInfo: any) => {
         setLoading(true);
         setError('');
@@ -112,6 +114,8 @@ const LoginForm: React.FC = () => {
                         <Zap className="w-6 h-6 animate-pulse" />
                         <span className="text-lg tracking-wider uppercase">{t('login.fastDemoAccess')}</span>
                     </button>
+
+
 
                     {/* Error Message */}
                     {error && (

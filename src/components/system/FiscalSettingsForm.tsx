@@ -6,16 +6,17 @@ import { Calculator, AlertTriangle } from 'lucide-react';
 import { getFiscalSettings, updateFiscalSettings, type FiscalSettings } from '../../database/simple-db';
 import { toast } from 'react-hot-toast';
 
+
 export const FiscalSettingsForm: React.FC = () => {
     const { t } = useLocale();
     const [settings, setSettings] = useState<FiscalSettings>(getFiscalSettings());
 
-    const handleSave = async () => {
-        const loading = toast.loading('Guardando configuración fiscal...');
+    const handleSave = () => {
+        const loading = toast.loading(t('fiscalSettings.saving'));
         try {
             const res = updateFiscalSettings(settings);
             if (res.success) {
-                toast.success('✅ Configuración aplicada y guardada', { id: loading });
+                toast.success(t('fiscalSettings.saveSuccess'), { id: loading });
             } else {
                 toast.error(`❌ ${res.message} `, { id: loading });
             }

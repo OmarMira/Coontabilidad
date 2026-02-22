@@ -1841,7 +1841,6 @@ export interface BudgetVarianceAnalysis {
   }[];
 }
 
-// Flag global de modo demo
 export let isDemoActive = false;
 
 export const resetDB = async () => {
@@ -1852,7 +1851,7 @@ export const resetDB = async () => {
   dbEngine = null;
   isInitialized = false;
   isDemoActive = false;
-  logger.info('Database', 'reset', 'Base de datos reiniciada para cambio de modo');
+  logger.info('Database', 'reset', 'Base de datos reiniciada');
 };
 
 export const initDB = async (password?: string, demoMode: boolean = false): Promise<any> => {
@@ -1860,10 +1859,9 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
     return db;
   }
 
-  isDemoActive = demoMode;
-
   try {
-    logger.info('Database', 'init_start', `Iniciando inicializaciÃ³n de base de datos SQLite (Demo: ${demoMode})`);
+    logger.info('Database', 'init_start', `Iniciando inicialización de base de datos SQLite (${demoMode ? 'Modo Demo' : 'Modo Normal'})`);
+    isDemoActive = demoMode;
 
     // Configurar cifrado si se proporciona contraseÃ±a
     if (password && BasicEncryption.isSupported()) {
@@ -1893,15 +1891,16 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
       // Cargar datos existentes
       const { loadDatabase } = await import('./PersistenceLayer');
       dbData = await loadDatabase();
-
       // Fallback a localStorage si no hay en IndexedDB
       if (!dbData) {
         try {
           dbData = await loadFromLocalStorage();
-        } catch (e) { console.warn('LocalStorage load failed', e); }
+        } catch (e) {
+          console.warn('LocalStorage load failed', e);
+        }
       }
     } else {
-      logger.warn('Database', 'demo_warning', 'âš ï¸ MODO DEMO: Base de datos en RAM. Los datos se perderÃ¡n al recargar.');
+      logger.warn('Database', 'demo_warning', '⚠️ MODO DEMO: Base de datos en RAM. Los datos se perderán al recargar.');
     }
 
     if (!db) {
@@ -1925,7 +1924,8 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
     // NUEVO: Ejecutar reparaciÃ³n profunda y seed de emergencia (Iron Core Protection)
     await DatabaseInitializer.initializeWithFix(db);
 
-    // Configurar servicios adicionales solo si no es demo (para evitar sobrescribir datos Áreales)
+    // Configurar servicios adicionales
+    // Configurar servicios adicionales solo si no es demo
     if (!demoMode) {
       setupAutoSave();
     }

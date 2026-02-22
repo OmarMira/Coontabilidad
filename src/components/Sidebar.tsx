@@ -155,6 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         { id: 'backups', label: t('navigation.backupsRestoration'), icon: HardDrive },
         { id: 'system-logs', label: t('navigation.systemLogs'), icon: Activity },
         { id: 'auditoria', label: t('navigation.transactionAudit'), icon: Search },
+        { id: 'system-audit', label: t('navigation.audit'), icon: History },
         { id: 'verify', label: t('navigation.ironCoreVerify'), icon: Shield },
         { id: 'help', label: t('navigation.helpCenter'), icon: HelpCircle }
       ]
@@ -196,6 +197,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       case 'payroll':
       case 'fixed-assets-section':
         return ['contador', 'vendedor', 'comprador', 'auditor'].includes(role);
+
+      case 'system-audit':
+      case 'audit':
+        return ['admin', 'auditor', 'contador'].includes(role);
 
       case 'herramientas':
         return role === 'auditor';

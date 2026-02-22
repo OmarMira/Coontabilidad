@@ -200,7 +200,9 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                                     <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                                         <BookOpen className="w-5 h-5 text-blue-400" />
                                     </div>
-                                    <span className="text-sm font-medium text-slate-300 group-hover:text-white">{op.label}</span>
+                                    <span className="text-sm font-medium text-slate-300 group-hover:text-white">
+                                        {(op as any).labelKey ? t((op as any).labelKey) : op.label}
+                                    </span>
                                 </button>
                             ))}
                         </div>

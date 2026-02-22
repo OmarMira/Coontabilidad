@@ -37,21 +37,6 @@ export class AuthService {
     }
 
     /**
-     * Crea sesión para modo Demo (Sin persistencia real de usuario)
-     */
-    static createDemoSession(): UserSession {
-        const session: UserSession = {
-            userId: 999999, // Dummy ID
-            email: 'demo@accountexpress.local',
-            role: 'demo',
-            expiresAt: Date.now() + SESSION_DURATION,
-            isDemo: true
-        };
-        this.saveSession(session);
-        return session;
-    }
-
-    /**
      * Crea una sesión real para un usuario autenticado
      */
     static createSession(userId: number, email: string, role: string): UserSession {
@@ -61,6 +46,21 @@ export class AuthService {
             role,
             expiresAt: Date.now() + SESSION_DURATION,
             isDemo: false
+        };
+        this.saveSession(session);
+        return session;
+    }
+
+    /**
+     * Crea sesión para modo Demo (Sin persistencia real de usuario)
+     */
+    static createDemoSession(): UserSession {
+        const session: UserSession = {
+            userId: 999999, // ID ficticio
+            email: 'demo@accountexpress.local',
+            role: 'demo',
+            expiresAt: Date.now() + SESSION_DURATION,
+            isDemo: true
         };
         this.saveSession(session);
         return session;
