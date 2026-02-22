@@ -146,7 +146,7 @@ export const CustomerDashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+    <div className="elite-page-container pb-20">
       {/* Header Hub */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
         <div className="flex items-center gap-6">

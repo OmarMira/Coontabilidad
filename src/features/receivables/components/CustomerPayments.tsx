@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Calendar, DollarSign, FileText, Search, Plus, Check, X } from 'lucide-react';
+import { CreditCard, Calendar, DollarSign, FileText, Search, Plus, Check, X, Zap } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Invoice, Customer, getPaymentMethods, PaymentMethod, createPayment, Payment } from '../../../database/simple-db';
 import { useLocale } from '../../../i18n/useLocale';
@@ -164,17 +164,24 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight leading-none">{t('customerPayments.title')}</h2>
-          <p className="text-slate-500 font-medium text-sm mt-2">{t('customerPayments.subtitle')}</p>
+    <div className="elite-page-container">
+      {/* Header Hub */}
+      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+        <div className="flex items-center gap-6">
+          <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
+            <CreditCard className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('customerPayments.title')}</h1>
+            <p className="text-slate-500 font-medium text-sm mt-3 flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('customerPayments.subtitle')}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="bg-white/10 p-4 rounded-lg shadow-sm border border-white/10">
+      {/* Filters and Search */}
+      <div className="card-elite-flat">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -202,32 +209,32 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
         </div>
       </div>
 
-      {/* Lista de facturas pendientes */}
-      <div className="bg-white/10 rounded-lg shadow-sm border border-white/10">
-        <div className="px-6 py-4 border-b border-white/10">
-          <h3 className="text-lg font-black text-white tracking-tight">{t('customerPayments.pendingInvoices')}</h3>
+      {/* Pending Invoices List */}
+      <div className="card-elite-flat overflow-hidden p-0">
+        <div className="px-8 py-5 border-b border-slate-800 bg-slate-900/50">
+          <h3 className="text-xl font-bold text-white tracking-tight">{t('customerPayments.pendingInvoices')}</h3>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-700">
             <thead className="bg-slate-900">
               <tr>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {t('customerPayments.invoice')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {t('invoiceForm.customer')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {t('common.date')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {t('common.amount')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {t('customerPayments.daysOverdue')}
                 </th>
-                <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   {t('common.actions')}
                 </th>
               </tr>

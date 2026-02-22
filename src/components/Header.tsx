@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick, onNav
               <Database className="w-4 h-4 text-blue-400" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('header.engineVersion')}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">{t('header.engineVersion')}</span>
               <span className="text-xs font-bold text-slate-300 leading-none">{t('header.sqliteLocal')}</span>
             </div>
           </div>
@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick, onNav
               <Shield className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{t('header.encryptionProtocol')}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">{t('header.encryptionProtocol')}</span>
               <span className="text-xs font-bold text-slate-300 leading-none">{t('header.militaryGrade')}</span>
             </div>
           </div>
@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({ dbStats, onAssistantClick, onNav
                 <UserIcon className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-black text-white leading-none tracking-tight group-hover:text-blue-400 transition-colors">
+                <span className="text-[11px] font-bold text-white leading-none tracking-tight group-hover:text-blue-400 transition-colors">
                   {user.display_name.toUpperCase()}
                 </span>
                 <span className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.1em] mt-0.5">

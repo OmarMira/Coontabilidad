@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScanSearch, FilePlus, Database, CheckCircle2, AlertCircle, Clock, Settings, ArrowRight, RefreshCw, DollarSign, Users, Gem, Package, Rocket } from 'lucide-react';
+import { ScanSearch, FilePlus, Database, CheckCircle2, AlertCircle, Clock, Settings, ArrowRight, RefreshCw, DollarSign, Users, Gem, Package, Rocket, Zap } from 'lucide-react';
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { ARDScanner } from './ARDScanner';
 import { ARDDocumentList } from './ARDDocumentList';
@@ -47,59 +47,61 @@ export const ARDModule: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8 animate-fade-in px-2">
+        <div className="elite-page-container">
             {/* HEADER ELITE */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h2 className="text-3xl font-black text-white tracking-tighter flex items-center gap-4">
-                        <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-                            <ScanSearch className="w-8 h-8 text-indigo-400" />
-                        </div>
-                        {t('ard.title')}
-                    </h2>
-                    <p className="text-slate-500 mt-2 font-medium">{t('ard.subtitle')}</p>
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-indigo-600/10 rounded-2.5xl border border-indigo-500/20 shadow-indigo-900/10 shadow-lg group">
+                        <ScanSearch className="w-10 h-10 text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('ard.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-3 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t('ard.subtitle')}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 overflow-x-auto max-w-full">
                     <button
                         onClick={() => setActiveTab('scan')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'scan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'scan' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <FilePlus className="w-4 h-4" /> {t('ard.scanning')}
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'history' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <Database className="w-4 h-4" /> {t('ard.garManagement')}
                     </button>
                     <button
                         onClick={() => setActiveTab('inventory')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'inventory' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'inventory' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <Package className="w-4 h-4" /> {t('ard.inventory')}
                     </button>
                     <button
                         onClick={() => setActiveTab('payments')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'payments' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <DollarSign className="w-4 h-4" /> {t('ard.collections')}
                     </button>
                     <button
                         onClick={() => setActiveTab('customers')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <Users className="w-4 h-4" /> {t('ard.customers')}
                     </button>
                     <button
                         onClick={() => setActiveTab('quality')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quality' ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'quality' ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <Gem className="w-4 h-4" /> {t('ard.quality.label')}
                     </button>
                     <button
                         onClick={() => setActiveTab('roadmap')}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'roadmap' ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40' : 'text-slate-600 hover:text-white'}`}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'roadmap' ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40' : 'text-slate-600 hover:text-white'}`}
                     >
                         <Rocket className="w-4 h-4" /> {t('ard.roadmap.label')}
                     </button>

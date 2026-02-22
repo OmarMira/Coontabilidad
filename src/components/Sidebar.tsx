@@ -245,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
                 ? 'text-slate-500 hover:text-white mt-0 border-t border-slate-900/10 pt-1 font-bold'
                 : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
             }
-            ${level > 0 ? 'text-xs font-black tracking-tight' : 'text-sm font-black uppercase tracking-[0.15em]'}
+            ${level > 0 ? 'text-xs font-bold tracking-tight' : 'text-sm font-bold uppercase tracking-wider'}
           `}
         >
           {isActive && !hasChildren && (
@@ -260,12 +260,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
           {!isCollapsed && (
             <>
-              <span className={`flex-1 ${level === 0 ? 'text-sm font-black' : 'text-xs font-black'}`}>
+              <span className={`flex-1 ${level === 0 ? 'text-sm font-bold' : 'text-xs font-bold'}`}>
                 {item.label}
               </span>
 
               {item.badge && (
-                <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                <span className="px-1.5 py-0.5 text-[8px] font-bold uppercase rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
                   {item.badge}
                 </span>
               )}
@@ -302,8 +302,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           </div>
           {!isCollapsed && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-              <h1 className="text-white font-black text-xl tracking-tighter leading-none">AccountExpress</h1>
-              <p className="text-blue-500/70 text-[10px] uppercase font-black tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
+              <h1 className="text-white font-bold text-xl tracking-tight leading-none">AccountExpress</h1>
+              <p className="text-blue-500/70 text-[10px] uppercase font-bold tracking-wider mt-1.5 flex items-center gap-1.5">
                 <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
                 {t('common.systemVersion')}
               </p>
@@ -328,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
             console.log('🚪 Logout initiated by user');
             logout();
           }}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-black transition-all border border-red-600/20 group uppercase text-xs tracking-widest"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs tracking-widest"
         >
           <Lock className="w-4 h-4 group-hover:rotate-12 transition-transform" />
           {!isCollapsed && <span>{t('navigation.logout')}</span>}

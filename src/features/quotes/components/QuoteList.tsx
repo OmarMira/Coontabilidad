@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Quote } from '@/database/simple-db';
-import { FileText, Eye, Edit, Trash2, CheckCircle, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { FileText, Eye, Edit, Trash2, CheckCircle, XCircle, Clock, ArrowRight, Zap, Plus } from 'lucide-react';
 import { useLocale } from '../../../i18n/useLocale';
 
 interface QuoteListProps {
@@ -59,9 +59,24 @@ export const QuoteList: React.FC<QuoteListProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Filtros */}
-      <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+    <div className="elite-page-container">
+      {/* Header Hub */}
+      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+        <div className="flex items-center gap-6">
+          <div className="p-4 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 shadow-blue-900/10 shadow-lg group">
+            <FileText className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('quotes.title') || 'Cotizaciones'}</h1>
+            <p className="text-slate-500 font-medium text-sm mt-3 flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('quotes.subtitle') || 'Gestión de propuestas comerciales'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="card-elite-flat">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-slate-300">{t('quotes.filterStatus')}:</label>
           <select
@@ -99,7 +114,7 @@ export const QuoteList: React.FC<QuoteListProps> = ({
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-3">
-                    <h3 className="text-xl font-black tracking-tight text-white">
+                    <h3 className="text-xl font-bold tracking-tight text-white">
                       {quote.quote_number}
                     </h3>
                     {getStatusBadge(quote.status)}
