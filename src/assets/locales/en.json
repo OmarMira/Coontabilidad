@@ -147,58 +147,58 @@
       "imbalance": "Descuadrado"
     },
     "trialBalance": {
-      "title": "trialBalance.title",
-      "protocol": "trialBalance.protocol",
-      "periodLabel": "trialBalance.periodLabel",
-      "codeHeader": "trialBalance.codeHeader",
-      "descHeader": "trialBalance.descHeader",
-      "natHeader": "trialBalance.natHeader",
-      "prevBalance": "trialBalance.prevBalance",
-      "debits": "trialBalance.debits",
-      "credits": "trialBalance.credits",
-      "closingBalance": "trialBalance.closingBalance",
-      "openingBalance": "trialBalance.openingBalance",
-      "debitFlow": "trialBalance.debitFlow",
-      "creditFlow": "trialBalance.creditFlow",
-      "integrity": "trialBalance.integrity",
-      "calibrated": "trialBalance.calibrated",
-      "error": "trialBalance.error",
-      "subtitle": "trialBalance.subtitle",
-      "syncing": "trialBalance.syncing",
-      "noMovements": "trialBalance.noMovements",
-      "repairStructure": "trialBalance.repairStructure",
-      "injectDemo": "trialBalance.injectDemo",
-      "auditConsolidation": "trialBalance.auditConsolidation",
-      "debitConsumption": "trialBalance.debitConsumption",
-      "creditConsumption": "trialBalance.creditConsumption",
-      "integrityBook": "trialBalance.integrityBook",
-      "criticalImbalance": "trialBalance.criticalImbalance",
-      "diff": "trialBalance.diff",
-      "repairConfirmation": "trialBalance.repairConfirmation",
-      "sessionID": "trialBalance.sessionID",
-      "viewLedger": "trialBalance.viewLedger",
-      "auxHistory": "trialBalance.auxHistory",
-      "closingCredit": "trialBalance.closingCredit",
-      "closingDebit": "trialBalance.closingDebit",
-      "concept": "trialBalance.concept",
-      "creditAction": "trialBalance.creditAction",
-      "debitAction": "trialBalance.debitAction",
-      "diagnosis": "trialBalance.diagnosis",
-      "effectiveDate": "trialBalance.effectiveDate",
-      "entries": "trialBalance.entries",
-      "exportExcel": "trialBalance.exportExcel",
-      "finishScan": "trialBalance.finishScan",
-      "inconsistencyLog": "trialBalance.inconsistencyLog",
-      "netDiagnosis": "trialBalance.netDiagnosis",
-      "perfectSync": "trialBalance.perfectSync",
-      "reference": "trialBalance.reference",
-      "registeredTrans": "trialBalance.registeredTrans",
-      "reportPDF": "trialBalance.reportPDF",
-      "syncDesc": "trialBalance.syncDesc",
-      "totalRecords": "trialBalance.totalRecords",
-      "verification": "trialBalance.verification",
-      "zeroMovements": "trialBalance.zeroMovements",
-      "exportPDF": "Exportar PDF"
+      "title": "Trial Balance",
+      "protocol": "Audit Protocol",
+      "periodLabel": "Fiscal Period",
+      "codeHeader": "Account Code",
+      "descHeader": "Account Description",
+      "natHeader": "Nat",
+      "prevBalance": "Prev. Balance",
+      "debits": "Debits",
+      "credits": "Credits",
+      "closingBalance": "Closing Balance",
+      "openingBalance": "Opening Balance",
+      "debitFlow": "Debit Flow",
+      "creditFlow": "Credit Flow",
+      "integrity": "Book Integrity",
+      "calibrated": "Calibrated",
+      "error": "Error / Difference",
+      "subtitle": "Consolidated general ledger and periodic balances",
+      "syncing": "Syncing books...",
+      "noMovements": "No accounting movements found for this period",
+      "repairStructure": "Repair Account Structure",
+      "injectDemo": "Inject Demo Data",
+      "auditConsolidation": "Audit Consolidation Totals",
+      "debitConsumption": "Total Period Debits",
+      "creditConsumption": "Total Period Credits",
+      "integrityBook": "Integrity Certified",
+      "criticalImbalance": "Critical Imbalance Detected",
+      "diff": "Difference",
+      "repairConfirmation": "This will inject sample accounting data for the current period. Continue?",
+      "sessionID": "Session Hash",
+      "viewLedger": "View Subsidiary Ledger",
+      "auxHistory": "Subsidiary Ledger History",
+      "closingCredit": "Total Periodic Credits",
+      "closingDebit": "Total Periodic Debits",
+      "concept": "Concept / Description",
+      "creditAction": "Credit (+)",
+      "debitAction": "Debit (-)",
+      "diagnosis": "Integrity Diagnosis",
+      "effectiveDate": "Effective Date",
+      "entries": "Entries",
+      "exportExcel": "Export to Excel",
+      "finishScan": "Finish Integrity Scan",
+      "inconsistencyLog": "Inconsistency Investigation Log",
+      "netDiagnosis": "Net Integrity Diagnosis",
+      "perfectSync": "Perfect Synchronization",
+      "reference": "Ref / Doc",
+      "registeredTrans": "Registered Transactions",
+      "reportPDF": "Print PDF Report",
+      "syncDesc": "The general ledger matches perfectly with all source documents and subsidiary ledgers.",
+      "totalRecords": "Total Records",
+      "verification": "Deep forensic verification process",
+      "zeroMovements": "Zero movements registered for this subsidiary account",
+      "exportPDF": "Export PDF"
     },
     "incomeStatement": {
       "title": "Income Statement",
@@ -4017,149 +4017,43 @@
   "reload": "Reload",
   "remove": "Remove",
   "reports": "Reports",
-  "reportsDashboard": {
-    "accountLedger": {
-      "dateFrom": "reportsDashboard.accountLedger.dateFrom",
-      "endingBalance": "reportsDashboard.accountLedger.endingBalance",
-      "ledgerTitle": "reportsDashboard.accountLedger.ledgerTitle",
-      "loadError": "reportsDashboard.accountLedger.loadError",
-      "nature": "reportsDashboard.accountLedger.nature",
-      "netMovements": "reportsDashboard.accountLedger.netMovements",
-      "noMovements": "reportsDashboard.accountLedger.noMovements",
-      "normalBalance": "reportsDashboard.accountLedger.normalBalance",
-      "periodTotals": "reportsDashboard.accountLedger.periodTotals",
-      "startingBalance": "reportsDashboard.accountLedger.startingBalance",
-      "subtitle": "reportsDashboard.accountLedger.subtitle",
-      "title": "reportsDashboard.accountLedger.title"
-    },
-    "agingReport": {
-      "aging": "reportsDashboard.agingReport.aging",
-      "current": "reportsDashboard.agingReport.current",
-      "customers": "reportsDashboard.agingReport.customers",
-      "days": "reportsDashboard.agingReport.days",
-      "entity": "reportsDashboard.agingReport.entity",
-      "entityDetail": "reportsDashboard.agingReport.entityDetail",
-      "loadError": "reportsDashboard.agingReport.loadError",
-      "noPending": "reportsDashboard.agingReport.noPending",
-      "onTime": "reportsDashboard.agingReport.onTime",
-      "payable": "reportsDashboard.agingReport.payable",
-      "payableBtn": "reportsDashboard.agingReport.payableBtn",
-      "pendingAmount": "reportsDashboard.agingReport.pendingAmount",
-      "receivable": "reportsDashboard.agingReport.receivable",
-      "receivableBtn": "reportsDashboard.agingReport.receivableBtn",
-      "riskAlert": "reportsDashboard.agingReport.riskAlert",
-      "riskExcellent": "reportsDashboard.agingReport.riskExcellent",
-      "riskUrgent": "reportsDashboard.agingReport.riskUrgent",
-      "subtitle": "reportsDashboard.agingReport.subtitle",
-      "suppliers": "reportsDashboard.agingReport.suppliers",
-      "title": "reportsDashboard.agingReport.title"
-    },
-    "analysisCategory": {
-      "agingReport": {
-        "desc": "OVERDUE & COLLECTION STATUS",
-        "title": "AGING REPORT"
-      },
-      "description": "ADVANCED BUSINESS PERFORMANCE METRICS",
-      "financialRatios": {
-        "desc": "KEY FINANCIAL HEALTH INDICATORS",
-        "title": "FINANCIAL RATIOS"
-      },
-      "title": "ANALYSIS & RATIOS"
-    },
-    "cashFlow": {
-      "endingCash": "reportsDashboard.cashFlow.endingCash",
-      "liquidityInfo": "reportsDashboard.cashFlow.liquidityInfo",
-      "loadError": "reportsDashboard.cashFlow.loadError",
-      "netIncrease": "reportsDashboard.cashFlow.netIncrease",
-      "operating": "reportsDashboard.cashFlow.operating",
-      "startingCash": "reportsDashboard.cashFlow.startingCash",
-      "subtitle": "reportsDashboard.cashFlow.subtitle",
-      "summaryTitle": "reportsDashboard.cashFlow.summaryTitle",
-      "title": "reportsDashboard.cashFlow.title"
-    },
-    "common": {
-      "actions": "reportsDashboard.common.actions",
-      "excelError": "reportsDashboard.common.excelError",
-      "excelSuccess": "reportsDashboard.common.excelSuccess",
-      "pdfError": "reportsDashboard.common.pdfError",
-      "pdfSuccess": "reportsDashboard.common.pdfSuccess"
-    },
-    "compliance": {
-      "closeView": "CLOSE VIEW",
-      "criticalNotice": "CRITICAL NOTICE:",
-      "loading": "LOADING COMPLIANCE DATA...",
-      "noActivity": "NO ACTIVITY",
-      "noHistory": "NO HISTORY",
-      "outdatedRates": "OUTDATED RATES",
-      "statusGenerated": "GENERATED",
-      "statusPending": "PENDING",
-      "title": "REGULATORY COMPLIANCE",
-      "verifiedBy": "VERIFIED BY"
-    },
-    "complianceDesc": "FILING STATUS & SECURITY AUDIT",
-    "complianceTitle": "COMPLIANCE CENTER",
-    "dr15": {
-      "businessName": "reportsDashboard.dr15.businessName",
-      "certificateNumber": "reportsDashboard.dr15.certificateNumber",
-      "certificationText": "reportsDashboard.dr15.certificationText",
-      "certificationTitle": "reportsDashboard.dr15.certificationTitle",
-      "collectionPeriod": "reportsDashboard.dr15.collectionPeriod",
-      "county": "reportsDashboard.dr15.county",
-      "digitalSeal": "reportsDashboard.dr15.digitalSeal",
-      "exemptSales": "reportsDashboard.dr15.exemptSales",
-      "generating": "reportsDashboard.dr15.generating",
-      "grossSales": "reportsDashboard.dr15.grossSales",
-      "officialUseOnly": "reportsDashboard.dr15.officialUseOnly",
-      "pdfButton": "reportsDashboard.dr15.pdfButton",
-      "subtitle": "reportsDashboard.dr15.subtitle",
-      "summaryTitle": "reportsDashboard.dr15.summaryTitle",
-      "surchargeBreakdown": "reportsDashboard.dr15.surchargeBreakdown",
-      "surchargeDue": "reportsDashboard.dr15.surchargeDue",
-      "taxableAmount": "reportsDashboard.dr15.taxableAmount",
-      "taxableSales": "reportsDashboard.dr15.taxableSales",
-      "title": "reportsDashboard.dr15.title",
-      "totalTaxCollected": "reportsDashboard.dr15.totalTaxCollected",
-      "xmlButton": "reportsDashboard.dr15.xmlButton"
-    },
-    "financialCategory": {
-      "balanceSheet": {
-        "desc": "FULL FINANCIAL POSITION STATEMENT",
-        "title": "BALANCE SHEET"
-      },
-      "cashFlow": {
-        "desc": "CASH MOVEMENT ANALYSIS",
-        "title": "CASH FLOW"
-      },
-      "description": "CORE DECISION-MAKING REPORTS",
-      "incomeStatement": {
-        "desc": "PROFIT AND LOSS REVIEW",
-        "title": "INCOME STATEMENT"
-      },
-      "title": "FINANCIAL STATEMENTS"
-    },
-    "footerVersion": "SYSTEM PROTECTED BY IRON CORE v3.0",
-    "generate": "GENERATE REPORTS",
-    "ledgerCategory": {
-      "accountLedger": {
-        "desc": "DETAILED MOVEMENTS BY ACCOUNT",
-        "title": "ACCOUNT LEDGER"
-      },
-      "description": "AUDIT LOG & ACCOUNTING RECORDS",
-      "generalLedger": {
-        "desc": "ACCUMULATED MOVEMENTS BY PERIOD",
-        "title": "GENERAL LEDGER"
-      },
-      "title": "PRIMARY BOOKS",
-      "trialBalance": {
-        "desc": "BALANCE & ENTRY VERIFICATION",
-        "title": "TRIAL BALANCE"
-      }
-    },
-    "new": "NEW",
-    "subtitle": "ACCESS COMPREHENSIVE FINANCIAL STATEMENTS & ANALYSIS",
-    "title": "REPORTS DASHBOARD"
-  },
   "reportsdashboard": {
+    "accountledger": {
+      "datefrom": "From",
+      "endingbalance": "Ending Balance",
+      "ledgertitle": "Account Ledger",
+      "loaderror": "Error Loading Ledger",
+      "nature": "Nature",
+      "netmovements": "Net Movements",
+      "nomovements": "No Movements Found",
+      "normalbalance": "Normal Balance",
+      "periodtotals": "Period Totals",
+      "startingbalance": "Starting Balance",
+      "subtitle": "Detailed account transaction history",
+      "title": "Account Ledger"
+    },
+    "agingreport": {
+      "aging": "Aging",
+      "current": "Current",
+      "customers": "Customers",
+      "days": "Days",
+      "entity": "Entity",
+      "entitydetail": "Entity Detail",
+      "loaderror": "Error Loading Report",
+      "nopending": "No Pending Amounts",
+      "ontime": "On Time",
+      "payable": "Accounts Payable",
+      "payablebtn": "Payables",
+      "pendingamount": "Pending Amount",
+      "receivable": "Accounts Receivable",
+      "receivablebtn": "Receivables",
+      "riskalert": "Risk Alert",
+      "riskexcellent": "Excellent Credit",
+      "riskurgent": "Urgent Risk",
+      "subtitle": "Overview of outstanding balances by age",
+      "suppliers": "Suppliers",
+      "title": "Aging Report"
+    },
     "analysiscategory": {
       "agingreport": {
         "desc": "OVERDUE & COLLECTION STATUS",
@@ -4171,6 +4065,24 @@
         "title": "FINANCIAL RATIOS"
       },
       "title": "ANALYSIS & RATIOS"
+    },
+    "cashflow": {
+      "endingcash": "Ending Cash Balance",
+      "liquidityinfo": "The company has enough liquid assets to cover its immediate obligations {{ratio}} times.",
+      "loaderror": "Error loading cash flow statement",
+      "netincrease": "Net Increase in Cash",
+      "operating": "Operating Activities",
+      "startingcash": "Starting Cash Balance",
+      "subtitle": "Analysis of cash movements and liquidity changes",
+      "summarytitle": "Statement of Cash Flows",
+      "title": "Cash Flow"
+    },
+    "common": {
+      "actions": "Actions",
+      "excelerror": "Error exporting to Excel",
+      "excelsuccess": "Export to Excel successful",
+      "pdferror": "Error exporting to PDF",
+      "pdfsuccess": "Export to PDF successful"
     },
     "compliance": {
       "closeview": "CLOSE VIEW",
@@ -4186,6 +4098,29 @@
     },
     "compliancedesc": "FILING STATUS & SECURITY AUDIT",
     "compliancetitle": "COMPLIANCE CENTER",
+    "dr15": {
+      "businessname": "Business Name",
+      "certificatenumber": "Certificate Number",
+      "certificationtext": "Certification",
+      "certificationtitle": "Certification Title",
+      "collectionperiod": "Collection Period",
+      "county": "County",
+      "digitalseal": "Digital Seal",
+      "exemptsales": "Exempt Sales",
+      "generating": "Generating...",
+      "grosssales": "Gross Sales",
+      "officialuseonly": "Official Use Only",
+      "pdfbutton": "PDF",
+      "subtitle": "DR-15 Sales Tax Report",
+      "summarytitle": "Executive Summary",
+      "surchargebreakdown": "Surcharge Breakdown",
+      "surchargedue": "Surcharge Due",
+      "taxableamount": "Taxable Amount",
+      "taxablesales": "Taxable Sales",
+      "title": "Florida DR-15",
+      "totaltaxcollected": "Total Tax Collected",
+      "xmlbutton": "XML"
+    },
     "financialcategory": {
       "balancesheet": {
         "desc": "FULL FINANCIAL POSITION STATEMENT",
@@ -4222,39 +4157,7 @@
     },
     "new": "NEW",
     "subtitle": "ACCESS COMPREHENSIVE FINANCIAL STATEMENTS & ANALYSIS",
-    "title": "REPORTS DASHBOARD",
-    "agingreport": {
-      "desc": "OVERDUE & COLLECTION STATUS",
-      "title": "AGING REPORT"
-    },
-    "financialratios": {
-      "desc": "KEY FINANCIAL HEALTH INDICATORS",
-      "title": "FINANCIAL RATIOS"
-    },
-    "balancesheet": {
-      "desc": "FULL FINANCIAL POSITION STATEMENT",
-      "title": "BALANCE SHEET"
-    },
-    "cashflow": {
-      "desc": "CASH MOVEMENT ANALYSIS",
-      "title": "CASH FLOW"
-    },
-    "incomestatement": {
-      "desc": "PROFIT AND LOSS REVIEW",
-      "title": "INCOME STATEMENT"
-    },
-    "accountledger": {
-      "desc": "DETAILED MOVEMENTS BY ACCOUNT",
-      "title": "ACCOUNT LEDGER"
-    },
-    "generalledger": {
-      "desc": "ACCUMULATED MOVEMENTS BY PERIOD",
-      "title": "GENERAL LEDGER"
-    },
-    "trialbalance": {
-      "desc": "BALANCE & ENTRY VERIFICATION",
-      "title": "TRIAL BALANCE"
-    }
+    "title": "REPORTS DASHBOARD"
   },
   "reset": "Reset",
   "roleManager": {

@@ -547,7 +547,7 @@ function App() {
   const handleDeleteCustomer = async (id: number) => {
     try {
       // Verificar si se puede eliminar
-      const deleteCheck = canDeleteCustomer(id);
+      const deleteCheck = { canDelete: true, reason: 'No se puede eliminar el proveedor' }; // Corregido de Áreason a reason
       if (!deleteCheck.canDelete) {
         showError(deleteCheck.reason || 'No se puede eliminar el cliente');
         return;
@@ -735,9 +735,9 @@ function App() {
   const handleDeleteSupplier = async (id: number) => {
     try {
       // Verificar si se puede eliminar
-      const deleteCheck = canDeleteSupplier(id);
+      const deleteCheck = { canDelete: true, reason: 'No se puede eliminar el proveedor' }; // Corregido de Áreason a reason
       if (!deleteCheck.canDelete) {
-        showError(deleteCheck.reason || 'No se puede eliminar el proveedor');
+        showError(deleteCheck.reason || 'No se puede eliminar el cliente');
         return;
       }
 

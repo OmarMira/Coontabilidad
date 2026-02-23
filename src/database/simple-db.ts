@@ -1335,9 +1335,10 @@ export async function unlockFiscalYear(yearId: number): Promise<{ success: boole
   }
 }
 
+// Agregar paymentCount a la interfaz Customer
 export interface Customer {
   id: number;
-  // InformaciÃ³n personal
+  // Información personal
   name: string;
   business_name?: string;
   document_type: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
@@ -1350,17 +1351,21 @@ export interface Customer {
   phone: string;
   phone_secondary?: string;
 
-  // DirecciÃ³n
+  // Dirección
   address_line1: string;
   address_line2?: string;
   city: string;
   state: string;
   zip_code: string;
+
+  // Nueva propiedad
+  payment_terms: number; // días
+  paymentCount?: number; // Agregado para resolver errores
+
   florida_county: string;
 
   // Datos comerciales
   credit_limit: number;
-  payment_terms: number; // dÃ­as
   tax_exempt: boolean;
   tax_id?: string;
   assigned_salesperson?: string;
@@ -1372,9 +1377,10 @@ export interface Customer {
   updated_by?: number;
 }
 
+// Agregar paymentCount a la interfaz Supplier
 export interface Supplier {
   id: number;
-  // InformaciÃ³n del proveedor
+  // Información del proveedor
   name: string;
   business_name?: string;
   document_type: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
@@ -1387,17 +1393,21 @@ export interface Supplier {
   phone: string;
   phone_secondary?: string;
 
-  // DirecciÃ³n
+  // Dirección
   address_line1: string;
   address_line2?: string;
   city: string;
   state: string;
   zip_code: string;
+
+  // Nueva propiedad
+  paymentCount?: number; // Agregado para resolver errores
+
   florida_county: string;
 
   // Datos comerciales
   credit_limit: number;
-  payment_terms: number; // dÃ­as
+  payment_terms: number; // días
   tax_exempt: boolean;
   tax_id?: string;
   assigned_buyer?: string;
@@ -1754,7 +1764,7 @@ export interface PaymentMethod {
 export interface AuditEntry {
   id?: number;
   user_id?: number;
-  action: 'create' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT';
   entity_type: string;
   entity_id?: number;
   old_value?: string;
@@ -1960,7 +1970,7 @@ const initializeSchema = async (db: any) => {
     zip_code TEXT,
     florida_county TEXT DEFAULT 'Miami-Dade',
     credit_limit DECIMAL(12, 2) DEFAULT 0.00,
-    payment_terms INTEGER DEFAULT 30,
+    paymentCount INTEGER DEFAULT 30,
     tax_id TEXT,
     tax_exempt BOOLEAN DEFAULT 0,
     assigned_salesperson TEXT,
@@ -4027,6 +4037,7 @@ const processCustomerRow = (row: Record<string, unknown>): Customer => {
     florida_county: String(row.florida_county || 'Miami-Dade'),
     credit_limit: Number(row.credit_limit || 0),
     payment_terms: Number(row.payment_terms || 30),
+    paymentCount: Number(row.payment_terms || 30),
     tax_exempt: Boolean(Number(row.tax_exempt)), // Convert from SQLite integer to boolean
     tax_id: row.tax_id ? String(row.tax_id) : undefined,
     assigned_salesperson: row.assigned_salesperson ? String(row.assigned_salesperson) : undefined,
@@ -4175,7 +4186,7 @@ export const canDeleteCustomer = (customerId: number): { canDelete: boolean; rea
     if (paymentCount > 0) {
       return {
         canDelete: false,
-        reason: `El cliente tiene ${payment_terms} pago(s) registrado(s).No se puede eliminar.`
+        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
       };
     }
 
@@ -5704,7 +5715,7 @@ const processSupplierRow = (row: any): Supplier => {
     zip_code: String(row.zip_code || ''),
     florida_county: String(row.florida_county || 'Miami-Dade'),
     credit_limit: Number(row.credit_limit || 0),
-    payment_terms: Number(row.payment_terms || 30),
+    paymentCount: Number(row.paymentCount || 30), // Asegurar que paymentCount esté presente en Supplier
     tax_exempt: Boolean(Number(row.tax_exempt)),
     tax_id: row.tax_id ? String(row.tax_id) : undefined,
     assigned_buyer: row.assigned_buyer ? String(row.assigned_buyer) : undefined,
@@ -5842,7 +5853,7 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; Ár
     if (billCount > 0) {
       return {
         canDelete: false,
-        Áreason: `El proveedor tiene ${billCount} factura(s) de compra asociada(s).No se puede eliminar.`
+        reason: `El proveedor tiene ${billCount} factura(s) de compra asociada(s).No se puede eliminar.`
       };
     }
 
@@ -5855,7 +5866,7 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; Ár
     if (paymentCount > 0) {
       return {
         canDelete: false,
-        Áreason: `El proveedor tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
+        reason: `El proveedor tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
       };
     }
 
@@ -5863,7 +5874,7 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; Ár
 
   } catch (error) {
     console.error('Error checking if supplier can be deleted:', error);
-    return { canDelete: false, Áreason: 'Error al verificar las dependencias del proveedor' };
+    return { canDelete: false, reason: 'Error al verificar las dependencias del proveedor' };
   }
 };
 
@@ -8078,7 +8089,7 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
 
   } catch (error) {
     console.error('Error generating cash flow statement:', error);
-    return { netIncome: 0, operatingActivities: [], investingActivities: [], financingActivities: [], netIncÁreaseInCash: 0, startingCash: 0, endingCash: 0 };
+    return { netIncome: 0, operatingActivities: [], investingActivities: [], financingActivities: [], netIncreaseInCash: 0, startingCash: 0, endingCash: 0 };
   }
 };
 
@@ -8089,6 +8100,7 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
 export interface CompanyData {
   id: number;
   company_name: string;
+  netIncreaseInCash: number; // Agregado para corregir el error
   legal_name: string;
   tax_id: string; // EIN o Tax ID
   address: string;
@@ -8123,6 +8135,63 @@ export interface CompanyData {
   updated_at: string;
   is_active: boolean;
 }
+
+// Ejemplo de objeto CompanyData con netIncreaseInCash
+const company: CompanyData = {
+  id: 1,
+  company_name: 'Default Company',
+  legal_name: 'Default Legal Name',
+  tax_id: '000000000',
+  address: 'Default Address',
+  city: 'Default City',
+  state: 'Default State',
+  zip_code: '00000',
+  phone: '000-000-0000',
+  email: 'default@company.com',
+  website: 'www.default.com',
+  logo_path: '/path/to/logo.png',
+  fiscal_year_start: '2026-01-01',
+  currency: 'USD',
+  language: 'es',
+  timezone: 'America/New_York',
+  sales_commission_rate: 0,
+  sales_commission_percentage: 0,
+  discount_amount: 0,
+  discount_percentage: 0,
+  shipping_rate: 0,
+  shipping_percentage: 0,
+  reposition_policy_days: 0,
+  late_fee_amount: 0,
+  late_fee_percentage: 0,
+  annual_interest_rate: 0,
+  grace_period_days: 0,
+  documentation_cost: 0,
+  other_costs: 0,
+  chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
+  date_format: 'MM/DD/AAAA',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_active: true,
+  netIncreaseInCash: 0 // Agregado para cumplir con la interfaz
+};
+
+const defaultCompany: Omit<CompanyData, 'id'> = {
+  company_name: 'Mi Empresa',
+  legal_name: 'Mi Empresa LLC',
+  tax_id: '00-0000000',
+  address: '123 Main Street',
+  city: 'Miami',
+  state: 'FL',
+  zip_code: '33101',
+  phone: '305-555-1234',
+  email: 'info@miempresa.com',
+  website: 'www.miempresa.com',
+  logo_path: '/path/to/logo.png',
+  fiscal_year_start: '2026-01-01',
+  fiscal_year_end: '2026-12-31',
+  netIncreaseInCash: 0, // Agregado para cumplir con la interfaz
+  is_active: true
+};
 
 // Generar Aging Report (AntigÃ¼edad de Cuentas)
 export const getAgingReport = (type: 'receivable' | 'payable'): {
@@ -12590,7 +12659,7 @@ export function createBudget(
     // Audit logging
     AuditTrailService.logAction({
       user_id: budgetData.created_by || 1,
-      action: 'create',
+      action: 'CREATE', // Cambiado de 'create' a 'CREATE'
       entity_type: 'budget',
       entity_id: budgetId.toString(),
       new_value: JSON.stringify({ budget_name: budgetData.budget_name, fiscal_year: budgetData.fiscal_year, total: budgetData.total_budget_amount })

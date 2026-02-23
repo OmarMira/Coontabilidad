@@ -306,6 +306,60 @@
         "phase": "Phase"
       }
     },
+    "trialbalance": {
+      "title": "Balance de Comprobación",
+      "protocol": "Protocolo de Auditoría",
+      "periodlabel": "Período Fiscal",
+      "codeheader": "Código Cuenta",
+      "descheader": "Descripción de Cuenta",
+      "natheader": "Nat",
+      "prevbalance": "Saldo Anterior",
+      "debits": "Débitos",
+      "credits": "Créditos",
+      "closingbalance": "Saldo de Cierre",
+      "openingbalance": "Saldo de Apertura",
+      "debitflow": "Flujo de Débitos",
+      "creditflow": "Flujo de Créditos",
+      "integrity": "Integridad de Libros",
+      "calibrated": "Calibrado",
+      "error": "Error / Diferencia",
+      "subtitle": "Libro mayor consolidado y saldos periódicos",
+      "syncing": "Sincronizando libros...",
+      "nomovements": "No se encontraron movimientos contables para este período",
+      "repairstructure": "Reparar Estructura de Cuentas",
+      "injectdemo": "Inyectar Datos Demo",
+      "auditconsolidation": "Totales de Consolidación de Auditoría",
+      "debitconsumption": "Total Débitos Periodo",
+      "creditconsumption": "Total Créditos Periodo",
+      "integritybook": "Integridad Certificada",
+      "criticalimbalance": "Desbalance Crítico Detectado",
+      "diff": "Diferencia",
+      "repairconfirmation": "Esto inyectará datos contables de muestra para el período actual. ¿Continuar?",
+      "sessionid": "Hash de Sesión",
+      "viewledger": "Ver Libro Auxiliar",
+      "auxhistory": "Historial de Libro Auxiliar",
+      "closingcredit": "Total Créditos Periódicos",
+      "closingdebit": "Total Débitos Periódicos",
+      "concept": "Concepto / Descripción",
+      "creditaction": "Crédito (+)",
+      "debitaction": "Débito (-)",
+      "diagnosis": "Diagnóstico de Integridad",
+      "effectivedate": "Fecha Efectiva",
+      "entries": "Asientos",
+      "exportexcel": "Exportar a Excel",
+      "finishscan": "Finalizar Escaneo de Integridad",
+      "inconsistencylog": "Log de Investigación de Inconsistencias",
+      "netdiagnosis": "Diagnóstico Neto de Integridad",
+      "perfectsync": "Sincronización Perfecta",
+      "reference": "Ref / Doc",
+      "registeredtrans": "Transacciones Registradas",
+      "reportpdf": "Imprimir Reporte PDF",
+      "syncdesc": "El libro mayor coincide perfectamente con todos los documentos fuente y libros auxiliares.",
+      "totalrecords": "Total Registros",
+      "verification": "Proceso de verificación forense profunda",
+      "zeromovements": "Cero movimientos registrados para esta cuenta auxiliar",
+      "exportpdf": "Exportar PDF"
+    },
     "journalEntry": {
       "title": "Asientos Contables",
       "subtitle": "Registro y control de operaciones contables",
@@ -380,60 +434,6 @@
       "pdfRevenue": "INGRESOS",
       "pdfExpenses": "GASTOS",
       "pdfNetIncome": "UTILIDAD / RESULTADO NETA"
-    },
-    "trialBalance": {
-      "title": "Balance de Comprobación",
-      "subtitle": "Balance de Comprobación y Saldos",
-      "protocol": "Protocolo",
-      "periodLabel": "Período",
-      "sessionID": "ID de Sesión",
-      "codeHeader": "Código",
-      "descHeader": "Descripción",
-      "natHeader": "Naturaleza",
-      "prevBalance": "Saldo Anterior",
-      "debits": "Débitos",
-      "credits": "Créditos",
-      "closingBalance": "Saldo Final",
-      "openingBalance": "Saldo Inicial",
-      "debitFlow": "Flujo de Débito",
-      "creditFlow": "Flujo de Crédito",
-      "integrity": "Integridad",
-      "calibrated": "Calibrado",
-      "error": "Error",
-      "diagnosis": "Diagnóstico",
-      "exportExcel": "Exportar Excel",
-      "exportPDF": "Exportar PDF",
-      "syncing": "Sincronizando...",
-      "noMovements": "Sin Movimientos",
-      "repairStructure": "Reparar Estructura",
-      "injectDemo": "Inyectar Demo",
-      "auditConsolidation": "Consolidación de Auditoría",
-      "debitConsumption": "Consumo de Débito",
-      "creditConsumption": "Consumo de Crédito",
-      "integrityBook": "Libro de Integridad",
-      "criticalImbalance": "Descuadre Crítico",
-      "diff": "Diferencia",
-      "repairConfirmation": "Confirmación de Reparación",
-      "viewLedger": "Ver Libro Mayor",
-      "auxHistory": "Historial de Auxiliares",
-      "closingCredit": "Crédito Final",
-      "closingDebit": "Débito Final",
-      "concept": "Concepto",
-      "creditAction": "Acción Crédito",
-      "debitAction": "Acción Débito",
-      "effectiveDate": "Fecha Efectiva",
-      "entries": "Asientos",
-      "finishScan": "Finalizar Escaneo",
-      "inconsistencyLog": "Registro de Inconsistencias",
-      "netDiagnosis": "Diagnóstico Neto",
-      "perfectSync": "Sincronización Perfecta",
-      "reference": "Referencia",
-      "registeredTrans": "Transacciones Registradas",
-      "reportPDF": "Reporte PDF",
-      "syncDesc": "Sincronización de saldos y auxiliares",
-      "totalRecords": "Total Registros",
-      "verification": "Verificación",
-      "zeroMovements": "Cero Movimientos"
     },
     "periodClosure": {
       "wizardTitle": "Asistente de Cierre Fiscal",
@@ -4405,149 +4405,43 @@
   "reload": "Recargar",
   "remove": "Quitar",
   "reports": "Reportes",
-  "reportsDashboard": {
-    "accountLedger": {
-      "dateFrom": "Desde",
-      "endingBalance": "Saldo Final",
-      "ledgerTitle": "Libro Mayor",
-      "loadError": "Error de Carga",
+  "reportsdashboard": {
+    "accountledger": {
+      "datefrom": "Desde",
+      "endingbalance": "Saldo Final",
+      "ledgertitle": "Libro Mayor",
+      "loaderror": "Error de Carga",
       "nature": "Naturaleza",
-      "netMovements": "Movimientos Netos",
-      "noMovements": "Sin Movimientos",
-      "normalBalance": "Saldo Normal",
-      "periodTotals": "Totales del Período",
-      "startingBalance": "Saldo Inicial",
+      "netmovements": "Movimientos Netos",
+      "nomovements": "Sin Movimientos",
+      "normalbalance": "Saldo Normal",
+      "periodtotals": "Totales del Período",
+      "startingbalance": "Saldo Inicial",
       "subtitle": "Movimientos detallados por cuenta",
       "title": "Auxiliar de Cuenta"
     },
-    "agingReport": {
+    "agingreport": {
       "aging": "Antigüedad",
       "current": "Corriente",
       "customers": "Clientes",
       "days": "Días",
       "entity": "Entidad",
-      "entityDetail": "Detalle de Entidad",
-      "loadError": "Error de Carga",
-      "noPending": "Sin Pendientes",
-      "onTime": "A Tiempo",
+      "entitydetail": "Detalle de Entidad",
+      "loaderror": "Error de Carga",
+      "nopending": "Sin Pendientes",
+      "ontime": "A Tiempo",
       "payable": "Por Pagar",
-      "payableBtn": "Cuentas por Pagar",
-      "pendingAmount": "Monto Pendiente",
+      "payablebtn": "Cuentas por Pagar",
+      "pendingamount": "Monto Pendiente",
       "receivable": "Por Cobrar",
-      "receivableBtn": "Cuentas por Cobrar",
-      "riskAlert": "Alerta de Riesgo",
-      "riskExcellent": "Riesgo Excelente",
-      "riskUrgent": "Riesgo Urgente",
+      "receivablebtn": "Cuentas por Cobrar",
+      "riskalert": "Alerta de Riesgo",
+      "riskexcellent": "Riesgo Excelente",
+      "riskurgent": "Riesgo Urgente",
       "subtitle": "Reporte de Antigüedad de Saldos",
       "suppliers": "Proveedores",
       "title": "Antigüedad de Deuda"
     },
-    "analysisCategory": {
-      "agingReport": {
-        "desc": "REPORTES DE MOROSIDAD Y COBRANZA",
-        "title": "ANTIGÜEDAD DE DEUDA"
-      },
-      "description": "MÉTRICAS AVANZADAS DE RENDIMIENTO EMPRESARIAL",
-      "financialRatios": {
-        "desc": "INDICADORES CLAVE DE SALUD FINANCIERA",
-        "title": "RATIOS FINANCIEROS"
-      },
-      "title": "ANÁLISIS Y RATIOS"
-    },
-    "cashFlow": {
-      "endingCash": "Efectivo Final",
-      "liquidityInfo": "Información de Liquidez",
-      "loadError": "Error de Carga",
-      "netIncrease": "Aumento Neto",
-      "operating": "Operativo",
-      "startingCash": "Efectivo Inicial",
-      "subtitle": "Flujo de Efectivo",
-      "summaryTitle": "Resumen",
-      "title": "Flujo de Caja"
-    },
-    "common": {
-      "actions": "Acciones",
-      "excelError": "Error Excel",
-      "excelSuccess": "Excel Exitoso",
-      "pdfError": "Error PDF",
-      "pdfSuccess": "PDF Exitoso"
-    },
-    "compliance": {
-      "closeView": "CERRAR VISTA",
-      "criticalNotice": "AVISO CRÍTICO:",
-      "loading": "CARGANDO DATOS DE CUMPLIMIENTO...",
-      "noActivity": "SIN ACTIVIDAD",
-      "noHistory": "SIN HISTORIAL",
-      "outdatedRates": "TASAS DESACTUALIZADAS",
-      "statusGenerated": "GENERADO",
-      "statusPending": "PENDIENTE",
-      "title": "CUMPLIMIENTO NORMATIVO",
-      "verifiedBy": "VERIFICADO POR"
-    },
-    "complianceDesc": "ESTADO DE DECLARACIONES Y AUDITORÍA DE SEGURIDAD",
-    "complianceTitle": "CENTRO DE CUMPLIMIENTO",
-    "dr15": {
-      "businessName": "Nombre del Negocio",
-      "certificateNumber": "Número de Certificado",
-      "certificationText": "Certificación",
-      "certificationTitle": "Título de Certificación",
-      "collectionPeriod": "Período de Recaudación",
-      "county": "Condado",
-      "digitalSeal": "Sello Digital",
-      "exemptSales": "Ventas Exentas",
-      "generating": "Generando...",
-      "grossSales": "Ventas Brutas",
-      "officialUseOnly": "Uso Oficial Solamente",
-      "pdfButton": "PDF",
-      "subtitle": "Reporte DR-15",
-      "summaryTitle": "Resumen",
-      "surchargeBreakdown": "Desglose de Recargo",
-      "surchargeDue": "Recargo Adeudado",
-      "taxableAmount": "Monto Gravable",
-      "taxableSales": "Ventas Gravables",
-      "title": "DR-15",
-      "totalTaxCollected": "Total Impuestos Recaudados",
-      "xmlButton": "XML"
-    },
-    "financialCategory": {
-      "balanceSheet": {
-        "desc": "ESTADO DE SITUACIÓN FINANCIERA COMPLETO",
-        "title": "BALANCE GENERAL"
-      },
-      "cashFlow": {
-        "desc": "ANÁLISIS DE MOVIMIENTO DE EFECTIVO",
-        "title": "FLUJO DE CAJA"
-      },
-      "description": "REPORTES BASE PARA LA TOMA DE DECISIONES",
-      "incomeStatement": {
-        "desc": "REVISIÓN DE PÉRDIDAS Y GANANCIAS",
-        "title": "ESTADO DE RESULTADOS"
-      },
-      "title": "ESTADOS FINANCIEROS"
-    },
-    "footerVersion": "SISTEMA PROTEGIDO POR IRON CORE v3.0",
-    "generate": "GENERAR REPORTES",
-    "ledgerCategory": {
-      "accountLedger": {
-        "desc": "DETALLE DE MOVIMIENTOS POR CUENTA",
-        "title": "AUXILIAR DE CUENTA"
-      },
-      "description": "DETALLE DE AUDITORÍA Y REGISTROS CONTABLES",
-      "generalLedger": {
-        "desc": "MOVIMIENTOS ACUMULADOS POR PERÍODO",
-        "title": "LIBRO MAYOR GENERAL"
-      },
-      "title": "LIBROS PRINCIPALES",
-      "trialBalance": {
-        "desc": "VERIFICACIÓN DE SALDOS Y PARTIDAS",
-        "title": "BALANCE DE COMPROBACIÓN"
-      }
-    },
-    "new": "NUEVO",
-    "subtitle": "ACCESO A ESTADOS FINANCIEROS Y ANÁLISIS AL DETALLE",
-    "title": "DASHBOARD DE REPORTES"
-  },
-  "reportsdashboard": {
     "analysiscategory": {
       "agingreport": {
         "desc": "REPORTES DE MOROSIDAD Y COBRANZA",
@@ -4559,6 +4453,24 @@
         "title": "RATIOS FINANCIEROS"
       },
       "title": "ANÁLISIS Y RATIOS"
+    },
+    "cashflow": {
+      "endingcash": "Efectivo al Final del Periodo",
+      "liquidityinfo": "La empresa cuenta con activos líquidos para cubrir sus obligaciones inmediatas {{ratio}} veces.",
+      "loaderror": "Error al cargar el flujo de caja",
+      "netincrease": "Aumento Neto en Efectivo",
+      "operating": "Actividades Operativas",
+      "startingcash": "Efectivo al Inicio del Periodo",
+      "subtitle": "Análisis de movimientos y variaciones de liquidez",
+      "summarytitle": "Resumen de Flujos de Efectivo",
+      "title": "Flujo de Caja"
+    },
+    "common": {
+      "actions": "Acciones",
+      "excelerror": "Error al exportar a Excel",
+      "excelsuccess": "Exportación a Excel exitosa",
+      "pdferror": "Error al exportar a PDF",
+      "pdfsuccess": "Exportación a PDF exitosa"
     },
     "compliance": {
       "closeview": "CERRAR VISTA",
@@ -4574,6 +4486,29 @@
     },
     "compliancedesc": "ESTADO DE DECLARACIONES Y AUDITORÍA DE SEGURIDAD",
     "compliancetitle": "CENTRO DE CUMPLIMIENTO",
+    "dr15": {
+      "businessname": "Nombre del Negocio",
+      "certificatenumber": "Número de Certificado",
+      "certificationtext": "Certificación",
+      "certificationtitle": "Título de Certificación",
+      "collectionperiod": "Período de Recaudación",
+      "county": "Condado",
+      "digitalseal": "Sello Digital",
+      "exemptsales": "Ventas Exentas",
+      "generating": "Generando...",
+      "grosssales": "Ventas Brutas",
+      "officialuseonly": "Uso Oficial Solamente",
+      "pdfbutton": "PDF",
+      "subtitle": "Reporte DR-15",
+      "summarytitle": "Resumen",
+      "surchargebreakdown": "Desglose de Recargo",
+      "surchargedue": "Recargo Adeudado",
+      "taxableamount": "Monto Gravable",
+      "taxablesales": "Ventas Gravables",
+      "title": "DR-15",
+      "totaltaxcollected": "Total Impuestos Recaudados",
+      "xmlbutton": "XML"
+    },
     "financialcategory": {
       "balancesheet": {
         "desc": "ESTADO DE SITUACIÓN FINANCIERA COMPLETO",
@@ -4610,39 +4545,7 @@
     },
     "new": "NUEVO",
     "subtitle": "ACCESO A ESTADOS FINANCIEROS Y ANÁLISIS AL DETALLE",
-    "title": "DASHBOARD DE REPORTES",
-    "agingreport": {
-      "desc": "REPORTES DE MOROSIDAD Y COBRANZA",
-      "title": "ANTIGÜEDAD DE DEUDA"
-    },
-    "financialratios": {
-      "desc": "INDICADORES CLAVE DE SALUD FINANCIERA",
-      "title": "RATIOS FINANCIEROS"
-    },
-    "balancesheet": {
-      "desc": "ESTADO DE SITUACIÓN FINANCIERA COMPLETO",
-      "title": "BALANCE GENERAL"
-    },
-    "cashflow": {
-      "desc": "ANÁLISIS DE MOVIMIENTO DE EFECTIVO",
-      "title": "FLUJO DE CAJA"
-    },
-    "incomestatement": {
-      "desc": "REVISIÓN DE PÉRDIDAS Y GANANCIAS",
-      "title": "ESTADO DE RESULTADOS"
-    },
-    "accountledger": {
-      "desc": "DETALLE DE MOVIMIENTOS POR CUENTA",
-      "title": "AUXILIAR DE CUENTA"
-    },
-    "generalledger": {
-      "desc": "MOVIMIENTOS ACUMULADOS POR PERÍODO",
-      "title": "LIBRO MAYOR GENERAL"
-    },
-    "trialbalance": {
-      "desc": "VERIFICACIÓN DE SALDOS Y PARTIDAS",
-      "title": "BALANCE DE COMPROBACIÓN"
-    }
+    "title": "DASHBOARD DE REPORTES"
   },
   "reset": "Restablecer",
   "roleManager": {

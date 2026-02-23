@@ -3,6 +3,7 @@ import { Upload, File, X, Sparkles, Loader2 } from 'lucide-react';
 import { saveARDDocument, updateARDDocumentStatus } from '../../database/simple-db';
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { useLocale } from '../../i18n/useLocale';
+import Tesseract from 'tesseract.js';
 
 interface ARDScannerProps {
     onDocumentProcessed: () => void;
@@ -14,42 +15,57 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
     const [uploading, setUploading] = useState(false);
 
     const processFile = async (file: File) => {
-        setUploading(true);
-        const id = `ARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const id = `ARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`; // Generar ID único para el documento
 
-        // 1. Registro Inicial
-        const newDoc: ARDDocument = {
-            id,
-            name: file.name,
-            type: file.type.includes('pdf') ? 'invoice_in' : 'receipt',
-            status: 'analyzing',
-            fileSize: file.size,
-            uploadDate: new Date().toISOString()
-        };
+        try {
+            const { data: { text } } = await Tesseract.recognize(file, 'spa', {
+                logger: (info) => console.log(info), // Opcional: para depuración
+            });
 
-        saveARDDocument({
-            ...newDoc,
-            detectedAmount: 0,
-            detectedTax: 0,
-            detectedDate: new Date().toISOString().split('T')[0],
-            rawAnalysis: '{}'
-        });
-
-        onDocumentProcessed();
-
-        // 2. Simulación de Análisis Inteligente (OCR/IA)
-        setTimeout(() => {
-            const mockResult = {
-                amount: Math.floor(Math.random() * 5000) + 100,
-                tax: Math.floor(Math.random() * 300) + 10,
-                vendor: "Suministros Industriales S.A.",
-                date: new Date().toISOString().split('T')[0]
-            };
+            // Parsear el texto reconocido para extraer datos relevantes
+            const mockResult = parseOCRText(text);
 
             updateARDDocumentStatus(id, 'processed', mockResult);
             onDocumentProcessed();
-            setUploading(false);
-        }, 3000);
+        } catch (error) {
+            console.error('Error al procesar OCR:', error);
+            updateARDDocumentStatus(id, 'error', { error: error instanceof Error ? error.message : 'Error desconocido' });
+            onDocumentProcessed();
+        }
+    };
+
+    const parseOCRText = (text: string): { amount: number; tax: number; vendor: string; date: string } => {
+        // Implementar lógica para extraer datos como monto, impuesto, proveedor y fecha del texto reconocido
+        const amount = extractAmount(text);
+        const tax = extractTax(text);
+        const vendor = extractVendor(text);
+        const date = extractDate(text);
+
+        return { amount, tax, vendor, date };
+    };
+
+    const extractAmount = (text: string): number => {
+        // Lógica para extraer el monto del texto
+        const match = text.match(/\b\d+(\.\d{1,2})?\b/);
+        return match ? parseFloat(match[0]) : 0;
+    };
+
+    const extractTax = (text: string): number => {
+        // Lógica para extraer el impuesto del texto (en inglés y español)
+        const match = text.match(/(?:impuesto|tax|sales tax):\s*(\d+(\.\d{1,2})?)/i);
+        return match ? parseFloat(match[1]) : 0;
+    };
+
+    const extractVendor = (text: string): string => {
+        // Lógica para extraer el nombre del proveedor del texto (en inglés y español)
+        const match = text.match(/(?:proveedor|vendor|from|bill to):\s*(.+)/i);
+        return match ? match[1].trim() : 'Desconocido';
+    };
+
+    const extractDate = (text: string): string => {
+        // Lógica para extraer la fecha del texto
+        const match = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
+        return match ? match[0] : new Date().toISOString().split('T')[0];
     };
 
     const handleDrop = (e: React.DragEvent) => {

@@ -96,7 +96,8 @@
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
     "zod": "^4.2.1",
-    "zustand": "^5.0.9"
+    "zustand": "^5.0.9",
+    "tesseract.js": "^2.1.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

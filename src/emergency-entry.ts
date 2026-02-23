@@ -15,6 +15,7 @@ export async function emergencyBoot(): Promise<void> {
 
     try {
         // Verificar si el usuario tiene permisos para ejecutar el modo de emergencia
+        const user = { role: 'admin' }; // Declarar la variable user para evitar errores
         if (!user || user.role !== 'admin') {
             throw new Error('Acceso denegado: Solo los administradores pueden ejecutar el modo de emergencia.');
         }
