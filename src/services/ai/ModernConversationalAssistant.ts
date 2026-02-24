@@ -4,6 +4,7 @@ import { IntelligentSQLGenerator } from './IntelligentSQLGenerator';
 import { QuerySecurityMonitor } from './QuerySecurityMonitor';
 import { AccountingKnowledgeBase } from './AccountingKnowledgeBase';
 import { LocalAIService } from './LocalAIService';
+import { EngineBridge } from '../../core/database/EngineBridge';
 
 export interface AssistantResponse {
     success: boolean;
@@ -25,14 +26,13 @@ export interface AssistantResponse {
 
 export class ModernConversationalAssistant {
     private analyzer: SemanticQueryAnalyzer | null = null;
-    private sqlGenerator: IntelligentSQLGenerator;
+    private sqlGenerator: IntelligentSQLGenerator | null = null;
     private securityMonitor: QuerySecurityMonitor;
     private knowledgeBase: AccountingKnowledgeBase;
     private localAI: LocalAIService;
     private isInitialized: boolean = false;
 
     constructor() {
-        this.sqlGenerator = new IntelligentSQLGenerator();
         this.securityMonitor = new QuerySecurityMonitor();
         this.knowledgeBase = new AccountingKnowledgeBase();
         this.localAI = new LocalAIService();
@@ -42,6 +42,7 @@ export class ModernConversationalAssistant {
         if (this.isInitialized) return;
         try {
             this.analyzer = await SemanticQueryAnalyzer.getInstance();
+            this.sqlGenerator = new IntelligentSQLGenerator(EngineBridge.getEngine());
             this.isInitialized = true;
             console.log("✅ ModernConversationalAssistant Initialized.");
         } catch (error) {
@@ -140,7 +141,8 @@ export class ModernConversationalAssistant {
     private async handleDataQuery(query: string, analysis: QueryAnalysis, startTime: number): Promise<AssistantResponse> {
         const lang = analysis.language;
         try {
-            const sqlResult = this.sqlGenerator.generateSQL(analysis);
+            if (!this.sqlGenerator) this.sqlGenerator = new IntelligentSQLGenerator(EngineBridge.getEngine());
+            const sqlResult = await this.sqlGenerator.generateSQL(analysis);
             const security = QuerySecurityMonitor.validateQuery(sqlResult.sql);
 
             if (!security.isValid) {
@@ -233,7 +235,7 @@ export class ModernConversationalAssistant {
             msg = lang === 'es'
                 ? "📊 Puedo ayudarte con información sobre clientes. Intenta preguntar:\n• ¿Cuántos clientes tengo?\n• ¿Quién es mi mejor cliente?\n• Muéstrame los clientes con deuda pendiente"
                 : "📊 I can help you with customer information. Try asking:\n• How many customers do I have?\n• Who is my best customer?\n• Show me customers with outstanding debt";
-            suggestions = lang === 'es' 
+            suggestions = lang === 'es'
                 ? ["¿Cuántos clientes tengo?", "¿Quién es mi mejor cliente?"]
                 : ["How many customers do I have?", "Who is my best customer?"];
         } else if (lower.match(/\b(factura|venta|vendi|invoice|sale|sold)\b/)) {

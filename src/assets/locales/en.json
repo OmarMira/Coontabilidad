@@ -1881,6 +1881,12 @@
   "bankReconciliation": {
     "title": "Bank Reconciliation",
     "subtitle": "Automatic Bank Sync",
+    "detectingAccount": "Detecting bank account...",
+    "accountDetected": "Account detected: {{account}} ({{bank}})",
+    "accountNotFound": "Account {{account}} not found in systems.",
+    "askCreateAccount": "Would you like to register this account now to process the statement?",
+    "registerAndContinue": "Register and Continue",
+    "analyzingMetadata": "Analyzing file metadata...",
     "newReconciliation": "New Reconciliation",
     "activeVaults": "Active Vaults",
     "noRecords": "No records",

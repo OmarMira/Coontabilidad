@@ -1,53 +1,4 @@
 {
-  "": {
-    "": ""
-  },
-  "2d": "2d",
-  "Authorization": "Autorización",
-  "Bases de datos IndexedDB eliminadas": {
-    " La página se recargará": {
-      "": ""
-    }
-  },
-  "Datos Demo generados: Cuenta creada, Asientos creados, Transacciones importadas": {
-    "": ""
-  },
-  "Error al revertir: ${(error as Error)": {
-    "message}": "Message}"
-  },
-  "Error crítico durante la reparación": {
-    "": ""
-  },
-  "Error ejecutando auditoría": {
-    " Ver consola para detalles": {
-      "": ""
-    }
-  },
-  "LocalStorage limpiado": {
-    " La página se recargará": {
-      "": ""
-    }
-  },
-  "No se pudo reparar el registro": {
-    " Consulte los logs del sistema": {
-      "": ""
-    }
-  },
-  "Registro reparado exitosamente desde la verdad forense": {
-    "": ""
-  },
-  "Service Worker desinstalado": {
-    " La página se recargará": {
-      "": ""
-    }
-  },
-  "Tax: 6": {
-    "5": "5"
-  },
-  "Total: 106": {
-    "5": "5"
-  },
-  "a": "a",
   "accounting": {
     "periods": {
       "title": "Gestión de Períodos",
@@ -634,17 +585,14 @@
       "reportId": "ID de Reporte",
       "closeDashboard": "Volver al Dashboard"
     },
-    "common": {
-      "of": "de"
-    },
-    "accountName": "Account Name",
-    "accountType": "Account Type",
-    "balance": "Balance",
-    "credit": "Credit",
-    "debit": "Debit",
-    "netIncome": "Net Income",
-    "payroll": "Payroll",
-    "reference": "Reference"
+    "accountName": "Nombre de Cuenta",
+    "accountType": "Tipo de Cuenta",
+    "balance": "Saldo",
+    "credit": "Haber",
+    "debit": "Debe",
+    "netIncome": "Utilidad Neta",
+    "payroll": "Nómina",
+    "reference": "Referencia"
   },
   "accountingDiagnosis": {
     "sqlRawTrace": "Rastro SQL Crudo",
@@ -1593,8 +1541,8 @@
   "bankAccountForm": {
     "button": {
       "cancel": "Abortar Proceso",
-      "save": "Sincronizar Bóveda",
-      "update": "Confirmar Ajustes"
+      "save": "Guardar cuenta bancaria",
+      "update": "Confirmar cambios"
     },
     "currency": {
       "eur": "EUR - EURO",
@@ -1630,8 +1578,8 @@
     },
     "subtitle": "Banking Forensic Protocol v5.1",
     "title": {
-      "create": "Sincronizar Nueva Cuenta",
-      "edit": "Ajustar Bóveda"
+      "create": "Agregar Nueva Cuenta",
+      "edit": "Editar Cuenta"
     },
     "type": {
       "checking": "Cuenta corriente (Checking)",
@@ -1645,8 +1593,8 @@
       "liquidPosition": "Posición Líquida"
     },
     "empty": {
-      "desc": "No se han mapeado cuentas bancarias bajo estos parámetros.",
-      "title": "Bóveda no Detectada"
+      "desc": "No se han encontrado cuentas bancarias bajo estos parámetros.",
+      "title": "Cuenta no detectada"
     },
     "filterAll": "Todos los tipos",
     "search": "Buscar cuenta o entidad...",
@@ -1715,8 +1663,8 @@
       "prepareFiling": "Preparar Declaración",
       "dr15Period": "Periodo DR-15"
     },
-    "subtitle": "Gestión estratégica de activos líquidos y bóvedas",
-    "syncVault": "Sincronizar Bóveda",
+    "subtitle": "Gestión estratégica de activos líquidos y cuentas bancarias",
+    "syncVault": "Agregar cuenta bancaria",
     "title": "Cuentas Bancarias"
   },
   "bankAccounts": {
@@ -1815,7 +1763,13 @@
     },
     "phaseDesc": "Proceso de conciliación bancaria y validación de saldos.",
     "phaseTitle": "Conciliación Bancaria",
-    "protocolTitle": "Protocolo de Conciliación"
+    "protocolTitle": "Protocolo de Conciliación",
+    "detectingAccount": "Detectando cuenta bancaria...",
+    "accountDetected": "Cuenta detectada: {{account}} ({{bank}})",
+    "accountNotFound": "No se encontró la cuenta {{account}} en el sistema.",
+    "askCreateAccount": "¿Deseas registrar esta cuenta ahora para procesar el resumen?",
+    "registerAndContinue": "Registrar y Continuar",
+    "analyzingMetadata": "Analizando metadatos del archivo..."
   },
   "bankStatementImport": {
     "title": "Importador Neural",
@@ -2255,6 +2209,7 @@
     "equity": "Patrimonio",
     "error": "Error",
     "expense": "Gasto",
+    "expenses": "Gastos",
     "export": "Exportar",
     "liability": "Pasivo",
     "loading": "Cargando...",
@@ -2263,10 +2218,12 @@
     "notes": "Notas",
     "print": "Imprimir",
     "report": "Reporte",
-    "reports": "Reportes",
+    "products": "Productos",
+    "profit": "Utilidad",
     "revenue": "Ingreso",
-    "expenses": "Gastos",
     "customers": "Clientes",
+    "suppliers": "Proveedores",
+    "bills": "Gastos",
     "save": "Guardar",
     "search": "Buscar",
     "status": "Estado",
@@ -2274,6 +2231,7 @@
     "total": "Total",
     "subtotal": "Subtotal",
     "tax": "Impuesto",
+    "of": "de",
     "unitPrice": "Precio",
     "type": "Tipo",
     "update": "Actualizar",
@@ -2318,13 +2276,10 @@
     "systemVersion": "Sistema v1.0.0",
     "deprecatedComponent": "Componente Desactivado. Use el nuevo panel de seguridad.",
     "tools": "Herramientas",
-    "all": "All",
-    "customers": "Customers",
-    "errorUnknown": "Error Unknown",
-    "expenses": "Expenses",
-    "generatedOn": "Generated On",
-    "localeCode": "Locale Code",
-    "noRecords": "No Records",
+    "other": "Otro",
+    "generatedOn": "Generado el",
+    "localeCode": "Código de Localización",
+    "noRecords": "Sin registros",
     "other": "Other",
     "paymentMethods": {
       "bankTransfer": "Bank Transfer",
@@ -2332,8 +2287,8 @@
       "check": "Check",
       "creditCard": "Credit Card"
     },
-    "percentOfTotal": "Percent Of Total",
-    "processing": "Processing",
+    "percentOfTotal": "Porcentaje del Total",
+    "processing": "Procesando",
     "year": "Year",
     "periodMonths": "Meses del Período"
   },
@@ -3384,24 +3339,24 @@
     "auditText": "Texto de Auditoría"
   },
   "journalEntryTest": {
-    "autoPurchases": "journalEntryTest.autoPurchases",
-    "autoSales": "journalEntryTest.autoSales",
-    "billToLedgerProtocol": "journalEntryTest.billToLedgerProtocol",
-    "cashEntryDesc": "journalEntryTest.cashEntryDesc",
-    "errorLoadingEntries": "journalEntryTest.errorLoadingEntries",
-    "generateTestEntry": "journalEntryTest.generateTestEntry",
-    "invoiceToLedgerProtocol": "journalEntryTest.invoiceToLedgerProtocol",
-    "latestLabRecords": "journalEntryTest.latestLabRecords",
-    "manualEntry": "journalEntryTest.manualEntry",
-    "manualTestEntryDesc": "journalEntryTest.manualTestEntryDesc",
-    "outOfPivot": "journalEntryTest.outOfPivot",
-    "runTotalSuite": "journalEntryTest.runTotalSuite",
-    "serviceSaleDesc": "journalEntryTest.serviceSaleDesc",
+    "autoPurchases": "Auto-Compras",
+    "autoSales": "Auto-Ventas",
+    "billToLedgerProtocol": "Protocolo de Factura a Libro",
+    "cashEntryDesc": "Entrada de Efectivo de Prueba",
+    "errorLoadingEntries": "Error al cargar asientos",
+    "generateTestEntry": "Generar Asiento de Prueba",
+    "invoiceToLedgerProtocol": "Protocolo de Factura a Libro Mayor",
+    "latestLabRecords": "Últimos Registros de Laboratorio",
+    "manualEntry": "Entrada Manual",
+    "manualTestEntryDesc": "Asiento de prueba generado manualmente",
+    "outOfPivot": "Descuadrado",
+    "runTotalSuite": "Ejecutar Suite Total",
+    "serviceSaleDesc": "Venta de Servicios de Prueba",
     "subtitle": "Pruebas de Asientos",
-    "syncOk": "journalEntryTest.syncOk",
-    "testLogs": "journalEntryTest.testLogs",
+    "syncOk": "Sincronizado",
+    "testLogs": "Logs de Pruebas",
     "title": "Test de Asientos",
-    "waitingForExecution": "journalEntryTest.waitingForExecution"
+    "waitingForExecution": "Esperando ejecución..."
   },
   "jspdf": "jspdf",
   "ledger": {
@@ -4464,13 +4419,6 @@
       "subtitle": "Análisis de movimientos y variaciones de liquidez",
       "summarytitle": "Resumen de Flujos de Efectivo",
       "title": "Flujo de Caja"
-    },
-    "common": {
-      "actions": "Acciones",
-      "excelerror": "Error al exportar a Excel",
-      "excelsuccess": "Exportación a Excel exitosa",
-      "pdferror": "Error al exportar a PDF",
-      "pdfsuccess": "Exportación a PDF exitosa"
     },
     "compliance": {
       "closeview": "CERRAR VISTA",

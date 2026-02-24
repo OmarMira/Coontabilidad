@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 
 
 import { useLocale } from '../i18n/useLocale';
+import { NAVIGATION_CONFIG } from '../config/NavigationConfig';
 
 interface SidebarProps {
   currentSection: string;
@@ -23,8 +24,8 @@ interface SidebarProps {
 
 interface MenuItem {
   id: string;
-  label: string;
-  icon: React.ComponentType<any>;
+  labelKey: string;
+  icon: any;
   children?: MenuItem[];
   badge?: string;
   isNew?: boolean;
@@ -36,136 +37,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const menuItems: MenuItem[] = [
-    {
-      id: 'dashboard',
-      label: t('navigation.dashboard'),
-      icon: Home
-    },
-    {
-      id: 'archivo',
-      label: t('navigation.archive'),
-      icon: FileText,
-      children: [
-        { id: 'company-data', label: t('navigation.companyData'), icon: Building2 },
-        { id: 'admin-users', label: t('navigation.usersSecurity'), icon: UserCheck },
-        { id: 'role-manager', label: t('navigation.roleManager'), icon: Shield },
-        { id: 'audit-trail', label: t('navigation.auditTrail'), icon: History },
-        { id: 'banks', label: t('navigation.bankAccounts'), icon: Building2 },
-        { id: 'payment-methods', label: t('navigation.paymentMethods'), icon: CreditCard }
-      ]
-    },
-    {
-      id: 'cuentas-pagar',
-      label: t('navigation.accountsPayable'),
-      icon: Receipt,
-      children: [
-        { id: 'dashboard-suppliers', label: t('navigation.suppliersDashboard'), icon: Building2 },
-        { id: 'suppliers', label: t('navigation.suppliers'), icon: Building2 },
-        { id: 'bills', label: t('navigation.purchaseInvoices'), icon: FileText },
-        { id: 'supplier-payments', label: t('navigation.supplierPayments'), icon: CreditCard },
-        { id: 'purchase-orders', label: t('navigation.purchaseOrders'), icon: ShoppingCart },
-        { id: 'payable-reports', label: t('navigation.supplierReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'cuentas-cobrar',
-      label: t('navigation.accountsReceivable'),
-      icon: TrendingUp,
-      children: [
-        { id: 'dashboard-customers', label: t('navigation.customersDashboard'), icon: Users },
-        { id: 'ard-module', label: t('navigation.ardAnalysis'), icon: ScanSearch },
-        { id: 'customers', label: t('navigation.customers'), icon: Users },
-        { id: 'invoices', label: t('navigation.salesInvoices'), icon: FileText },
-        { id: 'customer-payments', label: t('navigation.customerPayments'), icon: CreditCard },
-        { id: 'quotes', label: t('navigation.quotes'), icon: FileText },
-        { id: 'receivable-reports', label: t('navigation.customerReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'libro-mayor',
-      label: t('navigation.accounting'),
-      icon: Calculator,
-      children: [
-        { id: 'dashboard-financial', label: t('navigation.financialDashboard'), icon: TrendingUp },
-        { id: 'reports-dashboard', label: t('navigation.reportsDashboard'), icon: BarChart3 },
-        { id: 'accounting-periods', label: t('navigation.closuresPeriods'), icon: Lock },
-        { id: 'ledger-hub', label: t('navigation.ledgerAuxiliaries'), icon: Database },
-        { id: 'chart-accounts', label: t('navigation.chartOfAccounts'), icon: FileText },
-        { id: 'journal-entries', label: t('navigation.journalEntries'), icon: FileText },
-        { id: 'bank-reconciliation', label: t('navigation.bankReconciliation'), icon: FileText },
-        { id: 'discrepancy-analysis', label: t('navigation.discrepancyAnalysis'), icon: BarChart3 },
-        { id: 'bank-smart-import', label: t('navigation.iaBankImport'), icon: Bot },
-        { id: 'general-ledger', label: t('navigation.generalLedger'), icon: FileText },
-        { id: 'trial-balance', label: t('navigation.trialBalance'), icon: BarChart3 },
-        { id: 'account-ledger', label: t('navigation.accountAuxiliaries'), icon: PieChart },
-        { id: 'balance-sheet', label: t('navigation.balanceSheet'), icon: ShieldCheck },
-        { id: 'income-statement', label: t('navigation.incomeStatement'), icon: TrendingUp },
-        { id: 'cash-flow', label: t('navigation.cashFlow'), icon: DollarSign },
-        { id: 'aging-report', label: t('navigation.agingReport'), icon: Clock },
-        { id: 'fixed-assets', label: t('navigation.assetManagement'), icon: Package },
-        { id: 'budgets', label: t('navigation.budgets'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'payroll',
-      label: t('navigation.payroll'),
-      icon: Users,
-      children: [
-        { id: 'dashboard-payroll', label: t('navigation.payrollDashboard'), icon: PieChart },
-        { id: 'employee-mgr', label: t('navigation.employeeManagement'), icon: UserCheck },
-        { id: 'payroll-process', label: t('navigation.processPayroll'), icon: Calculator },
-        { id: 'payroll-review', label: t('navigation.reviewPayroll'), icon: ShieldCheck },
-        { id: 'payroll-reports', label: t('navigation.payrollReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'inventario',
-      label: t('navigation.inventory'),
-      icon: Package,
-      children: [
-        { id: 'dashboard-inventory', label: t('navigation.inventoryDashboard'), icon: PieChart },
-        { id: 'products', label: t('navigation.productsServices'), icon: Package },
-        { id: 'inventory-movements', label: t('navigation.movements'), icon: TrendingUp },
-        { id: 'inventory-adjustments', label: t('navigation.inventoryAdjustments'), icon: Settings },
-        { id: 'inventory-reports', label: t('navigation.inventoryReports'), icon: BarChart3 },
-        { id: 'product-categories', label: t('navigation.categories'), icon: Package2 },
-        { id: 'locations', label: t('navigation.locations'), icon: MapPin }
-      ]
-    },
-    {
-      id: 'impuestos',
-      label: t('navigation.taxes'),
-      icon: Receipt,
-      children: [
-        { id: 'tax-config', label: t('navigation.taxConfig'), icon: Settings },
-        { id: 'florida-dr15', label: t('navigation.dr15Report'), icon: FileText },
-        { id: 'tax-calendar', label: t('navigation.taxCalendar'), icon: FileText },
-        { id: 'tax-rates', label: t('navigation.countyRates'), icon: MapPin },
-        { id: 'tax-reports', label: t('navigation.taxReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'herramientas',
-      label: t('navigation.tools'),
-      icon: HelpCircle,
-      children: [
-        { id: 'accounting-diagnosis', label: t('navigation.accountingDiagnosis'), icon: Activity },
-        { id: 'journal-entry-test', label: t('navigation.journalEntryTest'), icon: FileText },
-        { id: 'backups', label: t('navigation.backupsRestoration'), icon: HardDrive },
-        { id: 'system-logs', label: t('navigation.systemLogs'), icon: Activity },
-        { id: 'auditoria', label: t('navigation.transactionAudit'), icon: Search },
-        { id: 'system-audit', label: t('navigation.audit'), icon: History },
-        { id: 'verify', label: t('navigation.ironCoreVerify'), icon: Shield },
-        { id: 'help', label: t('navigation.helpCenter'), icon: HelpCircle }
-      ]
-    },
-    {
-      id: 'ai-assistant',
-      label: t('navigation.aiAssistant'),
-      icon: Bot
-    }
-  ];
+  const menuItems = NAVIGATION_CONFIG;
+
 
   // Definir acceso por rol
   const hasAccess = (itemId: string): boolean => {
@@ -266,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           {!isCollapsed && (
             <>
               <span className={`flex-1 ${level === 0 ? 'text-sm font-bold' : 'text-xs font-bold'}`}>
-                {item.label}
+                {t(item.labelKey)}
               </span>
 
               {item.badge && (

@@ -81,9 +81,11 @@ export class SchemaRepairService {
                     { name: 'late_fee_percentage', type: 'REAL', default: "0" },
                     { name: 'grace_period_days', type: 'INTEGER', default: "0" },
                     { name: 'fiscal_year_start', type: 'TEXT', default: "'01-01'" },
+                    { name: 'fiscal_year_end', type: 'TEXT', default: "'12-31'" },
                     { name: 'tax_frequency', type: 'TEXT', default: "'monthly'" },
                     { name: 'sales_tax_method', type: 'TEXT', default: "'accrual'" },
                     { name: 'dr15_filing_day', type: 'INTEGER', default: "20" },
+                    { name: 'netIncreaseInCash', type: 'REAL', default: "0" },
                     { name: 'is_active', type: 'BOOLEAN', default: "1" }
 
                 ];

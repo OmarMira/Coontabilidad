@@ -1,4 +1,5 @@
 import { getCustomers, getInvoices, getProducts } from '../database/simple-db';
+import { getNavigationPath } from '../config/NavigationConfig';
 
 /**
  * BASE DE CONOCIMIENTO DEL SISTEMA - GUÍAS Y OPERACIONES
@@ -54,7 +55,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Puedes agregar descuentos por línea o al total',
             'Los asientos contables se generan automáticamente'
         ],
-        relatedMenu: 'CUENTAS POR COBRAR > Facturas de Venta',
+        relatedMenu: getNavigationPath('invoices'),
         category: 'ventas'
     },
 
@@ -75,7 +76,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Puedes asignar crédito máximo y días de pago',
             'El sistema tiene autocompletado de direcciones'
         ],
-        relatedMenu: 'CUENTAS POR COBRAR > Clientes',
+        relatedMenu: getNavigationPath('customers'),
         category: 'ventas'
     },
 
@@ -97,7 +98,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Asocia la compra con la cuenta contable correcta',
             'Puedes programar la fecha de vencimiento para control de pagos'
         ],
-        relatedMenu: 'CUENTAS POR PAGAR > Facturas de Compra',
+        relatedMenu: getNavigationPath('bills'),
         category: 'compras'
     },
 
@@ -116,7 +117,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Puedes clasificar proveedores por categoría',
             'Agrega información bancaria para pagos electrónicos'
         ],
-        relatedMenu: 'CUENTAS POR PAGAR > Proveedores',
+        relatedMenu: getNavigationPath('suppliers'),
         category: 'compras'
     },
 
@@ -140,7 +141,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Los servicios no afectan el stock',
             'Puedes definir múltiples unidades de medida'
         ],
-        relatedMenu: 'INVENTARIO > Productos y Servicios',
+        relatedMenu: getNavigationPath('products'),
         category: 'inventario'
     },
 
@@ -149,8 +150,8 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo generar el reporte DR-15?',
         description: 'Reporte de impuestos Florida por período',
         steps: [
-            'Ve al menú "IMPUESTOS FLORIDA"',
-            'Haz clic en "Reportes DR-15"',
+            'Ve al menú "IMPUESTOS" en el sidebar',
+            'Haz clic en "Reporte DR-15"',
             'Presiona "Nuevo Reporte"',
             'Selecciona el período fiscal (trimestre/mes)',
             'Haz clic en "Calcular Reporte"',
@@ -163,7 +164,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Las tasas se actualizan según la configuración de cada condado',
             'Puedes exportar a PDF para presentación al estado'
         ],
-        relatedMenu: 'IMPUESTOS FLORIDA > Reportes DR-15',
+        relatedMenu: getNavigationPath('florida-dr15'),
         category: 'impuestos'
     },
 
@@ -171,7 +172,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo ver las tasas de impuesto por condado?',
         description: 'Consultar y configurar tasas de Florida',
         steps: [
-            'Ve al menú "IMPUESTOS FLORIDA"',
+            'Ve al menú "IMPUESTOS" en el sidebar',
             'Haz clic en "Tasas por Condado"',
             'Verás los 67 condados de Florida con sus tasas',
             'Cada condado muestra: tasa base (6%) + surtax local',
@@ -182,7 +183,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Broward tiene 7.0% (6% + 1% surtax)',
             'Las tasas se aplican automáticamente según la dirección del cliente'
         ],
-        relatedMenu: 'IMPUESTOS FLORIDA > Tasas por Condado',
+        relatedMenu: getNavigationPath('tax-rates'),
         category: 'impuestos'
     },
 
@@ -191,8 +192,8 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo ver el Balance General?',
         description: 'Estado de situación financiera',
         steps: [
-            'Ve al menú "CONTABILIDAD"',
-            'Haz clic en "Reportes Financieros"',
+            'Ve al menú "LIBRO MAYOR / CONTABILIDAD" en el sidebar',
+            'Haz clic en "Dashboard de Reportes" o un reporte específico',
             'Selecciona "Balance General"',
             'Elige el período a consultar',
             'Visualiza Activos, Pasivos y Patrimonio'
@@ -202,7 +203,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Los movimientos de ventas y compras actualizan el balance automáticamente',
             'Puedes exportar a Excel para análisis'
         ],
-        relatedMenu: 'CONTABILIDAD > Reportes Financieros',
+        relatedMenu: getNavigationPath('balance-sheet'),
         category: 'contabilidad'
     },
 
@@ -211,7 +212,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo crear un respaldo de la base de datos?',
         description: 'Exportar backup cifrado .aex',
         steps: [
-            'Ve al menú "ARCHIVO"',
+            'Ve al menú "HERRAMIENTAS" en el sidebar',
             'Haz clic en "Respaldos y Restauración"',
             'Presiona "Crear Nuevo Respaldo"',
             'Ingresa una contraseña segura para cifrar',
@@ -232,7 +233,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo restaurar un respaldo?',
         description: 'Importar backup cifrado .aex',
         steps: [
-            'Ve al menú "ARCHIVO"',
+            'Ve al menú "HERRAMIENTAS" en el sidebar',
             'Haz clic en "Respaldos y Restauración"',
             'Presiona "Restaurar Respaldo"',
             'Selecciona el archivo .aex a restaurar',
@@ -254,7 +255,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo conciliar una cuenta bancaria paso a paso?',
         description: 'Proceso de cuadre entre banco y registros locales',
         steps: [
-            'Navega a "HERRAMIENTAS" > "Cuentas Bancarias"',
+            'Navega a "LIBRO MAYOR / CONTABILIDAD" > "Conciliación Bancaria"',
             'Selecciona la cuenta bancaria a conciliar',
             'Haz clic en "Importar Estado de Cuenta"',
             'Sube tu archivo OFX, CSV o PDF bancario',
@@ -267,7 +268,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Usa archivos OFX para mayor precisión en el matching',
             'El sistema sugiere la cuenta contable de gasto según el nombre del comercio'
         ],
-        relatedMenu: 'HERRAMIENTAS > Cuentas Bancarias',
+        relatedMenu: getNavigationPath('bank-reconciliation'),
         category: 'contabilidad'
     },
 
@@ -276,7 +277,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo registrar el pago de un préstamo?',
         description: 'Afectación de cuentas al pagar deuda financiera',
         steps: [
-            'Ve a "CONTABILIDAD" > "Asientos Contables"',
+            'Ve a "LIBRO MAYOR / CONTABILIDAD" > "Asientos Contables"',
             'Crea un nuevo asiento manual',
             'Debita la cuenta de "Pasivo: Préstamos Bancarios" (para reducir deuda)',
             'Debita la cuenta de "Gastos: Intereses Bancarios" (por la porción de interés)',
@@ -297,7 +298,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo calcular la depreciación de activos?',
         description: 'Registro del desgaste de activos fijos',
         steps: [
-            'Navega a "LIBRO MAYOR" > "Activos Fijos"',
+            'Navega a "LIBRO MAYOR / CONTABILIDAD" > "Activos Fijos"',
             'Selecciona el activo (ej: Vehículo, Computadora)',
             'Elige el método: "Línea Recta" o "Acelerada (MACRS)"',
             'Haz clic en "Calcular Depreciación Mensual"',
@@ -308,7 +309,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Para impuestos de Florida usa generalmente MACRS para mayor beneficio fiscal inicial',
             'Asegúrate de tener configurada la vida útil del activo correctamente'
         ],
-        relatedMenu: 'CONTABILIDAD > Reportes Financieros > Activos',
+        relatedMenu: getNavigationPath('fixed-assets'),
         category: 'contabilidad'
     },
 
@@ -317,7 +318,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
         title: '¿Cómo procesar la nómina?',
         description: 'Cálculo y registro de pagos a empleados',
         steps: [
-            'Ve a "RECURSOS HUMANOS" > "Nómina"',
+            'Ve a "NÓMINA" en el sidebar',
             'Selecciona el período de pago',
             'Verifica horas trabajadas de cada empleado',
             'El sistema calcula automáticamente: salario bruto, retenciones (FICA, Medicare, impuestos), deducciones',
@@ -331,7 +332,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Remite las retenciones al IRS según tu calendario (mensual/trimestral)',
             'Genera formularios W-2 al final del año'
         ],
-        relatedMenu: 'RECURSOS HUMANOS > Nómina',
+        relatedMenu: getNavigationPath('payroll'),
         category: 'contabilidad'
     },
 
@@ -354,7 +355,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Prepara un índice de documentos para facilitar la búsqueda',
             'Revisa años anteriores para anticipar preguntas comunes'
         ],
-        relatedMenu: 'CONTABILIDAD > Auditoría',
+        relatedMenu: getNavigationPath('system-audit'),
         category: 'contabilidad'
     },
 
@@ -378,7 +379,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Documenta todos los ajustes realizados',
             'Compara resultados con meses anteriores para detectar anomalías'
         ],
-        relatedMenu: 'CONTABILIDAD > Cierre de Período',
+        relatedMenu: getNavigationPath('accounting-periods'),
         category: 'contabilidad'
     },
 
@@ -390,7 +391,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Identifica cuentas por cobrar con más de 90-120 días vencidas',
             'Documenta intentos de cobro realizados',
             'Obtén aprobación de gerencia para dar de baja',
-            'Ve a "CONTABILIDAD" > "Asientos Contables"',
+            'Ve a "LIBRO MAYOR / CONTABILIDAD" > "Asientos Contables"',
             'Crea asiento: Débito Gasto por Cuentas Incobrables / Crédito Cuentas por Cobrar',
             'Mantén registro separado para seguimiento futuro',
             'Si el cliente paga después: Débito Efectivo / Crédito Recuperación de Cuentas Incobrables'
@@ -400,7 +401,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Mantén políticas claras de crédito para minimizar pérdidas',
             'Documenta todo para propósitos fiscales'
         ],
-        relatedMenu: 'CONTABILIDAD > Asientos Contables',
+        relatedMenu: getNavigationPath('journal-entries'),
         category: 'contabilidad'
     },
 
@@ -423,7 +424,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Investiga diferencias grandes antes de ajustar',
             'Mantén seguridad física del inventario para prevenir robos'
         ],
-        relatedMenu: 'INVENTARIO > Ajustes',
+        relatedMenu: getNavigationPath('inventory-adjustments'),
         category: 'inventario'
     },
 
@@ -445,7 +446,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Mantén registros detallados de compras y ventas de activos',
             'Considera depreciar activos para reducir el valor imponible'
         ],
-        relatedMenu: 'IMPUESTOS FLORIDA > Propiedad Personal',
+        relatedMenu: getNavigationPath('tax-config'),
         category: 'impuestos'
     },
 
@@ -467,7 +468,7 @@ export const SYSTEM_GUIDES: Record<string, SystemGuide> = {
             'Uso indebido puede resultar en multas y auditorías',
             'Mantén copias de todos los certificados proporcionados'
         ],
-        relatedMenu: 'IMPUESTOS FLORIDA > Certificados',
+        relatedMenu: getNavigationPath('tax-config'),
         category: 'impuestos'
     },
 };
@@ -504,6 +505,16 @@ export const ACCOUNTING_KNOWLEDGE = {
             name: 'Base Devengado',
             explanation: 'Los ingresos y gastos se registran cuando se generan, no cuando se cobra o paga.',
             example: 'Una venta a crédito se registra como ingreso aunque no se haya cobrado aún'
+        },
+        macrs: {
+            name: 'Depreciación MACRS',
+            explanation: 'Sistema Modificado de Recuperación de Costos Acelerada utilizado para fines fiscales en EE.UU.',
+            rule: 'Divide el costo del activo entre su vida útil permitida (ej: 5 años para equipos de computación).'
+        },
+        surtaxCap: {
+            name: 'Límite Surtax Florida ($5,000)',
+            explanation: 'El impuesto discrecional por condado solo aplica a los primeros $5,000 de una venta.',
+            rule: 'Si vendes un auto de $20,000, solo los primeros $5,000 pagan el surtax del condado, el resto solo paga el 6% estatal.'
         }
     },
 
@@ -752,15 +763,15 @@ export const FAQ = [
     },
     {
         question: '¿Cómo hago un respaldo de mis datos?',
-        answer: 'Ve a ARCHIVO > Respaldos y Restauración > Crear Nuevo Respaldo. El archivo .aex estará cifrado con tu contraseña.'
+        answer: 'Ve a HERRAMIENTAS > Respaldos y Restauración > Crear Nuevo Respaldo. El archivo .aex estará cifrado con tu contraseña.'
     },
     {
         question: '¿Puedo importar datos de otro sistema?',
-        answer: 'Sí, puedes importar desde Excel/CSV o restaurar un respaldo .aex. Ve a ARCHIVO > Importar Datos.'
+        answer: 'Sí, puedes importar desde Excel/CSV o restaurar un respaldo .aex. Ve a HERRAMIENTAS > Respaldos y Restauración.'
     },
     {
         question: '¿El sistema genera estados financieros?',
-        answer: 'Sí, genera Balance General, Estado de Resultados (P&L), y Flujo de Efectivo. Ve a CONTABILIDAD > Reportes Financieros.'
+        answer: 'Sí, genera Balance General, Estado de Resultados (P&L), y Flujo de Efectivo. Ve a LIBRO MAYOR / CONTABILIDAD > Dashboard de Reportes.'
     },
     {
         question: '¿Puedo procesar nómina?',
@@ -768,7 +779,7 @@ export const FAQ = [
     },
     {
         question: '¿Cómo concilio mi cuenta bancaria?',
-        answer: 'Ve a HERRAMIENTAS > Cuentas Bancarias > Importar Estado de Cuenta. El sistema machea automáticamente transacciones por monto y fecha.'
+        answer: 'Ve a LIBRO MAYOR / CONTABILIDAD > Conciliación Bancaria. El sistema machea automáticamente transacciones por monto y fecha.'
     },
     {
         question: '¿Qué hago si tengo una cuenta incobrable?',

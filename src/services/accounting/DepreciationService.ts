@@ -3,6 +3,7 @@ import { FixedAssetService, FixedAsset } from './FixedAssetService';
 import { AssetCategoryService } from './AssetCategoryService';
 import { DepreciationCalculator, DepreciationParams } from './DepreciationCalculator';
 import { DatabaseService } from '../../database/DatabaseService';
+import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 
 /**
  * Depreciation Entry Model
@@ -40,6 +41,14 @@ export interface DepreciationBatchResult {
 export class DepreciationService {
     private assetService: FixedAssetService;
     private categoryService: AssetCategoryService;
+    private static orchestrator: WorkerOrchestrator | null = null;
+
+    private getOrchestrator(): WorkerOrchestrator {
+        if (!DepreciationService.orchestrator) {
+            DepreciationService.orchestrator = new WorkerOrchestrator();
+        }
+        return DepreciationService.orchestrator;
+    }
 
     constructor(private db: SQLiteEngine) {
         this.assetService = new FixedAssetService(db);
@@ -143,9 +152,22 @@ export class DepreciationService {
             isPartialMonth
         };
 
-        // Calculate depreciation
-        const result = DepreciationCalculator.calculate(asset.depreciation_method, params);
-        const depreciationAmount = result.depreciationAmount;
+        // Calculate depreciation (Using Worker)
+        const workerResult = await this.getOrchestrator().executeTask<any>('ACCOUNTING', {
+            operation: 'single_depreciation',
+            asset: {
+                id: asset.id,
+                purchase_cost: asset.purchase_cost,
+                salvage_value: asset.salvage_value,
+                useful_life_months: asset.useful_life_months,
+                net_book_value: asset.net_book_value || asset.purchase_cost,
+                depreciation_method: asset.depreciation_method.replace('_200', ''), // Normalize name for worker
+                purchase_date: asset.purchase_date
+            },
+            periodDate: periodDate.toISOString()
+        });
+
+        const depreciationAmount = workerResult.depreciationAmount;
 
         // Calculate new accumulated depreciation
         const newAccumulated = asset.total_accumulated_depreciation + depreciationAmount;

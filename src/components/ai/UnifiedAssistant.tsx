@@ -99,9 +99,12 @@ export const UnifiedAssistant: React.FC<UnifiedAssistantProps> = ({
     const loadDashboardAnalysis = async () => {
         setIsLoading(true);
         try {
+            // Sincronizar conocimiento con el estado actual del sistema (Auto-Actualización)
+            await AIFactory.sync();
+
             const result = await AIFactory.processQuery('resumen salud financiera');
             setAnalysis(result as any);
-            logger.info('UnifiedAssistant', 'dashboard_loaded', 'Análisis cargado exitosamente');
+            logger.info('UnifiedAssistant', 'dashboard_loaded', 'Análisis y sincronización completados');
         } catch (error) {
             logger.error('UnifiedAssistant', 'dashboard_error', 'Error cargando análisis', {}, error as Error);
         } finally {

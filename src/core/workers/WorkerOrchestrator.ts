@@ -25,16 +25,23 @@ interface Task {
 
 // Sistema centralizado de gestión de Web Workers
 export class WorkerOrchestrator {
+    private workerPools: Map<WorkerType, Worker[]> = new Map();
+    private poolSize: number = 2; // Máximo 2 workers por tipo de tarea
     private workers: Map<string, Worker> = new Map();
+    private workerToType: Map<string, WorkerType> = new Map();
     private taskQueue: Map<string, Task> = new Map();
-    private maxConcurrentWorkers: number = 4; // Límite según navegador
+    private maxConcurrentWorkers: number = 8; // Límite global
 
-    async spawnWorker(type: WorkerType, config?: WorkerConfig): Promise<Worker> {
+    async spawnWorker(type: WorkerType, config?: WorkerConfig): Promise<string> {
         if (this.workers.size >= this.maxConcurrentWorkers) {
             await this.cleanupIdleWorkers();
+            // Si aún estamos llenos, forzar limpieza de los más antiguos sin tareas
+            if (this.workers.size >= this.maxConcurrentWorkers) {
+                this.forceTerminateOldestIdle();
+            }
         }
 
-        const workerId = `${type}_${Date.now()}`;
+        const workerId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         let worker: Worker;
 
         // Vite worker import syntax
@@ -42,87 +49,80 @@ export class WorkerOrchestrator {
             case 'ENCRYPTION':
                 worker = new Worker(new URL('../../workers/encryption.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-crypto`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'DATABASE':
                 worker = new Worker(new URL('../../workers/database.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-db`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'ACCOUNTING':
                 worker = new Worker(new URL('../../workers/accounting.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-accounting`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'PDF_GENERATION':
                 worker = new Worker(new URL('../../workers/pdf.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-pdf`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'CSV_PROCESSING':
                 worker = new Worker(new URL('../../workers/csv.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-csv`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'REPORTS':
                 worker = new Worker(new URL('../../workers/reports.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-reports`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'PAYROLL':
                 worker = new Worker(new URL('../../workers/payroll.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-payroll`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'RECONCILIATION':
                 worker = new Worker(new URL('../../workers/reconciliation.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-reconciliation`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'QUOTES_PROCESSING':
                 worker = new Worker(new URL('../../workers/quotes.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-quotes`
+                    name: `${workerId}`
                 });
                 break;
-
             case 'INVENTORY_ANALYSIS':
                 worker = new Worker(new URL('../../workers/inventory-analysis.worker.ts', import.meta.url), {
                     type: 'module',
-                    name: `${workerId}-inventory-analysis`
+                    name: `${workerId}`
                 });
                 break;
-
             default:
                 throw new Error(`Tipo de worker no soportado: ${type}`);
         }
 
-        // Configurar manejo de mensajes
         worker.onmessage = this.handleWorkerMessage.bind(this, workerId);
         worker.onerror = this.handleWorkerError.bind(this, workerId);
 
         this.workers.set(workerId, worker);
+        this.workerToType.set(workerId, type);
 
-        // Inicializar worker (Implementation simplified)
-        // await this.initializeWorker(workerId, config);
+        // Agregar al pool específico
+        if (!this.workerPools.has(type)) {
+            this.workerPools.set(type, []);
+        }
+        this.workerPools.get(type)!.push(worker);
 
-        return worker;
+        return workerId;
     }
 
     async executeTask<T>(
@@ -134,17 +134,15 @@ export class WorkerOrchestrator {
         const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         return new Promise((resolve, reject) => {
-            // Registrar tarea en cola
             this.taskQueue.set(taskId, {
                 id: taskId,
                 workerId,
                 resolve,
                 reject,
                 timestamp: Date.now(),
-                timeout: options?.timeout || 30000
+                timeout: options?.timeout || 60000 // Aumentado para tareas pesadas
             });
 
-            // Enviar tarea al worker
             const worker = this.workers.get(workerId);
             if (!worker) {
                 reject(new Error(`Worker ${workerId} no disponible`));
@@ -158,32 +156,72 @@ export class WorkerOrchestrator {
                 metadata: options?.metadata
             });
 
-            // Configurar timeout
             setTimeout(() => {
                 if (this.taskQueue.has(taskId)) {
                     this.taskQueue.delete(taskId);
-                    reject(new Error(`Timeout en tarea ${taskId}`));
-
-                    // Terminar worker si está colgado
+                    reject(new Error(`Timeout en tarea ${taskId} (${workerType})`));
                     this.terminateWorker(workerId);
                 }
-            }, options?.timeout || 30000);
+            }, options?.timeout || 60000);
         });
     }
 
     private async getAvailableWorker(type: WorkerType): Promise<string> {
-        // Simple implementation: spawn new if none, or reuse first found
-        // Real implementation would implement pooling logic
-        const existing = Array.from(this.workers.entries()).find(([id]) => id.startsWith(type));
-        if (existing) return existing[0];
+        if (!this.workerPools.has(type)) {
+            this.workerPools.set(type, []);
+        }
 
-        const newWorker = await this.spawnWorker(type);
-        // Need to map the worker object back to ID if spawn doesn't return ID.
-        // Current spawnWorker returns Worker object.
-        // I need to reverse lookup or change spawnWorker signature.
-        // For now, assume I can find it.
-        // Hack for step:
-        return Array.from(this.workers.keys()).find(k => this.workers.get(k) === newWorker)!;
+        const pool = this.workerPools.get(type)!;
+
+        // 1. Buscar worker en el pool que no esté procesando ninguna tarea
+        for (const workerObj of pool) {
+            // Encontrar el workerId asociado al objeto worker
+            const workerId = Array.from(this.workers.entries())
+                .find(([_, w]) => w === workerObj)?.[0];
+
+            if (workerId) {
+                const isBusy = Array.from(this.taskQueue.values())
+                    .some(task => task.workerId === workerId);
+
+                if (!isBusy) {
+                    return workerId;
+                }
+            }
+        }
+
+        // 2. Si llegamos aquí, todos están ocupados. ¿Podemos crear otro en el pool?
+        if (pool.length < this.poolSize) {
+            return await this.spawnWorker(type);
+        }
+
+        // 3. Esperar un momento a que se libere uno (backoff simple)
+        return new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                for (const workerObj of pool) {
+                    const workerId = Array.from(this.workers.entries())
+                        .find(([_, w]) => w === workerObj)?.[0];
+
+                    if (workerId) {
+                        const isBusy = Array.from(this.taskQueue.values())
+                            .some(task => task.workerId === workerId);
+
+                        if (!isBusy) {
+                            clearInterval(checkInterval);
+                            resolve(workerId);
+                            return;
+                        }
+                    }
+                }
+            }, 50);
+
+            // Safety timeout para la espera del pool
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                // Si llegamos aquí, forzar la creación de uno nuevo ignorando poolSize 
+                // pero respetando maxConcurrentWorkers
+                this.spawnWorker(type).then(resolve);
+            }, 5000);
+        });
     }
 
     private handleWorkerMessage(workerId: string, event: MessageEvent) {
@@ -201,6 +239,7 @@ export class WorkerOrchestrator {
 
     private handleWorkerError(workerId: string, error: ErrorEvent) {
         console.error(`Worker ${workerId} error:`, error);
+        this.terminateWorker(workerId);
     }
 
     private terminateWorker(workerId: string) {
@@ -208,20 +247,32 @@ export class WorkerOrchestrator {
         if (worker) {
             worker.terminate();
             this.workers.delete(workerId);
+
+            const type = this.workerToType.get(workerId);
+            if (type && this.workerPools.has(type)) {
+                const pool = this.workerPools.get(type)!;
+                const index = pool.indexOf(worker);
+                if (index > -1) pool.splice(index, 1);
+            }
+            this.workerToType.delete(workerId);
+        }
+    }
+
+    private forceTerminateOldestIdle() {
+        const busyWorkerIds = new Set(Array.from(this.taskQueue.values()).map(t => t.workerId));
+        const idleWorkers = Array.from(this.workers.keys()).filter(id => !busyWorkerIds.has(id));
+
+        if (idleWorkers.length > 0) {
+            this.terminateWorker(idleWorkers[0]);
         }
     }
 
     private async cleanupIdleWorkers(): Promise<void> {
-        const now = Date.now();
-        const maxIdleTime = 5 * 60 * 1000; // 5 minutos
+        const busyWorkerIds = new Set(Array.from(this.taskQueue.values()).map(t => t.workerId));
 
         for (const [workerId, worker] of this.workers) {
-            const task = Array.from(this.taskQueue.values())
-                .find(t => t.workerId === workerId);
-
-            if (!task) { // Simplified check
-                worker.terminate();
-                this.workers.delete(workerId);
+            if (!busyWorkerIds.has(workerId)) {
+                this.terminateWorker(workerId);
                 console.log(`🧹 Worker ${workerId} limpiado por inactividad`);
             }
         }

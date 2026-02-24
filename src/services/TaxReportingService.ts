@@ -1,4 +1,5 @@
 import { DatabaseService } from '../database/DatabaseService';
+import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
 import { BasicEncryption } from '../core/security/BasicEncryption';
 
 export interface DR15Report {
@@ -32,40 +33,25 @@ export interface ComplianceAlert {
 
 export class TaxReportingService {
 
+    private static orchestrator: WorkerOrchestrator | null = null;
+
+    private static getOrchestrator(): WorkerOrchestrator {
+        if (!this.orchestrator) {
+            this.orchestrator = new WorkerOrchestrator();
+        }
+        return this.orchestrator;
+    }
+
     /**
      * Generates the Florida DR-15 Sales and Use Tax Return data.
      */
     static async generateDR15Report(month: number, year: number): Promise<DR15Report> {
         // 1. Define Period
-        // month: 1 = Jan
-        const startDate = new Date(Date.UTC(year, month - 1, 1)).toISOString().split('T')[0];
-        // END Date: Day 0 of next month is last day of current month
-        const endDate = new Date(Date.UTC(year, month, 0)).toISOString().split('T')[0];
-
         const periodStr = `${year}-${month.toString().padStart(2, '0')}`;
-
-        // 2. Query Transactions
-        const query = `
-            SELECT county_code, SUM(taxable_amount) as total_sales, SUM(tax_amount) as total_tax 
-            FROM tax_transactions 
-            WHERE transaction_date >= ? AND transaction_date <= ?
-            GROUP BY county_code
-        `;
-
-        // Note: transaction_date in ISO format 'YYYY-MM-DDTHH:mm:ss.sssZ' string comparison works as long as date prefixes match.
-        // Or if stored as 'YYYY-MM-DD' or ISO.
-        // LiveVerification saved as `transactionDate: new Date().toISOString()` (Full ISO).
-        // e.g. '2026-01-07T12:00:00.000Z'
-        // Comparison: '2026-01-01' <= '2026-01-07...'
-        // But '2026-01-31' < '2026-01-31T23:59...'?
-        // Query param `endDate` is '2026-01-31'. 
-        // If query uses string compare '2026-01-31T...' > '2026-01-31'.
-        // So we should append time for end: '...T23:59:59.999Z' or usage proper date logic.
-        // Simpler: use 'YYYY-MM-DD' prefix match or simply full ISO ranges.
-
         const startISO = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0)).toISOString();
         const endISO = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)).toISOString();
 
+        // 2. Query Transactions (DB Task - main thread)
         const results = await DatabaseService.executeQuery(`
             SELECT county_code, SUM(taxable_amount) as total_sales, SUM(tax_amount) as total_tax 
             FROM tax_transactions 
@@ -79,28 +65,26 @@ export class TaxReportingService {
             tax: r.total_tax || 0
         }));
 
-        // 3. Totals
-        const totalSales = countySummary.reduce((sum, c) => sum + c.sales, 0);
-        const totalTax = countySummary.reduce((sum, c) => sum + c.tax, 0);
-
-        // 4. Verification
-        const payload = JSON.stringify({ period: periodStr, totals: { sales: totalSales, tax: totalTax }, details: countySummary });
-        // Use crypto-safe hash
-        const checksum = await BasicEncryption.hash(new TextEncoder().encode(payload));
+        // 3. Process Report (CPU Task - worker thread)
+        const processed = await this.getOrchestrator().executeTask<any>('ACCOUNTING', {
+            operation: 'PROCESS_TAX_REPORT',
+            countySummary,
+            periodStr
+        });
 
         return {
             taxpayerInfo: {
-                fein: '20-2026FL', // Mock FEIN, replace with Config later
+                fein: '20-2026FL',
                 period: periodStr
             },
             countySummary,
             totals: {
-                sales: totalSales,
-                tax: totalTax
+                sales: processed.totalSales,
+                tax: processed.totalTax
             },
             verification: {
-                checksum,
-                generatedAt: new Date().toISOString()
+                checksum: processed.checksum,
+                generatedAt: processed.generatedAt
             }
         };
     }

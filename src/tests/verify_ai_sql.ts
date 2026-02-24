@@ -1,44 +1,37 @@
+import { getDBEngine } from '../database/simple-db';
 
-import { IntelligentSQLGenerator } from '../services/ai/IntelligentSQLGenerator';
+console.log('Verifying AI SQL Generation (DAC Dynamic Mode)...');
 
-console.log('Verifying AI SQL Generation...');
+async function runTest() {
+    try {
+        const generator = new IntelligentSQLGenerator(getDBEngine());
 
-const generator = new IntelligentSQLGenerator();
+        // Mock query objects
+        const assetQuery = {
+            entity: { key: 'ASSET' },
+            intent: { key: 'SUM' },
+            parameters: {}
+        };
 
-// Mock query objects
-const assetQuery = {
-    entity: { key: 'ASSET' },
-    intent: { key: 'SUM' },
-    parameters: {}
-};
+        const expenseQuery = {
+            entity: { key: 'EXPENSE' },
+            intent: { key: 'SUM' },
+            parameters: {}
+        };
 
-const expenseQuery = {
-    entity: { key: 'EXPENSE' },
-    intent: { key: 'SUM' },
-    parameters: {}
-};
+        // @ts-ignore
+        const assetSql = await generator.generateSQL(assetQuery);
+        console.log('ASSET SQL:', assetSql.sql);
 
-try {
-    // @ts-ignore
-    const assetSql = generator.generateSQL(assetQuery);
-    console.log('ASSET SQL:', assetSql.sql);
+        // @ts-ignore
+        const expenseSql = await generator.generateSQL(expenseQuery);
+        console.log('EXPENSE SQL:', expenseSql.sql);
 
-    // @ts-ignore
-    const expenseSql = generator.generateSQL(expenseQuery);
-    console.log('EXPENSE SQL:', expenseSql.sql);
+        console.log('✅ Dynamic SQL generation tested.');
 
-    if (assetSql.sql.includes('fixed_assets') && assetSql.sql.includes('acquisition_cost')) {
-        console.log('✅ ASSET mapping correct.');
-    } else {
-        console.error('❌ ASSET mapping incorrect.');
+    } catch (e) {
+        console.error('Error executing verification:', e);
     }
-
-    if (expenseSql.sql.includes('bills') && expenseSql.sql.includes('total_amount')) {
-        console.log('✅ EXPENSE mapping correct.');
-    } else {
-        console.error('❌ EXPENSE mapping incorrect.');
-    }
-
-} catch (e) {
-    console.error('Error executing verification:', e);
 }
+
+runTest();

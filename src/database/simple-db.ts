@@ -9,6 +9,7 @@ import { MigrationEngine } from '../core/migrations/MigrationEngine';
 import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
 import AuditTrailService from '../services/AuditTrailService';
+import { EngineBridge } from '../core/database/EngineBridge';
 
 // Tipo ligero para la API que usamos de sql.js (exec/run/prepare)
 type SQLJSDB = {
@@ -48,6 +49,9 @@ export { dbEngine };
  */
 export const getDBEngine = (): SQLiteEngine => {
   if (!dbEngine) {
+    if (EngineBridge.hasEngine()) {
+      return EngineBridge.getEngine();
+    }
     throw new Error('Database engine not initialized. Call initDB() first.');
   }
   return dbEngine;
@@ -74,7 +78,7 @@ export async function checkGuestRestriction(userId: number | undefined, table: s
       throw new Error('SANDBOX SECURITY: Las cuentas demo no pueden modificar usuarios del sistema.');
     }
 
-    // Rule 2: Limit records on ANY table cÁreation
+    // Rule 2: Limit records on ANY table creation
     if (action === 'create') {
       // Safe-guard against SQL injection in table name implies internal usage only
       const countRes = db.exec(`SELECT COUNT(*) FROM ${table}`);
@@ -1917,16 +1921,19 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
       db = new SQL.Database(dbData || undefined);
     }
 
-    // CÁrear instancia de SQLiteEngine y configurarla con la instancia de sql.js
+    // Crear instancia de SQLiteEngine y configurarla con la instancia de sql.js
     dbEngine = new SQLiteEngine();
     dbEngine.setDB(db);
+
+    // Registrar en el puente para evitar dependencias circulares
+    EngineBridge.setEngine(dbEngine);
 
     // Configurar modo demo en el motor
     if (demoMode) {
       dbEngine.setDemoMode(true);
     }
 
-    logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper cÁreado exitosamente');
+    logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
 
     // Ejecutar inicializaciÃ³n de esquema
     await initializeSchema(db);
@@ -1970,7 +1977,7 @@ const initializeSchema = async (db: any) => {
     zip_code TEXT,
     florida_county TEXT DEFAULT 'Miami-Dade',
     credit_limit DECIMAL(12, 2) DEFAULT 0.00,
-    paymentCount INTEGER DEFAULT 30,
+    payment_terms INTEGER DEFAULT 30,
     tax_id TEXT,
     tax_exempt BOOLEAN DEFAULT 0,
     assigned_salesperson TEXT,
@@ -2119,7 +2126,7 @@ const initializeSchema = async (db: any) => {
     payment_number TEXT UNIQUE NOT NULL,
     payment_date DATE DEFAULT CURRENT_DATE,
     amount DECIMAL(12, 2) NOT NULL,
-    payment_method TEXT DEFAULT 'cash' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    payment_method TEXT DEFAULT 'cash' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'digital', 'other')),
     reference_number TEXT,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -2139,6 +2146,35 @@ const initializeSchema = async (db: any) => {
     total_rate DECIMAL(5, 4) DEFAULT 0.06,
     effective_date DATE DEFAULT CURRENT_DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // Tabla de transacciones fiscales (Florida)
+  db.run(`
+    create TABLE IF NOT EXISTS tax_transactions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+    transaction_date TEXT NOT NULL,
+    county_code TEXT NOT NULL,
+    taxable_amount REAL NOT NULL,
+    effective_rate REAL NOT NULL,
+    tax_amount REAL NOT NULL,
+    is_exempt BOOLEAN DEFAULT 0,
+    exemption_type TEXT,
+    verification_hash TEXT,
+    status TEXT DEFAULT 'pending',
+    dr15_report_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // Tabla de migraciones del sistema
+  db.run(`
+    create TABLE IF NOT EXISTS sys_migrations(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version INTEGER NOT NULL UNIQUE,
+    migration_name TEXT NOT NULL,
+    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
   `);
 
@@ -2204,7 +2240,7 @@ const initializeSchema = async (db: any) => {
     payment_number TEXT UNIQUE NOT NULL,
     payment_date DATE DEFAULT CURRENT_DATE,
     amount DECIMAL(12, 2) NOT NULL,
-    payment_method TEXT DEFAULT 'check' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    payment_method TEXT DEFAULT 'check' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'digital', 'other')),
     reference_number TEXT,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -2325,6 +2361,8 @@ const initializeSchema = async (db: any) => {
     other_costs DECIMAL(10, 2) DEFAULT 0.00,
     chart_of_accounts_name TEXT DEFAULT 'Plan de Cuenta Ejemplo',
     date_format TEXT DEFAULT 'MM/DD/AAAA',
+    fiscal_year_end TEXT DEFAULT '12-31',
+    netIncreaseInCash DECIMAL(15, 2) DEFAULT 0.00,
     tax_frequency TEXT DEFAULT 'monthly', --monthly, quarterly
     sales_tax_method TEXT DEFAULT 'accrual', --accrual, cash
     dr15_filing_day INTEGER DEFAULT 20,
@@ -2374,7 +2412,7 @@ const initializeSchema = async (db: any) => {
     create TABLE IF NOT EXISTS payment_methods(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     method_name TEXT UNIQUE NOT NULL,
-    method_type TEXT CHECK(method_type IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    method_type TEXT CHECK(method_type IN('cash', 'check', 'credit_card', 'bank_transfer', 'digital', 'other')),
     is_active BOOLEAN DEFAULT 1,
     requires_reference BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -5715,7 +5753,8 @@ const processSupplierRow = (row: any): Supplier => {
     zip_code: String(row.zip_code || ''),
     florida_county: String(row.florida_county || 'Miami-Dade'),
     credit_limit: Number(row.credit_limit || 0),
-    paymentCount: Number(row.paymentCount || 30), // Asegurar que paymentCount esté presente en Supplier
+    payment_terms: Number(row.payment_terms || 30),
+    paymentCount: Number(row.payment_terms || 30), // Asegurar que paymentCount esté presente en Supplier
     tax_exempt: Boolean(Number(row.tax_exempt)),
     tax_id: row.tax_id ? String(row.tax_id) : undefined,
     assigned_buyer: row.assigned_buyer ? String(row.assigned_buyer) : undefined,
@@ -5840,8 +5879,8 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>, user
 };
 
 // Verificar si un proveedor puede ser eliminado
-export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; Áreason?: string } => {
-  if (!db) return { canDelete: false, Áreason: 'Database not initialized' };
+export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; reason?: string } => {
+  if (!db) return { canDelete: false, reason: 'Database not initialized' };
 
   try {
     // Verificar si tiene facturas de compra
@@ -5886,7 +5925,7 @@ export const deleteSupplier = (id: number, userId?: number): { success: boolean;
     // Verificar si se puede eliminar
     const deleteCheck = canDeleteSupplier(id);
     if (!deleteCheck.canDelete) {
-      return { success: false, message: deleteCheck.Áreason || 'No se puede eliminar el proveedor' };
+      return { success: false, message: deleteCheck.reason || 'No se puede eliminar el proveedor' };
     }
 
     // Obtener datos del proveedor para auditorÃ­a antes de eliminar
@@ -8112,6 +8151,7 @@ export interface CompanyData {
   website?: string;
   logo_path?: string;
   fiscal_year_start: string; // MM-DD format
+  fiscal_year_end: string;
   currency: string;
   language: string;
   timezone: string;
@@ -8169,6 +8209,7 @@ const company: CompanyData = {
   other_costs: 0,
   chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
   date_format: 'MM/DD/AAAA',
+  fiscal_year_end: '12-31',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   is_active: true,
@@ -8189,7 +8230,27 @@ const defaultCompany: Omit<CompanyData, 'id'> = {
   logo_path: '/path/to/logo.png',
   fiscal_year_start: '2026-01-01',
   fiscal_year_end: '2026-12-31',
-  netIncreaseInCash: 0, // Agregado para cumplir con la interfaz
+  currency: 'USD',
+  language: 'es',
+  timezone: 'America/New_York',
+  sales_commission_rate: 0,
+  sales_commission_percentage: 0,
+  discount_amount: 50,
+  discount_percentage: 0,
+  shipping_rate: 0,
+  shipping_percentage: 0,
+  reposition_policy_days: 32,
+  late_fee_amount: 0,
+  late_fee_percentage: 0,
+  annual_interest_rate: 0,
+  grace_period_days: 0,
+  documentation_cost: 0,
+  other_costs: 0,
+  chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
+  date_format: 'MM/DD/AAAA',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  netIncreaseInCash: 0,
   is_active: true
 };
 
@@ -8369,42 +8430,20 @@ SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
     }
 
     const row = result[0].values[0];
-    const company: CompanyData = {
-      id: row[0] as number,
-      company_name: row[1] as string,
-      legal_name: row[2] as string,
-      tax_id: row[3] as string,
-      address: row[4] as string,
-      city: row[5] as string,
-      state: row[6] as string,
-      zip_code: row[7] as string,
-      phone: row[8] as string,
-      email: row[9] as string,
-      website: row[10] as string || '',
-      logo_path: row[11] as string || '',
-      fiscal_year_start: row[12] as string,
-      currency: row[13] as string,
-      language: row[14] as string,
-      timezone: row[15] as string,
-      sales_commission_rate: Number(row[16]) || 0,
-      sales_commission_percentage: Number(row[17]) || 0,
-      discount_amount: Number(row[18]) || 50,
-      discount_percentage: Number(row[19]) || 0,
-      shipping_rate: Number(row[20]) || 0,
-      shipping_percentage: Number(row[21]) || 0,
-      reposition_policy_days: Number(row[22]) || 32,
-      late_fee_amount: Number(row[23]) || 0,
-      late_fee_percentage: Number(row[24]) || 0,
-      annual_interest_rate: Number(row[25]) || 0,
-      grace_period_days: Number(row[26]) || 0,
-      documentation_cost: Number(row[27]) || 0,
-      other_costs: Number(row[28]) || 0,
-      chart_of_accounts_name: row[29] as string || 'Plan de Cuenta Ejemplo',
-      date_format: row[30] as string || 'MM/DD/AAAA',
-      created_at: row[31] as string,
-      updated_at: row[32] as string,
-      is_active: Boolean(row[33])
-    };
+    const columns = result[0].columns;
+    const company = rowToEntity<CompanyData>(columns, row);
+
+    // Asegurar que los campos nuevos tengan valores válidos si no vienen de DB
+    if (!company.fiscal_year_end) company.fiscal_year_end = '12-31';
+    if (company.netIncreaseInCash === undefined) company.netIncreaseInCash = 0;
+
+    // Normalización de tipos numéricos (sql.js a veces devuelve strings o nulls que deben ser 0)
+    company.sales_commission_rate = Number(company.sales_commission_rate) || 0;
+    company.sales_commission_percentage = Number(company.sales_commission_percentage) || 0;
+    company.discount_amount = Number(company.discount_amount) || 0;
+    company.discount_percentage = Number(company.discount_percentage) || 0;
+    company.shipping_rate = Number(company.shipping_rate) || 0;
+    company.shipping_percentage = Number(company.shipping_percentage) || 0;
 
     logger.info('CompanyData', 'get_success', 'Datos de empresa obtenidos', { company_name: company.company_name });
     return company;
@@ -8484,6 +8523,8 @@ company_name = ?,
   other_costs = ?,
   chart_of_accounts_name = ?,
   date_format = ?,
+  fiscal_year_end = ?,
+  netIncreaseInCash = ?,
   updated_at = ?
     WHERE id = ? AND is_active = 1
       `);
@@ -8519,6 +8560,8 @@ company_name = ?,
       updateData.other_costs || 0,
       updateData.chart_of_accounts_name || 'Plan de Cuenta Ejemplo',
       updateData.date_format || 'MM/DD/AAAA',
+      updateData.fiscal_year_end || '12-31',
+      updateData.netIncreaseInCash || 0,
       updateData.updated_at,
       currentData.id
     ]);
@@ -8717,9 +8760,16 @@ export function initializeCompanyData(): void {
       website: 'www.miempresa.com',
       logo_path: '',
       fiscal_year_start: '01-01', // Enero 1
+      fiscal_year_end: '12-31',
+      netIncreaseInCash: 0,
       currency: 'USD',
       language: 'es',
       timezone: 'America/New_York',
+      chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
+      date_format: 'MM/DD/AAAA',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_active: true,
       // Configuraciones financieras por defecto
       sales_commission_rate: 0,
       sales_commission_percentage: 0,
@@ -8733,12 +8783,7 @@ export function initializeCompanyData(): void {
       annual_interest_rate: 0,
       grace_period_days: 0,
       documentation_cost: 0,
-      other_costs: 0,
-      chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
-      date_format: 'MM/DD/AAAA',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_active: true
+      other_costs: 0
     };
 
     const stmt = db.prepare(`
@@ -8750,8 +8795,9 @@ export function initializeCompanyData(): void {
     reposition_policy_days, late_fee_amount, late_fee_percentage,
     annual_interest_rate, grace_period_days, documentation_cost,
     other_costs, chart_of_accounts_name, date_format,
+    fiscal_year_end, netIncreaseInCash,
     created_at, updated_at, is_active
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
@@ -8770,21 +8816,23 @@ export function initializeCompanyData(): void {
       defaultCompany.currency,
       defaultCompany.language,
       defaultCompany.timezone,
-      defaultCompany.sales_commission_rate,
-      defaultCompany.sales_commission_percentage,
-      defaultCompany.discount_amount,
-      defaultCompany.discount_percentage,
-      defaultCompany.shipping_rate,
-      defaultCompany.shipping_percentage,
-      defaultCompany.reposition_policy_days,
-      defaultCompany.late_fee_amount,
-      defaultCompany.late_fee_percentage,
-      defaultCompany.annual_interest_rate,
-      defaultCompany.grace_period_days,
-      defaultCompany.documentation_cost,
-      defaultCompany.other_costs,
-      defaultCompany.chart_of_accounts_name,
-      defaultCompany.date_format,
+      defaultCompany.sales_commission_rate || 0,
+      defaultCompany.sales_commission_percentage || 0,
+      defaultCompany.discount_amount || 50,
+      defaultCompany.discount_percentage || 0,
+      defaultCompany.shipping_rate || 0,
+      defaultCompany.shipping_percentage || 0,
+      defaultCompany.reposition_policy_days || 32,
+      defaultCompany.late_fee_amount || 0,
+      defaultCompany.late_fee_percentage || 0,
+      defaultCompany.annual_interest_rate || 0,
+      defaultCompany.grace_period_days || 0,
+      defaultCompany.documentation_cost || 0,
+      defaultCompany.other_costs || 0,
+      defaultCompany.chart_of_accounts_name || 'Plan de Cuenta Ejemplo',
+      defaultCompany.date_format || 'MM/DD/AAAA',
+      defaultCompany.fiscal_year_end || '12-31',
+      defaultCompany.netIncreaseInCash || 0,
       defaultCompany.created_at,
       defaultCompany.updated_at,
       defaultCompany.is_active ? 1 : 0
@@ -10454,6 +10502,38 @@ export function getBankAccountById(id: number): BankAccount | null {
     return account as BankAccount;
   } catch (error) {
     logger.error('BankAccounts', 'get_by_id_failed', 'Error al obtener cuenta bancaria', { id }, error as Error);
+    return null;
+  }
+}
+
+/**
+ * Busca una cuenta bancaria por su número de cuenta (coincidencia parcial o exacta)
+ */
+export function findBankAccountByNumber(accountNumber: string): BankAccount | null {
+  if (!db || !accountNumber) return null;
+
+  try {
+    // Buscamos coincidencia exacta o que termine con el número (muchas veces el OFX trae solo los últimos 4 o similar)
+    const result = db.exec(
+      "SELECT * FROM bank_accounts WHERE account_number = ? OR account_number LIKE ?",
+      [accountNumber, `%${accountNumber}`]
+    );
+
+    if (result.length === 0 || result[0].values.length === 0) {
+      return null;
+    }
+
+    const row = result[0].values[0];
+    const columns = result[0].columns;
+    const account: any = {};
+
+    columns.forEach((col: any, index: any) => {
+      account[col] = row[index];
+    });
+
+    return account as BankAccount;
+  } catch (error) {
+    logger.error('BankAccounts', 'find_failed', 'Error al buscar cuenta por número', { accountNumber }, error as Error);
     return null;
   }
 }

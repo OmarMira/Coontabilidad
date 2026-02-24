@@ -20,9 +20,12 @@ import {
     Calendar,
     ChevronRight
 } from 'lucide-react';
-import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions } from '../../database/simple-db';
+import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountByNumber, createBankAccount } from '../../database/simple-db';
 import Papa from 'papaparse';
 import { toast } from 'react-hot-toast';
+import { StatementSmartParser, StatementMetadata } from '../../services/banking/StatementSmartParser';
+import { BankAccountForm } from '../BankAccountForm';
+import { useLocale } from '../../i18n/useLocale';
 
 export const BankReconciliationImporter: React.FC = () => {
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -38,6 +41,9 @@ export const BankReconciliationImporter: React.FC = () => {
     });
     const [preview, setPreview] = useState<string[][]>([]);
     const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
+    const [showRegisterForm, setShowRegisterForm] = useState(false);
+    const [detectedMetadata, setDetectedMetadata] = useState<StatementMetadata | null>(null);
+    const { t } = useLocale();
 
     React.useEffect(() => {
         setAccounts(getBankAccounts());
@@ -62,21 +68,57 @@ export const BankReconciliationImporter: React.FC = () => {
         }
     }, []);
 
-    const handleFileSelect = (selectedFile: File) => {
-        if (!selectedFile.name.endsWith('.csv')) {
-            toast.error('Protocolo requiere formato CSV');
+    const handleFileSelect = async (selectedFile: File) => {
+        const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+        if (ext !== 'csv' && ext !== 'ofx') {
+            toast.error(t('bankStatementImport.compatibility'));
             return;
         }
+
+        setIsProcessing(true);
         setFile(selectedFile);
-        Papa.parse(selectedFile, {
-            complete: (results: Papa.ParseResult<string[]>) => {
-                setPreview((results.data as string[][]).slice(0, 10));
-                setStep('mapping');
-                toast.success('Integridad de archivo verificada');
-            },
-            header: false,
-            skipEmptyLines: true
-        });
+
+        try {
+            // Detección Inteligente de Cuenta
+            const metadata = await StatementSmartParser.parseMetadata(selectedFile);
+            setDetectedMetadata(metadata);
+
+            if (metadata.accountNumber) {
+                const existingAccount = findBankAccountByNumber(metadata.accountNumber);
+                if (existingAccount) {
+                    setSelectedAccountId(existingAccount.id);
+                    toast.success(t('bankReconciliation.accountDetected')
+                        .replace('{{account}}', metadata.accountNumber)
+                        .replace('{{bank}}', existingAccount.bank_name));
+                } else {
+                    toast.error(t('bankReconciliation.accountNotFound')
+                        .replace('{{account}}', metadata.accountNumber));
+                    setShowRegisterForm(true);
+                    setIsProcessing(false);
+                    return;
+                }
+            }
+
+            if (ext === 'csv') {
+                Papa.parse(selectedFile, {
+                    complete: (results: Papa.ParseResult<string[]>) => {
+                        setPreview((results.data as string[][]).slice(0, 10));
+                        setStep('mapping');
+                        toast.success('Integridad de archivo verificada');
+                    },
+                    header: false,
+                    skipEmptyLines: true
+                });
+            } else {
+                // Para OFX podríamos parsear transacciones directamente, pero por ahora seguimos flujo CSV
+                // (Se asume que el usuario subirá mayormente CSV por el diseño actual)
+                toast.info('Formato OFX detectado. Soporte avanzado en desarrollo.');
+            }
+        } catch (error) {
+            toast.error('Fallo en el análisis inteligente del archivo');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleImport = async () => {
@@ -202,21 +244,18 @@ export const BankReconciliationImporter: React.FC = () => {
 
                             <input
                                 type="file"
-                                accept=".csv"
+                                accept=".csv,.ofx"
                                 onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
                                 className="hidden"
                                 id="csv-upload"
-                                disabled={!selectedAccountId}
                             />
                             <label
                                 htmlFor="csv-upload"
-                                className={`px-14 py-6 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-3xl flex items-center gap-4 cursor-pointer ${!selectedAccountId ? 'bg-slate-800 text-slate-600 opacity-50' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40 hover:-translate-y-1 active:scale-95'
-                                    }`}
+                                className={`px-14 py-6 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-3xl flex items-center gap-4 cursor-pointer bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40 hover:-translate-y-1 active:scale-95 ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}
                             >
-                                <Zap className="w-5 h-5 fill-current" />
-                                LOCALIZAR FUENTE CSV
+                                <Zap className={`w-5 h-5 fill-current ${isProcessing ? 'animate-spin' : ''}`} />
+                                {isProcessing ? t('bankReconciliation.analyzingMetadata') : t('bankStatementImport.injectCSV')}
                             </label>
-                            {!selectedAccountId && <p className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em] mt-6">⚠️ ACCESO DENEGADO: SELECCIONA BÓVEDA PRIMERO</p>}
                         </div>
                     ) : (
                         <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] p-12 shadow-3xl space-y-12 animate-in slide-in-from-bottom-6 duration-700 relative overflow-hidden group">
@@ -249,12 +288,12 @@ export const BankReconciliationImporter: React.FC = () => {
                                     <table className="w-full text-left">
                                         <tbody>
                                             {preview.map((row: string[], i: number) => (
-                                                        <tr key={i} className="border-b border-slate-800/40 last:border-0 hover:bg-white/[0.02]">
-                                                            {row.map((cell: string | number, j: number) => (
-                                                                <td key={j} className="px-4 py-3 text-[10px] font-black text-slate-600 font-mono tracking-tighter truncate max-w-[150px]">{cell}</td>
-                                                            ))}
-                                                        </tr>
+                                                <tr key={i} className="border-b border-slate-800/40 last:border-0 hover:bg-white/[0.02]">
+                                                    {row.map((cell: string | number, j: number) => (
+                                                        <td key={j} className="px-4 py-3 text-[10px] font-black text-slate-600 font-mono tracking-tighter truncate max-w-[150px]">{cell}</td>
                                                     ))}
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
@@ -274,6 +313,39 @@ export const BankReconciliationImporter: React.FC = () => {
                     )}
                 </div>
             </div>
+            {/* Modal de Registro de Cuenta Automático */}
+            {showRegisterForm && detectedMetadata && (
+                <BankAccountForm
+                    initialData={{
+                        id: 0,
+                        account_name: detectedMetadata.accountNumber,
+                        bank_name: detectedMetadata.bankName,
+                        account_number: detectedMetadata.accountNumber,
+                        account_type: 'checking',
+                        balance: 0,
+                        currency: detectedMetadata.currency || 'USD',
+                        is_active: true,
+                        created_at: new Date().toISOString()
+                    }}
+                    onCancel={() => {
+                        setShowRegisterForm(false);
+                        setFile(null);
+                    }}
+                    onSubmit={async (data) => {
+                        const res = createBankAccount(data);
+                        if (res.success && res.id) {
+                            setSelectedAccountId(res.id);
+                            setAccounts(getBankAccounts());
+                            setShowRegisterForm(false);
+                            toast.success(t('bankAccountList.addAccount'));
+                            // Intentar re-procesar el archivo ahora que la cuenta existe
+                            if (file) handleFileSelect(file);
+                        } else {
+                            toast.error(res.message);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -5,6 +5,8 @@ import { AIAssistantService } from './AIAssistantService';
 import { AccountingService, CreateJournalEntryDTO } from '../accounting/AccountingService';
 import { FloridaTaxEngine } from '../accounting/FloridaTaxEngine';
 import { I18nHelper } from '../../utils/I18nHelper';
+import { SemanticQueryResolver } from './SemanticQueryResolver';
+import { SchemaCrawler } from './SchemaCrawler';
 import {
     RepairProposal,
     RepairResult,
@@ -38,6 +40,7 @@ export class AIRepairService {
     private aiAssistant: AIAssistantService;
     private accountingService: AccountingService;
     private taxEngine: FloridaTaxEngine;
+    private resolver: SemanticQueryResolver;
     private proposals: Map<string, RepairProposal> = new Map();
     private t: (key: string, params?: Record<string, string | number>) => string;
     private currentLocale: 'es' | 'en';
@@ -58,6 +61,7 @@ export class AIRepairService {
         this.aiAssistant = new AIAssistantService(db, apiKey);
         this.accountingService = new AccountingService(db);
         this.taxEngine = FloridaTaxEngine.getInstance(db);
+        this.resolver = new SemanticQueryResolver(db);
         // Detectar idioma actual de la UI
         this.currentLocale = I18nHelper.getCurrentLocale();
         // Inicializar función de traducción con locale actual
@@ -167,6 +171,16 @@ export class AIRepairService {
             // 6. Marcar como ejecutado
             proposal.status = 'executed';
             proposal.executedAt = new Date();
+
+            // DAC Phase 3: Healing Sync (Refresh AI Context after repair)
+            try {
+                const crawler = new SchemaCrawler(this.db);
+                const context = await crawler.crawl();
+                await crawler.persistContext(context);
+                ProductionLogger.info('AIRepairService', 'Healing Sync: AI Context refreshed after repair');
+            } catch (syncError) {
+                ProductionLogger.error('AIRepairService', 'Healing Sync failed', syncError as Error);
+            }
 
             const result: RepairResult = {
                 success: true,
@@ -539,6 +553,7 @@ export class AIRepairService {
 
     private async createBackupPoint(proposal: RepairProposal): Promise<BackupPoint> {
         const logicClock = await this.auditChainService.getCurrentLogicClock();
+        await this.resolver.loadContext();
         const affectedTables = this.extractAffectedTables(proposal);
 
         // Capture data snapshot for affected tables
@@ -656,10 +671,13 @@ export class AIRepairService {
 
         for (const action of proposal.solution.actions) {
             if (action.type === 'CREATE_JE' || action.type === 'REVERSE_ENTRY') {
-                tables.add('journal_entries');
-                tables.add('journal_entry_lines');
+                const journalTable = this.resolver.resolveTable('JOURNAL');
+                if (journalTable) tables.add(journalTable.name);
+                // Fallback hardcoded por si el crawler no ha mapeado subtablas
+                tables.add('ledger_lines');
             } else if (action.type === 'UPDATE_ACCOUNT') {
-                tables.add('accounts');
+                const accountTable = this.resolver.resolveTable('ACCOUNT');
+                if (accountTable) tables.add(accountTable.name);
             }
         }
 
