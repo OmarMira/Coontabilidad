@@ -28,7 +28,7 @@ files.forEach(f => {
     }
 });
 
-const es = require('./src/assets/locales/es.json');
+const es = require('./src/locales/es.json');
 
 function keyExists(key, obj) {
     const parts = key.split('.');

@@ -30,7 +30,7 @@ files.forEach(f => {
     }
 });
 
-const es = JSON.parse(fs.readFileSync('./src/assets/locales/es.json', 'utf8'));
+const es = JSON.parse(fs.readFileSync('./src/locales/es.json', 'utf8'));
 
 function keyExists(key, obj) {
     const parts = key.split('.');

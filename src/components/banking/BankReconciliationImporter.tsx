@@ -121,11 +121,10 @@ export const BankReconciliationImporter: React.FC = () => {
                     setIsProcessing(false);
                     return;
                 } else {
+                    // Si no se encuentra la cuenta, NO bloqueamos el proceso.
+                    // Solo avisamos, pero dejamos que vea la previsualización.
                     toast.error(t('bankReconciliation.accountNotFound')
-                        .replace('{{account}}', metadata.accountNumber));
-                    setShowRegisterForm(true);
-                    setIsProcessing(false);
-                    return;
+                        .replace('{{account}}', metadata.accountNumber), { duration: 5000 });
                 }
             }
 

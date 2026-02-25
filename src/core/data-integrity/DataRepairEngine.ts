@@ -11,6 +11,8 @@
 
 import { db } from '../../database/simple-db';
 import { RepairOperation } from './DataIntegrityCore';
+import { logger } from '../../core/logging/SystemLogger';
+import { BasicEncryption } from '../security/BasicEncryption';
 
 export interface RepairPlan {
   name: string;
@@ -62,8 +64,9 @@ export class DataRepairEngine {
       return [];
     }
 
+    logger.info('DataRepairEngine', 'repair_start', `Ejecutando plan de reparación: ${plan.name}`);
     const results: RepairOperation[] = [];
-    const originalData = this.createBackup();
+    const originalData = await this.createBackup();
 
     try {
       for (const operation of plan.operations) {
@@ -71,10 +74,10 @@ export class DataRepairEngine {
         results.push(result);
 
         if (result.status === 'failed') {
-          console.error(`❌ Repair failed: ${operation.reason}`);
+          logger.error('DataRepairEngine', 'operation_failed', `Fallo en reparación: ${operation.reason}`);
           // Rollback si falla operación crítica
           if (plan.riskLevel === 'high') {
-            this.restoreBackup(originalData);
+            await this.restoreBackup(originalData);
             throw new Error(`Critical repair failed: ${operation.reason}`);
           }
         } else {
@@ -156,11 +159,11 @@ export class DataRepairEngine {
     }
 
     try {
-      switch (operation.reason.includes('huérfan') ? 'orphan' : 
-              operation.reason.includes('duplicado') ? 'duplicate' :
-              operation.reason.includes('Recalculando') ? 'consistency' :
-              'other') {
-        
+      switch (operation.reason.includes('huérfan') ? 'orphan' :
+        operation.reason.includes('duplicado') ? 'duplicate' :
+          operation.reason.includes('Recalculando') ? 'consistency' :
+            'other') {
+
         case 'orphan':
           return this.repairOrphan(operation);
 
@@ -319,17 +322,46 @@ export class DataRepairEngine {
     return 'low';
   }
 
-  private static createBackup(): string {
-    // Simulación de backup (en producción, hacer dump de BD)
-    return JSON.stringify({
-      timestamp: new Date().toISOString(),
-      checksums: {}
-    });
+  /**
+   * Genera un dump real de la base de datos (SQLite/OPFS)
+   */
+  private static async createBackup(): Promise<Uint8Array | null> {
+    if (!db) return null;
+    try {
+      logger.info('DataRepairEngine', 'backup_snapshot', 'Creando snapshot volátil de seguridad antes de reparación...');
+      const dump = db.export();
+
+      // Generar hash de integridad para el backup (Nivel NASA)
+      const hash = await BasicEncryption.hash(dump);
+      logger.info('DataRepairEngine', 'backup_ready', `Snapshot creado. SHA-256: ${hash.substring(0, 16)}...`);
+
+      return dump;
+    } catch (e) {
+      logger.error('DataRepairEngine', 'backup_error', 'Fallo al exportar DB para backup preventivo', null, e as Error);
+      return null;
+    }
   }
 
-  private static restoreBackup(backup: string) {
-    // Simulación de restauración
-    console.log(`🔄 Rollback: Restaurando backup`);
+  /**
+   * Restaura físicamente la base de datos desde un snapshot
+   */
+  private static async restoreBackup(backup: Uint8Array | null) {
+    if (!backup) {
+      logger.warn('DataRepairEngine', 'restore_skip', 'No hay backup válido para restaurar');
+      return;
+    }
+
+    try {
+      logger.warn('DataRepairEngine', 'rollback_init', '🔄 INICIANDO RESTAURACIÓN DE EMERGENCIA (Rollback)...');
+
+      // Import dinámico para evitar posibles ciclos
+      const { restoreDatabaseFromBackup } = await import('../../database/simple-db');
+      await restoreDatabaseFromBackup(backup);
+
+      logger.info('DataRepairEngine', 'rollback_success', 'Base de datos restaurada al estado previo a la reparación.');
+    } catch (e) {
+      logger.error('DataRepairEngine', 'rollback_failed', 'FALLO CRÍTICO EN RESTAURACIÓN! Integridad en riesgo.', null, e as Error);
+    }
   }
 
   /**

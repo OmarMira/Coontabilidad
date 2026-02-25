@@ -2,7 +2,7 @@
 const fs = require('fs');
 
 try {
-    const es = JSON.parse(fs.readFileSync('./src/assets/locales/es.json', 'utf8'));
+    const es = JSON.parse(fs.readFileSync('./src/locales/es.json', 'utf8'));
     console.log('✅ es.json es JSON válido');
     console.log(`📊 Namespaces encontrados: ${Object.keys(es).length}`);
     console.log('📋 Lista de namespaces:');

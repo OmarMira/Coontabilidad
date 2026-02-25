@@ -15,6 +15,7 @@ interface WizardStepProps {
     data: DR15Data;
     updateData: (updates: Partial<DR15Data>) => void;
     engine: ExplanationEngine;
+    isLoading?: boolean;
 }
 
 interface DR15Data {
@@ -57,8 +58,15 @@ const StepSelectPeriod: React.FC<WizardStepProps> = ({ onNext, data, updateData 
                     {t('dr15.step1Hint')}
                 </p>
             </div>
-            <Button onClick={onNext} disabled={!data.period} className="w-full">
-                {t('dr15.next')} <ChevronRight className="w-4 h-4 ml-2" />
+            <Button onClick={onNext} disabled={!data.period || isLoading} className="w-full">
+                {isLoading ? (
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        {t('dr15.loadingData')}
+                    </div>
+                ) : (
+                    <>{t('dr15.next')} <ChevronRight className="w-4 h-4 ml-2" /></>
+                )}
             </Button>
         </div>
     );
@@ -246,35 +254,49 @@ export const DR15PreparationWizard: React.FC = () => {
         confirmed: false
     });
     const [engine] = useState(() => new ExplanationEngine('es-US')); // Spanish for output
+    const [isLoading, setIsLoading] = useState(false);
 
-    const loadMockData = () => {
-        // Parse year and month from period
-        const [year, month] = data.period.split('-').map(Number);
+    const loadRealData = async () => {
+        setIsLoading(true);
+        try {
+            const [year, month] = data.period.split('-').map(Number);
+            const { TaxReportingService } = await import('@/services/TaxReportingService');
 
-        // Simulate DB fetch based on period
-        setData(prev => ({
-            ...prev,
-            year,
-            month,
-            grossSales: 15450.00,
-            exemptSales: 2450.00,
-            taxableSales: 13000.00,
-            taxCollected: 910.00,
-            totalTaxDue: 910.00,
-            countyBreakdown: [
-                { county: 'Miami-Dade', grossSales: 8500.00, taxableSales: 8500.00, taxRate: 0.065, taxCollected: 552.50 },
-                { county: 'Broward', grossSales: 4500.00, taxableSales: 4500.00, taxRate: 0.060, taxCollected: 270.00 },
-                { county: 'Palm Beach', grossSales: 2450.00, taxableSales: 0, taxRate: 0.060, taxCollected: 0 }
-            ],
-            auditHash: Array(64).fill('0').map((_, i) => (Math.random() * 16 | 0).toString(16)).join('')
-        }));
+            const report = await TaxReportingService.generateDR15Report(month, year);
+
+            // Convert cents to dollars for UI
+            const toDollars = (cents: number) => cents / 100;
+
+            setData(prev => ({
+                ...prev,
+                year,
+                month,
+                grossSales: toDollars(report.totals.sales),
+                exemptSales: toDollars(report.countySummary.reduce((acc, curr: any) => acc + (curr.exemptSales || 0), 0)),
+                taxableSales: toDollars(report.countySummary.reduce((acc, curr: any) => acc + (curr.taxableSales || 0), 0)),
+                taxCollected: toDollars(report.totals.tax),
+                totalTaxDue: toDollars(report.totals.tax),
+                countyBreakdown: report.countySummary.map((c: any) => ({
+                    county: c.code,
+                    grossSales: toDollars(c.sales),
+                    taxableSales: toDollars(c.taxableSales || c.sales),
+                    taxRate: c.sales > 0 ? c.tax / c.sales : 0,
+                    taxCollected: toDollars(c.tax)
+                })),
+                auditHash: report.verification.checksum
+            }));
+        } catch (error) {
+            console.error("Error loading DR-15 data:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const updateData = (updates: Partial<DR15Data>) => setData(prev => ({ ...prev, ...updates }));
 
-    const nextStep = () => {
-        if (step === 1) loadMockData();
-        setStep(prev => prev + 1);
+    const nextStep = async () => {
+        if (step === 1) await loadRealData();
+        setStep(prev => Math.min(prev + 1, 4));
     };
 
     const prevStep = () => setStep(prev => prev - 1);
@@ -318,9 +340,9 @@ export const DR15PreparationWizard: React.FC = () => {
                 </div>
             </CardHeader>
             <CardContent className="pt-6">
-                {step === 1 && <StepSelectPeriod onNext={nextStep} data={data} updateData={updateData} engine={engine} />}
-                {step === 2 && <StepReviewFigures onNext={nextStep} onBack={prevStep} data={data} updateData={updateData} engine={engine} />}
-                {step === 3 && <StepFinalize onNext={() => { }} onBack={prevStep} data={data} updateData={updateData} engine={engine} />}
+                {step === 1 && <StepSelectPeriod onNext={nextStep} data={data} updateData={updateData} engine={engine} isLoading={isLoading} />}
+                {step === 2 && <StepReviewFigures onNext={nextStep} onBack={prevStep} data={data} updateData={updateData} engine={engine} isLoading={isLoading} />}
+                {step === 3 && <StepFinalize onBack={prevStep} data={data} updateData={updateData} engine={engine} isLoading={isLoading} />}
             </CardContent>
         </Card>
     );

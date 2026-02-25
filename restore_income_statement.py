@@ -1,8 +1,8 @@
 import json
 import os
 
-path_en = 'src/assets/locales/en.json'
-path_es = 'src/assets/locales/es.json'
+path_en = 'src/locales/en.json'
+path_es = 'src/locales/es.json'
 
 def load_json(p):
     with open(p, 'r', encoding='utf-8') as f:

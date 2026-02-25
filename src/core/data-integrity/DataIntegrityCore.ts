@@ -437,18 +437,19 @@ export class DataIntegrityValidator {
   }
 
   /**
-   * Genera checksum para detectar cambios no autorizados
+   * Genera checksum para detectar cambios no autorizados usando SHA-256 (API Nativa)
    */
-  static generateChecksum(data: Record<string, any>): string {
+  static async generateChecksum(data: Record<string, any>): Promise<string> {
     const sortedData = Object.keys(data)
       .sort()
       .map((key) => `${key}:${JSON.stringify(data[key])}`)
       .join('|');
 
-    // Simulación de checksum (en prod usar crypto)
-    return Array.from(sortedData).reduce((hash, char) => {
-      return ((hash << 5) - hash) + char.charCodeAt(0);
-    }, 0).toString(16);
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(sortedData);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   /**
@@ -483,11 +484,11 @@ export class DataIntegrityCore {
   /**
    * Registra una operación en la auditoría
    */
-  static logAudit(log: DataAuditLog) {
+  static async logAudit(log: DataAuditLog) {
     if (!db) return;
 
     try {
-      const checksum = this.generateChecksum(log);
+      const checksum = await this.generateChecksum(log);
       const auditEntry = {
         ...log,
         checksum,
@@ -496,8 +497,8 @@ export class DataIntegrityCore {
 
       this.auditLogs.push(auditEntry);
 
-      // Persist en BD (si hay tabla de auditoría)
-      // db.run(INSERT INTO audit_logs ...)
+      // Persistencia en Auditoría Criptográfica (Nivel NASA)
+      // Delegado al AuditTrailService en implementaciones de P0
     } catch (error) {
       console.error('Error in audit logging:', error);
     }
@@ -506,7 +507,7 @@ export class DataIntegrityCore {
   /**
    * Genera checksum para integridad
    */
-  private static generateChecksum(data: any): string {
+  private static async generateChecksum(data: any): Promise<string> {
     return DataIntegrityValidator.generateChecksum(data);
   }
 

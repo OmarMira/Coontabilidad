@@ -53,15 +53,22 @@ export class TaxReportingService {
 
         // 2. Query Transactions (DB Task - main thread)
         const results = await DatabaseService.executeQuery(`
-            SELECT county_code, SUM(taxable_amount) as total_sales, SUM(tax_amount) as total_tax 
+            SELECT 
+                county_code, 
+                SUM(CASE WHEN is_exempt = 0 THEN taxable_amount ELSE 0 END) as taxable_sum, 
+                SUM(CASE WHEN is_exempt = 1 THEN taxable_amount ELSE 0 END) as exempt_sum,
+                SUM(taxable_amount) as gross_sum,
+                SUM(tax_amount) as total_tax 
             FROM tax_transactions 
-            WHERE transaction_date >= '${startISO}' AND transaction_date <= '${endISO}'
+            WHERE transaction_date >= ? AND transaction_date <= ?
             GROUP BY county_code
-        `);
+        `, [startISO, endISO]);
 
         const countySummary = results.map(r => ({
             code: r.county_code,
-            sales: r.total_sales || 0,
+            sales: r.gross_sum || 0,
+            taxableSales: r.taxable_sum || 0,
+            exemptSales: r.exempt_sum || 0,
             tax: r.total_tax || 0
         }));
 

@@ -1,4 +1,4 @@
-import es from '../../assets/locales/es.json';
+import es from '@/locales/es.json';
 import { logger } from '../../core/logging/SystemLogger';
 
 export type Language = 'es';

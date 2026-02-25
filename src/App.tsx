@@ -108,7 +108,7 @@ import { TransactionAudit } from './components/TransactionAudit';
 import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
 import { SalesInvoiceForm } from './features/sales/components/SalesInvoiceForm';
-import { BankReconciliationImporter } from './components/banking/BankReconciliationImporter';
+import { BankStatementImporter } from './components/BankStatementImporter';
 import { BankImport } from './components/banking/BankImport';
 import { ManualJournalEntries } from './components/ManualJournalEntries';
 import { GeneralLedger } from './components/GeneralLedger';
@@ -1939,7 +1939,7 @@ function App() {
                   <DiscrepancyAnalysis />
                 </Suspense>
               )}
-              {state.currentSection === 'bank-smart-import' && <BankReconciliationImporter />}
+              {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
               {state.currentSection === 'banking-import' && <BankImport />}
 
               {/* --- IMPUESTOS FLORIDA --- */}

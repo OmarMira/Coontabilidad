@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const path = './src/assets/locales/es.json';
+const path = './src/locales/es.json';
 const es = JSON.parse(fs.readFileSync(path, 'utf8'));
 
 // 1. Fix bankAccountList

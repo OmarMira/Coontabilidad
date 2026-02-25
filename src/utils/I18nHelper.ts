@@ -6,7 +6,7 @@
  * SIMPLIFICADO: Solo soporte para español.
  */
 
-import esTranslations from '../assets/locales/es.json';
+import esTranslations from '@/locales/es.json';
 
 type Locale = 'es';
 type Translations = typeof esTranslations;
