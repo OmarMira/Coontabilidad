@@ -1,0 +1,6 @@
+﻿src/components/banking/BankReconciliationImporter.tsx(120,27): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "position" | "className" | "icon" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">> | undefined): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions | undef...'.
+src/components/banking/BankReconciliationImporter.tsx(165,23): error TS2339: Property 'info' does not exist on type '{ (message: Message, opts?: Partial<Pick<Toast, "style" | "id" | "position" | "className" | "icon" | "duration" | "ariaProps" | "iconTheme" | "toasterId" | "removeDelay">> | undefined): string; ... 8 more ...; promise<T>(promise: Promise<...> | (() => Promise<...>), msgs: { ...; }, opts?: DefaultToastOptions | undef...'.
+src/services/csv/AsyncCSVService.ts(175,17): error TS2322: Type 'string' is not assignable to type 'Worker'.
+src/services/csv/AsyncCSVService.ts(178,17): error TS2531: Object is possibly 'null'.
+src/services/csv/AsyncCSVService.ts(201,17): error TS2531: Object is possibly 'null'.
+src/services/csv/AsyncCSVService.ts(207,17): error TS2531: Object is possibly 'null'.

@@ -125,6 +125,10 @@ export class WorkerOrchestrator {
         return workerId;
     }
 
+    getWorker(workerId: string): Worker | undefined {
+        return this.workers.get(workerId);
+    }
+
     async executeTask<T>(
         workerType: WorkerType,
         task: TaskPayload,

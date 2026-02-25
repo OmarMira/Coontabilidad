@@ -90,14 +90,14 @@
     "sjcl": "^1.0.8",
     "sql.js": "^1.13.0",
     "sqlite3": "^5.0.2",
+    "tesseract.js": "^5.0.0",
     "tsx": "^4.21.0",
     "uuid": "^13.0.0",
     "wa-sqlite": "^1.0.0",
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
     "zod": "^4.2.1",
-    "zustand": "^5.0.9",
-    "tesseract.js": "^2.1.1"
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

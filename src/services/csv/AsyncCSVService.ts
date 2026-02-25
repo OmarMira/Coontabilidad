@@ -172,7 +172,12 @@ export class AsyncCSVService {
         return new Promise(async (resolve, reject) => {
             try {
                 // Spawn CSV worker
-                this.activeWorker = await this.orchestrator.spawnWorker('CSV_PROCESSING');
+                const workerId = await this.orchestrator.spawnWorker('CSV_PROCESSING');
+                this.activeWorker = this.orchestrator.getWorker(workerId) || null;
+
+                if (!this.activeWorker) {
+                    throw new Error('Failed to retrieve CSV worker instance');
+                }
 
                 // Setup message handler
                 this.activeWorker.onmessage = (e: MessageEvent) => {

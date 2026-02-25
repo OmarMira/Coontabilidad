@@ -10,7 +10,7 @@ interface SalesInvoiceFormProps {
     onCancel?: () => void;
     customers: Customer[];
     products: Product[];
-    currentUserId: string;
+    currentUserId: number;
 }
 
 interface ItemData {

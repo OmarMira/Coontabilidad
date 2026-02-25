@@ -20,7 +20,7 @@ import {
     Calendar,
     ChevronRight
 } from 'lucide-react';
-import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountByNumber, createBankAccount } from '../../database/simple-db';
+import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountsByNumber, createBankAccount, getLastReconciliationStatement } from '../../database/simple-db';
 import Papa from 'papaparse';
 import { toast } from 'react-hot-toast';
 import { StatementSmartParser, StatementMetadata } from '../../services/banking/StatementSmartParser';
@@ -43,11 +43,31 @@ export const BankReconciliationImporter: React.FC = () => {
     const [step, setStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
     const [showRegisterForm, setShowRegisterForm] = useState(false);
     const [detectedMetadata, setDetectedMetadata] = useState<StatementMetadata | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
+    const [ambiguousAccounts, setAmbiguousAccounts] = useState<BankAccount[]>([]);
+    const [continuityError, setContinuityError] = useState<string | null>(null);
     const { t } = useLocale();
 
     React.useEffect(() => {
         setAccounts(getBankAccounts());
     }, []);
+
+    // Re-validar continuidad si cambia la cuenta seleccionada
+    React.useEffect(() => {
+        if (selectedAccountId && detectedMetadata && detectedMetadata.openingBalance !== undefined) {
+            const lastStatement = getLastReconciliationStatement(selectedAccountId);
+            if (lastStatement) {
+                const diff = Math.abs(lastStatement.statement_balance - detectedMetadata.openingBalance);
+                if (diff > 0.05) {
+                    setContinuityError(`Hueco temporal detectado: El saldo inicial del archivo ($${detectedMetadata.openingBalance}) no coincide con el último saldo conciliado ($${lastStatement.statement_balance}).`);
+                } else {
+                    setContinuityError(null);
+                }
+            } else {
+                setContinuityError(null);
+            }
+        }
+    }, [selectedAccountId, detectedMetadata]);
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -70,7 +90,9 @@ export const BankReconciliationImporter: React.FC = () => {
 
     const handleFileSelect = async (selectedFile: File) => {
         const ext = selectedFile.name.split('.').pop()?.toLowerCase();
-        if (ext !== 'csv' && ext !== 'ofx') {
+        const validExtensions = ['csv', 'ofx', 'pdf', 'jpg', 'jpeg', 'png'];
+
+        if (!validExtensions.includes(ext || '')) {
             toast.error(t('bankStatementImport.compatibility'));
             return;
         }
@@ -83,13 +105,21 @@ export const BankReconciliationImporter: React.FC = () => {
             const metadata = await StatementSmartParser.parseMetadata(selectedFile);
             setDetectedMetadata(metadata);
 
+            let accountIdToUse = selectedAccountId;
+
             if (metadata.accountNumber) {
-                const existingAccount = findBankAccountByNumber(metadata.accountNumber);
-                if (existingAccount) {
-                    setSelectedAccountId(existingAccount.id);
+                const results = findBankAccountsByNumber(metadata.accountNumber);
+                if (results.length === 1) {
+                    accountIdToUse = results[0].id;
+                    setSelectedAccountId(accountIdToUse);
                     toast.success(t('bankReconciliation.accountDetected')
                         .replace('{{account}}', metadata.accountNumber)
-                        .replace('{{bank}}', existingAccount.bank_name));
+                        .replace('{{bank}}', results[0].bank_name));
+                } else if (results.length > 1) {
+                    setAmbiguousAccounts(results);
+                    toast('Varias cuentas candidatas detectadas. Por favor elige la correcta.');
+                    setIsProcessing(false);
+                    return;
                 } else {
                     toast.error(t('bankReconciliation.accountNotFound')
                         .replace('{{account}}', metadata.accountNumber));
@@ -99,20 +129,66 @@ export const BankReconciliationImporter: React.FC = () => {
                 }
             }
 
+            if (metadata.isValidTriangle === false) {
+                setValidationError(t('bankReconciliation.checks.triangleError'));
+            } else {
+                setValidationError(null);
+            }
+
             if (ext === 'csv') {
                 Papa.parse(selectedFile, {
                     complete: (results: Papa.ParseResult<string[]>) => {
-                        setPreview((results.data as string[][]).slice(0, 10));
+                        const data = results.data as string[][];
+                        setPreview(data.slice(0, 15));
                         setStep('mapping');
                         toast.success('Integridad de archivo verificada');
                     },
                     header: false,
                     skipEmptyLines: true
                 });
+            } else if (ext === 'pdf' || ['jpg', 'jpeg', 'png'].includes(ext || '')) {
+                if (metadata.transactions && metadata.transactions.length > 0) {
+                    // Add headers for clear view
+                    const txList = [
+                        ['FECHA', 'DESCRIPCIÓN', 'MONTO'],
+                        ...metadata.transactions.map(tx => [
+                            tx.transaction_date,
+                            tx.description,
+                            tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })
+                        ])
+                    ];
+                    setPreview(txList);
+                    setStep('mapping');
+                    toast.success(`Se recuperaron ${metadata.transactions.length} transacciones`);
+                } else {
+                    setPreview([
+                        ['DATO', 'VALOR DETECTADO'],
+                        ['FORMATO', ext?.toUpperCase() || ''],
+                        ['MÉTODO', 'INTELIGENCIA DE VISIÓN (OCR)'],
+                        ['CUENTA', metadata.accountNumber || 'NO DETECTADA'],
+                        ['BANCO', metadata.bankName || 'DESCONOCIDO']
+                    ]);
+                    setStep('mapping');
+                    toast.error('No se detectaron transacciones en el documento');
+                }
+            } else if (ext === 'ofx') {
+                if (metadata.transactions && metadata.transactions.length > 0) {
+                    const txList = [
+                        ['FECHA', 'DESCRIPCIÓN', 'MONTO'],
+                        ...metadata.transactions.map(tx => [
+                            tx.transaction_date || '',
+                            tx.description || '',
+                            tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })
+                        ])
+                    ];
+                    setPreview(txList);
+                    setStep('mapping');
+                    toast.success('Datos OFX procesados correctamente');
+                } else {
+                    toast.error('El archivo OFX no contiene transacciones válidas');
+                }
             } else {
-                // Para OFX podríamos parsear transacciones directamente, pero por ahora seguimos flujo CSV
-                // (Se asume que el usuario subirá mayormente CSV por el diseño actual)
-                toast.info('Formato OFX detectado. Soporte avanzado en desarrollo.');
+                toast.error('Formato no soportado para procesamiento inteligente.');
             }
         } catch (error) {
             toast.error('Fallo en el análisis inteligente del archivo');
@@ -122,9 +198,37 @@ export const BankReconciliationImporter: React.FC = () => {
     };
 
     const handleImport = async () => {
-        if (!file || !selectedAccountId) return;
+        if (!file || !selectedAccountId || continuityError || validationError) return;
 
         setIsProcessing(true);
+
+        const executeInjection = (transactions: Partial<BankTransaction>[]) => {
+            const result = insertBankTransactions(transactions as BankTransaction[]);
+            if (result.success) {
+                toast.success(`Inyección completa: ${transactions.length} registros certificados`);
+                setStep('upload');
+                setFile(null);
+                setPreview([]);
+            } else {
+                toast.error(result.message);
+            }
+            setIsProcessing(false);
+        };
+
+        if (detectedMetadata && (detectedMetadata.format === 'PDF' || detectedMetadata.format === 'OFX' || detectedMetadata.extractionMethod === 'OCR')) {
+            if (detectedMetadata.transactions) {
+                const txs = detectedMetadata.transactions.map(tx => ({
+                    ...tx,
+                    bank_account_id: selectedAccountId
+                }));
+                executeInjection(txs);
+            } else {
+                toast.error('No se detectaron transacciones en el documento visual.');
+                setIsProcessing(false);
+            }
+            return;
+        }
+
         Papa.parse(file, {
             complete: (results: Papa.ParseResult<string[]>) => {
                 const rows = results.data as string[][];
@@ -141,16 +245,32 @@ export const BankReconciliationImporter: React.FC = () => {
 
                 const transactions = mapped.filter((t) => !!t.transaction_date && t.amount !== 0) as Partial<BankTransaction>[];
 
-                const result = insertBankTransactions(transactions as BankTransaction[]);
-                if (result.success) {
-                    toast.success(`Inyección completa: ${transactions.length} registros certificados`);
-                    setStep('upload');
-                    setFile(null);
-                    setPreview([]);
-                } else {
-                    toast.error(result.message);
+                // Validación del Triángulo para CSV
+                if (detectedMetadata && detectedMetadata.format === 'CSV') {
+                    let credits = 0;
+                    let debits = 0;
+                    transactions.forEach(tx => {
+                        if ((tx.amount || 0) > 0) credits += tx.amount || 0;
+                        else debits += Math.abs(tx.amount || 0);
+                    });
+
+                    const isValid = StatementSmartParser.validateTriangle({
+                        ...detectedMetadata,
+                        totalCredits: credits,
+                        totalDebits: debits
+                    });
+
+                    if (!isValid) {
+                        const calculated = (detectedMetadata.openingBalance || 0) + credits - debits;
+                        const errorMsg = `Discrepancia en Triángulo de Verdad: Esperado ${detectedMetadata.closingBalance}, Calculado ${calculated.toFixed(2)}`;
+                        toast.error(errorMsg);
+                        setValidationError(errorMsg);
+                        setIsProcessing(false);
+                        return;
+                    }
                 }
-                setIsProcessing(false);
+
+                executeInjection(transactions);
             },
             header: false,
             skipEmptyLines: true
@@ -166,17 +286,28 @@ export const BankReconciliationImporter: React.FC = () => {
                         <FileSpreadsheet className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Inyector de Conciliación</h2>
+                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('bankStatementImport.title')}</h2>
                         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-                            <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> Asset Synchronization Interface
+                            <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('bankStatementImport.subtitle')}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6 p-1.5 bg-slate-950 border border-slate-900 rounded-2.5xl shadow-3xl">
-                    <div className="px-6 py-3 flex items-center gap-3">
+                <div className="flex flex-col md:flex-row items-center gap-6 p-1.5">
+                    <div className="px-6 py-4 bg-slate-950 border border-slate-900 rounded-2.5xl shadow-3xl flex items-center gap-4 group hover:border-blue-500/30 transition-all">
+                        <Database className="w-4 h-4 text-blue-500" />
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('bankStatementImport.chartOfAccounts')}</span>
+                            <span className="text-[10px] font-black text-white tracking-widest leading-none mt-1">V2.8.5</span>
+                        </div>
+                    </div>
+
+                    <div className="px-6 py-4 bg-slate-950 border border-slate-900 rounded-2.5xl shadow-3xl flex items-center gap-4 group hover:border-emerald-500/30 transition-all">
                         <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Kernel Integrity: Active</span>
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{t('bankStatementImport.encryption')}</span>
+                            <span className="text-[10px] font-black text-white tracking-widest leading-none mt-1 uppercase">Seguridad Activa</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -187,7 +318,7 @@ export const BankReconciliationImporter: React.FC = () => {
                     <div className="bg-slate-900 border-2 border-slate-800 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[60px] pointer-events-none"></div>
                         <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
-                            <Landmark className="w-4 h-4 text-blue-500" /> Destino de Bóveda
+                            <Landmark className="w-4 h-4 text-blue-500" /> Cuenta de Destino
                         </h3>
                         <div className="space-y-3">
                             {accounts.map(account => (
@@ -214,8 +345,8 @@ export const BankReconciliationImporter: React.FC = () => {
                     <div className="p-8 bg-slate-950 border border-slate-800 rounded-[2.5rem] shadow-xl text-center space-y-4">
                         <TerminalIcon className="w-8 h-8 text-slate-800 mx-auto mb-4 group-hover:text-blue-500 transition-colors" />
                         <div className="space-y-2">
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Protocol: CSV_STANDARD_V1</p>
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Auth: AES-X_CRYPTO</p>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('bankStatementImport.confidential')}</p>
+                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('bankStatementImport.savedTime')}: +15 min</p>
                         </div>
                     </div>
                 </div>
@@ -228,7 +359,8 @@ export const BankReconciliationImporter: React.FC = () => {
                             onDragLeave={handleDrag}
                             onDragOver={handleDrag}
                             onDrop={handleDrop}
-                            className={`h-full bg-slate-900 border-4 border-dashed rounded-[3.5rem] p-24 text-center transition-all duration-700 flex flex-col items-center justify-center group relative overflow-hidden ${dragActive ? 'border-blue-500 bg-blue-500/5' : 'border-slate-800 bg-slate-950/20 hover:border-slate-700'
+                            onClick={() => document.getElementById('csv-upload')?.click()}
+                            className={`h-full bg-slate-900 border-4 border-dashed rounded-[3.5rem] p-24 text-center transition-all duration-700 flex flex-col items-center justify-center group relative overflow-hidden cursor-pointer ${dragActive ? 'border-blue-500 bg-blue-500/5' : 'border-slate-800 bg-slate-950/20 hover:border-slate-700'
                                 }`}
                         >
                             <div className={`absolute inset-0 bg-blue-500/5 transition-opacity duration-700 ${dragActive ? 'opacity-100 animate-pulse' : 'opacity-0'}`}></div>
@@ -237,14 +369,14 @@ export const BankReconciliationImporter: React.FC = () => {
                                 <Upload className={`w-12 h-12 ${dragActive ? 'text-blue-500 animate-bounce' : 'text-slate-700'}`} />
                             </div>
 
-                            <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ingreso de Base CSV</h3>
+                            <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">{t('bankStatementImport.selectProtocol')}</h3>
                             <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm mb-12">
-                                ARRASTRA EL ARCHIVO DE TRANSACCIONES O HAZ CLIC PARA SELECCIONAR. NUESTRO MOTOR REFIBRARÁ LOS DATOS.
+                                {t('bankStatementImport.mappingDesc')}
                             </p>
 
                             <input
                                 type="file"
-                                accept=".csv,.ofx"
+                                accept=".pdf,.ofx,.csv,image/jpeg,image/png"
                                 onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
                                 className="hidden"
                                 id="csv-upload"
@@ -263,34 +395,69 @@ export const BankReconciliationImporter: React.FC = () => {
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Mapeo de Atributos</h3>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Preparar Datos</h3>
                                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 italic flex items-center gap-2">
-                                        <Layers className="w-3.5 h-3.5 text-blue-500" /> Neural Layer Coordination
+                                        <Layers className="w-3.5 h-3.5 text-blue-500" /> {t('bankStatementImport.executingHeuristics')}
                                     </p>
                                 </div>
-                                <button onClick={() => setStep('upload')} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
+                                <button onClick={() => { setStep('upload'); setValidationError(null); setContinuityError(null); }} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
                                     <X className="w-6 h-6" />
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <MappingField label="Timestamp (Fecha)" icon={Calendar} value={mapping.date} onChange={(v) => setMapping(prev => ({ ...prev, date: v }))} />
-                                <MappingField label="Descriptor (Descripción)" icon={Target} value={mapping.description} onChange={(v) => setMapping(prev => ({ ...prev, description: v }))} />
-                                <MappingField label="Cuantía (Monto)" icon={Activity} value={mapping.amount} onChange={(v) => setMapping(prev => ({ ...prev, amount: v }))} />
-                                <MappingField label="Referencia (ID)" icon={ShieldCheck} value={mapping.reference} onChange={(v) => setMapping(prev => ({ ...prev, reference: v }))} />
-                            </div>
+                            {continuityError && (
+                                <div className="p-6 bg-amber-500/10 border-2 border-amber-500/20 rounded-3xl flex items-center gap-6">
+                                    <AlertCircle className="w-8 h-8 text-amber-500 shrink-0" />
+                                    <div>
+                                        <p className="text-xs font-black text-amber-500 uppercase tracking-widest leading-none mb-1">Hueco Temporal (Audit Layer)</p>
+                                        <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">{continuityError}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {validationError && (
+                                <div className="p-6 bg-rose-500/10 border-2 border-rose-500/20 rounded-3xl flex items-center gap-6 animate-pulse">
+                                    <AlertCircle className="w-8 h-8 text-rose-500 shrink-0" />
+                                    <div>
+                                        <p className="text-xs font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Bloqueo de Integridad (Triángulo)</p>
+                                        <p className="text-[10px] text-rose-400 font-bold uppercase tracking-wider">{validationError}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {(!detectedMetadata || detectedMetadata.format === 'CSV') && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <MappingField label="Timestamp (Fecha)" icon={Calendar} value={mapping.date} onChange={(v) => setMapping(prev => ({ ...prev, date: v }))} />
+                                    <MappingField label="Descriptor (Descripción)" icon={Target} value={mapping.description} onChange={(v) => setMapping(prev => ({ ...prev, description: v }))} />
+                                    <MappingField label="Cuantía (Monto)" icon={Activity} value={mapping.amount} onChange={(v) => setMapping(prev => ({ ...prev, amount: v }))} />
+                                    <MappingField label="Referencia (ID)" icon={ShieldCheck} value={mapping.reference} onChange={(v) => setMapping(prev => ({ ...prev, reference: v }))} />
+                                </div>
+                            )}
 
                             <div className="bg-slate-950 border-2 border-slate-800 rounded-[2.5rem] overflow-hidden shadow-inner">
-                                <div className="px-8 py-4 bg-slate-900/50 border-b border-slate-800">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Heurística: Vista Previa de Kernel</span>
+                                <div className="px-8 py-4 bg-slate-900/50 border-b border-slate-800 flex justify-between items-center">
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                        {detectedMetadata?.transactions && detectedMetadata.transactions.length > 0
+                                            ? `Transacciones Recuperadas (${detectedMetadata.transactions.length})`
+                                            : 'Vista Previa de Datos'
+                                        }
+                                    </span>
+                                    {detectedMetadata?.extractionMethod === 'OCR' && (
+                                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20">
+                                            IA VALIDATED
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="overflow-x-auto p-4 max-h-48 custom-scrollbar">
+                                <div className="overflow-x-auto p-4 max-h-80 custom-scrollbar">
                                     <table className="w-full text-left">
-                                        <tbody>
+                                        <tbody className="divide-y divide-slate-800/30">
                                             {preview.map((row: string[], i: number) => (
-                                                <tr key={i} className="border-b border-slate-800/40 last:border-0 hover:bg-white/[0.02]">
+                                                <tr key={i} className={`hover:bg-white/[0.02] ${i === 0 ? 'bg-slate-950/50 sticky top-0' : ''}`}>
                                                     {row.map((cell: string | number, j: number) => (
-                                                        <td key={j} className="px-4 py-3 text-[10px] font-black text-slate-600 font-mono tracking-tighter truncate max-w-[150px]">{cell}</td>
+                                                        <td key={j} className={`px-4 py-3 text-[10px] font-black font-mono tracking-tighter truncate max-w-[200px] ${i === 0 ? 'text-slate-400 border-b border-slate-800' : 'text-slate-600'
+                                                            }`}>
+                                                            {cell}
+                                                        </td>
                                                     ))}
                                                 </tr>
                                             ))}
@@ -306,7 +473,7 @@ export const BankReconciliationImporter: React.FC = () => {
                                     className="px-14 py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-3xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4"
                                 >
                                     {isProcessing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Cpu className="w-5 h-5" />}
-                                    {isProcessing ? 'INYECTANDO...' : 'EJECUTAR SINCRO'}
+                                    {isProcessing ? t('bankReconciliation.analyzingMetadata') : t('bankStatementImport.consolidate')}
                                 </button>
                             </footer>
                         </div>
@@ -314,39 +481,90 @@ export const BankReconciliationImporter: React.FC = () => {
                 </div>
             </div>
             {/* Modal de Registro de Cuenta Automático */}
-            {showRegisterForm && detectedMetadata && (
-                <BankAccountForm
-                    initialData={{
-                        id: 0,
-                        account_name: detectedMetadata.accountNumber,
-                        bank_name: detectedMetadata.bankName,
-                        account_number: detectedMetadata.accountNumber,
-                        account_type: 'checking',
-                        balance: 0,
-                        currency: detectedMetadata.currency || 'USD',
-                        is_active: true,
-                        created_at: new Date().toISOString()
-                    }}
-                    onCancel={() => {
-                        setShowRegisterForm(false);
-                        setFile(null);
-                    }}
-                    onSubmit={async (data) => {
-                        const res = createBankAccount(data);
-                        if (res.success && res.id) {
-                            setSelectedAccountId(res.id);
-                            setAccounts(getBankAccounts());
+            {
+                showRegisterForm && detectedMetadata && (
+                    <BankAccountForm
+                        initialData={{
+                            id: 0,
+                            account_name: detectedMetadata.accountNumber,
+                            bank_name: detectedMetadata.bankName,
+                            account_number: detectedMetadata.accountNumber,
+                            account_type: 'checking',
+                            balance: 0,
+                            currency: detectedMetadata.currency || 'USD',
+                            is_active: true,
+                            created_at: new Date().toISOString()
+                        }}
+                        onCancel={() => {
                             setShowRegisterForm(false);
-                            toast.success(t('bankAccountList.addAccount'));
-                            // Intentar re-procesar el archivo ahora que la cuenta existe
-                            if (file) handleFileSelect(file);
-                        } else {
-                            toast.error(res.message);
-                        }
-                    }}
-                />
-            )}
-        </div>
+                            setFile(null);
+                        }}
+                        onSubmit={async (data) => {
+                            const res = createBankAccount(data);
+                            if (res.success && res.id) {
+                                setSelectedAccountId(res.id);
+                                setAccounts(getBankAccounts());
+                                setShowRegisterForm(false);
+                                toast.success(t('bankAccountList.addAccount'));
+                                // Intentar re-procesar el archivo ahora que la cuenta existe
+                                if (file) handleFileSelect(file);
+                            } else {
+                                toast.error(res.message);
+                            }
+                        }}
+                    />
+                )
+            }
+            {/* Modal de Desambiguación */}
+            {
+                ambiguousAccounts.length > 0 && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-slate-900 border-2 border-slate-800 rounded-[3rem] p-10 max-w-2xl w-full shadow-3xl space-y-8">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                                    <AlertCircle className="w-8 h-8 text-amber-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Varias Cuentas Detectadas</h3>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">El número de cuenta termina en "{detectedMetadata?.accountNumber}" en múltiples entidades.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                                {ambiguousAccounts.map(account => (
+                                    <button
+                                        key={account.id}
+                                        onClick={() => {
+                                            setSelectedAccountId(account.id);
+                                            setAmbiguousAccounts([]);
+                                            if (file) handleFileSelect(file);
+                                        }}
+                                        className="w-full text-left p-6 bg-slate-950 border border-slate-800 rounded-2.5xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="font-black text-white uppercase tracking-tight">{account.account_name}</div>
+                                                <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{account.bank_name} • ****{account.account_number.slice(-4)}</div>
+                                            </div>
+                                            <ArrowRight className="w-5 h-5 text-slate-700 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <button
+                                    onClick={() => { setAmbiguousAccounts([]); setFile(null); }}
+                                    className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+                                >
+                                    Cancelar Proceso
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

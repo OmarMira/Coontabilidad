@@ -23,7 +23,6 @@ import {
   getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
 } from './database/simple-db';
 import { DatabaseService } from './database/DatabaseService';
-import { isDemoActive } from './database/simple-db';
 
 // Core components (always loaded)
 import { Header } from './components/Header';
@@ -58,7 +57,6 @@ const LocationsManager = lazy(() => import('./components/inventory/LocationsMana
 const CashFlowStatement = lazy(() => import('./components/reports/CashFlowStatement').then(m => ({ default: m.CashFlowStatement })));
 const AgingReport = lazy(() => import('./components/reports/AgingReport').then(m => ({ default: m.AgingReport })));
 const AccountLedger = lazy(() => import('./components/reports/AccountLedger').then(m => ({ default: m.AccountLedger })));
-const ForensicDemoPage = lazy(() => import('./pages/forensic/ForensicDemoPage').then(m => ({ default: m.ForensicDemoPage })));
 const UnifiedAssistant = lazy(() => import('./components/ai/UnifiedAssistant').then(m => ({ default: m.UnifiedAssistant })));
 const HealthCheckPage = lazy(() => import('./pages/HealthCheckPage').then(m => ({ default: m.HealthCheckPage })));
 const SystemStatusDashboard = lazy(() => import('./pages/SystemStatusDashboard').then(m => ({ default: m.SystemStatusDashboard })));
@@ -110,7 +108,7 @@ import { TransactionAudit } from './components/TransactionAudit';
 import { BankAccountList } from './components/BankAccountList';
 import { BankAccountForm } from './components/BankAccountForm';
 import { SalesInvoiceForm } from './features/sales/components/SalesInvoiceForm';
-import { BankStatementImporter } from './components/BankStatementImporter';
+import { BankReconciliationImporter } from './components/banking/BankReconciliationImporter';
 import { BankImport } from './components/banking/BankImport';
 import { ManualJournalEntries } from './components/ManualJournalEntries';
 import { GeneralLedger } from './components/GeneralLedger';
@@ -1198,10 +1196,6 @@ function App() {
   // RENDERIZADO
   // ==========================================
 
-  // Forensic Demo Route
-  // if (state.currentSection === 'forensic-demo') {
-  //   return <ForensicDemoPage />;
-  // }
 
   if (state.isLoading) {
     return (
@@ -1346,12 +1340,6 @@ function App() {
           {/* Background Decorative Element */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] -mr-64 -mt-64 pointer-events-none"></div>
 
-          {/* VOLATILE DEMO BANNER */}
-          {isDemoActive && (
-            <div className="bg-orange-600 text-white text-[10px] font-black text-center py-1 uppercase tracking-[0.2em] shadow-md z-50 select-none sticky top-0">
-              {t('demoMode.banner')}
-            </div>
-          )}
 
           <Header
             dbStats={state.dbStats}
@@ -1460,7 +1448,7 @@ function App() {
                         onCancel={() => setState(prev => ({ ...prev, showingInvoiceForm: false }))}
                         customers={state.customers}
                         products={state.products}
-                        currentUserId="DEMO_USER"
+                        currentUserId={user?.id || 1}
                       />
                     </div>
                   ) : state.editingInvoice ? (
@@ -1951,7 +1939,7 @@ function App() {
                   <DiscrepancyAnalysis />
                 </Suspense>
               )}
-              {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
+              {state.currentSection === 'bank-smart-import' && <BankReconciliationImporter />}
               {state.currentSection === 'banking-import' && <BankImport />}
 
               {/* --- IMPUESTOS FLORIDA --- */}

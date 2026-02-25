@@ -18,7 +18,7 @@ const LoginForm: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, loginWithGoogle, loginAsGuest } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     const { t } = useLocale();
     const showGoogleLogin = true; // Forzar mostrar botón de Google
 
@@ -40,20 +40,6 @@ const LoginForm: React.FC = () => {
         }
     };
 
-    const handleQuickDemoLogin = async () => {
-        setError('');
-        setLoading(true);
-        try {
-            const success = await loginAsGuest();
-            if (!success) {
-                setError('Error iniciando modo Demo/Guest.');
-            }
-        } catch (err) {
-            setError('Error de conexión.');
-        } finally {
-            setLoading(false);
-        }
-    };
 
 
 
@@ -104,16 +90,6 @@ const LoginForm: React.FC = () => {
                 {/* Login Card */}
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 animate-in fade-in slide-in-from-bottom duration-500">
 
-                    {/* Botón de Acceso Rápido (NEW) */}
-                    <button
-                        onClick={handleQuickDemoLogin}
-                        disabled={loading}
-                        className="w-full mb-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black rounded-xl shadow-lg shadow-emerald-900/40 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 overflow-hidden group relative"
-                    >
-                        <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out skew-x-[-20deg]"></div>
-                        <Zap className="w-6 h-6 animate-pulse" />
-                        <span className="text-lg tracking-wider uppercase">{t('login.fastDemoAccess')}</span>
-                    </button>
 
 
 

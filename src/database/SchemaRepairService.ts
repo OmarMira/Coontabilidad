@@ -101,22 +101,7 @@ export class SchemaRepairService {
                 }
             }
 
-            // Ensure Data Exists
-            const hasDataRes = await this.db.select(`SELECT COUNT(*) as count FROM company_data`);
-            const hasData = hasDataRes[0]?.count || 0;
-            if (hasData === 0) {
-                await this.db.run(`
-                    INSERT INTO company_data (
-                        company_name, legal_name, tax_id, address, city, state, zip_code, 
-                        phone, email, fiscal_year_start, currency, language, timezone, date_format, is_active
-                    ) VALUES (
-                        'Account Express Demo Inc.', 'Account Express Demo Inc.', 'US-DEMO-123', 
-                        '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000', 
-                        'admin@accountexpress.com', '01-01', 'USD', 'es', 'America/New_York', 'MM/DD/YYYY', 1
-                    )
-                `);
-                logs.push("✅ Datos de empresa por defecto insertados");
-            }
+            logs.push("✅ Tabla company_data lista (vacía para configuración inicial)");
 
 
             // 2. VERIFICAR INTEGRIDAD DE VISTAS
@@ -200,32 +185,6 @@ export class SchemaRepairService {
                 }
             }
 
-            // CREAR/REPARAR USUARIO DEMO
-            const demoUserRes = await this.db.select("SELECT id, password_hash FROM users WHERE username = 'demo'");
-            if (demoUserRes.length > 0) {
-                const currentHash = demoUserRes[0].password_hash as string;
-                if (!currentHash || currentHash.startsWith('U2FsdGVk')) {
-                    const newHash = await this.hashPassword('demo123');
-                    if (newHash) {
-                        await this.db.run("UPDATE users SET password_hash = ?, is_active = 1 WHERE username = 'demo'", [newHash]);
-                        logs.push("✅ Contraseña de Demo reparada (demo123)");
-                    }
-                }
-            } else {
-                // Buscar el ID del rol admin dinámicamente
-                const adminRoleRes = await this.db.select("SELECT id FROM user_roles WHERE name = 'admin' LIMIT 1");
-                const adminRoleId = adminRoleRes[0]?.id || 1;
-
-                const newHash = await this.hashPassword('demo123');
-                if (newHash) {
-                    await this.db.run(`
-                        INSERT INTO users (username, email, password_hash, full_name, display_name, role_id, is_active)
-                        VALUES ('demo', 'demo@empresa.com', ?, 'Usuario Demo', 'Demo', ?, 1)
-                     `, [newHash, adminRoleId]);
-                    logs.push("✅ Usuario Demo creado");
-                }
-                logs.push("✅ Usuario Demo creado");
-            }
 
             // 4.5 ADD PICTURE COLUMN IF MISSING
             if (userCols.length > 0 && !userCols.includes('picture')) {

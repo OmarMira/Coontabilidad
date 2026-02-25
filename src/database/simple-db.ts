@@ -57,43 +57,6 @@ export const getDBEngine = (): SQLiteEngine => {
   return dbEngine;
 };
 
-// --- SANDBOX SECURITY INTERCEPTOR ---
-const GUEST_LIMIT_PER_TABLE = 20;
-
-export async function checkGuestRestriction(userId: number | undefined, table: string, action: 'create' | 'update' | 'delete'): Promise<void> {
-  if (!db || !userId) return;
-
-  // Check user role
-  try {
-    const userRes = db.exec("SELECT r.name FROM users u JOIN user_roles r ON u.role_id = r.id WHERE u.id = ?", [userId]);
-    if (!userRes.length || !userRes[0].values.length) return;
-
-    const roleName = (userRes[0].values[0][0] as string).toLowerCase();
-
-    // Only restrict 'guest' or 'demo' roles
-    if (!['guest', 'demo', 'viewer'].includes(roleName)) return;
-
-    // Rule 1: No modifications to 'users' table
-    if (table === 'users') {
-      throw new Error('SANDBOX SECURITY: Las cuentas demo no pueden modificar usuarios del sistema.');
-    }
-
-    // Rule 2: Limit records on ANY table creation
-    if (action === 'create') {
-      // Safe-guard against SQL injection in table name implies internal usage only
-      const countRes = db.exec(`SELECT COUNT(*) FROM ${table}`);
-      const count = countRes[0].values[0][0] as number;
-      if (count >= GUEST_LIMIT_PER_TABLE) {
-        throw new Error(`SANDBOX DEMO LIMIT: No puedes crear más de ${GUEST_LIMIT_PER_TABLE} registros en ${table} durante la demostración.`);
-      }
-    }
-  } catch (e) {
-    if (e instanceof Error && e.message.startsWith('SANDBOX')) throw e;
-    // Ignore other errors to not block logic if check fails (fail-open vs fail-close trade-off)
-    // For security, usually fail-close, but here we assume DB errors shouldn't block admins if check fails.
-  }
-}
-
 // ==========================================
 // DASHBOARD & ANALYTICS
 // ==========================================
@@ -1855,7 +1818,7 @@ export interface BudgetVarianceAnalysis {
   }[];
 }
 
-export let isDemoActive = false;
+
 
 export const resetDB = async () => {
   if (dbEngine) {
@@ -1864,18 +1827,16 @@ export const resetDB = async () => {
   db = null;
   dbEngine = null;
   isInitialized = false;
-  isDemoActive = false;
   logger.info('Database', 'reset', 'Base de datos reiniciada');
 };
 
-export const initDB = async (password?: string, demoMode: boolean = false): Promise<any> => {
+export const initDB = async (password?: string): Promise<any> => {
   if (isInitialized && db) {
     return db;
   }
 
   try {
-    logger.info('Database', 'init_start', `Iniciando inicialización de base de datos SQLite (${demoMode ? 'Modo Demo' : 'Modo Normal'})`);
-    isDemoActive = demoMode;
+    logger.info('Database', 'init_start', 'Iniciando inicialización de base de datos SQLite');
 
     // Configurar cifrado si se proporciona contraseÃ±a
     if (password && BasicEncryption.isSupported()) {
@@ -1900,21 +1861,16 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
 
     let dbData: Uint8Array | null = null;
 
-    // Solo cargar persistencia si NO estamos en modo demo
-    if (!demoMode) {
-      // Cargar datos existentes
-      const { loadDatabase } = await import('./PersistenceLayer');
-      dbData = await loadDatabase();
-      // Fallback a localStorage si no hay en IndexedDB
-      if (!dbData) {
-        try {
-          dbData = await loadFromLocalStorage();
-        } catch (e) {
-          console.warn('LocalStorage load failed', e);
-        }
+    // Cargar datos existentes
+    const { loadDatabase } = await import('./PersistenceLayer');
+    dbData = await loadDatabase();
+    // Fallback a localStorage si no hay en IndexedDB
+    if (!dbData) {
+      try {
+        dbData = await loadFromLocalStorage();
+      } catch (e) {
+        console.warn('LocalStorage load failed', e);
       }
-    } else {
-      logger.warn('Database', 'demo_warning', '⚠️ MODO DEMO: Base de datos en RAM. Los datos se perderán al recargar.');
     }
 
     if (!db) {
@@ -1928,10 +1884,6 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
     // Registrar en el puente para evitar dependencias circulares
     EngineBridge.setEngine(dbEngine);
 
-    // Configurar modo demo en el motor
-    if (demoMode) {
-      dbEngine.setDemoMode(true);
-    }
 
     logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
 
@@ -1942,10 +1894,7 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
     await DatabaseInitializer.initializeWithFix(db);
 
     // Configurar servicios adicionales
-    // Configurar servicios adicionales solo si no es demo
-    if (!demoMode) {
-      setupAutoSave();
-    }
+    setupAutoSave();
 
     return db;
   } catch (error) {
@@ -3911,8 +3860,7 @@ export const addCustomer = async (customerData: Partial<Customer>, userId?: numb
     throw new Error('Database not initialized. Please wait for the system to load completely.');
   }
 
-  // SANDBOX CHECK
-  await checkGuestRestriction(userId, 'customers', 'create');
+
 
   try {
     logger.debug('CustomerModule', 'add_customer_transaction', 'Iniciando transacciÃ³n para agregar cliente');
@@ -10507,35 +10455,42 @@ export function getBankAccountById(id: number): BankAccount | null {
 }
 
 /**
- * Busca una cuenta bancaria por su número de cuenta (coincidencia parcial o exacta)
+ * Busca todas las cuentas bancarias que coincidan con un número (coincidencia parcial o exacta)
+ * Útil para desambiguación.
  */
-export function findBankAccountByNumber(accountNumber: string): BankAccount | null {
-  if (!db || !accountNumber) return null;
+export function findBankAccountsByNumber(accountNumber: string): BankAccount[] {
+  if (!db || !accountNumber) return [];
 
   try {
-    // Buscamos coincidencia exacta o que termine con el número (muchas veces el OFX trae solo los últimos 4 o similar)
     const result = db.exec(
       "SELECT * FROM bank_accounts WHERE account_number = ? OR account_number LIKE ?",
       [accountNumber, `%${accountNumber}`]
     );
 
     if (result.length === 0 || result[0].values.length === 0) {
-      return null;
+      return [];
     }
 
-    const row = result[0].values[0];
     const columns = result[0].columns;
-    const account: any = {};
-
-    columns.forEach((col: any, index: any) => {
-      account[col] = row[index];
+    return result[0].values.map((row: any) => {
+      const account: any = {};
+      columns.forEach((col: any, index: any) => {
+        account[col] = row[index];
+      });
+      return account as BankAccount;
     });
-
-    return account as BankAccount;
   } catch (error) {
-    logger.error('BankAccounts', 'find_failed', 'Error al buscar cuenta por número', { accountNumber }, error as Error);
-    return null;
+    logger.error('BankAccounts', 'find_all_failed', 'Error al buscar cuentas por número', { accountNumber }, error as Error);
+    return [];
   }
+}
+
+/**
+ * Busca una cuenta bancaria por su número de cuenta (coincidencia parcial o exacta)
+ */
+export function findBankAccountByNumber(accountNumber: string): BankAccount | null {
+  const accounts = findBankAccountsByNumber(accountNumber);
+  return accounts.length > 0 ? accounts[0] : null;
 }
 
 /**
@@ -10715,6 +10670,14 @@ export function getReconciliationStatements(accountId?: number): ReconciliationS
     console.error('Error fetching reconciliation statements:', e);
     return [];
   }
+}
+
+/**
+ * Obtiene el último estado de conciliación de una cuenta
+ */
+export function getLastReconciliationStatement(accountId: number): ReconciliationStatement | null {
+  const statements = getReconciliationStatements(accountId);
+  return statements.length > 0 ? statements[0] : null;
 }
 
 /**
@@ -13488,7 +13451,6 @@ export function hasUsers(): boolean {
     const result = db.exec(`
       SELECT COUNT(*) as count 
       FROM users 
-      WHERE username NOT IN ('demo.admin', 'guest', 'demo@volatile.local')
     `);
     if (result.length > 0 && result[0].values.length > 0) {
       const count = result[0].values[0][0] as number;

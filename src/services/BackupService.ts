@@ -206,31 +206,9 @@ export class BackupService {
     // Configuración CLIENT_ID
     const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'PENDING_CLIENT_ID';
 
-    // Antigravity Feature: Modo Demo Inteligente
-    // Si no hay API Key real configurada, permitir probar la UI en modo simulación
     if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE' || CLIENT_ID === 'PENDING_CLIENT_ID') {
-      const confirmDemo = window.confirm(
-        "⚠️ Google Client ID no configurado en .env.local\n\n" +
-        "¿Desea activar el MODO DEMO para simular la vinculación exitosa?\n" +
-        "(Esto permitirá probar la interfaz, pero no subirá archivos reales a Drive)"
-      );
-
-      if (confirmDemo) {
-        logger.info('BackupService', 'demo_mode', 'Activando simulación de Cloud Link');
-        // Simular token de OAuth con duración de 1 hora
-        const fakeToken = `demo_token_${Date.now()}_${Math.random().toString(36).substr(2)}`;
-        localStorage.setItem('gdrive_token', fakeToken);
-
-        // Simular delay de red
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Recargar para reflejar estado
-        window.location.reload();
-        return;
-      } else {
-        window.open('https://console.cloud.google.com/apis/credentials', '_blank');
-        return;
-      }
+      window.open('https://console.cloud.google.com/apis/credentials', '_blank');
+      return;
     }
 
     const REDIRECT_URI = window.location.origin;

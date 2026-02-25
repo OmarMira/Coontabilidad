@@ -1931,26 +1931,28 @@
     "protocolTitle": "bankReconciliation.protocolTitle"
   },
   "bankStatementImport": {
-    "title": "Neural Importer",
-    "subtitle": "AI Bank Smart Bridge v6.2",
-    "injectCSV": "Inject Bank Statement (CSV)",
-    "compatibility": "Compatibility: CHASE, BOFA, WELLS FARGO, AMEX, STRIPE",
-    "selectProtocol": "Select CSV Protocol",
-    "executingHeuristics": "Executing Neural Heuristics...",
-    "mappingDesc": "Mapping descriptions to US GAAP accounting codes and detecting anomalies in real-time.",
+    "title": "AI Banking Import",
+    "subtitle": "Smart bank statement processing",
+    "injectCSV": "Select File (CSV, OFX, PDF)",
+    "compatibility": "Supports CSV, OFX, PDF and Images (OCR)",
+    "chartOfAccounts": "Direct Accounting",
+    "encryption": "Banking Security",
+    "selectProtocol": "Configure File",
+    "executingHeuristics": "Analyzing transactions...",
+    "mappingDesc": "Automatic mapping of descriptions to accounts and anomaly detection.",
     "transactions": "Transactions",
-    "aiConfidence": "AI Confidence",
-    "efficiency": "Efficiency",
-    "forensicStatus": "Forensic Status",
-    "temporalityDesc": "Temporality / Description",
-    "valuation": "Valuation",
-    "aiCategory": "AI Category",
+    "aiConfidence": "Precision",
+    "efficiency": "Time Saved",
+    "forensicStatus": "Audit Status",
+    "temporalityDesc": "Date & Description",
+    "valuation": "Amount",
+    "aiCategory": "Suggested Category",
     "accountingLink": "Accounting Link",
-    "abortSync": "Abort Sync",
-    "consolidate": "Consolidate",
-    "items": "ITEMS",
-    "confidential": "Confidential",
-    "savedTime": "MIN SAVED"
+    "abortSync": "Cancel Import",
+    "consolidate": "Import Now",
+    "items": "Records",
+    "confidential": "End-to-End Encryption",
+    "savedTime": "Minutes saved"
   },
   "bill": "Bill",
   "billDetail": {
@@ -2676,9 +2678,6 @@
   "database-initialized-success": "database-initialized-success",
   "date": "Date",
   "delete": "Delete",
-  "demoMode": {
-    "banner": "DEMO MODE ACTIVE - DATA IS VOLATILE"
-  },
   "description": "Description",
   "details": "Details",
   "discount": "Discount",
@@ -5497,5 +5496,18 @@
       "paidLabel": "Paid Label"
     },
     "deductions": "Deductions"
-  }
+  },
+  "bankReconciliation": {
+    "phaseTitle": "Bank Reconciliation",
+    "protocolTitle": "Reconciliation Protocol",
+    "detectingAccount": "Detecting bank account...",
+    "accountDetected": "Account detected: {{account}} ({{bank}})",
+    "accountNotFound": "Account {{account}} not found in system.",
+    "askCreateAccount": "Do you want to register this account now to process the statement?",
+    "registerAndContinue": "Register and Continue",
+    "analyzingMetadata": "Analyzing file metadata...",
+    "checks": {
+      "triangleError": "Mathematical discrepancy detected: Closing balance does not match transactions."
+    }
+  },
 }

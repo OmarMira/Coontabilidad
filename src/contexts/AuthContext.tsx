@@ -30,7 +30,6 @@ interface AuthContextType {
     user: User | null;
     login: (username: string, password: string) => Promise<boolean>;
     loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<boolean>;
-    loginAsGuest: () => Promise<boolean>;
     logout: () => void;
     isAuthenticated: boolean;
     refreshUser: () => Promise<void>;
@@ -233,66 +232,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return hasUsers();
     };
 
-    const loginAsGuest = async (): Promise<boolean> => {
-        try {
-            console.log('🔄 Switching to Volatile Demo Mode...');
-
-            // 1. Reset current DB connection to switch modes
-            const { resetDB, initDB, createUser } = await import('../database/simple-db');
-            await resetDB();
-
-            // 2. Initialize in RAM-ONLY Mode (Volatile)
-            // This creates a fresh new SQL.Database() instance
-            await initDB(undefined, true);
-
-            // 3. Create Demo User in the Volatile DB
-            // We need a user in the DB so relational queries (invoice.userId) work
-            const roles = UserService.getRoles();
-            const adminRole = roles.find(r => r.name === 'admin') || roles[0];
-
-            if (!adminRole) throw new Error('System roles not initialized in Demo Mode');
-
-            const demoUserFn = {
-                username: 'demo.admin',
-                email: 'demo@volatile.local',
-                full_name: 'Modo Demo Volátil',
-                display_name: 'Demo Admin',
-                password: 'demo_access_grant',
-                role_id: adminRole.id
-            };
-
-            const createRes = await createUser(demoUserFn);
-
-            if (createRes.success && createRes.userId) {
-                const userData: User = {
-                    id: createRes.userId,
-                    username: demoUserFn.username,
-                    email: demoUserFn.email,
-                    full_name: demoUserFn.full_name,
-                    display_name: demoUserFn.display_name,
-                    role: adminRole.name,
-                    role_id: adminRole.id,
-                    role_level: adminRole.level,
-                    permissions: adminRole.permissions_json ? JSON.parse(adminRole.permissions_json) : {}
-                };
-
-                setUser(userData);
-
-                // NOTA CRÍTICA: NO guardamos en localStorage.
-                // "Al cerrar la pestaña o refrescar, los datos deben desaparecer por completo".
-                // Esto incluye la sesión. Si refrescan, vuelven al login y la DB persistente.
-
-                console.log('✅ Volatile Demo Mode Activated (RAM Only)');
-                return true;
-            }
-
-            return false;
-
-        } catch (e) {
-            console.error('Guest login failed', e);
-            return false;
-        }
-    };
 
 
 
@@ -361,7 +300,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             user,
             login,
             loginWithGoogle,
-            loginAsGuest,
             checkSystemHasUsers,
             logout,
             isAuthenticated: !!user,
