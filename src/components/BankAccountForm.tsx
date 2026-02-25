@@ -86,7 +86,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                         </div>
                         <div>
                             <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
-                                {initialData ? t('bankAccountForm.title.edit') : t('bankAccountForm.title.create')}
+                                {(!initialData || (initialData && initialData.id === 0)) ? t('bankAccountForm.title.create') : t('bankAccountForm.title.edit')}
                             </h2>
                             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
                                 <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.subtitle')}

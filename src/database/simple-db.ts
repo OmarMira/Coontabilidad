@@ -1830,6 +1830,20 @@ export const resetDB = async () => {
   logger.info('Database', 'reset', 'Base de datos reiniciada');
 };
 
+/**
+ * Configura el auto-guardado periódico de la base de datos
+ */
+function setupAutoSave(): void {
+  setInterval(async () => {
+    if (!db) return;
+    try {
+      await forceSaveDB();
+    } catch (e) {
+      // Silencioso para evitar spam en consola en producción
+    }
+  }, 5000); // Guardar cada 5 segundos para balancear seguridad y rendimiento
+}
+
 export const initDB = async (password?: string): Promise<any> => {
   if (isInitialized && db) {
     return db;
@@ -3767,6 +3781,24 @@ export const saveDatabase = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('Error saving database:', error);
+  }
+};
+
+/**
+ * Persist DB explicitly to IndexedDB (and LocalStorage as fallback if configured)
+ * This bypasses the SQLiteEngine's sync if running in sql.js compatibility mode.
+ */
+export const forceSaveDB = async () => {
+  if (!db || typeof db.export !== 'function') return;
+
+  try {
+    const data = db.export();
+    // Save to PersistenceLayer (IndexedDB)
+    const { saveDatabase: persistSave } = await import('./PersistenceLayer');
+    await persistSave(data);
+    logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente en IndexedDB');
+  } catch (e) {
+    logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
   }
 };
 
@@ -6245,7 +6277,7 @@ export const getStatsWithSuppliers = (filters?: { userId?: number, role?: string
 };
 
 // Actualizar factura de compra
-export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[], userId?: number): { success: boolean; message: string } => {
+export const updateBill = async (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[], userId?: number): Promise<{ success: boolean; message: string }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -6350,8 +6382,8 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
 
     db.run('COMMIT');
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return { success: true, message: 'Factura de compra actualizada correctamente' };
 
@@ -7201,11 +7233,11 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
 
 
 // Crear asiento contable automático
-export const createJournalEntry = (
+export const createJournalEntry = async (
   entryData: Partial<JournalEntry>,
   details: Partial<JournalDetail>[],
   userId?: number
-): { success: boolean; message: string; entryId?: number } => {
+): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -7299,8 +7331,8 @@ export const createJournalEntry = (
 
     db.run('COMMIT');
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return {
       success: true,
@@ -7691,7 +7723,7 @@ export const generatePaymentSentJournalEntry = (payment: SupplierPayment, suppli
 /**
  * Crear un pago a proveedor (Supplier Payment) - Alias: addPayment
  */
-export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
+export const addPayment = async (paymentData: Partial<SupplierPayment>, userId?: number): Promise<{ success: boolean; message: string; paymentId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -7773,8 +7805,8 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
     db.run('COMMIT');
     logger.info('Payments', 'add_payment_success', 'Pago a proveedor registrado', { paymentId, userId });
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return { success: true, message: 'Pago registrado correctamente', paymentId };
 
@@ -8402,7 +8434,7 @@ SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
   }
 }
 
-export function updateCompanyData(companyData: Partial<CompanyData>): { success: boolean; message: string; warnings?: string[] } {
+export async function updateCompanyData(companyData: Partial<CompanyData>): Promise<{ success: boolean; message: string; warnings?: string[] }> {
   try {
     logger.info('CompanyData', 'update_start', 'Actualizando datos de empresa', companyData);
 
@@ -8530,8 +8562,8 @@ company_name = ?,
       warnings_count: warnings.length
     });
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return {
       success: true,
@@ -10047,7 +10079,7 @@ export function getAllPaymentMethods(): PaymentMethod[] {
 /**
  * Crear un nuevo método de pago
  */
-export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'created_at'>): { success: boolean; message: string; id?: number } {
+export async function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'created_at'>): Promise<{ success: boolean; message: string; id?: number }> {
   if (!db) {
     return { success: false, message: 'Base de datos no disponible' };
   }
@@ -10102,8 +10134,8 @@ VALUES(?, ?, ?, ?, ?, ?)
       method_name: methodData.method_name
     });
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return {
 
@@ -10496,7 +10528,7 @@ export function findBankAccountByNumber(accountNumber: string): BankAccount | nu
 /**
  * Crear una nueva cuenta bancaria
  */
-export function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>): { success: boolean; message: string; id?: number } {
+export async function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>): Promise<{ success: boolean; message: string; id?: number }> {
   if (!db) return { success: false, message: 'Base de datos no disponible' };
 
   try {
@@ -10536,8 +10568,10 @@ VALUES(?, ?, ?, ?, ?, ?)
     ]);
 
     logger.info('BankAccounts', 'create_success', 'Cuenta bancaria creada', { id });
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+
+    // Limpieza y Persistencia
+    stmt.free();
+    await forceSaveDB();
 
     return { success: true, message: 'Cuenta bancaria creada correctamente', id };
   } catch (error) {
@@ -10549,7 +10583,7 @@ VALUES(?, ?, ?, ?, ?, ?)
 /**
  * Actualiza una cuenta bancaria existente
  */
-export function updateBankAccount(id: number, data: Partial<BankAccount>): { success: boolean; message: string } {
+export async function updateBankAccount(id: number, data: Partial<BankAccount>): Promise<{ success: boolean; message: string }> {
   if (!db) return { success: false, message: 'Base de datos no disponible' };
 
   try {
@@ -10591,8 +10625,9 @@ VALUES(?, ?, ?, ?, ?, ?)
     ]);
 
     logger.info('BankAccounts', 'update_success', 'Cuenta bancaria actualizada', { id });
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return { success: true, message: 'Cuenta bancaria actualizada correctamente' };
   } catch (error) {
@@ -12637,7 +12672,7 @@ function generateBudgetPeriods(
  * Valida CP-1 (Balance Invariant): Sum of lines = total budget (Â±1 cent tolerance)
  * Uses transactions for atomicity.
  */
-export function createBudget(
+export async function createBudget(
   budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'>,
   budgetLines: Omit<BudgetLine, 'id' | 'budget_id' | 'created_at'>[]
 ): { success: boolean; message: string; id?: number } {
@@ -12709,6 +12744,10 @@ export function createBudget(
     });
 
     logger.info('Budgets', 'budget_created', `Presupuesto creado: ${budgetData.budget_name}`, { budgetId, linesCount: budgetLines.length });
+
+    // Persistencia Inmediata
+    await forceSaveDB();
+
     return { success: true, message: 'Presupuesto creado exitosamente', id: budgetId };
 
   } catch (error: any) {
@@ -13422,19 +13461,6 @@ export function getBudgetExecutionStatus(budgetId: number): {
  * Persist DB explicitly to IndexedDB (and LocalStorage as fallback if configured)
  * This bypasses the SQLiteEngine's sync if running in sql.js compatibility mode.
  */
-export const forceSaveDB = async () => {
-  if (!db || typeof db.export !== 'function') return;
-
-  try {
-    const data = db.export();
-    // Save to PersistenceLayer (IndexedDB)
-    const { saveDatabase } = await import('./PersistenceLayer');
-    await saveDatabase(data);
-    logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente');
-  } catch (e) {
-    logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
-  }
-};
 
 
 /**

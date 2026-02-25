@@ -59,7 +59,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       if (editingMethod) {
         result = updatePaymentMethod(editingMethod.id, formData);
       } else {
-        result = createPaymentMethod(formData);
+        result = await createPaymentMethod(formData);
       }
 
       if (result.success) {

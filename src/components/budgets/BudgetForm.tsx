@@ -119,7 +119,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
           throw new Error(result.message);
         }
       } else {
-        const result = createBudget(budgetData, lines as Omit<BudgetLine, 'id' | 'budget_id' | 'created_at'>[]);
+        const result = await createBudget(budgetData, lines as Omit<BudgetLine, 'id' | 'budget_id' | 'created_at'>[]);
         if (!result.success) {
           throw new Error(result.message);
         }

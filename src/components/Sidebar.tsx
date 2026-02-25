@@ -202,6 +202,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
 
         <button
+          onClick={async () => {
+            const loadToast = toast.loading('Guardando base de datos...');
+            try {
+              const { forceSaveDB } = await import('../database/simple-db');
+              await forceSaveDB();
+              toast.success('Base de datos guardada localmente', { id: loadToast });
+            } catch (error) {
+              toast.error('Error al guardar base de datos', { id: loadToast });
+            }
+          }}
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-xl font-bold transition-all border border-blue-600/20 group uppercase text-xs tracking-widest"
+        >
+          <Database className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+          {!isCollapsed && <span>Guardar Local</span>}
+        </button>
+
+        <button
           onClick={() => {
             console.log('🚪 Logout initiated by user');
             logout();

@@ -425,6 +425,44 @@ export class SchemaRepairService {
                 logs.push("✅ Inyectados los 67 condados de Florida");
             }
 
+            // 8. REPARAR BANK_ACCOUNTS
+            const bankCols = await this.getTableColumns('bank_accounts');
+            if (bankCols.length === 0) {
+                await this.db.run(`
+                    CREATE TABLE IF NOT EXISTS bank_accounts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        account_name TEXT NOT NULL,
+                        bank_name TEXT NOT NULL,
+                        account_number TEXT NOT NULL,
+                        account_type TEXT DEFAULT 'checking',
+                        routing_number TEXT,
+                        balance REAL DEFAULT 0,
+                        currency TEXT DEFAULT 'USD',
+                        is_active BOOLEAN DEFAULT 1,
+                        notes TEXT,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                `);
+                logs.push("✅ Tabla bank_accounts creada");
+            } else {
+                const requiredBankCols = [
+                    { name: 'routing_number', type: 'TEXT' },
+                    { name: 'balance', type: 'REAL', default: '0' },
+                    { name: 'currency', type: 'TEXT', default: "'USD'" }
+                ];
+                for (const col of requiredBankCols) {
+                    if (!bankCols.includes(col.name)) {
+                        try {
+                            const def = col.default ? ` DEFAULT ${col.default}` : "";
+                            await this.db.run(`ALTER TABLE bank_accounts ADD COLUMN ${col.name} ${col.type}${def}`);
+                            logs.push(`✅ Agregada columna ${col.name} a bank_accounts`);
+                        } catch (e) {
+                            logs.push(`⚠️ Error agregando columna ${col.name}: ${(e as Error).message}`);
+                        }
+                    }
+                }
+            }
+
             const taxTransCols = await this.getTableColumns('tax_transactions');
             if (taxTransCols.length === 0) {
                 await this.db.run(`

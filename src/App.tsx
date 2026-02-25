@@ -806,7 +806,7 @@ function App() {
     if (!state.editingBill) return;
 
     try {
-      const result = updateBill(state.editingBill.id, billData, items);
+      const result = await updateBill(state.editingBill.id, billData, items);
       if (result.success) {
         await loadData();
         setState(prev => ({ ...prev, editingBill: null }));
@@ -1133,7 +1133,7 @@ function App() {
 
   const handleCreateBankAccount = async (accountData: Omit<BankAccount, 'id' | 'created_at'>) => {
     try {
-      const result = createBankAccount(accountData);
+      const result = await createBankAccount(accountData);
       if (result.success) {
         await loadData();
         setState(prev => ({ ...prev, showingBankAccountForm: false }));
@@ -1151,7 +1151,7 @@ function App() {
     if (!state.editingBankAccount) return;
 
     try {
-      const result = updateBankAccount(state.editingBankAccount.id, accountData);
+      const result = await updateBankAccount(state.editingBankAccount.id, accountData);
       if (result.success) {
         await loadData();
         setState(prev => ({ ...prev, editingBankAccount: null }));

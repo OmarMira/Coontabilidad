@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import {
     Upload, FileText, Check, AlertCircle, Sparkles, ArrowRight, Table,
-    Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X
+    Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X, Building2
 } from 'lucide-react';
 import { parseBankPDF } from '../lib/pdf-parser';
+import { getBankAccounts, createBankAccount, BankAccount } from '../database/simple-db';
+import { BankAccountForm } from './BankAccountForm';
 
 interface BankTransaction {
     id: string;
@@ -17,41 +19,118 @@ interface BankTransaction {
 
 export const BankStatementImporter: React.FC = () => {
     const [isDragging, setIsDragging] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [step, setStep] = useState<'upload' | 'analysis' | 'review'>('upload');
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
+    const [openingBalance, setOpeningBalance] = useState<number | null>(null);
+    const [openingDate, setOpeningDate] = useState<string | null>(null);
+    const [endingBalance, setEndingBalance] = useState<number | null>(null);
+    const [endingDate, setEndingDate] = useState<string | null>(null);
+    const [accountNumber, setAccountNumber] = useState<string | null>(null);
+    const [bankName, setBankName] = useState<string | null>(null);
+    const [routingNumber, setRoutingNumber] = useState<string | null>(null);
+    const [accountStatus, setAccountStatus] = useState<'valid' | 'missing' | 'inactive'>('valid');
+    const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+    const [showAccountForm, setShowAccountForm] = useState(false);
+    const [processingProgress, setProcessingProgress] = useState(0);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            processFile(e.target.files[0]);
+        if (e.target.files && e.target.files.length > 0) {
+            processFiles(Array.from(e.target.files));
         }
     };
 
-    const processFile = async (file: File) => {
-        setFile(file);
+    const processFiles = async (selectedFiles: File[]) => {
+        setFiles(selectedFiles);
         setStep('analysis');
+        setProcessingProgress(0);
 
         try {
-            // ✅ BUG #1 FIXED: Ahora llama al parser real en lugar de usar mockData
-            const results = await parseBankPDF(file);
-            const mappedTransactions = results
-                .filter(r => r.success && r.data)
-                .map((r, i) => ({
-                    id: String(i),
-                    date: r.data!.date,
-                    description: r.data!.description,
-                    amount: r.data!.amount,
-                    category: 'Uncategorized',
-                    confidence: r.data!.confidence ?? 0.9,
-                    mappedAccount: '',
-                }));
+            const allTransactions: BankTransaction[] = [];
+            let globalOpening: number | null = null;
+            let globalEnding: number | null = null;
+            let detectedAcc: string | null = null;
+            let detectedBank: string | null = null;
+            let detectedRouting: string | null = null;
 
-            setTransactions(mappedTransactions);
+            // Collect results with date context for sorting
+            const resultsWithContext: any[] = [];
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const results = await parseBankPDF(file);
+
+                const mappedTransactions = results.transactions
+                    .filter(r => r.success && r.data)
+                    .map((r, txIdx) => ({
+                        id: `${i}-${txIdx}`,
+                        date: r.data!.transaction_date,
+                        description: r.data!.description,
+                        amount: r.data!.amount / 100,
+                        category: 'Uncategorized',
+                        confidence: r.data!.confidence ?? 0.95,
+                        mappedAccount: '',
+                    }));
+
+                allTransactions.push(...mappedTransactions);
+
+                resultsWithContext.push({
+                    opening: results.openingBalance,
+                    ending: results.endingBalance,
+                    firstDate: mappedTransactions[0]?.date || '9999-12-31',
+                    lastDate: mappedTransactions[mappedTransactions.length - 1]?.date || '0000-01-01'
+                });
+
+                if (results.accountNumber && !detectedAcc) {
+                    detectedAcc = results.accountNumber;
+                }
+                if (results.bankName && !detectedBank) {
+                    detectedBank = results.bankName;
+                }
+                if (results.routingNumber && !detectedRouting) {
+                    detectedRouting = results.routingNumber;
+                }
+
+                setProcessingProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+            }
+
+            // Sort results by date to find the true opening and ending balances
+            resultsWithContext.sort((a, b) => a.firstDate.localeCompare(b.firstDate));
+            if (resultsWithContext.length > 0) {
+                const firstResult = resultsWithContext[0];
+                const lastResult = resultsWithContext[resultsWithContext.length - 1];
+
+                setOpeningBalance(firstResult.opening ? firstResult.opening / 100 : null);
+                setOpeningDate(firstResult.firstDate);
+
+                setEndingBalance(lastResult.ending ? lastResult.ending / 100 : null);
+                setEndingDate(lastResult.lastDate);
+            }
+
+            setTransactions(allTransactions.sort((a, b) => b.date.localeCompare(a.date)));
+            setAccountNumber(detectedAcc);
+            setBankName(detectedBank);
+            setRoutingNumber(detectedRouting);
+
+            // Verify account status in database
+            const activeAccounts = getBankAccounts();
+            setBankAccounts(activeAccounts);
+
+            if (detectedAcc) {
+                const found = activeAccounts.find(a => a.account_number === detectedAcc);
+                if (!found) {
+                    setAccountStatus('missing');
+                } else if (!found.is_active) {
+                    setAccountStatus('inactive');
+                } else {
+                    setAccountStatus('valid');
+                }
+            }
+
             setStep('review');
         } catch (e) {
-            console.error('Error parsing PDF', e);
+            console.error('Error parsing PDFs', e);
             setStep('upload');
-            // Aquí se podría añadir un toast de error
         }
     };
 
@@ -74,13 +153,38 @@ export const BankStatementImporter: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 justify-center">
-                    <div className="px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3 shadow-lg">
-                        <Database className="w-4 h-4 text-emerald-500" />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan de Cuentas v2.8</span>
-                    </div>
-                    <div className="px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3 shadow-lg">
-                        <ShieldCheck className="w-4 h-4 text-blue-500" />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Encryption: IronCore</span>
+                    <div className={`px-10 py-6 bg-slate-950 border rounded-[2.5rem] flex items-center gap-8 shadow-2xl transition-all duration-700 ${accountStatus === 'valid' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-900/10' : 'border-rose-500/40 bg-rose-500/5 shadow-rose-900/10'}`}>
+                        <div className={`p-4 rounded-2xl ${accountStatus === 'valid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                            <Box className="w-8 h-8 animate-pulse" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2">Entidad Detectada</span>
+                            <div className="flex items-baseline gap-4">
+                                <span className={`text-4xl font-black tracking-tighter uppercase leading-none transition-colors ${accountStatus === 'valid' ? 'text-white' : 'text-rose-500'}`}>
+                                    {bankName || 'Buscando...'}
+                                </span>
+                                <span className={`text-xl font-mono font-bold tracking-tighter ${accountStatus === 'valid' ? 'text-emerald-500/70' : 'text-rose-400/50 italic'}`}>
+                                    #{accountNumber?.slice(-4) || '----'}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 pl-6 border-l border-slate-800">
+                            {accountStatus === 'valid' ? (
+                                <>
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
+                                        <Check className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-tight">Cuenta<br />Verificada</span>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 animate-bounce">
+                                        <AlertCircle className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-tight">Registro<br />Pendiente</span>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -90,7 +194,7 @@ export const BankStatementImporter: React.FC = () => {
                     className={`h-[450px] bg-slate-900 border-2 rounded-[3.5rem] border-dashed flex flex-col items-center justify-center transition-all duration-500 group relative overflow-hidden ${isDragging ? 'border-emerald-500 bg-emerald-500/5 shadow-2xl shadow-emerald-900/20' : 'border-slate-800 hover:border-slate-700'}`}
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                     onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }}
+                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length > 0) processFiles(Array.from(e.dataTransfer.files)); }}
                 >
                     <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 blur-[120px] pointer-events-none group-hover:bg-emerald-500/10 transition-all"></div>
 
@@ -101,9 +205,8 @@ export const BankStatementImporter: React.FC = () => {
                     <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-10">Compatibilidad: CHASE, BOFA, WELLS FARGO, AMEX, STRIPE</p>
 
                     <label className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-2xl shadow-emerald-900/40 cursor-pointer flex items-center gap-3 hover:-translate-y-1">
-                        Seleccionar Archivo
-                        {/* ✅ BUG #2 FIXED: Ahora acepta PDFs */}
-                        <input type="file" className="hidden" accept=".pdf,.csv" onChange={handleFileUpload} />
+                        Seleccionar Archivos
+                        <input type="file" className="hidden" accept=".pdf,.csv" multiple onChange={handleFileUpload} />
                     </label>
                 </div>
             )}
@@ -118,18 +221,34 @@ export const BankStatementImporter: React.FC = () => {
                     <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ejecutando Heurística Neural...</h3>
                     <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">Mapeando descripciones a códigos contables US GAAP y detectando anomalías en tiempo real.</p>
 
-                    <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner">
-                        <div className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-[loading_2.5s_ease-in-out_infinite]"></div>
+                    <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
+                        <div
+                            className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-300"
+                            style={{ width: `${processingProgress}%` }}
+                        ></div>
                     </div>
+                    <div className="mt-4 text-[10px] font-black text-emerald-500 uppercase tracking-widest">{processingProgress}% Completado</div>
                 </div>
             )}
 
             {step === 'review' && (
                 <div className="space-y-10 animate-in slide-in-from-bottom-6 duration-700">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <StatusCard label="Transacciones" value={`${transactions.length} ITEMS`} icon={Layers} color="blue" />
-                        <StatusCard label="Confianza IA" value="Confidencial (98.4%)" icon={ShieldCheck} color="emerald" />
-                        <StatusCard label="Eficiencia" value="+45 MIN SALVADOS" icon={Clock} color="amber" />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatusCard label="Archivos Seleccionados" value={`${files.length} PDF/CSV`} icon={FileText} color="blue" />
+                        <StatusCard label="Total Transacciones" value={`${transactions.length} ITEMS`} icon={Layers} color="blue" />
+                        <StatusCard
+                            label={`Saldo Inicial (${openingDate || '...'})`}
+                            value={openingBalance !== null ? formatCurrency(openingBalance) : "NO DETECTADO"}
+                            icon={ShieldCheck}
+                            color="emerald"
+                        />
+                        <StatusCard
+                            label={`Saldo Final (${endingDate || '...'})`}
+                            value={endingBalance !== null ? formatCurrency(endingBalance) : "NO DETECTADO"}
+                            icon={Activity}
+                            color="amber"
+                        />
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden relative group">
@@ -189,16 +308,65 @@ export const BankStatementImporter: React.FC = () => {
                         </table>
                     </div>
 
-                    <div className="flex justify-end gap-6 pt-10 border-t border-slate-800 flex-wrap">
-                        <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
-                            Abortar Sincronización
-                        </button>
-                        <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
-                            Consolidar {transactions.length} Transacciones
-                            <Zap className="w-5 h-5 text-emerald-200" />
-                        </button>
+                    <div className="flex flex-col gap-8 pt-10 border-t border-slate-800">
+                        {accountStatus !== 'valid' && accountNumber && (
+                            <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] animate-in fade-in slide-in-from-right-4 duration-500">
+                                <div className="flex items-center gap-4 mb-4 md:mb-0">
+                                    <div className="p-3 bg-rose-500/20 rounded-xl">
+                                        <AlertCircle className="w-6 h-6 text-rose-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-black text-white uppercase tracking-widest">Atención: Documentación Incompleta</p>
+                                        <p className="text-[10px] font-black text-rose-400/70 uppercase tracking-[0.2em] mt-1">La documentación de esta cuenta no está cargada en el sistema.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowAccountForm(true)}
+                                    className="px-10 py-5 bg-[#f43f5e] hover:bg-[#e11d48] text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-3 shadow-2xl shadow-rose-900/40 hover:-translate-y-1 active:scale-95"
+                                >
+                                    <Building2 className="w-5 h-5" />
+                                    COMPLETAR DOCUMENTACIÓN
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-6 flex-wrap">
+                            <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
+                                Abortar Sincronización
+                            </button>
+                            <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
+                                Consolidar {transactions.length} Transacciones
+                                <Zap className="w-5 h-5 text-emerald-200" />
+                            </button>
+                        </div>
                     </div>
                 </div>
+            )}
+            {showAccountForm && (
+                <BankAccountForm
+                    initialData={accountNumber ? {
+                        id: 0,
+                        account_name: `${bankName || 'BANCO'} CORRIENTE *${accountNumber.slice(-4)}`.toUpperCase(),
+                        bank_name: bankName || 'BANCO POR DEFINIR',
+                        account_number: accountNumber,
+                        account_type: 'checking',
+                        routing_number: routingNumber || '',
+                        balance: openingBalance || 0,
+                        currency: 'USD',
+                        is_active: true,
+                        created_at: ''
+                    } : undefined}
+                    onCancel={() => setShowAccountForm(false)}
+                    onSubmit={async (data) => {
+                        const res = createBankAccount(data);
+                        if (res.success) {
+                            setAccountStatus('valid');
+                            setShowAccountForm(false);
+                            // Refresh accounts
+                            setBankAccounts(getBankAccounts());
+                        }
+                    }}
+                />
             )}
         </div>
     );
