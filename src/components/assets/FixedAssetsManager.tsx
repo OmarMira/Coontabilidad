@@ -22,6 +22,8 @@ import { AssetRegisterReport } from './reports/AssetRegisterReport';
 import { DepreciationScheduleReport } from './reports/DepreciationScheduleReport';
 import { DisposalSummaryReport } from './reports/DisposalSummaryReport';
 import { useLocale } from '@/i18n/useLocale';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface FixedAssetsManagerProps {
   db: any; // Database instance passed from App
@@ -37,6 +39,7 @@ interface FixedAssetsManagerProps {
  * - Category management
  */
 export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) => {
+  const { user } = useAuth();
   const { t } = useLocale();
   const [assets, setAssets] = useState<FixedAsset[]>([]);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -94,10 +97,15 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setLoading(true);
       setError(null);
 
+      if (!user?.id) {
+        console.error('[FixedAssetsManager] userId no disponible. Operación abortada.');
+        return;
+      }
+
       const controller = getFixedAssetsController(db);
       const now = new Date();
 
-      const result = await controller.runDepreciationBatch(now);
+      const result = await controller.runDepreciationBatch(now, user.id);
 
       setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: ${(result.total_depreciation_amount / 100).toFixed(2)}`);
 

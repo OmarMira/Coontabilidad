@@ -7,6 +7,8 @@ import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import type { AssetCategory } from '../../services/accounting/AssetCategoryService';
 import type { AssetPurchaseData, FixedAsset } from '../../services/accounting/FixedAssetService';
 import { useLocale } from '../../i18n/useLocale';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface AssetFormProps {
     asset: FixedAsset | null;
@@ -16,6 +18,7 @@ interface AssetFormProps {
 }
 
 export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, db }) => {
+    const { user } = useAuth();
     const { t } = useLocale();
     const [categories, setCategories] = useState<AssetCategory[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<AssetCategory | null>(null);
@@ -118,6 +121,11 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
         e.preventDefault();
         setError('');
 
+        if (!user?.id) {
+            console.error('[AssetForm] userId no disponible. Operación abortada.');
+            return;
+        }
+
         if (!validateForm()) return;
 
         setLoading(true);
@@ -143,7 +151,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                 await controller.updateAsset(asset.id, purchaseData);
             } else {
                 // Create new asset
-                await controller.purchaseAsset(purchaseData, 1); // TODO: Get user ID from context
+                await controller.purchaseAsset(purchaseData, user?.id ?? null);
             }
 
             onSave();

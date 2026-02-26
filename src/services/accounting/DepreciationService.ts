@@ -64,8 +64,11 @@ export class DepreciationService {
      */
     async runMonthlyDepreciationBatch(
         periodDate: Date,
-        userId: number = 1
+        userId: number | null
     ): Promise<DepreciationBatchResult> {
+        if (userId === null || userId === undefined) {
+            throw new Error('[DepreciationService] userId requerido. Operación abortada.');
+        }
         const periodDateStr = this.formatPeriodDate(periodDate);
 
         // Get all active assets
@@ -118,8 +121,11 @@ export class DepreciationService {
     async calculateDepreciationForAsset(
         assetId: number,
         periodDate: Date,
-        userId: number = 1
+        userId: number | null
     ): Promise<DepreciationEntry | null> {
+        if (userId === null || userId === undefined) {
+            throw new Error('[DepreciationService] userId requerido. Operación abortada.');
+        }
         const asset = await this.assetService.getAssetById(assetId);
         if (!asset) {
             throw new Error(`Asset ${assetId} not found`);

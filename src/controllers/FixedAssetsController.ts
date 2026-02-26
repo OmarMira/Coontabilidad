@@ -33,7 +33,7 @@ export class FixedAssetsController {
             this.db = new SQLiteEngine();
             this.db.setDB(db);
         }
-        
+
         this.categoryService = new AssetCategoryService(this.db);
         this.assetService = new FixedAssetService(this.db);
         this.depreciationService = new DepreciationService(this.db);
@@ -76,7 +76,10 @@ export class FixedAssetsController {
     // FIXED ASSETS
     // ==========================================
 
-    async purchaseAsset(data: AssetPurchaseData, userId: number = 1) {
+    async purchaseAsset(data: AssetPurchaseData, userId: number | null) {
+        if (userId === null || userId === undefined) {
+            throw new Error('[FixedAssetsController] userId requerido. Operación abortada.');
+        }
         return await this.assetService.purchaseAsset(data, userId);
     }
 
@@ -104,11 +107,17 @@ export class FixedAssetsController {
     // DEPRECIATION
     // ==========================================
 
-    async runDepreciationBatch(periodDate: Date, userId: number = 1) {
+    async runDepreciationBatch(periodDate: Date, userId: number | null) {
+        if (userId === null || userId === undefined) {
+            throw new Error('[FixedAssetsController] userId requerido. Operación abortada.');
+        }
         return await this.depreciationService.runMonthlyDepreciationBatch(periodDate, userId);
     }
 
-    async calculateAssetDepreciation(assetId: number, periodDate: Date, userId: number = 1) {
+    async calculateAssetDepreciation(assetId: number, periodDate: Date, userId: number | null) {
+        if (userId === null || userId === undefined) {
+            throw new Error('[FixedAssetsController] userId requerido. Operación abortada.');
+        }
         return await this.depreciationService.calculateDepreciationForAsset(assetId, periodDate, userId);
     }
 
@@ -128,7 +137,10 @@ export class FixedAssetsController {
     // ASSET DISPOSAL
     // ==========================================
 
-    async disposeAsset(assetId: number, disposalData: DisposalData, userId: number = 1) {
+    async disposeAsset(assetId: number, disposalData: DisposalData, userId: number | null) {
+        if (userId === null || userId === undefined) {
+            throw new Error('[FixedAssetsController] userId requerido. Operación abortada.');
+        }
         return await this.disposalService.disposeAsset(assetId, disposalData, userId);
     }
 

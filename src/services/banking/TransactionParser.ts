@@ -1,0 +1,383 @@
+// SQLiteEngine interface — mirrors the public API of SQLiteEngine.ts.
+// Defined locally to avoid TS2709 namespace collision caused by `declare module '*'` in custom.d.ts.
+interface IDbEngine {
+    exec(sql: string): Promise<void>;
+    run(sql: string, params?: any[]): Promise<void>;
+    select(sql: string, params?: any[]): Promise<Record<string, any>[]>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TIPOS — alineados exactamente con migration 016 constraints
+// ─────────────────────────────────────────────────────────────
+export type TransactionState =
+    | 'IMPORTED'
+    | 'HIGH_RISK_PERSONAL'
+    | 'PENDING_SUPERVISOR'
+    | 'DISPUTED'
+    | 'VERIFIED';
+
+export type SuggestedCategory =
+    | 'PERSONAL_EXPENSE'
+    | 'OWNERS_DRAW'
+    | 'PENDING_REVIEW'
+    | 'TRANSPORT_INCOME'
+    | 'CONTRACTOR_PAYMENT';
+
+export interface RiskKeyword {
+    id: number;
+    merchant_name: string;
+    pattern: string;
+    pattern_type: 'REGEX' | 'LIKE' | 'EXACT';
+    risk_level: 'HIGH' | 'MEDIUM' | 'LOW';
+    suggested_category: SuggestedCategory;
+    auto_classify: number; // SQLite stores boolean as 0|1
+}
+
+export interface ParseResult {
+    transaction_id: number;
+    description: string;
+    state: TransactionState;
+    matched_keyword_id: number | null;
+    suggested_category: SuggestedCategory | null;
+    confidence_score: number;
+    auto_classified: boolean;
+    // Para Zelle/P2P: nombre extraído de la nota
+    extracted_reference: string | null;
+    // Para Invoice: número de factura extraído
+    extracted_invoice_number: number | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// MOTOR DE DOS CAPAS
+// ─────────────────────────────────────────────────────────────
+export class TransactionParser {
+    private db: IDbEngine;
+    private keywordCache: RiskKeyword[] = [];
+    private cacheLoadedAt: number = 0;
+    private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+    constructor(db: IDbEngine) {
+        this.db = db;
+    }
+
+    // ── Carga de reglas desde DB ──────────────────────────────
+    // NOTE: SQLiteEngine.select() returns Promise<Record<string, any>[]> — no generics.
+    // We cast the rows to RiskKeyword after retrieval.
+    private async loadKeywords(): Promise<void> {
+        const now = Date.now();
+        if (this.keywordCache.length > 0 && (now - this.cacheLoadedAt) < this.CACHE_TTL_MS) {
+            return;
+        }
+        const rows = await this.db.select(
+            `SELECT id, merchant_name, pattern, pattern_type,
+                    risk_level, suggested_category,
+                    auto_classify
+             FROM   risk_keywords
+             WHERE  is_active = 1
+             ORDER  BY risk_level DESC, id ASC`
+        );
+        this.keywordCache = rows as unknown as RiskKeyword[];
+        this.cacheLoadedAt = now;
+    }
+
+    // ── CAPA 1: Regex determinístico ─────────────────────────
+    private matchLayer1(description: string): { keyword: RiskKeyword; score: number } | null {
+        const descUpper = description.toUpperCase();
+
+        for (const kw of this.keywordCache) {
+            let matched = false;
+
+            if (kw.pattern_type === 'REGEX') {
+                try {
+                    // El patrón en DB incluye flags: /pattern/flags
+                    const flagMatch = kw.pattern.match(/^\/(.+)\/([gimsuy]*)$/);
+                    if (flagMatch) {
+                        const regex = new RegExp(flagMatch[1], flagMatch[2]);
+                        matched = regex.test(description);
+                    }
+                } catch {
+                    console.warn(`[TransactionParser] Regex inválido en keyword ${kw.id}: ${kw.pattern}`);
+                }
+            } else if (kw.pattern_type === 'LIKE') {
+                // Convertir SQL LIKE a match simple: % = wildcard, _ = un carácter
+                const likePattern = kw.pattern
+                    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escapar regex especiales
+                    .replace(/%/g, '.*')
+                    .replace(/_/g, '.');
+                matched = new RegExp(`^${likePattern}$`, 'i').test(descUpper);
+            } else if (kw.pattern_type === 'EXACT') {
+                matched = descUpper === kw.pattern.toUpperCase();
+            }
+
+            if (matched) {
+                // auto_classify viene como 0|1 desde SQLite
+                return { keyword: kw, score: kw.auto_classify ? 1.0 : 0.9 };
+            }
+        }
+        return null;
+    }
+
+    // ── CAPA 2: Fuzzy scoring Jaro-Winkler ───────────────────
+    // Usado para Zelle P2P donde el nombre del beneficiario
+    // es inconsistente. Umbral calibrado empíricamente.
+    private jaroWinkler(s1: string, s2: string): number {
+        if (s1 === s2) return 1.0;
+        const len1 = s1.length;
+        const len2 = s2.length;
+        if (len1 === 0 || len2 === 0) return 0.0;
+
+        const matchDist = Math.max(0, Math.floor(Math.max(len1, len2) / 2) - 1);
+        const s1Matches = new Array(len1).fill(false);
+        const s2Matches = new Array(len2).fill(false);
+
+        let matches = 0;
+        let transpositions = 0;
+
+        for (let i = 0; i < len1; i++) {
+            const start = Math.max(0, i - matchDist);
+            const end = Math.min(i + matchDist + 1, len2);
+            for (let j = start; j < end; j++) {
+                if (s2Matches[j] || s1[i] !== s2[j]) continue;
+                s1Matches[i] = true;
+                s2Matches[j] = true;
+                matches++;
+                break;
+            }
+        }
+
+        if (matches === 0) return 0.0;
+
+        let k = 0;
+        for (let i = 0; i < len1; i++) {
+            if (!s1Matches[i]) continue;
+            while (!s2Matches[k]) k++;
+            if (s1[i] !== s2[k]) transpositions++;
+            k++;
+        }
+
+        const jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3;
+
+        // Winkler prefix bonus (hasta 4 caracteres)
+        let prefix = 0;
+        for (let i = 0; i < Math.min(4, Math.min(len1, len2)); i++) {
+            if (s1[i] === s2[i]) prefix++;
+            else break;
+        }
+
+        return jaro + prefix * 0.1 * (1 - jaro);
+    }
+
+    // ── Extracción de referencias de notas Zelle/Invoice ─────
+    private extractReferences(description: string): {
+        extracted_reference: string | null;
+        extracted_invoice_number: number | null;
+    } {
+        // Extraer número de factura: "Invoice 334", "invoice #334", "INV-334"
+        const invoiceMatch = description.match(/invoice\s*#?\s*(\d+)|INV[-\s](\d+)/i);
+        const extracted_invoice_number = invoiceMatch
+            ? parseInt(invoiceMatch[1] ?? invoiceMatch[2], 10)
+            : null;
+
+        // Extraer nombre de Zelle: "Zelle - Omar M", "ZELLE PAYMENT FROM JOHN"
+        const zelleMatch = description.match(/Zelle\s*[-–]\s*(.+?)(?:\s+\d|$)/i);
+        const extracted_reference = zelleMatch ? zelleMatch[1].trim() : null;
+
+        return { extracted_reference, extracted_invoice_number };
+    }
+
+    // ── MÉTODO PRINCIPAL ──────────────────────────────────────
+    async parse(transaction_id: number, description: string): Promise<ParseResult> {
+        await this.loadKeywords();
+
+        const { extracted_reference, extracted_invoice_number } = this.extractReferences(description);
+
+        // CAPA 1
+        const layer1Match = this.matchLayer1(description);
+
+        if (layer1Match && layer1Match.keyword.auto_classify) {
+            return {
+                transaction_id,
+                description,
+                state: 'VERIFIED',
+                matched_keyword_id: layer1Match.keyword.id,
+                suggested_category: layer1Match.keyword.suggested_category,
+                confidence_score: 1.0,
+                auto_classified: true,
+                extracted_reference,
+                extracted_invoice_number,
+            };
+        }
+
+        if (layer1Match && !layer1Match.keyword.auto_classify) {
+            const state: TransactionState =
+                layer1Match.keyword.risk_level === 'HIGH'
+                    ? 'HIGH_RISK_PERSONAL'
+                    : 'IMPORTED';
+            return {
+                transaction_id,
+                description,
+                state,
+                matched_keyword_id: layer1Match.keyword.id,
+                suggested_category: layer1Match.keyword.suggested_category,
+                confidence_score: layer1Match.score,
+                auto_classified: false,
+                extracted_reference,
+                extracted_invoice_number,
+            };
+        }
+
+        // CAPA 2: Fuzzy para P2P sin match determinístico
+        // NOTA: El umbral F₀.₅ se calibra con datos reales en Sprint 2.
+        // Valor provisional: 0.82. Reemplazar después de calibración con 100 tx BofA reales.
+        const FUZZY_THRESHOLD = 0.82; // TODO: calibrar con dataset real BofA
+
+        let bestScore = 0;
+        let bestKeyword: RiskKeyword | null = null;
+
+        for (const kw of this.keywordCache) {
+            const score = this.jaroWinkler(
+                description.toLowerCase(),
+                kw.merchant_name.toLowerCase()
+            );
+            if (score > bestScore) {
+                bestScore = score;
+                bestKeyword = kw;
+            }
+        }
+
+        if (bestScore >= FUZZY_THRESHOLD && bestKeyword !== null) {
+            return {
+                transaction_id,
+                description,
+                state: 'IMPORTED', // Fuzzy nunca auto-clasifica — siempre requiere revisión
+                matched_keyword_id: bestKeyword.id,
+                suggested_category: bestKeyword.suggested_category,
+                confidence_score: bestScore,
+                auto_classified: false,
+                extracted_reference,
+                extracted_invoice_number,
+            };
+        }
+
+        // Sin match en ninguna capa
+        return {
+            transaction_id,
+            description,
+            state: 'IMPORTED',
+            matched_keyword_id: null,
+            suggested_category: null,
+            confidence_score: 0,
+            auto_classified: false,
+            extracted_reference,
+            extracted_invoice_number,
+        };
+    }
+
+    // ── Procesar lote e insertar estados en DB ────────────────
+    // NOTE: SQLiteEngine.exec() returns Promise<void> — no .changes property.
+    // For UPSERT, exec() is sufficient as it runs DDL/DML without parameterized binding.
+    // For parameterized INSERTs, run() is used.
+    async processBatch(
+        transactions: Array<{ id: number; description: string }>,
+        userId: number | null
+    ): Promise<ParseResult[]> {
+        if (userId === null || userId === undefined) {
+            throw new Error('[TransactionParser] userId requerido. Operación abortada.');
+        }
+
+        const results: ParseResult[] = [];
+
+        for (const tx of transactions) {
+            const result = await this.parse(tx.id, tx.description);
+            results.push(result);
+
+            const keywordIdSQL = result.matched_keyword_id !== null
+                ? String(result.matched_keyword_id)
+                : 'NULL';
+            const quarantineStart = result.state === 'HIGH_RISK_PERSONAL'
+                ? `datetime('now')`
+                : 'NULL';
+            const slaDeadline = result.state === 'HIGH_RISK_PERSONAL'
+                ? `datetime('now', '+72 hours')`
+                : 'NULL';
+            const isVerified = result.state === 'VERIFIED' ? 1 : 0;
+
+            // Insertar o actualizar estado en transaction_states
+            // ON CONFLICT requires SQLite 3.24+ (available in all modern browsers)
+            await this.db.exec(`
+                INSERT INTO transaction_states (
+                    transaction_id, current_state, risk_keyword_id,
+                    risk_score, is_verified,
+                    quarantine_started_at, sla_deadline
+                ) VALUES (
+                    ${tx.id},
+                    '${result.state}',
+                    ${keywordIdSQL},
+                    ${result.confidence_score},
+                    ${isVerified},
+                    ${quarantineStart},
+                    ${slaDeadline}
+                )
+                ON CONFLICT(transaction_id) DO UPDATE SET
+                    current_state         = excluded.current_state,
+                    risk_keyword_id       = excluded.risk_keyword_id,
+                    risk_score            = excluded.risk_score,
+                    is_verified           = excluded.is_verified,
+                    quarantine_started_at = excluded.quarantine_started_at,
+                    sla_deadline          = excluded.sla_deadline
+            `);
+
+            // Log en quarantine_audit_log para HIGH_RISK
+            if (result.state === 'HIGH_RISK_PERSONAL') {
+                const stateRows = await this.db.select(
+                    `SELECT id FROM transaction_states WHERE transaction_id = ${tx.id} LIMIT 1`
+                );
+                if (stateRows.length > 0) {
+                    const stateId = stateRows[0]['id'] as number;
+                    await this.db.exec(`
+                        INSERT INTO quarantine_audit_log (
+                            transaction_id, state_id, action_type,
+                            performed_by, previous_state, new_state
+                        ) VALUES (
+                            ${tx.id}, ${stateId}, 'RISK_DETECTED',
+                            NULL, 'IMPORTED', 'HIGH_RISK_PERSONAL'
+                        )
+                    `);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    // ── Escalación SLA (llamar desde job periódico) ───────────
+    // NOTE: exec() returns void. To get affected rows, we query count before/after.
+    async escalateExpiredQuarantine(): Promise<number> {
+        // Count before
+        const before = await this.db.select(
+            `SELECT COUNT(*) as cnt FROM transaction_states
+             WHERE current_state = 'HIGH_RISK_PERSONAL'
+               AND sla_deadline  < datetime('now')
+               AND is_verified   = 0`
+        );
+        const count = (before[0]?.['cnt'] as number) ?? 0;
+
+        if (count > 0) {
+            await this.db.exec(`
+                UPDATE transaction_states
+                SET    current_state = 'PENDING_SUPERVISOR'
+                WHERE  current_state = 'HIGH_RISK_PERSONAL'
+                  AND  sla_deadline  < datetime('now')
+                  AND  is_verified   = 0
+            `);
+        }
+
+        return count;
+    }
+
+    // ── Invalidar caché (llamar cuando se modifiquen risk_keywords) ──
+    invalidateCache(): void {
+        this.keywordCache = [];
+        this.cacheLoadedAt = 0;
+    }
+}

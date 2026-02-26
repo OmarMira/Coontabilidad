@@ -72,8 +72,14 @@ export class SchemaCrawler {
             }
 
             // 6. Obtener Logic Clock actual para frescura de datos
-            const logicClockRes = await this.db.select("SELECT MAX(logic_clock) as max_clock FROM journal_entries");
-            const currentLogicClock = logicClockRes[0]?.max_clock || 0;
+            let currentLogicClock = 0;
+            try {
+                const logicClockRes = await this.db.select("SELECT MAX(logic_clock) as max_clock FROM journal_entries");
+                currentLogicClock = logicClockRes[0]?.max_clock || 0;
+            } catch (e) {
+                // Columna podría no existir si la migración 008 aún no se ha ejecutado
+                ProductionLogger.warn('SchemaCrawler', 'Columna logic_clock no encontrada, usando valor por defecto 0');
+            }
 
             const context: SchemaContext = {
                 version: '1.0.0-dynamic',

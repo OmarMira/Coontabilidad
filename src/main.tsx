@@ -59,6 +59,27 @@ async function initializeApplication(): Promise<void> {
       return; // El recargo se encarga de lo demás
     }
 
+    // VERIFICAR LIMPIEZA BANCARIA SELECTIVA (Solicitada por el usuario)
+    if (urlParams.has('clean_banking')) {
+      try {
+        const { db, forceSaveDB } = await import('@/database/simple-db');
+        await db.run("DELETE FROM bank_transactions");
+        await db.run("DELETE FROM bank_accounts");
+        await db.run("DELETE FROM import_batches"); // Por si acaso
+        await db.run("DELETE FROM import_transactions_temp");
+        await db.run("UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('bank_accounts', 'bank_transactions', 'import_batches')");
+        await forceSaveDB();
+
+        // Limpiar URL y recargar
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('clean_banking');
+        window.location.href = newUrl.pathname;
+        return;
+      } catch (e: any) {
+        console.error('Error en limpieza bancaria:', e);
+      }
+    }
+
     // Comportamiento normal (incluyendo el clean anterior si existe)
     const forceClean = urlParams.has('clean') || localStorage.getItem('force_clean_start');
     if (forceClean) {

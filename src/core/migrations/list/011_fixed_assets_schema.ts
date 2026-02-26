@@ -189,10 +189,22 @@ export const FixedAssetsSchema: Migration = {
             `);
         }
 
+        // ── Iron Core: Anti-Tamper Trigger ───────────────────────────────────
+        // fixed_assets is guaranteed to exist at this point.
+        await db.exec(`
+            CREATE TRIGGER IF NOT EXISTS protect_asset_financials
+            BEFORE UPDATE OF purchase_cost ON fixed_assets
+            WHEN OLD.status != 'PENDING'
+            BEGIN
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Cannot modify cost of non-PENDING fixed asset');
+            END
+        `);
+
         console.log('✅ Migration 011: Fixed Assets schema created successfully');
         console.log('   - Created 4 tables: asset_categories, fixed_assets, asset_depreciation, asset_disposals');
         console.log('   - Added 6 indexes for query optimization');
         console.log('   - Seeded 6 default asset categories');
+        console.log('   - Iron Core: protect_asset_financials trigger active');
     },
 
     down: async (db: SQLiteEngine) => {

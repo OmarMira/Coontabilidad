@@ -2144,7 +2144,7 @@ const initializeSchema = async (db: any) => {
     create TABLE IF NOT EXISTS sys_migrations(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     version INTEGER NOT NULL UNIQUE,
-    migration_name TEXT NOT NULL,
+    name TEXT NOT NULL,
     applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
   `);

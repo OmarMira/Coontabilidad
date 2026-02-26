@@ -4,6 +4,7 @@ import { logger } from '../core/logging/SystemLogger';
 import { SchemaRepairService } from './SchemaRepairService';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { SchemaCrawler } from '../services/ai/SchemaCrawler';
+import { MigrationEngine } from '../core/migrations/MigrationEngine';
 
 export class DatabaseInitializer {
     static async initializeWithFix(db: initSqlJs.Database): Promise<void> {
@@ -13,6 +14,10 @@ export class DatabaseInitializer {
             // CRITICAL: Wrap sql.js instance in SQLiteEngine for SchemaRepairService compatibility
             const engine = new SQLiteEngine();
             engine.setDB(db);
+
+            // Execute pending migrations
+            logger.info('Database', 'migration_engine', 'Starting database migrations...');
+            await MigrationEngine.getInstance().migrate(engine);
 
             const repairService = new SchemaRepairService(engine);
             const repairLogs = await repairService.repairSchema();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, FileText, BarChart3, Download, ArrowRight, ArrowDownCircle, ChevronRight, TrendingUp, TrendingDown, History, ShieldCheck, Box, Loader2 } from 'lucide-react';
-import { ChartOfAccount } from '../database/simple-db';
+import { ChartOfAccount, getAccountLedger } from '../database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface LedgerEntry {
@@ -53,51 +53,30 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
 
     setIsLoading(true);
     try {
-      // Mock Data using industrial aesthetics patterns for simulation
-      const mockEntries: LedgerEntry[] = [
-        {
-          id: 1,
-          date: '2024-12-01',
-          reference: 'INV-001',
-          description: 'Venta de servicios consultoría IT',
-          debit: selectedAccount.account_type === 'asset' || selectedAccount.account_type === 'expense' ? 1500 : 0,
-          credit: selectedAccount.account_type === 'liability' || selectedAccount.account_type === 'equity' || selectedAccount.account_type === 'revenue' ? 1500 : 0,
-          balance: 1500,
-          source_type: 'invoice',
-          source_id: 1
-        },
-        {
-          id: 2,
-          date: '2024-12-15',
-          reference: 'AST-882',
-          description: 'Ajuste de amortización maquinaria P3',
-          debit: selectedAccount.account_type === 'asset' || selectedAccount.account_type === 'expense' ? 0 : 200,
-          credit: selectedAccount.account_type === 'liability' || selectedAccount.account_type === 'equity' || selectedAccount.account_type === 'revenue' ? 0 : 200,
-          balance: 1300,
-          source_type: 'journal_entry',
-          source_id: 882
-        }
-      ];
+      const result = getAccountLedger(selectedAccount.account_code, dateFrom, dateTo);
 
-      const openingBalance = 0;
-      let runningBalance = openingBalance;
-
-      const entriesWithBalance = mockEntries.map(entry => {
-        if (selectedAccount.account_type === 'asset' || selectedAccount.account_type === 'expense') {
-          runningBalance += entry.debit - entry.credit;
-        } else {
-          runningBalance += entry.credit - entry.debit;
-        }
-        return { ...entry, balance: runningBalance };
-      });
+      if (!result || !result.account) {
+        setAccountLedger(null);
+        return;
+      }
 
       setAccountLedger({
         account: selectedAccount,
-        opening_balance: openingBalance,
-        entries: entriesWithBalance,
-        closing_balance: runningBalance,
-        total_debits: mockEntries.reduce((s, e) => s + e.debit, 0),
-        total_credits: mockEntries.reduce((s, e) => s + e.credit, 0)
+        opening_balance: result.startingBalance,
+        entries: result.transactions.map((tx: any, idx: number) => ({
+          id: tx.journal_id || idx,
+          date: tx.entry_date,
+          reference: tx.reference,
+          description: tx.description,
+          debit: tx.debit_amount,
+          credit: tx.credit_amount,
+          balance: tx.running_balance,
+          source_type: 'journal_entry',
+          source_id: tx.journal_id
+        })),
+        closing_balance: result.endingBalance,
+        total_debits: result.totalDebit,
+        total_credits: result.totalCredit
       });
     } catch (error) {
       console.error('Core Ledger Load Error:', error);

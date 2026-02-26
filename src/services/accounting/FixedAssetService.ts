@@ -95,7 +95,10 @@ export class FixedAssetService {
      * Purchase a new fixed asset
      * Creates the asset record and optionally creates the purchase journal entry
      */
-    async purchaseAsset(data: AssetPurchaseData, userId: number = 1): Promise<number> {
+    async purchaseAsset(data: AssetPurchaseData, userId: number | null): Promise<number> {
+        if (userId === null || userId === undefined) {
+            throw new Error('[FixedAssetService] userId requerido. Operación abortada.');
+        }
         // Validate category exists
         const category = await this.categoryService.getCategoryById(data.category_id);
         if (!category) {

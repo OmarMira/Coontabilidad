@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  assetsInclude: ['**/*.wasm'],
   plugins: [react()],
   test: {
     globals: true,
@@ -26,7 +27,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['sql.js'],
-    exclude: ['@xenova/transformers'] // Lazy load AI models
+    exclude: ['@xenova/transformers', 'wa-sqlite'] // Lazy load AI models and preserve wasm paths
   },
   resolve: {
     alias: {
@@ -64,8 +65,7 @@ export default defineConfig({
             return 'vendor-pdf';
           }
           // Database engines (very heavy)
-          if (id.includes('node_modules/sql.js') ||
-            id.includes('node_modules/wa-sqlite')) {
+          if (id.includes('node_modules/sql.js')) {
             return 'vendor-database';
           }
           // AI/ML (extremely heavy - lazy load recommended)

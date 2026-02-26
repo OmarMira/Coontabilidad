@@ -6,6 +6,8 @@ import { getFixedAssetsController } from '../../controllers/FixedAssetsControlle
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import type { FixedAsset } from '../../services/accounting/FixedAssetService';
 import { useLocale } from '../../i18n/useLocale';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface AssetDisposalFormProps {
     asset: FixedAsset;
@@ -22,6 +24,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
     onCancel,
     db
 }) => {
+    const { user } = useAuth();
     const { t } = useLocale();
     const [formData, setFormData] = useState({
         disposal_date: new Date().toISOString().split('T')[0],
@@ -52,6 +55,11 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
             return;
         }
 
+        if (!user?.id) {
+            console.error('[AssetDisposalForm] userId no disponible. Operación abortada.');
+            return;
+        }
+
         setLoading(true);
         try {
             const controller = getFixedAssetsController(db);
@@ -61,7 +69,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                 disposal_method: formData.disposal_method,
                 disposal_proceeds: Math.round(formData.disposal_proceeds_dollars * 100), // Convert to cents
                 notes: formData.notes
-            });
+            }, user?.id ?? null);
 
             onDispose();
         } catch (err: any) {

@@ -162,7 +162,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                 bank_account_id: matched.id,
                 transaction_date: tx.date,
                 description: tx.description,
-                amount: Math.round(tx.amount * 100), // store as cents
+                amount: tx.amount, // Ya está en dólares desde el preview
                 reference_number: tx.id,
             }));
             const result = insertBankTransactions(toInsert);

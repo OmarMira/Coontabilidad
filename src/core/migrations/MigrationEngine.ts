@@ -6,6 +6,7 @@ import { PurchasingSchemaMigration } from './list/004_purchasing_schema';
 import { AccountingSchemaMigration } from './list/005_accounting_schema';
 import { SystemSchemaMigration } from './list/006_system_schema';
 import { CurrencyFixAndFiscalMigration } from './list/007_currency_fix_and_fiscal';
+import { LogicClockInitMigration } from './list/008_logic_clock_init';
 import { HistoricalDataFixMigration } from './list/008_historical_data_fix';
 import { PerformanceIndicesMigration } from './list/009_performance_indices';
 import { MultiUserSchemaMigration } from './list/010_multi_user_schema';
@@ -13,6 +14,7 @@ import { FixedAssetsSchema } from './list/011_fixed_assets_schema';
 import { BudgetsSchema } from './list/012_budgets_schema';
 import { TaxTransactionsMigration } from './list/013_tax_transactions';
 import { AddAccountAliasMigration } from './list/015_add_account_alias';
+import { RemediationSchemaMigration } from './list/016_remediation_schema';
 
 export interface Migration {
     version: number;
@@ -31,13 +33,15 @@ export class MigrationEngine {
         AccountingSchemaMigration,
         SystemSchemaMigration,
         CurrencyFixAndFiscalMigration,
+        LogicClockInitMigration,
         new HistoricalDataFixMigration(),
         new PerformanceIndicesMigration(),
         MultiUserSchemaMigration,
         FixedAssetsSchema,
         BudgetsSchema,
         TaxTransactionsMigration,
-        AddAccountAliasMigration
+        AddAccountAliasMigration,
+        RemediationSchemaMigration
     ];
 
     private constructor() { }
@@ -103,6 +107,24 @@ export class MigrationEngine {
                 applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // ── Legacy compatibility ─────────────────────────────────────────────
+        // Instances created before Sprint 1A used column 'migration_name'.
+        // We add 'name' if missing and back-fill from 'migration_name' so the
+        // UNIQUE constraint on (version, name) never blocks existing records.
+        try {
+            await engine.exec(`ALTER TABLE sys_migrations ADD COLUMN name TEXT`);
+        } catch (_) {
+            // Column already exists — expected on new installations. Ignore.
+        }
+        try {
+            await engine.exec(
+                `UPDATE sys_migrations SET name = migration_name WHERE name IS NULL OR name = ''`
+            );
+        } catch (_) {
+            // 'migration_name' column does not exist — schema is already correct. Ignore.
+        }
+        // ────────────────────────────────────────────────────────────────────
     }
 
     private async getCurrentVersion(engine: SQLiteEngine): Promise<number> {
