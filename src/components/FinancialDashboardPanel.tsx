@@ -122,9 +122,18 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     return currentMonth?.monto_total || 0;
   };
 
-  const calculateCriticalStock = (data: any): number => {
-    // Simular productos con stock crítico
-    return Math.floor(Math.random() * 5) + 1;
+  const calculateCriticalStock = (_data: any): number => {
+    try {
+      const { dbExec } = require('../database/simple-db');
+      const res = dbExec(
+        `SELECT COUNT(*) as cnt FROM products
+         WHERE active = 1
+           AND (stock_quantity <= reorder_point OR stock_quantity <= min_stock_level)`
+      );
+      return res?.[0]?.values?.[0]?.[0] ?? 0;
+    } catch {
+      return 0;
+    }
   };
 
   const calculatePendingCollections = (data: any): number => {

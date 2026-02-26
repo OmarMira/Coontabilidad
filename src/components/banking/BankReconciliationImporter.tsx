@@ -499,7 +499,7 @@ export const BankReconciliationImporter: React.FC = () => {
                             setFile(null);
                         }}
                         onSubmit={async (data) => {
-                            const res = createBankAccount(data);
+                            const res = await createBankAccount(data);
                             if (res.success && res.id) {
                                 setSelectedAccountId(res.id);
                                 setAccounts(getBankAccounts());

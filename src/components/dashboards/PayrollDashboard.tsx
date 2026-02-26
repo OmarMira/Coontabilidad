@@ -111,14 +111,40 @@ export const PayrollDashboard: React.FC = () => {
       t('financialDashboard.months.nov'),
       t('financialDashboard.months.dic')
     ];
+
+    try {
+      const { dbExec } = require('../../database/simple-db');
+      const res = dbExec(`
+        SELECT
+          strftime('%Y', pay_date) as yr,
+          strftime('%m', pay_date) as mo,
+          COALESCE(SUM(total_gross), 0) as amount
+        FROM payroll_periods
+        WHERE status IN ('closed', 'paid')
+        GROUP BY yr, mo
+        ORDER BY yr DESC, mo DESC
+        LIMIT 12
+      `);
+
+      if (res && res[0]?.values?.length > 0) {
+        return res[0].values
+          .slice()
+          .reverse()
+          .map((row: any[]) => ({
+            month: months[parseInt(row[1]) - 1] ?? row[1],
+            amount: row[2] ?? 0,
+            employees: stats.activeEmployees
+          }));
+      }
+    } catch {
+      // fallback to empty below
+    }
+
+    // Sin datos: retorna los últimos 12 meses con cero (sin aleatorios)
     const currentMonth = new Date().getMonth();
     return Array.from({ length: 12 }, (_, i) => {
       const monthIndex = (currentMonth - 11 + i + 12) % 12;
-      return {
-        month: months[monthIndex],
-        amount: 115000 + Math.random() * 15000,
-        employees: 22 + Math.floor(Math.random() * 4)
-      };
+      return { month: months[monthIndex], amount: 0, employees: 0 };
     });
   };
 

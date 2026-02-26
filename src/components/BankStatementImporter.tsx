@@ -4,7 +4,7 @@ import {
     Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X, Building2
 } from 'lucide-react';
 import { parseBankPDF } from '../lib/pdf-parser';
-import { getBankAccounts, createBankAccount, BankAccount } from '../database/simple-db';
+import { getBankAccounts, createBankAccount, insertBankTransactions, forceSaveDB, BankAccount } from '../database/simple-db';
 import { BankAccountForm } from './BankAccountForm';
 
 interface BankTransaction {
@@ -17,7 +17,11 @@ interface BankTransaction {
     mappedAccount: string;
 }
 
-export const BankStatementImporter: React.FC = () => {
+interface BankStatementImporterProps {
+    onImportComplete?: (count: number) => void;
+}
+
+export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ onImportComplete }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [files, setFiles] = useState<File[]>([]);
     const [step, setStep] = useState<'upload' | 'analysis' | 'review'>('upload');
@@ -33,6 +37,8 @@ export const BankStatementImporter: React.FC = () => {
     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
     const [showAccountForm, setShowAccountForm] = useState(false);
     const [processingProgress, setProcessingProgress] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -117,7 +123,11 @@ export const BankStatementImporter: React.FC = () => {
             setBankAccounts(activeAccounts);
 
             if (detectedAcc) {
-                const found = activeAccounts.find(a => a.account_number === detectedAcc);
+                const found = activeAccounts.find(a =>
+                    a.account_number === detectedAcc ||
+                    a.account_number.endsWith(detectedAcc) ||
+                    detectedAcc.endsWith(a.account_number)
+                );
                 if (!found) {
                     setAccountStatus('missing');
                 } else if (!found.is_active) {
@@ -135,6 +145,40 @@ export const BankStatementImporter: React.FC = () => {
     };
 
     const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const handleConsolidate = async () => {
+        if (accountStatus !== 'valid' || transactions.length === 0) return;
+        setIsProcessing(true);
+        setImportResult(null);
+        try {
+            // Resolve bank account ID from account number
+            const matched = bankAccounts.find(a => a.account_number === accountNumber);
+            if (!matched) {
+                setImportResult({ success: false, message: 'Cuenta bancaria no encontrada. Complete la documentación primero.' });
+                return;
+            }
+            // Map parsed transactions to DB format
+            const toInsert = transactions.map(tx => ({
+                bank_account_id: matched.id,
+                transaction_date: tx.date,
+                description: tx.description,
+                amount: Math.round(tx.amount * 100), // store as cents
+                reference_number: tx.id,
+            }));
+            const result = insertBankTransactions(toInsert);
+            if (result.success) {
+                await forceSaveDB();
+                setImportResult({ success: true, message: `✓ ${result.importedCount} transacciones consolidadas exitosamente.` });
+                onImportComplete?.(result.importedCount);
+            } else {
+                setImportResult({ success: false, message: result.message });
+            }
+        } catch (e) {
+            setImportResult({ success: false, message: `Error inesperado: ${e instanceof Error ? e.message : 'Unknown'}` });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
@@ -177,12 +221,13 @@ export const BankStatementImporter: React.FC = () => {
                                     <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-tight">Cuenta<br />Verificada</span>
                                 </>
                             ) : (
-                                <>
-                                    <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 animate-bounce">
-                                        <AlertCircle className="w-6 h-6" />
-                                    </div>
-                                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-tight">Registro<br />Pendiente</span>
-                                </>
+                                <button
+                                    onClick={() => setShowAccountForm(true)}
+                                    className="flex items-center gap-3 px-6 py-3 bg-[#f43f5e] hover:bg-[#e11d48] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-rose-900/40 animate-pulse hover:animate-none"
+                                >
+                                    <Building2 className="w-4 h-4 shrink-0" />
+                                    Completar<br />Documentación
+                                </button>
                             )}
                         </div>
                     </div>
@@ -330,13 +375,25 @@ export const BankStatementImporter: React.FC = () => {
                             </div>
                         )}
 
+                        {importResult && (
+                            <div className={`px-6 py-4 rounded-2xl text-sm font-bold ${importResult.success
+                                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                                : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+                                }`}>
+                                {importResult.message}
+                            </div>
+                        )}
                         <div className="flex justify-end gap-6 flex-wrap">
                             <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
                                 Abortar Sincronización
                             </button>
-                            <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
-                                Consolidar {transactions.length} Transacciones
-                                <Zap className="w-5 h-5 text-emerald-200" />
+                            <button
+                                onClick={handleConsolidate}
+                                disabled={isProcessing || accountStatus !== 'valid' || transactions.length === 0}
+                                className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1 active:scale-95"
+                            >
+                                {isProcessing ? 'Procesando...' : `Consolidar ${transactions.length} Transacciones`}
+                                <Zap className={`w-5 h-5 ${isProcessing ? 'animate-spin' : 'text-emerald-200'}`} />
                             </button>
                         </div>
                     </div>
@@ -358,7 +415,7 @@ export const BankStatementImporter: React.FC = () => {
                     } : undefined}
                     onCancel={() => setShowAccountForm(false)}
                     onSubmit={async (data) => {
-                        const res = createBankAccount(data);
+                        const res = await createBankAccount(data);
                         if (res.success) {
                             setAccountStatus('valid');
                             setShowAccountForm(false);

@@ -1167,10 +1167,6 @@ function App() {
 
   const handleDeleteBankAccount = async (id: number) => {
     try {
-      if (!window.confirm(t('messages.confirmDelete'))) {
-        return;
-      }
-
       const result = deleteBankAccount(id);
       if (result.success) {
         await loadData();
@@ -1922,6 +1918,7 @@ function App() {
                       onAddAccount={() => setState(prev => ({ ...prev, showingBankAccountForm: true }))}
                       onEditAccount={handleEditBankAccount}
                       onDeleteAccount={handleDeleteBankAccount}
+                      onNavigateToJournal={() => setState(prev => ({ ...prev, currentSection: 'journal-entries' }))}
                     />
                   )}
                 </>

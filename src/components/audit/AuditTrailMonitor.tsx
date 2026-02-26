@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AuditChainVerifier } from '@/modules/audit/AuditChainVerifier';
+import { AuditChainService } from '@/services/audit/AuditChainService';
+import { getDBEngine } from '@/database/simple-db';
 import { Shield, ShieldAlert, ShieldCheck, RefreshCw, Activity } from 'lucide-react';
 import { useLocale } from '@/i18n/useLocale';
 
@@ -25,18 +26,27 @@ export const AuditTrailMonitor: React.FC = () => {
 
     const verifyChain = async () => {
         setStatus(prev => ({ ...prev, status: 'verifying' }));
+        try {
+            const engine = getDBEngine();
+            const auditChain = new AuditChainService(engine);
+            const report = await auditChain.verifyIntegrity();
 
-        // Mock verification for UI demo
-        setTimeout(() => {
-            const isSecure = Math.random() > 0.1; // 90% secure
             setStatus({
-                status: isSecure ? 'secure' : 'compromised',
-                lastHash: Array(64).fill(0).map(() => (Math.random() * 16 | 0).toString(16)).join('').slice(0, 16) + '...',
-                totalEvents: Math.floor(Math.random() * 1000) + 50,
+                status: report.valid ? 'secure' : 'compromised',
+                lastHash: report.lastChainHash
+                    ? report.lastChainHash.slice(0, 16) + '...'
+                    : 'GENESIS',
+                totalEvents: report.totalRecords,
                 lastVerified: new Date(),
-                errors: isSecure ? [] : ['Hash Mismatch at Block #45', 'Broken Link #89']
+                errors: report.errors.map(e => e.message)
             });
-        }, 1500);
+        } catch (err) {
+            setStatus(prev => ({
+                ...prev,
+                status: 'unknown',
+                errors: [err instanceof Error ? err.message : 'Error verificando cadena']
+            }));
+        }
     };
 
     useEffect(() => {

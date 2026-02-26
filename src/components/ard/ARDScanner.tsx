@@ -23,9 +23,9 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
             });
 
             // Parsear el texto reconocido para extraer datos relevantes
-            const mockResult = parseOCRText(text);
+            const parsedResult = parseOCRText(text);
 
-            updateARDDocumentStatus(id, 'processed', mockResult);
+            updateARDDocumentStatus(id, 'processed', parsedResult);
             onDocumentProcessed();
         } catch (error) {
             console.error('Error al procesar OCR:', error);

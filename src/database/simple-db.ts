@@ -1831,7 +1831,8 @@ export const resetDB = async () => {
 };
 
 /**
- * Configura el auto-guardado periódico de la base de datos
+ * Configura el auto-guardado periódico de la base de datos.
+ * También guarda al cerrar la ventana.
  */
 function setupAutoSave(): void {
   setInterval(async () => {
@@ -1841,7 +1842,14 @@ function setupAutoSave(): void {
     } catch (e) {
       // Silencioso para evitar spam en consola en producción
     }
-  }, 5000); // Guardar cada 5 segundos para balancear seguridad y rendimiento
+  }, 5000);
+
+  // Guardar al cerrar la ventana
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+      forceSaveDB().catch(() => { });
+    });
+  }
 }
 
 export const initDB = async (password?: string): Promise<any> => {
@@ -3717,26 +3725,7 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
   logger.info('Database', 'initialization_complete', 'Esquema y datos iniciales verificados');
 };
 
-const setupAutoSave = (): void => {
-  if (!db) return;
-
-  setInterval(async () => {
-    try {
-      await saveDatabase();
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    }
-  }, BACKUP_INTERVAL);
-
-  // Guardar al cerrar la ventana
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => {
-      saveDatabase().catch(console.error);
-    });
-  }
-
-  console.log('Auto-save configured');
-};
+// setupAutoSave is defined at line ~1836 (consolidated)
 
 // Guardar base de datos
 export const saveDatabase = async (): Promise<void> => {
@@ -10438,7 +10427,7 @@ export function getBankAccounts(): BankAccount[] {
   }
 
   try {
-    const result = db.exec("SELECT * FROM bank_accounts ORDER BY account_name");
+    const result = db.exec("SELECT * FROM bank_accounts WHERE is_active = 1 ORDER BY account_name");
 
     if (result.length === 0 || result[0].values.length === 0) {
       return [];
@@ -10487,6 +10476,26 @@ export function getBankAccountById(id: number): BankAccount | null {
 }
 
 /**
+ * Cuenta cuántas transacciones importadas tiene una cuenta bancaria.
+ * Usado para bloquear eliminaciones que dejarían registros huérfanos.
+ */
+export function getBankAccountTransactionCount(accountId: number): number {
+  if (!db) return 0;
+  try {
+    const stmt = db.prepare(`SELECT COUNT(*) as cnt FROM bank_transactions WHERE bank_account_id = ?`);
+    stmt.bind([accountId]);
+    let count = 0;
+    if (stmt.step()) {
+      count = Number(stmt.getAsObject().cnt) || 0;
+    }
+    stmt.free();
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Busca todas las cuentas bancarias que coincidan con un número (coincidencia parcial o exacta)
  * Útil para desambiguación.
  */
@@ -10495,7 +10504,7 @@ export function findBankAccountsByNumber(accountNumber: string): BankAccount[] {
 
   try {
     const result = db.exec(
-      "SELECT * FROM bank_accounts WHERE account_number = ? OR account_number LIKE ?",
+      "SELECT * FROM bank_accounts WHERE (account_number = ? OR account_number LIKE ?) AND is_active = 1",
       [accountNumber, `%${accountNumber}`]
     );
 
@@ -10554,11 +10563,12 @@ export async function createBankAccount(data: Omit<BankAccount, 'id' | 'created_
     const idResult = db.exec("SELECT last_insert_rowid()");
     const id = idResult[0].values[0][0] as number;
 
-    // AuditorÃ­a
-    db.exec(`
+    // Auditoría
+    const auditStmt = db.prepare(`
       INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-    `, [
+      VALUES(?, ?, ?, ?, ?, ?)
+    `);
+    auditStmt.run([
       'bank_accounts',
       id,
       'INSERT',
@@ -10566,6 +10576,7 @@ VALUES(?, ?, ?, ?, ?, ?)
       1,
       generateSimpleHash(data)
     ]);
+    auditStmt.free();
 
     logger.info('BankAccounts', 'create_success', 'Cuenta bancaria creada', { id });
 
@@ -10611,11 +10622,12 @@ export async function updateBankAccount(id: number, data: Partial<BankAccount>):
     const stmt = db.prepare(`UPDATE bank_accounts SET ${updateFields.join(', ')} WHERE id = ? `);
     stmt.run(updateValues);
 
-    // AuditorÃ­a
-    db.exec(`
+    // Auditoría
+    const updateAuditStmt = db.prepare(`
       INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-  `, [
+      VALUES(?, ?, ?, ?, ?, ?)
+    `);
+    updateAuditStmt.run([
       'bank_accounts',
       id,
       'UPDATE',
@@ -10623,6 +10635,8 @@ VALUES(?, ?, ?, ?, ?, ?)
       1,
       generateSimpleHash(data)
     ]);
+    updateAuditStmt.free();
+    stmt.free();
 
     logger.info('BankAccounts', 'update_success', 'Cuenta bancaria actualizada', { id });
 
@@ -10647,31 +10661,47 @@ export function deleteBankAccount(id: number): { success: boolean; message: stri
     const account = getBankAccountById(id);
     if (!account) return { success: false, message: 'Cuenta no encontrada' };
 
-    if (account.balance !== 0) {
-      return { success: false, message: 'No se puede eliminar una cuenta con saldo diferente a 0. Ajuste el saldo o desactÃ­vela.' };
+    const hasBalance = account.balance !== 0;
+    const txCount = getBankAccountTransactionCount(id);
+
+    // Lógica de discriminación:
+    if (txCount === 0 && !hasBalance) {
+      // Hard Delete: La cuenta nunca se usó y no tiene saldo. Limpieza física.
+      const hardDeleteStmt = db.prepare("DELETE FROM bank_accounts WHERE id = ?");
+      hardDeleteStmt.run([id]);
+      hardDeleteStmt.free();
+    } else {
+      // Soft Delete: La cuenta tiene historia o saldo. Preservamos para auditoría.
+      const softDeleteStmt = db.prepare("UPDATE bank_accounts SET is_active = 0 WHERE id = ?");
+      softDeleteStmt.run([id]);
+      softDeleteStmt.free();
     }
 
-    // Por seguridad, preferimos Soft Delete para bancos
-    db.exec("UPDATE bank_accounts SET is_active = 0 WHERE id = ?", [id]);
-
-    // AuditorÃ­a
-    db.exec(`
+    // Auditoría
+    const deleteAuditStmt = db.prepare(`
       INSERT INTO audit_log(table_name, record_id, action, old_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-  `, [
+      VALUES(?, ?, ?, ?, ?, ?)
+    `);
+    deleteAuditStmt.run([
       'bank_accounts',
       id,
-      'DELETE', // Marcamos como DELETE en auditorÃ­a aunque sea soft delete para indicar la intenciÃ³n
+      'DELETE',
       JSON.stringify(account),
       1,
       generateSimpleHash(account)
     ]);
+    deleteAuditStmt.free();
 
     logger.info('BankAccounts', 'delete_success', 'Cuenta bancaria desactivada/eliminada', { id });
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Cuenta bancaria eliminada correctamente' };
+    return {
+      success: true,
+      message: hasBalance
+        ? 'Cuenta desactivada (tenía saldo activo — no se puede eliminar definitivamente)'
+        : 'Cuenta bancaria eliminada correctamente'
+    };
   } catch (error) {
     logger.error('BankAccounts', 'delete_failed', 'Error al eliminar cuenta bancaria', { id }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
