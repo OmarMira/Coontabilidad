@@ -39,7 +39,7 @@ interface DR15Data {
     auditHash?: string;
 }
 
-const StepSelectPeriod: React.FC<WizardStepProps> = ({ onNext, data, updateData }) => {
+const StepSelectPeriod: React.FC<WizardStepProps> = ({ onNext, data, updateData, isLoading }) => {
     const { t } = useLocale();
     return (
         <div className="space-y-4">
@@ -141,7 +141,7 @@ const StepReviewFigures: React.FC<WizardStepProps> = ({ onNext, onBack, data, up
     );
 };
 
-const StepFinalize: React.FC<WizardStepProps> = ({ onBack, data, updateData }) => {
+const StepFinalize: React.FC<WizardStepProps> = ({ onNext, onBack, data, updateData }) => {
     const { t } = useLocale();
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -254,10 +254,11 @@ export const DR15PreparationWizard: React.FC = () => {
         confirmed: false
     });
     const [engine] = useState(() => new ExplanationEngine('es-US')); // Spanish for output
-    const [isLoading, setIsLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const isLoading = loading;
 
     const loadRealData = async () => {
-        setIsLoading(true);
+        setLoading(true);
         try {
             const [year, month] = data.period.split('-').map(Number);
             const { TaxReportingService } = await import('@/services/TaxReportingService');
@@ -288,7 +289,7 @@ export const DR15PreparationWizard: React.FC = () => {
         } catch (error) {
             console.error("Error loading DR-15 data:", error);
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
@@ -340,9 +341,9 @@ export const DR15PreparationWizard: React.FC = () => {
                 </div>
             </CardHeader>
             <CardContent className="pt-6">
-                {step === 1 && <StepSelectPeriod onNext={nextStep} data={data} updateData={updateData} engine={engine} isLoading={isLoading} />}
-                {step === 2 && <StepReviewFigures onNext={nextStep} onBack={prevStep} data={data} updateData={updateData} engine={engine} isLoading={isLoading} />}
-                {step === 3 && <StepFinalize onBack={prevStep} data={data} updateData={updateData} engine={engine} isLoading={isLoading} />}
+                {step === 1 && <StepSelectPeriod onNext={nextStep} data={data} updateData={updateData} engine={engine} isLoading={loading} />}
+                {step === 2 && <StepReviewFigures onNext={nextStep} onBack={prevStep} data={data} updateData={updateData} engine={engine} isLoading={loading} />}
+                {step === 3 && <StepFinalize onNext={nextStep} onBack={prevStep} data={data} updateData={updateData} engine={engine} isLoading={loading} />}
             </CardContent>
         </Card>
     );

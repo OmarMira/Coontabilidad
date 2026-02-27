@@ -115,9 +115,25 @@ export const RemediationSchemaMigration: Migration = {
         await db.exec(`CREATE INDEX IF NOT EXISTS idx_qal_txn     ON quarantine_audit_log(transaction_id)`);
         await db.exec(`CREATE INDEX IF NOT EXISTS idx_qal_action  ON quarantine_audit_log(action_type)`);
 
+        // TABLE 5: transaction_classification_memory
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS transaction_classification_memory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                descriptor_pattern TEXT NOT NULL,
+                account_code TEXT NOT NULL,
+                account_name TEXT NOT NULL,
+                confirmed_by INTEGER NOT NULL REFERENCES users(id),
+                confirmed_at TEXT NOT NULL,
+                use_count INTEGER DEFAULT 1,
+                last_used_at TEXT NOT NULL
+            )
+        `);
+        await db.exec(`CREATE INDEX IF NOT EXISTS idx_tcm_pattern ON transaction_classification_memory(descriptor_pattern)`);
+
         console.log('✅ Migration 016: Remediation schema created.');
     },
     down: async (db: SQLiteEngine) => {
+        await db.exec(`DROP TABLE IF EXISTS transaction_classification_memory`);
         await db.exec(`DROP TABLE IF EXISTS quarantine_audit_log`);
         await db.exec(`DROP TABLE IF EXISTS transaction_states`);
         await db.exec(`DROP TABLE IF EXISTS risk_keywords`);

@@ -1,0 +1,3 @@
+﻿src/database/simple-db.ts(10084,98): error TS1064: The return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<{ success: boolean; message: string; id?: number | undefined; }>'?
+src/database/simple-db.ts(10553,88): error TS1064: The return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<{ success: boolean; message: string; id?: number | undefined; }>'?
+src/lib/pdf-parser.ts(180,9): error TS2353: Object literal may only specify known properties, and 'transactions' does not exist in type 'BankStatementResults'.

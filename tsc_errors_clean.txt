@@ -1,0 +1,37 @@
+﻿src/components/BankAccountList.tsx(43,26): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'number' have no overlap.
+src/components/banking/BankReconciliationImporter.tsx(256,58): error TS2339: Property 'validateTriangle' does not exist on type 'typeof StatementSmartParser'.
+src/components/banking/QuarantinePanel.tsx(139,50): error TS2339: Property 'code' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(139,76): error TS2339: Property 'name' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(139,117): error TS2339: Property 'name' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(142,50): error TS2339: Property 'code' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(142,77): error TS2339: Property 'name' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(142,118): error TS2339: Property 'name' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(282,93): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/banking/QuarantinePanel.tsx(285,115): error TS2339: Property 'name' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(286,120): error TS2339: Property 'code' does not exist on type 'ChartOfAccount'.
+src/components/banking/QuarantinePanel.tsx(295,93): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/banking/QuarantinePanel.tsx(299,110): error TS2339: Property 'name' does not exist on type 'ChartOfAccount'.
+src/components/BankStatementImporter.tsx(69,52): error TS2339: Property 'transactions' does not exist on type 'BankStatementResults'.
+src/components/CompanyDataForm.tsx(110,18): error TS2339: Property 'success' does not exist on type 'Promise<{ success: boolean; message: string; warnings?: string[] | undefined; }>'.
+src/components/CompanyDataForm.tsx(111,27): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; warnings?: string[] | undefined; }>'.
+src/components/CompanyDataForm.tsx(112,20): error TS2339: Property 'warnings' does not exist on type 'Promise<{ success: boolean; message: string; warnings?: string[] | undefined; }>'.
+src/components/CompanyDataForm.tsx(113,30): error TS2339: Property 'warnings' does not exist on type 'Promise<{ success: boolean; message: string; warnings?: string[] | undefined; }>'.
+src/components/CompanyDataForm.tsx(120,25): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; warnings?: string[] | undefined; }>'.
+src/components/CompanyDataForm.tsx(121,109): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; warnings?: string[] | undefined; }>'.
+src/components/dr15/DR15PreparationWizard.tsx(61,64): error TS2304: Cannot find name 'isLoading'.
+src/components/dr15/DR15PreparationWizard.tsx(62,18): error TS2304: Cannot find name 'isLoading'.
+src/components/dr15/DR15PreparationWizard.tsx(345,33): error TS2741: Property 'onNext' is missing in type '{ onBack: () => void; data: DR15Data; updateData: (updates: Partial<DR15Data>) => void; engine: ExplanationEngine; isLoading: boolean; }' but required in type 'WizardStepProps'.
+src/components/ManualJournalEntries.tsx(179,18): error TS2339: Property 'success' does not exist on type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>'.
+src/components/ManualJournalEntries.tsx(186,28): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>'.
+src/components/SupplierPayments.tsx(120,19): error TS2339: Property 'success' does not exist on type 'Promise<{ success: boolean; message: string; paymentId?: number | undefined; }>'.
+src/components/SupplierPayments.tsx(121,32): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; paymentId?: number | undefined; }>'.
+src/components/SupplierPayments.tsx(126,20): error TS2339: Property 'paymentId' does not exist on type 'Promise<{ success: boolean; message: string; paymentId?: number | undefined; }>'.
+src/database/simple-db.ts(7483,3): error TS2739: Type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>' is missing the following properties from type '{ success: boolean; message: string; entryId?: number | undefined; }': success, message
+src/database/simple-db.ts(7523,3): error TS2739: Type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>' is missing the following properties from type '{ success: boolean; message: string; entryId?: number | undefined; }': success, message
+src/database/simple-db.ts(7549,3): error TS2739: Type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>' is missing the following properties from type '{ success: boolean; message: string; entryId?: number | undefined; }': success, message
+src/database/simple-db.ts(7716,3): error TS2739: Type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>' is missing the following properties from type '{ success: boolean; message: string; entryId?: number | undefined; }': success, message
+src/database/simple-db.ts(8028,5): error TS2739: Type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>' is missing the following properties from type '{ success: boolean; message: string; entryId?: number | undefined; }': success, message
+src/database/simple-db.ts(12719,4): error TS1064: The return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<{ success: boolean; message: string; id?: number | undefined; }>'?
+src/lib/pdf-parser.ts(180,9): error TS2353: Object literal may only specify known properties, and 'transactions' does not exist in type 'BankStatementResults'.

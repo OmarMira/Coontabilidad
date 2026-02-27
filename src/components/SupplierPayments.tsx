@@ -115,7 +115,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
         notes: paymentForm.notes
       };
 
-      const result = addPayment(paymentData, user?.id || 1);
+      const result = await addPayment(paymentData, user?.id || 1);
 
       if (!result.success) {
         throw new Error(result.message);

@@ -2,6 +2,8 @@ import { extractTextFromPDF } from './pdf-extractor';
 import { normalizeTransaction, NormalizationResult } from '@/components/banking/importers/TransactionNormalizer';
 
 export interface BankStatementResults {
+    transactions?: NormalizationResult[];
+    data?: NormalizationResult[];
     openingBalance?: number;
     endingBalance?: number;
     accountNumber?: string;
@@ -177,7 +179,7 @@ export const parseBankPDF = async (file: File): Promise<BankStatementResults> =>
     });
 
     return {
-        transactions: results,
+        data: results,
         openingBalance,
         endingBalance,
         accountNumber,

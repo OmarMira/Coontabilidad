@@ -2164,6 +2164,17 @@ const initializeSchema = async (db: any) => {
     );
   `);
 
+  // System Configuration (Core Table required by v8+)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS system_config (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        category TEXT DEFAULT 'general',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+
   // Tabla de facturas de compra (bills)
   db.run(`
     create TABLE IF NOT EXISTS bills(
@@ -4782,12 +4793,13 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
     if (invoiceData.status === 'sent' || invoiceData.status === 'paid') {
       const fullInvoice = getInvoiceById(invoiceId);
       if (fullInvoice) {
-        const journalResult = generateSalesJournalEntry(fullInvoice, userId);
-        if (!journalResult.success) {
-          console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
-        } else {
-          console.log('Journal entry created for invoice:', journalResult.entryId);
-        }
+        generateSalesJournalEntry(fullInvoice, userId).then(journalResult => {
+          if (!journalResult.success) {
+            console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
+          } else {
+            console.log('Journal entry created for invoice:', journalResult.entryId);
+          }
+        });
       }
     }
 
@@ -6191,12 +6203,13 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
     if (billData.status === 'approved' || billData.status === 'paid') {
       const fullBill = getBillById(billId);
       if (fullBill) {
-        const journalResult = generatePurchaseJournalEntry(fullBill, userId);
-        if (!journalResult.success) {
-          console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
-        } else {
-          console.log('Journal entry created for bill:', journalResult.entryId);
-        }
+        generatePurchaseJournalEntry(fullBill, userId).then(journalResult => {
+          if (!journalResult.success) {
+            console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
+          } else {
+            console.log('Journal entry created for bill:', journalResult.entryId);
+          }
+        });
       }
     }
 
@@ -7437,7 +7450,7 @@ jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount,
 // ==========================================
 
 // Generar asiento automÃ¡tico para factura de venta
-export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generateSalesJournalEntry = async (invoice: Invoice, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!invoice.customer) {
     return { success: false, message: 'InformaciÃ³n del cliente requerida' };
   }
@@ -7477,7 +7490,7 @@ export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { 
 };
 
 // Generar asiento automÃ¡tico para factura de compra
-export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generatePurchaseJournalEntry = async (bill: Bill, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!bill.supplier) {
     return { success: false, message: 'InformaciÃ³n del proveedor requerida' };
   }
@@ -7517,7 +7530,7 @@ export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { suc
 };
 
 // Generar asiento automÃ¡tico para pago recibido
-export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: Customer, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generatePaymentReceivedJournalEntry = async (payment: Payment, customer: Customer, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   const details: Partial<JournalDetail>[] = [
     // DÃ©bito: Efectivo/Banco
     {
@@ -7684,7 +7697,7 @@ export const createPayment = (paymentData: Partial<Payment>, userId?: number): {
 /**
  * Generar asiento automático para pago realizado (a proveedor)
  */
-export const generatePaymentSentJournalEntry = (payment: SupplierPayment, supplier: Supplier, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generatePaymentSentJournalEntry = async (payment: SupplierPayment, supplier: Supplier, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   const details: Partial<JournalDetail>[] = [
     // DÃ©bito: Cuentas por Pagar (Disminuye pasivo)
     {
@@ -7968,7 +7981,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
  * Genera el asiento de cierre de resultados (Ingresos y Gastos).
  * Transfiere los saldos a la cuenta de Utilidades Retenidas (3130).
  */
-export const generateClosingEntry = (fromDate: string, toDate: string, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generateClosingEntry = async (fromDate: string, toDate: string, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -12705,7 +12718,7 @@ function generateBudgetPeriods(
 export async function createBudget(
   budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'>,
   budgetLines: Omit<BudgetLine, 'id' | 'budget_id' | 'created_at'>[]
-): { success: boolean; message: string; id?: number } {
+): Promise<{ success: boolean; message: string; id?: number }> {
   if (!db) {
     return { success: false, message: 'Database not initialized' };
   }

@@ -1,0 +1,11 @@
+﻿src/components/dr15/DR15PreparationWizard.tsx(61,64): error TS2304: Cannot find name 'isLoading'.
+src/components/dr15/DR15PreparationWizard.tsx(62,18): error TS2304: Cannot find name 'isLoading'.
+src/components/JournalEntryTest.tsx(103,25): error TS2339: Property 'success' does not exist on type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>'.
+src/components/JournalEntryTest.tsx(104,25): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>'.
+src/components/JournalEntryTest.tsx(105,25): error TS2339: Property 'entryId' does not exist on type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>'.
+src/components/JournalEntryTest.tsx(108,18): error TS2339: Property 'success' does not exist on type 'Promise<{ success: boolean; message: string; entryId?: number | undefined; }>'.
+src/components/SupplierPayments.tsx(120,19): error TS2339: Property 'success' does not exist on type 'Promise<{ success: boolean; message: string; paymentId?: number | undefined; }>'.
+src/components/SupplierPayments.tsx(121,32): error TS2339: Property 'message' does not exist on type 'Promise<{ success: boolean; message: string; paymentId?: number | undefined; }>'.
+src/components/SupplierPayments.tsx(126,20): error TS2339: Property 'paymentId' does not exist on type 'Promise<{ success: boolean; message: string; paymentId?: number | undefined; }>'.
+src/database/simple-db.ts(12721,4): error TS1064: The return type of an async function or method must be the global Promise<T> type. Did you mean to write 'Promise<{ success: boolean; message: string; id?: number | undefined; }>'?
+src/lib/pdf-parser.ts(180,9): error TS2353: Object literal may only specify known properties, and 'transactions' does not exist in type 'BankStatementResults'.

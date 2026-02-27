@@ -175,7 +175,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         is_balanced: true
       };
 
-      const result = createJournalEntry(entryData, details);
+      const result = await createJournalEntry(entryData, details);
       if (result.success) {
         toast.success(t('journal.registeredSuccess'));
         loadJournalEntries();

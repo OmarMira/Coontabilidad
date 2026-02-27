@@ -6,10 +6,12 @@ import {
   ScanSearch, HardDrive, UserCheck, User as UserIcon, Lock, Bot, Activity,
   HelpCircle, ChevronDown, ChevronRight, Database, CreditCard, Shield,
   History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
-  CheckCircle
+  CheckCircle, AlertTriangle
 } from 'lucide-react';
 // import { LanguageSwitcher } from './LanguageSwitcher';
-import { saveDatabase } from '../database/simple-db';
+import { db, saveDatabase } from '../database/simple-db';
+import { SQLiteEngine } from '../core/database/SQLiteEngine';
+import { useEffect } from 'react';
 
 import toast from 'react-hot-toast';
 
@@ -36,8 +38,48 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
   const { t } = useLocale();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [quarantineCount, setQuarantineCount] = useState<number>(0);
 
-  const menuItems = NAVIGATION_CONFIG;
+  useEffect(() => {
+    const loadQuarantineCount = async () => {
+      try {
+        const { db } = await import('../database/simple-db');
+        if (!db) return;
+        const result = db.exec(
+          "SELECT COUNT(*) as count FROM transaction_states WHERE current_state IN ('HIGH_RISK_PERSONAL', 'PENDING_SUPERVISOR') AND is_verified = 0"
+        );
+        if (result?.[0]?.values?.[0]) {
+          setQuarantineCount(result[0].values[0][0] as number);
+        }
+      } catch {
+        // tabla no lista aún — silencioso
+      }
+    };
+    loadQuarantineCount();
+    const interval = setInterval(loadQuarantineCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const menuItems: MenuItem[] = [];
+
+  // Insertar Dashboard
+  const dashboardItem = NAVIGATION_CONFIG.find(i => i.id === 'dashboard');
+  if (dashboardItem) menuItems.push(dashboardItem);
+
+  // Insertar Cuarentena
+  menuItems.push({
+    id: 'quarantine-panel',
+    labelKey: 'navigation.quarantine_audit',
+    icon: AlertTriangle,
+    badge: quarantineCount > 0 ? String(quarantineCount) : undefined
+  });
+
+  // Insertar resto de items evitando duplicados
+  NAVIGATION_CONFIG.forEach(item => {
+    if (item.id !== 'dashboard' && item.id !== 'quarantine-panel') {
+      menuItems.push(item);
+    }
+  });
 
 
   // Definir acceso por rol
@@ -73,7 +115,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
       case 'system-audit':
       case 'audit':
-        return ['admin', 'auditor', 'contador'].includes(role);
+        return role === 'admin';
+
+      case 'quarantine-panel':
+        return ['contador', 'auditor', 'admin'].includes(role);
 
       case 'herramientas':
         return role === 'auditor';
@@ -143,7 +188,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
               </span>
 
               {item.badge && (
-                <span className="px-1.5 py-0.5 text-[8px] font-bold uppercase rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                <span className={`
+                  px-1.5 py-0.5 text-[8px] font-bold uppercase rounded-md border
+                  ${item.id === 'quarantine-panel'
+                    ? 'bg-red-500/20 text-red-400 border-red-500/40 animate-pulse'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  }
+                `}>
                   {item.badge}
                 </span>
               )}
@@ -201,22 +252,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         {/* Language Switcher deshabilitado por simplificación i18n */}
         {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
 
-        <button
-          onClick={async () => {
-            const loadToast = toast.loading('Guardando base de datos...');
-            try {
-              const { forceSaveDB } = await import('../database/simple-db');
-              await forceSaveDB();
-              toast.success('Base de datos guardada localmente', { id: loadToast });
-            } catch (error) {
-              toast.error('Error al guardar base de datos', { id: loadToast });
-            }
-          }}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-xl font-bold transition-all border border-blue-600/20 group uppercase text-xs tracking-widest"
-        >
-          <Database className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-          {!isCollapsed && <span>Guardar Local</span>}
-        </button>
+        {/* Indicador de persistencia automática con opción de forzar guardado */}
+        <div className="px-3 pb-2">
+          <button
+            onClick={async () => {
+              const loadingToast = toast.loading(t('common.savingChanges'));
+              try {
+                await saveDatabase();
+                toast.success('✓ Sincronizado con almacenamiento local', { id: loadingToast });
+              } catch {
+                toast.error(t('common.saveError'), { id: loadingToast });
+              }
+            }}
+            title="El sistema guarda automáticamente. Haz clic para forzar sincronización."
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs
+                       text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20
+                       transition-colors group"
+          >
+            <CheckCircle size={14} className="shrink-0 text-emerald-400" />
+            {!isCollapsed && (
+              <span className="flex flex-col items-start leading-tight text-left">
+                <span className="font-medium uppercase tracking-tighter">Auto-guardado activo</span>
+                <span className="text-emerald-600/70 text-[10px] group-hover:text-emerald-400 transition-colors uppercase font-black">
+                  Forzar sincronización
+                </span>
+              </span>
+            )}
+          </button>
+        </div>
 
         <button
           onClick={() => {

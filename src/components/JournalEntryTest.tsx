@@ -81,7 +81,7 @@ export function JournalEntryTest() {
     try {
       const invoice = getInvoiceById(1);
       if (!invoice) return;
-      const result = generateSalesJournalEntry(invoice);
+      const result = await generateSalesJournalEntry(invoice);
       setTestResults(prev => [{
         test: 'Sales Auto-Ledger',
         success: result.success,
@@ -97,7 +97,7 @@ export function JournalEntryTest() {
     try {
       const bill = getBillById(1);
       if (!bill) return;
-      const result = generatePurchaseJournalEntry(bill);
+      const result = await generatePurchaseJournalEntry(bill);
       setTestResults(prev => [{
         test: 'Purchase Auto-Ledger',
         success: result.success,

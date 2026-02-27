@@ -105,7 +105,7 @@ export function CompanyDataForm() {
 
       logger.info('CompanyDataForm', 'save_start', 'Guardando datos de empresa', formData);
 
-      const result = updateCompanyData(formData);
+      const result = await updateCompanyData(formData);
 
       if (result.success) {
         setSuccess(result.message);

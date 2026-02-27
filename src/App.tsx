@@ -60,6 +60,7 @@ const AccountLedger = lazy(() => import('./components/reports/AccountLedger').th
 const UnifiedAssistant = lazy(() => import('./components/ai/UnifiedAssistant').then(m => ({ default: m.UnifiedAssistant })));
 const HealthCheckPage = lazy(() => import('./pages/HealthCheckPage').then(m => ({ default: m.HealthCheckPage })));
 const SystemStatusDashboard = lazy(() => import('./pages/SystemStatusDashboard').then(m => ({ default: m.SystemStatusDashboard })));
+const QuarantinePanel = lazy(() => import('./components/banking/QuarantinePanel').then(m => ({ default: m.QuarantinePanel })));
 
 // Regular imports (lighter components)
 import { UserRoleManager } from './components/system/UserRoleManager';
@@ -1938,6 +1939,11 @@ function App() {
               )}
               {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
               {state.currentSection === 'banking-import' && <BankImport />}
+              {state.currentSection === 'quarantine-panel' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <QuarantinePanel />
+                </Suspense>
+              )}
 
               {/* --- IMPUESTOS FLORIDA --- */}
               {state.currentSection === 'tax-config' && <FiscalSettingsForm />}

@@ -1,0 +1,5 @@
+﻿src/database/simple-db.ts(4814,7): error TS1005: 'try' expected.
+src/database/simple-db.ts(4821,4): error TS1472: 'catch' or 'finally' expected.
+src/database/simple-db.ts(6223,9): error TS1005: 'try' expected.
+src/database/simple-db.ts(6230,6): error TS1472: 'catch' or 'finally' expected.
+src/database/simple-db.ts(13784,1): error TS1005: '}' expected.

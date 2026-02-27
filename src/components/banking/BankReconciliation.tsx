@@ -45,9 +45,16 @@ export const BankReconciliation: React.FC = () => {
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [statements, setStatements] = useState<ReconciliationStatement[]>([]);
     const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
+    const [selectedStatementItem, setSelectedStatementItem] = useState<any>(null);
+    const [matchingInProgress, setMatchingInProgress] = useState(false);
     const [unreconciledTransactions, setUnreconciledTransactions] = useState<BankTransaction[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showNewStatementForm, setShowNewStatementForm] = useState(false);
+
+    const extractReference = (description: string) => {
+        const match = description.match(/CONF#\s*(\S+)/i);
+        return match ? match[1] : '—';
+    };
 
     // Form state for new reconciliation
     const [newStatement, setNewStatement] = useState({
@@ -351,11 +358,16 @@ export const BankReconciliation: React.FC = () => {
                                                             }`}>
                                                             ${Math.abs(transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                         </td>
-                                                        <td className="px-8 py-6 text-xs font-bold text-slate-600 font-mono italic">{transaction.reference_number || 'NULL_PTR'}</td>
+                                                        <td className="px-8 py-6 text-xs font-bold text-slate-400 font-mono italic">
+                                                            {extractReference(transaction.description)}
+                                                        </td>
                                                         <td className="px-8 py-6 text-center">
-                                                            <span className="px-3 py-1.5 rounded-xl border text-[8px] font-black uppercase tracking-[0.2em] bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-lg">
-                                                                {t('bankReconciliation.statusPending')}
-                                                            </span>
+                                                            <button
+                                                                onClick={() => window.location.hash = '#quarantine-panel'}
+                                                                className="px-4 py-2 rounded-xl border text-[8px] font-black uppercase tracking-[0.2em] bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black transition-all shadow-lg shadow-amber-950/20"
+                                                            >
+                                                                Clasificar
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}

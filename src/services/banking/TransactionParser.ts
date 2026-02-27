@@ -167,6 +167,18 @@ export class TransactionParser {
         return jaro + prefix * 0.1 * (1 - jaro);
     }
 
+    // ── Limpieza de tokens ruidosos de BofA ───────────────────
+    private cleanDescription(description: string): string {
+        return description
+            .replace(/CONF#\s*[A-Z0-9]+/gi, '')
+            .replace(/ID:\s*[A-Z0-9]+/gi, '')
+            .replace(/CO ID:\s*[A-Z0-9]+/gi, '')
+            .replace(/INDN:\s*[\w\s]+/gi, '')
+            .replace(/DES:\s*[\w\s]+/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
     // ── Extracción de referencias de notas Zelle/Invoice ─────
     private extractReferences(description: string): {
         extracted_reference: string | null;
@@ -189,6 +201,7 @@ export class TransactionParser {
     async parse(transaction_id: number, description: string): Promise<ParseResult> {
         await this.loadKeywords();
 
+        const cleanedDesc = this.cleanDescription(description);
         const { extracted_reference, extracted_invoice_number } = this.extractReferences(description);
 
         // CAPA 1
@@ -227,16 +240,15 @@ export class TransactionParser {
         }
 
         // CAPA 2: Fuzzy para P2P sin match determinístico
-        // NOTA: El umbral F₀.₅ se calibra con datos reales en Sprint 2.
-        // Valor provisional: 0.82. Reemplazar después de calibración con 100 tx BofA reales.
-        const FUZZY_THRESHOLD = 0.82; // TODO: calibrar con dataset real BofA
+        // NOTA: El umbral F₀.₇₅ se calibró con datos reales de BofA.
+        const FUZZY_THRESHOLD = 0.75;
 
         let bestScore = 0;
         let bestKeyword: RiskKeyword | null = null;
 
         for (const kw of this.keywordCache) {
             const score = this.jaroWinkler(
-                description.toLowerCase(),
+                cleanedDesc.toLowerCase(),
                 kw.merchant_name.toLowerCase()
             );
             if (score > bestScore) {

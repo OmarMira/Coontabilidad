@@ -1,0 +1,6 @@
+﻿src/database/simple-db.ts(12719,28): error TS1127: Invalid character.
+src/database/simple-db.ts(12719,29): error TS1003: Identifier expected.
+src/database/simple-db.ts(12719,70): error TS1002: Unterminated string literal.
+src/database/simple-db.ts(12720,33): error TS1127: Invalid character.
+src/database/simple-db.ts(12720,34): error TS1003: Identifier expected.
+src/database/simple-db.ts(12720,75): error TS1002: Unterminated string literal.

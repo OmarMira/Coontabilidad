@@ -66,9 +66,9 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                 const file = selectedFiles[i];
                 const results = await parseBankPDF(file);
 
-                const mappedTransactions = results.transactions
-                    .filter(r => r.success && r.data)
-                    .map((r, txIdx) => ({
+                const mappedTransactions = ((results as any).transactions || (results as any).data || [])
+                    .filter((r: any) => r.success && r.data)
+                    .map((r: any, txIdx: number) => ({
                         id: `${i}-${txIdx}`,
                         date: r.data!.transaction_date,
                         description: r.data!.description,

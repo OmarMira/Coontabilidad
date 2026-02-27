@@ -3,7 +3,7 @@ import {
     Package2, Calculator, FileText, BarChart3, Settings, Receipt, Search,
     ScanSearch, HardDrive, UserCheck, Lock, Bot, Activity,
     HelpCircle, Database, CreditCard, Shield,
-    History, PieChart, ShieldCheck, Clock, DollarSign
+    History, PieChart, ShieldCheck, Clock, DollarSign, ShieldAlert
 } from 'lucide-react';
 
 export interface MenuItemConfig {
@@ -143,6 +143,12 @@ export const NAVIGATION_CONFIG: MenuItemConfig[] = [
         id: 'ai-assistant',
         labelKey: 'navigation.aiAssistant',
         icon: Bot
+    },
+    {
+        id: 'quarantine-panel',
+        labelKey: 'navigation.quarantine_audit',
+        icon: ShieldAlert,
+        badge: '0'
     }
 ];
 

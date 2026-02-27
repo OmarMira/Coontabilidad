@@ -40,7 +40,7 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
     const [activeCard, setActiveCard] = useState<ActiveCard | null>(null);
 
     const filteredAccounts = accounts.filter(account => {
-        const isActive = account.is_active === 1 || account.is_active === true;
+        const isActive = !!account.is_active;
         const matchesSearch =
             account.account_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             account.bank_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

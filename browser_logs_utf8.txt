@@ -1,0 +1,287 @@
+[BROWSER] DEBUG: [vite] connecting...
+[BROWSER] DEBUG: [vite] connected.
+[BROWSER] INFO: %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[BROWSER] LOG: 🔍 ========== AUTO-DIAGNÓSTICO DE USUARIOS ==========
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.init_start: Iniciando inicialización de base de datos SQLite color: #3B82F6; font-weight: normal
+[BROWSER] WARN: Error while trying to use the following icon from the Manifest: http://localhost:3000/vite.svg (Download error or resource isn't a valid image)
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.sqljs_loaded: SQL.js cargado y base de datos inicializada color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:09 p.m.] [WARN] Persistence.load_empty: No se encontró base de datos en IndexedDB color: #F59E0B; font-weight: normal
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.engine_initialized: SQLiteEngine wrapper creado exitosamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: Database schema created successfully
+[BROWSER] LOG: Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN NÂ°1 IMPLEMENTADA
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.schema_updated: Tablas de GestiÃ³n de Usuarios verificadas y actualizadas color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.roles_seeded: Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.user_seeded: Usuario admin (admin@empresa.com) creado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.user_seeded: Usuario demo (demo@empresa.com) creado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:09 p.m.] [INFO] Database.user_seeded: Usuario vendedor1 (vendedor1@empresa.com) creado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.user_seeded: Usuario contador1 (contador1@empresa.com) creado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.user_seeded: Usuario auditor1 (auditor1@empresa.com) creado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.roles_updated: Niveles de roles de sistema verificados y actualizados color: #3B82F6; font-weight: normal
+[BROWSER] LOG: Initial product categories inserted successfully
+[BROWSER] LOG: Initial products inserted successfully
+[BROWSER] LOG: Initial tax rates inserted successfully (2026 rates)
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Inventory.initial_locations_created: Ubicaciones iniciales creadas: 3 color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.locations_seeded: 3 ubicaciones iniciales creadas exitosamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: Initial payroll settings inserted successfully
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] ChartOfAccounts.init_start: Insertando plan de cuentas inicial color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] ChartOfAccounts.init_success: Plan de cuentas inicial insertado: 103 cuentas color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.chart_seeded: Plan de cuentas inicial creado con 103 cuentas color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.initialization_complete: Esquema y datos iniciales verificados color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.init: Iniciando verificación de esquema... color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.migration_engine: Starting database migrations... color: #3B82F6; font-weight: normal
+[BROWSER] LOG: [MigrationEngine] Current DB Version: 0
+[BROWSER] LOG: [MigrationEngine] Found 16 pending migrations.
+[BROWSER] LOG: [MigrationEngine] Applying v1: Initial Schema & AI Views...
+[BROWSER] LOG: [MigrationEngine] Success v1
+[BROWSER] LOG: [MigrationEngine] Applying v2: Add Specialized AI Views...
+[BROWSER] LOG: [MigrationEngine] Success v2
+[BROWSER] LOG: [MigrationEngine] Applying v3: Advanced Inventory Schema...
+[BROWSER] LOG: [MigrationEngine] Success v3
+[BROWSER] LOG: [MigrationEngine] Applying v4: Purchasing & Accounts Payable...
+[BROWSER] LOG: [MigrationEngine] Success v4
+[BROWSER] LOG: [MigrationEngine] Applying v5: Advanced Accounting Schema...
+[BROWSER] LOG: [MigrationEngine] Success v5
+[BROWSER] LOG: [MigrationEngine] Applying v6: System Configuration & Roles...
+[BROWSER] LOG: [MigrationEngine] Success v6
+[BROWSER] LOG: [MigrationEngine] Applying v7: Currency Fix (Floats to Cents) & Fiscal Triggers...
+[BROWSER] WARN: Migration 007: Could not create triggers. Tables may not exist yet. Error: no such table: main.fixed_assets
+[BROWSER] LOG: [MigrationEngine] Success v7
+[BROWSER] LOG: [MigrationEngine] Applying v8: Initialize Logic Clock...
+[BROWSER] LOG: 🔄 Migration 008: Initializing logic_clock infrastructure...
+[BROWSER] LOG:   ✓ Added logic_clock to customers
+[BROWSER] LOG:   ✓ Added logic_clock to products
+[BROWSER] LOG:   ✓ Added logic_clock to invoices
+[BROWSER] LOG:   ✓ Added logic_clock to suppliers
+[BROWSER] LOG:   ✓ Logic clock initialized: 0
+[BROWSER] LOG: ✅ Migration 008: Logic clock infrastructure ready
+[BROWSER] LOG: [MigrationEngine] Success v8
+[BROWSER] LOG: [MigrationEngine] Applying v17: Historical Data and Audit Fix...
+[BROWSER] LOG: [Migration 008] Adding missing column: operation
+[BROWSER] LOG: [Migration 008] Adding missing column: created_at
+[BROWSER] LOG: [Migration 008] Adding missing column: created_by
+[BROWSER] LOG: [MigrationEngine] Success v17
+[BROWSER] LOG: [MigrationEngine] Applying v9: Performance Indices...
+[BROWSER] WARN: Migration 009: idx_je_number_date skipped - no such column: entry_number
+[BROWSER] LOG: [MigrationEngine] Success v9
+[BROWSER] LOG: [MigrationEngine] Applying v10: Multi-User System and Audit Trail...
+[BROWSER] LOG: [MigrationEngine] Success v10
+[BROWSER] LOG: [MigrationEngine] Applying v11: Fixed Assets Module Schema...
+[BROWSER] LOG: 🔄 Migration 011: Creating Fixed Assets schema...
+[BROWSER] LOG: ✅ Migration 011: Fixed Assets schema created successfully
+[BROWSER] LOG:    - Created 4 tables: asset_categories, fixed_assets, asset_depreciation, asset_disposals
+[BROWSER] LOG:    - Added 6 indexes for query optimization
+[BROWSER] LOG:    - Seeded 6 default asset categories
+[BROWSER] LOG:    - Iron Core: protect_asset_financials trigger active
+[BROWSER] LOG: [MigrationEngine] Success v11
+[BROWSER] LOG: [MigrationEngine] Applying v12: Budgets Module Schema...
+[BROWSER] LOG: 🔄 Migration 012: Creating Budgets schema...
+[BROWSER] LOG: ✅ Migration 012: Budgets schema created successfully
+[BROWSER] LOG:    - Created 3 tables: budgets, budget_lines, budget_periods
+[BROWSER] LOG:    - Added 4 indexes for query optimization
+[BROWSER] LOG: [MigrationEngine] Success v12
+[BROWSER] LOG: [MigrationEngine] Applying v13: Tax Transactions Table...
+[BROWSER] LOG: 🔄 Migration 013: Creating tax_transactions table...
+[BROWSER] LOG: ✅ Migration 013: tax_transactions table created successfully
+[BROWSER] LOG:    - Table: tax_transactions
+[BROWSER] LOG:    - Indexes: 3 (invoice_id, transaction_date, county_code)
+[BROWSER] LOG:    - Iron Core: prevent_tax_tx_update + prevent_tax_tx_delete triggers active
+[BROWSER] LOG: [MigrationEngine] Success v13
+[BROWSER] LOG: [MigrationEngine] Applying v15: Add account_alias for bilingual support...
+[BROWSER] LOG: ✅ Migration 015: account_alias column added successfully
+[BROWSER] LOG: [MigrationEngine] Success v15
+[BROWSER] LOG: [MigrationEngine] Applying v16: Remediation Schema - Risk Keywords, Transaction States, Quarantine...
+[BROWSER] LOG: ✅ Migration 016: Remediation schema created.
+[BROWSER] LOG: [MigrationEngine] Success v16
+[BROWSER] LOG: [MigrationEngine] All migrations completed successfully.
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] SchemaRepair.start: Iniciando reparación de esquema... color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] SchemaRepair.sync_start: Forzando persistencia de cambios... color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Tabla company_data lista (vacía para configuración inicial) color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Vistas del sistema sincronizadas color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Columna 'picture' agregada a tabla users color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Agregada columna county_code a florida_tax_rates color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Agregada columna base_rate a florida_tax_rates color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Agregada columna surtax_rate a florida_tax_rates color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: 📊 Condados actuales: 9/67 color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Inyectados los 67 condados de Florida color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ⚠️ Error registrando migración: table sys_migrations has no column named migration_name color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.repair_success: ✅ Cambios persistidos a IndexedDB color: #3B82F6; font-weight: normal
+[BROWSER] LOG: [2026-02-26T22:53:10.280Z] [INFO] [SchemaCrawler] Starting schema crawl...
+[BROWSER] WARN: [2026-02-26T22:53:10.291Z] [WARN] [SchemaCrawler] Columna logic_clock no encontrada, usando valor por defecto 0
+[BROWSER] LOG: [2026-02-26T22:53:10.291Z] [INFO] [SchemaCrawler] Crawl completed in 10ms {"tablesFound":75,"relationshipsFound":116}
+[BROWSER] LOG: [2026-02-26T22:53:10.299Z] [INFO] [SchemaCrawler] Schema context and Markdown summary persisted
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Database.dac_phase1_success: Contexto dinámico de IA actualizado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [WARN] Health.repair_attempt: Iniciando intento de auto-reparación de emergencia... color: #F59E0B; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] UserService.init: UserService inicializado color: #3B82F6; font-weight: normal
+[BROWSER] LOG: [SyncWorker] Background sync initialized.
+[BROWSER] LOG: 🔄 Initializing wa-sqlite...
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.start_checks: Iniciando verificación de integridad del sistema color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.start_checks: Iniciando verificación de integridad del sistema color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.check_passed: Check exitoso: Integridad Estructural color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.check_passed: Check exitoso: Integridad Estructural color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.check_passed: Check exitoso: Datos Fiscales de Florida color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.check_passed: Check exitoso: Datos Fiscales de Florida color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.check_passed: Check exitoso: Usuarios del Sistema color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.checks_complete: Verificación completada: healthy color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.check_passed: Check exitoso: Usuarios del Sistema color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] IntegrityService.checks_complete: Verificación completada: healthy color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] App.init_start: Iniciando AccountExpress Next-Gen MVP color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] App.init_start: Iniciando AccountExpress Next-Gen MVP color: #3B82F6; font-weight: normal
+[BROWSER] LOG: 🔧 Initializing Persistent Storage Service...
+[BROWSER] LOG: 🔧 Initializing Persistent Storage Service...
+[BROWSER] WARN: ⚠️ Persistent storage denied - data may be cleared by browser
+[BROWSER] WARN: ⚠️ Persistent storage denied - data may be cleared by browser
+[BROWSER] LOG: 📊 STORAGE STATUS REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔒 Persistent Storage: ❌ DISABLED
+💾 Usage: 0MB / 10240MB (0.0%)
+📦 Available: 10240MB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ WARNING: Data may be cleared by browser!
+   Recommendation: Enable cloud backups immediately.
+[BROWSER] WARN: ⚠️ Persistent storage not granted - data may be cleared by browser
+[BROWSER] LOG: %c[5:53:10 p.m.] [WARN] App.storage_not_persistent: Persistent storage denied by browser color: #F59E0B; font-weight: normal
+[BROWSER] LOG: 🔍 Starting storage monitoring (interval: 300000ms)
+[BROWSER] LOG: === GETTING CUSTOMERS === 
+[BROWSER] LOG: Database initialized: true
+[BROWSER] LOG: Raw query result: [array Array]
+[BROWSER] LOG: Processed customers: [array Array]
+[BROWSER] LOG: Customer count: 0
+[BROWSER] LOG: === GETTING SUPPLIERS === 
+[BROWSER] LOG: Database initialized: true
+[BROWSER] LOG: Raw query result: [array Array]
+[BROWSER] LOG: Processed suppliers: [array Array]
+[BROWSER] LOG: Supplier count: 0
+[BROWSER] LOG: %c[5:53:10 p.m.] [INFO] Products.get_start: Obteniendo productos color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] Products.get_success: Productos obtenidos color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] ProductCategories.get_start: Obteniendo categorÃ­as de productos color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] ProductCategories.get_success: CategorÃ­as obtenidas color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] DatabaseService.auto_backup_init: Initializing automatic backup scheduler... color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [WARN] DatabaseService.auto_backup_skip: Cloud backup not configured, skipping auto-backup color: #F59E0B; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] App.auto_backup_scheduled: Automatic backups scheduled successfully color: #3B82F6; font-weight: normal
+[BROWSER] LOG: 📊 STORAGE STATUS REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔒 Persistent Storage: ❌ DISABLED
+💾 Usage: 0MB / 10240MB (0.0%)
+📦 Available: 10240MB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ WARNING: Data may be cleared by browser!
+   Recommendation: Enable cloud backups immediately.
+[BROWSER] WARN: ⚠️ Persistent storage not granted - data may be cleared by browser
+[BROWSER] LOG: %c[5:53:11 p.m.] [WARN] App.storage_not_persistent: Persistent storage denied by browser color: #F59E0B; font-weight: normal
+[BROWSER] LOG: 🔍 Starting storage monitoring (interval: 300000ms)
+[BROWSER] LOG: === GETTING CUSTOMERS === 
+[BROWSER] LOG: Database initialized: true
+[BROWSER] LOG: Raw query result: [array Array]
+[BROWSER] LOG: Processed customers: [array Array]
+[BROWSER] LOG: Customer count: 0
+[BROWSER] LOG: === GETTING SUPPLIERS === 
+[BROWSER] LOG: Database initialized: true
+[BROWSER] LOG: Raw query result: [array Array]
+[BROWSER] LOG: Processed suppliers: [array Array]
+[BROWSER] LOG: Supplier count: 0
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] Products.get_start: Obteniendo productos color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] Products.get_success: Productos obtenidos color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] ProductCategories.get_start: Obteniendo categorÃ­as de productos color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] ProductCategories.get_success: CategorÃ­as obtenidas color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] DatabaseService.auto_backup_init: Initializing automatic backup scheduler... color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [WARN] DatabaseService.auto_backup_skip: Cloud backup not configured, skipping auto-backup color: #F59E0B; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] App.auto_backup_scheduled: Automatic backups scheduled successfully color: #3B82F6; font-weight: normal
+[BROWSER] LOG: [App] Service Worker registrado con éxito
+[BROWSER] LOG: [App] Service Worker registrado con éxito
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] AnomalyDetector.scan_start: Iniciando escaneo de anomalías color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.unbalanced_check_failed: Error al detectar asientos descuadrados color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such table: journal_entry_lines
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.overdue_check_failed: Error al detectar facturas vencidas color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such column: amount_paid
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.duplicate_check_failed: Error al detectar duplicados color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such column: date
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.unusual_check_failed: Error al detectar gastos inusuales color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such table: expenses
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.negative_check_failed: Error al detectar saldos negativos color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such table: accounts
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] AnomalyDetector.auto_scan_scheduled: Escaneo automático programado cada hora color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] App.anomaly_detector_started: AI Anomaly Detector started successfully color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] App.init_success: AccountExpress inicializado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] AnomalyDetector.scan_complete: Escaneo completado color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] AnomalyDetector.scan_start: Iniciando escaneo de anomalías color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.unbalanced_check_failed: Error al detectar asientos descuadrados color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such table: journal_entry_lines
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.overdue_check_failed: Error al detectar facturas vencidas color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such column: amount_paid
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.duplicate_check_failed: Error al detectar duplicados color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such column: date
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.unusual_check_failed: Error al detectar gastos inusuales color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such table: expenses
+[BROWSER] LOG: %c[5:53:11 p.m.] [ERROR] AnomalyDetector.negative_check_failed: Error al detectar saldos negativos color: #EF4444; font-weight: bold
+[BROWSER] ERROR: %cError: color: #EF4444; font-weight: bold Error: no such table: accounts
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] AnomalyDetector.auto_scan_scheduled: Escaneo automático programado cada hora color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] App.anomaly_detector_started: AI Anomaly Detector started successfully color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] App.init_success: AccountExpress inicializado correctamente color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:11 p.m.] [INFO] AnomalyDetector.scan_complete: Escaneo completado color: #3B82F6; font-weight: normal
+[BROWSER] LOG: Database ready check: [object Object]
+[BROWSER] LOG: Database ready check: [object Object]
+[BROWSER] LOG: 🔐 Google Auth Init: [object Object]
+[BROWSER] LOG: 🔐 Google Auth Init: [object Object]
+[BROWSER] VERBOSE: [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+[BROWSER] WARN: [GSI_LOGGER]: Provided button width is invalid: 100%
+[BROWSER] ERROR: Not signed in with the identity provider.
+[BROWSER] ERROR: [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token.
+[BROWSER] LOG: ✅ SQLiteEngine (wa-sqlite) initialized successfully
+[BROWSER] ERROR: ❌ SQLiteEngine initialization failed: SQLiteError: not an error
+[BROWSER] LOG: ✅ Base de datos inicializada
+
+[BROWSER] LOG: 📋 ESTRUCTURA DE TABLA 'users':
+[BROWSER] LOG:   id (INTEGER)
+[BROWSER] LOG:   username (TEXT)
+[BROWSER] LOG:   email (TEXT)
+[BROWSER] LOG:   full_name (TEXT)
+[BROWSER] LOG:   display_name (TEXT)
+[BROWSER] LOG:   password_hash (TEXT)
+[BROWSER] LOG:   role_id (INTEGER)
+[BROWSER] LOG:   is_active (BOOLEAN)
+[BROWSER] LOG:   last_login (DATETIME)
+[BROWSER] LOG:   created_at (DATETIME)
+[BROWSER] LOG:   updated_at (DATETIME)
+[BROWSER] LOG:   picture (TEXT)
+[BROWSER] LOG: 
+[BROWSER] LOG: 👥 TOTAL USUARIOS: 5
+
+[BROWSER] LOG: 📝 LISTA DE USUARIOS:
+[BROWSER] LOG:   ID: 1, User: admin, Email: admin@empresa.com, Active: 1, Role: 1
+[BROWSER] LOG:   ID: 2, User: demo, Email: demo@empresa.com, Active: 1, Role: 1
+[BROWSER] LOG:   ID: 3, User: vendedor1, Email: vendedor1@empresa.com, Active: 1, Role: 3
+[BROWSER] LOG:   ID: 4, User: contador1, Email: contador1@empresa.com, Active: 1, Role: 2
+[BROWSER] LOG:   ID: 5, User: auditor1, Email: auditor1@empresa.com, Active: 1, Role: 5
+[BROWSER] LOG: 
+[BROWSER] LOG: 🔐 HASH DE ADMIN: 1VYnwI/HcZuMJjBLnw5J...
+[BROWSER] LOG: 
+[BROWSER] LOG: 🎭 ROLES:
+[BROWSER] LOG:   ID: 1, Name: admin, Level: 100
+[BROWSER] LOG:   ID: 2, Name: contador, Level: 80
+[BROWSER] LOG:   ID: 3, Name: vendedor, Level: 40
+[BROWSER] LOG:   ID: 4, Name: comprador, Level: 40
+[BROWSER] LOG:   ID: 5, Name: auditor, Level: 20
+[BROWSER] LOG:   ID: 6, Name: viewer, Level: 10
+[BROWSER] LOG: 
+🔍 ========== FIN DEL DIAGNÓSTICO ==========
+[BROWSER] ERROR: [GSI_LOGGER]: The given origin is not allowed for the given client ID.
+[BROWSER] LOG: %c[5:53:15 p.m.] [WARN] Persistence.no_key: Guardando DB sin cifrar (Clave no establecida) color: #F59E0B; font-weight: normal
+[BROWSER] LOG: %c[5:53:15 p.m.] [INFO] Persistence.save_success: Base de datos guardada en IndexedDB color: #3B82F6; font-weight: normal
+[BROWSER] LOG: %cData: color: #6B7280; font-style: italic [object Object]
+[BROWSER] LOG: %c[5:53:15 p.m.] [INFO] Database.forced_save: Base de datos guardada forzadamente en IndexedDB color: #3B82F6; font-weight: normal

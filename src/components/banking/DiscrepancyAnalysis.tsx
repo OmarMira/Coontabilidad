@@ -12,6 +12,7 @@ import {
     Clock,
     BarChart3
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import {
     getBankAccounts,
     getReconciliationStatements,
@@ -68,6 +69,59 @@ export const DiscrepancyAnalysis: React.FC = () => {
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    const handleViewDetails = (discrepancy: Discrepancy) => {
+        toast.success(discrepancy.description, {
+            duration: 5000,
+            icon: '🔍',
+            style: {
+                borderRadius: '15px',
+                background: '#0f172a',
+                color: '#fff',
+                border: '1px solid #1e293b'
+            }
+        });
+    };
+
+    const handleResolveDiscrepancy = (index: number) => {
+        const newDiscrepancies = [...discrepancies];
+        newDiscrepancies.splice(index, 1);
+        setDiscrepancies(newDiscrepancies);
+        toast.success('Discrepancia marcada como resuelta', {
+            icon: '✅',
+            style: {
+                borderRadius: '15px',
+                background: '#064e3b',
+                color: '#fff'
+            }
+        });
+    };
+
+    const handleExport = () => {
+        if (discrepancies.length === 0) return;
+
+        const headers = ["Tipo", "Severidad", "Descripción", "Acción Sugerida"];
+        const rows = discrepancies.map(d => [
+            d.type,
+            d.severity,
+            d.description,
+            d.suggestedAction
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute("href", url);
+        link.setAttribute("download", `discrepancias_${selectedAccount?.account_name || 'report'}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success('Reporte de discrepancias exportado correlatamente');
     };
 
     const getSeverityColor = (severity: string) => {
@@ -160,8 +214,8 @@ export const DiscrepancyAnalysis: React.FC = () => {
                                     key={account.id}
                                     onClick={() => setSelectedAccount(account)}
                                     className={`w-full text-left p-3 rounded-xl transition-all ${selectedAccount?.id === account.id
-                                            ? 'bg-rose-600 text-white'
-                                            : 'hover:bg-slate-800 text-slate-300'
+                                        ? 'bg-rose-600 text-white'
+                                        : 'hover:bg-slate-800 text-slate-300'
                                         }`}
                                 >
                                     <div className="font-bold">{account.account_name}</div>
@@ -280,12 +334,16 @@ export const DiscrepancyAnalysis: React.FC = () => {
                             {/* Lista de Discrepancias */}
                             {discrepancies.length > 0 && (
                                 <Card className="bg-slate-900 border-slate-800">
-                                    <CardHeader className="border-b border-slate-800 flex flex-row items-center justify-between">
-                                        <CardTitle className="text-white text-lg font-bold flex items-center gap-2">
-                                            <AlertTriangle className="w-5 h-5 text-rose-500" />
+                                    <CardHeader className="border-b border-slate-800 flex flex-col items-center gap-4 py-8">
+                                        <CardTitle className="text-white text-2xl font-black flex items-center gap-3 tracking-tighter uppercase">
+                                            <AlertTriangle className="w-6 h-6 text-rose-500" />
                                             {t('discrepancyAnalysis.detectedDiscrepancies')} ({discrepancies.length})
                                         </CardTitle>
-                                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 font-bold">
+                                        <Button
+                                            size="sm"
+                                            onClick={handleExport}
+                                            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black uppercase tracking-widest text-[10px] px-8 py-4 rounded-xl shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5"
+                                        >
                                             <Download className="w-4 h-4 mr-2" /> {t('discrepancyAnalysis.export')}
                                         </Button>
                                     </CardHeader>
@@ -321,10 +379,18 @@ export const DiscrepancyAnalysis: React.FC = () => {
                                                         <td className="px-6 py-4 text-slate-400 text-xs">{discrepancy.suggestedAction}</td>
                                                         <td className="px-6 py-4 text-center">
                                                             <div className="flex gap-2 justify-center">
-                                                                <button className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors" title="Ver Detalles">
+                                                                <button
+                                                                    onClick={() => handleViewDetails(discrepancy)}
+                                                                    className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
+                                                                    title="Ver Detalles"
+                                                                >
                                                                     <Eye className="w-4 h-4" />
                                                                 </button>
-                                                                <button className="p-2 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors" title="Resolver">
+                                                                <button
+                                                                    onClick={() => handleResolveDiscrepancy(index)}
+                                                                    className="p-2 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors"
+                                                                    title="Resolver"
+                                                                >
                                                                     <CheckCircle className="w-4 h-4" />
                                                                 </button>
                                                             </div>

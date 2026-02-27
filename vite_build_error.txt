@@ -1,0 +1,490 @@
+﻿node.exe : Γû▓ [WARNING] Duplicate key 
+"assetsInclude" in object literal 
+[duplicate-object-key]
+En C:\Program Files\nodejs\npx.ps1: 29 
+Carácter: 3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpeci 
+   fied: (Γû▓ [WARNING] D...ate-objec  
+  t-key]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCo 
+   mmandError
+ 
+
+    vite.config.ts:125:2:
+      125 Γöé   assetsInclude: 
+['**/*.wasm']
+          Γò╡   ~~~~~~~~~~~~~
+
+  The original key "assetsInclude" is 
+here:
+
+    vite.config.ts:6:2:
+      6 Γöé   assetsInclude: 
+['**/*.wasm'],
+        Γò╡   ~~~~~~~~~~~~~
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[33m[plugin vite:resolve] Module "fs" 
+has been externalized for browser 
+compatibility, imported by "C:/Account 
+Express/node_modules/sql.js/dist/sql-wa
+sm.js". See https://vite.dev/guide/trou
+bleshooting.html#module-externalized-fo
+r-browser-compatibility for more 
+details.[39m
+[33m[plugin vite:resolve] Module 
+"path" has been externalized for 
+browser compatibility, imported by 
+"C:/Account Express/node_modules/sql.js
+/dist/sql-wasm.js". See https://vite.de
+v/guide/troubleshooting.html#module-ext
+ernalized-for-browser-compatibility 
+for more details.[39m
+[33m[plugin vite:resolve] Module 
+"crypto" has been externalized for 
+browser compatibility, imported by 
+"C:/Account Express/node_modules/sql.js
+/dist/sql-wasm.js". See https://vite.de
+v/guide/troubleshooting.html#module-ext
+ernalized-for-browser-compatibility 
+for more details.[39m
+[33m[plugin vite:resolve] Module 
+"crypto" has been externalized for 
+browser compatibility, imported by 
+"C:/Account 
+Express/node_modules/sjcl/sjcl.js". 
+See https://vite.dev/guide/troubleshoot
+ing.html#module-externalized-for-browse
+r-compatibility for more details.[39m
+[33m[plugin vite:resolve] Module 
+"crypto" has been externalized for 
+browser compatibility, imported by 
+"C:/Account 
+Express/node_modules/sjcl/sjcl.js". 
+See https://vite.dev/guide/troubleshoot
+ing.html#module-externalized-for-browse
+r-compatibility for more details.[39m
+[33m[plugin vite:resolve] Module "fs" 
+has been externalized for browser 
+compatibility, imported by "C:/Account 
+Express/node_modules/sql.js/dist/sql-wa
+sm.js". See https://vite.dev/guide/trou
+bleshooting.html#module-externalized-fo
+r-browser-compatibility for more 
+details.[39m
+[33m[plugin vite:resolve] Module 
+"path" has been externalized for 
+browser compatibility, imported by 
+"C:/Account Express/node_modules/sql.js
+/dist/sql-wasm.js". See https://vite.de
+v/guide/troubleshooting.html#module-ext
+ernalized-for-browser-compatibility 
+for more details.[39m
+[33m[plugin vite:resolve] Module 
+"crypto" has been externalized for 
+browser compatibility, imported by 
+"C:/Account Express/node_modules/sql.js
+/dist/sql-wasm.js". See https://vite.de
+v/guide/troubleshooting.html#module-ext
+ernalized-for-browser-compatibility 
+for more details.[39m
+[33m[plugin vite:resolve] Module "fs" 
+has been externalized for browser 
+compatibility, imported by "C:/Account 
+Express/node_modules/sql.js/dist/sql-wa
+sm.js". See https://vite.dev/guide/trou
+bleshooting.html#module-externalized-fo
+r-browser-compatibility for more 
+details.[39m
+[33m[plugin vite:resolve] Module 
+"path" has been externalized for 
+browser compatibility, imported by 
+"C:/Account Express/node_modules/sql.js
+/dist/sql-wasm.js". See https://vite.de
+v/guide/troubleshooting.html#module-ext
+ernalized-for-browser-compatibility 
+for more details.[39m
+[33m[plugin vite:resolve] Module 
+"crypto" has been externalized for 
+browser compatibility, imported by 
+"C:/Account Express/node_modules/sql.js
+/dist/sql-wasm.js". See https://vite.de
+v/guide/troubleshooting.html#module-ext
+ernalized-for-browser-compatibility 
+for more details.[39m
+[32mΓ£ô[39m 3740 modules transformed.
+[33mnode_modules/onnxruntime-web/dist/
+ort-web.min.js (6:62546): Use of eval 
+in "node_modules/onnxruntime-web/dist/o
+rt-web.min.js" is strongly discouraged 
+as it poses security risks and may 
+cause issues with minification.[39m
+rendering chunks...
+[33m[plugin vite:reporter] 
+(!) C:/Account Express/src/core/logging
+/SystemLogger.ts is dynamically 
+imported by C:/Account Express/src/core
+/logging/ProductionLogger.ts but also 
+statically imported by C:/Account 
+Express/src/App.tsx, C:/Account Express
+/src/components/AccountingDiagnosis.tsx
+, C:/Account Express/src/components/Cha
+rtOfAccounts.tsx, C:/Account Express/sr
+c/components/CompanyDataForm.tsx, 
+C:/Account Express/src/components/LogoU
+ploader.tsx, C:/Account 
+Express/src/components/SystemLogs.tsx, 
+C:/Account Express/src/components/ai/Un
+ifiedAssistant.tsx, C:/Account Express/
+src/components/ard/ARDModule.tsx, 
+C:/Account Express/src/components/ard/A
+RDPaymentModal.tsx, C:/Account Express/
+src/components/ard/ARDSaleConversionMod
+al.tsx, C:/Account Express/src/componen
+ts/forensic/ForensicSentinelDashboard.t
+sx, C:/Account Express/src/components/r
+eports/AccountLedger.tsx, C:/Account Ex
+press/src/components/reports/AgingRepor
+t.tsx, C:/Account Express/src/component
+s/reports/CashFlowStatement.tsx, 
+C:/Account Express/src/components/repor
+ts/ReportExporter.tsx, C:/Account 
+Express/src/core/DashboardRestorer.ts, 
+C:/Account Express/src/core/NuclearClea
+nExecution.ts, C:/Account Express/src/c
+ore/data-integrity/DataRepairEngine.ts,
+ C:/Account Express/src/database/Databa
+seInitializer.ts, C:/Account Express/sr
+c/database/DatabaseReconstructor.ts, 
+C:/Account Express/src/database/Databas
+eService.ts, C:/Account Express/src/dat
+abase/PersistenceLayer.ts, C:/Account E
+xpress/src/database/SchemaRepairService
+.ts, C:/Account 
+Express/src/database/simple-db.ts, 
+C:/Account Express/src/features/i18n/Tr
+anslationEngine.ts, C:/Account 
+Express/src/services/AuditService.ts, 
+C:/Account Express/src/services/AuditTr
+ailService.ts, C:/Account Express/src/s
+ervices/BackupLocationService.ts, 
+C:/Account 
+Express/src/services/BackupService.ts, 
+C:/Account Express/src/services/Forensi
+cSentinel.ts, C:/Account Express/src/se
+rvices/GDriveSyncService.ts, 
+C:/Account Express/src/services/GoogleA
+uthService.ts, C:/Account 
+Express/src/services/UserService.ts, 
+C:/Account Express/src/services/account
+ing/AccountingPeriodService.ts, 
+C:/Account 
+Express/src/services/ai/AIFactory.ts, 
+C:/Account Express/src/services/ai/AIRe
+sponseFixer.ts, C:/Account Express/src/
+services/ai/AnomalyDetector.ts, 
+C:/Account Express/src/services/integri
+ty/IntegrityService.ts, C:/Account 
+Express/src/utils/logger.ts, 
+C:/Account 
+Express/src/utils/logoUtils.ts, 
+dynamic import will not move module 
+into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Account 
+Express/src/database/simple-db.ts is 
+dynamically imported by C:/Account 
+Express/src/auto-diagnosis.ts, 
+C:/Account 
+Express/src/components/Sidebar.tsx, 
+C:/Account 
+Express/src/components/Sidebar.tsx, 
+C:/Account Express/src/components/Suppl
+ierPayments.tsx, C:/Account Express/src
+/components/security/checks/SchemaInteg
+rityCheck.ts, C:/Account Express/src/co
+mponents/security/checks/SchemaIntegrit
+yCheck.ts, C:/Account Express/src/compo
+nents/security/checks/SchemaIntegrityCh
+eck.ts, C:/Account Express/src/componen
+ts/security/checks/SchemaIntegrityCheck
+.ts, C:/Account Express/src/components/
+security/checks/TaxDataIntegrityCheck.t
+s, C:/Account Express/src/components/se
+curity/checks/UserIntegrityCheck.ts, 
+C:/Account Express/src/core/data-integr
+ity/DataRepairEngine.ts, C:/Account 
+Express/src/main.tsx but also 
+statically imported by C:/Account 
+Express/src/App.tsx, C:/Account Express
+/src/components/AccountingDiagnosis.tsx
+, C:/Account 
+Express/src/components/AppRouter.tsx, 
+C:/Account Express/src/components/Balan
+ceSheet.tsx, C:/Account Express/src/com
+ponents/BankAccountList.tsx, 
+C:/Account Express/src/components/BankS
+tatementImporter.tsx, C:/Account 
+Express/src/components/BillForm.tsx, 
+C:/Account Express/src/components/Chart
+OfAccounts.tsx, C:/Account Express/src/
+components/CompanyDataForm.tsx, 
+C:/Account Express/src/components/Custo
+merFormAdvanced.tsx, C:/Account 
+Express/src/components/Dashboard.tsx, 
+C:/Account Express/src/components/Gener
+alLedger.tsx, C:/Account Express/src/co
+mponents/InvoiceForm.tsx, C:/Account Ex
+press/src/components/JournalEntryTest.t
+sx, C:/Account Express/src/components/M
+anualJournalEntries.tsx, C:/Account Exp
+ress/src/components/PaymentMethods.tsx,
+ C:/Account Express/src/components/Prod
+uctCategoryForm.tsx, C:/Account Express
+/src/components/ProductForm.tsx, 
+C:/Account Express/src/components/Suppl
+ierForm.tsx, C:/Account Express/src/com
+ponents/SupplierPayments.tsx, 
+C:/Account 
+Express/src/components/TaxRates.tsx, 
+C:/Account Express/src/components/accou
+nting/IncomeStatement.tsx, C:/Account E
+xpress/src/components/accounting/TrialB
+alanceReport.tsx, C:/Account Express/sr
+c/components/accounting/wizard-steps/Pa
+yrollValidationStep.tsx, C:/Account Exp
+ress/src/components/ard/ARDAssignCustom
+erModal.tsx, C:/Account Express/src/com
+ponents/ard/ARDCustomerPanel.tsx, 
+C:/Account Express/src/components/ard/A
+RDDocumentList.tsx, C:/Account Express/
+src/components/ard/ARDInventorySync.tsx
+, C:/Account Express/src/components/ard
+/ARDModule.tsx, C:/Account Express/src/
+components/ard/ARDPaymentModal.tsx, 
+C:/Account Express/src/components/ard/A
+RDQualityPanel.tsx, C:/Account Express/
+src/components/ard/ARDSaleConversionMod
+al.tsx, C:/Account Express/src/componen
+ts/ard/ARDScanner.tsx, C:/Account Expre
+ss/src/components/assets/AssetDetailVie
+w.tsx, C:/Account Express/src/component
+s/auth/RoleManager.tsx, C:/Account Expr
+ess/src/components/banking/BankReconcil
+iation.tsx, C:/Account Express/src/comp
+onents/banking/DiscrepancyAnalysis.tsx,
+ C:/Account Express/src/components/bank
+ing/QuarantinePanel.tsx, C:/Account Exp
+ress/src/components/budgets/BudgetDetai
+lView.tsx, C:/Account Express/src/compo
+nents/budgets/BudgetForm.tsx, 
+C:/Account Express/src/components/budge
+ts/BudgetLineEditor.tsx, C:/Account Exp
+ress/src/components/budgets/BudgetLines
+Table.tsx, C:/Account Express/src/compo
+nents/budgets/BudgetList.tsx, 
+C:/Account Express/src/components/budge
+ts/BudgetManager.tsx, C:/Account Expres
+s/src/components/budgets/reports/Budget
+PerformanceChart.tsx, C:/Account Expres
+s/src/components/budgets/reports/Budget
+VarianceReport.tsx, C:/Account Express/
+src/components/dashboards/CustomerDashb
+oard.tsx, C:/Account Express/src/compon
+ents/dashboards/FinancialDashboard.tsx,
+ C:/Account Express/src/components/dash
+boards/InventoryDashboard.tsx, 
+C:/Account Express/src/components/dashb
+oards/SupplierDashboard.tsx, 
+C:/Account Express/src/components/inven
+tory/InventoryKardexViewer.tsx, 
+C:/Account Express/src/components/inven
+tory/InventoryMovements.tsx, 
+C:/Account Express/src/components/inven
+tory/InventoryReports.tsx, C:/Account E
+xpress/src/components/inventory/Locatio
+nsManager.tsx, C:/Account Express/src/c
+omponents/payroll/EmployeeManager.tsx, 
+C:/Account Express/src/components/payro
+ll/EmployeePaystub.tsx, C:/Account Expr
+ess/src/components/payroll/PayrollEntry
+List.tsx, C:/Account Express/src/compon
+ents/payroll/PayrollProcessor.tsx, 
+C:/Account Express/src/components/payro
+ll/PayrollReports.tsx, C:/Account Expre
+ss/src/components/payroll/PayrollReview
+.tsx, C:/Account Express/src/components
+/payroll/PayrollSettings.tsx, 
+C:/Account Express/src/components/purch
+asing/PurchaseOrderReceiving.tsx, 
+C:/Account Express/src/components/purch
+asing/PurchaseOrdersList.tsx, 
+C:/Account Express/src/components/repor
+ts/AccountLedger.tsx, C:/Account Expres
+s/src/components/reports/AgingReport.ts
+x, C:/Account Express/src/components/re
+ports/CashFlowStatement.tsx, 
+C:/Account Express/src/components/repor
+ts/ReportExporter.tsx, C:/Account Expre
+ss/src/components/security/checks/Schem
+aIntegrityCheck.ts, C:/Account Express/
+src/components/security/checks/TaxDataI
+ntegrityCheck.ts, C:/Account Express/sr
+c/components/security/checks/UserIntegr
+ityCheck.ts, C:/Account Express/src/com
+ponents/system/FiscalSettingsForm.tsx, 
+C:/Account 
+Express/src/contexts/AuthContext.tsx, 
+C:/Account Express/src/core/DatabaseHea
+lthChecker.ts, C:/Account Express/src/c
+ore/data-integrity/DataIntegrityChecker
+.ts, C:/Account Express/src/core/data-i
+ntegrity/DataIntegrityCore.ts, 
+C:/Account Express/src/core/data-integr
+ity/DataRepairEngine.ts, C:/Account Exp
+ress/src/database/ForensicDiagnostic.ts
+, C:/Account Express/src/features/recei
+vables/components/CustomerPayments.tsx,
+ C:/Account Express/src/features/receiv
+ables/components/ReceivableReports.tsx,
+ C:/Account Express/src/knowledge/Syste
+mKnowledge.ts, C:/Account 
+Express/src/main.tsx, C:/Account Expres
+s/src/modules/ai/ExplanationEngine.ts, 
+C:/Account Express/src/services/AuditTr
+ailService.ts, C:/Account 
+Express/src/services/BackupService.ts, 
+C:/Account 
+Express/src/services/UserService.ts, 
+C:/Account Express/src/services/account
+ing/AccountingPeriodService.ts, 
+C:/Account Express/src/services/account
+ing/AssetCategoryService.ts, 
+C:/Account Express/src/services/account
+ing/FixedAssetService.ts, C:/Account 
+Express/src/services/ai/AIFactory.ts, 
+C:/Account Express/src/services/ai/AIRe
+sponseFixer.ts, C:/Account Express/src/
+services/ai/AnomalyDetector.ts, 
+C:/Account Express/src/services/backup/
+CorruptionProofBackupService.ts, 
+C:/Account Express/src/services/banking
+/BankImportService.ts, C:/Account Expre
+ss/src/services/payroll/PayrollJournalS
+ervice.ts, C:/Account Express/src/servi
+ces/payroll/PayrollProcessor.ts, 
+C:/Account Express/src/services/payroll
+/PayrollReportGenerator.ts, C:/Account 
+Express/src/utils/logoUtils.ts, 
+C:/Account 
+Express/src/utils/systemAudit.ts, 
+dynamic import will not move module 
+into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Account Express/src/services/GDr
+iveSyncService.ts is dynamically 
+imported by C:/Account 
+Express/src/services/BackupService.ts 
+but also statically imported by 
+C:/Account Express/src/services/BackupL
+ocationService.ts, dynamic import will 
+not move module into another chunk.
+[39m
+[33m[plugin vite:reporter] 
+(!) C:/Account Express/src/components/r
+eports/AccountLedger.tsx is 
+dynamically imported by C:/Account 
+Express/src/App.tsx but also 
+statically imported by C:/Account Expre
+ss/src/components/accounting/LedgerHub.
+tsx, dynamic import will not move 
+module into another chunk.
+[39m
+computing gzip size...
+[2mdist/[22m[32mindex.html                                      [39m[1m[2m    1.47 kB[22m[1m[22m[2m Γöé gzip:   0.67 kB[22m
+[2mdist/[22m[32massets/quotes.worker-D2NSNi_f.js                [39m[1m[2m    1.65 kB[22m[1m[22m
+[2mdist/[22m[32massets/inventory-analysis.worker-CCjN1jeP.js    [39m[1m[2m    1.88 kB[22m[1m[22m
+[2mdist/[22m[32massets/payroll.worker-Bx2_fMX7.js               [39m[1m[2m    4.00 kB[22m[1m[22m
+[2mdist/[22m[32massets/accounting.worker-C7Xh9bCe.js            [39m[1m[2m    4.53 kB[22m[1m[22m
+[2mdist/[22m[32massets/reconciliation.worker-DizR5Mpg.js        [39m[1m[2m    4.61 kB[22m[1m[22m
+[2mdist/[22m[32massets/purify.es-Bzr520pe.js                    [39m[1m[2m   22.45 kB[22m[1m[22m
+[2mdist/[22m[32massets/csv.worker-DcTAZth9.js                   [39m[1m[2m   23.33 kB[22m[1m[22m
+[2mdist/[22m[32massets/encryption.worker-CVeb0IZB.js            [39m[1m[2m   27.38 kB[22m[1m[22m
+[2mdist/[22m[32massets/database.worker-D_wonVOt.js              [39m[1m[2m   47.62 kB[22m[1m[22m
+[2mdist/[22m[32massets/index.es-BkKajmI8.js                     [39m[1m[2m  158.73 kB[22m[1m[22m
+[2mdist/[22m[32massets/index.es-CWLUj_9n.js                     [39m[1m[2m  158.73 kB[22m[1m[22m
+[2mdist/[22m[32massets/SyncWorker-Nvp0wA9q.js                   [39m[1m[2m  179.89 kB[22m[1m[22m
+[2mdist/[22m[32massets/html2canvas.esm-DXEQVQnt.js              [39m[1m[2m  201.04 kB[22m[1m[22m
+[2mdist/[22m[32massets/reports.worker-CbJxA2lS.js               [39m[1m[2m  286.47 kB[22m[1m[22m
+[2mdist/[22m[32massets/jspdf.es.min-9Moa9vUa.js                 [39m[1m[2m  384.97 kB[22m[1m[22m
+[2mdist/[22m[32massets/pdf.worker-OuM8vIuS.js                   [39m[1m[2m  422.91 kB[22m[1m[22m
+[2mdist/[22m[32massets/wasm/wa-sqlite-async-DY3_ptqa.wasm       [39m[1m[2m1,139.40 kB[22m[1m[22m[2m Γöé gzip: 417.66 kB[22m
+[2mdist/[22m[32massets/wa-sqlite-async-DY3_ptqa.wasm            [39m[1m[2m1,139.40 kB[22m[1m[22m[2m Γöé gzip: 417.66 kB[22m
+[2mdist/[22m[32massets/mjs/pdf.worker-DjmdXq8j.mjs              [39m[1m[2m1,964.15 kB[22m[1m[22m
+[2mdist/[22m[35massets/css/App-DhHQ6yBr.css                     [39m[1m[2m    7.70 kB[22m[1m[22m[2m Γöé gzip:   1.37 kB[22m
+[2mdist/[22m[35massets/css/index-h2bV9G5I.css                   [39m[1m[2m  145.87 kB[22m[1m[22m[2m Γöé gzip:  21.89 kB[22m
+[2mdist/[22m[36massets/js/label-CJKNjIty.js                     [39m[1m[2m    0.27 kB[22m[1m[22m[2m Γöé gzip:   0.23 kB[22m
+[2mdist/[22m[36massets/js/useLocale-Bn-tDVUc.js                 [39m[1m[2m    0.44 kB[22m[1m[22m[2m Γöé gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/js/health-DCr25w9H.js                    [39m[1m[2m    0.58 kB[22m[1m[22m[2m Γöé gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/js/PersistenceLayer-uDvNA8eg.js          [39m[1m[2m    1.76 kB[22m[1m[22m[2m Γöé gzip:   0.80 kB[22m
+[2mdist/[22m[36massets/js/InventoryAdjustments-C_z4dyY5.js      [39m[1m[2m    2.86 kB[22m[1m[22m[2m Γöé gzip:   0.97 kB[22m
+[2mdist/[22m[36massets/js/PersistentStorageService-B4wEYDqy.js  [39m[1m[2m    3.89 kB[22m[1m[22m[2m Γöé gzip:   1.36 kB[22m
+[2mdist/[22m[36massets/js/LocationsManager-cPCgqXqv.js          [39m[1m[2m    4.74 kB[22m[1m[22m[2m Γöé gzip:   1.50 kB[22m
+[2mdist/[22m[36massets/js/InventoryMovements-BDouaPqk.js        [39m[1m[2m    4.75 kB[22m[1m[22m[2m Γöé gzip:   1.51 kB[22m
+[2mdist/[22m[36massets/js/ReportsDashboard-CI8BLVyi.js          [39m[1m[2m    5.21 kB[22m[1m[22m[2m Γöé gzip:   1.46 kB[22m
+[2mdist/[22m[36massets/js/HealthCheckPage-C0EQkJH4.js           [39m[1m[2m    5.65 kB[22m[1m[22m[2m Γöé gzip:   1.64 kB[22m
+[2mdist/[22m[36massets/js/InventoryKardexViewer-BLvIKwvi.js     [39m[1m[2m    6.44 kB[22m[1m[22m[2m Γöé gzip:   1.97 kB[22m
+[2mdist/[22m[36massets/js/AnomalyDetector-wQyeT83f.js           [39m[1m[2m    7.09 kB[22m[1m[22m[2m Γöé gzip:   2.25 kB[22m
+[2mdist/[22m[36massets/js/CashFlowStatement-4h9mvzXM.js         [39m[1m[2m    7.19 kB[22m[1m[22m[2m Γöé gzip:   2.16 kB[22m
+[2mdist/[22m[36massets/js/AgingReport-2YeqIEwv.js               [39m[1m[2m    7.99 kB[22m[1m[22m[2m Γöé gzip:   2.36 kB[22m
+[2mdist/[22m[36massets/js/SystemIntegrityGate-CUEuhAfo.js       [39m[1m[2m    8.12 kB[22m[1m[22m[2m Γöé gzip:   2.49 kB[22m
+[2mdist/[22m[36massets/js/PayrollSettings-DFnDoppJ.js           [39m[1m[2m    8.46 kB[22m[1m[22m[2m Γöé gzip:   2.43 kB[22m
+[2mdist/[22m[36massets/js/PayrollEntryList-MivmLhbI.js          [39m[1m[2m    9.06 kB[22m[1m[22m[2m Γöé gzip:   1.93 kB[22m
+[2mdist/[22m[36massets/js/QuarantinePanel-CT8tqSme.js           [39m[1m[2m    9.65 kB[22m[1m[22m[2m Γöé gzip:   3.28 kB[22m
+[2mdist/[22m[36massets/js/SystemStatusDashboard-hxql1MdA.js     [39m[1m[2m    9.74 kB[22m[1m[22m[2m Γöé gzip:   2.24 kB[22m
+[2mdist/[22m[36massets/js/AuthContext-BdleJP-X.js               [39m[1m[2m    9.88 kB[22m[1m[22m[2m Γöé gzip:   3.11 kB[22m
+[2mdist/[22m[36massets/js/IntegrityService-d3FDukSx.js          [39m[1m[2m   11.68 kB[22m[1m[22m[2m Γöé gzip:   2.96 kB[22m
+[2mdist/[22m[36massets/js/CustomerDashboard-CPP2CFe-.js         [39m[1m[2m   11.71 kB[22m[1m[22m[2m Γöé gzip:   3.55 kB[22m
+[2mdist/[22m[36massets/js/SupplierDashboard-BixRupW8.js         [39m[1m[2m   12.03 kB[22m[1m[22m[2m Γöé gzip:   3.63 kB[22m
+[2mdist/[22m[36massets/js/DiscrepancyAnalysis-CToAilKh.js       [39m[1m[2m   12.08 kB[22m[1m[22m[2m Γöé gzip:   2.71 kB[22m
+[2mdist/[22m[36massets/js/PayrollDashboard-CYQBEeQG.js          [39m[1m[2m   12.24 kB[22m[1m[22m[2m Γöé gzip:   3.58 kB[22m
+[2mdist/[22m[36massets/js/FinancialDashboard-C8E5ZTRh.js        [39m[1m[2m   12.46 kB[22m[1m[22m[2m Γöé gzip:   3.61 kB[22m
+[2mdist/[22m[36massets/js/InventoryDashboard-BnG6WQ1I.js        [39m[1m[2m   13.81 kB[22m[1m[22m[2m Γöé gzip:   3.87 kB[22m
+[2mdist/[22m[36massets/js/EmployeePaystub-BrT6dQxt.js           [39m[1m[2m   15.05 kB[22m[1m[22m[2m Γöé gzip:   2.78 kB[22m
+[2mdist/[22m[36massets/js/EmployeeManager-CJZAnpGN.js           [39m[1m[2m   16.04 kB[22m[1m[22m[2m Γöé gzip:   3.94 kB[22m
+[2mdist/[22m[36massets/js/BankReconciliation-PfEgDDAl.js        [39m[1m[2m   16.58 kB[22m[1m[22m[2m Γöé gzip:   4.07 kB[22m
+[2mdist/[22m[36massets/js/PayrollProcessor-CE-uQJME.js          [39m[1m[2m   18.31 kB[22m[1m[22m[2m Γöé gzip:   4.81 kB[22m
+[2mdist/[22m[36massets/js/DR15PreparationWizard-DkG0u7A_.js     [39m[1m[2m   18.91 kB[22m[1m[22m[2m Γöé gzip:   5.52 kB[22m
+[2mdist/[22m[36massets/js/InventoryReports-Drx40L2i.js          [39m[1m[2m   21.89 kB[22m[1m[22m[2m Γöé gzip:   4.46 kB[22m
+[2mdist/[22m[36massets/js/PayrollReview-D1fsVZNd.js             [39m[1m[2m   23.34 kB[22m[1m[22m[2m Γöé gzip:   6.34 kB[22m
+[2mdist/[22m[36massets/js/UnifiedAssistant-BeOYosDc.js          [39m[1m[2m   27.59 kB[22m[1m[22m[2m Γöé gzip:   9.27 kB[22m
+[2mdist/[22m[36massets/js/vendor-icons-Ds0okGXF.js              [39m[1m[2m   33.37 kB[22m[1m[22m[2m Γöé gzip:  10.14 kB[22m
+[2mdist/[22m[36massets/js/PayrollReports-147sdWmI.js            [39m[1m[2m   36.07 kB[22m[1m[22m[2m Γöé gzip:   8.12 kB[22m
+[2mdist/[22m[36massets/js/vendor-database-BQ5sL2cV.js           [39m[1m[2m   44.50 kB[22m[1m[22m[2m Γöé gzip:  15.77 kB[22m
+[2mdist/[22m[36massets/js/ARDModule-B4ZX49Xh.js                 [39m[1m[2m   67.64 kB[22m[1m[22m[2m Γöé gzip:  12.82 kB[22m
+[2mdist/[22m[36massets/js/vendor-react-DrkGsenf.js              [39m[1m[2m  152.74 kB[22m[1m[22m[2m Γöé gzip:  49.64 kB[22m
+[2mdist/[22m[36massets/js/vendor-ai-CowMRLsO.js                 [39m[1m[2m  201.23 kB[22m[1m[22m[2m Γöé gzip:  56.73 kB[22m
+[2mdist/[22m[36massets/js/vendor-charts-rLGCX7Ld.js             [39m[1m[2m  253.45 kB[22m[1m[22m[2m Γöé gzip:  65.26 kB[22m
+[2mdist/[22m[36massets/js/vendor-utils-D-Ra0NCU.js              [39m[1m[2m  329.63 kB[22m[1m[22m[2m Γöé gzip: 106.46 kB[22m
+[2mdist/[22m[36massets/js/index-DoEKpc8z.js                     [39m[1m[2m  567.97 kB[22m[1m[22m[2m Γöé gzip: 145.47 kB[22m
+[2mdist/[22m[36massets/js/App-B232ikBK.js                       [39m[1m[33m1,118.85 kB[39m[22m[2m Γöé gzip: 224.23 kB[22m
+[2mdist/[22m[36massets/js/vendor-pdf-C0D4gbfF.js                [39m[1m[33m1,228.54 kB[39m[22m[2m Γöé gzip: 357.42 kB[22m
+[2mdist/[22m[36massets/js/vendor-other-CD-7G5UC.js              [39m[1m[33m2,793.86 kB[39m[22m[2m Γöé gzip: 818.00 kB[22m
+[33m
+(!) Some chunks are larger than 600 kB 
+after minification. Consider:
+- Using dynamic import() to code-split 
+the application
+- Use build.rollupOptions.output.manual
+Chunks to improve chunking: https://rol
+lupjs.org/configuration-options/#output
+-manualchunks
+- Adjust chunk size limit for this 
+warning via 
+build.chunkSizeWarningLimit.[39m
+[32mΓ£ô built in 38.32s[39m
