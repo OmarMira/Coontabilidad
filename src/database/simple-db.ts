@@ -1915,6 +1915,28 @@ export const initDB = async (password?: string): Promise<any> => {
     // NUEVO: Ejecutar reparaciÃ³n profunda y seed de emergencia (Iron Core Protection)
     await DatabaseInitializer.initializeWithFix(db);
 
+    // DIAGNÃ“STICO: DistribuciÃ³n de estados de transacciones para calibraciÃ³n de threshold fuzzy
+    try {
+      const res = db.exec(`
+            SELECT 
+                current_state as state,
+                COUNT(*) as total,
+                ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as porcentaje
+            FROM transaction_states
+            GROUP BY current_state
+        `);
+      if (res.length > 0) {
+        console.log('--- CALIBRACIÃ“N: DISTRIBUCIÃ“N DE ESTADOS ---');
+        console.table(res[0].values.map((row: any) => ({
+          state: row[0],
+          total: row[1],
+          porcentaje: `${row[2]}%`
+        })));
+      }
+    } catch (e) {
+      console.warn('Error al obtener estadÃ­sticas de transacciones:', e);
+    }
+
     // Configurar servicios adicionales
     setupAutoSave();
 

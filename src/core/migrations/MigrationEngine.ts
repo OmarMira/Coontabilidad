@@ -99,6 +99,7 @@ export class MigrationEngine {
     }
 
     private async ensureMigrationTable(engine: SQLiteEngine): Promise<void> {
+        // 1. Intentar crear la tabla con el esquema corregido (Sprint 1A+)
         await engine.exec(`
             CREATE TABLE IF NOT EXISTS sys_migrations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,23 +109,59 @@ export class MigrationEngine {
             )
         `);
 
-        // ── Legacy compatibility ─────────────────────────────────────────────
-        // Instances created before Sprint 1A used column 'migration_name'.
-        // We add 'name' if missing and back-fill from 'migration_name' so the
-        // UNIQUE constraint on (version, name) never blocks existing records.
-        try {
-            await engine.exec(`ALTER TABLE sys_migrations ADD COLUMN name TEXT`);
-        } catch (_) {
-            // Column already exists — expected on new installations. Ignore.
+        // 2. Inspeccionar esquema actual
+        const tableInfo = await engine.select("PRAGMA table_info(sys_migrations)");
+        const hasName = tableInfo.some((col: any) => col.name === 'name');
+        const hasLegacyName = tableInfo.some((col: any) => col.name === 'migration_name');
+
+        // 3. Normalización profunda si detectamos columnas obsoletas que causan fallos de NOT NULL
+        if (hasLegacyName) {
+            console.log("[MigrationEngine] Legacy schema detected in sys_migrations. Normalizing...");
+
+            // Usamos un bloque TRY/CATCH simple fuera de la transacción principal para evitar 
+            // problemas de bloqueo si la tabla ya está en uso, aunque executeTransaction es preferible.
+            try {
+                await engine.executeTransaction(async () => {
+                    // Renombrar tabla vieja
+                    await engine.exec("ALTER TABLE sys_migrations RENAME TO sys_migrations_old");
+
+                    // Crear tabla nueva limpia
+                    await engine.exec(`
+                        CREATE TABLE sys_migrations (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            version INTEGER NOT NULL UNIQUE,
+                            name TEXT NOT NULL,
+                            applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        )
+                    `);
+
+                    // Migrar datos usando COALESCE para manejar cualquier combinación de columnas
+                    if (hasName) {
+                        await engine.exec(`
+                            INSERT INTO sys_migrations (id, version, name, applied_at)
+                            SELECT id, version, COALESCE(name, migration_name), applied_at 
+                            FROM sys_migrations_old
+                        `);
+                    } else {
+                        await engine.exec(`
+                            INSERT INTO sys_migrations (id, version, name, applied_at)
+                            SELECT id, version, migration_name, applied_at 
+                            FROM sys_migrations_old
+                        `);
+                    }
+
+                    // Eliminar tabla obsoleta
+                    await engine.exec("DROP TABLE sys_migrations_old");
+                });
+                console.log("[MigrationEngine] Schema normalization successful.");
+            } catch (error) {
+                console.error("[MigrationEngine] Schema normalization failed. Attempting fallback...", error);
+                // Si falla el renombre (ej. por triggers), al menos intentamos añadir la columna
+                if (!hasName) {
+                    try { await engine.exec(`ALTER TABLE sys_migrations ADD COLUMN name TEXT`); } catch (_) { }
+                }
+            }
         }
-        try {
-            await engine.exec(
-                `UPDATE sys_migrations SET name = migration_name WHERE name IS NULL OR name = ''`
-            );
-        } catch (_) {
-            // 'migration_name' column does not exist — schema is already correct. Ignore.
-        }
-        // ────────────────────────────────────────────────────────────────────
     }
 
     private async getCurrentVersion(engine: SQLiteEngine): Promise<number> {
