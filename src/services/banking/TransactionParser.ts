@@ -240,8 +240,8 @@ export class TransactionParser {
         }
 
         // CAPA 2: Fuzzy para P2P sin match determinístico
-        // NOTA: El umbral F₀.₇₅ se calibró con datos reales de BofA.
-        const FUZZY_THRESHOLD = 0.75;
+        // NOTA: El umbral F₀.₈₅ se calibró con datos reales de BofA.
+        const FUZZY_THRESHOLD = 0.85;
 
         let bestScore = 0;
         let bestKeyword: RiskKeyword | null = null;
