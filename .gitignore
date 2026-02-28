@@ -87,6 +87,8 @@ opfs-cache/
 temp/
 tmp/
 .tmp/
+src/.translation_backups/
+src/.migration_backups/
 
 # ============================================
 # 💻 EDITORES E IDEs
