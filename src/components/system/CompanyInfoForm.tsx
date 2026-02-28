@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building, Save, Globe, Cloud, CheckCircle, AlertTriangle } from 'lucide-react';
 import { type CompanyInfo } from '../../modules/system/System.types';
-import { BackupService } from '../../services/BackupService';
+import { BackupService } from '../../services/backup/BackupService';
 import { useLocale } from '../../i18n/useLocale';
 
 export const CompanyInfoForm: React.FC = () => {

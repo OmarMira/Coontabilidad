@@ -8,7 +8,7 @@ import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { MigrationEngine } from '../core/migrations/MigrationEngine';
 import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
-import AuditTrailService from '../services/AuditTrailService';
+import { AuditChainService as AuditTrailService } from '../core/audit/AuditChainService';
 import { EngineBridge } from '../core/database/EngineBridge';
 
 // Tipo ligero para la API que usamos de sql.js (exec/run/prepare)

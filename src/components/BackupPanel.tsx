@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BackupService } from '../services/BackupService';
+import { BackupService } from '../services/backup/BackupService';
 import { BackupLocationSelector } from './backup/BackupLocationSelector';
 import { BackupLocation } from '../services/BackupLocationService';
 import { Download, Upload, Shield, Loader2, AlertTriangle, FileJson, CheckCircle, FolderOpen } from 'lucide-react';

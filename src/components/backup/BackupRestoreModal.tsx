@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EnhancedBackupService, ProgressData, RestoreResult } from '../../services/backup/EnhancedBackupService';
+import { BackupService as EnhancedBackupService, ProgressData, RestoreResult } from '../../services/backup/BackupService';
 import '../../styles/backup-progress.css';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -49,7 +49,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
         setResult(null);
         setProgress(null);
         try {
-            await EnhancedBackupService.restoreBackup(selectedBackupId);
+            await EnhancedBackupService.restoreBackupStatic(selectedBackupId);
         } catch (err: any) {
             console.error('Error in restoration trigger:', err);
             setIsRestoring(false);

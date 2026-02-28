@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AuditChainService } from '@/services/audit/AuditChainService';
+import { AuditChainService } from '@/core/audit/AuditChainService';
 import { getDBEngine } from '@/database/simple-db';
 import { Shield, ShieldAlert, ShieldCheck, RefreshCw, Activity } from 'lucide-react';
 import { useLocale } from '@/i18n/useLocale';
@@ -27,18 +27,14 @@ export const AuditTrailMonitor: React.FC = () => {
     const verifyChain = async () => {
         setStatus(prev => ({ ...prev, status: 'verifying' }));
         try {
-            const engine = getDBEngine();
-            const auditChain = new AuditChainService(engine);
-            const report = await auditChain.verifyIntegrity();
+            const report = await AuditChainService.performFullAudit();
 
             setStatus({
                 status: report.valid ? 'secure' : 'compromised',
-                lastHash: report.lastChainHash
-                    ? report.lastChainHash.slice(0, 16) + '...'
-                    : 'GENESIS',
-                totalEvents: report.totalRecords,
+                lastHash: report.lastHash || '...',
+                totalEvents: report.totalChecked || 0,
                 lastVerified: new Date(),
-                errors: report.errors.map(e => e.message)
+                errors: report.valid ? [] : [report.details]
             });
         } catch (err) {
             setStatus(prev => ({

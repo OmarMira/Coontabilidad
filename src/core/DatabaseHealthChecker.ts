@@ -1,5 +1,5 @@
 import { db } from '../database/simple-db';
-import { CorruptionProofBackupService } from '../services/backup/CorruptionProofBackupService';
+import { BackupService } from '../services/backup/BackupService';
 import { ForensicDatabaseDiagnostic } from '../database/ForensicDiagnostic';
 import { logger } from '../utils/logger';
 
@@ -17,7 +17,7 @@ export class DatabaseHealthChecker {
             return { healthy: false, issues: ['Base de datos no instanciada'] };
         }
 
-        const testResults = await CorruptionProofBackupService.runIntegrityTestSuite();
+        const testResults = await BackupService.runIntegrityTestSuite(db);
 
         return {
             healthy: testResults.passed,

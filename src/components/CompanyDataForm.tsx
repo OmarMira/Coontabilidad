@@ -3,7 +3,7 @@ import { Building2, AlertTriangle, CheckCircle, Save, RefreshCw, Shield, FileTex
 import { getCompanyData, updateCompanyData, checkAccountingDataAssociation, CompanyData } from '../database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { LogoUploader } from './LogoUploader';
-import { BackupService } from '../services/BackupService';
+import { BackupService } from '../services/backup/BackupService';
 import { useLocale } from '../i18n/useLocale';
 
 export function CompanyDataForm() {

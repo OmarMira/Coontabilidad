@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { z } from 'zod';
 import { InvoiceFormSchema } from './InvoiceSchemas';
 import { FloridaTaxCalculator } from '@/modules/billing/FloridaTaxCalculator';
-import { AuditChain } from '@/modules/audit/AuditChain';
+import { AuditChainService as AuditChain } from '@/core/audit/AuditChainService';
 import { InvoiceService } from '@/services/invoicing/InvoiceService';
 import { SQLiteEngine } from '@/core/database/SQLiteEngine';
 

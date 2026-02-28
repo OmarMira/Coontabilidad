@@ -1,7 +1,8 @@
 import initSqlJs from 'sql.js';
 
 // Import worker utilities
-import { encryptData, decryptData, exportDatabaseToSQL } from '../services/backup/BackupServiceWorker';
+import { BackupService as BackupServiceWorker } from '../services/backup/BackupService';
+const { encryptData, decryptData, exportDatabaseToSQL } = BackupServiceWorker;
 
 // Initialize SQL.js
 let SQL: any;

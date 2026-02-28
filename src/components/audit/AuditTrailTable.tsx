@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { History, Search, Filter, User, Activity, Clock, Database } from 'lucide-react';
-import AuditTrailService from '../../services/AuditTrailService';
+import { AuditChainService as AuditTrailService } from '../../core/audit/AuditChainService';
 import { AuditEntry } from '../../types/user.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../i18n/useLocale';
@@ -20,10 +20,10 @@ export const AuditTrailTable: React.FC = () => {
         loadAuditTrail();
     }, [filter]);
 
-    const loadAuditTrail = () => {
+    const loadAuditTrail = async () => {
         setLoading(true);
         try {
-            const data = AuditTrailService.getAuditTrail({
+            const data = await AuditTrailService.getAuditTrail({
                 userId: filter.userId || undefined,
                 entityType: filter.entityType || undefined,
                 action: filter.action || undefined,

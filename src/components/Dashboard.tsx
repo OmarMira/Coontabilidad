@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useLocale } from '../i18n/useLocale';
 
-import { AuditService } from '../services/AuditService';
+import { AuditChainService as AuditService } from '../core/audit/AuditChainService';
 import { TaxService } from '../services/TaxService';
 import { DatabaseService } from '../database/DatabaseService';
 import { getMonthlyFinancialSummary, MonthlySummary } from '../database/simple-db';

@@ -1,6 +1,6 @@
 import { db } from '../database/simple-db';
 import { logger } from '../utils/logger';
-import { CorruptionProofBackupService } from '../services/backup/CorruptionProofBackupService';
+import { BackupService } from '../services/backup/BackupService';
 
 export class IntegrityMonitor {
     private static intervalId: any = null;
@@ -39,7 +39,7 @@ export class IntegrityMonitor {
     private static async performPulseCheck(): Promise<void> {
         try {
             // 1. Salud de la Base de Datos (Integridad y FK)
-            const dbStatus = await CorruptionProofBackupService.runIntegrityTestSuite();
+            const dbStatus = await BackupService.runIntegrityTestSuite(db);
 
             if (!dbStatus.passed) {
                 logger.emergency('FALLA DE INTEGRIDAD DETECTADA POR MONITOR CONTINUO', { failures: dbStatus.failures }, undefined, 'Monitor', 'integrity_failure');

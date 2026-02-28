@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Activity, Shield } from 'lucide-react';
 import { DatabaseService } from '../database/DatabaseService';
 import { TaxService } from '../services/TaxService';
-import { BackupService } from '../services/BackupService';
-import { ForensicAuditService } from '../services/ForensicAuditService';
+import { BackupService } from '../services/backup/BackupService';
+import { AuditChainService as ForensicAuditService } from '../core/audit/AuditChainService';
 import { ForensicSentinelDashboard } from '../components/forensic/ForensicSentinelDashboard';
 
 export const LiveVerification: React.FC = () => {
