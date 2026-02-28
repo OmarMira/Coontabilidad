@@ -284,6 +284,10 @@ export const QuarantinePanel: React.FC = () => {
 
                                         <div className="flex flex-col items-center gap-2">
                                             <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedTx(tx);
+                                                }}
                                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg
                                                     ${isSelected ? 'bg-blue-600 text-white' : 'bg-amber-500/10 border border-amber-500/20 text-amber-500 group-hover:bg-amber-500 group-hover:text-black'}
                                                 `}

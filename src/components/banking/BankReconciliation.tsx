@@ -40,7 +40,11 @@ import { ReconciliationTask, ReconciliationResult } from '../../workers/reconcil
 import { toast } from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';
 
-export const BankReconciliation: React.FC = () => {
+interface BankReconciliationProps {
+    onNavigate?: (section: string) => void;
+}
+
+export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNavigate }) => {
     const { t } = useLocale();
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [statements, setStatements] = useState<ReconciliationStatement[]>([]);
@@ -363,7 +367,13 @@ export const BankReconciliation: React.FC = () => {
                                                         </td>
                                                         <td className="px-8 py-6 text-center">
                                                             <button
-                                                                onClick={() => window.location.hash = '#quarantine-panel'}
+                                                                onClick={() => {
+                                                                    if (onNavigate) {
+                                                                        onNavigate('quarantine-panel');
+                                                                    } else {
+                                                                        window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'quarantine-panel' }));
+                                                                    }
+                                                                }}
                                                                 className="px-4 py-2 rounded-xl border text-[8px] font-black uppercase tracking-[0.2em] bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black transition-all shadow-lg shadow-amber-950/20"
                                                             >
                                                                 Clasificar

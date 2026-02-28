@@ -486,6 +486,18 @@ function App() {
     }));
   };
 
+  useEffect(() => {
+    const onNavigateEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail === 'string') {
+        handleNavigate(customEvent.detail);
+      }
+    };
+    window.addEventListener('navigate-to', onNavigateEvent);
+    return () => window.removeEventListener('navigate-to', onNavigateEvent);
+  }, []);
+
+
   const handleAddCustomer = async (customerData: any) => {
     try {
       console.log('=== ADDING CUSTOMER ===');
@@ -1929,7 +1941,7 @@ function App() {
 
               {state.currentSection === 'bank-reconciliation' && (
                 <Suspense fallback={<LoadingSpinner />}>
-                  <BankReconciliation />
+                  <BankReconciliation onNavigate={handleNavigate} />
                 </Suspense>
               )}
               {state.currentSection === 'discrepancy-analysis' && (
