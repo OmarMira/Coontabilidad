@@ -26,7 +26,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['sql.js'],
+    include: ['react', 'react-dom', 'sql.js'],
     exclude: ['@xenova/transformers', 'wa-sqlite'] // Lazy load AI models and preserve wasm paths
   },
   resolve: {
