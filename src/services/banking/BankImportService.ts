@@ -18,6 +18,9 @@ import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
 import { AICategorizerService, TrainingExample } from './AICategorizerService';
 import { TransactionMatcher, Invoice, Bill } from './TransactionMatcher';
 import { DatabaseService } from '../../database/DatabaseService';
+import { generateTransactionHash } from './BankingUtils';
+import { ClassificationRulesService } from './ClassificationRulesService';
+import { TRANSACTION_STATES } from '../../constants/bankingStates';
 
 export interface ImportBatch {
   id: number;
@@ -52,12 +55,12 @@ export interface ImportTransaction {
 
 export class BankImportService {
   private categorizer: AICategorizerService;
-  
+
   constructor() {
     this.categorizer = new AICategorizerService();
     this.loadTrainingData();
   }
-  
+
   /**
    * Carga datos de entrenamiento desde la base de datos
    */
@@ -69,7 +72,7 @@ export class BankImportService {
         ORDER BY created_at DESC
         LIMIT 1000
       `);
-      
+
       if (trainingData.length > 0 && trainingData[0].values.length > 0) {
         const examples: TrainingExample[] = trainingData[0].values.map((row: any) => ({
           description: row[0],
@@ -77,14 +80,14 @@ export class BankImportService {
           amount: row[2],
           transactionType: row[3]
         }));
-        
+
         this.categorizer.train(examples);
       }
     } catch (error) {
       console.error('Error loading training data:', error);
     }
   }
-  
+
   /**
    * Crea un nuevo batch de importación y genera preview
    */
@@ -93,21 +96,21 @@ export class BankImportService {
     bankAccountId: number,
     userId: number
   ): Promise<{ batchId: number; transactions: ImportTransaction[] }> {
-    
+
     // 1. Parse file
     const parseResult = await FileParserService.parseFile(file);
-    
+
     if (parseResult.errors.length > 0) {
       throw new Error(`Errores al parsear archivo: ${parseResult.errors.join(', ')}`);
     }
-    
+
     if (parseResult.transactions.length === 0) {
       throw new Error('No se encontraron transacciones en el archivo');
     }
-    
+
     // 2. Create batch
     const batchNumber = `IMP-${Date.now()}`;
-    
+
     db.run(`
       INSERT INTO import_batches (
         batch_number, file_name, file_format, bank_account_id,
@@ -121,34 +124,34 @@ export class BankImportService {
       parseResult.transactions.length,
       userId
     ]);
-    
+
     const batchIdResult = db.exec('SELECT last_insert_rowid() as id');
     const batchId = batchIdResult[0].values[0][0] as number;
-    
+
     // 3. Get existing transactions for duplicate detection
     const existingTxns = await this.getExistingTransactions();
-    
+
     // 4. Get unpaid invoices and bills for matching
     const unpaidInvoices = await this.getUnpaidInvoices();
     const unpaidBills = await this.getUnpaidBills();
-    
+
     // 5. Process each transaction
     const importTransactions: ImportTransaction[] = [];
-    
+
     for (const txn of parseResult.transactions) {
       // Detect duplicates
       const duplicateResult = await DuplicateDetector.detectDuplicate(txn, existingTxns);
-      
+
       // Categorize with AI
       const categorizationResult = this.categorizer.categorize(txn);
-      
+
       // Match with invoices/bills
       const matchResult = await TransactionMatcher.matchTransaction(
         txn,
         unpaidInvoices,
         unpaidBills
       );
-      
+
       // Insert into temp table
       db.run(`
         INSERT INTO import_transactions_temp (
@@ -171,10 +174,10 @@ export class BankImportService {
         matchResult.matchType === 'bill' ? matchResult.matchedId : null,
         matchResult.confidence || null
       ]);
-      
+
       const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
       const txnId = txnIdResult[0].values[0][0] as number;
-      
+
       importTransactions.push({
         id: txnId,
         batchId,
@@ -192,10 +195,10 @@ export class BankImportService {
         excluded: false
       });
     }
-    
+
     return { batchId, transactions: importTransactions };
   }
-  
+
   /**
    * Actualiza una transacción en el preview
    */
@@ -209,50 +212,51 @@ export class BankImportService {
   ): Promise<void> {
     const setClauses: string[] = [];
     const values: any[] = [];
-    
+
     if (updates.userCategory !== undefined) {
       setClauses.push('user_category = ?');
       values.push(updates.userCategory);
     }
-    
+
     if (updates.userDescription !== undefined) {
       setClauses.push('user_description = ?');
       values.push(updates.userDescription);
     }
-    
+
     if (updates.excluded !== undefined) {
       setClauses.push('excluded = ?');
       values.push(updates.excluded ? 1 : 0);
     }
-    
+
     if (setClauses.length === 0) return;
-    
+
     values.push(transactionId);
-    
+
     db.run(`
       UPDATE import_transactions_temp
       SET ${setClauses.join(', ')}
       WHERE id = ?
     `, values);
   }
-  
+
   /**
    * Importa las transacciones finales
+   * Retorna { imported: number, skipped: number }
    */
-  async finalizeImport(batchId: number, userId: number): Promise<void> {
+  async finalizeImport(batchId: number, userId: number, bankAccountId: number): Promise<{ imported: number, skipped: number }> {
     try {
       db.run('BEGIN TRANSACTION');
-      
+
       // Get transactions to import (not excluded, not duplicates)
       const txnsResult = db.exec(`
         SELECT * FROM import_transactions_temp
-        WHERE batch_id = ? AND excluded = 0 AND is_duplicate = 0
+        WHERE batch_id = ? AND excluded = 0
       `, [batchId]);
-      
+
       if (txnsResult.length === 0 || txnsResult[0].values.length === 0) {
         throw new Error('No hay transacciones para importar');
       }
-      
+
       const columns = txnsResult[0].columns;
       const transactions = txnsResult[0].values.map((row: any) => {
         const obj: any = {};
@@ -261,22 +265,76 @@ export class BankImportService {
         });
         return obj;
       });
-      
+
       let importedCount = 0;
-      
+      let skippedCount = 0;
+
       for (const txn of transactions) {
-        // Determine final category (user override or suggested)
-        const finalCategory = txn.user_category || txn.suggested_category;
+        // Generar hash único para deduplicación
+        const hash = await generateTransactionHash(
+          txn.transaction_date,
+          txn.amount,
+          txn.description,
+          bankAccountId
+        );
+
+        // Intentar insertar la transacción bancaria. INSERT OR IGNORE evita duplicados por UNIQUE(import_hash)
+        db.run(`
+          INSERT OR IGNORE INTO bank_transactions (
+            bank_account_id, transaction_date, description, amount, status, import_hash
+          ) VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+          bankAccountId,
+          txn.transaction_date,
+          txn.description,
+          txn.amount,
+          TRANSACTION_STATES.IMPORTED,
+          hash
+        ]);
+
+        // Verificar si se insertó realmente
+        const rowsAffected = db.exec('SELECT changes() as changes')[0].values[0][0] as number;
+
+        if (rowsAffected === 0) {
+          skippedCount++;
+          continue;
+        }
+
+        // Obtener ID de la transacción recién insertada
+        const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
+        const bankTxnId = txnIdResult[0].values[0][0] as number;
+
+        // EVALUAR REGLAS DE CLASIFICACIÓN (Automatización Inteligente)
+        const autoAccount = await ClassificationRulesService.evaluateTransaction(txn.description);
+
+        // Determine final category (rule match > user override > suggested)
+        const finalCategory = autoAccount ? autoAccount.account_code : (txn.user_category || txn.suggested_category);
         const finalDescription = txn.user_description || txn.description;
-        
-        // Create bank transaction (assuming there's a bank_transactions table)
-        // Note: This would need to be adapted to your actual schema
-        
+        const isAutoClassified = !!autoAccount;
+
+        // Insertar en transaction_states
+        db.run(`
+          INSERT INTO transaction_states (
+            transaction_id, current_state, is_verified, 
+            auto_classified, assigned_account_code, assigned_account_name,
+            verified_at, verified_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          bankTxnId,
+          isAutoClassified ? TRANSACTION_STATES.VERIFIED : TRANSACTION_STATES.IMPORTED,
+          isAutoClassified ? 1 : 0,
+          isAutoClassified ? 1 : 0,
+          autoAccount ? autoAccount.account_code : null,
+          autoAccount ? autoAccount.account_name : null,
+          isAutoClassified ? new Date().toISOString() : null,
+          isAutoClassified ? userId : null
+        ]);
+
         // Generate journal entry
         const debitAccount = txn.amount < 0 ? finalCategory : 'Bank Account';
         const creditAccount = txn.amount < 0 ? 'Bank Account' : finalCategory;
         const absAmount = Math.abs(txn.amount);
-        
+
         await DatabaseService.insertJournalEntry({
           description: `Bank Import: ${finalDescription}`,
           date: txn.transaction_date,
@@ -296,7 +354,7 @@ export class BankImportService {
           ],
           userId
         });
-        
+
         // Save as training data if user corrected the category
         if (txn.user_category && txn.user_category !== txn.suggested_category) {
           db.run(`
@@ -308,7 +366,7 @@ export class BankImportService {
             txn.amount,
             txn.amount < 0 ? 'debit' : 'credit'
           ]);
-          
+
           // Add to categorizer for immediate learning
           this.categorizer.addTrainingExample({
             description: txn.description,
@@ -317,56 +375,57 @@ export class BankImportService {
             transactionType: txn.amount < 0 ? 'debit' : 'credit'
           });
         }
-        
+
         importedCount++;
       }
-      
+
       // Update batch status
       db.run(`
         UPDATE import_batches
         SET status = 'completed', imported_count = ?, imported_at = datetime('now')
         WHERE id = ?
       `, [importedCount, batchId]);
-      
+
       // Clean up temp transactions
       db.run('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
-      
+
       db.run('COMMIT');
-      
+      return { imported: importedCount, skipped: skippedCount };
+
     } catch (error) {
       db.run('ROLLBACK');
       throw error;
     }
   }
-  
+
   /**
    * Rollback de una importación
    */
   async rollbackImport(batchId: number): Promise<void> {
     try {
       db.run('BEGIN TRANSACTION');
-      
+
       // Check if period is open
       // (This would need to check against accounting_periods table)
-      
+
       // Delete journal entries created by this batch
       // Note: This would need to track which journal entries belong to which batch
       // For now, we'll just mark the batch as rolled back
-      
+
       db.run(`
         UPDATE import_batches
         SET status = 'rolled_back', rolled_back_at = datetime('now')
         WHERE id = ?
       `, [batchId]);
-      
+
       db.run('COMMIT');
-      
+
     } catch (error) {
       db.run('ROLLBACK');
       throw error;
     }
   }
-  
+
   /**
    * Obtiene transacciones existentes para detección de duplicados
    */
@@ -380,7 +439,7 @@ export class BankImportService {
       return [];
     }
   }
-  
+
   /**
    * Obtiene facturas no pagadas
    */
@@ -393,11 +452,11 @@ export class BankImportService {
         ORDER BY date DESC
         LIMIT 100
       `);
-      
+
       if (result.length === 0 || result[0].values.length === 0) {
         return [];
       }
-      
+
       return result[0].values.map((row: any) => ({
         id: row[0],
         invoice_number: row[1],
@@ -410,7 +469,7 @@ export class BankImportService {
       return [];
     }
   }
-  
+
   /**
    * Obtiene gastos no pagados
    */
@@ -424,7 +483,7 @@ export class BankImportService {
       return [];
     }
   }
-  
+
   /**
    * Obtiene el historial de importaciones
    */
@@ -438,11 +497,11 @@ export class BankImportService {
         ORDER BY created_at DESC
         LIMIT 50
       `);
-      
+
       if (result.length === 0 || result[0].values.length === 0) {
         return [];
       }
-      
+
       return result[0].values.map((row: any) => ({
         id: row[0],
         batchNumber: row[1],

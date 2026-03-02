@@ -9,12 +9,7 @@ interface IDbEngine {
 // ─────────────────────────────────────────────────────────────
 // TIPOS — alineados exactamente con migration 016 constraints
 // ─────────────────────────────────────────────────────────────
-export type TransactionState =
-    | 'IMPORTED'
-    | 'HIGH_RISK_PERSONAL'
-    | 'PENDING_SUPERVISOR'
-    | 'DISPUTED'
-    | 'VERIFIED';
+import { TRANSACTION_STATES, TransactionState } from '../../constants/bankingStates';
 
 export type SuggestedCategory =
     | 'PERSONAL_EXPENSE'
@@ -211,7 +206,7 @@ export class TransactionParser {
             return {
                 transaction_id,
                 description,
-                state: 'VERIFIED',
+                state: TRANSACTION_STATES.VERIFIED,
                 matched_keyword_id: layer1Match.keyword.id,
                 suggested_category: layer1Match.keyword.suggested_category,
                 confidence_score: 1.0,
@@ -224,8 +219,8 @@ export class TransactionParser {
         if (layer1Match && !layer1Match.keyword.auto_classify) {
             const state: TransactionState =
                 layer1Match.keyword.risk_level === 'HIGH'
-                    ? 'HIGH_RISK_PERSONAL'
-                    : 'IMPORTED';
+                    ? TRANSACTION_STATES.HIGH_RISK_PERSONAL
+                    : TRANSACTION_STATES.IMPORTED;
             return {
                 transaction_id,
                 description,
@@ -261,7 +256,7 @@ export class TransactionParser {
             return {
                 transaction_id,
                 description,
-                state: 'IMPORTED', // Fuzzy nunca auto-clasifica — siempre requiere revisión
+                state: TRANSACTION_STATES.IMPORTED, // Fuzzy nunca auto-clasifica — siempre requiere revisión
                 matched_keyword_id: bestKeyword.id,
                 suggested_category: bestKeyword.suggested_category,
                 confidence_score: bestScore,
@@ -275,7 +270,7 @@ export class TransactionParser {
         return {
             transaction_id,
             description,
-            state: 'IMPORTED',
+            state: TRANSACTION_STATES.IMPORTED,
             matched_keyword_id: null,
             suggested_category: null,
             confidence_score: 0,
@@ -303,32 +298,19 @@ export class TransactionParser {
             const result = await this.parse(tx.id, tx.description);
             results.push(result);
 
-            const keywordIdSQL = result.matched_keyword_id !== null
-                ? String(result.matched_keyword_id)
-                : 'NULL';
-            const quarantineStart = result.state === 'HIGH_RISK_PERSONAL'
-                ? `datetime('now')`
-                : 'NULL';
-            const slaDeadline = result.state === 'HIGH_RISK_PERSONAL'
-                ? `datetime('now', '+72 hours')`
-                : 'NULL';
-            const isVerified = result.state === 'VERIFIED' ? 1 : 0;
+            const keywordId = result.matched_keyword_id;
+            const isHighRisk = result.state === TRANSACTION_STATES.HIGH_RISK_PERSONAL;
 
             // Insertar o actualizar estado en transaction_states
-            // ON CONFLICT requires SQLite 3.24+ (available in all modern browsers)
-            await this.db.exec(`
+            await this.db.run(`
                 INSERT INTO transaction_states (
                     transaction_id, current_state, risk_keyword_id,
                     risk_score, is_verified,
                     quarantine_started_at, sla_deadline
                 ) VALUES (
-                    ${tx.id},
-                    '${result.state}',
-                    ${keywordIdSQL},
-                    ${result.confidence_score},
-                    ${isVerified},
-                    ${quarantineStart},
-                    ${slaDeadline}
+                    ?, ?, ?, ?, ?, 
+                    ${isHighRisk ? "datetime('now')" : "NULL"}, 
+                    ${isHighRisk ? "datetime('now', '+72 hours')" : "NULL"}
                 )
                 ON CONFLICT(transaction_id) DO UPDATE SET
                     current_state         = excluded.current_state,
@@ -337,24 +319,34 @@ export class TransactionParser {
                     is_verified           = excluded.is_verified,
                     quarantine_started_at = excluded.quarantine_started_at,
                     sla_deadline          = excluded.sla_deadline
-            `);
+            `, [
+                tx.id,
+                result.state,
+                keywordId,
+                result.confidence_score,
+                isVerified
+            ]);
 
             // Log en quarantine_audit_log para HIGH_RISK
-            if (result.state === 'HIGH_RISK_PERSONAL') {
+            if (result.state === TRANSACTION_STATES.HIGH_RISK_PERSONAL) {
                 const stateRows = await this.db.select(
-                    `SELECT id FROM transaction_states WHERE transaction_id = ${tx.id} LIMIT 1`
+                    `SELECT id FROM transaction_states WHERE transaction_id = ? LIMIT 1`,
+                    [tx.id]
                 );
                 if (stateRows.length > 0) {
                     const stateId = stateRows[0]['id'] as number;
-                    await this.db.exec(`
+                    await this.db.run(`
                         INSERT INTO quarantine_audit_log (
                             transaction_id, state_id, action_type,
                             performed_by, previous_state, new_state
-                        ) VALUES (
-                            ${tx.id}, ${stateId}, 'RISK_DETECTED',
-                            NULL, 'IMPORTED', 'HIGH_RISK_PERSONAL'
-                        )
-                    `);
+                        ) VALUES (?, ?, ?, NULL, ?, ?)
+                    `, [
+                        tx.id,
+                        stateId,
+                        TRANSACTION_STATES.RISK_DETECTED,
+                        TRANSACTION_STATES.IMPORTED,
+                        TRANSACTION_STATES.HIGH_RISK_PERSONAL
+                    ]);
                 }
             }
         }
@@ -377,8 +369,8 @@ export class TransactionParser {
         if (count > 0) {
             await this.db.exec(`
                 UPDATE transaction_states
-                SET    current_state = 'PENDING_SUPERVISOR'
-                WHERE  current_state = 'HIGH_RISK_PERSONAL'
+                SET    current_state = '${TRANSACTION_STATES.PENDING_SUPERVISOR}'
+                WHERE  current_state = '${TRANSACTION_STATES.HIGH_RISK_PERSONAL}'
                   AND  sla_deadline  < datetime('now')
                   AND  is_verified   = 0
             `);

@@ -209,13 +209,6 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
             <p className="mt-1 text-slate-400 font-medium">
               {t('paymentMethods.noMethodsDesc')}
             </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-6 inline-flex items-center px-6 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 transition-all font-bold"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('paymentMethods.addMethod')}
-            </button>
           </div>
         ) : (
           <ul className="divide-y divide-slate-800/50">

@@ -155,8 +155,8 @@ export const SupplierDashboard: React.FC = () => {
                         <Building2 className="w-10 h-10 text-rose-500 group-hover:-rotate-6 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('supplierDashboard.title')}</h1>
-                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none uppercase">{t('supplierDashboard.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
                             <Zap className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> {t('supplierDashboard.subtitle')}
                         </p>
                     </div>

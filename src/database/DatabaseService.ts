@@ -185,8 +185,8 @@ export class DatabaseService {
         id INTEGER PRIMARY KEY,
         asset_number TEXT UNIQUE NOT NULL,      -- 'FA-2026-001'
         description TEXT NOT NULL,
-        acquisition_date TEXT NOT NULL,         -- ISO-8601
-        acquisition_cost INTEGER NOT NULL,      -- En centavos
+        purchase_date TEXT NOT NULL,         -- ISO-8601
+        purchase_cost INTEGER NOT NULL,      -- En centavos
         depreciation_method TEXT NOT NULL,      -- 'MACRS-5', 'SL-7'
         useful_life_years INTEGER NOT NULL,
         federal_depreciation_schedule TEXT,     -- JSON con anual

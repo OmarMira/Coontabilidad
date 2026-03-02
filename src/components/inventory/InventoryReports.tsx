@@ -15,7 +15,8 @@ import {
     AlertTriangle,
     CheckCircle2,
     Calendar,
-    Download
+    Download,
+    Zap
 } from 'lucide-react';
 import { InventoryKardexViewer } from './InventoryKardexViewer';
 import { db } from '../../database/simple-db';
@@ -174,20 +175,22 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button
-                        variant="ghost"
+                    <button
                         onClick={() => setSelectedReport(null)}
-                        className="text-slate-400 hover:text-white hover:bg-slate-900"
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
                     >
-                        <ArrowLeft className="w-4 h-4 mr-2" /> {t('inv.reports.backToReports')}
-                    </Button>
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.backToReports')}
+                    </button>
                     <div className="flex gap-3">
-                        <Button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 shadow-lg">
-                            <Printer className="w-4 h-4 mr-2" /> {t('inv.reports.print')}
-                        </Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg border-0">
-                            <Download className="w-4 h-4 mr-2" /> {t('inv.reports.exportCsv')}
-                        </Button>
+                        <button
+                            onClick={handlePrint}
+                            className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-2.5 rounded-xl border border-slate-700 shadow-lg transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            <Printer className="w-4 h-4" /> {t('inv.reports.print')}
+                        </button>
+                        <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg border-0 transition-all active:scale-95 flex items-center gap-2">
+                            <Download className="w-4 h-4" /> {t('inv.reports.exportCsv')}
+                        </button>
                     </div>
                 </div>
                 <PrintHeader title={t('inv.reports.movementsHistoryTitle')} subtitle={t('inv.reports.movementsHistorySubtitle')} t={t} />
@@ -201,12 +204,18 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> {t('inv.reports.back')}
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg px-6">
-                        <Printer className="w-4 h-4 mr-2" /> {t('inv.reports.printReport')}
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printReport')}
+                    </button>
                 </div>
 
                 <PrintHeader title={t('inv.reports.valuationReportTitle')} subtitle={t('inv.reports.valuationReportSubtitle')} t={t} />
@@ -258,12 +267,18 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> {t('inv.reports.back')}
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
-                        <Printer className="w-4 h-4 mr-2" /> {t('inv.reports.printCritical')}
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 border-0 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printCritical')}
+                    </button>
                 </div>
 
                 <PrintHeader title={t('inv.reports.lowStockReportTitle')} subtitle={t('inv.reports.lowStockReportSubtitle')} t={t} />
@@ -324,12 +339,18 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> {t('inv.reports.back')}
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
-                        <Printer className="w-4 h-4 mr-2" /> {t('inv.reports.printAnalysis')}
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 border-0 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printAnalysis')}
+                    </button>
                 </div>
 
                 <PrintHeader title={t('inv.reports.turnoverReportTitle')} subtitle={t('inv.reports.turnoverReportSubtitle')} t={t} />
@@ -365,8 +386,8 @@ export const InventoryReports: React.FC = () => {
                                     <td className="px-6 py-4 text-right font-mono text-white font-black">{item.turnover_rate}x</td>
                                     <td className="px-6 py-4 text-center">
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${item.classification === 'A' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                                                item.classification === 'B' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                                                    'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                            item.classification === 'B' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                                                'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                                             }`}>
                                             {t('inv.reports.class')} {item.classification}
                                         </span>
@@ -396,12 +417,18 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> {t('inv.reports.back')}
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
-                        <Printer className="w-4 h-4 mr-2" /> {t('inv.reports.printAlerts')}
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 border-0 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printAlerts')}
+                    </button>
                 </div>
 
                 <PrintHeader title={t('inv.reports.expiringReportTitle')} subtitle={t('inv.reports.expiringReportSubtitle')} t={t} />
@@ -452,15 +479,20 @@ export const InventoryReports: React.FC = () => {
     }
 
     return (
-        <div className="animate-in fade-in duration-700">
-            <div className="mb-8">
-                <h1 className="text-section-title flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40">
-                        <TrendingUp className="w-6 h-6 text-white" />
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="mb-8 border-b border-slate-800 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <TrendingUp className="w-7 h-7 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
-                    {t('inv.reports.centerTitle')}
-                </h1>
-                <p className="text-standard-body opacity-80 mt-2 ml-16">{t('inv.reports.centerSubtitle')}</p>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('inv.reports.centerTitle')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('inv.reports.centerSubtitle')}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

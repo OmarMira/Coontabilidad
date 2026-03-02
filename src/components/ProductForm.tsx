@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X, Package, DollarSign, Hash, Tag, Truck, BarChart3,
+  XCircle, Package, DollarSign, Hash, Tag, Truck, BarChart3,
   AlertTriangle, ShieldCheck, Zap, Cpu, Sparkles, Box, Server,
   Layers, Settings, Info, Maximize2, Save, Plus
 } from 'lucide-react';
@@ -100,27 +100,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-50 p-6">
-      <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 blur-[120px] pointer-events-none"></div>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 blur-[120px] pointer-events-none group-hover:bg-white/10 transition-all duration-700"></div>
 
         {/* Header */}
-        <header className="flex items-center justify-between p-10 border-b border-slate-800 relative z-10">
+        <header className="flex items-center justify-between p-10 relative z-10">
           <div className="flex items-center gap-6">
-            <div className={`p-5 rounded-2.5xl border shadow-lg ${isEditing ? 'bg-blue-600/10 border-blue-500/20 text-blue-500' : 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500'} animate-pulse`}>
+            <div className="text-emerald-500">
               {isEditing ? <Cpu className="w-8 h-8" /> : <Sparkles className="w-8 h-8" />}
             </div>
             <div>
-              <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
                 {isEditing ? 'Actualizar Ficha de Activo' : 'Sincronizar Nuevo Activo'}
               </h2>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Registro Central de Inventario v4.2
               </p>
             </div>
           </div>
-          <button onClick={onCancel} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all">
-            <X className="w-6 h-6" />
+          <button onClick={onCancel} className="p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95">
+            <XCircle className="w-6 h-6" />
           </button>
         </header>
 
@@ -146,8 +146,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <div className="space-y-12 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   {/* Type Selector */}
-                  <div className="p-8 bg-slate-950 border border-slate-800 rounded-3xl space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Naturaleza del Activo</label>
+                  <div className="p-8 bg-slate-950/50 border border-slate-800/50 rounded-3xl space-y-4">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Naturaleza del Activo</label>
                     <div className="flex gap-4">
                       <TypeButton
                         active={!formData.is_service}
@@ -172,13 +172,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
                       <Layers className="w-3.5 h-3.5 text-emerald-500" /> Clasificación Matriz
                     </label>
                     <select
                       value={formData.category_id || ''}
                       onChange={(e) => handleInputChange('category_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                      className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
+                      className="w-full bg-slate-950/50 text-white px-6 py-4 rounded-2xl border border-slate-800/50 focus:border-emerald-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px]"
                     >
                       <option value="">SIN CATEGORÍA</option>
                       {categories.map((c) => <option key={c.id} value={c.id}>{c.name.toUpperCase()}</option>)}
@@ -186,13 +186,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
                       <Zap className="w-3.5 h-3.5 text-emerald-500" /> Unidad de Control
                     </label>
                     <select
                       value={formData.unit_of_measure}
                       onChange={(e) => handleInputChange('unit_of_measure', e.target.value)}
-                      className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
+                      className="w-full bg-slate-950/50 text-white px-6 py-4 rounded-2xl border border-slate-800/50 focus:border-emerald-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px]"
                     >
                       {['unidad', 'pieza', 'kg', 'litro', 'metro', 'caja', 'paquete', 'hora', 'servicio'].map(u => (
                         <option key={u} value={u}>{u.toUpperCase()}</option>
@@ -228,7 +228,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       <select
                         value={formData.supplier_id || ''}
                         onChange={(e) => handleInputChange('supplier_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-emerald-500 focus:outline-none font-black uppercase tracking-widest text-[10px]"
+                        className="w-full bg-slate-950/50 text-white px-6 py-4 rounded-2xl border border-slate-800/50 focus:border-emerald-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px]"
                       >
                         <option value="">SELECCIONAR PROVEEDOR</option>
                         {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name.toUpperCase()}</option>)}
@@ -257,7 +257,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       value={formData.notes}
                       onChange={(e) => handleInputChange('notes', e.target.value)}
                       rows={4}
-                      className="w-full bg-slate-950 text-white px-8 py-6 rounded-[2rem] border border-slate-800 focus:border-emerald-500 focus:outline-none font-medium text-sm placeholder:text-slate-800"
+                      className="w-full bg-slate-950/50 text-white px-8 py-6 rounded-[2rem] border border-slate-800/50 focus:border-emerald-500/50 focus:outline-none font-medium text-sm placeholder:text-slate-800"
                       placeholder="Información adicional para auditoría..."
                     />
                   </div>
@@ -297,12 +297,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             <div className="flex gap-6 w-full md:w-auto">
-              <button type="button" onClick={onCancel} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
+              <button type="button" onClick={onCancel} className="flex-1 md:flex-none px-6 py-2.5 bg-slate-900 border border-slate-800 text-slate-400 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all active:scale-95">
                 Abortar Protocolo
               </button>
-              <button type="submit" className={`flex-1 md:flex-none px-12 py-5 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-2xl ${isEditing ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40'
-                } hover:-translate-y-1 active:scale-95`}>
-                {isEditing ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              <button type="submit" className={`flex-1 md:flex-none px-8 py-2.5 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-3 shadow-lg ${isEditing ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/40'
+                } active:scale-95`}>
+                {isEditing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 {isEditing ? 'Confirmar Sincronización' : 'Ejecutar Alta de Activo'}
               </button>
             </div>
@@ -323,7 +323,7 @@ const TypeButton = ({ active, onClick, icon: Icon, label, color }: any) => {
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 flex items-center justify-center gap-3 p-5 rounded-2xl border-2 transition-all font-black uppercase tracking-tighter text-xs ${variants[color]}`}
+      className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl border-2 transition-all font-bold uppercase tracking-tight text-xs ${variants[color]}`}
     >
       <Icon className="w-5 h-5" />
       {label}
@@ -333,7 +333,7 @@ const TypeButton = ({ active, onClick, icon: Icon, label, color }: any) => {
 
 const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required }: any) => (
   <div className="space-y-3">
-    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
       <Icon className={`w-3.5 h-3.5 ${error ? 'text-rose-500' : 'text-emerald-500'}`} /> {label} {required && '*'}
     </label>
     <div className="relative group/input">
@@ -341,7 +341,7 @@ const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, 
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full bg-slate-950 text-white px-8 py-6 rounded-[2.5rem] border transition-all font-black uppercase tracking-widest text-[10px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800 focus:border-emerald-500 focus:shadow-[0_0_25px_rgba(16,185,129,0.1)] group-hover/input:border-slate-700'
+        className={`w-full bg-slate-950/50 text-white px-8 py-6 rounded-[2.5rem] border transition-all font-bold uppercase tracking-widest text-[9px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800/50 focus:border-emerald-500/50 focus:shadow-[0_0_25px_rgba(16,185,129,0.1)] group-hover/input:border-slate-700'
           }`}
         placeholder={placeholder}
         required={required}

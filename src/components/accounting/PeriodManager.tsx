@@ -210,22 +210,20 @@ export const PeriodManager: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-800 pb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
-            <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
-              <CalendarDays className="w-10 h-10 text-blue-500" />
-            </div>
+          <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+            <CalendarDays className="w-8 h-8 text-blue-500" />
             {t('accounting.periods.title')}
-          </h1>
-          <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+          </h2>
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
             <ShieldAlert className="w-3.5 h-3.5 text-blue-500" />
             {t('accounting.periods.subtitle')}
           </p>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-8 py-4 rounded-2xl transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center gap-3"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
         >
           <Plus className="w-5 h-5" />
           {t('accounting.periods.initYear')}
@@ -294,13 +292,7 @@ export const PeriodManager: React.FC = () => {
           {periods.length === 0 ? (
             <div className="text-center py-20 bg-grid-slate-950/20">
               <Calendar className="w-20 h-20 text-slate-800 mx-auto mb-6" />
-              <p className="text-slate-500 font-bold tracking-wide text-xs mb-6">{t('accounting.periods.initSubtitle')}</p>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all"
-              >
-                {t('accounting.periods.generatePeriods')}
-              </button>
+              <p className="text-slate-500 font-bold tracking-wide text-xs">{t('accounting.periods.initSubtitle')}</p>
             </div>
           ) : (
             <table className="w-full">

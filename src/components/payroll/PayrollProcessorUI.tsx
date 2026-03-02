@@ -130,15 +130,15 @@ export const PayrollProcessorUI: React.FC = () => {
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-24 px-4 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 shadow-blue-900/10 shadow-lg group">
-            <Calculator className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
-          </div>
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <Calculator className="w-8 h-8 text-emerald-500" />
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payroll.processor.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-              <Shield className="w-3.5 h-3.5 text-blue-500" /> {t('payroll.processor.subtitle')}
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {t('payroll.processor.title')}
+            </h2>
+            <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payroll.processor.subtitle')}
             </p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export const PayrollProcessorUI: React.FC = () => {
             <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
               <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('payroll.processor.payrollInfo')}</h3>
               <div className="flex items-center gap-3">
-                <Zap className="w-4 h-4 text-blue-500 animate-pulse" />
+                <Zap className="w-4 h-4 text-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{t('payroll.processor.flTaxEngine')}</span>
               </div>
             </div>
@@ -170,7 +170,7 @@ export const PayrollProcessorUI: React.FC = () => {
                     const emp = employees.find(x => x.id === Number(e.target.value));
                     setSelectedEmployee(emp || null);
                   }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2.2xl px-6 py-5 text-white font-black uppercase tracking-widest text-[10px] outline-none focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.1)] transition-all cursor-pointer"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2.2xl px-6 py-5 text-white font-black uppercase tracking-widest text-[10px] outline-none focus:border-emerald-500 focus:shadow-[0_0_20px_rgba(16,185,129,0.1)] transition-all cursor-pointer"
                 >
                   <option value="">{t('payroll.processor.selectActiveEmployee')}</option>
                   {employees.map(emp => (
@@ -183,8 +183,8 @@ export const PayrollProcessorUI: React.FC = () => {
                 <>
                   {/* Employee Quick Info */}
                   <div className="p-8 bg-slate-950/50 border border-slate-800 rounded-[2.5rem] flex gap-6 group/card">
-                    <div className="p-4 bg-blue-600/10 rounded-2.2xl border border-blue-500/20 shadow-xl group-hover/card:scale-110 transition-transform">
-                      <User className="w-8 h-8 text-blue-500 shrink-0" />
+                    <div className="p-4 bg-emerald-600/10 rounded-2.2xl border border-emerald-500/20 shadow-xl group-hover/card:scale-110 transition-transform">
+                      <User className="w-8 h-8 text-emerald-500 shrink-0" />
                     </div>
                     <div className="space-y-2">
                       <h4 className="text-sm font-black text-white uppercase tracking-tight">{selectedEmployee.first_name} {selectedEmployee.last_name}</h4>
@@ -266,11 +266,11 @@ export const PayrollProcessorUI: React.FC = () => {
                   {/* Calculate Button */}
                   <button
                     onClick={handleCalculatePreview}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-blue-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     <div className="flex items-center justify-center gap-4 text-sm tracking-widest uppercase">
-                      <Calculator className="w-5 h-5" />
+                      <Calculator className="w-5 h-5 fill-white" />
                       <span>{t('payroll.processor.calculatePreview')}</span>
                     </div>
                   </button>
@@ -298,7 +298,7 @@ export const PayrollProcessorUI: React.FC = () => {
             {preview ? (
               <div className="space-y-6">
                 {/* Net Pay Highlight */}
-                <div className="bg-blue-600 p-8 rounded-3xl text-white shadow-2xl shadow-blue-950/40 relative overflow-hidden group/net">
+                <div className="bg-emerald-600 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-950/40 relative overflow-hidden group/net">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] -mr-32 -mt-32"></div>
                   <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">{t('payroll.processor.netToReceive')}</p>
                   <h2 className="text-4xl font-black tracking-tighter">{formatCurrency(preview.netPay)}</h2>
@@ -309,7 +309,7 @@ export const PayrollProcessorUI: React.FC = () => {
 
                 {/* Earnings */}
                 <div className="space-y-3">
-                  <h4 className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{t('payroll.processor.earningsConcepts')}</h4>
+                  <h4 className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{t('payroll.processor.earningsConcepts')}</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase">
                       <span>{t('payroll.processor.grossRegularExtras')}</span>

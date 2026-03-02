@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Plus, Edit2, Eye, Search,
   Building, TrendingUp, DollarSign, CreditCard,
-  ChevronRight, ChevronDown, AlertCircle, CheckCircle
+  ChevronRight, ChevronDown, AlertCircle, CheckCircle, XCircle
 } from 'lucide-react';
 import { logger } from '../core/logging/SystemLogger';
 import { getChartOfAccounts, ChartOfAccount, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '../database/simple-db';
@@ -279,7 +279,7 @@ export function ChartOfAccounts() {
           </div>
 
           {/* Nombre de cuenta */}
-          <div className="flex-1 text-white font-medium">
+          <div className={`flex-1 text-white font-black uppercase tracking-tight ${level === 0 ? 'text-sm' : 'text-xs opacity-90 font-bold'}`}>
             {account.account_name}
           </div>
 
@@ -289,7 +289,7 @@ export function ChartOfAccounts() {
           </div>
 
           {/* Balance normal */}
-          <div className="w-20 text-xs text-center text-slate-500">
+          <div className="w-20 text-[10px] font-black uppercase text-center text-slate-600">
             {t(`chartOfAccounts.${account.normal_balance}`)}
           </div>
 
@@ -351,7 +351,7 @@ export function ChartOfAccounts() {
           <p className="text-red-200">{error}</p>
           <button
             onClick={loadChartOfAccounts}
-            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl transition-all font-bold shadow-lg shadow-red-900/40 active:scale-95"
           >
             {t('chartOfAccounts.retry')}
           </button>
@@ -363,32 +363,36 @@ export function ChartOfAccounts() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">{t('chartOfAccounts.title')}</h1>
-          <p className="text-slate-500">{t('chartOfAccounts.subtitle')}</p>
+          <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+            <Building className="w-8 h-8 text-blue-500" />
+            {t('chartOfAccounts.title')}
+          </h2>
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+            {t('chartOfAccounts.subtitle')}
+          </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center space-x-2 transition-all font-bold shadow-lg shadow-blue-900/20 active:scale-95"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span>{t('chartOfAccounts.newAccount')}</span>
         </button>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="bg-white/10 rounded-lg p-4">
+      <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 h-3.5 w-3.5" />
               <input
                 type="text"
                 placeholder={t('chartOfAccounts.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-950/50 border border-slate-800/50 text-white pl-10 pr-4 py-2 rounded-xl text-xs focus:outline-none focus:border-blue-500/50"
               />
             </div>
           </div>
@@ -397,43 +401,42 @@ export function ChartOfAccounts() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
-              className="bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+              className="bg-slate-950/50 border border-slate-800/50 text-slate-300 px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-blue-500/50"
             >
-              <option value="ALL">{t('chartOfAccounts.filterAll')}</option>
-              <option value="asset">{t('chartOfAccounts.typeAsset')}</option>
-              <option value="liability">{t('chartOfAccounts.typeLiability')}</option>
-              <option value="equity">{t('chartOfAccounts.typeEquity')}</option>
-              <option value="revenue">{t('chartOfAccounts.typeRevenue')}</option>
-              <option value="expense">{t('chartOfAccounts.typeExpense')}</option>
+              <option value="ALL" className="bg-slate-900">{t('chartOfAccounts.filterAll')}</option>
+              <option value="asset" className="bg-slate-900">{t('chartOfAccounts.typeAsset')}</option>
+              <option value="liability" className="bg-slate-900">{t('chartOfAccounts.typeLiability')}</option>
+              <option value="equity" className="bg-slate-900">{t('chartOfAccounts.typeEquity')}</option>
+              <option value="revenue" className="bg-slate-900">{t('chartOfAccounts.typeRevenue')}</option>
+              <option value="expense" className="bg-slate-900">{t('chartOfAccounts.typeExpense')}</option>
             </select>
           </div>
 
-          <label className="flex items-center space-x-2 text-slate-400">
+          <label className="flex items-center space-x-2 text-slate-500 cursor-pointer">
             <input
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
-              className="rounded"
+              className="rounded border-slate-800 bg-slate-950 text-blue-600"
             />
-            <span className="text-sm">{t('chartOfAccounts.showInactive')}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">{t('chartOfAccounts.showInactive')}</span>
           </label>
         </div>
       </div>
 
-      {/* Tabla de cuentas */}
-      <div className="bg-white/10 rounded-lg overflow-hidden">
-        <div className="bg-white/5 px-4 py-4 border-b border-white/10">
-          <div className="flex items-center text-xs font-bold text-slate-500 uppercase tracking-wider" style={{ paddingLeft: '40px' }}>
-            <div className="w-20">{t('chartOfAccounts.colCode')}</div>
+      <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="bg-slate-950/30 px-4 py-3 border-b border-slate-800/50">
+          <div className="flex items-center text-[10px] font-black text-slate-500 uppercase tracking-widest" style={{ paddingLeft: '40px' }}>
+            <div className="w-20 pl-2">{t('chartOfAccounts.colCode')}</div>
             <div className="flex-1 ml-3">{t('chartOfAccounts.colName')}</div>
-            <div className="w-20 text-center">{t('chartOfAccounts.colType')}</div>
+            <div className="w-24 text-center">{t('chartOfAccounts.colType')}</div>
             <div className="w-20 text-center">{t('chartOfAccounts.colBalance')}</div>
             <div className="w-16 text-center">{t('chartOfAccounts.colStatus')}</div>
             <div className="w-20 text-center">{t('chartOfAccounts.colActions')}</div>
           </div>
         </div>
 
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
           {accounts.length === 0 ? (
             <div className="text-center py-12 text-slate-600">
               <AlertCircle className="h-12 w-12 mx-auto mb-4" />
@@ -476,112 +479,124 @@ export function ChartOfAccounts() {
 
       {/* Modal de formulario */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white/10 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              {editingAccount ? t('chartOfAccounts.editAccount') : t('chartOfAccounts.newAccount')}
-            </h3>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-10 w-full max-w-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in duration-300 relative group">
+            <div className="flex items-start justify-between mb-10">
+              <h3 className="text-2xl font-black text-white tracking-tighter uppercase">
+                {editingAccount ? t('chartOfAccounts.editAccount') : t('chartOfAccounts.newAccount')}
+              </h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formCode')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.account_code}
-                  onChange={(e) => setFormData({ ...formData, account_code: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder="1000"
-                  required
-                  disabled={!!editingAccount} // No permitir cambiar código al editar
-                />
+            <form onSubmit={handleFormSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formCode')}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.account_code}
+                    onChange={(e) => setFormData({ ...formData, account_code: e.target.value })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                    placeholder="1000"
+                    required
+                    disabled={!!editingAccount}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formName')}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.account_name}
+                    onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all uppercase font-bold text-xs"
+                    placeholder={t('chartOfAccounts.formName')}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formType')}
+                  </label>
+                  <select
+                    value={formData.account_type}
+                    onChange={(e) => setFormData({ ...formData, account_type: e.target.value as any })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all"
+                    required
+                  >
+                    <option value="asset" className="bg-slate-900">{t('chartOfAccounts.activo')}</option>
+                    <option value="liability" className="bg-slate-900">{t('chartOfAccounts.pasivo')}</option>
+                    <option value="equity" className="bg-slate-900">{t('chartOfAccounts.patrimonio')}</option>
+                    <option value="revenue" className="bg-slate-900">{t('chartOfAccounts.ingreso')}</option>
+                    <option value="expense" className="bg-slate-900">{t('chartOfAccounts.gasto')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formBalance')}
+                  </label>
+                  <select
+                    value={formData.normal_balance}
+                    onChange={(e) => setFormData({ ...formData, normal_balance: e.target.value as any })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all"
+                    required
+                  >
+                    <option value="debit" className="bg-slate-900">{t('chartOfAccounts.debito')}</option>
+                    <option value="credit" className="bg-slate-900">{t('chartOfAccounts.credito')}</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formName')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.account_name}
-                  onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder={t('chartOfAccounts.formName')}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formType')}
-                </label>
-                <select
-                  value={formData.account_type}
-                  onChange={(e) => setFormData({ ...formData, account_type: e.target.value as any })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  <option value="asset">{t('chartOfAccounts.activo')}</option>
-                  <option value="liability">{t('chartOfAccounts.pasivo')}</option>
-                  <option value="equity">{t('chartOfAccounts.patrimonio')}</option>
-                  <option value="revenue">{t('chartOfAccounts.ingreso')}</option>
-                  <option value="expense">{t('chartOfAccounts.gasto')}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formBalance')}
-                </label>
-                <select
-                  value={formData.normal_balance}
-                  onChange={(e) => setFormData({ ...formData, normal_balance: e.target.value as any })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  <option value="debit">{t('chartOfAccounts.debito')}</option>
-                  <option value="credit">{t('chartOfAccounts.credito')}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
                   {t('chartOfAccounts.formParent')}
                 </label>
                 <input
                   type="text"
                   value={formData.parent_account}
                   onChange={(e) => setFormData({ ...formData, parent_account: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono"
                   placeholder="1000"
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-3 px-1">
                 <input
                   type="checkbox"
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="rounded"
+                  className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-blue-600 focus:ring-0 focus:ring-offset-0"
                 />
-                <label htmlFor="is_active" className="text-sm text-slate-400">
+                <label htmlFor="is_active" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer">
                   {t('chartOfAccounts.formActive')}
                 </label>
               </div>
 
-              <div className="flex space-x-3 pt-6">
+              <div className="flex gap-4 pt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3.5 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-900/40 active:scale-95"
                 >
                   {editingAccount ? t('chartOfAccounts.update') : t('chartOfAccounts.create')}
                 </button>
                 <button
                   type="button"
-                  onClick={handleCancelForm}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3 px-4 rounded-xl font-bold transition-all"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3.5 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95"
                 >
                   {t('chartOfAccounts.cancel')}
                 </button>

@@ -350,11 +350,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               <button
                 key={action.id}
                 onClick={() => onNavigate(action.id)}
-                className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2.5xl hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-white/10 transition-all duration-300 group active:scale-[0.98]"
               >
                 <div className="flex items-center gap-5">
-                  <div className={`p-3 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:bg-${action.color}-500/10`}>
-                    <action.icon className={`w-5 h-5 text-gray-400 group-hover:text-${action.color}-400 transition-colors`} />
+                  <div className={`p-3 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:bg-white/5`}>
+                    <action.icon className={`w-5 h-5 text-gray-400 group-hover:text-white transition-colors`} />
                   </div>
                   <span className="text-sm font-bold text-gray-200 tracking-tight group-hover:text-white transition-colors">{action.label}</span>
                 </div>

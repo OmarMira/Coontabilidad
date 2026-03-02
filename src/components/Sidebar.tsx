@@ -60,25 +60,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     return () => clearInterval(interval);
   }, []);
 
-  const menuItems: MenuItem[] = [];
-
-  // Insertar Dashboard
-  const dashboardItem = NAVIGATION_CONFIG.find(i => i.id === 'dashboard');
-  if (dashboardItem) menuItems.push(dashboardItem);
-
-  // Insertar Cuarentena
-  menuItems.push({
-    id: 'quarantine-panel',
-    labelKey: 'navigation.quarantine_audit',
-    icon: AlertTriangle,
-    badge: quarantineCount > 0 ? String(quarantineCount) : undefined
-  });
-
-  // Insertar resto de items evitando duplicados
-  NAVIGATION_CONFIG.forEach(item => {
-    if (item.id !== 'dashboard' && item.id !== 'quarantine-panel') {
-      menuItems.push(item);
+  const menuItems: MenuItem[] = NAVIGATION_CONFIG.map(item => {
+    if (item.id === 'herramientas' && item.children) {
+      return {
+        ...item,
+        children: item.children.map(child =>
+          child.id === 'quarantine-panel'
+            ? { ...child, badge: quarantineCount > 0 ? String(quarantineCount) : undefined }
+            : child
+        )
+      };
     }
+    return item;
   });
 
 
@@ -106,6 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       case 'libro-mayor':
       case 'impuestos':
       case 'bank-smart-import':
+      case 'classification-rules':
         return ['contador', 'auditor'].includes(role);
 
       case 'inventario':
@@ -121,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         return ['contador', 'auditor', 'admin'].includes(role);
 
       case 'herramientas':
-        return role === 'auditor';
+        return ['auditor', 'admin', 'contador'].includes(role);
 
       default:
         return false;

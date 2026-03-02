@@ -94,7 +94,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
 
           <button
             onClick={onAddCustomer}
-            className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             {t('customerList.registerCustomer')}

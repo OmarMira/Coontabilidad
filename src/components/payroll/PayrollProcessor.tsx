@@ -172,24 +172,25 @@ export const PayrollProcessor: React.FC = () => {
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
             {/* Header Hub */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-                <div className="flex items-center gap-6">
-                    <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-                        <Calculator className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+            <div className="mb-8 border-b border-slate-800 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <Calculator className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payrollProcessor.title')}</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-white tracking-tight">
+                            {t('payrollProcessor.title')}
+                        </h2>
+                        <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
                             <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollProcessor.subtitle')}
                         </p>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
-                    <TabButton active={activeTab === 'periods'} onClick={() => { setActiveTab('periods'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.history')} icon={History} />
-                    <TabButton active={activeTab === 'process'} onClick={() => { setActiveTab('process'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.process')} icon={Play} />
-                    <TabButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.settings')} icon={Settings} />
-                </div>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
+                <TabButton active={activeTab === 'periods'} onClick={() => { setActiveTab('periods'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.history')} icon={History} />
+                <TabButton active={activeTab === 'process'} onClick={() => { setActiveTab('process'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.process')} icon={Play} />
+                <TabButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.settings')} icon={Settings} />
             </div>
 
             {activeTab === 'settings' ? (

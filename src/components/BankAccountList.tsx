@@ -104,13 +104,13 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                     <div className="flex gap-2">
                         <button
                             onClick={() => { onDeleteAccount(account.id); dismissCard(); }}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <CheckCircle2 className="w-3.5 h-3.5" /> Sí, eliminar
                         </button>
                         <button
                             onClick={dismissCard}
-                            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all"
+                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
@@ -137,13 +137,13 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                     <div className="flex gap-2 mt-3">
                         <button
                             onClick={() => handleArchiveClick(account)}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-600/80 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-6 py-2 bg-amber-600/80 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <Archive className="w-3.5 h-3.5" /> Inactivar / Archivar
                         </button>
                         <button
                             onClick={dismissCard}
-                            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all"
+                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
@@ -171,14 +171,14 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                         {onNavigateToJournal && (
                             <button
                                 onClick={() => { dismissCard(); onNavigateToJournal(); }}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all"
+                                className="flex-1 flex items-center justify-center gap-1.5 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                             >
                                 <BookOpen className="w-3.5 h-3.5" /> Crear Journal Entry
                             </button>
                         )}
                         <button
                             onClick={dismissCard}
-                            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all"
+                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
@@ -203,13 +203,13 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
                     <div className="flex gap-2">
                         <button
                             onClick={() => { onDeleteAccount(account.id); dismissCard(); }}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <CheckCircle2 className="w-3.5 h-3.5" /> Sí, archivar
                         </button>
                         <button
                             onClick={dismissCard}
-                            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all"
+                            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-xl transition-all active:scale-95"
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
@@ -260,7 +260,7 @@ export const BankAccountList: React.FC<BankAccountListProps> = ({
 
                     <button
                         onClick={onAddAccount}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/50 hover:scale-105"
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/40 active:scale-95"
                     >
                         <Plus className="w-5 h-5" />
                         {t('bankAccountList.syncVault')}

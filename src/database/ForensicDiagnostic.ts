@@ -142,6 +142,26 @@ export class ForensicDatabaseDiagnostic {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`,
 
+            // FASE A.1: Datos de la Empresa (Vital para la identidad del sistema)
+            `CREATE TABLE company_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_name TEXT NOT NULL,
+        legal_name TEXT NOT NULL,
+        tax_id TEXT NOT NULL,
+        address TEXT NOT NULL,
+        city TEXT NOT NULL,
+        state TEXT NOT NULL DEFAULT 'FL',
+        zip_code TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        email TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+            `INSERT OR IGNORE INTO company_data (id, company_name, legal_name, tax_id, address, city, state, zip_code, phone, email) 
+       VALUES (1, 'Mi Empresa', 'Empresa Reconstruida', '00-0000000', 'Dirección Temporal', 'Miami', 'FL', '33101', '000-000-0000', 'admin@empresa.com')`,
+
             // FASE B: Catálogos con UUIDs (Prevenir colisiones y facilitar migraciones)
             `CREATE TABLE customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -136,14 +136,16 @@ export const InventoryDashboard: React.FC = () => {
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       {/* Header Hub */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-amber-600/10 rounded-2.5xl border border-amber-500/20 shadow-amber-900/10 shadow-lg group">
-            <Boxes className="w-10 h-10 text-amber-500 group-hover:rotate-12 transition-transform duration-500" />
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+            <Boxes className="w-7 h-7 text-amber-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('inventoryDashboard.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none uppercase">
+              {t('inventoryDashboard.title')}
+            </h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
               <Zap className="w-3.5 h-3.5 text-amber-500 animate-pulse" /> {t('inventoryDashboard.subtitle')}
             </p>
           </div>

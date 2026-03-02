@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Save, X, User, MapPin, CreditCard, FileText } from 'lucide-react';
+import { Plus, Save, XCircle, User, MapPin, CreditCard, FileText, ShieldCheck } from 'lucide-react';
 import { FLORIDA_COUNTIES } from '../database/simple-db';
 import { AddressAutocomplete } from './AddressAutocomplete';
 import { addressService } from '../services/addressService';
@@ -177,15 +177,15 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('supplierForm.name')}
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
-            className={`w-full bg-white/5 text-white px-4 py-2 rounded-md border transition-colors ${errors.name ? 'border-red-500' : 'border-white/10 focus:border-blue-500'
-              } focus:outline-none`}
+            className={`w-full bg-slate-950/50 text-white px-4 py-3 rounded-2xl border transition-all font-bold uppercase tracking-widest text-[9px] focus:outline-none ${errors.name ? 'border-rose-500' : 'border-slate-800/50 focus:border-blue-500/50'
+              }`}
             placeholder={t('supplierForm.namePlaceholder')}
             required
           />
@@ -193,14 +193,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('supplierForm.businessName')}
           </label>
           <input
             type="text"
             value={formData.business_name}
             onChange={(e) => handleInputChange('business_name', e.target.value)}
-            className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
+            className="w-full bg-slate-950/50 text-white px-4 py-3 rounded-2xl border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px]"
             placeholder={t('supplierForm.businessNamePlaceholder')}
           />
         </div>
@@ -208,7 +208,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('supplierForm.documentType')}
           </label>
           <select
@@ -224,7 +224,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('supplierForm.documentNumber')}
           </label>
           <input
@@ -238,14 +238,14 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-400 mb-1">
+        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
           {t('supplierForm.businessActivity')}
         </label>
         <input
           type="text"
           value={formData.business_type}
           onChange={(e) => handleInputChange('business_type', e.target.value)}
-          className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
+          className="w-full bg-slate-950/50 text-white px-4 py-3 rounded-2xl border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px]"
           placeholder={t('supplierForm.businessActivityPlaceholder')}
         />
       </div>
@@ -256,7 +256,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.primaryEmail')}
           </label>
           <input
@@ -271,7 +271,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.secondaryEmail')}
           </label>
           <input
@@ -286,7 +286,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.primaryPhone')}
           </label>
           <input
@@ -301,7 +301,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.secondaryPhone')}
           </label>
           <input
@@ -328,7 +328,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       {/* Autocompletado de direcciones */}
       <div>
-        <label className="block text-sm font-medium text-slate-400 mb-1">
+        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
           {t('customerForm.autoCompleteTitle')}
         </label>
         <AddressAutocomplete
@@ -342,7 +342,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-400 mb-1">
+        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
           {t('customerForm.addressLine1')}
         </label>
         <input
@@ -355,7 +355,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-400 mb-1">
+        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
           {t('customerForm.addressLine2')}
         </label>
         <input
@@ -369,7 +369,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.city')}
           </label>
           <input
@@ -382,7 +382,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.state')}
           </label>
           <select
@@ -399,7 +399,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.zipCode')}
           </label>
           <input
@@ -445,7 +445,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.creditLimit')}
           </label>
           <input
@@ -460,7 +460,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.paymentTerms')}
           </label>
           <select
@@ -480,7 +480,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('customerForm.taxId')}
           </label>
           <input
@@ -493,7 +493,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('supplierForm.assignedBuyer')}
           </label>
           <select
@@ -512,7 +512,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2">
             {t('supplierForm.status')}
           </label>
           <select
@@ -556,114 +556,98 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   );
 
   return (
-    <div className="bg-white/10 rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-        {isEditing ? (
-          <>
-            <Save className="w-5 h-5 text-blue-500" />
-            {t('supplierForm.titleEdit')}
-          </>
-        ) : (
-          <>
-            <Plus className="w-5 h-5 text-green-500" />
-            {t('supplierForm.titleNew')}
-          </>
-        )}
-      </h2>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6 overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 blur-[120px] pointer-events-none"></div>
 
-      {/* Pestañas */}
-      <div className="flex space-x-1 mb-6 bg-slate-900 p-1 rounded-lg">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors flex-1 text-sm ${activeTab === tab.id
-              ? 'bg-blue-600 text-white'
-              : 'text-slate-400 hover:bg-white/5 hover:text-white'
-              }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {/* Contenido de las pestañas */}
-        <div className="min-h-[400px]">
-          {activeTab === 'personal' && renderPersonalTab()}
-          {activeTab === 'contact' && renderContactTab()}
-          {activeTab === 'address' && renderAddressTab()}
-          {activeTab === 'commercial' && renderCommercialTab()}
-        </div>
-
-        {/* Botones */}
-        <div className="flex justify-between pt-6 border-t border-white/10">
-          <div className="flex space-x-3">
-            {activeTab !== 'personal' && (
-              <button
-                type="button"
-                onClick={() => {
-                  const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-                  if (currentIndex > 0) {
-                    setActiveTab(tabs[currentIndex - 1].id);
-                  }
-                }}
-                className="px-4 py-2 bg-gray-600 hover:bg-white/5 text-white rounded-md transition-colors"
-              >
-                {t('common.previous')}
-              </button>
-            )}
-
-            {activeTab !== 'commercial' && (
-              <button
-                type="button"
-                onClick={() => {
-                  const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-                  if (currentIndex < tabs.length - 1) {
-                    setActiveTab(tabs[currentIndex + 1].id);
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                {t('common.next')}
-              </button>
-            )}
+        <header className="flex items-center justify-between p-10 border-b border-slate-800/50 flex-shrink-0 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="text-blue-500">
+              {isEditing ? <FileText className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
+                {isEditing ? t('supplierForm.titleEdit') : t('supplierForm.titleNew')}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> {t('supplierForm.info')}
+              </p>
+            </div>
           </div>
+          {onCancel && (
+            <button onClick={onCancel} className="p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95">
+              <XCircle className="w-6 h-6" />
+            </button>
+          )}
+        </header>
 
-          <div className="flex space-x-3">
-            {onCancel && (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="px-4 py-2 bg-gray-600 hover:bg-white/5 text-white rounded-md transition-colors flex items-center gap-2"
-              >
-                <X className="w-4 h-4" />
-                {t('common.cancel')}
-              </button>
-            )}
+        {/* Pestañas */}
+        <div className="flex px-10 border-b border-slate-800/50 bg-slate-950/20 relative z-10">
+          {tabs.map((tab) => (
             <button
-              type="submit"
-              className={`px-6 py-2 rounded-md transition-colors flex items-center gap-2 ${isEditing
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-green-600 hover:bg-green-700 text-white'
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-3 px-8 py-5 text-[10px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab.id ? 'text-blue-400' : 'text-slate-500 hover:text-white'
                 }`}
             >
-              {isEditing ? (
-                <>
-                  <Save className="w-4 h-4" />
-                  {t('supplierForm.updateSupplier')}
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  {t('supplierForm.createSupplier')}
-                </>
-              )}
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+              {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>}
             </button>
-          </div>
+          ))}
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+            <div className="min-h-[400px]">
+              {activeTab === 'personal' && renderPersonalTab()}
+              {activeTab === 'contact' && renderContactTab()}
+              {activeTab === 'address' && renderAddressTab()}
+              {activeTab === 'commercial' && renderCommercialTab()}
+            </div>
+          </div>
+
+          <footer className="p-10 border-t border-slate-800 bg-slate-950/50 relative z-10 flex items-center justify-between">
+            <div className="flex gap-6">
+              {activeTab !== 'personal' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+                    if (currentIndex > 0) setActiveTab(tabs[currentIndex - 1].id);
+                  }}
+                  className="px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all active:scale-95"
+                >
+                  {t('common.previous')}
+                </button>
+              )}
+
+              {activeTab !== 'commercial' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+                    if (currentIndex < tabs.length - 1) setActiveTab(tabs[currentIndex + 1].id);
+                  }}
+                  className="px-6 py-2.5 bg-blue-600/10 border border-blue-500/20 text-blue-400 hover:bg-blue-600/20 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all active:scale-95"
+                >
+                  {t('common.next')}
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-6 w-full md:w-auto">
+              <button
+                type="submit"
+                className="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-900/40 active:scale-95"
+              >
+                {isEditing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {isEditing ? t('supplierForm.updateSupplier') : t('supplierForm.createSupplier')}
+              </button>
+            </div>
+          </footer>
+        </form>
+      </div>
     </div>
   );
 };

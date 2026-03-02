@@ -142,9 +142,9 @@ export class FixedAssetService {
         // Insert asset (usando nombres de columnas de simple-db.ts)
         const result = await this.db.run(
             `INSERT INTO fixed_assets 
-            (asset_code, name, description, category_id, acquisition_date, acquisition_cost, 
-             salvage_value, supplier_id, useful_life_months, depreciation_method, 
-             current_value, purchase_entry_id, status)
+            (asset_code, name, description, category_id, purchase_date, purchase_cost, 
+             salvage_value, vendor_id, useful_life_months, depreciation_method, 
+             net_book_value, purchase_entry_id, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 assetCode,
@@ -452,9 +452,9 @@ export class FixedAssetService {
             SELECT 
                 COUNT(*) as total_assets,
                 SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_assets,
-                COALESCE(SUM(acquisition_cost), 0) as total_cost,
-                COALESCE(SUM(accumulated_depreciation), 0) as total_depreciation,
-                COALESCE(SUM(current_value), 0) as net_book_value
+                COALESCE(SUM(purchase_cost), 0) as total_cost,
+                COALESCE(SUM(total_accumulated_depreciation), 0) as total_depreciation,
+                COALESCE(SUM(net_book_value), 0) as net_book_value
             FROM fixed_assets
             WHERE status != 'DISPOSED'
         `);

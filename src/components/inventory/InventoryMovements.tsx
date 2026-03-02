@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowDownLeft, ArrowUpRight, Search, Activity, Package, Trash2 } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Search, Activity, Package, Trash2, Zap, RefreshCw } from 'lucide-react';
 import { getInventoryMovements } from '../../database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
 
@@ -22,18 +22,29 @@ export const InventoryMovements: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6 no-print">
-                <div>
-                    <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                        <Activity className="w-8 h-8 text-blue-500" />
-                        {t('inv.movements.title')}
-                    </h2>
-                    <p className="text-slate-400 font-medium ml-11">{t('inv.movements.subtitle')}</p>
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <Activity className="w-7 h-7 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('inv.movements.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('inv.movements.subtitle')}
+                        </p>
+                    </div>
                 </div>
-                <div className="flex gap-3">
-                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white rounded-xl" onClick={loadData}>
-                        <Search className="w-4 h-4 mr-2" /> {t('inv.movements.refresh')}
+
+                <div className="flex flex-wrap items-center gap-4 justify-center">
+                    <Button
+                        variant="outline"
+                        onClick={loadData}
+                        className="flex items-center gap-3 px-8 py-4 bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        {t('inv.movements.refresh')}
                     </Button>
                 </div>
             </div>

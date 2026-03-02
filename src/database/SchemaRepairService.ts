@@ -101,7 +101,23 @@ export class SchemaRepairService {
                 }
             }
 
-            logs.push("✅ Tabla company_data lista (vacía para configuración inicial)");
+            // ASEGURAR QUE EXISTE AL MENOS UN REGISTRO (Failsafe Identity)
+            const companyCountRes = await this.db.select("SELECT COUNT(*) as c FROM company_data");
+            const companyCount = companyCountRes[0]?.c || 0;
+
+            if (companyCount === 0) {
+                await this.db.run(`
+                    INSERT INTO company_data (
+                        company_name, legal_name, tax_id, address, city, state, zip_code, phone, email, is_active
+                    ) VALUES (
+                        'Account Express Demo Inc.', 'Account Express Demo Inc.', 'US-DEMO-123', 
+                        '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000', 'admin@accountexpress.com', 1
+                    )
+                `);
+                logs.push("✅ Datos de empresa por defecto restaurados");
+            }
+
+            logs.push("✅ Tabla company_data lista");
 
 
             // 2. VERIFICAR INTEGRIDAD DE VISTAS
@@ -249,8 +265,8 @@ export class SchemaRepairService {
                         name TEXT NOT NULL,
                         description TEXT,
                         category_id INTEGER,
-                        acquisition_date TEXT NOT NULL,
-                        acquisition_cost REAL NOT NULL,
+                        purchase_date TEXT NOT NULL,
+                        purchase_cost REAL NOT NULL,
                         useful_life_years INTEGER,
                         useful_life_months INTEGER,
                         depreciation_method TEXT DEFAULT 'straight_line',

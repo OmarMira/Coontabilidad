@@ -164,24 +164,24 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
           <p className="text-slate-400 mt-1">{t('fixedAssets.subtitle')}</p>
         </div>
         <div className="flex gap-3">
-          <Button
+          <button
             onClick={handleRunDepreciation}
             disabled={loading || assets.length === 0}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-emerald-900/40 active:scale-95"
           >
-            <Play className="w-4 h-4 mr-2" />
+            <Play className="w-4 h-4" />
             {t('fixedAssets.runDepreciation')}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={() => {
               setEditingAsset(null);
               setShowAssetForm(true);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4" />
             {t('fixedAssets.newAsset')}
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -309,17 +309,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
               {assets.length === 0 ? (
                 <div className="text-center py-12">
                   <Package className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-400 mb-4">{t('fixedAssets.noAssets')}</p>
-                  <Button
-                    onClick={() => {
-                      setEditingAsset(null);
-                      setShowAssetForm(true);
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('fixedAssets.addAsset')}
-                  </Button>
+                  <p className="text-slate-400">{t('fixedAssets.noAssets')}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -348,7 +338,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                             {categories.find(c => c.id === asset.category_id)?.name || 'N/A'}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono">
-                            ${((asset.acquisition_cost || 0) / 100).toFixed(2)}
+                            ${((asset.purchase_cost || 0) / 100).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono text-amber-400">
                             ${((asset.total_accumulated_depreciation || 0) / 100).toFixed(2)}

@@ -2126,6 +2126,8 @@
     "typeExpense": "Gastos",
     "typeLiability": "Pasivos",
     "typeRevenue": "Ingresos",
+    "debit": "Débito",
+    "credit": "Crédito",
     "unexpectedError": "Error inesperado",
     "update": "Actualizar",
     "updateSuccess": "Cuenta actualizada exitosamente"
@@ -2728,7 +2730,7 @@
       "compensation": "Compensación",
       "contact": "Contacto",
       "dept": "Dpto",
-      "optimize": "Optimizar",
+      "optimize": "Editar",
       "position": "Posición"
     },
     "deploy": "Desplegar Activo",
@@ -2737,7 +2739,7 @@
     "form": {
       "abort": "Abortar Registro",
       "department": "Departamento",
-      "deploy": "Desplegar Activo",
+      "deploy": "Registrar Empleado",
       "email": "Email Corporativo",
       "firstName": "Nombre(s)",
       "grossAmount": "Monto Bruto",
@@ -2751,10 +2753,10 @@
       "sync": "Sincronizar Cambios"
     },
     "notFoundTitle": "Fuerza Laboral no Detectada",
-    "optimizeRecord": "Optimizar Registro",
+    "optimizeRecord": "Editar Empleado",
     "protocol": "Human Capital Forensic Protocol v4.0",
-    "recruitActive": "Reclutar Activo",
-    "registerNew": "Registrar Nuevo Activo",
+    "recruitActive": "Nuevo Empleado",
+    "registerNew": "Registrar Nuevo Empleado",
     "searchPlaceholder": "BUSCAR COLABORADOR / ID...",
     "status": {
       "active": "ACTIVO",
@@ -3488,6 +3490,7 @@
     "cashFlow": "Flujo de Caja",
     "categories": "Categorías",
     "chartOfAccounts": "Plan de Cuentas",
+    "classificationRules": "Reglas de Clasificación",
     "closuresPeriods": "Cierres y Períodos",
     "companyData": "Datos de la Empresa",
     "confirmLogout": "¿Está seguro que desea cerrar sesión?",
@@ -5580,6 +5583,16 @@
       "noLocations": "No hay ubicaciones registradas. Crea una para comenzar a organizar tu inventario.",
       "saveLocation": "Guardar Ubicación",
       "title": "Ubicaciones de Inventario"
+    },
+    "assets": {
+      "title": "Matriz de Activos",
+      "subtitle": "Neural Inventory Controller v4",
+      "register": "Registrar Activo",
+      "search": "BUSCAR SKU / NOMBRE...",
+      "totalSku": "Total SKU",
+      "valuation": "Valorización",
+      "stockAlerts": "Alertas Stock",
+      "activeServices": "Servicios Activos"
     }
   }
 }

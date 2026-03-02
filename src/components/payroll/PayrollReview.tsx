@@ -96,16 +96,17 @@ export const PayrollReview: React.FC<PayrollReviewProps> = ({ onViewPaystub }) =
 
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-24 px-4 overflow-x-hidden">
-      {/* Header */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-            <DollarSign className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+            <Activity className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payroll.review.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-              <Shield className="w-3.5 h-3.5 text-emerald-500" /> {t('payroll.review.subtitle')}
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {t('payrollReview.title')}
+            </h2>
+            <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollReview.subtitle')}
             </p>
           </div>
         </div>
@@ -160,9 +161,9 @@ export const PayrollReview: React.FC<PayrollReviewProps> = ({ onViewPaystub }) =
           <div className="flex items-end">
             <button
               onClick={loadPayrolls}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-[10px]"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-4 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-900/40 hover:-translate-y-1"
             >
-              <Filter className="w-4 h-4" />
+              <Filter className="w-4 h-4 fill-white" />
               {t('payroll.review.applyFilters')}
             </button>
           </div>

@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 import { useAuth } from '../../contexts/AuthContext';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
+import { TRANSACTION_STATES } from '../../constants/bankingStates';
 
 interface QuarantinedTransaction {
     id: number;
@@ -93,7 +94,7 @@ export const QuarantinePanel: React.FC = () => {
         FROM transaction_states ts
         JOIN bank_transactions bt ON ts.transaction_id = bt.id
         LEFT JOIN risk_keywords rk ON ts.risk_keyword_id = rk.id
-        WHERE ts.current_state IN ('HIGH_RISK_PERSONAL', 'PENDING_SUPERVISOR')
+        WHERE ts.current_state IN ('${TRANSACTION_STATES.HIGH_RISK_PERSONAL}', '${TRANSACTION_STATES.PENDING_SUPERVISOR}')
           AND ts.is_verified = 0
         ORDER BY ts.sla_deadline ASC
       `);
@@ -151,24 +152,26 @@ export const QuarantinePanel: React.FC = () => {
             // 2. Marcar como verificado y cambiar estado
             await engine.run(`
                 UPDATE transaction_states 
-                SET current_state = 'VERIFIED', 
+                SET current_state = ?, 
                     is_verified = 1,
                     verified_at = CURRENT_TIMESTAMP,
                     verified_by = ?
                 WHERE id = ?
-            `, [user.id, selectedTx.id]);
+            `, [TRANSACTION_STATES.VERIFIED, user.id, selectedTx.id]);
 
             // 3. Registrar en log de auditoría
             await engine.run(`
                 INSERT INTO quarantine_audit_log (
                     transaction_id, state_id, action_type, performed_by, 
                     previous_state, new_state, new_category, justification
-                ) VALUES (?, ?, 'RECLASSIFIED', ?, ?, 'VERIFIED', ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `, [
                 selectedTx.transaction_id,
                 selectedTx.id,
+                TRANSACTION_STATES.RECLASSIFIED,
                 user.id,
                 selectedTx.current_state,
+                TRANSACTION_STATES.VERIFIED,
                 selectedAccount.account_code,
                 notes || 'Manual reclassification'
             ]);

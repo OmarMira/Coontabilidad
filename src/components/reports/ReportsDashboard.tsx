@@ -46,15 +46,15 @@ export const ReportsDashboard: React.FC<ReportDashboardProps> = ({ onNavigate })
 
     return (
         <div className="space-y-10 animate-fade-in px-2">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight flex items-center gap-4">
-                        <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                            <BarChart3 className="w-8 h-8 text-blue-400" />
-                        </div>
+                    <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+                        <BarChart3 className="w-8 h-8 text-blue-500" />
                         {t('reportsDashboard.title')}
                     </h2>
-                    <p className="text-slate-500 mt-2 font-medium">{t('reportsDashboard.subtitle')}</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                        {t('reportsDashboard.subtitle')}
+                    </p>
                 </div>
             </div>
 

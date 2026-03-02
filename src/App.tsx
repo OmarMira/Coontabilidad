@@ -61,6 +61,7 @@ const UnifiedAssistant = lazy(() => import('./components/ai/UnifiedAssistant').t
 const HealthCheckPage = lazy(() => import('./pages/HealthCheckPage').then(m => ({ default: m.HealthCheckPage })));
 const SystemStatusDashboard = lazy(() => import('./pages/SystemStatusDashboard').then(m => ({ default: m.SystemStatusDashboard })));
 const QuarantinePanel = lazy(() => import('./components/banking/QuarantinePanel').then(m => ({ default: m.QuarantinePanel })));
+const ClassificationRulesManager = lazy(() => import('./components/banking/ClassificationRulesManager').then(m => ({ default: m.ClassificationRulesManager })));
 
 // Regular imports (lighter components)
 import { UserRoleManager } from './components/system/UserRoleManager';
@@ -94,6 +95,7 @@ import { ChartOfAccounts } from './components/ChartOfAccounts';
 import { AccountingDiagnosis } from './components/AccountingDiagnosis';
 import { JournalEntryTest } from './components/JournalEntryTest';
 import { BankingModule } from './components/banking/BankingModule';
+import { TransactionClassifier } from './components/banking/TransactionClassifier';
 import { CustomerPayments } from './features/receivables/components/CustomerPayments';
 import { SupplierPayments } from './components/SupplierPayments';
 import { ProductForm } from './components/ProductForm';
@@ -209,6 +211,7 @@ interface AppState {
   chartOfAccounts: ChartOfAccount[];
   kardexParams?: { productId?: string; type?: string };
   selectedPayrollId?: number;
+  selectedBankAccountId?: number;
 }
 
 
@@ -458,7 +461,12 @@ function App() {
     }, 3000);
   };
 
-  const handleNavigate = (section: string) => {
+  const handleNavigate = (sectionRaw: string) => {
+    // Supports 'section:accountId' encoding (e.g. 'transaction-classifier:5')
+    const colonIdx = sectionRaw.indexOf(':');
+    const section = colonIdx !== -1 ? sectionRaw.slice(0, colonIdx) : sectionRaw;
+    const accountIdFromNav = colonIdx !== -1 ? parseInt(sectionRaw.slice(colonIdx + 1), 10) : undefined;
+
     if (section === 'ai-assistant') {
       setState(prev => ({ ...prev, showAssistant: true }));
       return;
@@ -466,6 +474,7 @@ function App() {
     setState(prev => ({
       ...prev,
       currentSection: section,
+      ...(accountIdFromNav !== undefined && { selectedBankAccountId: accountIdFromNav }),
       editingCustomer: null,
       viewingCustomer: null,
       editingSupplier: null,
@@ -1858,7 +1867,7 @@ function App() {
               {/* --- ARCHIVO / CONFIG / HERRAMIENTAS --- */}
               {state.currentSection === 'company-data' && (
                 <div className="space-y-6">
-                  <CompanyDataForm />
+                  <CompanyDataForm onClose={() => setState(prev => ({ ...prev, currentSection: 'dashboard' }))} />
                 </div>
               )}
 
@@ -1956,9 +1965,25 @@ function App() {
                   <QuarantinePanel />
                 </Suspense>
               )}
+              {state.currentSection === 'transaction-classifier' && (
+                state.selectedBankAccountId ? (
+                  <TransactionClassifier accountId={state.selectedBankAccountId} />
+                ) : (
+                  <div className="bg-slate-900/20 border-2 border-dashed border-slate-800 rounded-3xl p-20 text-center">
+                    <div className="text-xl font-bold text-slate-500 uppercase tracking-widest">
+                      Seleccioná una cuenta bancaria primero
+                    </div>
+                  </div>
+                )
+              )}
+              {state.currentSection === 'classification-rules' && (
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ClassificationRulesManager />
+                </Suspense>
+              )}
 
               {/* --- IMPUESTOS FLORIDA --- */}
-              {state.currentSection === 'tax-config' && <FiscalSettingsForm />}
+              {state.currentSection === 'tax-config' && <FiscalSettingsForm onClose={() => handleNavigate('dashboard')} />}
 
               {state.currentSection === 'help' && <HelpCenter />}
 

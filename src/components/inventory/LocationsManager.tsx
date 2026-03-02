@@ -55,14 +55,17 @@ export const LocationsManager: React.FC = () => {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-3 leading-none">
                     <MapPin className="w-8 h-8 text-blue-500" />
                     {t('inv.locations.title')}
-                </h2>
-                <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">
-                    <Plus className="w-4 h-4 mr-2" />
+                </h1>
+                <button
+                    onClick={() => setShowForm(true)}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95"
+                >
+                    <Plus className="w-4 h-4" />
                     {t('inv.locations.newLocation')}
-                </Button>
+                </button>
             </div>
 
             {showForm && (
@@ -107,13 +110,19 @@ export const LocationsManager: React.FC = () => {
                                 className="bg-white/10 border-white/10 text-white"
                             />
                         </div>
-                        <div className="flex gap-2 pt-2">
-                            <Button onClick={handleSave} className="flex-1 bg-green-600 hover:bg-green-700">
-                                <Save className="w-4 h-4 mr-2" /> {t('inv.locations.saveLocation')}
-                            </Button>
-                            <Button variant="ghost" onClick={() => { setShowForm(false); setForm({ name: '', code: '' }); }} className="flex-1 text-slate-400">
-                                <X className="w-4 h-4 mr-2" /> {t('inv.locations.cancel')}
-                            </Button>
+                        <div className="flex gap-4 pt-2">
+                            <button
+                                onClick={handleSave}
+                                className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all shadow-lg active:scale-95"
+                            >
+                                <Save className="w-4 h-4" /> {t('inv.locations.saveLocation')}
+                            </button>
+                            <button
+                                onClick={() => { setShowForm(false); setForm({ name: '', code: '' }); }}
+                                className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl font-bold transition-all active:scale-95"
+                            >
+                                <X className="w-4 h-4" /> {t('inv.locations.cancel')}
+                            </button>
                         </div>
                     </CardContent>
                 </Card>
@@ -141,9 +150,12 @@ export const LocationsManager: React.FC = () => {
                                 <p className="text-sm text-slate-400 mt-3">{loc.address || t('inv.locations.noAddress')}</p>
                                 {loc.description && <p className="text-xs text-slate-500 mt-1 italic">{loc.description}</p>}
                                 <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="sm" className="text-slate-400 hover:text-blue-400 text-xs">
-                                        <Edit className="w-3 h-3 mr-1" /> {t('inv.locations.edit')}
-                                    </Button>
+                                    <button
+                                        onClick={() => { setForm(loc); setShowForm(true); }}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all active:scale-95"
+                                    >
+                                        <Edit className="w-3.5 h-3.5" /> {t('inv.locations.edit')}
+                                    </button>
                                 </div>
                             </CardContent>
                         </Card>

@@ -102,14 +102,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
             <FileText className="w-12 h-12 text-slate-700" />
           </div>
           <h3 className="text-3xl font-black tracking-tight text-white mb-4">{t('invoiceList.noInvoices')}</h3>
-          <p className="text-slate-500 mb-12 max-w-lg mx-auto text-lg">{t('invoiceList.noInvoicesMessage')}</p>
-          <button
-            onClick={onAddInvoice}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2.5xl transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95 flex items-center gap-3 mx-auto font-bold"
-          >
-            <Plus className="w-5 h-5" />
-            {t('invoiceList.createInvoice')}
-          </button>
+          <p className="text-slate-500 max-w-lg mx-auto text-lg">{t('invoiceList.noInvoicesMessage')}</p>
         </div>
       </div>
     );
@@ -134,7 +127,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
         <div className="flex items-center gap-4">
           <button
             onClick={onAddInvoice}
-            className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-3 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             {t('invoiceList.createInvoice')}

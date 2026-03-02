@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X, Building2, AlertCircle, ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Landmark, Layers, Info } from 'lucide-react';
+import { Save, XCircle, Building2, AlertCircle, ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Landmark, Layers, Info } from 'lucide-react';
 import { BankAccount } from '../database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
@@ -74,27 +74,27 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-50 p-6 overflow-y-auto">
-            <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-3xl w-full max-w-4xl my-auto overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-700">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] pointer-events-none"></div>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6 overflow-y-auto">
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-4xl my-auto overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 blur-[120px] pointer-events-none"></div>
 
                 {/* Header Hub */}
-                <header className="flex items-center justify-between p-10 border-b border-slate-800 relative z-10 bg-slate-900/50">
+                <header className="flex items-center justify-between p-10 relative z-10">
                     <div className="flex items-center gap-6">
-                        <div className="p-5 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 text-blue-500 shadow-xl animate-pulse">
+                        <div className="text-blue-500">
                             {initialData ? <Cpu className="w-8 h-8" /> : <Sparkles className="w-8 h-8" />}
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
+                            <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
                                 {(!initialData || (initialData && initialData.id === 0)) ? t('bankAccountForm.title.create') : t('bankAccountForm.title.edit')}
                             </h2>
-                            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
                                 <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.subtitle')}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onCancel} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
-                        <X className="w-6 h-6" />
+                    <button onClick={onCancel} className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95">
+                        <XCircle className="w-6 h-6" />
                     </button>
                 </header>
 
@@ -104,14 +104,14 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                         <PremiumInput label={t('bankAccountForm.label.bankEntity')} icon={Landmark} value={formData.bank_name} error={errors.bank_name} onChange={(v) => handleChange('bank_name', v)} placeholder={t('bankAccountForm.placeholder.bankEntity')} required t={t} />
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
                                 <Layers className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.label.classification')}
                             </label>
                             <select
                                 name="account_type"
                                 value={formData.account_type}
                                 onChange={(e) => handleChange('account_type', e.target.value)}
-                                className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer h-[58px]"
+                                className="w-full bg-slate-950/50 text-white px-6 py-4 rounded-2xl border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px] appearance-none cursor-pointer h-[58px]"
                             >
                                 <option value="checking">{t('bankAccountForm.type.checking')}</option>
                                 <option value="savings">{t('bankAccountForm.type.savings')}</option>
@@ -121,14 +121,14 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
                                 <Zap className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.label.currency')}
                             </label>
                             <select
                                 name="currency"
                                 value={formData.currency}
                                 onChange={(e) => handleChange('currency', e.target.value)}
-                                className="w-full bg-slate-950 text-white px-6 py-4 rounded-2xl border border-slate-800 focus:border-blue-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer h-[58px]"
+                                className="w-full bg-slate-950/50 text-white px-6 py-4 rounded-2xl border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px] appearance-none cursor-pointer h-[58px]"
                             >
                                 <option value="USD">{t('bankAccountForm.currency.usd')}</option>
                                 <option value="EUR">{t('bankAccountForm.currency.eur')}</option>
@@ -159,7 +159,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                     </div>
 
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
                             <Info className="w-3.5 h-3.5 text-blue-500" /> {t('bankAccountForm.label.memo')}
                         </label>
                         <textarea
@@ -168,7 +168,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                             onChange={(e) => handleChange('notes', e.target.value)}
                             rows={3}
                             placeholder={t('bankAccountForm.placeholder.memo')}
-                            className="w-full bg-slate-950 text-white px-8 py-6 rounded-[2rem] border border-slate-800 focus:border-blue-500 focus:outline-none font-medium text-sm transition-all placeholder:text-slate-800 resize-none"
+                            className="w-full bg-slate-950/50 text-white px-8 py-6 rounded-[2rem] border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-medium text-sm transition-all placeholder:text-slate-800 resize-none"
                         />
                     </div>
 
@@ -201,7 +201,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
 
 const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, type = "text", required, t }: any) => (
     <div className="space-y-4">
-        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
             <Icon className={`w-3.5 h-3.5 ${error ? 'text-rose-500' : 'text-blue-500'}`} /> {label} {required && '*'}
         </label>
         <div className="relative group/input">
@@ -209,7 +209,7 @@ const PremiumInput = ({ label, icon: Icon, value, error, onChange, placeholder, 
                 type={type}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className={`w-full bg-slate-950 text-white px-8 py-4 rounded-2xl border transition-all font-black uppercase tracking-widest text-[10px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800 focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.1)] group-hover/input:border-slate-700'
+                className={`w-full bg-slate-950/50 text-white px-8 py-4 rounded-2xl border transition-all font-bold uppercase tracking-widest text-[9px] placeholder:text-slate-800 focus:outline-none ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800/50 focus:border-blue-500/50 group-hover/input:border-slate-700'
                     }`}
                 placeholder={placeholder}
                 required={required}

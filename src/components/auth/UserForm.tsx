@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Lock, Shield, User as UserIcon } from 'lucide-react';
+import { XCircle, Save, Lock, Shield, User as UserIcon, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../i18n/useLocale';
 import UserService from '../../services/UserService';
@@ -151,226 +151,222 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSave, onCancel }) =>
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                {/* Header */}
-                <div className="sticky top-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                            <UserIcon className="w-5 h-5 text-white" />
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6 overflow-hidden">
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] pointer-events-none group-hover:bg-blue-500/10 transition-all duration-700"></div>
+
+                {/* Header Hub */}
+                <header className="flex items-center justify-between p-10 border-b border-slate-800/50 flex-shrink-0 relative z-10">
+                    <div className="flex items-center gap-6">
+                        <div className="text-blue-500">
+                            <UserIcon className="w-8 h-8" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black text-white">
+                            <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
                                 {isEditing ? t('userForm.editUser') : t('userForm.newUser')}
                             </h2>
-                            <p className="text-slate-400 text-sm">
-                                {isEditing ? t('userForm.editUserDesc') : t('userForm.newUserDesc')}
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 flex items-center gap-2">
+                                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Control de Acceso v4.2
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={onCancel}
-                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                        className="p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95"
                     >
-                        <X className="w-5 h-5 text-slate-400" />
+                        <XCircle className="w-6 h-6" />
                     </button>
-                </div>
+                </header>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto p-10 space-y-10 relative z-10 custom-scrollbar">
                     {/* Error general */}
                     {errors.submit && (
-                        <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4">
-                            <p className="text-red-400 text-sm font-semibold">{errors.submit}</p>
+                        <div className="bg-rose-500/10 border border-rose-500/50 rounded-2xl p-6 flex items-start gap-4 animate-in slide-in-from-top-2">
+                            <Shield className="w-6 h-6 text-rose-500 flex-shrink-0" />
+                            <p className="text-rose-200 text-sm font-bold uppercase tracking-tight">{errors.submit}</p>
                         </div>
                     )}
 
-                    {/* Username */}
-                    <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">
-                            {t('userForm.username')}
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                            disabled={isEditing}
-                            className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.username ? 'border-red-500' : 'border-slate-700'
-                                } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
-                            placeholder={t('userForm.usernamePlaceholder')}
-                        />
-                        {errors.username && (
-                            <p className="mt-2 text-sm text-red-400">{errors.username}</p>
-                        )}
-                    </div>
-
-                    {/* Email and Full Name */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-300 mb-2">
-                                {t('userForm.email')}
-                            </label>
-                            <input
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-700'
-                                    } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                placeholder={t('userForm.emailPlaceholder')}
-                            />
-                            {errors.email && (
-                                <p className="mt-2 text-sm text-red-400">{errors.email}</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-slate-300 mb-2">
-                                {t('userForm.fullName')}
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.full_name}
-                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.full_name ? 'border-red-500' : 'border-slate-700'
-                                    } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                placeholder={t('userForm.fullNamePlaceholder')}
-                            />
-                            {errors.full_name && (
-                                <p className="mt-2 text-sm text-red-400">{errors.full_name}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Display Name */}
-                    <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2">
-                            {t('userForm.displayName')}
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.display_name}
-                            onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                            className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.display_name ? 'border-red-500' : 'border-slate-700'
-                                } rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                            placeholder={t('userForm.displayNamePlaceholder')}
-                        />
-                        {errors.display_name && (
-                            <p className="mt-2 text-sm text-red-400">{errors.display_name}</p>
-                        )}
-                    </div>
-
-                    {/* Role */}
-                    <div>
-                        <label className="block text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
-                            <Shield className="w-4 h-4" />
-                            {t('userForm.userRole')}
-                        </label>
-                        <select
-                            value={formData.role_id}
-                            onChange={(e) => setFormData({ ...formData, role_id: parseInt(e.target.value) })}
-                            className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.role_id ? 'border-red-500' : 'border-slate-700'
-                                } rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        >
-                            <option value={0}>{t('userForm.selectRole')}</option>
-                            {roles.map((role) => (
-                                <option key={role.id} value={role.id}>
-                                    {role.name} - {role.description}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.role_id && (
-                            <p className="mt-2 text-sm text-red-400">{errors.role_id}</p>
-                        )}
-                    </div>
-
-                    {/* Password Section */}
-                    <div className="space-y-4 pt-4 border-t border-slate-800">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black text-blue-400 uppercase tracking-wider flex items-center gap-2">
-                                <Lock className="w-4 h-4" />
-                                {isEditing ? t('userForm.changePasswordOptional') : t('userForm.userPassword')}
+                    <form onSubmit={handleSubmit} id="user-form" className="space-y-10">
+                        {/* Basic Info */}
+                        <div className="space-y-8">
+                            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-3">
+                                <UserIcon className="w-4 h-4 text-blue-400" />
+                                {t('userForm.basicInfo') || 'INFORMACIÓN BÁSICA'}
                             </h3>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-                                    let generated = '';
-                                    for (let i = 0; i < 10; i++) {
-                                        generated += chars.charAt(Math.floor(Math.random() * chars.length));
-                                    }
-                                    setFormData({ ...formData, password: generated, confirmPassword: generated });
-                                    // Cambiar el tipo de input temporalmente podría ser buena idea, pero por ahora solo lo seteamos
-                                    alert(t('userForm.generatedPasswordAlert', { pwd: generated }));
-                                }}
-                                className="text-[10px] font-black bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg border border-blue-500/20 transition-all uppercase tracking-tighter"
-                            >
-                                {t('userForm.generatePassword')}
-                            </button>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Username */}
+                                <div className="md:col-span-2">
+                                    <PremiumInput
+                                        label={t('userForm.username')}
+                                        value={formData.username}
+                                        onChange={(v: string) => setFormData({ ...formData, username: v })}
+                                        disabled={isEditing}
+                                        error={errors.username}
+                                        placeholder={t('userForm.usernamePlaceholder')}
+                                    />
+                                </div>
+
+                                {/* Email */}
+                                <div>
+                                    <PremiumInput
+                                        label={t('userForm.email')}
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(v: string) => setFormData({ ...formData, email: v })}
+                                        error={errors.email}
+                                        placeholder={t('userForm.emailPlaceholder')}
+                                    />
+                                </div>
+
+                                {/* Full Name */}
+                                <div>
+                                    <PremiumInput
+                                        label={t('userForm.fullName')}
+                                        value={formData.full_name}
+                                        onChange={(v: string) => setFormData({ ...formData, full_name: v })}
+                                        error={errors.full_name}
+                                        placeholder={t('userForm.fullNamePlaceholder')}
+                                    />
+                                </div>
+
+                                {/* Display Name */}
+                                <div className="md:col-span-2">
+                                    <PremiumInput
+                                        label={t('userForm.displayName')}
+                                        value={formData.display_name}
+                                        onChange={(v: string) => setFormData({ ...formData, display_name: v })}
+                                        error={errors.display_name}
+                                        placeholder={t('userForm.displayNamePlaceholder')}
+                                    />
+                                </div>
+
+                                {/* Role */}
+                                <div className="md:col-span-2 space-y-3">
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 ml-1 flex items-center gap-2">
+                                        <Shield className="w-4 h-4" />
+                                        {t('userForm.userRole')}
+                                    </label>
+                                    <div className="relative group">
+                                        <select
+                                            value={formData.role_id}
+                                            onChange={(e) => setFormData({ ...formData, role_id: parseInt(e.target.value) })}
+                                            className={`w-full bg-slate-950/50 border ${errors.role_id ? 'border-rose-500' : 'border-slate-800/50'} rounded-2xl px-6 py-4 text-white focus:border-blue-500/50 outline-none transition-all font-bold uppercase tracking-widest text-[9px] appearance-none cursor-pointer`}
+                                        >
+                                            <option value={0}>{t('userForm.selectRole')}</option>
+                                            {roles.map((role) => (
+                                                <option key={role.id} value={role.id}>
+                                                    {role.name} - {role.description}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">▼</div>
+                                    </div>
+                                    {errors.role_id && (
+                                        <p className="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest px-1">{errors.role_id}</p>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
-                                    {t('userForm.newPassword')}
-                                </label>
-                                <input
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.password ? 'border-red-500' : 'border-slate-700'
-                                        } rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                                    placeholder="••••••••"
-                                />
-                                {errors.password && (
-                                    <p className="mt-2 text-sm text-red-400">{errors.password}</p>
-                                )}
+                        {/* Password Section */}
+                        <div className="space-y-8 pt-10 border-t border-slate-800/50">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-3">
+                                    <Lock className="w-4 h-4" />
+                                    {isEditing ? t('userForm.changePasswordOptional') : t('userForm.userPassword')}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                                        let generated = '';
+                                        for (let i = 0; i < 10; i++) {
+                                            generated += chars.charAt(Math.floor(Math.random() * chars.length));
+                                        }
+                                        setFormData({ ...formData, password: generated, confirmPassword: generated });
+                                        alert(t('userForm.generatedPasswordAlert', { pwd: generated }));
+                                    }}
+                                    className="text-[9px] font-bold bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-4 py-2 rounded-xl border border-blue-500/20 transition-all uppercase tracking-widest active:scale-95"
+                                >
+                                    {t('userForm.generatePassword')}
+                                </button>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
-                                    {t('userForm.confirmPassword')}
-                                </label>
-                                <input
-                                    type="password"
-                                    value={formData.confirmPassword}
-                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                    className={`w-full px-4 py-3 bg-slate-800/50 border ${errors.confirmPassword ? 'border-red-500' : 'border-slate-700'
-                                        } rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`}
-                                    placeholder={t('userForm.passwordPlaceholder')}
-                                />
-                                {errors.confirmPassword && (
-                                    <p className="mt-2 text-sm text-red-400">{errors.confirmPassword}</p>
-                                )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <PremiumInput
+                                        label={t('userForm.newPassword')}
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(v: string) => setFormData({ ...formData, password: v })}
+                                        error={errors.password}
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+
+                                <div>
+                                    <PremiumInput
+                                        label={t('userForm.confirmPassword')}
+                                        type="password"
+                                        value={formData.confirmPassword}
+                                        onChange={(v: string) => setFormData({ ...formData, confirmPassword: v })}
+                                        error={errors.confirmPassword}
+                                        placeholder={t('userForm.passwordPlaceholder')}
+                                    />
+                                </div>
                             </div>
+                            {isEditing && (
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">
+                                    {t('userForm.passwordLeaveBlank')}
+                                </p>
+                            )}
                         </div>
-                        {isEditing && (
-                            <p className="text-[10px] text-slate-500 italic">
-                                {t('userForm.passwordLeaveBlank')}
-                            </p>
-                        )}
-                    </div>
+                    </form>
+                </div>
 
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                        <button
-                            type="button"
-                            onClick={onCancel}
-                            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-semibold transition-colors"
-                        >
-                            {t('userForm.cancel')}
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <Save className="w-5 h-5" />
-                            {loading ? (isEditing ? t('userForm.updating') : t('userForm.saving')) : (isEditing ? t('userForm.update') : t('userForm.create'))}
-                        </button>
-                    </div>
-                </form>
+                {/* Footer Hub */}
+                <footer className="p-10 border-t border-slate-800/50 bg-slate-950/30 flex justify-end gap-6 flex-shrink-0 relative z-10">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-6 py-2.5 text-slate-500 hover:text-white transition-all font-bold uppercase tracking-widest text-[10px] hover:bg-slate-900 rounded-xl border border-transparent hover:border-slate-800 active:scale-95"
+                    >
+                        {t('userForm.cancel')}
+                    </button>
+                    <button
+                        form="user-form"
+                        type="submit"
+                        disabled={loading}
+                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-8 py-2.5 rounded-xl font-bold uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-3 shadow-lg shadow-blue-900/40 active:scale-95"
+                    >
+                        <Save className="w-5 h-5" />
+                        <span>{loading ? (isEditing ? t('userForm.updating') : t('userForm.saving')) : (isEditing ? t('userForm.update') : t('userForm.create'))}</span>
+                    </button>
+                </footer>
             </div>
         </div>
     );
 };
+
+const PremiumInput = ({ label, value, onChange, type = "text", required, placeholder, error, disabled }: any) => (
+    <div className="space-y-3">
+        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 ml-1 block">
+            {label} {required && <span className="text-rose-500">*</span>}
+        </label>
+        <div className="relative group/input">
+            <input
+                type={type}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+                className={`w-full bg-slate-950/50 border ${error ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800/50 focus:border-blue-500/50'} rounded-2xl px-6 py-4 text-white outline-none transition-all font-black uppercase tracking-widest text-[10px] placeholder:text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed`}
+                placeholder={placeholder}
+            />
+        </div>
+        {error && (
+            <p className="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-widest px-1">{error}</p>
+        )}
+    </div>
+);

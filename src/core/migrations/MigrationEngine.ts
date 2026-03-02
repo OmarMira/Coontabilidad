@@ -15,6 +15,8 @@ import { BudgetsSchema } from './list/012_budgets_schema';
 import { TaxTransactionsMigration } from './list/013_tax_transactions';
 import { AddAccountAliasMigration } from './list/015_add_account_alias';
 import { RemediationSchemaMigration } from './list/016_remediation_schema';
+import { BankImportHashMigration } from './list/017_bank_import_hash';
+import { ClassificationRulesMigration } from './list/018_classification_rules';
 
 export interface Migration {
     version: number;
@@ -41,7 +43,9 @@ export class MigrationEngine {
         BudgetsSchema,
         TaxTransactionsMigration,
         AddAccountAliasMigration,
-        RemediationSchemaMigration
+        RemediationSchemaMigration,
+        BankImportHashMigration,
+        ClassificationRulesMigration
     ];
 
     private constructor() { }

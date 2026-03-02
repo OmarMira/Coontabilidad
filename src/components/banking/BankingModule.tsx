@@ -3,12 +3,13 @@ import { BankImportWizard } from './BankImportWizard';
 import { BankTransactionMatcher } from './BankTransactionMatcher';
 import { Button } from '@/components/ui/button';
 import { getBankTransactions, BankTransaction, BankAccount, db } from '@/database/simple-db';
-import { Upload, Scale, Building2 } from 'lucide-react';
+import { Upload, Scale, Building2, ListChecks } from 'lucide-react';
 import { useLocale } from '@/i18n/useLocale';
+import { TransactionClassifier } from './TransactionClassifier';
 
 export const BankingModule: React.FC = () => {
     const { t } = useLocale();
-    const [activeTab, setActiveTab] = useState<'import' | 'match'>('import');
+    const [activeTab, setActiveTab] = useState<'import' | 'classify' | 'match'>('import');
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
@@ -128,6 +129,13 @@ export const BankingModule: React.FC = () => {
                     <Upload className="w-4 h-4 mr-2" /> {t('bankAccounts.table.actions')}
                 </Button>
                 <Button
+                    variant={activeTab === 'classify' ? 'default' : 'ghost'}
+                    className={activeTab === 'classify' ? 'bg-emerald-600 hover:bg-emerald-500' : 'text-slate-400'}
+                    onClick={() => setActiveTab('classify')}
+                >
+                    <ListChecks className="w-4 h-4 mr-2" /> Clasificar
+                </Button>
+                <Button
                     variant={activeTab === 'match' ? 'default' : 'ghost'}
                     className={activeTab === 'match' ? 'bg-purple-600 hover:bg-purple-500' : 'text-slate-400'}
                     onClick={() => setActiveTab('match')}
@@ -142,11 +150,24 @@ export const BankingModule: React.FC = () => {
                     <div className="h-full overflow-y-auto p-4 scale-in-center">
                         <BankImportWizard
                             accounts={accounts}
+                            selectedAccountId={selectedAccountId ?? accounts[0]?.id ?? 0}
                             onComplete={() => {
                                 handleRefresh();
-                                setActiveTab('match');
+                                setActiveTab('classify');
                             }}
                         />
+                    </div>
+                )}
+
+                {activeTab === 'classify' && (
+                    <div className="h-full overflow-y-auto p-4 scale-in-center">
+                        {selectedAccountId ? (
+                            <TransactionClassifier accountId={selectedAccountId} />
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-slate-500">
+                                Seleccioná una cuenta bancaria primero
+                            </div>
+                        )}
                     </div>
                 )}
 

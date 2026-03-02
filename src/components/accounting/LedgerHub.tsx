@@ -64,21 +64,15 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
     return (
         <div className="space-y-10 animate-in fade-in duration-500 pb-12">
             {/* Main Navigation Header */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 border-b border-slate-800 pb-10 bg-grid-slate-900/20">
-                <div className="space-y-3">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-900/10">
-                            <Book className="w-10 h-10 text-blue-500" />
-                        </div>
-                        <div>
-                            <h2 className="text-3xl font-bold text-white tracking-tight">
-                                {t('accounting.ledgerHub.title')}
-                            </h2>
-                            <p className="text-slate-500 font-medium text-xs mt-1">
-                                {t('accounting.ledgerHub.subtitle')}
-                            </p>
-                        </div>
-                    </div>
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+                        <Book className="w-8 h-8 text-blue-500" />
+                        {t('accounting.ledgerHub.title')}
+                    </h2>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+                        {t('accounting.ledgerHub.subtitle')}
+                    </p>
                 </div>
 
                 <div className="flex flex-wrap gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800 shadow-inner">

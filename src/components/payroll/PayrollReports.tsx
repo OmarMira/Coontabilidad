@@ -267,39 +267,42 @@ export const PayrollReports: React.FC = () => {
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-24 px-4 overflow-x-hidden">
       {/* Header Hub */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-            <FileText className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+            <FileText className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payroll.reports.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-              <Shield className="w-3.5 h-3.5 text-emerald-500" /> {t('payroll.reports.complianceProtocols')}
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {t('payrollReports.title')}
+            </h2>
+            <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollReports.subtitle')}
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
-          <TabButton
-            active={activeTab === 'form941'}
-            onClick={() => setActiveTab('form941')}
-            label={t('payroll.form941')}
-            icon={Calendar}
-          />
-          <TabButton
-            active={activeTab === 'w2'}
-            onClick={() => setActiveTab('w2')}
-            label={t('payroll.formW2')}
-            icon={Users}
-          />
-          <TabButton
-            active={activeTab === 'w3'}
-            onClick={() => setActiveTab('w3')}
-            label={t('payroll.formW3')}
-            icon={DollarSign}
-          />
-        </div>
+      <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
+        <TabButton
+          active={activeTab === 'form941'}
+          onClick={() => setActiveTab('form941')}
+          label={t('payroll.form941')}
+          icon={Calendar}
+        />
+        <TabButton
+          active={activeTab === 'w2'}
+          onClick={() => setActiveTab('w2')}
+          label={t('payroll.formW2')}
+          icon={Users}
+        />
+        <TabButton
+          active={activeTab === 'w3'}
+          onClick={() => setActiveTab('w3')}
+          label={t('payroll.formW3')}
+          icon={DollarSign}
+        />
       </div>
 
       {/* State Indicators */}
@@ -380,7 +383,7 @@ export const PayrollReports: React.FC = () => {
                   <button
                     onClick={handleGenerateForm941}
                     disabled={loading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     {loading ? (
@@ -483,7 +486,7 @@ export const PayrollReports: React.FC = () => {
                   <button
                     onClick={handleGenerateW2}
                     disabled={loading || !selectedEmployeeId}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-blue-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-blue-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     {loading ? (
@@ -560,7 +563,7 @@ export const PayrollReports: React.FC = () => {
                   <button
                     onClick={handleGenerateW3}
                     disabled={loading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     {loading ? (
@@ -644,7 +647,7 @@ export const PayrollReports: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, TrendingUp, Package, ArrowRight } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Package, ArrowRight, Zap } from 'lucide-react';
 import { getProducts, getKardexMovements, Product, KardexEntry } from '@/database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
 
@@ -59,7 +59,22 @@ export const InventoryDashboard: React.FC<{
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="mb-8 border-b border-slate-800 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <Package className="w-7 h-7 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('inventoryDashboard.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('inventoryDashboard.subtitle')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="bg-slate-900 border-slate-800 text-white">
@@ -114,9 +129,12 @@ export const InventoryDashboard: React.FC<{
                             <TrendingUp className="w-5 h-5 text-blue-400" />
                             {t('inv.dashboard.recentMovements')}
                         </CardTitle>
-                        <Button variant="ghost" size="sm" onClick={() => OnNavigateToKardex()} className="text-xs text-blue-400 hover:text-blue-300">
+                        <button
+                            onClick={() => OnNavigateToKardex()}
+                            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-blue-400 hover:text-white hover:bg-white/5 rounded-xl transition-all active:scale-95"
+                        >
                             {t('inv.dashboard.viewAll')} <ArrowRight className="w-3 h-3 ml-1" />
-                        </Button>
+                        </button>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">

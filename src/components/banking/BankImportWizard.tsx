@@ -22,11 +22,12 @@ interface BankImportWizardProps {
   onClose?: () => void;
   onComplete: () => void;
   accounts?: BankAccount[];
+  selectedAccountId?: number;
 }
 
 type Step = 'upload' | 'preview' | 'edit' | 'confirm';
 
-export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => {}, onComplete, accounts }) => {
+export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => { }, onComplete, accounts, selectedAccountId }) => {
   const [step, setStep] = useState<Step>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [batchId, setBatchId] = useState<number | null>(null);
@@ -88,8 +89,14 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     setError(null);
 
     try {
-      await importService.finalizeImport(batchId, 1);
-      toast.success('Inyección de datos certificada correctamente');
+      const result = await importService.finalizeImport(batchId, 1, selectedAccountId ?? 0);
+
+      if (result.skipped > 0) {
+        toast.success(`${result.imported} transacciones importadas, ${result.skipped} duplicadas salteadas`);
+      } else {
+        toast.success(`${result.imported} transacciones importadas correctamente`);
+      }
+
       onComplete();
     } catch (err) {
       setError((err as Error).message);
@@ -298,8 +305,8 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
 const StepIndicator = ({ active, completed, step, label, icon: Icon }: any) => (
   <div className={`flex items-center gap-4 transition-all duration-500 ${active ? 'scale-110' : completed ? 'opacity-80' : 'opacity-40'}`}>
     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 shadow-xl ${active ? 'bg-blue-600 border-blue-400 text-white shadow-blue-900/40' :
-        completed ? 'bg-emerald-600/10 border-emerald-500/40 text-emerald-500' :
-          'bg-slate-950 border-slate-800 text-slate-600'
+      completed ? 'bg-emerald-600/10 border-emerald-500/40 text-emerald-500' :
+        'bg-slate-950 border-slate-800 text-slate-600'
       }`}>
       {completed ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
     </div>

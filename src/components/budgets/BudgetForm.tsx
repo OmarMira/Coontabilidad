@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Trash2, AlertTriangle, Save, X } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, Save, XCircle, Target, ShieldCheck, Loader2 } from 'lucide-react';
 import {
   createBudget,
   updateBudget,
@@ -135,179 +135,146 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header Information */}
-      <Card className="bg-slate-900 border-slate-800 text-white">
-        <CardHeader>
-          <CardTitle>{isEditing ? t('budgets.editBudget') : t('budgets.newBudget')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Validation Errors */}
-          {validationErrors.length > 0 && (
-            <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-200">
-              <AlertTriangle className="h-4 w-4 text-red-400" />
-              <AlertDescription>
-                <ul className="list-disc list-inside space-y-1">
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6 overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] pointer-events-none"></div>
+
+        {/* Header Hub */}
+        <header className="flex items-center justify-between p-10 border-b border-slate-800/50 flex-shrink-0 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="text-blue-500">
+              <Target className="w-8 h-8" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
+                {isEditing ? t('budgets.editBudget') : t('budgets.newBudget')}
+              </h2>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Fiscal Protocol v3.0
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95"
+          >
+            <XCircle className="w-6 h-6" />
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-10 space-y-12 relative z-10 custom-scrollbar">
+          {/* Error Feedback */}
+          {(validationErrors.length > 0 || error) && (
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-[2rem] p-8 space-y-4 animate-in shake duration-500">
+              <div className="flex items-center gap-4">
+                <AlertTriangle className="w-6 h-6 text-rose-500" />
+                <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest leading-none">
+                  {t('common.error') || 'ERROR DE VALIDACIÓN'}
+                </p>
+              </div>
+              <ul className="list-disc list-inside space-y-1">
+                {validationErrors.map((err, idx) => (
+                  <li key={idx} className="text-[11px] font-bold text-rose-200/70 uppercase tracking-tight">{err}</li>
+                ))}
+                {error && <li className="text-[11px] font-bold text-rose-200/70 uppercase tracking-tight">{error}</li>}
+              </ul>
+            </div>
           )}
 
-          {/* Error Alert */}
-          {error && (
-            <Alert variant="destructive" className="bg-red-900/20 border-red-900 text-red-200">
-              <AlertTriangle className="h-4 w-4 text-red-400" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Budget Name */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">
+          {/* Primary Info Block */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="md:col-span-2 space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">
                 {t('budgets.budgetName')} *
               </label>
-              <Input
+              <input
                 type="text"
                 value={budgetName}
                 onChange={(e) => setBudgetName(e.target.value)}
                 placeholder={t('budgets.placeholders.budgetName')}
+                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2.5xl px-8 py-5 text-white focus:border-blue-500/50 outline-none transition-all font-black uppercase tracking-widest text-[11px] placeholder:text-slate-800"
                 required
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
-            {/* Start Date */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                {t('budgets.startDate')} *
-              </label>
-              <Input
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('budgets.startDate')} *</label>
+              <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2.5xl px-8 py-5 text-white focus:border-blue-500/50 outline-none transition-all font-black uppercase tracking-widest text-[11px]"
                 required
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
-            {/* End Date */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                {t('budgets.endDate')} *
-              </label>
-              <Input
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('budgets.endDate')} *</label>
+              <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2.5xl px-8 py-5 text-white focus:border-blue-500/50 outline-none transition-all font-black uppercase tracking-widest text-[11px]"
                 required
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
               />
             </div>
 
-            {/* Fiscal Year (auto-calculated) */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                {t('budgets.fiscalYear')}
-              </label>
-              <Input
-                type="number"
-                value={fiscalYear}
-                readOnly
-                className="bg-slate-950 border-slate-800 text-slate-400 cursor-not-allowed"
-              />
-            </div>
-
-            {/* Department */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                {t('budgets.department')}
-              </label>
-              <Input
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('budgets.department')}</label>
+              <input
                 type="text"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 placeholder={t('budgets.placeholders.department')}
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
+                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2.5xl px-8 py-5 text-white focus:border-blue-500/50 outline-none transition-all font-black uppercase tracking-widest text-[11px] placeholder:text-slate-800"
               />
             </div>
 
-            {/* Alert Threshold */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                {t('budgets.alertThreshold')}
-              </label>
-              <Input
-                type="number"
-                value={alertThreshold}
-                onChange={(e) => setAlertThreshold(Number(e.target.value))}
-                min="0"
-                max="100"
-                step="1"
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-blue-500"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                {t('budgets.alertThresholdHelp')}
-              </p>
-            </div>
-
-            {/* Notes */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                {t('common.notes')}
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-md text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={t('budgets.placeholders.notes')}
-              />
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('budgets.fiscalYear')}</label>
+              <div className="w-full bg-slate-950/30 border border-slate-800/30 rounded-2.5xl px-8 py-5 text-slate-600 font-black uppercase tracking-widest text-[11px]">
+                {fiscalYear}
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Budget Lines Editor */}
-      <BudgetLineEditor
-        lines={lines}
-        onChange={setLines}
-        totalAmount={totalBudgetAmount}
-      />
+          {/* Editor Section */}
+          <div className="pt-12 border-t border-slate-800/50">
+            <BudgetLineEditor
+              lines={lines}
+              onChange={setLines}
+              totalAmount={totalBudgetAmount}
+            />
+          </div>
+        </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onCancel}
-          disabled={loading}
-          className="text-slate-400 hover:text-white hover:bg-slate-800"
-        >
-          <X className="h-4 w-4 mr-2" />
-          {t('common.cancel')}
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading || lines.length === 0}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              {t('common.saving')}
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              {isEditing ? t('budgets.updateBudget') : t('budgets.createBudget')}
-            </>
-          )}
-        </Button>
+        {/* Footer Action Hub */}
+        <footer className="p-10 border-t border-slate-800/50 bg-slate-950/30 flex justify-end gap-6 flex-shrink-0 relative z-10">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-10 py-5 text-slate-500 hover:text-white transition-all font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 rounded-2xl border border-transparent hover:border-slate-800"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading || lines.length === 0}
+            className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:opacity-50 text-white px-12 py-5 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
+          >
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                <span>{isEditing ? t('budgets.updateBudget') : t('budgets.createBudget')}</span>
+              </>
+            )}
+          </button>
+        </footer>
       </div>
-    </form>
+    </div>
   );
 };

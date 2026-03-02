@@ -280,17 +280,15 @@ export const BankReconciliationImporter: React.FC = () => {
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
             {/* Header Hub */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-                <div className="flex items-center gap-6">
-                    <div className="p-4 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 shadow-blue-900/10 shadow-lg group">
-                        <FileSpreadsheet className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
-                    </div>
-                    <div>
-                        <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('bankStatementImport.title')}</h2>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-                            <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('bankStatementImport.subtitle')}
-                        </p>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <div>
+                    <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+                        <FileSpreadsheet className="w-8 h-8 text-blue-500" />
+                        {t('bankStatementImport.title')}
+                    </h2>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('bankStatementImport.subtitle')}
+                    </p>
                 </div>
 
                 <div className="flex flex-col md:flex-row items-center gap-6 p-1.5">
@@ -369,8 +367,8 @@ export const BankReconciliationImporter: React.FC = () => {
                                 <Upload className={`w-12 h-12 ${dragActive ? 'text-blue-500 animate-bounce' : 'text-slate-700'}`} />
                             </div>
 
-                            <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">{t('bankStatementImport.selectProtocol')}</h3>
-                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm mb-12">
+                            <h3 className="text-xl font-bold text-white mb-2">{t('bankStatementImport.selectProtocol')}</h3>
+                            <p className="text-sm font-medium text-slate-500 mb-8 max-w-sm">
                                 {t('bankStatementImport.mappingDesc')}
                             </p>
 
@@ -383,7 +381,7 @@ export const BankReconciliationImporter: React.FC = () => {
                             />
                             <label
                                 htmlFor="csv-upload"
-                                className={`px-14 py-6 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-3xl flex items-center gap-4 cursor-pointer bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/40 hover:-translate-y-1 active:scale-95 ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}
+                                className={`px-8 py-4 rounded-xl font-bold text-sm transition-all shadow-xl flex items-center gap-3 cursor-pointer bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20 hover:-translate-y-0.5 active:scale-95 ${isProcessing ? 'opacity-50 cursor-wait' : ''}`}
                             >
                                 <Zap className={`w-5 h-5 fill-current ${isProcessing ? 'animate-spin' : ''}`} />
                                 {isProcessing ? t('bankReconciliation.analyzingMetadata') : t('bankStatementImport.injectCSV')}

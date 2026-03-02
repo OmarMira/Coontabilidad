@@ -94,7 +94,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
 
           <button
             onClick={onAddSupplier}
-            className="flex items-center gap-3 px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-orange-900/40 hover:-translate-y-1"
+            className="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-orange-900/40 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             {t('supplierList.button.register')}

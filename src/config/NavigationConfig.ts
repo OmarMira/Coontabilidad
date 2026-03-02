@@ -3,7 +3,7 @@ import {
     Package2, Calculator, FileText, BarChart3, Settings, Receipt, Search,
     ScanSearch, HardDrive, UserCheck, Lock, Bot, Activity,
     HelpCircle, Database, CreditCard, Shield,
-    History, PieChart, ShieldCheck, Clock, DollarSign, ShieldAlert
+    History, PieChart, ShieldCheck, Clock, DollarSign, ShieldAlert, AlertTriangle, Zap
 } from 'lucide-react';
 
 export interface MenuItemConfig {
@@ -75,6 +75,7 @@ export const NAVIGATION_CONFIG: MenuItemConfig[] = [
             { id: 'bank-reconciliation', labelKey: 'navigation.bankReconciliation', icon: FileText },
             { id: 'discrepancy-analysis', labelKey: 'navigation.discrepancyAnalysis', icon: BarChart3 },
             { id: 'bank-smart-import', labelKey: 'navigation.iaBankImport', icon: Bot },
+            { id: 'classification-rules', labelKey: 'navigation.classificationRules', icon: Zap },
             { id: 'general-ledger', labelKey: 'navigation.generalLedger', icon: FileText },
             { id: 'trial-balance', labelKey: 'navigation.trialBalance', icon: BarChart3 },
             { id: 'account-ledger', labelKey: 'navigation.accountAuxiliaries', icon: PieChart },
@@ -129,6 +130,7 @@ export const NAVIGATION_CONFIG: MenuItemConfig[] = [
         labelKey: 'navigation.tools',
         icon: HelpCircle,
         children: [
+            { id: 'quarantine-panel', labelKey: 'navigation.quarantine_audit', icon: AlertTriangle, badge: '0' },
             { id: 'accounting-diagnosis', labelKey: 'navigation.accountingDiagnosis', icon: Activity },
             { id: 'journal-entry-test', labelKey: 'navigation.journalEntryTest', icon: FileText },
             { id: 'backups', labelKey: 'navigation.backupsRestoration', icon: HardDrive },
@@ -143,12 +145,6 @@ export const NAVIGATION_CONFIG: MenuItemConfig[] = [
         id: 'ai-assistant',
         labelKey: 'navigation.aiAssistant',
         icon: Bot
-    },
-    {
-        id: 'quarantine-panel',
-        labelKey: 'navigation.quarantine_audit',
-        icon: ShieldAlert,
-        badge: '0'
     }
 ];
 

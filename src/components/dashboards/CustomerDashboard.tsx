@@ -154,8 +154,8 @@ export const CustomerDashboard: React.FC = () => {
             <Users2 className="w-10 h-10 text-emerald-500" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('customerDashboard.title')}</h1>
-            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none uppercase">{t('customerDashboard.title')}</h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
               <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('customerDashboard.subtitle')}
             </p>
           </div>

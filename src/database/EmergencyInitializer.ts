@@ -97,6 +97,22 @@ export class EmergencyDatabaseInitializer {
         name TEXT UNIQUE NOT NULL,
         permissions TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`,
+
+            `CREATE TABLE IF NOT EXISTS company_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company_name TEXT NOT NULL,
+        legal_name TEXT NOT NULL,
+        tax_id TEXT NOT NULL,
+        address TEXT NOT NULL,
+        city TEXT NOT NULL,
+        state TEXT NOT NULL DEFAULT 'FL',
+        zip_code TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        email TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`
         ]);
 
@@ -312,7 +328,17 @@ export class EmergencyDatabaseInitializer {
     }
 
     private static async loadEssentialConfig(): Promise<void> {
-        // Carga de roles mínimos, etc.
+        if (!db) return;
+
+        // Asegurar datos de empresa
+        const res = db.exec("SELECT COUNT(*) FROM company_data");
+        if (res[0].values[0][0] === 0) {
+            db.run(`
+                INSERT INTO company_data (company_name, legal_name, tax_id, address, city, state, zip_code, phone, email)
+                VALUES ('Account Express Demo', 'Account Express Demo Inc.', 'US-DEMO-001', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0100', 'admin@accountexpress.com')
+            `);
+            logger.info('Datos de empresa por defecto inyectados vía EmergencyInit', undefined, 'EmergencyInit', 'seed');
+        }
     }
 
     private static async checkFirstRun(): Promise<boolean> {

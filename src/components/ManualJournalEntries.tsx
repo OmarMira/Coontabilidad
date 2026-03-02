@@ -4,7 +4,7 @@ import {
   Trash2,
   Calculator,
   Save,
-  X,
+  XCircle,
   AlertCircle,
   CheckCircle,
   FileText,
@@ -16,7 +16,8 @@ import {
   ArrowDownCircle,
   Hash,
   Search,
-  Loader2
+  Loader2,
+  Cpu
 } from 'lucide-react';
 import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '../database/simple-db';
 import { toast } from 'react-hot-toast';
@@ -220,7 +221,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
         <div className="p-4 w-full md:w-auto">
           <button
             onClick={() => setShowEntryForm(true)}
-            className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-8 py-4 rounded-2xl transition-all shadow-xl shadow-blue-900/20 active:scale-95 flex items-center justify-center gap-3"
+            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center justify-center gap-3 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
           >
             <Plus className="w-5 h-5" />
             {t('journal.newEntry')}
@@ -297,59 +298,61 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
       {/* Industrial Grade Entry Modal */}
       {showEntryForm && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl overflow-y-auto h-full w-full z-50 p-4 md:p-8 animate-in fade-in duration-300">
-          <div className="relative mx-auto bg-slate-900 border border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-[3rem] overflow-hidden max-w-6xl animate-in slide-in-from-bottom-8 duration-500">
-            <header className="bg-slate-950/50 px-10 py-8 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-5">
-                <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-500/20">
-                  <Calculator className="w-8 h-8 text-blue-500" />
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl overflow-y-auto h-full w-full z-50 p-4 md:p-12 animate-in fade-in duration-300 flex items-center justify-center">
+          <div className="relative bg-slate-900 border border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.5)] rounded-[3rem] overflow-hidden max-w-6xl w-full animate-in zoom-in duration-500">
+            <header className="px-10 py-10 border-b border-slate-800/50 flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-6">
+                <div className="text-blue-500">
+                  <Cpu className="w-10 h-10" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-bold text-white tracking-tight">{t('journal.folioInitiator')}</h3>
-                  <p className="text-xs font-medium text-slate-600 mt-1">{t('journal.standardUSGAAP')}</p>
+                  <h3 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">{t('journal.folioInitiator')}</h3>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 flex items-center gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> {t('journal.standardUSGAAP')}
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setShowEntryForm(false)} className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full transition-all active:scale-90 shadow-lg">
-                <X className="w-6 h-6" />
+              <button onClick={() => setShowEntryForm(false)} className="p-4 bg-slate-950/50 border border-slate-800 rounded-3xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95">
+                <XCircle className="w-7 h-7" />
               </button>
             </header>
 
             <form onSubmit={handleSubmit} className="p-10 space-y-12">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="space-y-3">
-                  <label className="text-xs font-medium text-slate-500 ml-2 flex items-center gap-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2 flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5" /> {t('journal.fiscalDate')}
                   </label>
                   <input
                     type="date"
                     value={currentEntry.date}
                     onChange={(e) => setCurrentEntry(prev => ({ ...prev, date: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-mono text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-mono font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
                     required
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-xs font-medium text-slate-500 ml-2 flex items-center gap-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2 flex items-center gap-2">
                     <Hash className="w-3.5 h-3.5" /> {t('journal.internalRef')}
                   </label>
                   <input
                     type="text"
                     value={currentEntry.reference}
                     onChange={(e) => setCurrentEntry(prev => ({ ...prev, reference: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-black uppercase tracking-widest text-[10px] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
                     placeholder={t('journal.internalRefPlaceholder')}
                     required
                   />
                 </div>
                 <div className="md:col-span-2 space-y-3">
-                  <label className="text-xs font-medium text-slate-500 ml-2 flex items-center gap-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 mb-2 flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5" /> {t('journal.generalGloss')}
                   </label>
                   <input
                     type="text"
                     value={currentEntry.description}
                     onChange={(e) => setCurrentEntry(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
                     placeholder={t('journal.generalGlossPlaceholder')}
                     required
                   />
@@ -358,7 +361,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
 
               <div className="bg-slate-950/40 border border-slate-800 rounded-[2rem] overflow-hidden shadow-inner p-1">
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-950/80 text-xs font-bold text-slate-600 uppercase tracking-wider border-b border-slate-800">
+                  <thead className="bg-slate-950 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800/50">
                     <tr>
                       <th className="px-8 py-5">{t('journal.account')}</th>
                       <th className="px-8 py-5">{t('journal.lineDetail')}</th>
@@ -374,7 +377,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                           <select
                             value={line.account_id}
                             onChange={(e) => updateLine(line.id, 'account_id', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white focus:border-blue-500 outline-none transition-all"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-white focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all cursor-pointer"
                             required
                           >
                             <option value="">{t('journal.selectNode')}</option>
@@ -390,7 +393,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                             type="text"
                             value={line.description}
                             onChange={(e) => updateLine(line.id, 'description', e.target.value)}
-                            className="w-full bg-transparent border-b border-slate-800 focus:border-blue-500 text-xs font-bold text-slate-400 p-2 outline-none transition-all"
+                            className="w-full bg-transparent border-b border-slate-800 focus:border-blue-500 text-[10px] font-bold uppercase tracking-widest text-slate-400 p-3 outline-none transition-all"
                             placeholder={t('journal.lineDetailPlaceholder')}
                             required
                           />
@@ -401,7 +404,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                             step="0.01"
                             value={line.debit || ''}
                             onChange={(e) => updateLine(line.id, 'debit', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-right font-mono font-black text-emerald-400 text-sm focus:border-emerald-500 outline-none transition-all"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-4 py-4 text-right font-mono font-black text-emerald-400 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all"
                             disabled={line.credit > 0}
                             onFocus={(e) => e.target.select()}
                           />
@@ -412,7 +415,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                             step="0.01"
                             value={line.credit || ''}
                             onChange={(e) => updateLine(line.id, 'credit', parseFloat(e.target.value) || 0)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-right font-mono font-black text-rose-400 text-sm focus:border-rose-500 outline-none transition-all"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-4 py-4 text-right font-mono font-black text-rose-400 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10 outline-none transition-all"
                             disabled={line.debit > 0}
                             onFocus={(e) => e.target.select()}
                           />
@@ -431,17 +434,17 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                         <button
                           type="button"
                           onClick={addNewLine}
-                          className="flex items-center gap-2 text-blue-500 hover:text-white bg-blue-500/5 hover:bg-blue-600 px-6 py-3 border border-blue-500/20 rounded-2xl font-bold text-xs transition-all shadow-lg"
+                          className="flex items-center gap-3 text-blue-500 hover:text-white bg-blue-500/5 hover:bg-blue-600 px-8 py-4 border border-blue-500/20 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-lg active:scale-95"
                         >
                           <Plus className="w-4 h-4" /> {t('journal.expandEntry')}
                         </button>
                       </td>
                       <td className="px-8 py-8 text-right bg-slate-900/40">
-                        <span className="text-xs font-medium text-slate-600 block mb-1">Total DR</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 px-1">Total DR</span>
                         <span className="font-mono text-xl text-emerald-400">${currentEntry.total_debits.toFixed(2)}</span>
                       </td>
                       <td className="px-8 py-8 text-right bg-slate-900/40">
-                        <span className="text-xs font-medium text-slate-600 block mb-1">Total CR</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2 px-1">Total CR</span>
                         <span className="font-mono text-xl text-rose-400">${currentEntry.total_credits.toFixed(2)}</span>
                       </td>
                       <td className="bg-slate-900/40"></td>
@@ -468,14 +471,14 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowEntryForm(false)}
-                    className="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-bold text-sm px-10 py-5 rounded-2xl transition-all"
+                    className="flex-1 md:flex-none bg-slate-950/50 hover:bg-slate-800 border border-slate-800 text-slate-500 hover:text-white font-black uppercase tracking-widest text-[10px] px-10 py-5 rounded-2xl transition-all active:scale-95"
                   >
                     {t('journal.discard')}
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading || !currentEntry.is_balanced || currentEntry.lines.length < 2}
-                    className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-12 py-5 rounded-2xl transition-all shadow-2xl shadow-blue-900/60 disabled:opacity-20 flex items-center justify-center gap-3"
+                    className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-[11px] px-12 py-5 rounded-2xl transition-all shadow-2xl shadow-blue-900/60 disabled:opacity-20 flex items-center justify-center gap-4 active:scale-95"
                   >
                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                     {t('journal.syncLedger')}

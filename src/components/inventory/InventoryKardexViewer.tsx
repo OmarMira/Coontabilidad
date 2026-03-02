@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
     FileText, RefreshCw, ArrowDownLeft, ArrowUpRight, AlertTriangle,
-    Search, Filter, Package
+    Search, Filter, Package, Zap
 } from 'lucide-react';
 import { getKardexMovements, getProducts, KardexEntry, Product } from '@/database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
@@ -69,112 +69,129 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
     };
 
     return (
-        <Card className="bg-slate-900 border-slate-800 text-white shadow-2xl rounded-3xl overflow-hidden">
-            <CardHeader className="border-b border-slate-800 pb-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <CardTitle className="flex items-center gap-2">
-                        <FileText className="w-6 h-6 text-blue-400" />
-                        {t('inv.kardex.title')}
-                    </CardTitle>
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <Button variant="outline" size="sm" onClick={loadMovements} className="border-slate-700 text-slate-400 hover:text-white rounded-xl">
-                            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                            {t('inv.kardex.refresh')}
-                        </Button>
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <FileText className="w-7 h-7 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">
+                            {t('inv.kardex.title')}
+                        </h2>
+                        <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('inventoryDashboard.subtitle')}
+                        </p>
                     </div>
                 </div>
-                {/* Filters */}
-                <div className="flex flex-wrap items-center gap-4 mt-4">
-                    <div className="flex items-center gap-2">
-                        <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{t('inv.kardex.productFilter')}</label>
-                        <select
-                            className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                            value={selectedProduct}
-                            onChange={e => setSelectedProduct(e.target.value)}
-                        >
-                            <option value="">{t('inv.kardex.allProducts')}</option>
-                            {products.map(p => (
-                                <option key={p.id} value={p.id?.toString()}>{p.sku} — {p.name}</option>
-                            ))}
-                        </select>
+
+                <div className="flex flex-wrap items-center gap-4 justify-center">
+                    {/* Filters Inline */}
+                    <div className="flex items-center gap-4 bg-slate-900 px-6 py-4 rounded-2xl border border-slate-800 shadow-xl">
+                        <div className="flex items-center gap-2">
+                            <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{t('inv.kardex.productFilter')}</label>
+                            <select
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500 transition-colors"
+                                value={selectedProduct}
+                                onChange={e => setSelectedProduct(e.target.value)}
+                            >
+                                <option value="">{t('inv.kardex.allProducts')}</option>
+                                {products.map(p => (
+                                    <option key={p.id} value={p.id?.toString()}>{p.sku} — {p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="w-px h-6 bg-slate-800 hidden md:block" />
+                        <div className="flex items-center gap-2">
+                            <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{t('inv.kardex.type')}</label>
+                            <select
+                                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-blue-500 transition-colors"
+                                value={selectedType}
+                                onChange={e => setSelectedType(e.target.value)}
+                            >
+                                <option value="">Todos</option>
+                                <option value="purchase">{t('inv.kardex.purchases')}</option>
+                                <option value="sale">{t('inv.kardex.sales')}</option>
+                                <option value="adjustment">{t('inv.kardex.adjustmentsFilter')}</option>
+                                <option value="return">{t('inv.kardex.returns')}</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{t('inv.kardex.movementTypeFilter')}</label>
-                        <select
-                            className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                            value={selectedType}
-                            onChange={e => setSelectedType(e.target.value)}
-                        >
-                            <option value="">{t('inv.kardex.all')}</option>
-                            <option value="purchase">{t('inv.kardex.purchases')}</option>
-                            <option value="sale">{t('inv.kardex.sales')}</option>
-                            <option value="adjustment">{t('inv.kardex.adjustmentsFilter')}</option>
-                            <option value="return">{t('inv.kardex.returns')}</option>
-                        </select>
-                    </div>
+                    <Button
+                        variant="outline"
+                        onClick={loadMovements}
+                        className="flex items-center gap-3 px-8 py-4 bg-slate-950 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        {t('inv.kardex.refresh')}
+                    </Button>
                 </div>
-            </CardHeader>
-            <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left border-collapse">
-                        <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
-                            <tr>
-                                <th className="px-6 py-5">{t('inv.kardex.date')}</th>
-                                <th className="px-6 py-5">{t('inv.kardex.product')}</th>
-                                <th className="px-6 py-5">{t('inv.kardex.ref')}</th>
-                                <th className="px-6 py-5">{t('inv.kardex.type')}</th>
-                                <th className="px-6 py-5 text-right">{t('inv.kardex.entry')}</th>
-                                <th className="px-6 py-5 text-right">{t('inv.kardex.exit')}</th>
-                                <th className="px-6 py-5 text-right">{t('inv.kardex.balanceCol')}</th>
-                                <th className="px-6 py-5">{t('inv.kardex.user')}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/50">
-                            {filtered.map((m) => {
-                                const typeInfo = getTypeDisplay(m.reference_type, m.quantity);
-                                return (
-                                    <tr key={m.id} className="hover:bg-slate-800/30 transition-colors">
-                                        <td className="px-6 py-4 font-mono text-slate-400 text-xs">
-                                            {m.formatted_date || new Date(m.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-[9px] font-mono font-black text-slate-600 uppercase">{m.product_sku}</span>
-                                                <span className="text-white font-bold text-xs">{m.product_name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-slate-500 text-[10px]">{m.reference_id || '—'}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${typeInfo.color}`}>
-                                                {m.quantity > 0 ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
-                                                {typeInfo.label}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold">
-                                            {m.quantity > 0 ? `+${m.quantity}` : ''}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono text-rose-400 font-bold">
-                                            {m.quantity < 0 ? m.quantity : ''}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono text-white font-black">
-                                            —
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-500 text-xs">{m.user_name || '—'}</td>
-                                    </tr>
-                                );
-                            })}
-                            {filtered.length === 0 && (
+            </div>
+
+            <Card className="bg-slate-900 border-slate-800 text-white shadow-2xl rounded-3xl overflow-hidden">
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left border-collapse">
+                            <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-16 text-center">
-                                        <Package className="w-10 h-10 text-slate-800 mx-auto mb-3" />
-                                        <p className="text-slate-500 font-bold">{t('inv.kardex.noMovementsFound')}</p>
-                                    </td>
+                                    <th className="px-6 py-5">{t('inv.kardex.date')}</th>
+                                    <th className="px-6 py-5">{t('inv.kardex.product')}</th>
+                                    <th className="px-6 py-5">{t('inv.kardex.ref')}</th>
+                                    <th className="px-6 py-5">{t('inv.kardex.type')}</th>
+                                    <th className="px-6 py-5 text-right">{t('inv.kardex.entry')}</th>
+                                    <th className="px-6 py-5 text-right">{t('inv.kardex.exit')}</th>
+                                    <th className="px-6 py-5 text-right">{t('inv.kardex.balanceCol')}</th>
+                                    <th className="px-6 py-5">{t('inv.kardex.user')}</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </CardContent>
-        </Card>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800/50">
+                                {filtered.map((m) => {
+                                    const typeInfo = getTypeDisplay(m.reference_type, m.quantity);
+                                    return (
+                                        <tr key={m.id} className="hover:bg-slate-800/30 transition-colors">
+                                            <td className="px-6 py-4 font-mono text-slate-400 text-xs">
+                                                {m.formatted_date || new Date(m.created_at).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-mono font-black text-slate-600 uppercase">{m.product_sku}</span>
+                                                    <span className="text-white font-bold text-xs">{m.product_name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-slate-500 text-[10px]">{m.reference_id || '—'}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${typeInfo.color}`}>
+                                                    {m.quantity > 0 ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
+                                                    {typeInfo.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold">
+                                                {m.quantity > 0 ? `+${m.quantity}` : ''}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-rose-400 font-bold">
+                                                {m.quantity < 0 ? m.quantity : ''}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-white font-black">
+                                                —
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500 text-xs">{m.user_name || '—'}</td>
+                                        </tr>
+                                    );
+                                })}
+                                {filtered.length === 0 && (
+                                    <tr>
+                                        <td colSpan={8} className="px-6 py-16 text-center">
+                                            <Package className="w-10 h-10 text-slate-800 mx-auto mb-3" />
+                                            <p className="text-slate-500 font-bold">{t('inv.kardex.noMovementsFound')}</p>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     );
 };

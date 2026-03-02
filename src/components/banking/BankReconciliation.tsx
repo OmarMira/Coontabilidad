@@ -39,6 +39,11 @@ import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 import { ReconciliationTask, ReconciliationResult } from '../../workers/reconciliation.worker';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';
+import { db, getChartOfAccounts, ChartOfAccount } from '../../database/simple-db';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
+import { TRANSACTION_STATES } from '../../constants/bankingStates';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface BankReconciliationProps {
     onNavigate?: (section: string) => void;
@@ -54,6 +59,26 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
     const [unreconciledTransactions, setUnreconciledTransactions] = useState<BankTransaction[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showNewStatementForm, setShowNewStatementForm] = useState(false);
+    const { user } = useAuth();
+
+    // Modal state
+    const [classifierModal, setClassifierModal] = useState<{
+        show: boolean;
+        transaction: BankTransaction | null;
+        selectedAccount: ChartOfAccount | null;
+        suggestions: MemorySuggestion[];
+        searchQuery: string;
+        filteredAccounts: ChartOfAccount[];
+        isAutoSuggested: boolean;
+    }>({
+        show: false,
+        transaction: null,
+        selectedAccount: null,
+        suggestions: [],
+        searchQuery: '',
+        filteredAccounts: [],
+        isAutoSuggested: false
+    });
 
     const extractReference = (description: string) => {
         const match = description.match(/CONF#\s*(\S+)/i);
@@ -144,26 +169,107 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
         }
     };
 
+    const openClassifierModal = async (tx: BankTransaction) => {
+        const loadingToast = toast.loading('Analizando memoria de clasificación...');
+        try {
+            const suggestions = await ClassificationMemoryService.getSuggestions(tx.description);
+            const allAccounts = getChartOfAccounts();
+            let autoAccount: ChartOfAccount | null = null;
+            let autoMode = false;
+
+            if (suggestions.length > 0) {
+                autoAccount = allAccounts.find(a => a.account_code === suggestions[0].accountCode) || null;
+                autoMode = !!autoAccount;
+            }
+
+            setClassifierModal({
+                show: true,
+                transaction: tx,
+                selectedAccount: autoAccount,
+                suggestions: suggestions.slice(0, 3),
+                searchQuery: autoAccount ? autoAccount.account_name : '',
+                filteredAccounts: [],
+                isAutoSuggested: autoMode
+            });
+            toast.dismiss(loadingToast);
+        } catch (error) {
+            toast.error('Error al cargar sugerencias', { id: loadingToast });
+        }
+    };
+
+    const handleClassifyInline = async () => {
+        const { transaction, selectedAccount: acc } = classifierModal;
+        if (!transaction || !acc || !user) return;
+
+        const loadingToast = toast.loading('Certificando clasificación...');
+        try {
+            const engine = new SQLiteEngine();
+            engine.setDB(db);
+
+            // 1. Encontrar el state_id para esta transacción bank_transaction_id.
+            const stateRes = await engine.select('SELECT id FROM transaction_states WHERE transaction_id = ?', [transaction.id]);
+            const stateId = (stateRes as any[])[0]?.id;
+
+            if (!stateId) throw new Error('Estado de transacción no encontrado');
+
+            // 2. Guardar en memoria
+            await ClassificationMemoryService.saveConfirmation(
+                transaction.description,
+                acc.account_code,
+                acc.account_name,
+                user.id
+            );
+
+            // 3. Update state
+            await engine.run(`
+                UPDATE transaction_states 
+                SET current_state = ?, 
+                    is_verified = 1,
+                    verified_at = CURRENT_TIMESTAMP,
+                    verified_by = ?
+                WHERE id = ?
+            `, [TRANSACTION_STATES.VERIFIED, user.id, stateId]);
+
+            toast.success('Clasificación certificada correctamente', { id: loadingToast });
+            setClassifierModal(prev => ({ ...prev, show: false }));
+            loadData();
+        } catch (error) {
+            console.error('Error classifying inline:', error);
+            toast.error('Error en el proceso de clasificación', { id: loadingToast });
+        }
+    };
+
+    const handleSearchAccounts = (query: string) => {
+        const all = getChartOfAccounts();
+        const filtered = query.length > 1
+            ? all.filter(a => a.account_name.toLowerCase().includes(query.toLowerCase()) || a.account_code.includes(query)).slice(0, 5)
+            : [];
+
+        setClassifierModal(prev => ({
+            ...prev,
+            searchQuery: query,
+            filteredAccounts: filtered,
+            isAutoSuggested: false
+        }));
+    };
+
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
             {/* Header Hub */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-                <div className="flex items-center gap-6">
-                    <div className="p-4 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 shadow-blue-900/10 shadow-lg group">
-                        <Calculator className="w-10 h-10 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
-                    </div>
-                    <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('bankReconciliation.title')}</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('bankReconciliation.subtitle')}
-                        </p>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight leading-none uppercase">
+                        <Calculator className="w-8 h-8 text-blue-500" />
+                        {t('bankReconciliation.title')}
+                    </h1>
+                    <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
+                        <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('bankReconciliation.subtitle')}
+                    </p>
                 </div>
-
                 {selectedAccount && (
                     <button
                         onClick={() => setShowNewStatementForm(true)}
-                        className="flex items-center gap-3 px-10 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/40 hover:-translate-y-1"
+                        className="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-xl shadow-blue-900/20 hover:-translate-y-0.5"
                     >
                         <Calendar className="w-4 h-4" />
                         {t('bankReconciliation.newReconciliation')}
@@ -173,10 +279,10 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
 
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-10">
                 {/* Panel de Cuentas - Vault Selection */}
-                <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-2xl overflow-hidden group">
-                    <div className="px-10 py-8 border-b border-slate-800">
-                        <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                            <Landmark className="w-5 h-5 text-blue-500" /> {t('bankReconciliation.activeVaults')}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-800">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-3">
+                            <Landmark className="w-4 h-4 text-blue-500" /> {t('bankReconciliation.activeVaults')}
                         </h3>
                     </div>
                     <div className="p-4 space-y-3">
@@ -189,10 +295,10 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                     : 'bg-slate-950 border border-slate-800 text-slate-400 hover:border-slate-700 hover:-translate-x-1'
                                     }`}
                             >
-                                <div className="relative z-10 flex flex-col gap-2">
-                                    <div className="font-black uppercase tracking-tighter text-sm">{account.account_name}</div>
-                                    <div className={`text-[9px] font-black uppercase tracking-[0.2em] font-mono ${selectedAccount?.id === account.id ? 'text-blue-100' : 'text-slate-600'}`}>{account.account_number}</div>
-                                    <div className="mt-2 text-lg font-black font-mono tracking-tighter">
+                                <div className="relative z-10 flex flex-col gap-1">
+                                    <div className="font-bold tracking-tight text-sm">{account.account_name}</div>
+                                    <div className={`text-[10px] font-medium uppercase tracking-widest font-mono ${selectedAccount?.id === account.id ? 'text-blue-100' : 'text-slate-500'}`}>{account.account_number}</div>
+                                    <div className="mt-1 text-base font-bold font-mono tracking-tight">
                                         ${account.balance.toLocaleString()}
                                     </div>
                                 </div>
@@ -226,8 +332,8 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                                     <Target className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{t('bankReconciliation.cycleParams')}</h3>
-                                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-2 italic">{selectedAccount.account_name}</p>
+                                                    <h3 className="text-xl font-bold text-white tracking-tight">{t('bankReconciliation.cycleParams')}</h3>
+                                                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest mt-1 italic">{selectedAccount.account_name}</p>
                                                 </div>
                                             </div>
                                             <button onClick={() => setShowNewStatementForm(false)} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg">
@@ -261,11 +367,11 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                             <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] overflow-hidden shadow-3xl relative group">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] pointer-events-none transition-all duration-700 group-hover:bg-blue-500/10"></div>
 
-                                <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between">
-                                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('bankReconciliation.timelineTitle')}</h3>
+                                <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-white tracking-tight">{t('bankReconciliation.timelineTitle')}</h3>
                                     <div className="flex items-center gap-3">
                                         <Activity className="w-4 h-4 text-blue-500 animate-pulse" />
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{t('bankReconciliation.statusHub')}</span>
+                                        <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest font-mono">{t('bankReconciliation.statusHub')}</span>
                                     </div>
                                 </div>
 
@@ -335,12 +441,12 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                             {/* Transacciones No Conciliadas - Exception List */}
                             {unreconciledTransactions.length > 0 && (
                                 <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] overflow-hidden shadow-3xl animate-in slide-in-from-bottom-6 duration-700">
-                                    <div className="px-10 py-8 border-b border-rose-500/20 bg-rose-500/[0.02] flex items-center justify-between">
-                                        <h3 className="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
-                                            <AlertTriangle className="w-6 h-6 text-rose-500 animate-pulse" />
+                                    <div className="px-6 py-4 border-b border-rose-500/20 bg-rose-500/[0.02] flex items-center justify-between">
+                                        <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-4">
+                                            <AlertTriangle className="w-5 h-5 text-rose-500 animate-pulse" />
                                             {t('bankReconciliation.exceptionsMaster')} ({unreconciledTransactions.length})
                                         </h3>
-                                        <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.3em] font-mono">{t('bankReconciliation.criticalConsistency')}</span>
+                                        <span className="text-[10px] font-medium text-rose-500 uppercase tracking-widest font-mono">{t('bankReconciliation.criticalConsistency')}</span>
                                     </div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left">
@@ -367,13 +473,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                                         </td>
                                                         <td className="px-8 py-6 text-center">
                                                             <button
-                                                                onClick={() => {
-                                                                    if (onNavigate) {
-                                                                        onNavigate('quarantine-panel');
-                                                                    } else {
-                                                                        window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'quarantine-panel' }));
-                                                                    }
-                                                                }}
+                                                                onClick={() => openClassifierModal(transaction)}
                                                                 className="px-4 py-2 rounded-xl border text-[8px] font-black uppercase tracking-[0.2em] bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-black transition-all shadow-lg shadow-amber-950/20"
                                                             >
                                                                 Clasificar
@@ -395,16 +495,135 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                             )}
                         </>
                     ) : (
-                        <div className="bg-slate-900/20 border-4 border-dashed border-slate-800 rounded-[4rem] p-32 text-center group">
-                            <div className="w-24 h-24 bg-slate-950 rounded-[2.5rem] border border-slate-800 flex items-center justify-center mx-auto mb-10 shadow-2xl group-hover:scale-110 group-hover:border-blue-500/50 transition-all duration-700">
-                                <Landmark className="w-10 h-10 text-slate-800 group-hover:text-blue-500 transition-colors" />
+                        <div className="bg-slate-900/20 border-2 border-dashed border-slate-800 rounded-3xl p-20 text-center group">
+                            <div className="w-16 h-16 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center mx-auto mb-8 shadow-2xl group-hover:border-blue-500/50 transition-all duration-700">
+                                <Landmark className="w-8 h-8 text-slate-800 group-hover:text-blue-500 transition-colors" />
                             </div>
-                            <h3 className="text-2xl font-black text-slate-500 uppercase tracking-[0.2em]">{t('bankReconciliation.vaultSelectionRequired')}</h3>
-                            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest mt-4">{t('bankReconciliation.chooseEntity')}</p>
+                            <h3 className="text-xl font-bold text-slate-500 transition-colors group-hover:text-slate-400">{t('bankReconciliation.vaultSelectionRequired')}</h3>
+                            <p className="text-xs font-medium text-slate-700 uppercase tracking-widest mt-2">{t('bankReconciliation.chooseEntity')}</p>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Clasificador Modal */}
+            {classifierModal.show && classifierModal.transaction && (
+                <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center z-[80] p-6">
+                    <div className="bg-slate-900 border-2 border-slate-800 rounded-[3rem] shadow-4xl w-full max-w-2xl animate-in zoom-in-95 duration-500 overflow-hidden">
+                        <header className="p-8 border-b border-slate-800 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                                    <Layers className="w-6 h-6 text-amber-500" />
+                                </div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight">Clasificar Excepción</h3>
+                            </div>
+                            <button onClick={() => setClassifierModal(prev => ({ ...prev, show: false }))} className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 transition-all">
+                                <X size={20} />
+                            </button>
+                        </header>
+
+                        <div className="p-8 space-y-6">
+                            <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800">
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Transacción</div>
+                                <div className="text-sm font-bold text-white uppercase mb-1">{classifierModal.transaction.description}</div>
+                                <div className={`text-xl font-black ${classifierModal.transaction.amount < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                    ${Math.abs(classifierModal.transaction.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </div>
+                            </div>
+
+                            {classifierModal.suggestions.length > 0 && (
+                                <div className="space-y-2">
+                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                        <Cpu className="w-3 h-3" /> Sugerencia IA/Memoria
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {classifierModal.suggestions.map((s, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setClassifierModal(prev => ({
+                                                    ...prev,
+                                                    selectedAccount: getChartOfAccounts().find(a => a.account_code === s.accountCode) || null,
+                                                    searchQuery: s.accountName,
+                                                    isAutoSuggested: true
+                                                }))}
+                                                className="flex items-center justify-between p-4 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 rounded-xl transition-all"
+                                            >
+                                                <div className="text-left">
+                                                    <div className="text-xs font-black text-amber-500">{s.accountName}</div>
+                                                    <div className="text-[9px] font-bold text-slate-500">CTA: {s.accountCode}</div>
+                                                </div>
+                                                <div className="text-[9px] font-black text-amber-500/40 uppercase">Usar esta</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-3">
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Cuenta Contable Destino</div>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={classifierModal.searchQuery}
+                                        onChange={(e) => handleSearchAccounts(e.target.value)}
+                                        placeholder="Buscar por nombre o código..."
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-4 text-xs font-bold text-white focus:border-amber-500 focus:outline-none transition-all"
+                                    />
+                                    {classifierModal.filteredAccounts.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden z-20">
+                                            {classifierModal.filteredAccounts.map(acc => (
+                                                <button
+                                                    key={acc.id}
+                                                    onClick={() => setClassifierModal(prev => ({
+                                                        ...prev,
+                                                        selectedAccount: acc,
+                                                        searchQuery: acc.account_name,
+                                                        filteredAccounts: []
+                                                    }))}
+                                                    className="w-full text-left p-4 hover:bg-slate-800 border-b border-slate-800 last:border-0 text-xs text-slate-300"
+                                                >
+                                                    <span className="font-black text-white">{acc.account_code}</span> — {acc.account_name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                {classifierModal.selectedAccount && (
+                                    <div className={`flex items-center gap-3 p-3 rounded-lg border ${classifierModal.isAutoSuggested ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
+                                        <ShieldCheck size={14} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">
+                                            {classifierModal.isAutoSuggested ? 'Sugerencia Aplicada' : 'Cuenta Seleccionada'}: {classifierModal.selectedAccount.account_code}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                disabled={!classifierModal.selectedAccount}
+                                onClick={handleClassifyInline}
+                                className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all
+                                    ${classifierModal.selectedAccount
+                                        ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-xl shadow-amber-500/20 hover:-translate-y-1'
+                                        : 'bg-slate-800 text-slate-600'}`}
+                            >
+                                Certificar Clasificación
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setClassifierModal(prev => ({ ...prev, show: false }));
+                                    const navTarget = `transaction-classifier:${selectedAccount?.id ?? 0}`;
+                                    if (onNavigate) onNavigate(navTarget);
+                                    else window.dispatchEvent(new CustomEvent('navigate-to', { detail: navTarget }));
+                                }}
+                                className="w-full py-2 text-[8px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+                            >
+                                Abrir Clasificador Completo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

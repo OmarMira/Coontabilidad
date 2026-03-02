@@ -132,13 +132,20 @@ export const PayrollSettings: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
-                        <Settings className="w-8 h-8 text-emerald-500" />
-                        Configuración de Nómina
-                    </h2>
-                    <p className="text-slate-500 text-xs font-black uppercase tracking-widest mt-1">Tasas, Impuestos y Parámetros</p>
+            {/* Header Hub */}
+            <div className="mb-8 border-b border-slate-800 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <Settings className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-white tracking-tight">
+                            Configuración de Nómina
+                        </h2>
+                        <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Tasas, Impuestos y Parámetros
+                        </p>
+                    </div>
                 </div>
             </div>
 

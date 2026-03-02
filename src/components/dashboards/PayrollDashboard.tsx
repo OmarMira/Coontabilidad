@@ -159,27 +159,18 @@ export const PayrollDashboard: React.FC = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
-      {/* Header Hub */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-            <Fingerprint className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+            <Activity className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payrollDashboard.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none uppercase">
+              {t('payrollDashboard.title')}
+            </h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
               <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollDashboard.subtitle')}
             </p>
-          </div>
-        </div>
-
-        {/* Demo Alert Hub */}
-        <div className="px-6 py-4 bg-slate-900 border border-emerald-500/20 rounded-2xl flex items-center gap-4 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-          <AlertCircle className="w-5 h-5 text-emerald-400 animate-pulse" />
-          <div>
-            <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{t('payrollDashboard.simulationMode')}</p>
-            <p className="text-[9px] text-slate-500 font-black uppercase mt-1 leading-none">{t('payrollDashboard.syncInProgress')}</p>
           </div>
         </div>
       </div>
@@ -311,8 +302,8 @@ const EliteStatCard = ({ title, value, icon: Icon, color, label }: any) => {
           </div>
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{title}</span>
         </div>
-        <div className="text-4xl font-black text-white tracking-tighter mb-2 font-mono tabular-nums leading-none">{value}</div>
-        <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">{label}</p>
+        <div className="text-3xl font-black text-white tracking-tight mb-2 font-mono tabular-nums leading-none">{value}</div>
+        <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{label}</p>
       </div>
       <div className={`absolute -right-4 -bottom-4 w-24 h-24 blur-3xl opacity-0 group-hover:opacity-10 transition-all ${themes[color]}`}></div>
     </div>

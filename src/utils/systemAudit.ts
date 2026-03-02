@@ -34,7 +34,7 @@ export interface SystemAuditReport {
  */
 export async function auditJournalEntries(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
-  
+
   if (!db) {
     results.push({
       category: 'Journal Entries',
@@ -59,9 +59,9 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
       GROUP BY je.id
       HAVING ABS(total_debits - total_credits) > 1.00
     `;
-    
+
     const unbalanced = db.exec(unbalancedQuery);
-    
+
     if (unbalanced.length > 0 && unbalanced[0].values.length > 0) {
       results.push({
         category: 'Journal Entries',
@@ -86,9 +86,9 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
       LEFT JOIN journal_details jd ON je.id = jd.journal_entry_id
       WHERE jd.id IS NULL
     `;
-    
+
     const entriesWithoutLines = db.exec(entriesWithoutLinesQuery);
-    
+
     if (entriesWithoutLines.length > 0 && entriesWithoutLines[0].values.length > 0) {
       results.push({
         category: 'Journal Entries',
@@ -113,9 +113,9 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
       LEFT JOIN chart_of_accounts coa ON jd.account_code = coa.account_code
       WHERE coa.account_code IS NULL
     `;
-    
+
     const invalidAccounts = db.exec(invalidAccountsQuery);
-    
+
     if (invalidAccounts.length > 0 && invalidAccounts[0].values.length > 0) {
       results.push({
         category: 'Journal Entries',
@@ -150,7 +150,7 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
  */
 export async function auditAccountingPeriods(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
-  
+
   if (!db) {
     results.push({
       category: 'Accounting Periods',
@@ -175,9 +175,9 @@ export async function auditAccountingPeriods(): Promise<AuditResult[]> {
       WHERE ap.status = 'closed'
       AND je.created_at > ap.created_at
     `;
-    
+
     const transactionsInClosedPeriods = db.exec(transactionsInClosedPeriodsQuery);
-    
+
     if (transactionsInClosedPeriods.length > 0 && transactionsInClosedPeriods[0].values.length > 0) {
       results.push({
         category: 'Accounting Periods',
@@ -213,9 +213,9 @@ export async function auditAccountingPeriods(): Promise<AuditResult[]> {
          OR (ap2.start_date BETWEEN ap1.start_date AND ap1.end_date)
          OR (ap2.end_date BETWEEN ap1.start_date AND ap1.end_date)
     `;
-    
+
     const overlappingPeriods = db.exec(overlappingPeriodsQuery);
-    
+
     if (overlappingPeriods.length > 0 && overlappingPeriods[0].values.length > 0) {
       results.push({
         category: 'Accounting Periods',
@@ -250,7 +250,7 @@ export async function auditAccountingPeriods(): Promise<AuditResult[]> {
  */
 export async function auditForeignKeys(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
-  
+
   if (!db) {
     results.push({
       category: 'Foreign Keys',
@@ -269,9 +269,9 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
       LEFT JOIN customers c ON i.customer_id = c.id
       WHERE c.id IS NULL
     `;
-    
+
     const orphanInvoices = db.exec(orphanInvoicesQuery);
-    
+
     if (orphanInvoices.length > 0 && orphanInvoices[0].values.length > 0) {
       results.push({
         category: 'Foreign Keys',
@@ -296,9 +296,9 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
       LEFT JOIN suppliers s ON b.supplier_id = s.id
       WHERE s.id IS NULL
     `;
-    
+
     const orphanBills = db.exec(orphanBillsQuery);
-    
+
     if (orphanBills.length > 0 && orphanBills[0].values.length > 0) {
       results.push({
         category: 'Foreign Keys',
@@ -323,9 +323,9 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
       LEFT JOIN asset_categories ac ON fa.category_id = ac.id
       WHERE ac.id IS NULL
     `;
-    
+
     const orphanAssets = db.exec(orphanAssetsQuery);
-    
+
     if (orphanAssets.length > 0 && orphanAssets[0].values.length > 0) {
       results.push({
         category: 'Foreign Keys',
@@ -360,7 +360,7 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
  */
 export async function auditBusinessRules(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
-  
+
   if (!db) {
     results.push({
       category: 'Business Rules',
@@ -382,13 +382,13 @@ export async function auditBusinessRules(): Promise<AuditResult[]> {
       FROM bills
       WHERE total_amount < 0
       UNION ALL
-      SELECT 'fixed_assets' as table_name, id, acquisition_cost as amount
+      SELECT 'fixed_assets' as table_name, id, purchase_cost as amount
       FROM fixed_assets
-      WHERE acquisition_cost < 0
+      WHERE purchase_cost < 0
     `;
-    
+
     const negativeAmounts = db.exec(negativeAmountsQuery);
-    
+
     if (negativeAmounts.length > 0 && negativeAmounts[0].values.length > 0) {
       results.push({
         category: 'Business Rules',
@@ -420,9 +420,9 @@ export async function auditBusinessRules(): Promise<AuditResult[]> {
       FROM journal_entries
       WHERE entry_date > date('now', '+1 day')
     `;
-    
+
     const futureDates = db.exec(futureDatesQuery);
-    
+
     if (futureDates.length > 0 && futureDates[0].values.length > 0) {
       results.push({
         category: 'Business Rules',
@@ -457,7 +457,7 @@ export async function auditBusinessRules(): Promise<AuditResult[]> {
  */
 export async function auditFixedAssets(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
-  
+
   if (!db) {
     results.push({
       category: 'Fixed Assets',
@@ -474,17 +474,17 @@ export async function auditFixedAssets(): Promise<AuditResult[]> {
       SELECT 
         fa.id,
         fa.name,
-        fa.acquisition_cost,
-        fa.accumulated_depreciation,
-        (fa.acquisition_cost - fa.accumulated_depreciation) as calculated_book_value,
-        fa.current_value as stored_book_value,
-        ABS((fa.acquisition_cost - fa.accumulated_depreciation) - COALESCE(fa.current_value, fa.acquisition_cost)) as difference
+        fa.purchase_cost,
+        fa.total_accumulated_depreciation,
+        (fa.purchase_cost - fa.total_accumulated_depreciation) as calculated_book_value,
+        fa.net_book_value as stored_book_value,
+        ABS((fa.purchase_cost - fa.total_accumulated_depreciation) - COALESCE(fa.net_book_value, fa.purchase_cost)) as difference
       FROM fixed_assets fa
-      WHERE ABS((fa.acquisition_cost - fa.accumulated_depreciation) - COALESCE(fa.current_value, fa.acquisition_cost)) > 1.00
+      WHERE ABS((fa.purchase_cost - fa.total_accumulated_depreciation) - COALESCE(fa.net_book_value, fa.purchase_cost)) > 1.00
     `;
-    
+
     const incorrectBookValues = db.exec(bookValueQuery);
-    
+
     if (incorrectBookValues.length > 0 && incorrectBookValues[0].values.length > 0) {
       results.push({
         category: 'Fixed Assets',
@@ -504,13 +504,13 @@ export async function auditFixedAssets(): Promise<AuditResult[]> {
 
     // 5.2 Verificar que la depreciación acumulada no exceda el precio de compra
     const excessiveDepreciationQuery = `
-      SELECT id, name, acquisition_cost, accumulated_depreciation
+      SELECT id, name, purchase_cost, total_accumulated_depreciation
       FROM fixed_assets
-      WHERE accumulated_depreciation > acquisition_cost
+      WHERE total_accumulated_depreciation > purchase_cost
     `;
-    
+
     const excessiveDepreciation = db.exec(excessiveDepreciationQuery);
-    
+
     if (excessiveDepreciation.length > 0 && excessiveDepreciation[0].values.length > 0) {
       results.push({
         category: 'Fixed Assets',
@@ -545,7 +545,7 @@ export async function auditFixedAssets(): Promise<AuditResult[]> {
  */
 export async function auditFinancialReports(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
-  
+
   if (!db) {
     results.push({
       category: 'Financial Reports',
@@ -566,12 +566,12 @@ export async function auditFinancialReports(): Promise<AuditResult[]> {
       FROM journal_details jd
       JOIN journal_entries je ON jd.journal_entry_id = je.id
     `;
-    
+
     const trialBalance = db.exec(trialBalanceQuery);
-    
+
     if (trialBalance.length > 0 && trialBalance[0].values.length > 0) {
       const difference = trialBalance[0].values[0][2] as number;
-      
+
       if (difference > 0.01) {
         results.push({
           category: 'Financial Reports',
@@ -607,9 +607,9 @@ export async function auditFinancialReports(): Promise<AuditResult[]> {
  */
 export async function runSystemAudit(): Promise<SystemAuditReport> {
   console.log('🔍 Starting system audit...');
-  
+
   const allResults: AuditResult[] = [];
-  
+
   // Ejecutar todas las auditorías
   const journalEntriesResults = await auditJournalEntries();
   const accountingPeriodsResults = await auditAccountingPeriods();
@@ -617,7 +617,7 @@ export async function runSystemAudit(): Promise<SystemAuditReport> {
   const businessRulesResults = await auditBusinessRules();
   const fixedAssetsResults = await auditFixedAssets();
   const financialReportsResults = await auditFinancialReports();
-  
+
   // Combinar todos los resultados
   allResults.push(...journalEntriesResults);
   allResults.push(...accountingPeriodsResults);
@@ -625,13 +625,13 @@ export async function runSystemAudit(): Promise<SystemAuditReport> {
   allResults.push(...businessRulesResults);
   allResults.push(...fixedAssetsResults);
   allResults.push(...financialReportsResults);
-  
+
   // Calcular estadísticas
   const totalChecks = allResults.length;
   const passed = allResults.filter(r => r.status === 'pass').length;
   const warnings = allResults.filter(r => r.status === 'warning').length;
   const failed = allResults.filter(r => r.status === 'fail').length;
-  
+
   // Determinar estado general
   let overallStatus: 'pass' | 'warning' | 'fail' = 'pass';
   if (failed > 0) {
@@ -639,7 +639,7 @@ export async function runSystemAudit(): Promise<SystemAuditReport> {
   } else if (warnings > 0) {
     overallStatus = 'warning';
   }
-  
+
   const report: SystemAuditReport = {
     timestamp: new Date().toISOString(),
     overallStatus,
@@ -649,13 +649,13 @@ export async function runSystemAudit(): Promise<SystemAuditReport> {
     failed,
     results: allResults
   };
-  
+
   console.log('✅ System audit completed');
   console.log(`Total checks: ${totalChecks}`);
   console.log(`Passed: ${passed}`);
   console.log(`Warnings: ${warnings}`);
   console.log(`Failed: ${failed}`);
-  
+
   return report;
 }
 
@@ -666,7 +666,7 @@ export function generateAuditReportHTML(report: SystemAuditReport): string {
   const criticalIssues = report.results.filter(r => r.severity === 'critical' && r.status === 'fail');
   const highIssues = report.results.filter(r => r.severity === 'high' && r.status === 'fail');
   const mediumIssues = report.results.filter(r => r.severity === 'medium' && (r.status === 'fail' || r.status === 'warning'));
-  
+
   return `
 <!DOCTYPE html>
 <html>

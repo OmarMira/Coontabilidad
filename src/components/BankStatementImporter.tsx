@@ -183,31 +183,29 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
             {/* Header Hub */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-                <div className="flex items-center gap-6">
-                    <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-                        <Sparkles className="w-10 h-10 text-emerald-500 group-hover:rotate-12 transition-transform duration-500" />
-                    </div>
-                    <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Importador Neural</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> AI Bank Smart Bridge v6.2
-                        </p>
-                    </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+                        <Cpu className="w-8 h-8 text-emerald-500" />
+                        Importador Neural
+                    </h1>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
+                        <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> AI Bank Smart Bridge v6.2
+                    </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 justify-center">
-                    <div className={`px-10 py-6 bg-slate-950 border rounded-[2.5rem] flex items-center gap-8 shadow-2xl transition-all duration-700 ${accountStatus === 'valid' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-900/10' : 'border-rose-500/40 bg-rose-500/5 shadow-rose-900/10'}`}>
-                        <div className={`p-4 rounded-2xl ${accountStatus === 'valid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
-                            <Box className="w-8 h-8 animate-pulse" />
+                    <div className={`px-6 py-4 bg-slate-950 border rounded-2xl flex items-center gap-6 shadow-xl transition-all duration-700 ${accountStatus === 'valid' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-900/10' : 'border-rose-500/40 bg-rose-500/5 shadow-rose-900/10'}`}>
+                        <div className={`p-3 rounded-xl ${accountStatus === 'valid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                            <Box className="w-6 h-6 animate-pulse" />
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2">Entidad Detectada</span>
-                            <div className="flex items-baseline gap-4">
-                                <span className={`text-4xl font-black tracking-tighter uppercase leading-none transition-colors ${accountStatus === 'valid' ? 'text-white' : 'text-rose-500'}`}>
+                            <div className="flex items-baseline gap-3">
+                                <span className={`text-lg font-bold tracking-tight transition-colors ${accountStatus === 'valid' ? 'text-white' : 'text-rose-500'}`}>
                                     {bankName || 'Buscando...'}
                                 </span>
-                                <span className={`text-xl font-mono font-bold tracking-tighter ${accountStatus === 'valid' ? 'text-emerald-500/70' : 'text-rose-400/50 italic'}`}>
+                                <span className={`text-sm font-mono font-medium tracking-tight ${accountStatus === 'valid' ? 'text-emerald-500/70' : 'text-rose-400/50 italic'}`}>
                                     #{accountNumber?.slice(-4) || '----'}
                                 </span>
                             </div>
@@ -246,10 +244,10 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                     <div className="p-8 bg-emerald-600/10 rounded-full mb-8 border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 shadow-xl">
                         <Upload className="w-14 h-14 text-emerald-500" />
                     </div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Inyectar Resumen Bancario (PDF/CSV)</h3>
-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-10">Compatibilidad: CHASE, BOFA, WELLS FARGO, AMEX, STRIPE</p>
+                    <h3 className="text-xl font-bold text-white tracking-tight mb-2">Inyectar Resumen Bancario (PDF/CSV)</h3>
+                    <p className="text-slate-500 text-xs font-medium uppercase tracking-widest mb-10">Compatibilidad: Chase, BofA, Wells Fargo, Amex, Stripe</p>
 
-                    <label className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-2xl shadow-emerald-900/40 cursor-pointer flex items-center gap-3 hover:-translate-y-1">
+                    <label className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm transition-all shadow-xl shadow-emerald-900/20 cursor-pointer flex items-center gap-3 hover:-translate-y-0.5">
                         Seleccionar Archivos
                         <input type="file" className="hidden" accept=".pdf,.csv" multiple onChange={handleFileUpload} />
                     </label>
@@ -263,8 +261,8 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                         <div className="w-32 h-32 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin"></div>
                         <Cpu className="w-10 h-10 text-emerald-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                     </div>
-                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ejecutando Heurística Neural...</h3>
-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">Mapeando descripciones a códigos contables US GAAP y detectando anomalías en tiempo real.</p>
+                    <h3 className="text-xl font-bold text-white tracking-tight mb-4">Ejecutando Heurística Neural...</h3>
+                    <p className="text-slate-500 text-xs font-medium max-w-sm mx-auto">Mapeando descripciones a códigos contables US GAAP y detectando anomalías en tiempo real.</p>
 
                     <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
                         <div
