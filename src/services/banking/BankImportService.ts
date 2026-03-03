@@ -244,10 +244,16 @@ export class BankImportService {
    * Retorna { imported: number, skipped: number }
    */
   async finalizeImport(batchId: number, userId: number, bankAccountId: number): Promise<{ imported: number, skipped: number }> {
+    // GUARD: bankAccountId es obligatorio. 0, null o undefined indican que el usuario
+    // no seleccionó una cuenta — abortamos con error claro antes de tocar la DB.
+    if (!bankAccountId || bankAccountId <= 0) {
+      throw new Error('Seleccioná una cuenta bancaria antes de importar');
+    }
+
     try {
       db.run('BEGIN TRANSACTION');
 
-      // Get transactions to import (not excluded, not duplicates)
+      // Get transactions to import (not excluded)
       const txnsResult = db.exec(`
         SELECT * FROM import_transactions_temp
         WHERE batch_id = ? AND excluded = 0
@@ -278,17 +284,20 @@ export class BankImportService {
           bankAccountId
         );
 
-        // Intentar insertar la transacción bancaria. INSERT OR IGNORE evita duplicados por UNIQUE(import_hash)
+        // NOTA ARQUITECTÓNICA: bank_transactions.status usa el vocabulario del schema original:
+        //   CHECK(status IN ('pending', 'matched', 'ignored')) — definido en simple-db.ts L2419
+        // El vocabulario TRANSACTION_STATES (IMPORTED, VERIFIED, etc.) pertenece a la tabla
+        //   transaction_states (migration 016), que es donde se registra el workflow.
+        // Son dos tablas distintas; no mezclar sus vocabolarios.
         db.run(`
           INSERT OR IGNORE INTO bank_transactions (
             bank_account_id, transaction_date, description, amount, status, import_hash
-          ) VALUES (?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, 'pending', ?)
         `, [
-          bankAccountId || 1,
+          bankAccountId,
           txn.transaction_date,
           txn.description,
           txn.amount,
-          'pending', // Se ajusta al CHECK(status IN ('pending', 'matched', 'ignored')) de SQLite
           hash
         ]);
 

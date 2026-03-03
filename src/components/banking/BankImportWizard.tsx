@@ -85,11 +85,19 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   const handleFinalizeImport = async () => {
     if (!batchId) return;
 
+    // GUARD: el usuario debe haber seleccionado una cuenta bancaria.
+    // Si no, mostramos un error claro y abortamos sin llamar al servicio.
+    if (!selectedAccountId || selectedAccountId <= 0) {
+      toast.error('Seleccioná una cuenta bancaria antes de importar');
+      setError('Seleccioná una cuenta bancaria antes de importar');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const result = await importService.finalizeImport(batchId, 1, selectedAccountId ?? 1);
+      const result = await importService.finalizeImport(batchId, 1, selectedAccountId);
 
       if (result.skipped > 0) {
         toast.success(`${result.imported} transacciones importadas, ${result.skipped} duplicadas salteadas`);
