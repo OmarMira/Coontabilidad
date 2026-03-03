@@ -1,9 +1,11 @@
 /**
- * FileParserService - Parsea archivos bancarios (CSV, OFX, QFX)
- * 
- * Soporta múltiples formatos de archivos bancarios y detecta automáticamente
- * el formato basado en el contenido del archivo.
+ * FileParserService - Parsea archivos bancarios (CSV, OFX, QFX, PDF)
+ *
+ * Soporta múltiples formatos de archivos bancarios.
+ * Para PDF delega al parser pdfjs-dist en src/lib/pdf-parser.ts.
  */
+
+import { parseBankPDF } from '../../lib/pdf-parser';
 
 export interface ParsedTransaction {
   date: string; // ISO-8601 format
@@ -107,112 +109,58 @@ export class FileParserService {
   /**
    * Parsea archivo PDF bancario.
    *
-   * Estrategia (sin depender de headers):
-   *   1. Intenta extraer texto plano del PDF con file.text() (PDFs con capa de texto).
-   *   2. Busca patrones: fecha DD/MM/YYYY o MM/DD/YYYY + número decimal → transacción.
-   *   3. Si no detecta filas completas, extrae solo los montos como fallback.
-   *   4. Log de debug: imprime en consola el texto crudo extraído.
+   * Delega a parseBankPDF en src/lib/pdf-parser.ts, que utiliza
+   * pdfjs-dist con file.arrayBuffer() para extraer texto real del PDF —
+   * incluyendo PDFs de Bank of America (eStmt_*.pdf).
+   *
+   * Nota de conversión: NormalizedTransaction.amount viene en centavos
+   * (p.ej. 1050 = $10.50). El pipeline de ImportTransaction espera dólares
+   * flotantes, por lo que dividimos por 100.
    */
   private static async parsePDF(file: File): Promise<ParseResult> {
-    const errors: string[] = [];
-    const transactions: ParsedTransaction[] = [];
-
-    // ── 1. Extraer texto plano ──────────────────────────────────────────────
-    let rawText = '';
     try {
-      rawText = await file.text();
-    } catch (e) {
-      errors.push(`No se pudo leer el texto del PDF: ${(e as Error).message}`);
-    }
+      const result = await parseBankPDF(file);
+      const rawItems = result.data ?? result.transactions ?? [];
 
-    // ── DEBUG LOG ──────────────────────────────────────────────────────────
-    // Muestra en consola los primeros 3000 chars del texto extraído del PDF
-    // para diagnóstico. Remover cuando el parser esté estable.
-    console.group('[FileParserService] PDF DEBUG — Texto extraído');
-    console.log('Archivo:', file.name, '| Tamaño:', file.size, 'bytes');
-    console.log('Primeros 3000 chars del texto plano:');
-    console.log(rawText.substring(0, 3000));
-    console.log('Longitud total del texto extraído:', rawText.length);
-    console.groupEnd();
-
-    // ── 2. Si el texto es demasiado corto, el PDF es escaneado (imagen) ────
-    const isScanned = rawText.length < 200;
-    if (isScanned) {
-      errors.push(
-        'El PDF parece ser un documento escaneado (imagen). Convertí el archivo a CSV/OFX para importarlo, o usá un PDF con capa de texto.'
-      );
-      return { format: 'PDF', transactions: [], errors };
-    }
-
-    // ── 3. Parseo por patrones — sin depender de headers ───────────────────
-    //
-    // Patrones soportados (incluyendo Bank of America):
-    //   - MM/DD/YY  o  MM/DD/YYYY  o  DD/MM/YYYY  o  YYYY-MM-DD  o  DD-MM-YYYY
-    //   - "Jan 31, 2025" o "Jan 31 2025" (mes abreviado en inglés — formato BofA)
-    //   - Monto: -1,234.56  |  1.234,56  |  (1234.56)  |  -1234.56
-    //
-    const MONTH_ABBR = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
-    const DATE_RE = new RegExp(
-      // Prioridad 1: Mes abreviado inglés — "Jan 31, 2025" o "Jan 31 2025" (BofA)
-      `\\b((?:${MONTH_ABBR})\\s+\\d{1,2},?\\s+\\d{4})\\b` +
-      // Prioridad 2: Númerico con separadores — MM/DD/YY, MM/DD/YYYY, DD-MM-YYYY, etc.
-      `|\\b(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})\\b` +
-      // Prioridad 3: ISO — YYYY-MM-DD
-      `|\\b(\\d{4}-\\d{2}-\\d{2})\\b`,
-      'i'
-    );
-    const AMOUNT_RE = /([+-]?\(?\$?\s?\d{1,3}(?:,\d{3})*(?:\.\d{2})\)?|[+-]?\(?\$?\s?\d+\.\d{2}\)?)(?!\d)/;
-
-    const lines = rawText
-      .split(/\r?\n/)
-      .map(l => l.trim())
-      .filter(l => l.length > 3);
-
-    for (const line of lines) {
-      const dateMatch = line.match(DATE_RE);
-      const amountMatch = line.match(AMOUNT_RE);
-
-      if (dateMatch && amountMatch) {
-        const parsedDate = this.parseDate(dateMatch[0]);
-        const parsedAmount = this.parseAmount(amountMatch[0]);
-
-        if (parsedDate && !isNaN(parsedAmount)) {
-          // La descripción es todo lo que queda después de quitar fecha y monto
-          const description = line
-            .replace(dateMatch[0], '')
-            .replace(amountMatch[0], '')
-            .replace(/\s{2,}/g, ' ')
-            .trim() || 'Transacción detectada';
-
-          transactions.push({ date: parsedDate, description, amount: parsedAmount });
-        }
+      if (rawItems.length === 0) {
+        return {
+          format: 'PDF',
+          transactions: [],
+          errors: ['El PDF no contiene transacciones detectables. Verificá que el archivo sea un estado de cuenta bancario con capa de texto.']
+        };
       }
-    }
 
-    // ── 4. Fallback: si no encontró filas completas extrae montos solos ─────
-    if (transactions.length === 0) {
-      console.warn('[FileParserService] PDF: 0 transacciones con patrón fecha+monto. Intentando fallback de montos.');
-      const amountsOnly = rawText.match(/([+-]?\d{1,3}(?:[,.]\d{3})*[,.]\d{2})/g);
-      if (amountsOnly && amountsOnly.length > 0) {
-        amountsOnly.slice(0, 30).forEach((amt, i) => {
-          const parsed = this.parseAmount(amt);
-          if (!isNaN(parsed) && parsed !== 0) {
-            transactions.push({
-              date: new Date().toISOString().substring(0, 10),
-              description: `Monto extraído #${i + 1} (revisión manual recomendada)`,
-              amount: parsed
-            });
-          }
-        });
-        errors.push(
-          'No se pudieron detectar fechas en el PDF. Los montos fueron extraídos sin fecha — revisá manualmente antes de confirmar.'
-        );
-      } else {
-        errors.push('No se encontraron transacciones en el PDF. Verificá que el archivo tenga capa de texto y no sea una imagen escaneada.');
+      // Convertir NormalizationResult[] → ParsedTransaction[]
+      // amount viene en centavos enteros — convertir a dólares
+      const transactions: ParsedTransaction[] = rawItems
+        .filter(r => r.success && r.data)
+        .map(r => ({
+          date: r.data!.transaction_date,
+          description: r.data!.description,
+          amount: r.data!.amount / 100, // centavos → dólares
+          balance: r.data!.metadata?.extracted_balance
+            ? parseFloat(String(r.data!.metadata.extracted_balance).replace(/[$,]/g, ''))
+            : undefined
+        }));
+
+      const errors: string[] = [];
+      if (result.bankName) {
+        console.info(`[FileParserService] PDF detectado: ${result.bankName}`);
       }
-    }
+      if (transactions.length < rawItems.length) {
+        errors.push(`${rawItems.length - transactions.length} líneas no pudieron normalizarse y fueron omitidas.`);
+      }
 
-    return { format: 'PDF', transactions, errors };
+      return { format: 'PDF', transactions, errors };
+
+    } catch (err) {
+      console.error('[FileParserService] parsePDF error:', err);
+      return {
+        format: 'PDF',
+        transactions: [],
+        errors: [`Error al procesar el PDF: ${(err as Error).message}`]
+      };
+    }
   }
 
   /**
