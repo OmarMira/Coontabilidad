@@ -284,11 +284,11 @@ export class BankImportService {
             bank_account_id, transaction_date, description, amount, status, import_hash
           ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
-          bankAccountId,
+          bankAccountId || 1,
           txn.transaction_date,
           txn.description,
           txn.amount,
-          TRANSACTION_STATES.IMPORTED,
+          'pending', // Se ajusta al CHECK(status IN ('pending', 'matched', 'ignored')) de SQLite
           hash
         ]);
 

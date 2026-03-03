@@ -89,7 +89,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     setError(null);
 
     try {
-      const result = await importService.finalizeImport(batchId, 1, selectedAccountId ?? 0);
+      const result = await importService.finalizeImport(batchId, 1, selectedAccountId ?? 1);
 
       if (result.skipped > 0) {
         toast.success(`${result.imported} transacciones importadas, ${result.skipped} duplicadas salteadas`);
