@@ -275,6 +275,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           </button>
         </div>
 
+        {/* DEV ONLY BUTTON */}
+        <div className="px-3 pb-2">
+          <button
+            onClick={() => onNavigate('sql-diagnostic')}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-xs font-bold uppercase"
+          >
+            📊 TEST SQL DB
+          </button>
+        </div>
+
         <button
           onClick={() => {
             console.log('🚪 Logout initiated by user');

@@ -1938,6 +1938,21 @@ export const initDB = async (password?: string): Promise<any> => {
     // Configurar servicios adicionales
     setupAutoSave();
 
+    // DEV: Exponer engine en window para verificación en consola del browser
+    if (typeof window !== 'undefined') {
+      (window as any).__dbEngine = dbEngine;
+      (window as any).__db = db;
+      (window as any).__runSQL = (sql: string, params?: any[]) => {
+        try {
+          const result = db.exec(sql, params);
+          return result;
+        } catch (e) {
+          return { error: String(e) };
+        }
+      };
+      console.log('🔬 [DEV] window.__dbEngine, window.__db, window.__runSQL disponibles para verificación');
+    }
+
     return db;
   } catch (error) {
     logger.error('Database', 'init_failed', 'Error fatal en inicialización', { error });

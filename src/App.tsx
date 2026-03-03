@@ -138,6 +138,7 @@ import { AppRouter } from './components/AppRouter';
 // --- CIERRE CONTABLE FASE 3 ---
 import { PeriodManager } from './components/accounting/PeriodManager';
 import { LedgerHub } from './components/accounting/LedgerHub';
+import { DiagnosticSQL } from './pages/DiagnosticSQL';
 
 // --- PAYROLL MODULE (Lazy loaded above) ---
 // import { EmployeeManager } from './components/payroll/EmployeeManager';
@@ -1388,6 +1389,9 @@ function App() {
             <div className="transition-all duration-500">
               {state.currentSection === 'debug' && (
                 <DiagnosticPanel />
+              )}
+              {state.currentSection === 'sql-diagnostic' && (
+                <DiagnosticSQL />
               )}
               {state.currentSection === 'dashboard' && (
                 <Dashboard
