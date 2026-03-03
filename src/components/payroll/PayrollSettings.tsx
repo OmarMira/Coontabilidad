@@ -7,7 +7,8 @@ import {
     DollarSign,
     Percent,
     Calculator,
-    AlertCircle
+    AlertCircle,
+    Zap
 } from 'lucide-react';
 import {
     getPayrollSettings,

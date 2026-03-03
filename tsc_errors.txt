@@ -1,1 +1,18 @@
-﻿src/components/banking/QuarantinePanel.tsx(353,58): error TS2304: Cannot find name 'Activity'.
+﻿src/components/accounting/JournalEntryForm.tsx(83,34): error TS2304: Cannot find name 'XCircle'.
+src/components/assets/AssetForm.tsx(482,30): error TS2304: Cannot find name 'RefreshCw'.
+src/components/invoices/InvoiceForm.tsx(52,34): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(66,30): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(77,120): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(87,107): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(95,34): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(104,138): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(106,62): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(115,159): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(127,159): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(184,38): error TS2304: Cannot find name 'AlertCircle'.
+src/components/invoices/InvoiceForm.tsx(211,40): error TS2304: Cannot find name 't'.
+src/components/invoices/InvoiceForm.tsx(215,40): error TS2304: Cannot find name 't'.
+src/components/payroll/PayrollSettings.tsx(146,30): error TS2304: Cannot find name 'Zap'.
+src/services/banking/ClassificationRulesService.ts(69,24): error TS2352: Conversion of type '{ id: number | undefined; account_code: string; account_name: string; account_type: string; is_active: number; }' to type 'ChartOfAccount' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'normal_balance' is missing in type '{ id: number | undefined; account_code: string; account_name: string; account_type: string; is_active: number; }' but required in type 'ChartOfAccount'.
+src/services/banking/TransactionParser.ts(327,17): error TS2304: Cannot find name 'isVerified'.

@@ -17,6 +17,7 @@ import { AddAccountAliasMigration } from './list/015_add_account_alias';
 import { RemediationSchemaMigration } from './list/016_remediation_schema';
 import { BankImportHashMigration } from './list/017_bank_import_hash';
 import { ClassificationRulesMigration } from './list/018_classification_rules';
+import { ClassificationRulesAccountTypeMigration } from './list/019_classification_rules_account_type';
 
 export interface Migration {
     version: number;
@@ -45,7 +46,8 @@ export class MigrationEngine {
         AddAccountAliasMigration,
         RemediationSchemaMigration,
         BankImportHashMigration,
-        ClassificationRulesMigration
+        ClassificationRulesMigration,
+        ClassificationRulesAccountTypeMigration
     ];
 
     private constructor() { }

@@ -1,5 +1,5 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
-import { db } from '../../database/simple-db';
+import { getDBEngine } from '../../database/simple-db';
 
 export interface MemorySuggestion {
     accountCode: string;
@@ -15,14 +15,9 @@ export interface AccountSuggestion {
 }
 
 export class ClassificationMemoryService {
-    private static engine: SQLiteEngine;
-
-    private static getEngine() {
-        if (!this.engine) {
-            this.engine = new SQLiteEngine();
-            this.engine.setDB(db);
-        }
-        return this.engine;
+    // getEngine is now internal to each call to ensure we get the latest instance
+    private static getEngine(): SQLiteEngine {
+        return getDBEngine();
     }
 
     /**

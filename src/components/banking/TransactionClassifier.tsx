@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle2, ListChecks, Activity } from 'lucide-react';
-import { db, getChartOfAccounts, ChartOfAccount } from '../../database/simple-db';
+import { getDBEngine, getChartOfAccounts, ChartOfAccount } from '../../database/simple-db';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { TRANSACTION_STATES } from '../../constants/bankingStates';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
@@ -52,8 +52,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
     const loadTransactions = async () => {
         setLoading(true);
         try {
-            const engine = new SQLiteEngine();
-            engine.setDB(db);
+            const engine = getDBEngine();
             const rows = await engine.select(`
                 SELECT 
                     ts.id as state_id,
@@ -63,11 +62,11 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                     bt.amount
                 FROM bank_transactions bt
                 JOIN transaction_states ts ON ts.transaction_id = bt.id
-                WHERE bt.bank_account_id = ${accountId}
-                  AND ts.current_state = '${TRANSACTION_STATES.IMPORTED}'
+                WHERE bt.bank_account_id = ?
+                  AND ts.current_state = ?
                   AND ts.is_verified = 0
                 ORDER BY bt.transaction_date DESC
-            `);
+            `, [accountId, TRANSACTION_STATES.IMPORTED]);
             setTransactions(rows as any);
         } catch (error) {
             console.error('Error loading transactions:', error);
@@ -134,11 +133,10 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
             : 'Clasificando transacción...');
 
         try {
-            const engine = new SQLiteEngine();
-            engine.setDB(db);
+            const engine = getDBEngine();
 
             // If single selection, save to memory
-            if (selectedTx) {
+            if (selectedTx && targetIds.length === 1) {
                 await ClassificationMemoryService.saveConfirmation(
                     selectedTx.description,
                     selectedAccount.account_code,
@@ -268,8 +266,21 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                                     </div>
                                     <div className="p-6 space-y-6">
                                         <div className="p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
-                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Descripción</div>
-                                            <div className="text-xs font-mono text-slate-300 break-words">{selectedTx.description}</div>
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                                                {selectedTxIds.size > 1 ? `${selectedTxIds.size} Transacciones Seleccionadas` : 'Descripción'}
+                                            </div>
+                                            <div className="text-xs font-mono text-slate-300 break-words">
+                                                {selectedTxIds.size > 1 ? (
+                                                    <div className="space-y-1">
+                                                        {transactions.filter(t => selectedTxIds.has(t.state_id)).slice(0, 3).map(t => (
+                                                            <div key={t.state_id} className="truncate">• {t.description}</div>
+                                                        ))}
+                                                        {selectedTxIds.size > 3 && <div>... y {selectedTxIds.size - 3} más</div>}
+                                                    </div>
+                                                ) : (
+                                                    selectedTx.description
+                                                )}
+                                            </div>
                                         </div>
 
                                         {memorySuggestions.length > 0 && (

@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, ShieldCheck, PlusCircle, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, ShieldCheck, PlusCircle, Trash2 } from 'lucide-react';
 import { useInvoiceForm } from './useInvoiceForm';
 import { CustomerSelector } from './subcomponents/CustomerSelector';
 import { TaxSummary } from './subcomponents/TaxSummary';
+import { useLocale } from '@/i18n/useLocale';
 
 export const InvoiceForm: React.FC = () => {
+    const { t } = useLocale();
     const {
         customer,
         lines,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus, Trash2, Save, Calculator, AlertCircle, Hash, History, CheckCircle2 } from 'lucide-react';
+import { FileText, Plus, Trash2, Save, Calculator, AlertCircle, Hash, History, CheckCircle2, XCircle } from 'lucide-react';
 import { type JournalEntry, type JournalLine } from '../../modules/accounting/Accounting.types';
 import { useLocale } from '../../i18n/useLocale';
 

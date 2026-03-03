@@ -324,7 +324,7 @@ export class TransactionParser {
                 result.state,
                 keywordId,
                 result.confidence_score,
-                isVerified
+                result.auto_classified ? 1 : 0
             ]);
 
             // Log en quarantine_audit_log para HIGH_RISK

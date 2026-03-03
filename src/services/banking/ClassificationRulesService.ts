@@ -1,5 +1,4 @@
-import { db, ChartOfAccount, getChartOfAccounts } from '../../database/simple-db';
-import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import { getDBEngine, ChartOfAccount, getChartOfAccounts } from '../../database/simple-db';
 
 export interface ClassificationRule {
     id: number;
@@ -19,8 +18,7 @@ export class ClassificationRulesService {
      */
     static async getRules(): Promise<ClassificationRule[]> {
         try {
-            const engine = new SQLiteEngine();
-            engine.setDB(db);
+            const engine = getDBEngine();
             const res = await engine.select(`
                 SELECT * FROM classification_rules 
                 WHERE is_active = 1 
@@ -71,8 +69,9 @@ export class ClassificationRulesService {
                     account_code: rule.account_code,
                     account_name: rule.account_name,
                     account_type: rule.account_type || 'Expense',
+                    normal_balance: realAcc.normal_balance,
                     is_active: 1
-                } as ChartOfAccount;
+                } as unknown as ChartOfAccount;
             }
         }
 
@@ -84,8 +83,7 @@ export class ClassificationRulesService {
      */
     static async saveRule(rule: Omit<ClassificationRule, 'id'>, userId: number): Promise<boolean> {
         try {
-            const engine = new SQLiteEngine();
-            engine.setDB(db);
+            const engine = getDBEngine();
             await engine.run(`
                 INSERT INTO classification_rules (
                     pattern, match_type, account_code, account_name, account_type, priority, is_active, created_by
@@ -112,8 +110,7 @@ export class ClassificationRulesService {
      */
     static async deleteRule(id: number): Promise<boolean> {
         try {
-            const engine = new SQLiteEngine();
-            engine.setDB(db);
+            const engine = getDBEngine();
             await engine.run(`DELETE FROM classification_rules WHERE id = ?`, [id]);
             return true;
         } catch (e) {
@@ -126,8 +123,7 @@ export class ClassificationRulesService {
      */
     static async toggleRule(id: number, active: boolean): Promise<boolean> {
         try {
-            const engine = new SQLiteEngine();
-            engine.setDB(db);
+            const engine = getDBEngine();
             await engine.run(`UPDATE classification_rules SET is_active = ? WHERE id = ?`, [active ? 1 : 0, id]);
             return true;
         } catch (e) {

@@ -1958,7 +1958,7 @@ function App() {
                   <DiscrepancyAnalysis />
                 </Suspense>
               )}
-              {state.currentSection === 'bank-smart-import' && <BankStatementImporter />}
+              {state.currentSection === 'bank-smart-import' && <BankImport />}
               {state.currentSection === 'banking-import' && <BankImport />}
               {state.currentSection === 'quarantine-panel' && (
                 <Suspense fallback={<LoadingSpinner />}>

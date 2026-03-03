@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { XCircle, Save, Building2, Calendar, DollarSign, Info, AlertCircle, TrendingDown, CheckCircle, ShieldCheck } from 'lucide-react';
+import { XCircle, Save, Building2, Calendar, DollarSign, Info, AlertCircle, TrendingDown, CheckCircle, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { getFixedAssetsController } from '../../controllers/FixedAssetsController';
