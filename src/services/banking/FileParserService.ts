@@ -146,12 +146,22 @@ export class FileParserService {
 
     // ── 3. Parseo por patrones — sin depender de headers ───────────────────
     //
-    // Patrones soportados:
-    //   - Fecha: DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, DD-MM-YYYY, DD.MM.YYYY
+    // Patrones soportados (incluyendo Bank of America):
+    //   - MM/DD/YY  o  MM/DD/YYYY  o  DD/MM/YYYY  o  YYYY-MM-DD  o  DD-MM-YYYY
+    //   - "Jan 31, 2025" o "Jan 31 2025" (mes abreviado en inglés — formato BofA)
     //   - Monto: -1,234.56  |  1.234,56  |  (1234.56)  |  -1234.56
     //
-    const DATE_RE = /\b(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}|\d{4}-\d{2}-\d{2})\b/;
-    const AMOUNT_RE = /([+-]?\(?\$?\s?\d{1,3}(?:[,.]\d{3})*(?:[,.]\d{2})\)?)(?!\d)/;
+    const MONTH_ABBR = 'Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec';
+    const DATE_RE = new RegExp(
+      // Prioridad 1: Mes abreviado inglés — "Jan 31, 2025" o "Jan 31 2025" (BofA)
+      `\\b((?:${MONTH_ABBR})\\s+\\d{1,2},?\\s+\\d{4})\\b` +
+      // Prioridad 2: Númerico con separadores — MM/DD/YY, MM/DD/YYYY, DD-MM-YYYY, etc.
+      `|\\b(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})\\b` +
+      // Prioridad 3: ISO — YYYY-MM-DD
+      `|\\b(\\d{4}-\\d{2}-\\d{2})\\b`,
+      'i'
+    );
+    const AMOUNT_RE = /([+-]?\(?\$?\s?\d{1,3}(?:,\d{3})*(?:\.\d{2})\)?|[+-]?\(?\$?\s?\d+\.\d{2}\)?)(?!\d)/;
 
     const lines = rawText
       .split(/\r?\n/)
@@ -404,34 +414,57 @@ export class FileParserService {
   }
 
   /**
-   * Parsea una fecha en múltiples formatos
+   * Parsea una fecha en múltiples formatos, incluyendo Bank of America.
+   *
+   * Soporta:
+   *   - ISO: YYYY-MM-DD
+   *   - MM/DD/YYYY, MM/DD/YY (BofA, Chase)
+   *   - DD/MM/YYYY (heurística: día > 12)
+   *   - "Jan 31, 2025" / "Jan 31 2025" (BofA eStatement)
+   *   - DD-MM-YYYY, DD.MM.YYYY
    */
   private static parseDate(dateStr: string): string | null {
-    const cleaned = dateStr.trim().replace(/"/g, '');
+    const cleaned = dateStr.trim().replace(/"/g, '').replace(/,/g, '');
 
-    // Try ISO format (YYYY-MM-DD)
+    // ─ ISO: YYYY-MM-DD ────────────────────────────────────────────
     if (/^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
       return cleaned.substring(0, 10);
     }
 
-    // Try MM/DD/YYYY
-    const mmddyyyy = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (mmddyyyy) {
-      const [, month, day, year] = mmddyyyy;
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    // ─ Mes abreviado: "Jan 31 2025" (BofA eStatement) ───────────────
+    const MONTHS: Record<string, string> = {
+      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+    };
+    const monthName = cleaned.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(\d{4})/i);
+    if (monthName) {
+      const month = MONTHS[monthName[1].toLowerCase()];
+      const day = monthName[2].padStart(2, '0');
+      const year = monthName[3];
+      return `${year}-${month}-${day}`;
     }
 
-    // Try DD/MM/YYYY
-    const ddmmyyyy = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (ddmmyyyy) {
-      const [, day, month, year] = ddmmyyyy;
-      // Heuristic: if day > 12, it's DD/MM/YYYY
-      if (parseInt(day) > 12) {
-        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    // ─ Numérico con separadores / - . ────────────────────────────
+    const numeric = cleaned.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})$/);
+    if (numeric) {
+      let [, a, b, y] = numeric;
+      // Normalizar año de 2 dígitos → 4 dígitos (00-30 → 2000-2030, resto → 19xx)
+      if (y.length === 2) {
+        y = parseInt(y) <= 30 ? `20${y}` : `19${y}`;
+      }
+      const aNum = parseInt(a);
+      const bNum = parseInt(b);
+      // Heurística: si a > 12 debe ser DD/MM, si b > 12 debe ser MM/DD
+      if (aNum > 12) {
+        // DD/MM/YYYY
+        return `${y}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
+      } else {
+        // Asumir MM/DD/YYYY (formato BofA/Chase por defecto)
+        return `${y}-${a.padStart(2, '0')}-${b.padStart(2, '0')}`;
       }
     }
 
-    // Try parsing with Date
+    // ─ Fallback: Date nativo ──────────────────────────────────────
     const date = new Date(cleaned);
     if (!isNaN(date.getTime())) {
       return date.toISOString().substring(0, 10);

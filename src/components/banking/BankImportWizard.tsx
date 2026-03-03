@@ -161,12 +161,12 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                   </div>
                   <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-4">Inyección de Archivo Fuente</h3>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm mx-auto mb-10">
-                    ARRASTRA TU BASE DE DATOS AQUÍ O HAZ CLIC PARA SELECCIONAR. SOPORTA CSV / OFX / QFX. HASTA 10MB POR CICLO.
+                    ARRASTRA TU BASE DE DATOS AQUÍ O HAZ CLIC PARA SELECCIONAR. SOPORTA <span className="text-blue-400">CSV / OFX / QFX / PDF</span>. HASTA 10MB POR CICLO.
                   </p>
 
                   <input
                     type="file"
-                    accept=".csv,.ofx,.qfx"
+                    accept=".csv,.ofx,.qfx,.pdf"
                     onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
                     className="hidden"
                     id="file-upload"
