@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Upload,
   FileText,
@@ -12,10 +12,11 @@ import {
   Target,
   ArrowRight,
   AlertTriangle,
-  Check
+  Check,
+  Building2
 } from 'lucide-react';
 import { BankImportService, ImportTransaction } from '../../services/banking/BankImportService';
-import { BankAccount } from '../../database/simple-db';
+import { BankAccount, db } from '../../database/simple-db';
 import { toast } from 'react-hot-toast';
 
 interface BankImportWizardProps {
@@ -36,7 +37,54 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
+  // Cuenta resuelta: puede venir del prop externo o autodetectarse del PDF
+  const [resolvedAccountId, setResolvedAccountId] = useState<number | null>(selectedAccountId ?? null);
+  const [detectedAccountNumber, setDetectedAccountNumber] = useState<string | null>(null);
+  const [accountMatchStatus, setAccountMatchStatus] = useState<'matched' | 'not_found' | null>(null);
+  const [matchedAccountLabel, setMatchedAccountLabel] = useState<string | null>(null);
+
+  // Si el padre actualiza selectedAccountId (ej. el usuario cambia la cuenta en el selector externo)
+  useEffect(() => {
+    if (selectedAccountId) setResolvedAccountId(selectedAccountId);
+  }, [selectedAccountId]);
+
   const importService = new BankImportService();
+
+  /**
+   * Intenta auto-matchear el número de cuenta extraído del PDF
+   * contra las cuentas existentes en bank_accounts.
+   * Busca por sufijo (los últimos 4 dígitos del número detectado).
+   */
+  const autoMatchAccount = (rawAccountNumber: string) => {
+    try {
+      // Extraer los últimos 4 dígitos del número detectado
+      const digits = rawAccountNumber.replace(/\D/g, '');
+      const suffix = digits.slice(-4);
+      if (!suffix) return;
+
+      setDetectedAccountNumber(rawAccountNumber);
+
+      const result = db.exec(
+        `SELECT id, account_name, account_number FROM bank_accounts
+         WHERE replace(account_number,'*','') LIKE '%${suffix}'
+            OR replace(account_number,' ','') LIKE '%${suffix}'
+         LIMIT 1`
+      );
+
+      if (result.length > 0 && result[0].values.length > 0) {
+        const [id, name, number] = result[0].values[0] as [number, string, string];
+        setResolvedAccountId(id);
+        setAccountMatchStatus('matched');
+        setMatchedAccountLabel(`${name} (...${suffix})`);
+        toast.success(`Cuenta bancaria autodetectada: ...${suffix}`);
+      } else {
+        setAccountMatchStatus('not_found');
+        setMatchedAccountLabel(null);
+      }
+    } catch (e) {
+      console.warn('[BankImportWizard] autoMatchAccount error:', e);
+    }
+  };
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
@@ -70,9 +118,15 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     setError(null);
 
     try {
-      const result = await importService.createImportBatch(file, 1, 1);
+      const result = await importService.createImportBatch(file, resolvedAccountId ?? 0, 1);
       setBatchId(result.batchId);
       setTransactions(result.transactions);
+
+      // Auto-match cuenta si el PDF reportó un número de cuenta
+      if (result.detectedAccountNumber) {
+        autoMatchAccount(result.detectedAccountNumber);
+      }
+
       setStep('preview');
       toast.success('Heurística de archivo analizada correctamente');
     } catch (err) {
@@ -85,11 +139,13 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   const handleFinalizeImport = async () => {
     if (!batchId) return;
 
-    // GUARD: el usuario debe haber seleccionado una cuenta bancaria.
-    // Si no, mostramos un error claro y abortamos sin llamar al servicio.
-    if (!selectedAccountId || selectedAccountId <= 0) {
-      toast.error('Seleccioná una cuenta bancaria antes de importar');
-      setError('Seleccioná una cuenta bancaria antes de importar');
+    // GUARD: el usuario debe haber seleccionado (o autodetectarse) una cuenta bancaria.
+    if (!resolvedAccountId || resolvedAccountId <= 0) {
+      const msg = detectedAccountNumber
+        ? `No se encontró la cuenta terminada en ${detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema. Selecció una cuenta manualmente.`
+        : 'Seleccióná una cuenta bancaria antes de importar';
+      toast.error(msg);
+      setError(msg);
       return;
     }
 
@@ -97,7 +153,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     setError(null);
 
     try {
-      const result = await importService.finalizeImport(batchId, 1, selectedAccountId);
+      const result = await importService.finalizeImport(batchId, 1, resolvedAccountId);
 
       if (result.skipped > 0) {
         toast.success(`${result.imported} transacciones importadas, ${result.skipped} duplicadas salteadas`);
@@ -232,6 +288,30 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                 <StatHighlight title="Alertas de Duplicidad" value={transactions.filter(t => t.isDuplicate).length.toString()} icon={AlertTriangle} color="rose" />
                 <StatHighlight title="Nivel de Confianza" value={`${(transactions.reduce((acc, t) => acc + t.confidenceScore, 0) / transactions.length || 0).toFixed(0)}%`} icon={Target} color="emerald" />
               </div>
+
+              {/* Banner de cuenta autodetectada / advertencia */}
+              {accountMatchStatus === 'matched' && matchedAccountLabel && (
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-[2rem] p-6 flex items-center gap-5 animate-in slide-in-from-top-4 duration-500">
+                  <div className="w-11 h-11 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                    ✓ Cuenta autodetectada: <span className="text-emerald-300">{matchedAccountLabel}</span>
+                  </p>
+                </div>
+              )}
+
+              {accountMatchStatus === 'not_found' && detectedAccountNumber && (
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-[2rem] p-6 flex items-center gap-5 animate-in slide-in-from-top-4 duration-500">
+                  <div className="w-11 h-11 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                    No se encontró la cuenta terminada en ...{detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema.
+                    <span className="text-amber-300"> Selecció una cuenta manualmente antes de confirmar la importación.</span>
+                  </p>
+                </div>
+              )}
 
               <div className="bg-slate-950 border-2 border-slate-800 rounded-[3rem] overflow-hidden shadow-3xl group">
                 <div className="max-h-[450px] overflow-y-auto custom-scrollbar">

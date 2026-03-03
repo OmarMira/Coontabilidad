@@ -18,6 +18,7 @@ export interface ParseResult {
   format: 'CSV' | 'OFX' | 'QFX' | 'PDF';
   transactions: ParsedTransaction[];
   errors: string[];
+  accountNumber?: string; // Extraído del encabezado del extracto (pe. BofA)
 }
 
 export class FileParserService {
@@ -151,7 +152,7 @@ export class FileParserService {
         errors.push(`${rawItems.length - transactions.length} líneas no pudieron normalizarse y fueron omitidas.`);
       }
 
-      return { format: 'PDF', transactions, errors };
+      return { format: 'PDF', transactions, errors, accountNumber: result.accountNumber };
 
     } catch (err) {
       console.error('[FileParserService] parsePDF error:', err);

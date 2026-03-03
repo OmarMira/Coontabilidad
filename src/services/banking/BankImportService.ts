@@ -95,7 +95,7 @@ export class BankImportService {
     file: File,
     bankAccountId: number,
     userId: number
-  ): Promise<{ batchId: number; transactions: ImportTransaction[] }> {
+  ): Promise<{ batchId: number; transactions: ImportTransaction[]; detectedAccountNumber?: string }> {
 
     // 1. Parse file
     const parseResult = await FileParserService.parseFile(file);
@@ -196,7 +196,7 @@ export class BankImportService {
       });
     }
 
-    return { batchId, transactions: importTransactions };
+    return { batchId, transactions: importTransactions, detectedAccountNumber: parseResult.accountNumber };
   }
 
   /**
