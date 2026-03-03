@@ -18,6 +18,7 @@ import { RemediationSchemaMigration } from './list/016_remediation_schema';
 import { BankImportHashMigration } from './list/017_bank_import_hash';
 import { ClassificationRulesMigration } from './list/018_classification_rules';
 import { ClassificationRulesAccountTypeMigration } from './list/019_classification_rules_account_type';
+import { BankImportSchemaMigration } from './list/020_bank_import_schema';
 
 export interface Migration {
     version: number;
@@ -47,7 +48,8 @@ export class MigrationEngine {
         RemediationSchemaMigration,
         BankImportHashMigration,
         ClassificationRulesMigration,
-        ClassificationRulesAccountTypeMigration
+        ClassificationRulesAccountTypeMigration,
+        BankImportSchemaMigration          // v020: import_batches, temp, ml tables, import_hash
     ];
 
     private constructor() { }
