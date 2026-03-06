@@ -31,6 +31,7 @@ export class AuthService {
             }
             return null;
         } catch (e) {
+            console.error('AUTH ERROR:', e);
             logger.error('AuthService', 'login_fail', 'Error during local login', null, e as Error);
             return null;
         }

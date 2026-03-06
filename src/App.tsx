@@ -1887,18 +1887,7 @@ function App() {
 
               {state.currentSection === 'users' && <UserRoleManager />}
 
-              {/* FIXED: Removed deprecated BackupRestore usage */}
-              {state.currentSection === 'backups' && (
-                <div className="p-8 text-center text-slate-400 border-2 border-dashed border-slate-600 rounded-lg">
-                  <div className="text-lg mb-2">⚠️ Componente Deprecado</div>
-                  <div className="text-sm">
-                    Funcionalidad migrada a <strong>BackupPanel</strong> (Iron Core v1.0)
-                  </div>
-                  <div className="text-xs mt-4 text-slate-500">
-                    Este componente será eliminado en Fase 3
-                  </div>
-                </div>
-              )}
+              {/* BackupPanel is rendered below */}
 
               {/* FIXED: Dedicated render for System Logs and Auditoria */}
               {(state.currentSection === 'system-logs' || state.currentSection === 'logs') && <SystemLogs />}

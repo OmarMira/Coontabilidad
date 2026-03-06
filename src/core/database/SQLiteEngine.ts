@@ -44,7 +44,11 @@ export class SQLiteEngine {
             console.log('🔄 Initializing wa-sqlite...');
 
             // 1. Initialize SQLite3 Module
-            const module = await SQLiteFactory();
+            // Pass locateFile so wa-sqlite always loads the .wasm from /public
+            // (served verbatim by Vite), not relative to the hashed bundle path.
+            const module = await SQLiteFactory({
+                locateFile: (file: string) => `/${file}`
+            });
             this.sqlite3 = SQLite.Factory(module);
 
             // 2. Register Persistent VFS (IDB Batch Atomic for Main Thread compatibility)
@@ -92,7 +96,12 @@ export class SQLiteEngine {
     // Run with parameters - Async
     async run(sql: string, params: any[] = []): Promise<void> {
         if (this.sqlJsDB) {
-            this.sqlJsDB.run(sql, params);
+            const stmt = this.sqlJsDB.prepare(sql);
+            try {
+                stmt.run(params);
+            } finally {
+                stmt.free();
+            }
             return;
         }
 

@@ -1872,8 +1872,9 @@ export const initDB = async (password?: string): Promise<any> => {
         if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
           return `./node_modules/sql.js/dist/${file}`;
         }
-        // En navegador, usar ruta pública
-        return `/${file}`;
+        // En navegador, normalizar nombres y usar ruta absoluta
+        const normalizedFile = file.replace('-browser', '');
+        return `/${normalizedFile}`;
       }
     });
 
@@ -1963,6 +1964,20 @@ export const initDB = async (password?: string): Promise<any> => {
 };
 
 const initializeSchema = async (db: any) => {
+  // --- MIGRATION: Drop old audit_chain if it lacks logic_clock or event_type ---
+  try {
+    const tableInfo = await db.select("PRAGMA table_info(audit_chain)");
+    if (Array.isArray(tableInfo) && tableInfo.length > 0) {
+      const cols = tableInfo.map((c: any) => c.name);
+      if (!cols.includes("event_type") || !cols.includes("logic_clock")) {
+        console.warn("⚠️ Legacy audit_chain table detected. Dropping it to adapt to new schema.");
+        await db.run("DROP TABLE audit_chain");
+      }
+    }
+  } catch (e) {
+    console.warn("Could not check if old audit_chain exists", e);
+  }
+
   // Tabla de clientes
   db.run(`
     create TABLE IF NOT EXISTS customers(
@@ -2147,9 +2162,10 @@ const initializeSchema = async (db: any) => {
     create TABLE IF NOT EXISTS florida_tax_rates(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     county_name TEXT UNIQUE NOT NULL,
-    state_rate DECIMAL(5, 4) DEFAULT 0.06,
-    county_rate DECIMAL(5, 4) DEFAULT 0.0,
-    total_rate DECIMAL(5, 4) DEFAULT 0.06,
+    county_code TEXT UNIQUE NOT NULL,
+    base_rate REAL DEFAULT 600,
+    surtax_rate REAL DEFAULT 0,
+    total_rate REAL DEFAULT 600,
     effective_date DATE DEFAULT CURRENT_DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -3226,18 +3242,19 @@ GROUP BY ba.id
 
   // Tabla de Cadena de Auditoría Inmutable (Forensic Grade)
   db.run(`
-    create TABLE IF NOT EXISTS audit_chain(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_name TEXT NOT NULL,
-    record_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    old_value TEXT,
-    new_value TEXT,
-    user_id INTEGER,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    previous_hash TEXT,
-    current_hash TEXT
-  )
+    CREATE TABLE IF NOT EXISTS audit_chain (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        event_type TEXT NOT NULL,
+        entity_table TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        user_id TEXT,
+        content_payload TEXT,
+        content_hash TEXT NOT NULL,
+        previous_hash TEXT NOT NULL,
+        chain_hash TEXT NOT NULL,
+        logic_clock INTEGER NOT NULL
+    )
   `);
 
   // ==========================================
@@ -3320,80 +3337,8 @@ GROUP BY ba.id
 
   logger.info('Database', 'schema_updated', 'Tablas de Gestión de Usuarios verificadas y actualizadas');
 
-  // Insertar roles y usuarios iniciales (Idempotente)
-  const seedUsersAndRoles = async (): Promise<void> => {
-    if (!db) return;
+  // Roles y usuarios iniciales manejados por seedUsersAndRoles fuera de esta función (ver sección de usuarios)
 
-    try {
-      // 1. Roles
-      const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
-      const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
-
-      if (roleCount === 0) {
-        db.run(`
-        INSERT INTO user_roles(name, description, level) VALUES
-  ('admin', 'Administrador del sistema con acceso completo', 100),
-  ('contador', 'Contador con acceso a módulos contables y reportes', 80),
-  ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
-  ('comprador', 'Comprador con acceso a proveedores y compras', 40),
-  ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
-  ('viewer', 'Usuario de consulta básica', 10)
-    `);
-        logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
-      }
-
-      // 2. Usuarios
-      const usersToVerify = [
-        { username: 'admin', email: 'admin@empresa.com', display_name: 'Main Administrator', password: 'admin123', role: 'admin' },
-        { username: 'demo', email: 'demo@empresa.com', display_name: 'Demo User', password: 'demo123', role: 'admin' },
-        { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Sales Rep Test', password: 'vendedor123', role: 'vendedor' },
-        { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Accountant Test', password: 'contador123', role: 'contador' },
-        { username: 'auditor1', email: 'auditor1@empresa.com', display_name: 'Auditor Test', password: 'auditor123', role: 'auditor' }
-      ];
-
-      const rolesResult = db.exec("SELECT id, name FROM user_roles");
-      const roleMap: Record<string, number> = {};
-      rolesResult[0]?.values.forEach((row: any) => {
-        roleMap[row[1] as string] = row[0] as number;
-      });
-
-      for (const sysUser of usersToVerify) {
-        try {
-          const existing = db.exec(`SELECT id FROM users WHERE username = ? `, [sysUser.username]);
-          if (!existing[0] || existing[0].values.length === 0) {
-            const hash = await hashPassword(sysUser.password);
-            const roleId = roleMap[sysUser.role] || 1;
-
-            db.run(`
-            INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active)
-VALUES(?, ?, ?, ?, ?, ?, 1)
-          `, [sysUser.username, sysUser.email, sysUser.display_name, sysUser.display_name, hash, roleId]);
-
-            logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} (${sysUser.email}) creado correctamente`);
-          } else {
-            // Asegurarse de que esté activo y resetear password a default en este ambiente demo
-            const hash = await hashPassword(sysUser.password);
-            db.run(`UPDATE users SET is_active = 1, password_hash = ? WHERE username = ? `, [hash, sysUser.username]);
-          }
-        } catch (userErr) {
-          logger.error('Database', 'seed_user_failed', `Error al procesar usuario ${sysUser.username} `, { error: userErr });
-        }
-      }
-
-      // 3. ACTUALIZACIí“N FORZADA DE NIVELES (Fuera del loop)
-      // 3. ACTUALIZACIí“N FORZADA DE NIVELES
-      db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
-      db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
-      db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
-      db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
-      db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
-      db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
-      logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados y actualizados');
-
-    } catch (error) {
-      logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
-    }
-  };
 
   /**
    * Migra la propiedad de datos existentes al usuario Admin (ID 1)
@@ -3544,12 +3489,12 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
 
       // 3. Insertar solo si no existen
       db.run(`
-    INSERT OR IGNORE INTO florida_tax_rates(county_name, county_rate, total_rate) VALUES
-  ('Miami-Dade', 0.01, 0.07),
-  ('Orange', 0.005, 0.065),
-  ('Hillsborough', 0.0075, 0.0675),
-  ('Broward', 0.01, 0.07),
-  ('Palm Beach', 0.01, 0.07)
+    INSERT OR IGNORE INTO florida_tax_rates(county_name, county_code, surtax_rate, total_rate) VALUES
+  ('Miami-Dade', 'MIAMI-DADE', 100, 700),
+  ('Orange', 'ORANGE', 50, 650),
+  ('Hillsborough', 'HILLSBOROUGH', 75, 675),
+  ('Broward', 'BROWARD', 100, 700),
+  ('Palm Beach', 'PALM-BEACH', 100, 700)
     `);
 
       // Proveedores de ejemplo
@@ -3683,16 +3628,16 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
     if (!db) return;
 
     db.run(`
-    INSERT INTO florida_tax_rates(county_name, state_rate, county_rate, total_rate) VALUES
-  ('Miami-Dade', 0.06, 0.005, 0.065),
-  ('Broward', 0.06, 0.00, 0.06),
-  ('Palm Beach', 0.06, 0.00, 0.06),
-  ('Orange', 0.06, 0.005, 0.065),
-  ('Hillsborough', 0.06, 0.005, 0.065),
-  ('Monroe', 0.06, 0.015, 0.075),
-  ('Duval', 0.06, 0.0075, 0.0675),
-  ('Pinellas', 0.06, 0.01, 0.07),
-  ('Lee', 0.06, 0.01, 0.07)
+    INSERT INTO florida_tax_rates(county_name, county_code, base_rate, surtax_rate, total_rate) VALUES
+  ('Miami-Dade', 'MIAMI-DADE', 600, 100, 700),
+  ('Broward', 'BROWARD', 600, 100, 700),
+  ('Palm Beach', 'PALM-BEACH', 600, 100, 700),
+  ('Orange', 'ORANGE', 600, 50, 650),
+  ('Hillsborough', 'HILLSBOROUGH', 600, 75, 675),
+  ('Monroe', 'MONROE', 600, 150, 750),
+  ('Duval', 'DUVAL', 600, 75, 675),
+  ('Pinellas', 'PINELLAS', 600, 100, 700),
+  ('Lee', 'LEE', 600, 100, 700)
     `);
 
     console.log('Initial tax rates inserted successfully (2026 rates)');
@@ -11524,6 +11469,86 @@ export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void>
 // GESTIí“N DE USUARIOS Y ROLES
 // ==========================================
 
+export const hasActiveUsers = async (): Promise<boolean> => {
+  if (!db) return false;
+  try {
+    // Asegurar tabla users
+    db.run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT UNIQUE,
+        full_name TEXT,
+        display_name TEXT,
+        password_hash TEXT NOT NULL,
+        role_id INTEGER,
+        is_active BOOLEAN DEFAULT 1,
+        picture TEXT,
+        last_login DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(role_id) REFERENCES user_roles(id)
+      )
+    `);
+    const result = db.exec("SELECT COUNT(*) FROM users WHERE is_active = 1");
+    if (!result[0] || !result[0].values.length) return false;
+    const count = result[0].values[0][0] as number || 0;
+    return count > 0;
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Insertar roles iniciales (Idempotente) - Los usuarios se crean via FirstTimeSetup
+ */
+export const seedUsersAndRoles = async (): Promise<void> => {
+  if (!db) return;
+
+  try {
+    // 0. Asegurar que la tabla existe (Robustez extrema)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        level INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 1. Roles
+    const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
+    const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
+
+    if (roleCount === 0) {
+      db.run(`
+        INSERT INTO user_roles(name, description, level) VALUES
+        ('admin', 'Administrador del sistema con acceso completo', 100),
+        ('contador', 'Contador con acceso a módulos contables y reportes', 80),
+        ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
+        ('comprador', 'Comprador con acceso a proveedores y compras', 40),
+        ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
+        ('viewer', 'Usuario de consulta básica', 10)
+      `);
+      logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
+    }
+
+    // 2. ACTUALIZACIí“N FORZADA DE NIVELES
+    db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
+    db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
+    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
+    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
+    db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
+    db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
+
+  } catch (error) {
+    logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
+  }
+};
+
 /**
  * Hash de contraseña usando PBKDF2 (compatible con Web Crypto API)
  */
@@ -11713,7 +11738,8 @@ export const getUserByUsername = (username: string): any | null => {
   if (!db) return null;
 
   try {
-    const result = db.exec(`
+    // Use prepare() + step() to avoid sql.js bug with db.exec() and ? params
+    const stmt = db.prepare(`
       SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.password_hash, u.role_id, u.is_active,
   u.last_login, u.created_at, u.updated_at,
   r.name as role_name, r.description as role_description, r.level as role_level,
@@ -11721,23 +11747,23 @@ export const getUserByUsername = (username: string): any | null => {
       FROM users u
       LEFT JOIN user_roles r ON u.role_id = r.id
       WHERE u.username = ? OR u.email = ?
-  `, [username, username]);
+    `);
 
-    if (!result[0] || result[0].values.length === 0) return null;
+    try {
+      stmt.bind([username, username]);
+      if (!stmt.step()) return null;
 
-    const columns = result[0].columns;
-    const row = result[0].values[0];
-    const user: any = {};
-    columns.forEach((col: any, index: any) => {
-      user[col] = row[index];
-    });
-
-    return user;
+      const row = stmt.getAsObject();
+      return row;
+    } finally {
+      if (stmt.free) stmt.free();
+    }
   } catch (error) {
     logger.error('Users', 'get_user_failed', 'Error getting user by username', { username }, error as Error);
     return null;
   }
 };
+
 
 /**
  * Actualizar usuario
@@ -11838,8 +11864,21 @@ export const getUserRoles = (): any[] => {
   if (!db) return [];
 
   try {
+    // Asegurar tabla roles
+    db.run(`
+      CREATE TABLE IF NOT EXISTS user_roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        level INTEGER DEFAULT 0,
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     const result = db.exec('SELECT * FROM user_roles ORDER BY level DESC');
-    if (!result[0]) return [];
+    if (!result[0] || !result[0].columns) return [];
 
     const columns = result[0].columns;
     return result[0].values.map((row: any) => {

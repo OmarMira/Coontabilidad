@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  assetsInclude: ['**/*.wasm'],
+  // Note: .wasm files are NOT included in assetsInclude intentionally.
+  // wa-sqlite resolves its .wasm at runtime via new URL(..., import.meta.url).
+  // Vite's assetsInclude would rename them with a hash, breaking that URL.
+  // The .wasm files are served verbatim from /public instead.
   plugins: [react()],
   test: {
     globals: true,
@@ -122,5 +125,4 @@ export default defineConfig({
   },
   // Servir archivos sql.js desde node_modules
   publicDir: 'public',
-  assetsInclude: ['**/*.wasm']
 })

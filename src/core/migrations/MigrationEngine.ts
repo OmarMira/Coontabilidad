@@ -19,6 +19,7 @@ import { BankImportHashMigration } from './list/017_bank_import_hash';
 import { ClassificationRulesMigration } from './list/018_classification_rules';
 import { ClassificationRulesAccountTypeMigration } from './list/019_classification_rules_account_type';
 import { BankImportSchemaMigration } from './list/020_bank_import_schema';
+import { FixAnomalyDetectorSchemaMigration } from './list/021_fix_anomaly_detector_schema';
 
 export interface Migration {
     version: number;
@@ -49,7 +50,8 @@ export class MigrationEngine {
         BankImportHashMigration,
         ClassificationRulesMigration,
         ClassificationRulesAccountTypeMigration,
-        BankImportSchemaMigration          // v020: import_batches, temp, ml tables, import_hash
+        BankImportSchemaMigration,          // v020: import_batches, temp, ml tables, import_hash
+        FixAnomalyDetectorSchemaMigration   // v021: amount_paid and admin seed
     ];
 
     private constructor() { }

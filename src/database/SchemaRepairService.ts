@@ -17,7 +17,8 @@ export class SchemaRepairService {
                 'raw', data, 'PBKDF2', false, ['deriveBits']
             );
             const hashBuffer = await crypto.subtle.deriveBits(
-                { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+                // CRITICAL: Must match simple-db.ts hashPassword (600k iterations)
+                { name: 'PBKDF2', salt: salt, iterations: 600000, hash: 'SHA-256' },
                 keyMaterial, 256
             );
             const hashArray = new Uint8Array(hashBuffer);
@@ -176,30 +177,8 @@ export class SchemaRepairService {
                 `);
             }
 
-            const adminUserRes = await this.db.select("SELECT id, password_hash FROM users WHERE username = 'admin'");
-            if (adminUserRes.length > 0) {
-                const currentHash = adminUserRes[0].password_hash as string;
-                if (!currentHash || currentHash.startsWith('U2FsdGVk')) {
-                    const newHash = await this.hashPassword('admin123');
-                    if (newHash) {
-                        await this.db.run("UPDATE users SET password_hash = ?, is_active = 1 WHERE username = 'admin'", [newHash]);
-                        logs.push("✅ Contraseña de Admin reparada (admin123)");
-                    }
-                }
-            } else {
-                // Buscar el ID del rol admin dinámicamente
-                const adminRoleRes = await this.db.select("SELECT id FROM user_roles WHERE name = 'admin' LIMIT 1");
-                const adminRoleId = adminRoleRes[0]?.id || 1;
-
-                const newHash = await this.hashPassword('admin123');
-                if (newHash) {
-                    await this.db.run(`
-                        INSERT INTO users (username, email, password_hash, full_name, display_name, role_id, is_active)
-                        VALUES ('admin', 'admin@accountexpress.com', ?, 'System Admin', 'Admin', ?, 1)
-                     `, [newHash, adminRoleId]);
-                    logs.push("✅ Usuario Admin recreado");
-                }
-            }
+            // NOTA: La creación del usuario admin se ha movido al flujo FirstTimeSetup.
+            // No recreamos usuarios aquí para permitir que el sistema inicie en estado "vacio".
 
 
             // 4.5 ADD PICTURE COLUMN IF MISSING

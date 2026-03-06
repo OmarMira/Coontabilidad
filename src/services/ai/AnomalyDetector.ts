@@ -48,16 +48,16 @@ export class AnomalyDetector {
             const unbalanced = db.prepare(`
         SELECT 
           je.id,
-          je.date,
+          je.entry_date as date,
           je.description,
-          SUM(CASE WHEN jel.type = 'debit' THEN jel.amount ELSE 0 END) as total_debits,
-          SUM(CASE WHEN jel.type = 'credit' THEN jel.amount ELSE 0 END) as total_credits
+          SUM(jd.debit) as total_debits,
+          SUM(jd.credit) as total_credits
         FROM journal_entries je
-        LEFT JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+        LEFT JOIN journal_details jd ON je.id = jd.journal_id
         WHERE je.status != 'voided'
         GROUP BY je.id
-        HAVING ABS(total_debits - total_credits) > 0.01
-        ORDER BY je.date DESC
+        HAVING ABS(SUM(jd.debit) - SUM(jd.credit)) > 0.01
+        ORDER BY je.entry_date DESC
         LIMIT 10
       `).all() as any[];
 
@@ -106,19 +106,19 @@ export class AnomalyDetector {
             // Buscar facturas vencidas con saldo pendiente
             const overdue = db.prepare(`
         SELECT 
-          id,
-          invoice_number,
-          customer_id,
-          issue_date,
-          due_date,
-          total_amount,
-          amount_paid,
-          (total_amount - amount_paid) as balance_due,
-          julianday('${today}') - julianday(due_date) as days_overdue
-        FROM invoices
-        WHERE status = 'sent'
-        AND due_date < '${today}'
-        AND (total_amount - amount_paid) > 0.01
+          i.id,
+          i.invoice_number,
+          i.customer_id,
+          i.issue_date,
+          i.due_date,
+          i.total_amount,
+          0 as amount_paid, -- Fallback since amount_paid column is missing
+          i.total_amount as balance_due,
+          julianday('${today}') - julianday(i.due_date) as days_overdue
+        FROM invoices i
+        WHERE i.status = 'sent'
+        AND i.due_date < '${today}'
+        AND i.total_amount > 0.01
         ORDER BY days_overdue DESC
         LIMIT 20
       `).all() as any[];
@@ -211,13 +211,14 @@ export class AnomalyDetector {
             // Calcular promedio y desviación estándar de gastos por categoría
             const stats = db.prepare(`
         SELECT 
-          category,
-          AVG(amount) as avg_amount,
+          ca.name as category,
+          AVG(jd.debit) as avg_amount,
           COUNT(*) as count
-        FROM expenses
-        WHERE date >= date('now', '-180 days')
-        AND status != 'voided'
-        GROUP BY category
+        FROM journal_details jd
+        JOIN chart_of_accounts ca ON jd.account_code = ca.code
+        WHERE ca.type = 'EXPENSE'
+        AND jd.debit > 0
+        GROUP BY ca.name
         HAVING COUNT(*) >= 5
       `).all() as any[];
 
@@ -227,17 +228,19 @@ export class AnomalyDetector {
 
                 const outliers = db.prepare(`
           SELECT 
-            id,
-            date,
-            description,
-            amount,
-            category
-          FROM expenses
-          WHERE category = ?
-          AND amount > ?
-          AND date >= date('now', '-90 days')
-          AND status != 'voided'
-          ORDER BY amount DESC
+            je.id,
+            je.entry_date as date,
+            je.description,
+            jd.debit as amount,
+            ca.name as category
+          FROM journal_details jd
+          JOIN journal_entries je ON jd.journal_id = je.id
+          JOIN chart_of_accounts ca ON jd.account_code = ca.code
+          WHERE ca.name = ?
+          AND jd.debit > ?
+          AND je.entry_date >= date('now', '-90 days')
+          AND je.status != 'voided'
+          ORDER BY jd.debit DESC
           LIMIT 5
         `).all(stat.category, threshold) as any[];
 
@@ -278,13 +281,13 @@ export class AnomalyDetector {
           a.code,
           a.name,
           a.type,
-          SUM(CASE WHEN jel.type = 'debit' THEN jel.amount ELSE -jel.amount END) as balance
-        FROM accounts a
-        LEFT JOIN journal_entry_lines jel ON a.id = jel.account_id
-        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
-        WHERE je.status != 'voided'
-        AND a.type IN ('asset', 'expense')
-        GROUP BY a.id
+          SUM(jd.debit - jd.credit) as balance
+        FROM chart_of_accounts a
+        LEFT JOIN journal_details jd ON a.code = jd.account_code
+        LEFT JOIN journal_entries je ON jd.journal_id = je.id
+        WHERE (je.status IS NULL OR je.status != 'voided')
+        AND a.type IN ('ASSET', 'EXPENSE')
+        GROUP BY a.id, a.code, a.name, a.type
         HAVING balance < -0.01
         ORDER BY balance ASC
         LIMIT 10

@@ -137,13 +137,15 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   };
 
   const handleFinalizeImport = async () => {
+    console.log('handleFinalizeImport called', { resolvedAccountId, batchId, selectedAccountId });
     if (!batchId) return;
 
-    // GUARD: el usuario debe haber seleccionado (o autodetectarse) una cuenta bancaria.
+    // CAMBIO 5: Validar resolvedAccountId y mostrar error claro.
+    // resolvedAccountId ya se actualiza en autoMatchAccount(result.detectedAccountNumber)
     if (!resolvedAccountId || resolvedAccountId <= 0) {
       const msg = detectedAccountNumber
-        ? `No se encontró la cuenta terminada en ${detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema. Selecció una cuenta manualmente.`
-        : 'Seleccióná una cuenta bancaria antes de importar';
+        ? `No se encontró la cuenta terminada en ${detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema. Seleccioná una cuenta manualmente.`
+        : 'Seleccioná una cuenta bancaria antes de importar';
       toast.error(msg);
       setError(msg);
       return;

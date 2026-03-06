@@ -15,7 +15,7 @@ export class UserIntegrityCheck implements IntegrityCheck {
 
     async execute(): Promise<CheckResult> {
         const db = getDB();
-        
+
         if (!db) {
             return {
                 passed: false,
@@ -25,21 +25,21 @@ export class UserIntegrityCheck implements IntegrityCheck {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
                     const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
                     const { initDB } = await import('../../../database/simple-db');
-                    
+
                     // Inicializar DB primero
                     const newDb = await initDB();
-                    
+
                     // Luego reparar
                     const engine = new SQLiteEngine();
                     engine.setDB(newDb);
                     const repair = new SchemaRepairService(engine);
                     await repair.repairSchema();
-                    
+
                     // CRÍTICO: Forzar persistencia
                     if (typeof engine.sync === 'function') {
                         await engine.sync();
                     }
-                    
+
                     // Esperar un momento para asegurar que IndexedDB termine
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
@@ -47,6 +47,19 @@ export class UserIntegrityCheck implements IntegrityCheck {
         }
 
         try {
+            // Verificar si el sistema está vacío (Primer Inicio)
+            const countResult = db.exec("SELECT COUNT(*) FROM users");
+            const totalUsers = countResult[0]?.values[0]?.[0] as number || 0;
+
+            if (totalUsers === 0) {
+                return {
+                    passed: true,
+                    message: '✅ Sistema virgen - Pendiente de configuración inicial',
+                    details: { issue: 'first_boot' },
+                    canAutoRepair: false
+                };
+            }
+
             // Verificar usuario admin
             const adminResult = db.exec(`
                 SELECT id, username, password_hash, is_active 
@@ -55,9 +68,10 @@ export class UserIntegrityCheck implements IntegrityCheck {
             `);
 
             if (adminResult.length === 0 || adminResult[0].values.length === 0) {
+                // Si hay usuarios pero no hay 'admin', esto SÍ es un problema de integridad
                 return {
                     passed: false,
-                    message: '❌ Usuario admin no existe',
+                    message: '❌ El sistema tiene usuarios pero no se encontró la cuenta admin',
                     details: { issue: 'admin_missing' },
                     canAutoRepair: true,
                     repairAction: async () => {
@@ -108,7 +122,7 @@ export class UserIntegrityCheck implements IntegrityCheck {
                 FROM users 
                 WHERE username = 'demo'
             `);
-            
+
             const hasDemo = demoResult.length > 0 && demoResult[0].values.length > 0;
             const demoActive = hasDemo && demoResult[0].values[0][2];
 
@@ -116,7 +130,7 @@ export class UserIntegrityCheck implements IntegrityCheck {
                 return {
                     passed: true,
                     message: `✅ Usuario admin configurado (demo ${hasDemo ? 'inactivo' : 'faltante'})`,
-                    details: { 
+                    details: {
                         admin: 'ok',
                         demo: hasDemo ? 'inactive' : 'missing'
                     },

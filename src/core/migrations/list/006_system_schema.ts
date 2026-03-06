@@ -41,8 +41,11 @@ export const SystemSchemaMigration: Migration = {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE, -- e.g. 'admin', 'accountant', 'viewer'
                 description TEXT,
+                level INTEGER DEFAULT 0,
                 permissions TEXT, -- JSON array of permission strings
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                is_active BOOLEAN DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
 

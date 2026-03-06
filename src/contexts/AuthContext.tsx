@@ -35,6 +35,7 @@ interface AuthContextType {
     refreshUser: () => Promise<void>;
     hasPermission: (module: string, action: string) => boolean;
     checkSystemHasUsers: () => boolean;
+    forceAdminBypass: () => void;
 }
 
 
@@ -232,6 +233,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return hasUsers();
     };
 
+    const forceAdminBypass = () => {
+        const userData: User = {
+            id: 1,
+            username: 'admin',
+            email: 'admin@dev.local',
+            full_name: 'Super Administrador (Bypass)',
+            display_name: 'Admin Global',
+            role: 'admin',
+            role_id: 1,
+            role_level: 100,
+            permissions: {}
+        };
+        setUser(userData);
+        localStorage.setItem('accountexpress_user', JSON.stringify({
+            user: userData,
+            expiresAt: Date.now() + 8 * 60 * 60 * 1000
+        }));
+        console.warn('⚠️ DEV BYPASS ACTIVATED - Logged in as Admin');
+    };
+
 
 
 
@@ -304,7 +325,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             logout,
             isAuthenticated: !!user,
             refreshUser,
-            hasPermission
+            hasPermission,
+            forceAdminBypass
         }}>
             {children}
         </AuthContext.Provider>
