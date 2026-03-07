@@ -1,22 +1,4 @@
 {
-  "common": {
-    "caution": "Precaución",
-    "back": "Atrás",
-    "cancel": "Cancelar",
-    "save": "Guardar",
-    "error": "Error",
-    "retry": "Reintentar",
-    "refresh": "Refrescar",
-    "close": "Cerrar",
-    "date": "Fecha",
-    "amount": "Monto",
-    "actions": "Acciones",
-    "status": "Estado",
-    "notes": "Notas",
-    "total": "Total",
-    "previous": "Anterior",
-    "next": "Siguiente"
-  },
   "accounting": {
     "periods": {
       "title": "Gestión de Períodos",
@@ -2212,6 +2194,7 @@
   },
   "comments": "Comentarios",
   "common": {
+    "caution": "Precaución",
     "actions": "Acciones",
     "add": "Agregar",
     "amount": "Monto",
