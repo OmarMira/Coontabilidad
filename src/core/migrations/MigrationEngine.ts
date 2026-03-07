@@ -7,7 +7,7 @@ import { AccountingSchemaMigration } from './list/005_accounting_schema';
 import { SystemSchemaMigration } from './list/006_system_schema';
 import { CurrencyFixAndFiscalMigration } from './list/007_currency_fix_and_fiscal';
 import { LogicClockInitMigration } from './list/008_logic_clock_init';
-import { HistoricalDataFixMigration } from './list/008_historical_data_fix';
+import { HistoricalDataFixMigration } from './list/024_historical_data_fix';
 import { PerformanceIndicesMigration } from './list/009_performance_indices';
 import { MultiUserSchemaMigration } from './list/010_multi_user_schema';
 import { FixedAssetsSchema } from './list/011_fixed_assets_schema';
