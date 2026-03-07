@@ -3,7 +3,7 @@ import { SQLiteEngine } from '../../database/SQLiteEngine';
 import { BasicEncryption } from '../../security/BasicEncryption';
 
 export class HistoricalDataFixMigration implements Migration {
-    version = 17;
+    version = 24;
     name = 'Historical Data and Audit Fix';
     description = 'Backfills journal_entry_lines from journal_details, creates dummy lines if missing, and repairs the entire forensic audit chain.';
 
