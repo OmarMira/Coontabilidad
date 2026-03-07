@@ -11,11 +11,15 @@
  * - Cuentas con saldo negativo inesperado
  */
 
-import { db } from '@/database/simple-db';
+import { db, getDBEngine } from '@/database/simple-db';
 import { DraftProposalService } from '../DraftProposalService';
 import { logger } from '../../core/logging/SystemLogger';
 
 export class AnomalyDetector {
+    private static get engine() {
+        return getDBEngine();
+    }
+
     /**
      * Ejecuta todas las detecciones de anomalías
      */
@@ -45,21 +49,21 @@ export class AnomalyDetector {
 
         try {
             // Buscar asientos donde débitos != créditos
-            const unbalanced = db.prepare(`
+            const unbalanced = await this.engine.select(`
         SELECT 
           je.id,
           je.entry_date as date,
           je.description,
-          SUM(jd.debit) as total_debits,
-          SUM(jd.credit) as total_credits
+          SUM(jd.debit_amount) as total_debits,
+          SUM(jd.credit_amount) as total_credits
         FROM journal_entries je
         LEFT JOIN journal_details jd ON je.id = jd.journal_id
         WHERE je.status != 'voided'
         GROUP BY je.id
-        HAVING ABS(SUM(jd.debit) - SUM(jd.credit)) > 0.01
+        HAVING ABS(SUM(jd.debit_amount) - SUM(jd.credit_amount)) > 0.01
         ORDER BY je.entry_date DESC
         LIMIT 10
-      `).all() as any[];
+      `);
 
             for (const entry of unbalanced) {
                 const difference = entry.total_debits - entry.total_credits;
@@ -104,7 +108,7 @@ export class AnomalyDetector {
             const today = new Date().toISOString().split('T')[0];
 
             // Buscar facturas vencidas con saldo pendiente
-            const overdue = db.prepare(`
+            const overdue = await this.engine.select(`
         SELECT 
           i.id,
           i.invoice_number,
@@ -121,7 +125,7 @@ export class AnomalyDetector {
         AND i.total_amount > 0.01
         ORDER BY days_overdue DESC
         LIMIT 20
-      `).all() as any[];
+      `);
 
             for (const invoice of overdue) {
                 // Solo crear propuesta si está muy vencida (>30 días)
@@ -159,7 +163,7 @@ export class AnomalyDetector {
 
         try {
             // Buscar transacciones con mismo monto, fecha y descripción
-            const duplicates = db.prepare(`
+            const duplicates = await this.engine.select(`
         SELECT 
           date,
           description,
@@ -173,7 +177,7 @@ export class AnomalyDetector {
         HAVING COUNT(*) > 1
         ORDER BY count DESC, date DESC
         LIMIT 10
-      `).all() as any[];
+      `);
 
             for (const dup of duplicates) {
                 const ids = dup.transaction_ids.split(',');
@@ -209,40 +213,40 @@ export class AnomalyDetector {
 
         try {
             // Calcular promedio y desviación estándar de gastos por categoría
-            const stats = db.prepare(`
+            const stats = await this.engine.select(`
         SELECT 
-          ca.name as category,
-          AVG(jd.debit) as avg_amount,
+          ca.account_name as category,
+          AVG(jd.debit_amount) as avg_amount,
           COUNT(*) as count
         FROM journal_details jd
-        JOIN chart_of_accounts ca ON jd.account_code = ca.code
-        WHERE ca.type = 'EXPENSE'
-        AND jd.debit > 0
-        GROUP BY ca.name
+        JOIN chart_of_accounts ca ON jd.account_code = ca.account_code
+        WHERE ca.account_type = 'expense'
+        AND jd.debit_amount > 0
+        GROUP BY ca.account_name
         HAVING COUNT(*) >= 5
-      `).all() as any[];
+      `);
 
             for (const stat of stats) {
                 // Buscar gastos que sean 3x el promedio
                 const threshold = stat.avg_amount * 3;
 
-                const outliers = db.prepare(`
+                const outliers = await this.engine.select(`
           SELECT 
             je.id,
             je.entry_date as date,
             je.description,
-            jd.debit as amount,
-            ca.name as category
+            jd.debit_amount as amount,
+            ca.account_name as category
           FROM journal_details jd
           JOIN journal_entries je ON jd.journal_id = je.id
-          JOIN chart_of_accounts ca ON jd.account_code = ca.code
-          WHERE ca.name = ?
-          AND jd.debit > ?
+          JOIN chart_of_accounts ca ON jd.account_code = ca.account_code
+          WHERE ca.account_name = ?
+          AND jd.debit_amount > ?
           AND je.entry_date >= date('now', '-90 days')
           AND je.status != 'voided'
-          ORDER BY jd.debit DESC
+          ORDER BY jd.debit_amount DESC
           LIMIT 5
-        `).all(stat.category, threshold) as any[];
+        `, [stat.category, threshold]);
 
                 for (const expense of outliers) {
                     await DraftProposalService.createProposal(
@@ -275,23 +279,23 @@ export class AnomalyDetector {
 
         try {
             // Buscar cuentas de activo con saldo negativo
-            const negative = db.prepare(`
+            const negative = await this.engine.select(`
         SELECT 
           a.id,
-          a.code,
-          a.name,
-          a.type,
-          SUM(jd.debit - jd.credit) as balance
+          a.account_code as code,
+          a.account_name as name,
+          a.account_type as type,
+          SUM(jd.debit_amount - jd.credit_amount) as balance
         FROM chart_of_accounts a
-        LEFT JOIN journal_details jd ON a.code = jd.account_code
+        LEFT JOIN journal_details jd ON a.account_code = jd.account_code
         LEFT JOIN journal_entries je ON jd.journal_id = je.id
         WHERE (je.status IS NULL OR je.status != 'voided')
-        AND a.type IN ('ASSET', 'EXPENSE')
-        GROUP BY a.id, a.code, a.name, a.type
+        AND a.account_type IN ('asset', 'expense')
+        GROUP BY a.id, a.account_code, a.account_name, a.account_type
         HAVING balance < -0.01
         ORDER BY balance ASC
         LIMIT 10
-      `).all() as any[];
+      `);
 
             for (const account of negative) {
                 await DraftProposalService.createProposal(
