@@ -1,4 +1,4 @@
-import { getDBEngine, ChartOfAccount, getChartOfAccounts } from '../../database/simple-db';
+import { getDBEngine, ChartOfAccount, getChartOfAccounts } from '@/database/simple-db';
 
 export interface ClassificationRule {
     id: number;

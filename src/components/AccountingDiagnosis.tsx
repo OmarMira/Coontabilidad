@@ -15,7 +15,7 @@ import {
   Network,
   HardDrive
 } from 'lucide-react';
-import { diagnoseAccountingSystem } from '../database/simple-db';
+import { diagnoseAccountingSystem } from '@/database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { useLocale } from '../i18n/useLocale';
 

@@ -323,7 +323,7 @@ export function getEmployees(): Employee[] {
   try {
     const res = db.exec("SELECT * FROM employees ORDER BY last_name, first_name");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<Employee>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<Employee>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching employees:', e);
     return [];
@@ -335,7 +335,7 @@ export function getEmployeeById(id: number): Employee | null {
   try {
     const res = db.exec("SELECT * FROM employees WHERE id = ?", [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
-    return rowToEntity<Employee>(res[0].columns, res[0].values[0]);
+    return rowToEntity<Employee>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
   } catch (e) {
     console.error('Error fetching employee:', e);
     return null;
@@ -410,7 +410,7 @@ export function getPayrollPeriods(): PayrollPeriod[] {
   try {
     const res = db.exec("SELECT * FROM payroll_periods ORDER BY start_date DESC");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollPeriod>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollPeriod>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching payroll periods:', e);
     return [];
@@ -422,7 +422,7 @@ export function getPayrollSettings(): PayrollSetting[] {
   try {
     const res = db.exec("SELECT * FROM payroll_settings");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollSetting>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollSetting>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching payroll settings:', e);
     return [];
@@ -444,7 +444,7 @@ export function getTaxBrackets(): TaxBracket[] {
   try {
     const res = db.exec("SELECT * FROM tax_brackets ORDER BY min_income ASC");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<TaxBracket>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<TaxBracket>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching tax brackets:', e);
     return [];
@@ -566,7 +566,7 @@ export function getAssetCategories(): AssetCategory[] {
   try {
     const res = db.exec("SELECT * FROM asset_categories WHERE is_active = 1 ORDER BY name");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<AssetCategory>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<AssetCategory>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching asset categories:', e);
     return [];
@@ -625,7 +625,7 @@ export function getFixedAssets(status?: string): FixedAsset[] {
 
     const res = db.exec(query);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<FixedAsset>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<FixedAsset>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching fixed assets:', e);
     return [];
@@ -640,7 +640,7 @@ export function getFixedAssetById(id: number): FixedAsset | null {
   try {
     const res = db.exec("SELECT * FROM fixed_assets WHERE id = ?", [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
-    return rowToEntity<FixedAsset>(res[0].columns, res[0].values[0]);
+    return rowToEntity<FixedAsset>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
   } catch (e) {
     console.error('Error fetching fixed asset:', e);
     return null;
@@ -819,7 +819,7 @@ export function getAssetDepreciations(assetId: number): AssetDepreciation[] {
   try {
     const res = db.exec("SELECT * FROM asset_depreciations WHERE asset_id = ? ORDER BY period_date DESC", [assetId]);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<AssetDepreciation>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<AssetDepreciation>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching asset depreciations:', e);
     return [];
@@ -990,7 +990,7 @@ export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_
       WHERE pe.period_id = ?
     `, [periodId]);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollEntry & { employee_name: string }>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollEntry & { employee_name: string }>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching payroll entries:', e);
     return [];
@@ -1046,7 +1046,7 @@ export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
   try {
     const res = db.exec("SELECT * FROM payroll_line_items WHERE payroll_entry_id = ?", [entryId]);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollLineItem>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollLineItem>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching payroll line items:', e);
     return [];
@@ -1084,7 +1084,7 @@ export function getPayrolls(filters: PayrollFilter = {}): Payroll[] {
 
     const res = db.exec(query, params);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<Payroll>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<Payroll>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching payrolls:', e);
     return [];
@@ -1192,7 +1192,7 @@ export function getFiscalYears(): FiscalYear[] {
   try {
     const res = db.exec("SELECT * FROM fiscal_years ORDER BY year DESC");
     if (res.length > 0) {
-      return res[0].values.map((row: any) => rowToEntity<FiscalYear>(res[0].columns, row));
+      return res[0].values.map((row: any) => rowToEntity<FiscalYear>((res[0].columns || (res[0] as any).lc), row));
     }
   } catch (e) { console.error(e); }
   return [];
@@ -1203,7 +1203,7 @@ export function getAccountingPeriods(fiscalYearId: number): AccountingPeriod[] {
   try {
     const res = db.exec("SELECT * FROM accounting_periods WHERE fiscal_year_id = ? ORDER BY month ASC", [fiscalYearId]);
     if (res.length > 0) {
-      return res[0].values.map((row: any) => rowToEntity<AccountingPeriod>(res[0].columns, row));
+      return res[0].values.map((row: any) => rowToEntity<AccountingPeriod>((res[0].columns || (res[0] as any).lc), row));
     }
   } catch (e) { console.error(e); }
   return [];
@@ -1238,7 +1238,7 @@ export async function closePeriod(periodId: number, userId: number): Promise<{ s
   try {
     const periodRes = db.exec("SELECT * FROM accounting_periods WHERE id = ?", [periodId]);
     if (periodRes.length === 0) return { success: false, message: 'Periodo no encontrado' };
-    const period = rowToEntity<AccountingPeriod>(periodRes[0].columns, periodRes[0].values[0]);
+    const period = rowToEntity<AccountingPeriod>((periodRes[0].columns || (periodRes[0] as any).lc), periodRes[0].values[0]);
 
     if (period.status === 'closed' || period.status === 'locked') {
       return { success: false, message: 'El periodo ya está cerrado' };
@@ -1954,13 +1954,33 @@ export const initDB = async (password?: string): Promise<any> => {
       console.log('🔬 [DEV] window.__dbEngine, window.__db, window.__runSQL disponibles para verificación');
     }
 
-    return db;
   } catch (error) {
     logger.error('Database', 'init_failed', 'Error fatal en inicialización', { error });
-    throw error;
-  } finally {
-    isInitialized = true;
   }
+
+  try {
+    // Seed de roles y usuarios — separado de las migraciones para que
+    // un fallo de migración no lo cancele
+    await seedUsersAndRoles();
+    seedSystemDefaults();
+    // saveDatabase corre en background — no debe bloquear isInitialized
+    setTimeout(() => {
+      saveDatabase().then(() => {
+        console.log('[initDB] ✅ Seed persistido a OPFS.');
+      }).catch(e => {
+        console.warn('[initDB] saveDatabase (background) falló:', e);
+      });
+    }, 500);
+  } catch (seedError) {
+    // El seed falló pero NO debe impedir que el sistema arranque
+    console.error('[initDB] ⚠️ Error en seed — el sistema arrancará sin datos base:', seedError);
+  } finally {
+    // isInitialized = true SIEMPRE, pase lo que pase con el seed
+    isInitialized = true;
+    console.log('[initDB] ✅ Base de datos lista (con o sin seed).');
+  }
+
+  return db;
 };
 
 const initializeSchema = async (db: any) => {
@@ -3285,6 +3305,7 @@ GROUP BY ba.id
     password_hash TEXT NOT NULL,
     role_id INTEGER NOT NULL,
     is_active BOOLEAN DEFAULT 1,
+    picture TEXT,
     last_login DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -3407,7 +3428,7 @@ GROUP BY ba.id
 
       // 1.1 Métodos de Pago (Sin FK)
       db.run(`
-      INSERT INTO payment_methods(name, type, is_active, requires_reference) VALUES
+      INSERT OR IGNORE INTO payment_methods(method_name, method_type, is_active, requires_reference) VALUES
   ('Efectivo', 'cash', 1, 0),
   ('Transferencia Bancaria', 'bank_transfer', 1, 1),
   ('Cheque', 'check', 1, 1),
@@ -3417,12 +3438,12 @@ GROUP BY ba.id
 
       // 1.2 Datos de la Empresa (Sin FK)
       db.run(`
-      INSERT INTO company_data(
+      INSERT OR IGNORE INTO company_data(
       company_name, legal_name, address, city, state, zip_code, phone, email, tax_id,
       fiscal_year_start, currency, timezone, date_format, is_active
     ) VALUES(
-      'Account Express Demo Inc.', 'Account Express Demo Inc.', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000',
-      'admin@accountexpress.com', 'US-DEMO-123',
+      'Mi Empresa LLC', 'Mi Empresa LLC', '123 Main Street', 'Orlando', 'FL', '32801', '(407) 000-0000',
+      'admin@miempresa.com', '00-0000000',
       '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
     )
       `);
@@ -3656,8 +3677,8 @@ GROUP BY ba.id
         ('medicare_tax_rate', '0.0145', 'taxes', 'Tasa Medicare'),
         ('pay_frequency', 'monthly', 'general', 'Frecuencia de pago por defecto'),
         ('overtime_rate', '1.5', 'general', 'Multiplicador para horas extras'),
-        ('company_name', 'Account Express Demo Inc.', 'general', 'Nombre de la empresa para reportes'),
-        ('ein_number', 'XX-XXXXXXX', 'general', 'Nï¿½mero de identificaciï¿½n del empleador')
+        ('company_name', 'Mi Empresa LLC', 'general', 'Nombre de la empresa para reportes'),
+        ('ein_number', '00-0000000', 'general', 'Número de identificación del empleador')
       `);
       console.log('Initial payroll settings inserted successfully');
     } catch (e) {
@@ -3665,8 +3686,7 @@ GROUP BY ba.id
     }
   };
 
-  // Ejecutar procesos de inicialización/seeding
-  await seedUsersAndRoles();
+  // Ejecutar procesos de inicialización
   await migrateDataOwnership();
 
   // Verificar si ya existen categorías antes de insertar
@@ -3995,7 +4015,7 @@ id, name, business_name, document_type, document_number, business_type,
     const customers: Customer[] = [];
 
     if (result && result.length > 0 && result[0].values) {
-      const columns = result[0].columns;
+      const columns = (result[0].columns || (result[0] as any).lc);
       const values = result[0].values;
 
       values.forEach((row: initSqlJs.SqlValue[]) => {
@@ -4062,7 +4082,7 @@ id, name, business_name, document_type, document_number, business_type,
 `);
 
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
-      const columns = result[0].columns;
+      const columns = (result[0].columns || (result[0] as any).lc);
       const row = result[0].values[0];
 
       const customerObj: any = {};
@@ -4567,7 +4587,7 @@ i.*,
     if (!result[0]) return [];
 
     const invoices: Invoice[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
       const invoice = rowToEntity<Invoice & { customer_name: string; customer_business_name: string; customer_email: string }>(columns, row);
@@ -4614,7 +4634,7 @@ i.*,
     if (!invoiceResult[0] || invoiceResult[0].values.length === 0) return null;
 
     const invoiceRow = invoiceResult[0].values[0];
-    const columns = invoiceResult[0].columns;
+    const columns = (invoiceResult[0].columns || (invoiceResult[0] as any).lc);
 
     const invoice: any = {};
     columns.forEach((col: any, index: any) => {
@@ -4647,7 +4667,7 @@ il.*,
 
     invoice.items = [];
     if (itemsResult[0]) {
-      const itemColumns = itemsResult[0].columns;
+      const itemColumns = (itemsResult[0].columns || (itemsResult[0] as any).lc);
       itemsResult[0].values.forEach((itemRow: any) => {
         const item: any = {};
         itemColumns.forEach((col: any, index: any) => {
@@ -4969,7 +4989,7 @@ export const getActiveProducts = (): Product[] => {
     if (!result[0]) return [];
 
     const products: Product[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const product: any = {};
@@ -5116,7 +5136,7 @@ export const getQuotes = (filters?: { userId?: number; role?: string; status?: s
     const result = db.exec(query, params);
     if (!result[0]) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Quote>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Quote>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting quotes:', error);
     return [];
@@ -5139,7 +5159,7 @@ export const getQuoteById = (id: number): Quote | null => {
 
     if (!quoteResult[0] || quoteResult[0].values.length === 0) return null;
 
-    const quote = rowToEntity<Quote>(quoteResult[0].columns, quoteResult[0].values[0]);
+    const quote = rowToEntity<Quote>((quoteResult[0].columns || (quoteResult[0] as any).lc), quoteResult[0].values[0]);
 
     // Obtener lï¿½neas de cotizaciï¿½n
     const linesResult = db.exec(`
@@ -5151,7 +5171,7 @@ export const getQuoteById = (id: number): Quote | null => {
 
     if (linesResult[0]) {
       quote.items = linesResult[0].values.map((row: any) =>
-        rowToEntity<QuoteLine>(linesResult[0].columns, row)
+        rowToEntity<QuoteLine>((linesResult[0].columns || (linesResult[0] as any).lc), row)
       );
     }
 
@@ -5675,7 +5695,7 @@ id, name, business_name, document_type, document_number, business_type,
     const suppliers: Supplier[] = [];
 
     if (result && result.length > 0 && result[0].values) {
-      const columns = result[0].columns;
+      const columns = (result[0].columns || (result[0] as any).lc);
       const values = result[0].values;
 
       values.forEach((row: initSqlJs.SqlValue[]) => {
@@ -5743,7 +5763,7 @@ id, name, business_name, document_type, document_number, business_type,
 `);
 
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
-      const columns = result[0].columns;
+      const columns = (result[0].columns || (result[0] as any).lc);
       const row = result[0].values[0];
 
       const supplierObj: any = {};
@@ -5975,7 +5995,7 @@ b.*,
     if (!result[0]) return [];
 
     const bills: Bill[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
       const bill = rowToEntity<Bill & { supplier_name: string; supplier_business_name: string; supplier_email: string }>(columns, row);
@@ -6024,7 +6044,7 @@ b.*,
     if (!billResult[0] || billResult[0].values.length === 0) return null;
 
     const billRow = billResult[0].values[0];
-    const columns = billResult[0].columns;
+    const columns = (billResult[0].columns || (billResult[0] as any).lc);
 
     const bill: any = {};
     columns.forEach((col: any, index: any) => {
@@ -6057,7 +6077,7 @@ bl.*,
 
     bill.items = [];
     if (itemsResult[0]) {
-      const itemColumns = itemsResult[0].columns;
+      const itemColumns = (itemsResult[0].columns || (itemsResult[0] as any).lc);
       itemsResult[0].values.forEach((itemRow: any) => {
         const item: any = {};
         itemColumns.forEach((col: any, index: any) => {
@@ -6545,7 +6565,7 @@ id, account_code, account_name, account_type, normal_balance,
 
     if (!result[0] || result[0].values.length === 0) return null;
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const row = result[0].values[0];
 
     const account: any = {};
@@ -7055,7 +7075,7 @@ account_code, account_name, account_type, normal_balance, parent_account,
     if (!result[0]) return [];
 
     const accounts: ChartOfAccount[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const account: any = {};
@@ -7359,7 +7379,7 @@ id, entry_date, reference, description, total_debit, total_credit,
     if (!result[0]) return [];
 
     const entries: JournalEntry[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const entry: any = {};
@@ -7399,7 +7419,7 @@ jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount,
     if (!result[0]) return [];
 
     const details: JournalDetail[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const detail: any = {};
@@ -7838,7 +7858,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
     let totalAssets = 0;
     let totalLiabilitiesEquity = 0;
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const account: any = {};
@@ -7913,7 +7933,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
     let totalRevenue = 0;
     let totalExpenses = 0;
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const account: any = {};
@@ -8253,7 +8273,7 @@ e.name,
     let total = 0;
     const details: any[] = [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     result[0].values.forEach((row: any) => {
       const name = row[0] as string;
       const amount = Number(row[1]) || 0;
@@ -8303,7 +8323,7 @@ export const getAccountLedger = (accountCode: string, fromDate: string, toDate: 
     if (!accResult[0]) return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
 
     const account: any = {};
-    accResult[0].columns.forEach((col: any, i: any) => account[col] = accResult[0].values[0][i]);
+    (accResult[0].columns || (accResult[0] as any).lc).forEach((col: any, i: any) => account[col] = accResult[0].values[0][i]);
 
     // 2. Calcular saldo inicial (antes de fromDate)
     const startBalResult = db.exec(`
@@ -8340,7 +8360,7 @@ je.entry_date,
     let totalCredit = 0;
 
     if (txResult[0]) {
-      const cols = txResult[0].columns;
+      const cols = (txResult[0].columns || (txResult[0] as any).lc);
       txResult[0].values.forEach((row: any) => {
         const tx: any = {};
         cols.forEach((col: any, i: any) => tx[col] = row[i]);
@@ -8392,7 +8412,12 @@ SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
+    // Guard: columns puede ser undefined con algunas versiones de sql.js
+    if (!columns || !Array.isArray(columns)) {
+      logger.warn('CompanyData', 'columns_missing', '(result[0].columns || (result[0] as any).lc) es undefined — retornando null');
+      return null;
+    }
     const company = rowToEntity<CompanyData>(columns, row);
 
     // Asegurar que los campos nuevos tengan valores válidos si no vienen de DB
@@ -8439,59 +8464,129 @@ export async function updateCompanyData(companyData: Partial<CompanyData>): Prom
       }
     }
 
-    // Obtener datos actuales
+    // ── UPSERT LOGIC ──────────────────────────────────────────────────────
+    // Verificar existencia de fila usando COUNT directo (sin rowToEntity)
+    const rowCount = db.exec("SELECT COUNT(*) FROM company_data")[0]?.values[0]?.[0] as number ?? 0;
+
+    // Helper: patrón correcto sql.js para DML con params posicionales
+    // db.run(sql, params) NO vincula parámetros en esta versión — requiere Statement API
+    const sqlRun = (sql: string, params: any[]): void => {
+      const stmt = db.prepare(sql);
+      try { stmt.run(params); } finally { stmt.free(); }
+    };
+
+    if (rowCount === 0) {
+      // CASO 1: No existe fila — INSERT directo con datos del usuario
+      logger.warn('CompanyData', 'upsert_insert', 'No existe fila — creando con datos del usuario');
+      sqlRun(`
+        INSERT INTO company_data (
+          company_name, legal_name, tax_id,
+          address, city, state, zip_code,
+          phone, email, website,
+          fiscal_year_start, currency, language,
+          timezone, date_format, fiscal_year_end,
+          is_active, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+      `, [
+        companyData.company_name || 'Mi Empresa LLC',
+        companyData.legal_name || 'Mi Empresa LLC',
+        companyData.tax_id || '00-0000000',
+        companyData.address || '',
+        companyData.city || '',
+        companyData.state || 'FL',
+        companyData.zip_code || '',
+        companyData.phone || '',
+        companyData.email || '',
+        companyData.website || null,
+        companyData.fiscal_year_start || '01-01',
+        companyData.currency || 'USD',
+        companyData.language || 'es',
+        companyData.timezone || 'America/New_York',
+        companyData.date_format || 'MM/DD/YYYY',
+        companyData.fiscal_year_end || '12-31',
+        new Date().toISOString()
+      ]);
+      logger.info('CompanyData', 'upsert_insert_ok', 'Empresa creada correctamente');
+      try { await forceSaveDB(); } catch (_) { }
+      return { success: true, message: 'Datos de empresa creados correctamente' };
+    }
+
+    // CASO 2: Existe fila — obtenerla y hacer UPDATE
     const currentData = getCompanyData();
     if (!currentData) {
-      throw new Error('No se encontraron datos de empresa para actualizar');
+      // Fallback: getCompanyData() falló a pesar de que rowCount > 0
+      logger.warn('CompanyData', 'update_fallback', 'getCompanyData() null con row presente — UPDATE simple WHERE is_active=1');
+      sqlRun(`
+        UPDATE company_data SET
+          company_name = ?, legal_name = ?, tax_id = ?,
+          address = ?, city = ?, state = ?, zip_code = ?,
+          phone = ?, email = ?, updated_at = ?
+        WHERE is_active = 1
+      `, [
+        companyData.company_name || '',
+        companyData.legal_name || '',
+        companyData.tax_id || '',
+        companyData.address || '',
+        companyData.city || '',
+        companyData.state || 'FL',
+        companyData.zip_code || '',
+        companyData.phone || '',
+        companyData.email || '',
+        new Date().toISOString()
+      ]);
+      try { await forceSaveDB(); } catch (_) { }
+      return { success: true, message: 'Datos de empresa actualizados correctamente' };
     }
 
     // Preparar datos para actualización
+    // Filtrar undefined/null/'' para que currentData sirva como fallback
+    const cleanInput = Object.fromEntries(
+      Object.entries(companyData).filter(([, v]) => v !== undefined && v !== null && v !== '')
+    );
     const updateData = {
       ...currentData,
-      ...companyData,
+      ...cleanInput,
       updated_at: new Date().toISOString()
     };
 
-    // Ejecutar actualización
-    const stmt = db.prepare(`
+    // UPDATE completo con Statement API (patrón correcto sql.js)
+    sqlRun(`
       UPDATE company_data SET
-company_name = ?,
-  legal_name = ?,
-  tax_id = ?,
-  address = ?,
-  city = ?,
-  state = ?,
-  zip_code = ?,
-  phone = ?,
-  email = ?,
-  website = ?,
-  logo_path = ?,
-  fiscal_year_start = ?,
-  currency = ?,
-  language = ?,
-  timezone = ?,
-  sales_commission_rate = ?,
-  sales_commission_percentage = ?,
-  discount_amount = ?,
-  discount_percentage = ?,
-  shipping_rate = ?,
-  shipping_percentage = ?,
-  reposition_policy_days = ?,
-  late_fee_amount = ?,
-  late_fee_percentage = ?,
-  annual_interest_rate = ?,
-  grace_period_days = ?,
-  documentation_cost = ?,
-  other_costs = ?,
-  chart_of_accounts_name = ?,
-  date_format = ?,
-  fiscal_year_end = ?,
-  netIncreaseInCash = ?,
-  updated_at = ?
-    WHERE id = ? AND is_active = 1
-      `);
-
-    stmt.run([
+        company_name = ?,
+        legal_name = ?,
+        tax_id = ?,
+        address = ?,
+        city = ?,
+        state = ?,
+        zip_code = ?,
+        phone = ?,
+        email = ?,
+        website = ?,
+        logo_path = ?,
+        fiscal_year_start = ?,
+        currency = ?,
+        language = ?,
+        timezone = ?,
+        sales_commission_rate = ?,
+        sales_commission_percentage = ?,
+        discount_amount = ?,
+        discount_percentage = ?,
+        shipping_rate = ?,
+        shipping_percentage = ?,
+        reposition_policy_days = ?,
+        late_fee_amount = ?,
+        late_fee_percentage = ?,
+        annual_interest_rate = ?,
+        grace_period_days = ?,
+        documentation_cost = ?,
+        other_costs = ?,
+        chart_of_accounts_name = ?,
+        date_format = ?,
+        fiscal_year_end = ?,
+        netIncreaseInCash = ?,
+        updated_at = ?
+      WHERE id = ? AND is_active = 1
+    `, [
       updateData.company_name,
       updateData.legal_name,
       updateData.tax_id,
@@ -8503,10 +8598,10 @@ company_name = ?,
       updateData.email,
       updateData.website || null,
       updateData.logo_path || null,
-      updateData.fiscal_year_start,
-      updateData.currency,
-      updateData.language,
-      updateData.timezone,
+      updateData.fiscal_year_start || '01-01',
+      updateData.currency || 'USD',
+      updateData.language || 'es',
+      updateData.timezone || 'America/New_York',
       updateData.sales_commission_rate || 0,
       updateData.sales_commission_percentage || 0,
       updateData.discount_amount || 50,
@@ -8521,7 +8616,7 @@ company_name = ?,
       updateData.documentation_cost || 0,
       updateData.other_costs || 0,
       updateData.chart_of_accounts_name || 'Plan de Cuenta Ejemplo',
-      updateData.date_format || 'MM/DD/AAAA',
+      updateData.date_format || 'MM/DD/YYYY',
       updateData.fiscal_year_end || '12-31',
       updateData.netIncreaseInCash || 0,
       updateData.updated_at,
@@ -8573,7 +8668,7 @@ export function getARDDocuments(): any[] {
     const result = db.exec('SELECT * FROM ard_documents ORDER BY created_at DESC');
     if (!result[0]) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const doc: any = {};
       columns.forEach((col: any, i: any) => doc[col] = row[i]);
@@ -8654,7 +8749,7 @@ c.id,
     const result = db.exec(query);
     if (!result[0]) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const obj: any = {};
       columns.forEach((col: any, i: any) => obj[col] = row[i]);
@@ -8835,7 +8930,7 @@ c.*,
     }
 
     const categories: ProductCategory[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const category: any = {};
@@ -9065,7 +9160,7 @@ p.*,
     }
 
     const products: Product[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const product: any = {};
@@ -9378,7 +9473,7 @@ p.*,
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const product: any = {};
 
     columns.forEach((col: any, index: any) => {
@@ -9482,7 +9577,7 @@ p.*,
     }
 
     const products: Product[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const product: any = {};
@@ -9809,7 +9904,7 @@ export function getAllFloridaTaxRates(): { id: number; county: string; stateRate
     const result = db.exec("SELECT id, county_name as county, state_rate as stateRate, county_rate as discretionaryRate, total_rate as totalRate FROM florida_tax_rates");
     if (result.length === 0 || result[0].values.length === 0) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => rowToEntity<any>(columns, row as initSqlJs.SqlValue[]));
   } catch (error) {
     console.error('Error getting all tax rates:', error);
@@ -9996,7 +10091,7 @@ export function getPaymentMethods(): PaymentMethod[] {
     }
 
     const paymentMethods: PaymentMethod[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const paymentMethod: any = {};
@@ -10039,7 +10134,7 @@ export function getAllPaymentMethods(): PaymentMethod[] {
     }
 
     const paymentMethods: PaymentMethod[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const paymentMethod: any = {};
@@ -10345,7 +10440,7 @@ export function getPaymentMethodById(id: number): PaymentMethod | null {
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     const paymentMethod: any = {};
     columns.forEach((col: any, index: any) => {
@@ -10426,7 +10521,7 @@ export function getBankAccounts(): BankAccount[] {
       return [];
     }
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const account: any = {};
       columns.forEach((col: any, index: any) => {
@@ -10454,7 +10549,7 @@ export function getBankAccountById(id: number): BankAccount | null {
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const account: any = {};
 
     columns.forEach((col: any, index: any) => {
@@ -10505,7 +10600,7 @@ export function findBankAccountsByNumber(accountNumber: string): BankAccount[] {
       return [];
     }
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const account: any = {};
       columns.forEach((col: any, index: any) => {
@@ -10723,7 +10818,7 @@ export function getReconciliationStatements(accountId?: number): ReconciliationS
 
     const res = db.exec(query, params);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<ReconciliationStatement>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<ReconciliationStatement>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching reconciliation statements:', e);
     return [];
@@ -10785,7 +10880,7 @@ export function getUnreconciledTransactions(accountId: number): BankTransaction[
     `, [accountId]);
 
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<BankTransaction>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<BankTransaction>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching unreconciled transactions:', e);
     return [];
@@ -10811,7 +10906,7 @@ export function findSimilarJournalEntries(transaction: BankTransaction): Journal
     `, [Math.abs(transaction.amount), transaction.transaction_date, transaction.transaction_date]);
 
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<JournalEntry>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<JournalEntry>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error finding similar journal entries:', e);
     return [];
@@ -10871,7 +10966,7 @@ export function autoMatchTransactions(statementId: number): { success: boolean; 
       return { success: false, message: 'Statement no encontrado', matchesFound: 0 };
     }
 
-    const statement = rowToEntity<ReconciliationStatement>(statementRes[0].columns, statementRes[0].values[0]);
+    const statement = rowToEntity<ReconciliationStatement>((statementRes[0].columns || (statementRes[0] as any).lc), statementRes[0].values[0]);
 
     // Obtener transacciones no conciliadas
     const transactions = getUnreconciledTransactions(statement.bank_account_id);
@@ -10972,7 +11067,7 @@ export function getInventoryMovements(): any[] {
       return [];
     }
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const obj: any = {};
       columns.forEach((col: any, index: any) => {
@@ -11165,7 +11260,7 @@ je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
     const result = db.exec(query);
     if (!result.length || !result[0].values.length) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const r: any = {};
       columns.forEach((col: any, i: any) => r[col] = row[i]);
@@ -11263,7 +11358,7 @@ export const getBankTransactions = (
     const result = db.exec(query);
     if (!result.length || !result[0].values.length) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => rowToEntity<BankTransaction>(columns, row));
   } catch (error) {
     logger.error('Database', 'get_bank_txn_failed', 'Error getting bank entries', { accountId }, error as Error);
@@ -11306,7 +11401,7 @@ SELECT * FROM journal_entries
     const result = db.exec(query);
     if (!result.length || !result[0].values.length) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const entries = result[0].values.map((row: any) => rowToEntity<JournalEntry>(columns, row));
 
     const candidates: MatchCandidate[] = [];
@@ -11472,82 +11567,319 @@ export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void>
 export const hasActiveUsers = async (): Promise<boolean> => {
   if (!db) return false;
   try {
-    // Asegurar tabla users
-    db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        email TEXT UNIQUE,
-        full_name TEXT,
-        display_name TEXT,
-        password_hash TEXT NOT NULL,
-        role_id INTEGER,
-        is_active BOOLEAN DEFAULT 1,
-        picture TEXT,
-        last_login DATETIME,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(role_id) REFERENCES user_roles(id)
-      )
-    `);
-    const result = db.exec("SELECT COUNT(*) FROM users WHERE is_active = 1");
-    if (!result[0] || !result[0].values.length) return false;
-    const count = result[0].values[0][0] as number || 0;
-    return count > 0;
+    const res = db.exec(
+      "SELECT COUNT(*) FROM users WHERE username != 'guest' AND is_active = 1"
+    );
+    return (res[0]?.values[0]?.[0] as number ?? 0) > 0;
   } catch (e) {
     return false;
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER GLOBAL: sql.js 1.14 no vincula parámetros con db.run(sql, array).
+// Usar SIEMPRE este helper para INSERT/UPDATE con valores parametrizados.
+// ─────────────────────────────────────────────────────────────────────────────
+const sqlRunWithParams = (database: any, sql: string, params: any[]): void => {
+  const stmt = database.prepare(sql);
+  try { stmt.run(params); } finally { stmt.free(); }
+};
+
 /**
- * Insertar roles iniciales (Idempotente) - Los usuarios se crean via FirstTimeSetup
+ * Seed idempotente de roles base + usuario admin inicial.
+ * Se ejecuta en initDB(). No requiere interacción del usuario.
  */
 export const seedUsersAndRoles = async (): Promise<void> => {
   if (!db) return;
 
   try {
-    // 0. Asegurar que la tabla existe (Robustez extrema)
-    db.run(`
-      CREATE TABLE IF NOT EXISTS user_roles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        description TEXT,
-        level INTEGER DEFAULT 0,
-        is_active BOOLEAN DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    // ── ROLES ──────────────────────────────────────────────────────────────
+    db.run(`DELETE FROM user_roles WHERE name IS NULL`);
 
-    // 1. Roles
-    const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
-    const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
+    const validRoles = db.exec(
+      "SELECT COUNT(*) FROM user_roles WHERE name IS NOT NULL"
+    )[0]?.values[0]?.[0] as number ?? 0;
 
-    if (roleCount === 0) {
-      db.run(`
-        INSERT INTO user_roles(name, description, level) VALUES
-        ('admin', 'Administrador del sistema con acceso completo', 100),
-        ('contador', 'Contador con acceso a módulos contables y reportes', 80),
-        ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
-        ('comprador', 'Comprador con acceso a proveedores y compras', 40),
-        ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
-        ('viewer', 'Usuario de consulta básica', 10)
-      `);
-      logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
+    if (validRoles < 6) {
+      db.run(`DELETE FROM user_roles`);
+
+      const roles = [
+        { name: 'admin', display: 'Administrador', level: 100, perms: '{"all":["read","write","delete","approve"]}' },
+        { name: 'contador', display: 'Contador', level: 80, perms: '{"accounting":["read","write","approve"],"reports":["read"]}' },
+        { name: 'vendedor', display: 'Vendedor', level: 40, perms: '{"invoices":["read","write"],"customers":["read","write"]}' },
+        { name: 'comprador', display: 'Comprador', level: 40, perms: '{"purchases":["read","write"],"vendors":["read","write"]}' },
+        { name: 'auditor', display: 'Auditor', level: 20, perms: '{"all":["read"]}' },
+        { name: 'viewer', display: 'Consulta', level: 10, perms: '{}' },
+      ];
+
+      for (const r of roles) {
+        sqlRunWithParams(db,
+          `INSERT OR IGNORE INTO user_roles (name, description, level, is_active, created_at)
+           VALUES (?, ?, ?, 1, ?)`,
+          [r.name, r.display, r.level, new Date().toISOString()]
+        );
+      }
+      console.log('[seedUsersAndRoles] ✅ 6 roles insertados.');
     }
 
-    // 2. ACTUALIZACIí“N FORZADA DE NIVELES
+    // Forzar niveles correctos siempre
     db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
-    db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
-    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
-    db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
-    db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
-    db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
+    db.run(`UPDATE user_roles SET level = 80  WHERE name = 'contador'`);
+    db.run(`UPDATE user_roles SET level = 40  WHERE name IN ('vendedor','sales')`);
+    db.run(`UPDATE user_roles SET level = 40  WHERE name IN ('comprador','purchasing')`);
+    db.run(`UPDATE user_roles SET level = 20  WHERE name = 'auditor'`);
+    db.run(`UPDATE user_roles SET level = 10  WHERE name = 'viewer'`);
+
+    // ── USUARIO ADMIN INICIAL ──────────────────────────────────────────────
+    const userCount = db.exec(
+      "SELECT COUNT(*) FROM users WHERE username != 'guest'"
+    )[0]?.values[0]?.[0] as number ?? 0;
+
+    if (userCount === 0) {
+      const adminRoleId = db.exec(
+        "SELECT id FROM user_roles WHERE name = 'admin' LIMIT 1"
+      )[0]?.values[0]?.[0] as number;
+
+      if (!adminRoleId) {
+        console.error('[seedUsersAndRoles] ❌ Rol admin no encontrado — no se puede crear usuario inicial');
+        return;
+      }
+
+      const passwordHash = await hashPassword('admin123');
+
+      sqlRunWithParams(db,
+        `INSERT OR IGNORE INTO users
+         (username, email, full_name, display_name, password_hash, role_id, is_active, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+        [
+          'admin',
+          'admin@miempresa.com',
+          'Administrador del Sistema',
+          'Admin',
+          passwordHash,
+          adminRoleId,
+          new Date().toISOString()
+        ]
+      );
+      console.log('[seedUsersAndRoles] ✅ Usuario admin creado (admin/admin123).');
+    }
+
+    const totalRoles = db.exec("SELECT COUNT(*) FROM user_roles")[0]?.values[0]?.[0] as number ?? 0;
+    console.log(`[seedUsersAndRoles] ✅ Sistema listo — ${totalRoles} roles en DB.`);
 
   } catch (error) {
-    logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
+    logger.error('Database', 'seed_auth_failed', 'Error en seed de autenticación', { error });
   }
 };
+
+// ============================================================
+// SEED DE DATOS OPERATIVOS DEL SISTEMA
+// ============================================================
+
+function seedCompanyData(): void {
+  if (!db) return;
+  const count = db.exec("SELECT COUNT(*) FROM company_data")[0]?.values[0]?.[0] as number ?? 0;
+  if (count > 0) return;
+
+  db.run(`
+        INSERT INTO company_data (
+            company_name, legal_name, tax_id,
+            address, city, state, zip_code,
+            phone, email, website,
+            fiscal_year_start, currency, language,
+            timezone, date_format, is_active
+        ) VALUES (
+            'Mi Empresa LLC', 'Mi Empresa LLC', '00-0000000',
+            '123 Main Street', 'Orlando', 'FL', '32801',
+            '(407) 000-0000', 'admin@miempresa.com', '',
+            '01-01', 'USD', 'es',
+            'America/New_York', 'MM/DD/YYYY', 1
+        )
+    `);
+  console.log('[seedCompanyData] ✅ Datos de empresa placeholder creados.');
+}
+
+function seedChartOfAccounts(): void {
+  if (!db) return;
+  const count = db.exec(
+    "SELECT COUNT(*) FROM chart_of_accounts WHERE account_code IS NOT NULL"
+  )[0]?.values[0]?.[0] as number ?? 0;
+  if (count > 0) return;
+
+  const accounts: Array<{ code: string; name: string; type: string; nb: string; parent: string | null }> = [
+    // ── ACTIVOS ──────────────────────────────────────────────────────────
+    { code: '1000', name: 'ACTIVOS', type: 'asset', nb: 'debit', parent: null },
+    { code: '1100', name: 'Activos Corrientes', type: 'asset', nb: 'debit', parent: '1000' },
+    { code: '1110', name: 'Efectivo y Equivalentes', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1111', name: 'Caja Chica', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1112', name: 'Cuenta Corriente - Bank of America', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1113', name: 'Cuenta de Ahorros', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1114', name: 'Cuenta Payroll', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1120', name: 'Cuentas por Cobrar', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1121', name: 'Cuentas por Cobrar - Clientes', type: 'asset', nb: 'debit', parent: '1120' },
+    { code: '1122', name: 'Provisión Cuentas Incobrables', type: 'asset', nb: 'credit', parent: '1120' },
+    { code: '1123', name: 'Otras Cuentas por Cobrar', type: 'asset', nb: 'debit', parent: '1120' },
+    { code: '1130', name: 'Inventario', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1131', name: 'Inventario - Productos Terminados', type: 'asset', nb: 'debit', parent: '1130' },
+    { code: '1132', name: 'Inventario - Materias Primas', type: 'asset', nb: 'debit', parent: '1130' },
+    { code: '1133', name: 'Inventario - Productos en Proceso', type: 'asset', nb: 'debit', parent: '1130' },
+    { code: '1140', name: 'Gastos Pagados por Anticipado', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1141', name: 'Seguros Pagados por Anticipado', type: 'asset', nb: 'debit', parent: '1140' },
+    { code: '1142', name: 'Alquileres Pagados por Anticipado', type: 'asset', nb: 'debit', parent: '1140' },
+    { code: '1200', name: 'Activos No Corrientes', type: 'asset', nb: 'debit', parent: '1000' },
+    { code: '1210', name: 'Propiedad, Planta y Equipo', type: 'asset', nb: 'debit', parent: '1200' },
+    { code: '1211', name: 'Terrenos', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1212', name: 'Edificios', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1213', name: 'Deprec. Acumulada - Edificios', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1214', name: 'Maquinaria y Equipo', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1215', name: 'Deprec. Acumulada - Maquinaria', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1216', name: 'Vehículos', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1217', name: 'Deprec. Acumulada - Vehículos', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1218', name: 'Mobiliario y Equipo de Oficina', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1219', name: 'Deprec. Acumulada - Mobiliario', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1220', name: 'Activos Intangibles', type: 'asset', nb: 'debit', parent: '1200' },
+    { code: '1221', name: 'Goodwill', type: 'asset', nb: 'debit', parent: '1220' },
+    { code: '1222', name: 'Patentes y Marcas', type: 'asset', nb: 'debit', parent: '1220' },
+    { code: '1223', name: 'Software', type: 'asset', nb: 'debit', parent: '1220' },
+    { code: '1224', name: 'Amortiz. Acumulada - Intangibles', type: 'asset', nb: 'credit', parent: '1220' },
+    // ── PASIVOS ──────────────────────────────────────────────────────────
+    { code: '2000', name: 'PASIVOS', type: 'liability', nb: 'credit', parent: null },
+    { code: '2100', name: 'Pasivos Corrientes', type: 'liability', nb: 'credit', parent: '2000' },
+    { code: '2110', name: 'Cuentas por Pagar', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2111', name: 'Cuentas por Pagar - Proveedores', type: 'liability', nb: 'credit', parent: '2110' },
+    { code: '2112', name: 'Otras Cuentas por Pagar', type: 'liability', nb: 'credit', parent: '2110' },
+    { code: '2120', name: 'Impuestos por Pagar', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2121', name: 'Sales Tax por Pagar (Florida)', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2122', name: 'Impuesto Federal por Pagar', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2123', name: 'Impuesto Estatal FL por Pagar', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2124', name: 'Payroll Taxes por Pagar', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2130', name: 'Nómina por Pagar', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2131', name: 'Sueldos y Salarios por Pagar', type: 'liability', nb: 'credit', parent: '2130' },
+    { code: '2132', name: 'Retenciones por Pagar', type: 'liability', nb: 'credit', parent: '2130' },
+    { code: '2140', name: 'Préstamos a Corto Plazo', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2141', name: 'Línea de Crédito', type: 'liability', nb: 'credit', parent: '2140' },
+    { code: '2142', name: 'Porción Corriente Deuda LP', type: 'liability', nb: 'credit', parent: '2140' },
+    { code: '2200', name: 'Pasivos No Corrientes', type: 'liability', nb: 'credit', parent: '2000' },
+    { code: '2210', name: 'Préstamos a Largo Plazo', type: 'liability', nb: 'credit', parent: '2200' },
+    { code: '2211', name: 'Hipotecas por Pagar', type: 'liability', nb: 'credit', parent: '2210' },
+    { code: '2212', name: 'Préstamos Bancarios a Largo Plazo', type: 'liability', nb: 'credit', parent: '2210' },
+    // ── PATRIMONIO ───────────────────────────────────────────────────────
+    { code: '3000', name: 'PATRIMONIO', type: 'equity', nb: 'credit', parent: null },
+    { code: '3100', name: 'Capital Social', type: 'equity', nb: 'credit', parent: '3000' },
+    { code: '3110', name: 'Common Stock', type: 'equity', nb: 'credit', parent: '3100' },
+    { code: '3120', name: 'Preferred Stock', type: 'equity', nb: 'credit', parent: '3100' },
+    { code: '3200', name: 'Utilidades Retenidas', type: 'equity', nb: 'credit', parent: '3000' },
+    { code: '3210', name: 'Utilidades del Ejercicio Actual', type: 'equity', nb: 'credit', parent: '3200' },
+    { code: '3220', name: 'Utilidades de Ejercicios Anteriores', type: 'equity', nb: 'credit', parent: '3200' },
+    { code: '3300', name: 'Dividendos', type: 'equity', nb: 'debit', parent: '3000' },
+    { code: '3400', name: "Owner's Draw", type: 'equity', nb: 'debit', parent: '3000' },
+    // ── INGRESOS ─────────────────────────────────────────────────────────
+    { code: '4000', name: 'INGRESOS', type: 'revenue', nb: 'credit', parent: null },
+    { code: '4100', name: 'Ingresos Operacionales', type: 'revenue', nb: 'credit', parent: '4000' },
+    { code: '4110', name: 'Ventas de Productos', type: 'revenue', nb: 'credit', parent: '4100' },
+    { code: '4120', name: 'Ventas de Servicios', type: 'revenue', nb: 'credit', parent: '4100' },
+    { code: '4130', name: 'Devoluciones y Descuentos s/Ventas', type: 'revenue', nb: 'debit', parent: '4100' },
+    { code: '4200', name: 'Otros Ingresos', type: 'revenue', nb: 'credit', parent: '4000' },
+    { code: '4210', name: 'Ingresos por Intereses', type: 'revenue', nb: 'credit', parent: '4200' },
+    { code: '4220', name: 'Ganancia en Venta de Activos', type: 'revenue', nb: 'credit', parent: '4200' },
+    { code: '4230', name: 'Ingresos Diversos', type: 'revenue', nb: 'credit', parent: '4200' },
+    // ── COSTO DE VENTAS ──────────────────────────────────────────────────
+    { code: '5000', name: 'COSTO DE VENTAS', type: 'expense', nb: 'debit', parent: null },
+    { code: '5100', name: 'Costo de Productos Vendidos', type: 'expense', nb: 'debit', parent: '5000' },
+    { code: '5110', name: 'Compras de Mercancía', type: 'expense', nb: 'debit', parent: '5100' },
+    { code: '5120', name: 'Fletes y Acarreos', type: 'expense', nb: 'debit', parent: '5100' },
+    { code: '5200', name: 'Costo de Servicios', type: 'expense', nb: 'debit', parent: '5000' },
+    { code: '5210', name: 'Mano de Obra Directa', type: 'expense', nb: 'debit', parent: '5200' },
+    { code: '5220', name: 'Materiales Directos', type: 'expense', nb: 'debit', parent: '5200' },
+    // ── GASTOS OPERACIONALES ─────────────────────────────────────────────
+    { code: '6000', name: 'GASTOS OPERACIONALES', type: 'expense', nb: 'debit', parent: null },
+    { code: '6100', name: 'Gastos de Ventas', type: 'expense', nb: 'debit', parent: '6000' },
+    { code: '6110', name: 'Sueldos - Personal de Ventas', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6120', name: 'Comisiones de Ventas', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6130', name: 'Publicidad y Marketing', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6140', name: 'Gastos de Viaje - Ventas', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6200', name: 'Gastos Administrativos', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6210', name: 'Sueldos - Personal Administrativo', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6220', name: 'Alquiler de Oficina', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6230', name: 'Servicios Públicos', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6240', name: 'Teléfono e Internet', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6250', name: 'Suministros de Oficina', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6260', name: 'Seguros', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6270', name: 'Honorarios Profesionales', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6280', name: 'Depreciación y Amortización', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6290', name: 'Gastos de Mantenimiento', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6300', name: 'Gastos Financieros', type: 'expense', nb: 'debit', parent: '6000' },
+    { code: '6310', name: 'Intereses sobre Préstamos', type: 'expense', nb: 'debit', parent: '6300' },
+    { code: '6320', name: 'Comisiones Bancarias', type: 'expense', nb: 'debit', parent: '6300' },
+    { code: '6330', name: 'Pérdida en Venta de Activos', type: 'expense', nb: 'debit', parent: '6300' },
+    { code: '6400', name: 'Impuestos', type: 'expense', nb: 'debit', parent: '6000' },
+    { code: '6410', name: 'Impuesto sobre la Renta', type: 'expense', nb: 'debit', parent: '6400' },
+    { code: '6420', name: 'Impuestos Locales y Estatales', type: 'expense', nb: 'debit', parent: '6400' },
+    { code: '6430', name: 'Property Tax', type: 'expense', nb: 'debit', parent: '6400' },
+  ];
+
+  for (const a of accounts) {
+    sqlRunWithParams(db,
+      `INSERT OR IGNORE INTO chart_of_accounts
+       (account_code, account_name, account_type, normal_balance, parent_code, is_active)
+       VALUES (?, ?, ?, ?, ?, 1)`,
+      [a.code, a.name, a.type, a.nb, a.parent]
+    );
+  }
+  console.log(`[seedChartOfAccounts] ✅ ${accounts.length} cuentas US GAAP sembradas.`);
+}
+
+function seedPaymentMethods(): void {
+  if (!db) return;
+  const count = db.exec("SELECT COUNT(*) FROM payment_methods")[0]?.values[0]?.[0] as number ?? 0;
+  if (count > 0) return;
+
+  db.run(`
+        INSERT INTO payment_methods (method_name, method_type, is_active, requires_reference) VALUES
+        ('Efectivo',               'cash',         1, 0),
+        ('Transferencia Bancaria', 'bank_transfer', 1, 1),
+        ('Cheque',                 'check',         1, 1),
+        ('Tarjeta de Crédito',     'credit_card',   1, 1),
+        ('Tarjeta de Débito',      'other',         1, 1),
+        ('Zelle',                  'digital',       1, 1),
+        ('ACH',                    'bank_transfer',  1, 1)
+    `);
+  console.log('[seedPaymentMethods] ✅ Métodos de pago base creados.');
+}
+
+function seedSystemConfig(): void {
+  if (!db) return;
+  const defaults: [string, string][] = [
+    ['fiscal_year_start', '01-01'],
+    ['default_currency', 'USD'],
+    ['default_language', 'es'],
+    ['default_state', 'FL'],
+    ['tax_method', 'accrual'],
+    ['dr15_filing_day', '20'],
+    ['ai_enabled', 'true'],
+    ['setup_completed', 'false'],
+  ];
+  for (const [key, value] of defaults) {
+    sqlRunWithParams(db,
+      `INSERT OR IGNORE INTO system_config (key, value) VALUES (?, ?)`,
+      [key, value]
+    );
+  }
+  console.log('[seedSystemConfig] ✅ Configuración del sistema inicializada.');
+}
+
+function seedSystemDefaults(): void {
+  try {
+    seedCompanyData();
+    seedChartOfAccounts();
+    seedPaymentMethods();
+    seedSystemConfig();
+    console.log('[seedSystemDefaults] ✅ Todos los datos del sistema inicializados.');
+  } catch (e) {
+    // Nunca lanzar: el seed no debe impedir el arranque
+    console.warn('[seedSystemDefaults] ⚠️ Error parcial en inicialización:', e);
+  }
+}
 
 /**
  * Hash de contraseña usando PBKDF2 (compatible con Web Crypto API)
@@ -11662,19 +11994,20 @@ export const createUser = async (userData: {
     // Hash de la contraseña
     const passwordHash = await hashPassword(userData.password);
 
-    // Insertar usuario
-    db.run(`
-      INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active, picture)
-      VALUES(?, ?, ?, ?, ?, ?, 1, ?)
-    `, [
-      userData.username,
-      userData.email || userData.username,
-      userData.full_name || userData.display_name,
-      userData.display_name,
-      passwordHash,
-      userData.role_id,
-      userData.picture || null
-    ]);
+    // Insertar usuario — usar sqlRunWithParams (db.run no vincula params en sql.js 1.14)
+    sqlRunWithParams(db,
+      `INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active, picture)
+       VALUES(?, ?, ?, ?, ?, ?, 1, ?)`,
+      [
+        userData.username,
+        userData.email || userData.username,
+        userData.full_name || userData.display_name,
+        userData.display_name,
+        passwordHash,
+        userData.role_id,
+        userData.picture || null
+      ]
+    );
 
     const result = db.exec('SELECT last_insert_rowid() as id');
     const userId = result[0]?.values[0]?.[0] as number;
@@ -11717,7 +12050,7 @@ export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
     const result = db.exec(query);
     if (!result[0]) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const user: any = {};
       columns.forEach((col: any, index: any) => {
@@ -11864,32 +12197,55 @@ export const getUserRoles = (): any[] => {
   if (!db) return [];
 
   try {
-    // Asegurar tabla roles
+    // Asegurar tabla roles con esquema real detectado
     db.run(`
       CREATE TABLE IF NOT EXISTS user_roles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         description TEXT,
         level INTEGER DEFAULT 0,
-        is_active BOOLEAN DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        permissions_json TEXT DEFAULT '{}',
+        is_system_role BOOLEAN DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    const result = db.exec('SELECT * FROM user_roles ORDER BY level DESC');
-    if (!result[0] || !result[0].columns) return [];
+    // Limpiar rows corruptas con name=NULL
+    db.run(`DELETE FROM user_roles WHERE name IS NULL`);
 
-    const columns = result[0].columns;
-    return result[0].values.map((row: any) => {
-      const role: any = {};
-      columns.forEach((col: any, index: any) => {
-        role[col] = row[index];
-      });
-      return role;
-    });
-  } catch (error) {
-    logger.error('Users', 'get_roles_failed', 'Error getting user roles', {}, error as Error);
+    // Contar roles válidos
+    const validCountRes = db.exec("SELECT COUNT(*) FROM user_roles WHERE name IS NOT NULL");
+    const validCount = validCountRes[0]?.values[0]?.[0] as number ?? 0;
+
+    if (validCount < 6) {
+      db.run(`DELETE FROM user_roles`);
+      db.run(`
+        INSERT INTO user_roles(name, description, level) VALUES
+        ('admin',    'Administrador del sistema con acceso completo', 100),
+        ('contador', 'Contador con acceso a módulos contables y reportes', 80),
+        ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
+        ('comprador','Comprador con acceso a proveedores y compras', 40),
+        ('auditor',  'Auditor con acceso de solo lectura a todo el sistema', 20),
+        ('viewer',   'Usuario de consulta básica', 10)
+      `);
+      logger.info('Users', 'roles_repaired', `getUserRoles: insertados 6 roles (había ${validCount} válidos)`);
+    }
+
+    // Consulta física robusta (SELECT * es más seguro si el esquema puede variar, pero aquí especificamos para evitar is_active)
+    const result = db.exec('SELECT id, name, description, level FROM user_roles WHERE name IS NOT NULL ORDER BY level DESC');
+    if (!result.length || !result[0]?.values?.length) return [];
+
+    return result[0].values
+      .filter((row: any) => row[1] != null)
+      .map((row: any) => ({
+        id: row[0] as number,
+        name: row[1] as string,
+        description: row[2] as string,
+        level: row[3] as number,
+        is_active: 1, // Mock de is_active ya que no existe en el esquema físico real
+      }));
+  } catch (error: any) {
+    logger.error('Users', 'get_roles_failed', `Error getting user roles: ${error.message}`, {}, error);
     return [];
   }
 };
@@ -11937,11 +12293,9 @@ export const createUserRole = (roleData: {
       return { success: false, message: 'Ya existe un rol con ese nombre' };
     }
 
-    // Insertar rol
-    db.run(`
-      INSERT INTO user_roles(name, description, level)
-VALUES(?, ?, ?)
-    `, [roleData.name, roleData.description, roleData.level]);
+    // Insertar rol — patrón correcto sql.js (db.run no vincula ? posicionales)
+    const stmtRole = db.prepare(`INSERT INTO user_roles(name, description, level) VALUES(?, ?, ?)`);
+    try { stmtRole.run([roleData.name, roleData.description, roleData.level]); } finally { stmtRole.free(); }
 
     const result = db.exec('SELECT last_insert_rowid() as id');
     const roleId = result[0]?.values[0]?.[0] as number;
@@ -12117,7 +12471,7 @@ export const getPurchaseOrders = (filters: { status?: string, supplier_id?: numb
 
     const res = db.exec(query, params);
     if (res.length > 0 && res[0].values.length > 0) {
-      const cols = res[0].columns;
+      const cols = (res[0].columns || (res[0] as any).lc);
       return res[0].values.map((row: any) => {
         const po: any = {};
         cols.forEach((col: any, i: any) => po[col] = row[i]);
@@ -12186,7 +12540,7 @@ export const receivePurchaseOrder = (poId: number, userId: number = 1): { succes
       return { success: false, message: 'Order has no items' };
     }
 
-    const cols = res[0].columns;
+    const cols = (res[0].columns || (res[0] as any).lc);
     const items = res[0].values.map((row: any) => {
       const item: any = {};
       cols.forEach((col: any, i: any) => item[col] = row[i]);
@@ -12237,7 +12591,7 @@ export const getStockMovements = (productId?: number): StockMovement[] => {
 
     const res = db.exec(query, params);
     if (res.length > 0 && res[0].values.length > 0) {
-      const cols = res[0].columns;
+      const cols = (res[0].columns || (res[0] as any).lc);
       return res[0].values.map((row: any) => {
         const sm: any = {};
         cols.forEach((col: any, i: any) => sm[col] = row[i]);
@@ -12367,7 +12721,7 @@ sm.*,
 
     const res = db.exec(query, params);
     if (res.length > 0 && res[0].values.length > 0) {
-      const cols = res[0].columns;
+      const cols = (res[0].columns || (res[0] as any).lc);
       return res[0].values.map((row: any) => {
         const item: any = {};
         cols.forEach((col: any, i: any) => item[col] = row[i]);
@@ -12507,7 +12861,7 @@ export function getInventoryMovementsWithFilters(filters: {
     const res = db.exec(query, params);
     if (res.length === 0) return [];
 
-    return res[0].values.map((row: any) => rowToEntity<any>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<any>((res[0].columns || (res[0] as any).lc), row));
   } catch (error) {
     logger.error('Inventory', 'get_movements_failed', 'Error al obtener movimientos de inventario', { error });
     return [];
@@ -12586,7 +12940,7 @@ export function getLocations(activeOnly: boolean = true): any[] {
     const res = db.exec(query, params);
     if (res.length === 0) return [];
 
-    return res[0].values.map((row: any) => rowToEntity<any>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<any>((res[0].columns || (res[0] as any).lc), row));
   } catch (error) {
     logger.error('Inventory', 'get_locations_failed', 'Error al obtener ubicaciones', { error });
     return [];
@@ -12912,7 +13266,7 @@ export function getBudgets(filters?: {
     const res = db.exec(query, params);
     if (res.length === 0) return [];
 
-    return res[0].values.map((row: any) => rowToEntity<Budget>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<Budget>((res[0].columns || (res[0] as any).lc), row));
   } catch (error) {
     console.error('Error fetching budgets:', error);
     return [];
@@ -12929,7 +13283,7 @@ export function getBudgetById(id: number): Budget | null {
     const res = db.exec('SELECT * FROM budgets WHERE id = ?', [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
 
-    return rowToEntity<Budget>(res[0].columns, res[0].values[0]);
+    return rowToEntity<Budget>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
   } catch (error) {
     console.error('Error fetching budget:', error);
     return null;
@@ -12946,7 +13300,7 @@ export function getBudgetLines(budgetId: number): BudgetLine[] {
     const res = db.exec('SELECT * FROM budget_lines WHERE budget_id = ? ORDER BY account_number ASC', [budgetId]);
     if (res.length === 0) return [];
 
-    return res[0].values.map((row: any) => rowToEntity<BudgetLine>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<BudgetLine>((res[0].columns || (res[0] as any).lc), row));
   } catch (error) {
     console.error('Error fetching budget lines:', error);
     return [];
@@ -12963,7 +13317,7 @@ export function getBudgetPeriods(budgetLineId: number): BudgetPeriod[] {
     const res = db.exec('SELECT * FROM budget_periods WHERE budget_line_id = ? ORDER BY period_number ASC', [budgetLineId]);
     if (res.length === 0) return [];
 
-    return res[0].values.map((row: any) => rowToEntity<BudgetPeriod>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<BudgetPeriod>((res[0].columns || (res[0] as any).lc), row));
   } catch (error) {
     console.error('Error fetching budget periods:', error);
     return [];
@@ -13620,7 +13974,7 @@ export function getPayroll(payrollId: number): Payroll | null {
     const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
     if (result.length === 0 || result[0].values.length === 0) return null;
 
-    return rowToEntity<Payroll>(result[0].columns, result[0].values[0]);
+    return rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), result[0].values[0]);
   } catch (error) {
     console.error('Error getting payroll:', error);
     return null;
@@ -13647,7 +14001,7 @@ export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[
     const result = db.exec(query, params);
     if (result.length === 0) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting employee payrolls:', error);
     return [];
@@ -13694,7 +14048,7 @@ export function getAllPayrolls(filters?: {
     const result = db.exec(query, params);
     if (result.length === 0) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting all payrolls:', error);
     return [];
@@ -13731,7 +14085,7 @@ export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
     const result = db.exec(query, [startDate, endDate]);
     if (result.length === 0) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting quarterly payrolls:', error);
     return [];
@@ -13756,7 +14110,7 @@ export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
     const result = db.exec(query, [employeeId, year.toString()]);
     if (result.length === 0) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting annual payrolls:', error);
     return [];

@@ -11,7 +11,7 @@ import {
   MapPin,
   Building
 } from 'lucide-react';
-import { Customer } from '../database/simple-db';
+import { Customer } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface CustomerDetailViewProps {

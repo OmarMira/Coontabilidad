@@ -3,7 +3,7 @@ import { FileDown, FileText, Table as TableIcon, Share2, Printer, CheckCircle, A
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { getCompanyData } from '../../database/simple-db';
+import { getCompanyData } from '@/database/simple-db';
 import { getCompanyLogoUrl } from '../../utils/logoUtils';
 import { logger } from '../../core/logging/SystemLogger';
 import { useLocale } from '../../i18n/useLocale';

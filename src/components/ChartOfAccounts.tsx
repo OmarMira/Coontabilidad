@@ -5,7 +5,7 @@ import {
   ChevronRight, ChevronDown, AlertCircle, CheckCircle, XCircle
 } from 'lucide-react';
 import { logger } from '../core/logging/SystemLogger';
-import { getChartOfAccounts, ChartOfAccount, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '../database/simple-db';
+import { getChartOfAccounts, ChartOfAccount, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 // Extender la interfaz para incluir propiedades de jerarquía

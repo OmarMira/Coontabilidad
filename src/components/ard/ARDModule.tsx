@@ -8,7 +8,7 @@ import { ARDCustomerPanel } from './ARDCustomerPanel';
 import { ARDQualityPanel } from './ARDQualityPanel';
 import { ARDInventorySync } from './ARDInventorySync';
 import { ARDRoadmap } from './ARDRoadmap';
-import { getARDDocuments } from '../../database/simple-db';
+import { getARDDocuments } from '@/database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 import { useLocale } from '../../i18n/useLocale';
 

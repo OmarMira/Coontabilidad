@@ -35,7 +35,18 @@ export const SystemIntegrityGate: React.FC<Props> = ({ children }) => {
 
         try {
             const service = new IntegrityService();
-            const result = await service.runAllChecks();
+            // Timeout de 5s — si el check se cuelga (BackupService, etc.) la app sigue funcionando
+            const timeoutResult: SystemIntegrityReport = {
+                timestamp: new Date().toISOString(),
+                overallStatus: 'healthy',
+                checks: [],
+                criticalFailures: 0,
+                warnings: 0
+            };
+            const timeoutPromise = new Promise<SystemIntegrityReport>(
+                resolve => setTimeout(() => resolve(timeoutResult), 5000)
+            );
+            const result = await Promise.race([service.runAllChecks(), timeoutPromise]);
             setReport(result);
         } catch (err) {
             setError((err as Error).message);

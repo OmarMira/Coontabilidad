@@ -1,4 +1,22 @@
 {
+  "common": {
+    "caution": "Precaución",
+    "back": "Atrás",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "error": "Error",
+    "retry": "Reintentar",
+    "refresh": "Refrescar",
+    "close": "Cerrar",
+    "date": "Fecha",
+    "amount": "Monto",
+    "actions": "Acciones",
+    "status": "Estado",
+    "notes": "Notas",
+    "total": "Total",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  },
   "accounting": {
     "periods": {
       "title": "Gestión de Períodos",
@@ -4399,8 +4417,9 @@
       "outdatedrates": "TASAS DESACTUALIZADAS",
       "statusgenerated": "GENERADO",
       "statuspending": "PENDIENTE",
-      "title": "CUMPLIMIENTO NORMATIVO",
-      "verifiedby": "VERIFICADO POR"
+      "verifiedby": "VERIFICADO POR",
+      "error": "ERROR DE CARGA",
+      "title": "HISTORIAL DE CUMPLIMIENTO"
     },
     "compliancedesc": "ESTADO DE DECLARACIONES Y AUDITORÍA DE SEGURIDAD",
     "compliancetitle": "CENTRO DE CUMPLIMIENTO",

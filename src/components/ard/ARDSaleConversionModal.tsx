@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, FilePlus, User, ArrowRight, ShoppingBag, Tag, Calendar, ShieldCheck } from 'lucide-react';
-import { getCustomers, createInvoice, updateARDDocumentStatus, Customer } from '../../database/simple-db';
+import { getCustomers, createInvoice, updateARDDocumentStatus, Customer } from '@/database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { useLocale } from '../../i18n/useLocale';

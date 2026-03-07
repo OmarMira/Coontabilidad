@@ -19,7 +19,7 @@ import {
   Loader2,
   Cpu
 } from 'lucide-react';
-import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '../database/simple-db';
+import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../i18n/useLocale';
 

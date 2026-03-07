@@ -1,4 +1,4 @@
-import { Employee, PayrollSetting, TaxBracket, PayrollLineItem } from '../database/simple-db';
+import { Employee, PayrollSetting, TaxBracket, PayrollLineItem } from '@/database/simple-db';
 
 export interface CalculationResult {
     grossAmount: number;

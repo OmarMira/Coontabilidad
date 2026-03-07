@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XCircle, Tag, Percent, FileText, ShieldCheck, Sparkles, Cpu } from 'lucide-react';
-import { ProductCategory, getProductCategories } from '../database/simple-db';
+import { ProductCategory, getProductCategories } from '@/database/simple-db';
 
 interface ProductCategoryFormProps {
   onSubmit: (categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>) => void;

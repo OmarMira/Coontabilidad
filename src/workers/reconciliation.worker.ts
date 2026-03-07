@@ -1,5 +1,5 @@
 // reconciliation.worker.ts - Worker para matching masivo de conciliación bancaria
-import { BankTransaction, JournalEntry, ReconciliationMatch } from '../database/simple-db';
+import { BankTransaction, JournalEntry, ReconciliationMatch } from '@/database/simple-db';
 
 export interface ReconciliationTask {
   type: 'AUTO_MATCH' | 'BULK_ANALYSIS' | 'DISCREPANCY_DETECTION';

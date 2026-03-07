@@ -22,7 +22,7 @@ import {
     Layers,
     Info
 } from 'lucide-react';
-import { getEmployees, createEmployee, updateEmployee, Employee } from '../../database/simple-db';
+import { getEmployees, createEmployee, updateEmployee, Employee } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 

@@ -1,5 +1,5 @@
 import { SQLiteEngine } from '../database/SQLiteEngine';
-import { db as globalDb } from '../../database/simple-db';
+import { db as globalDb } from '@/database/simple-db';
 import { logger } from '../../utils/logger';
 
 

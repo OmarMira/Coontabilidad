@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   Package
 } from 'lucide-react';
-import { ProductCategory } from '../database/simple-db';
+import { ProductCategory } from '@/database/simple-db';
 
 interface ProductCategoryListProps {
   categories: ProductCategory[];

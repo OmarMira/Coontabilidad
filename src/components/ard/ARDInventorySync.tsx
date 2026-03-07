@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Package, RefreshCw, AlertCircle, CheckCircle2, ArrowRightLeft, Info, Search } from 'lucide-react';
 import { ARDDocument } from '../../modules/ard/ARD.types';
-import { updateProductStock, getProducts, Product } from '../../database/simple-db';
+import { updateProductStock, getProducts, Product } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 

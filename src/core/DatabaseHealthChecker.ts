@@ -1,4 +1,4 @@
-import { db } from '../database/simple-db';
+import { db } from '@/database/simple-db';
 import { BackupService } from '../services/backup/BackupService';
 import { ForensicDatabaseDiagnostic } from '../database/ForensicDiagnostic';
 import { logger } from '../utils/logger';

@@ -3,7 +3,7 @@ import {
   Truck, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus,
   Zap, Activity, ShieldCheck, Target, Building2
 } from 'lucide-react';
-import { Supplier } from '../database/simple-db';
+import { Supplier } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface SupplierListProps {

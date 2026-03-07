@@ -19,7 +19,7 @@ import {
     Zap
 } from 'lucide-react';
 import { InventoryKardexViewer } from './InventoryKardexViewer';
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
 
 interface ProductData {

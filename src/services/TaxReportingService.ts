@@ -1,4 +1,4 @@
-import { DatabaseService } from '../database/DatabaseService';
+import { DatabaseService } from '@/database/DatabaseService';
 import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
 import { BasicEncryption } from '../core/security/BasicEncryption';
 
@@ -119,25 +119,35 @@ export class TaxReportingService {
         missingCounties: string[]; // Populated if count < 67
         outdatedRates: boolean;
     }> {
-        // 1. Check Count
-        const rows = await DatabaseService.executeQuery("SELECT county_name FROM florida_tax_rates");
-        const count = rows.length;
+        try {
+            // 1. Check Count
+            const rows = await DatabaseService.executeQuery("SELECT county_name FROM florida_tax_rates");
+            const count = rows.length;
 
-        // 2. Check Rates (Base Rate must be 6% = 600)
-        const badRatesRes = await DatabaseService.executeQuery("SELECT count(*) as c FROM florida_tax_rates WHERE state_rate != 0.06");
-        const hasBadRates = badRatesRes[0]?.c > 0;
+            // 2. Check Rates (Base Rate must be 6% = 600)
+            const badRatesRes = await DatabaseService.executeQuery("SELECT count(*) as c FROM florida_tax_rates WHERE base_rate != 600");
+            const hasBadRates = (badRatesRes[0]?.c || 0) > 0;
 
-        const missing: string[] = [];
-        if (count < 67) {
-            missing.push(`Missing ${67 - count} counties`);
+            const missing: string[] = [];
+            if (count < 67) {
+                missing.push(`Missing ${67 - count} counties`);
+            }
+
+            return {
+                valid: count === 67 && !hasBadRates,
+                counties: count,
+                missingCounties: missing,
+                outdatedRates: hasBadRates
+            };
+        } catch (e) {
+            console.error("Error in hasValidConfiguration:", e);
+            return {
+                valid: false,
+                counties: 0,
+                missingCounties: [`DB Error: ${e instanceof Error ? e.message : String(e)}`],
+                outdatedRates: true
+            };
         }
-
-        return {
-            valid: count === 67 && !hasBadRates,
-            counties: count,
-            missingCounties: missing,
-            outdatedRates: hasBadRates
-        };
     }
 
     /**

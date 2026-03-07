@@ -1,5 +1,5 @@
 import { logger } from '../core/logging/SystemLogger';
-import { getDB } from '../database/simple-db';
+import { getDB } from '@/database/simple-db';
 import { GoogleAuthService } from './GoogleAuthService';
 
 export interface UserSession {

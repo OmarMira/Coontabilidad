@@ -3,7 +3,7 @@ import { useLocale } from '../../i18n/useLocale';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calculator, AlertTriangle, ShieldCheck, XCircle, Save } from 'lucide-react';
-import { getFiscalSettings, updateFiscalSettings, type FiscalSettings } from '../../database/simple-db';
+import { getFiscalSettings, updateFiscalSettings, type FiscalSettings } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
 
 

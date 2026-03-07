@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Edit, FileText, Calendar, DollarSign, Truck, MapPin, Phone, Mail } from 'lucide-react';
-import { Bill } from '../database/simple-db';
+import { Bill } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface BillDetailViewProps {

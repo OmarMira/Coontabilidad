@@ -31,7 +31,7 @@ import {
   markDR15ReportAsFiled,
   getAvailableDR15Periods,
   FloridaDR15Report
-} from '../database/simple-db';
+} from '@/database/simple-db';
 import { getFloridaCountyNames } from '../data/floridaCounties';
 import { logger } from '../core/logging/SystemLogger';
 import { useLocale } from '../i18n/useLocale';

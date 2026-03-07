@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, XCircle, Building2, AlertCircle, ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Landmark, Layers, Info } from 'lucide-react';
-import { BankAccount } from '../database/simple-db';
+import { BankAccount } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface BankAccountFormProps {

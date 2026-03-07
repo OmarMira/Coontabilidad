@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, Edit, Trash2, FileText, Calendar, DollarSign, User, Filter, Plus, Zap } from 'lucide-react';
-import { Invoice } from '../database/simple-db';
+import { Invoice } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceListProps {

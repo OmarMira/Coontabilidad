@@ -1,5 +1,5 @@
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { FloridaTaxCalculator } from '../../modules/tax/FloridaTaxCalculator';
 
 export class ContextManager {

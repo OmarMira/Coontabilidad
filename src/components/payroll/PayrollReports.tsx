@@ -24,7 +24,7 @@ import {
   History
 } from 'lucide-react';
 import { payrollReportGenerator, Form941Data, W2Data, W3Data } from '../../services/payroll/PayrollReportGenerator';
-import { getEmployees, Employee } from '../../database/simple-db';
+import { getEmployees, Employee } from '@/database/simple-db';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useLocale } from '@/i18n/useLocale';

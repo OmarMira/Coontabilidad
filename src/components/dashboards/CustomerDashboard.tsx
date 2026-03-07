@@ -15,7 +15,7 @@ import {
   Target,
   Users2
 } from 'lucide-react';
-import { getCustomers, getInvoices } from '../../database/simple-db';
+import { getCustomers, getInvoices } from '@/database/simple-db';
 import { useLocale } from '../../i18n/useLocale';
 
 interface CustomerStats {

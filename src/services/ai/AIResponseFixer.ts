@@ -1,4 +1,4 @@
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 
 /**

@@ -20,7 +20,7 @@ import {
     BankAccount,
     ReconciliationStatement,
     BankTransaction
-} from '../../database/simple-db';
+} from '@/database/simple-db';
 import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 import { ReconciliationTask, ReconciliationResult, Discrepancy } from '../../workers/reconciliation.worker';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';

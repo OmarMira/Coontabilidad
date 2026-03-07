@@ -8,7 +8,7 @@
  * - Auditoría completa de cambios
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 
 export interface DataValidationRule {
   table: string;

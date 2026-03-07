@@ -18,7 +18,7 @@ import {
   Download,
   Loader2
 } from 'lucide-react';
-import { generateBalanceSheet, ChartOfAccount } from '../database/simple-db';
+import { generateBalanceSheet, ChartOfAccount } from '@/database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { useLocale } from '../i18n/useLocale';
 

@@ -4,7 +4,7 @@
  */
 
 import { IntegrityCheck, CheckResult } from '../../../types/integrity.types';
-import { getDB } from '../../../database/simple-db';
+import { getDB } from '@/database/simple-db';
 
 export class UserIntegrityCheck implements IntegrityCheck {
     id = 'user-integrity';

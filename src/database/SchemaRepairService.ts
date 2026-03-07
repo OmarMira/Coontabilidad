@@ -111,8 +111,8 @@ export class SchemaRepairService {
                     INSERT INTO company_data (
                         company_name, legal_name, tax_id, address, city, state, zip_code, phone, email, is_active
                     ) VALUES (
-                        'Account Express Demo Inc.', 'Account Express Demo Inc.', 'US-DEMO-123', 
-                        '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000', 'admin@accountexpress.com', 1
+                        'Mi Empresa LLC', 'Mi Empresa LLC', '00-0000000', 
+                        '123 Main Street', 'Orlando', 'FL', '32801', '(407) 000-0000', 'admin@miempresa.com', 1
                     )
                 `);
                 logs.push("✅ Datos de empresa por defecto restaurados");

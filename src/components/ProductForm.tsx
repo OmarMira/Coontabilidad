@@ -4,7 +4,7 @@ import {
   AlertTriangle, ShieldCheck, Zap, Cpu, Sparkles, Box, Server,
   Layers, Settings, Info, Maximize2, Save, Plus
 } from 'lucide-react';
-import { Product, ProductCategory, Supplier, getProductCategories, getSuppliers } from '../database/simple-db';
+import { Product, ProductCategory, Supplier, getProductCategories, getSuppliers } from '@/database/simple-db';
 
 interface ProductFormProps {
   onSubmit: (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => void;

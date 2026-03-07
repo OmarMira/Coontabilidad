@@ -4,7 +4,7 @@ import {
     CreditCard, ShieldCheck, Landmark, Archive,
     AlertTriangle, XCircle, BookOpen, CheckCircle2, X
 } from 'lucide-react';
-import { BankAccount, getBankAccountTransactionCount } from '../database/simple-db';
+import { BankAccount, getBankAccountTransactionCount } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 type CardPhase =

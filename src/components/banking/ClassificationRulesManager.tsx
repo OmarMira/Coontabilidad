@@ -3,7 +3,7 @@ import {
     Plus, Search, Trash2, ToggleLeft, ToggleRight,
     Zap, Filter, MoreHorizontal, ShieldCheck, X
 } from 'lucide-react';
-import { getChartOfAccounts, ChartOfAccount } from '../../database/simple-db';
+import { getChartOfAccounts, ChartOfAccount } from '@/database/simple-db';
 import { ClassificationRulesService, ClassificationRule } from '../../services/banking/ClassificationRulesService';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';

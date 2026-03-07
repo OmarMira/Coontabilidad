@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, Printer, DollarSign, User, Calendar, FileText, CheckCircle2 } from 'lucide-react';
-import { getPayroll, getEmployeeById } from '../../database/simple-db';
-import type { Payroll, Employee } from '../../database/simple-db';
+import { getPayroll, getEmployeeById } from '@/database/simple-db';
+import type { Payroll, Employee } from '@/database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
 
 interface EmployeePaystubProps {

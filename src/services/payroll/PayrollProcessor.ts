@@ -57,11 +57,11 @@
  * ```
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { payrollTaxCalculator, TaxCalculationInput, TaxCalculationResult } from './PayrollTaxCalculator';
 import { payrollJournalService, PayrollJournalInput } from './PayrollJournalService';
-import { isDateLocked } from '../../database/simple-db';
-import type { Employee, Payroll } from '../../database/simple-db';
+import { isDateLocked } from '@/database/simple-db';
+import type { Employee, Payroll } from '@/database/simple-db';
 
 // ==========================================
 // TYPES & INTERFACES

@@ -18,7 +18,7 @@ import {
     getTrialBalanceReport,
     closePeriod,
     generateClosingEntry
-} from '../../database/simple-db';
+} from '@/database/simple-db';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { toast } from 'react-hot-toast';

@@ -16,7 +16,7 @@ import {
     ShieldAlert,
     Maximize2
 } from 'lucide-react';
-import { getSuppliers, getBills } from '../../database/simple-db';
+import { getSuppliers, getBills } from '@/database/simple-db';
 import { useLocale } from '../../i18n/useLocale';
 
 interface SupplierStats {

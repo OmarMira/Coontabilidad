@@ -35,8 +35,8 @@ export const ComplianceHistory: React.FC = () => {
                 if (!configStatus.valid && isMounted) {
                     const errors: string[] = [];
                     if (configStatus.missingCounties.length > 0) errors.push(...configStatus.missingCounties);
-                    if (configStatus.outdatedRates) errors.push(t('reportsDashboard.compliance.outdatedRates'));
-                    setConfigAlert(`${t('reportsDashboard.compliance.criticalNotice')} ${errors.join('. ')}`);
+                    if (configStatus.outdatedRates) errors.push(t('reportsdashboard.compliance.outdatedrates'));
+                    setConfigAlert(`${t('reportsdashboard.compliance.criticalnotice')} ${errors.join('. ')}`);
                 }
 
                 // Initial labels setup
@@ -54,7 +54,6 @@ export const ComplianceHistory: React.FC = () => {
 
                 if (isMounted) {
                     setHistory(months);
-                    setInitialLoading(false);
                 }
 
                 // Sequential Loading to prevent UI Lock
@@ -84,6 +83,7 @@ export const ComplianceHistory: React.FC = () => {
                             });
                         }
                     } catch (e) {
+                        console.error(`Error loading month ${m.month}/${m.year}:`, e);
                         if (isMounted) {
                             setHistory(prev => {
                                 const newHistory = [...prev];
@@ -94,7 +94,14 @@ export const ComplianceHistory: React.FC = () => {
                     }
                 }
             } catch (e) {
-                console.error(e);
+                console.error("Compliance History Critical Load Error:", e);
+                if (isMounted) {
+                    setConfigAlert(`${t('reportsdashboard.compliance.error')}: ${e instanceof Error ? e.message : 'Unknown error'}`);
+                }
+            } finally {
+                if (isMounted) {
+                    setInitialLoading(false);
+                }
             }
         };
 
@@ -106,7 +113,7 @@ export const ComplianceHistory: React.FC = () => {
         <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-8 h-full flex flex-col items-center justify-center space-y-4">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                {t('reportsDashboard.compliance.loading')}
+                {t('reportsdashboard.compliance.loading')}
             </div>
         </div>
     );
@@ -115,7 +122,7 @@ export const ComplianceHistory: React.FC = () => {
         <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-8 h-full flex flex-col">
             <h2 className="text-[10px] font-black mb-8 uppercase tracking-[0.3em] text-emerald-500/80 flex items-center gap-3">
                 <CheckCircle2 className="w-4 h-4" />
-                {t('reportsDashboard.compliance.title')}
+                {t('reportsdashboard.compliance.title')}
             </h2>
             {configAlert && (
                 <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-4 rounded-2xl mb-6 text-[10px] flex items-center gap-3 font-bold uppercase tracking-wider">
@@ -137,26 +144,26 @@ export const ComplianceHistory: React.FC = () => {
                                 <>
                                     <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-500/20">
                                         <FileText size={10} />
-                                        {t('reportsDashboard.compliance.statusGenerated')}
+                                        {t('reportsdashboard.compliance.statusgenerated')}
                                     </span>
                                     <span className="font-mono font-black text-white text-base tracking-tighter">${((item.amount || 0) / 100).toFixed(2)}</span>
                                 </>
                             ) : item.status === 'pending' ? (
                                 <span className="text-[9px] bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full font-black uppercase tracking-widest flex items-center gap-2 border border-amber-500/20">
                                     <AlertCircle size={10} />
-                                    {t('reportsDashboard.compliance.statusPending')}
+                                    {t('reportsdashboard.compliance.statuspending')}
                                 </span>
                             ) : (
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('reportsDashboard.compliance.noActivity')}</span>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('reportsdashboard.compliance.noactivity')}</span>
                             )}
                         </div>
                     </div>
                 ))}
-                {history.length === 0 && <div className="text-center p-12 text-slate-600 font-black uppercase text-[10px] tracking-[0.2em]">{t('reportsDashboard.compliance.noHistory')}</div>}
+                {history.length === 0 && <div className="text-center p-12 text-slate-600 font-black uppercase text-[10px] tracking-[0.2em]">{t('reportsdashboard.compliance.nohistory')}</div>}
             </div>
             <div className="mt-8 text-[9px] text-slate-700 font-black uppercase tracking-[0.4em] text-right flex items-center justify-end gap-2">
                 <div className="w-1 h-1 bg-slate-700 rounded-full"></div>
-                {t('reportsDashboard.compliance.verifiedBy')} Iron Core v3.0
+                {t('reportsdashboard.compliance.verifiedby')} Iron Core v3.0
             </div>
 
             {selectedReport && (
@@ -167,7 +174,7 @@ export const ComplianceHistory: React.FC = () => {
                                 onClick={(e) => { e.stopPropagation(); setSelectedReport(null); }}
                                 className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white px-6 py-2 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest border border-rose-500/30"
                             >
-                                {t('reportsDashboard.compliance.closeView')}
+                                {t('reportsdashboard.compliance.closeview')}
                             </button>
                         </div>
                         <div className="p-10 pt-0" onClick={(e) => e.stopPropagation()}>

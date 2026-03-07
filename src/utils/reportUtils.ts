@@ -1,4 +1,4 @@
-import { getCompanyData } from '../database/simple-db';
+import { getCompanyData } from '@/database/simple-db';
 import { getCompanyLogoUrl, getLogoHtml } from './logoUtils';
 import { logger } from '../core/logging/SystemLogger';
 

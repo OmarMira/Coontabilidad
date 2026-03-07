@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Edit, FileText, Calendar, DollarSign, User, MapPin, Phone, Mail } from 'lucide-react';
-import { Invoice } from '../database/simple-db';
+import { Invoice } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceDetailViewProps {

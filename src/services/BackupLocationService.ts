@@ -49,7 +49,7 @@ export class BackupLocationService {
 
             this.lastUsedLocation = destination;
             logger.info('BackupLocation', 'location_selected', `Usuario seleccionó: ${dirHandle.name}`);
-            
+
             return destination;
         } catch (e: any) {
             if (e.name === 'AbortError') {
@@ -75,7 +75,7 @@ export class BackupLocationService {
             switch (dest.type) {
                 case 'google-drive':
                     return await this.saveToGoogleDrive(data, filename);
-                
+
                 case 'custom':
                 case 'local-disk':
                     if (dest.handle) {
@@ -83,7 +83,7 @@ export class BackupLocationService {
                     }
                     // Fallback a descargas si no hay handle
                     return await this.saveToDownloads(data, filename);
-                
+
                 case 'downloads':
                 default:
                     return await this.saveToDownloads(data, filename);
@@ -118,14 +118,14 @@ export class BackupLocationService {
         try {
             // Crear archivo en el directorio seleccionado
             const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-            
+
             // Obtener writable stream con safe fallback
             const writable = await (fileHandle.createWritable?.() ?? Promise.reject(new Error('createWritable not available')));
-            
+
             // Escribir datos
             await writable.write(data);
             await writable.close();
-            
+
             logger.info('BackupLocation', 'saved_to_disk', `Backup guardado en: ${dirHandle.name}/${filename}`);
             return true;
         } catch (e) {
@@ -141,16 +141,16 @@ export class BackupLocationService {
         try {
             const blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            
+
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            
+
             URL.revokeObjectURL(url);
-            
+
             logger.info('BackupLocation', 'saved_to_downloads', `Backup descargado: ${filename}`);
             return true;
         } catch (e) {
@@ -184,7 +184,7 @@ export class BackupLocationService {
 
             const file = await fileHandle.getFile();
             logger.info('BackupLocation', 'file_selected', `Usuario seleccionó: ${file.name}`);
-            
+
             return file;
         } catch (e: any) {
             if (e.name === 'AbortError') {
@@ -204,16 +204,42 @@ export class BackupLocationService {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.aex,.json';
-            
-            input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                resolve(file || null);
+            input.style.display = 'none';
+
+            // Adjuntar al DOM ANTES de hacer click — crítico para Chrome/Firefox
+            document.body.appendChild(input);
+
+            let settled = false;
+
+            const cleanup = (file: File | null) => {
+                if (settled) return;
+                settled = true;
+                // Pequeño delay antes de remover para que el evento termine de propagarse
+                setTimeout(() => {
+                    if (document.body.contains(input)) {
+                        document.body.removeChild(input);
+                    }
+                }, 100);
+                resolve(file);
             };
-            
-            input.oncancel = () => {
-                resolve(null);
+
+            input.addEventListener('change', (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0] ?? null;
+                cleanup(file);
+            });
+
+            // Detectar cancelación real: el foco vuelve a window después de cerrar el picker
+            // sin haber disparado 'change'
+            const onWindowFocus = () => {
+                window.removeEventListener('focus', onWindowFocus);
+                // Esperar un tick para que 'change' dispare primero si hubo selección
+                setTimeout(() => {
+                    cleanup(null);  // Si ya se liquidó con un archivo, este cleanup no hace nada
+                }, 300);
             };
-            
+
+            window.addEventListener('focus', onWindowFocus);
+
             input.click();
         });
     }
@@ -230,7 +256,7 @@ export class BackupLocationService {
                 const estimate = await (navigator as any).storage.estimate();
                 logger.info('BackupLocation', 'storage_info', 'Información de almacenamiento', estimate);
             }
-            
+
             // Por ahora, retornamos lista vacía
             // La detección real de pendrives requiere permisos especiales
             return [];

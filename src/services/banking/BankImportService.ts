@@ -12,7 +12,7 @@
  * 8. Rollback si es necesario
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { FileParserService, ParsedTransaction } from './FileParserService';
 import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
 import { AICategorizerService, TrainingExample } from './AICategorizerService';

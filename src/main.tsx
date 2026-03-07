@@ -93,11 +93,18 @@ async function initializeApplication(): Promise<void> {
     // CRÍTICO: Inicializar DB ANTES de renderizar
     await initDB();
 
-    // Validar y Cargar
-    const dbHealth = await DatabaseHealthChecker.checkHealth();
-    if (!dbHealth.healthy) {
-      await DatabaseHealthChecker.attemptAutoRepair();
-    }
+    // Health check en BACKGROUND — no bloquea el render
+    // Si falla, la app ya está montada y el usuario puede trabajar
+    setTimeout(async () => {
+      try {
+        const dbHealth = await DatabaseHealthChecker.checkHealth();
+        if (!dbHealth.healthy) {
+          await DatabaseHealthChecker.attemptAutoRepair();
+        }
+      } catch (healthErr) {
+        console.warn('[main] Health check en background falló (no crítico):', healthErr);
+      }
+    }, 2000);
 
     const App = (await import('./App')).default;
     const { AuthProvider } = await import('./contexts/AuthContext');

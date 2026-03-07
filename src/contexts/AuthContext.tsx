@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { translationEngine } from '@/features/i18n/TranslationEngine';
 import { useLanguage } from '@/i18n/LanguageContext';
 import UserService from '../services/UserService';
-import { createUser, getUserByUsername, hasUsers } from '../database/simple-db';
+import { createUser, getUserByUsername, hasUsers } from '@/database/simple-db';
 import type { User as DBUser } from '../types/user.types';
 
 interface User {

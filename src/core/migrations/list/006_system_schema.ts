@@ -18,7 +18,7 @@ export const SystemSchemaMigration: Migration = {
 
         // 2. Company Info (Singleton usually, or support multi-entity with row 1)
         await db.exec(`
-            CREATE TABLE IF NOT EXISTS company_info (
+            CREATE TABLE IF NOT EXISTS company_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 tax_id TEXT,
@@ -80,7 +80,7 @@ export const SystemSchemaMigration: Migration = {
         await db.exec("DROP TABLE IF EXISTS system_audit_log");
         await db.exec("DROP TABLE IF EXISTS fiscal_settings");
         await db.exec("DROP TABLE IF EXISTS user_roles");
-        await db.exec("DROP TABLE IF EXISTS company_info");
+        await db.exec("DROP TABLE IF EXISTS company_data");
         await db.exec("DROP TABLE IF EXISTS system_config");
     }
 };

@@ -10,7 +10,7 @@ import {
     updateUserPassword,
     getUserByUsername,
     hasUsers
-} from '../database/simple-db';
+} from '@/database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 
 export const exhaustiveAuthDiagnostic = async () => {

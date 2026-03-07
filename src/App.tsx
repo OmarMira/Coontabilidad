@@ -21,8 +21,8 @@ import {
   getProductCategories, createProductCategory, updateProductCategory, deleteProductCategory,
   getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount, db,
   getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
-} from './database/simple-db';
-import { DatabaseService } from './database/DatabaseService';
+} from '@/database/simple-db';
+import { DatabaseService } from '@/database/DatabaseService';
 
 // Core components (always loaded)
 import { Header } from './components/Header';

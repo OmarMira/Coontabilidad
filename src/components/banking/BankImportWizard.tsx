@@ -16,7 +16,7 @@ import {
   Building2
 } from 'lucide-react';
 import { BankImportService, ImportTransaction } from '../../services/banking/BankImportService';
-import { BankAccount, db } from '../../database/simple-db';
+import { BankAccount, db } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
 
 interface BankImportWizardProps {

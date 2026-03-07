@@ -107,17 +107,30 @@ export class TransactionManager {
             const stateRate = rateRecord[0]?.state_rate || 0.06;
 
             // C2. Insert Tax Transaction (Florida State)
+            // The table expects: invoice_id, transaction_date, county_code, taxable_amount, effective_rate, tax_amount, is_exempt, exemption_type, verification_hash
             await this.engine.run(`
-                INSERT INTO tax_transactions (invoice_id, transaction_date, county_name, gross_amount, exempt_amount, taxable_amount, tax_collected, tax_rate_applied)
-                VALUES (?, DATE('now'), 'Florida State', ?, ?, ?, ?, ?)
-             `, [invoiceId, taxResult.subtotal, taxResult.exemptAmount, taxResult.taxableAmount, taxResult.stateTax, stateRate]);
+                INSERT INTO tax_transactions (invoice_id, transaction_date, county_code, taxable_amount, effective_rate, tax_amount, is_exempt, status)
+                VALUES (?, ?, 'STATE', ?, ?, ?, 0, 'pending')
+             `, [invoiceId, now, taxResult.taxableAmount, stateRate * 10000, taxResult.stateTax]);
 
             if (taxResult.countyTax > 0) {
-                const countyRate = rateRecord[0]?.county_rate || parseFloat((taxResult.countyTax / taxResult.taxableAmount).toFixed(4));
+                const rate = await this.engine.select(
+                    "SELECT surtax_rate FROM florida_tax_rates WHERE county_name = ? LIMIT 1",
+                    [sale.county]
+                );
+                const surtaxRate = rate[0]?.surtax_rate || 0;
+
                 await this.engine.run(`
-                    INSERT INTO tax_transactions (invoice_id, transaction_date, county_name, gross_amount, exempt_amount, taxable_amount, tax_collected, tax_rate_applied)
-                    VALUES (?, DATE('now'), ?, ?, ?, ?, ?, ?)
-                 `, [invoiceId, sale.county, taxResult.subtotal, taxResult.exemptAmount, taxResult.taxableAmount, taxResult.countyTax, countyRate]);
+                    INSERT INTO tax_transactions (invoice_id, transaction_date, county_code, taxable_amount, effective_rate, tax_amount, is_exempt, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 0, 'pending')
+                 `, [invoiceId, now, sale.county.toUpperCase(), taxResult.taxableAmount, surtaxRate, taxResult.countyTax]);
+            }
+
+            if (taxResult.exemptAmount > 0) {
+                await this.engine.run(`
+                    INSERT INTO tax_transactions (invoice_id, transaction_date, county_code, taxable_amount, effective_rate, tax_amount, is_exempt, status)
+                    VALUES (?, ?, 'EXEMPT', ?, 0, 0, 1, 'pending')
+                 `, [invoiceId, now, taxResult.exemptAmount]);
             }
 
             // D. CREATE JOURNAL ENTRY - USING SYSTEM CHART OF ACCOUNTS CODES

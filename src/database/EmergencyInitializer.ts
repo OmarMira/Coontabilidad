@@ -333,9 +333,9 @@ export class EmergencyDatabaseInitializer {
         // Asegurar datos de empresa
         const res = db.exec("SELECT COUNT(*) FROM company_data");
         if (res[0].values[0][0] === 0) {
-            db.run(`
-                INSERT INTO company_data (company_name, legal_name, tax_id, address, city, state, zip_code, phone, email)
-                VALUES ('Account Express Demo', 'Account Express Demo Inc.', 'US-DEMO-001', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0100', 'admin@accountexpress.com')
+            await db.run(`
+              INSERT INTO company_data (company_name, legal_name, tax_id, address, city, state, zip_code, phone, email)
+                VALUES ('Mi Empresa LLC', 'Mi Empresa LLC', '00-0000000', '123 Main Street', 'Orlando', 'FL', '32801', '(407) 000-0000', 'admin@miempresa.com')
             `);
             logger.info('Datos de empresa por defecto inyectados vía EmergencyInit', undefined, 'EmergencyInit', 'seed');
         }

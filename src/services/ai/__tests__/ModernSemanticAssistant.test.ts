@@ -2,7 +2,7 @@
 import { ModernConversationalAssistant } from '../ModernConversationalAssistant';
 import { SemanticQueryAnalyzer } from '../SemanticQueryAnalyzer';
 import { describe, it, expect, beforeAll } from 'vitest';
-import { db } from '../../../database/simple-db';
+import { db } from '@/database/simple-db';
 
 describe('Modern Semantic Assistant - PRUEBAS MULTILINGÜES', () => {
     let assistant: ModernConversationalAssistant;

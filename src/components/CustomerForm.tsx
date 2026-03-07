@@ -3,7 +3,7 @@ import {
   Plus, Save, XCircle, User, Mail, Phone, MapPin,
   ShieldCheck, Zap, Cpu, Sparkles
 } from 'lucide-react';
-import { FLORIDA_COUNTIES } from '../database/simple-db';
+import { FLORIDA_COUNTIES } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface CustomerFormProps {

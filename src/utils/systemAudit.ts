@@ -9,7 +9,7 @@
  * 5. Seguridad implementada
  */
 
-import { db } from '../database/simple-db';
+import { db } from '@/database/simple-db';
 
 export interface AuditResult {
   category: string;

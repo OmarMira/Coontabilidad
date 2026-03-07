@@ -31,7 +31,7 @@ import {
     createChartOfAccount,
     getChartOfAccountByCode,
     createJournalEntry
-} from '../../database/simple-db';
+} from '@/database/simple-db';
 import type { TrialBalanceRow } from '../../modules/accounting/Accounting.types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';

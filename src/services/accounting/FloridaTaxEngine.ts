@@ -61,14 +61,17 @@ export class FloridaTaxEngine {
      * Pre-load all tax rates from database
      */
     public async loadRates(): Promise<void> {
+        // The table uses base_rate (e.g. 600) and surtax_rate (e.g. 100)
+        // and does NOT have an 'active' column.
         const rates = await this.db.select(
-            'SELECT county_name, state_rate, county_rate FROM florida_tax_rates WHERE active = 1'
+            'SELECT county_name, base_rate, surtax_rate FROM florida_tax_rates'
         );
         this.ratesCache.clear();
         rates.forEach((r: any) => {
+            // Convert basis points to decimals (600 -> 0.06)
             this.ratesCache.set(r.county_name, {
-                state_rate: r.state_rate,
-                county_rate: r.county_rate
+                state_rate: (r.base_rate || 600) / 10000,
+                county_rate: (r.surtax_rate || 0) / 10000
             });
         });
     }

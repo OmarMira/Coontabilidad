@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Lock, User, AlertCircle, Loader2, Zap, ShieldCheck } from 'lucide-react';
+import { Lock, User, AlertCircle, Loader2, ShieldCheck, Database } from 'lucide-react';
 import { GoogleLoginButton } from './GoogleLoginButton';
 import { useLocale } from '../../i18n/useLocale';
-// import { LanguageSelector } from '../LanguageSelector';
+import { getDB, isDatabaseReady } from '@/database/simple-db';
 
 // Verificar si Google está configurado (Soporte VITE/REACT_APP)
 const isGoogleConfigured = () => {
@@ -11,6 +11,78 @@ const isGoogleConfigured = () => {
         import.meta.env.REACT_APP_GOOGLE_CLIENT_ID ||
         import.meta.env.REACT_APP_CLIENT_ID || '';
     return clientId && clientId !== 'YOUR_GOOGLE_CLIENT_ID_HERE' && clientId.length > 10;
+};
+
+const DatabaseDiagnostic: React.FC = () => {
+    const [counts, setCounts] = useState<{ [key: string]: string | number }>({});
+    const [ready, setReady] = useState(false);
+
+    useEffect(() => {
+        const fetchPhysicalCounts = () => {
+            // Acceder directamente al motor global para evitar estados de React intermedios
+            const db = (window as any).__db || getDB();
+
+            if (!db) {
+                setCounts({ Error: 'DB No Vinculada' });
+                return;
+            }
+
+            setReady(true);
+            const tables = [
+                { name: 'Usuarios', table: 'users' },
+                { name: 'Empresa', table: 'company_data' },
+                { name: 'Roles', table: 'user_roles' },
+                { name: 'Formas Pago', table: 'payment_methods' },
+                { name: 'Plan Cuentas', table: 'chart_of_accounts' }
+            ];
+
+            const newCounts: { [key: string]: string | number } = {};
+            tables.forEach(t => {
+                try {
+                    const result = db.exec(`SELECT COUNT(*) as count FROM ${t.table}`);
+                    if (result && result[0]) {
+                        newCounts[t.name] = result[0].values[0][0] as number;
+                    } else {
+                        newCounts[t.name] = 0;
+                    }
+                } catch (e) {
+                    // Si la tabla no existe físicamente, reportar 0
+                    newCounts[t.name] = 0;
+                }
+            });
+            setCounts(newCounts);
+        };
+
+        // Polling de realidad física cada 2 segundos
+        const interval = setInterval(fetchPhysicalCounts, 2000);
+        fetchPhysicalCounts();
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="mt-6 p-4 bg-slate-950/40 border border-white/5 rounded-2xl w-full">
+            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Database className="w-3 h-3" /> Realidad Física de Base de Datos
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+                {Object.entries(counts).map(([name, count]) => (
+                    <div key={name} className="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+                        <span className="text-[10px] text-slate-400 font-medium">{name}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${count === 0 ? 'text-rose-400 bg-rose-500/10 border-rose-500/30' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                            }`}>
+                            {count}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            {counts['Plan Cuentas'] === 0 && (
+                <p className="text-[9px] text-rose-400 font-bold mt-3 uppercase tracking-tighter text-center italic">
+                    ⚠️ Alerta: El sistema está físicamente vacío.
+                </p>
+            )}
+        </div>
+    );
 };
 
 const LoginForm: React.FC = () => {
@@ -24,7 +96,6 @@ const LoginForm: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('SUBMIT VALUES:', { username, password: password.length });
         setError('');
         setLoading(true);
 
@@ -40,10 +111,6 @@ const LoginForm: React.FC = () => {
             setLoading(false);
         }
     };
-
-
-
-
 
     const handleGoogleSuccess = async (userInfo: any) => {
         setLoading(true);
@@ -158,6 +225,9 @@ const LoginForm: React.FC = () => {
                             )}
                         </button>
                     </form>
+
+                    {/* Database Diagnostic Section */}
+                    <DatabaseDiagnostic />
                 </div>
 
                 {/* Footer Info */}

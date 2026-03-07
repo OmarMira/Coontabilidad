@@ -3,7 +3,7 @@ import {
     FileText, Clock, CheckCircle2, AlertCircle, Eye,
     Trash2, ArrowUpRight, DollarSign, UserPlus, Users, FilePlus
 } from 'lucide-react';
-import { deleteARDDocument } from '../../database/simple-db';
+import { deleteARDDocument } from '@/database/simple-db';
 import { ARDPaymentModal } from './ARDPaymentModal';
 import { ARDPreviewModal } from './ARDPreviewModal';
 import { ARDAssignCustomerModal } from './ARDAssignCustomerModal';

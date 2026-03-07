@@ -13,7 +13,7 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
-import { Supplier } from '../database/simple-db';
+import { Supplier } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface SupplierDetailViewProps {

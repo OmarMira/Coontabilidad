@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, FileText, BarChart3, Download, ArrowRight, ArrowDownCircle, ChevronRight, TrendingUp, TrendingDown, History, ShieldCheck, Box, Loader2 } from 'lucide-react';
-import { ChartOfAccount, getAccountLedger } from '../database/simple-db';
+import { ChartOfAccount, getAccountLedger } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface LedgerEntry {

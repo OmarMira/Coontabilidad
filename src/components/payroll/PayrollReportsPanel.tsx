@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { payrollReportGenerator } from '../../services/payroll/PayrollReportGenerator';
-import { getCompanyData } from '../../database/simple-db';
+import { getCompanyData } from '@/database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
 import { FileText, Download, Zap, Shield, CheckCircle2, AlertCircle, Activity, Loader2 } from 'lucide-react';
 

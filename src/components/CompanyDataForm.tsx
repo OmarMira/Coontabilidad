@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, AlertTriangle, CheckCircle, Save, RefreshCw, Shield, FileText, Users, Receipt, XCircle, Cloud } from 'lucide-react';
-import { getCompanyData, updateCompanyData, checkAccountingDataAssociation, CompanyData } from '../database/simple-db';
+import { getCompanyData, updateCompanyData, checkAccountingDataAssociation, CompanyData } from '@/database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { LogoUploader } from './LogoUploader';
 import { BackupService } from '../services/backup/BackupService';
@@ -63,7 +63,7 @@ export function CompanyDataForm({ onClose }: CompanyDataFormProps) {
 
     } catch (error) {
       logger.error('CompanyDataForm', 'load_failed', 'Error al cargar datos de empresa', null, error as Error);
-      setError('Error al cargar los datos de la empresa');
+      setError(`Error al cargar los datos de la empresa: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
     }

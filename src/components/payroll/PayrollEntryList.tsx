@@ -10,7 +10,7 @@ import {
     Download,
     Activity
 } from 'lucide-react';
-import { PayrollEntry, PayrollLineItem, getPayrollEntries, getPayrollLineItems, PayrollPeriod } from '../../database/simple-db';
+import { PayrollEntry, PayrollLineItem, getPayrollEntries, getPayrollLineItems, PayrollPeriod } from '@/database/simple-db';
 import { useLocale } from '@/i18n/useLocale';
 
 interface PayrollEntryListProps {

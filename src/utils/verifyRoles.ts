@@ -3,7 +3,7 @@
  * Ejecutar desde la consola del navegador para verificar que los roles existen
  */
 
-import { getUserRoles } from '../database/simple-db';
+import { getUserRoles } from '@/database/simple-db';
 
 export const verifyRoles = () => {
     console.log('=== VERIFICACIÓN DE ROLES ===');

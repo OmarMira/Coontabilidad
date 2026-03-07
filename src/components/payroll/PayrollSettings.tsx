@@ -19,7 +19,7 @@ import {
     deleteTaxBracket,
     PayrollSetting,
     TaxBracket
-} from '../../database/simple-db';
+} from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';

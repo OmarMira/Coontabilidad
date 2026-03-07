@@ -25,7 +25,7 @@ import {
   JournalEntry,
   getInvoiceById,
   getBillById
-} from '../database/simple-db';
+} from '@/database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 import { useLocale } from '../i18n/useLocale';
 

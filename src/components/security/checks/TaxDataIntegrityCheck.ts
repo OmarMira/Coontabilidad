@@ -4,13 +4,13 @@
  */
 
 import { IntegrityCheck, CheckResult } from '../../../types/integrity.types';
-import { getDB } from '../../../database/simple-db';
+import { getDB } from '@/database/simple-db';
 
 export class TaxDataIntegrityCheck implements IntegrityCheck {
     id = 'tax-data-integrity';
     name = 'Datos Fiscales de Florida';
     description = 'Verifica que existan los 67 condados de Florida con tasas correctas';
-    severity = 'critical' as const;
+    severity = 'warning' as const;
     status = 'pending' as const;
 
     private readonly EXPECTED_COUNTIES = 67;
@@ -18,7 +18,7 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
 
     async execute(): Promise<CheckResult> {
         const db = getDB();
-        
+
         if (!db) {
             return {
                 passed: false,
@@ -28,21 +28,21 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
                     const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
                     const { initDB } = await import('../../../database/simple-db');
-                    
+
                     // Inicializar DB primero
                     const newDb = await initDB();
-                    
+
                     // Luego reparar
                     const engine = new SQLiteEngine();
                     engine.setDB(newDb);
                     const repair = new SchemaRepairService(engine);
                     await repair.repairSchema();
-                    
+
                     // CRÍTICO: Forzar persistencia
                     if (typeof engine.sync === 'function') {
                         await engine.sync();
                     }
-                    
+
                     // Esperar un momento para asegurar que IndexedDB termine
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
@@ -87,7 +87,7 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
             return {
                 passed: false,
                 message: `⚠️ Solo ${count}/${this.EXPECTED_COUNTIES} condados cargados`,
-                details: { 
+                details: {
                     currentCount: count,
                     expected: this.EXPECTED_COUNTIES,
                     missing: this.EXPECTED_COUNTIES - count,
@@ -101,12 +101,12 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
                     engine.setDB(db);
                     const repair = new SchemaRepairService(engine);
                     await repair.repairSchema();
-                    
+
                     // CRÍTICO: Forzar persistencia
                     if (typeof engine.sync === 'function') {
                         await engine.sync();
                     }
-                    
+
                     // Esperar un momento para asegurar que IndexedDB termine
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }

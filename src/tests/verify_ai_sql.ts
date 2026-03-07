@@ -1,4 +1,4 @@
-import { getDBEngine } from '../database/simple-db';
+import { getDBEngine } from '@/database/simple-db';
 
 console.log('Verifying AI SQL Generation (DAC Dynamic Mode)...');
 

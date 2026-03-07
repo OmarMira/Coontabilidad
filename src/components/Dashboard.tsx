@@ -21,8 +21,8 @@ import { useLocale } from '../i18n/useLocale';
 
 import { AuditChainService as AuditService } from '../core/audit/AuditChainService';
 import { TaxService } from '../services/TaxService';
-import { DatabaseService } from '../database/DatabaseService';
-import { getMonthlyFinancialSummary, MonthlySummary } from '../database/simple-db';
+import { DatabaseService } from '@/database/DatabaseService';
+import { getMonthlyFinancialSummary, MonthlySummary } from '@/database/simple-db';
 import { DraftProposalService } from '../services/DraftProposalService';
 
 import { ComplianceHistory } from './reports/ComplianceHistory';

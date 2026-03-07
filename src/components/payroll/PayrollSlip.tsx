@@ -13,7 +13,7 @@ import {
     X,
     TrendingUp
 } from 'lucide-react';
-import { PayrollEntry, PayrollLineItem, Employee, PayrollPeriod } from '../../database/simple-db';
+import { PayrollEntry, PayrollLineItem, Employee, PayrollPeriod } from '@/database/simple-db';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useLocale } from '@/i18n/useLocale';
 import { Activity } from 'lucide-react';

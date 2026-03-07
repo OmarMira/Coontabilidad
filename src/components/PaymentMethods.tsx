@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CreditCard, Check, X, AlertCircle } from 'lucide-react';
-import { PaymentMethod, getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '../database/simple-db';
+import { PaymentMethod, getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface PaymentMethodsProps {

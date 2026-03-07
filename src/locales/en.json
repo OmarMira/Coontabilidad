@@ -1,4 +1,22 @@
 {
+  "common": {
+    "caution": "Caution",
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "error": "Error",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "close": "Close",
+    "date": "Date",
+    "amount": "Amount",
+    "actions": "Actions",
+    "status": "Status",
+    "notes": "Notes",
+    "total": "Total",
+    "previous": "Previous",
+    "next": "Next"
+  },
   "login": {
     "fastDemoAccess": "FAST DEMO ACCESS",
     "fastdemoaccess": "FAST DEMO ACCESS",
@@ -4131,8 +4149,9 @@
       "outdatedrates": "OUTDATED RATES",
       "statusgenerated": "GENERATED",
       "statuspending": "PENDING",
-      "title": "REGULATORY COMPLIANCE",
-      "verifiedby": "VERIFIED BY"
+      "verifiedby": "VERIFIED BY",
+      "error": "LOADING ERROR",
+      "title": "COMPLIANCE HISTORY"
     },
     "compliancedesc": "FILING STATUS & SECURITY AUDIT",
     "compliancetitle": "COMPLIANCE CENTER",

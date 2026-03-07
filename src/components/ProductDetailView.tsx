@@ -15,7 +15,7 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
-import { Product } from '../database/simple-db';
+import { Product } from '@/database/simple-db';
 
 interface ProductDetailViewProps {
   product: Product;

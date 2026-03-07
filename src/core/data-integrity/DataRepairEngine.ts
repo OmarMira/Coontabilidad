@@ -9,7 +9,7 @@
  * - Estados inconsistentes
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { RepairOperation } from './DataIntegrityCore';
 import { logger } from '../../core/logging/SystemLogger';
 import { BasicEncryption } from '../security/BasicEncryption';

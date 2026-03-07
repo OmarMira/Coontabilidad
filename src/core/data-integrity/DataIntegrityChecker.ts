@@ -9,7 +9,7 @@
  * - Violaciones de constraints
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
 import { IntegrityCheckResult, IntegrityError, IntegrityWarning, RepairOperation } from './DataIntegrityCore';
 
 export interface CheckConfig {

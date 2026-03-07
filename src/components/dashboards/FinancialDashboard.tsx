@@ -17,7 +17,7 @@ import {
   Download,
   Maximize2
 } from 'lucide-react';
-import { getMonthlyFinancialSummary } from '../../database/simple-db';
+import { getMonthlyFinancialSummary } from '@/database/simple-db';
 import { Button } from '../ui/button';
 import { useLocale } from '../../i18n/useLocale';
 

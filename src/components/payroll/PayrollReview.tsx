@@ -12,7 +12,7 @@ import {
   Zap,
   Activity
 } from 'lucide-react';
-import { getPayrolls, getEmployees, Payroll, Employee } from '../../database/simple-db';
+import { getPayrolls, getEmployees, Payroll, Employee } from '@/database/simple-db';
 import { payrollProcessor } from '../../services/payroll/PayrollProcessor';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';

@@ -47,8 +47,9 @@ export const BackupPanel: React.FC = () => {
 
     const handleRestore = async () => {
         setError('');
+        setStatus('');
 
-        if (!window.confirm(t('backupPanel.criticalSecurityWarning'))) {
+        if (!window.confirm('⚠️ ADVERTENCIA: Esta operación reemplazará TODOS los datos actuales con el contenido del archivo de respaldo seleccionado. Esta acción no se puede deshacer. ¿Desea continuar?')) {
             return;
         }
 
@@ -58,21 +59,22 @@ export const BackupPanel: React.FC = () => {
         try {
             setStatus(t('backupPanel.verifyingSignature'));
 
-            // Usar el nuevo sistema de selección de archivo
             const success = await BackupService.restoreBackupWithFileChoice();
 
             if (success) {
                 setStatus(t('backupPanel.restoreComplete'));
                 setTimeout(() => window.location.reload(), 2000);
             } else {
-                setError(t('backupPanel.userCancelledOrError'));
-                setLoading(false);
+                // null retornado = usuario canceló el picker, no es un error real
+                setError('');
+                setStatus('');
             }
-
         } catch (e: any) {
-            setError(t('backupPanel.criticalRestoreFailure') + e.message);
-            setLoading(false);
+            setError(t('backupPanel.criticalRestoreFailure') + (e?.message ?? 'Error desconocido'));
             setStatus('');
+        } finally {
+            // SIEMPRE liberar el loading, sin importar qué pasó
+            setLoading(false);
         }
     };
 

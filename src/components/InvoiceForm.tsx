@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Save, XCircle, Calculator, User, Calendar, ShieldCheck } from 'lucide-react';
-import { Customer, Product, Invoice, InvoiceItem, getFloridaTaxRate } from '../database/simple-db';
+import { Customer, Product, Invoice, InvoiceItem, getFloridaTaxRate } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceFormProps {

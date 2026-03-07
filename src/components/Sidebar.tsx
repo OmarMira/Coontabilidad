@@ -9,7 +9,7 @@ import {
   CheckCircle, AlertTriangle
 } from 'lucide-react';
 // import { LanguageSwitcher } from './LanguageSwitcher';
-import { db, saveDatabase } from '../database/simple-db';
+import { db, saveDatabase } from '@/database/simple-db';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { useEffect } from 'react';
 

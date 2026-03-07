@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { getAllFloridaTaxRates, updateFloridaTaxRate } from '../database/simple-db';
+import { getAllFloridaTaxRates, updateFloridaTaxRate } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 import toast from 'react-hot-toast';
 

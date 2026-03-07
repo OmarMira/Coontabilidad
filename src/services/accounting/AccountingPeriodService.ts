@@ -5,7 +5,7 @@
  * Implementa validaciones de cierre y control de transacciones.
  */
 
-import { getDB } from '../../database/simple-db';
+import { getDB } from '@/database/simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 
 export interface AccountingPeriod {

@@ -20,7 +20,7 @@ import {
     Calendar,
     ChevronRight
 } from 'lucide-react';
-import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountsByNumber, createBankAccount, getLastReconciliationStatement } from '../../database/simple-db';
+import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountsByNumber, createBankAccount, getLastReconciliationStatement } from '@/database/simple-db';
 import Papa from 'papaparse';
 import { toast } from 'react-hot-toast';
 import { StatementSmartParser, StatementMetadata } from '../../services/banking/StatementSmartParser';

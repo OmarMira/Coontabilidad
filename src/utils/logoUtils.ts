@@ -1,4 +1,4 @@
-import { getCompanyData } from '../database/simple-db';
+import { getCompanyData } from '@/database/simple-db';
 import { logger } from '../core/logging/SystemLogger';
 
 /**

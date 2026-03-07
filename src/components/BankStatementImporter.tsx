@@ -4,7 +4,7 @@ import {
     Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X, Building2
 } from 'lucide-react';
 import { parseBankPDF } from '../lib/pdf-parser';
-import { getBankAccounts, createBankAccount, insertBankTransactions, forceSaveDB, BankAccount } from '../database/simple-db';
+import { getBankAccounts, createBankAccount, insertBankTransactions, forceSaveDB, BankAccount } from '@/database/simple-db';
 import { BankAccountForm } from './BankAccountForm';
 
 interface BankTransaction {

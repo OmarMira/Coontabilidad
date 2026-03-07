@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import ClosureChecklist, { ChecklistItem, ValidationResult } from '../ClosureChecklist';
-import { getDB } from '../../../database/simple-db';
+import { getDB } from '@/database/simple-db';
 import { DollarSign, Users, AlertTriangle, Info, Lightbulb, Wallet, Calculator } from 'lucide-react';
 
 interface PayrollValidationStepProps {

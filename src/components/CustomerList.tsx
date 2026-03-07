@@ -3,7 +3,7 @@ import {
   Users, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus,
   Target, Zap, Activity, Filter, ArrowRight
 } from 'lucide-react';
-import { Customer } from '../database/simple-db';
+import { Customer } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface CustomerListProps {

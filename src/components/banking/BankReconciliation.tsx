@@ -34,12 +34,12 @@ import {
     BankAccount,
     ReconciliationStatement,
     BankTransaction
-} from '../../database/simple-db';
+} from '@/database/simple-db';
 import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 import { ReconciliationTask, ReconciliationResult } from '../../workers/reconciliation.worker';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';
-import { db, getChartOfAccounts, ChartOfAccount } from '../../database/simple-db';
+import { db, getChartOfAccounts, ChartOfAccount } from '@/database/simple-db';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
 import { TRANSACTION_STATES } from '../../constants/bankingStates';

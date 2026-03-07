@@ -37,7 +37,7 @@ import {
     PayrollPeriod,
     PayrollSetting,
     TaxBracket
-} from '../../database/simple-db';
+} from '@/database/simple-db';
 import { calculateEmployeePayroll, CalculationResult } from '../../utils/payroll-tax-calculator';
 import { toast } from 'react-hot-toast';
 import { Button } from '../ui/button';

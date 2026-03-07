@@ -3,7 +3,7 @@ import {
   Plus, Save, XCircle, Calculator, Truck, Calendar,
   ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Info, Layers, Clock, Trash2
 } from 'lucide-react';
-import { Supplier, Product, Bill, BillItem, getFloridaTaxRate } from '../database/simple-db';
+import { Supplier, Product, Bill, BillItem, getFloridaTaxRate } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
 
 interface BillFormProps {

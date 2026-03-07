@@ -9,8 +9,8 @@
  * @date 2026-02-07
  */
 
-import { db } from '../../database/simple-db';
-import type { Payroll } from '../../database/simple-db';
+import { db } from '@/database/simple-db';
+import type { Payroll } from '@/database/simple-db';
 
 // ==========================================
 // TYPES & INTERFACES

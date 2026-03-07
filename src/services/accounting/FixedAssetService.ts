@@ -1,7 +1,7 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AssetCategoryService, AssetCategory } from './AssetCategoryService';
 import { DatabaseService } from '../../database/DatabaseService';
-import { saveDatabase, forceSaveDB } from '../../database/simple-db';
+import { saveDatabase, forceSaveDB } from '@/database/simple-db';
 
 
 
