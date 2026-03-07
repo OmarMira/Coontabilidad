@@ -88,8 +88,8 @@ export class AccountingService {
             // 6. Insert ledger lines
             for (const line of entry.lines) {
                 await this.db.run(`
-                    INSERT INTO ledger_lines (
-                        journal_entry_id, account_code, debit, credit, description, logic_clock
+                    INSERT INTO journal_details (
+                        journal_entry_id, account_code, debit_amount, credit_amount, description, logic_clock
                     ) VALUES (?, ?, ?, ?, ?, ?)
                 `, [
                     entryId,
@@ -173,15 +173,15 @@ export class AccountingService {
 
         // Get original lines
         const originalLines = await this.db.select(
-            'SELECT * FROM ledger_lines WHERE journal_entry_id = ?',
+            'SELECT * FROM journal_details WHERE journal_entry_id = ?',
             [originalEntryId]
         ) as unknown as any[];
 
         // Create reversal with swapped debits/credits
         const reversalLines: JournalLine[] = originalLines.map((line: any) => ({
             accountCode: line.account_code,
-            debit: line.credit,  // Swap
-            credit: line.debit,  // Swap
+            debit: line.credit_amount,  // Swap
+            credit: line.debit_amount,  // Swap
             description: `REVERSAL: ${line.description}`
         }));
 
@@ -274,9 +274,9 @@ export class AccountingService {
     public async getAccountBalance(accountCode: string): Promise<number> {
         const result = await this.db.select(`
             SELECT 
-                COALESCE(SUM(debit), 0) as total_debits,
-                COALESCE(SUM(credit), 0) as total_credits
-            FROM ledger_lines
+                COALESCE(SUM(debit_amount), 0) as total_debits,
+                COALESCE(SUM(credit_amount), 0) as total_credits
+            FROM journal_details
             WHERE account_code = ?
             AND journal_entry_id IN (SELECT id FROM journal_entries WHERE status = 'POSTED')
         `, [accountCode]) as unknown as any[];
@@ -332,7 +332,7 @@ export class AccountingService {
             if (balance !== 0) {
                 let debitAmount = 0;
                 let creditAmount = 0;
-                
+
                 // Si el balance es positivo, va en el lado normal
                 // Si es negativo, va en el lado opuesto
                 if (account.normal_balance === 'DEBIT') {
@@ -348,7 +348,7 @@ export class AccountingService {
                         debitAmount = Math.abs(balance);
                     }
                 }
-                
+
                 const entry: TrialBalanceEntry = {
                     accountCode: account.code,
                     accountName: account.name,
