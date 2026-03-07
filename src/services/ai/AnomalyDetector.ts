@@ -57,7 +57,7 @@ export class AnomalyDetector {
           SUM(jd.debit_amount) as total_debits,
           SUM(jd.credit_amount) as total_credits
         FROM journal_entries je
-        LEFT JOIN journal_details jd ON je.id = jd.journal_id
+        LEFT JOIN journal_details jd ON je.id = jd.journal_entry_id
         WHERE je.status != 'voided'
         GROUP BY je.id
         HAVING ABS(SUM(jd.debit_amount) - SUM(jd.credit_amount)) > 0.01
@@ -165,17 +165,17 @@ export class AnomalyDetector {
             // Buscar transacciones con mismo monto, fecha y descripción
             const duplicates = await this.engine.select(`
         SELECT 
-          date,
+          transaction_date as date,
           description,
           amount,
           COUNT(*) as count,
           GROUP_CONCAT(id) as transaction_ids
         FROM bank_transactions
         WHERE status != 'voided'
-        AND date >= date('now', '-90 days')
-        GROUP BY date, description, amount
+        AND transaction_date >= date('now', '-90 days')
+        GROUP BY transaction_date, description, amount
         HAVING COUNT(*) > 1
-        ORDER BY count DESC, date DESC
+        ORDER BY count DESC, transaction_date DESC
         LIMIT 10
       `);
 
@@ -238,7 +238,7 @@ export class AnomalyDetector {
             jd.debit_amount as amount,
             ca.account_name as category
           FROM journal_details jd
-          JOIN journal_entries je ON jd.journal_id = je.id
+          JOIN journal_entries je ON jd.journal_entry_id = je.id
           JOIN chart_of_accounts ca ON jd.account_code = ca.account_code
           WHERE ca.account_name = ?
           AND jd.debit_amount > ?
@@ -288,7 +288,7 @@ export class AnomalyDetector {
           SUM(jd.debit_amount - jd.credit_amount) as balance
         FROM chart_of_accounts a
         LEFT JOIN journal_details jd ON a.account_code = jd.account_code
-        LEFT JOIN journal_entries je ON jd.journal_id = je.id
+        LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
         WHERE (je.status IS NULL OR je.status != 'voided')
         AND a.account_type IN ('asset', 'expense')
         GROUP BY a.id, a.account_code, a.account_name, a.account_type
