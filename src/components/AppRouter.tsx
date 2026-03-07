@@ -81,21 +81,8 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
     );
   }
 
-  // Sin sesión → Login
   if (!isAuthenticated) {
-    return (
-      <>
-        <LoginForm />
-        {/* Botón DEV BYPASS — solo visible en desarrollo */}
-        <button
-          onClick={forceAdminBypass}
-          className="fixed bottom-6 right-6 z-[9999] bg-red-600/90 backdrop-blur-xl text-white font-black uppercase text-xs py-3 px-6 rounded-2xl shadow-2xl hover:bg-red-500 hover:scale-105 active:scale-95 transition-all border border-red-400/30 flex items-center gap-2 tracking-widest cursor-pointer"
-          title="Forzar entrada como Administrador Global"
-        >
-          🔑 DEV BYPASS
-        </button>
-      </>
-    );
+    return <LoginForm />;
   }
 
   // Autenticado → App principal

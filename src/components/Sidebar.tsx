@@ -6,14 +6,12 @@ import {
   ScanSearch, HardDrive, UserCheck, User as UserIcon, Lock, Bot, Activity,
   HelpCircle, ChevronDown, ChevronRight, Database, CreditCard, Shield,
   History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
-  CheckCircle, AlertTriangle
 } from 'lucide-react';
 // import { LanguageSwitcher } from './LanguageSwitcher';
-import { db, saveDatabase } from '@/database/simple-db';
+import { db } from '@/database/simple-db';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { useEffect } from 'react';
 
-import toast from 'react-hot-toast';
 
 
 import { useLocale } from '../i18n/useLocale';
@@ -246,44 +244,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
         {/* Language Switcher deshabilitado por simplificación i18n */}
         {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
 
-        {/* Indicador de persistencia automática con opción de forzar guardado */}
-        <div className="px-3 pb-2">
-          <button
-            onClick={async () => {
-              const loadingToast = toast.loading(t('common.savingChanges'));
-              try {
-                await saveDatabase();
-                toast.success('✓ Sincronizado con almacenamiento local', { id: loadingToast });
-              } catch {
-                toast.error(t('common.saveError'), { id: loadingToast });
-              }
-            }}
-            title="El sistema guarda automáticamente. Haz clic para forzar sincronización."
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs
-                       text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20
-                       transition-colors group"
-          >
-            <CheckCircle size={14} className="shrink-0 text-emerald-400" />
-            {!isCollapsed && (
-              <span className="flex flex-col items-start leading-tight text-left">
-                <span className="font-medium uppercase tracking-tighter">Auto-guardado activo</span>
-                <span className="text-emerald-600/70 text-[10px] group-hover:text-emerald-400 transition-colors uppercase font-black">
-                  Forzar sincronización
-                </span>
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* DEV ONLY BUTTON */}
-        <div className="px-3 pb-2">
-          <button
-            onClick={() => onNavigate('sql-diagnostic')}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-xs font-bold uppercase"
-          >
-            📊 TEST SQL DB
-          </button>
-        </div>
 
         <button
           onClick={() => {
