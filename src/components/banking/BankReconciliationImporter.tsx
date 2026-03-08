@@ -20,12 +20,18 @@ import {
     Calendar,
     ChevronRight
 } from 'lucide-react';
-import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountsByNumber, createBankAccount, getLastReconciliationStatement } from '@/database/simple-db';
+import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountsByNumber, createBankAccount, getLastReconciliationStatement, db } from '@/database/simple-db';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import Papa from 'papaparse';
 import { toast } from 'react-hot-toast';
 import { StatementSmartParser, StatementMetadata } from '../../services/banking/StatementSmartParser';
 import { BankAccountForm } from '../BankAccountForm';
 import { useLocale } from '../../i18n/useLocale';
+import { ClassificationRulesService } from '../../services/banking/ClassificationRulesService';
+import { ClassificationMemoryService } from '../../services/banking/ClassificationMemoryService';
+import { TRANSACTION_STATES } from '../../constants/bankingStates';
+import { useAuth } from '../../contexts/AuthContext';
+import { DatabaseService } from '../../database/DatabaseService';
 
 export const BankReconciliationImporter: React.FC = () => {
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -159,22 +165,119 @@ export const BankReconciliationImporter: React.FC = () => {
         }
     };
 
+    const { user } = useAuth();
+
     const handleImport = async () => {
-        if (files.length === 0 || !selectedAccountId || continuityError || validationError) return;
+        if (files.length === 0 || !selectedAccountId || continuityError || validationError || !user) return;
 
         setIsProcessing(true);
 
-        const executeInjection = (transactions: Partial<BankTransaction>[]) => {
-            const result = insertBankTransactions(transactions as BankTransaction[]);
-            if (result.success) {
-                toast.success(`Inyección completa: ${transactions.length} registros certificados`);
+        const executeInjection = async (transactions: Partial<BankTransaction>[]) => {
+            try {
+                // Batch inject with smarter logic (States + Rules)
+                let count = 0;
+                const batchId = `BATCH-REC-${Date.now()}`;
+
+                // NOTA: Para mantener integridad, lo hacemos uno por uno para poder evaluar reglas y auditoría
+                // aunque sea un poco más lento, es lo que pide el workflow de auditoría forense.
+                const getGlCodeForBank = (bankId: number) => {
+                    const map: Record<number, string> = { 1: '1112', 2: '1113' };
+                    return map[bankId] || '1112';
+                };
+
+                for (const txn of transactions) {
+                    if (!txn.transaction_date || txn.amount === 0) continue;
+
+                    // 1. Evaluar Reglas Automáticas
+                    const autoAccount = await ClassificationRulesService.evaluateTransaction(txn.description || '');
+
+                    // 2. Insertar Bank Transaction
+                    const engine = new SQLiteEngine();
+                    engine.setDB(db!);
+
+                    const bankTxIdRes = await engine.run(`
+                        INSERT INTO bank_transactions (
+                            bank_account_id, transaction_date, description, amount, reference_number,
+                            status, import_batch_id
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `, [
+                        selectedAccountId,
+                        txn.transaction_date,
+                        txn.description || 'Imported Transaction',
+                        txn.amount,
+                        txn.reference_number || null,
+                        'pending',
+                        batchId
+                    ]);
+
+                    const bankTxId = (bankTxIdRes as any).lastID;
+
+                    // 3. Crear Estado de Auditoría (transaction_states)
+                    const isAutoClassified = !!autoAccount;
+                    await engine.run(`
+                        INSERT INTO transaction_states (
+                            transaction_id, current_state, is_verified, 
+                            auto_classified, assigned_account_code, assigned_account_name,
+                            verified_at, verified_by
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `, [
+                        bankTxId,
+                        isAutoClassified ? TRANSACTION_STATES.VERIFIED : TRANSACTION_STATES.IMPORTED,
+                        isAutoClassified ? 1 : 0,
+                        isAutoClassified ? 1 : 0,
+                        autoAccount ? autoAccount.account_code : null,
+                        autoAccount ? autoAccount.account_name : null,
+                        isAutoClassified ? new Date().toISOString() : null,
+                        isAutoClassified ? user.id : null
+                    ]);
+
+                    // 4. GENERACIÓN DE ASIENTO (Si está auto-clasificado)
+                    if (isAutoClassified && autoAccount) {
+                        try {
+                            const bankAccountCode = getGlCodeForBank(selectedAccountId);
+                            const amountCents = Math.abs(txn.amount || 0);
+                            const finalAmount = txn.amount || 0;
+
+                            // Si monto < 0 (Egreso): Débito a la Cuenta Clasificada, Crédito a Banco
+                            // Si monto > 0 (Ingreso): Débito a Banco, Crédito a la Cuenta Clasificada
+                            const entryLines = finalAmount < 0 ? [
+                                { account_code: autoAccount.account_code, debit: amountCents, credit: 0, description: txn.description },
+                                { account_code: bankAccountCode, debit: 0, credit: amountCents, description: txn.description }
+                            ] : [
+                                { account_code: bankAccountCode, debit: amountCents, credit: 0, description: txn.description },
+                                { account_code: autoAccount.account_code, debit: 0, credit: amountCents, description: txn.description }
+                            ];
+
+                            await DatabaseService.insertJournalEntry({
+                                description: `Auto-clasificado: ${txn.description}`,
+                                date: txn.transaction_date || new Date().toISOString().split('T')[0],
+                                userId: user?.id || 1,
+                                items: entryLines
+                            });
+
+                            // Marcar como 'matched' si el asiento se creó exitosamente
+                            await engine.run(`UPDATE bank_transactions SET status = 'matched' WHERE id = ?`, [bankTxId]);
+                        } catch (jeError) {
+                            console.error('Error creating auto-journal entry:', jeError);
+                            // No fallamos la importación completa por un error de asiento individual
+                        }
+                    }
+
+                    count++;
+                }
+
+                toast.success(`Inyección completa: ${count} registros certificados bajo Batch ${batchId}`);
                 setStep('upload');
                 setFiles([]);
                 setPreview([]);
-            } else {
-                toast.error(result.message);
+                // Forzar refresco de datos en componentes padres si es necesario
+                window.dispatchEvent(new CustomEvent('bank-import-complete'));
+            } catch (error) {
+                console.error('Failure in smart injection:', error);
+                toast.error('Fallo en la inyección de seguridad auditada');
+            } finally {
+                setIsProcessing(false);
             }
-            setIsProcessing(false);
         };
 
         if (detectedMetadata && (detectedMetadata.format === 'PDF' || detectedMetadata.format === 'OFX' || detectedMetadata.extractionMethod === 'OCR')) {
@@ -183,7 +286,7 @@ export const BankReconciliationImporter: React.FC = () => {
                     ...tx,
                     bank_account_id: selectedAccountId
                 }));
-                executeInjection(txs);
+                await executeInjection(txs);
             } else {
                 toast.error('No se detectaron transacciones en el documento visual.');
                 setIsProcessing(false);
@@ -218,7 +321,7 @@ export const BankReconciliationImporter: React.FC = () => {
                 });
             });
         }
-        executeInjection(allTransactions);
+        await executeInjection(allTransactions);
     };
 
     return (

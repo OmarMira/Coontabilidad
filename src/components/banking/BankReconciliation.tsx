@@ -44,6 +44,7 @@ import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
 import { TRANSACTION_STATES } from '../../constants/bankingStates';
 import { useAuth } from '../../contexts/AuthContext';
+import { DatabaseService } from '../../database/DatabaseService';
 
 interface BankReconciliationProps {
     onNavigate?: (section: string) => void;
@@ -104,6 +105,12 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
 
     useEffect(() => {
         loadData();
+    }, [selectedAccount]);
+
+    useEffect(() => {
+        const handleRefresh = () => loadData();
+        window.addEventListener('bank-import-complete', handleRefresh);
+        return () => window.removeEventListener('bank-import-complete', handleRefresh);
     }, [selectedAccount]);
 
     const handleAccountSelect = (account: BankAccount) => {
@@ -201,7 +208,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
         const { transaction, selectedAccount: acc } = classifierModal;
         if (!transaction || !acc || !user) return;
 
-        const loadingToast = toast.loading('Certificando clasificación...');
+        const loadingToast = toast.loading('Certificando clasificación y generando asiento...');
         try {
             const engine = new SQLiteEngine();
             engine.setDB(db);
@@ -225,17 +232,49 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                 UPDATE transaction_states 
                 SET current_state = ?, 
                     is_verified = 1,
+                    auto_classified = 0,
+                    assigned_account_code = ?,
+                    assigned_account_name = ?,
                     verified_at = CURRENT_TIMESTAMP,
                     verified_by = ?
                 WHERE id = ?
-            `, [TRANSACTION_STATES.VERIFIED, user.id, stateId]);
+            `, [TRANSACTION_STATES.VERIFIED, acc.account_code, acc.account_name, user.id, stateId]);
 
-            toast.success('Clasificación certificada correctamente', { id: loadingToast });
+            // 4. GENERACIÓN DE ASIENTO
+            const getGlCodeForBank = (bankId: number) => {
+                const map: Record<number, string> = { 1: '1112', 2: '1113' };
+                return map[bankId] || '1112';
+            };
+
+            const bankAccountCode = getGlCodeForBank(transaction.bank_account_id);
+            const amountCents = Math.abs(transaction.amount);
+
+            // Si monto < 0 (Egreso): Débito a la Cuenta Clasificada, Crédito a Banco
+            // Si monto > 0 (Ingreso): Débito a Banco, Crédito a la Cuenta Clasificada
+            const entryLines = transaction.amount < 0 ? [
+                { account_code: acc.account_code, debit: amountCents, credit: 0, description: transaction.description },
+                { account_code: bankAccountCode, debit: 0, credit: amountCents, description: transaction.description }
+            ] : [
+                { account_code: bankAccountCode, debit: amountCents, credit: 0, description: transaction.description },
+                { account_code: acc.account_code, debit: 0, credit: amountCents, description: transaction.description }
+            ];
+
+            await DatabaseService.insertJournalEntry({
+                description: `Clasificación Manual: ${transaction.description}`,
+                date: transaction.transaction_date,
+                userId: user.id || 1,
+                items: entryLines
+            });
+
+            // 5. Marcar como 'matched' en bank_transactions y el estado visual
+            await engine.run(`UPDATE bank_transactions SET status = 'matched' WHERE id = ?`, [transaction.id]);
+
+            toast.success('Clasificación certificada y asiento generado correctamente', { id: loadingToast });
             setClassifierModal(prev => ({ ...prev, show: false }));
             loadData();
         } catch (error) {
             console.error('Error classifying inline:', error);
-            toast.error('Error en el proceso de clasificación', { id: loadingToast });
+            toast.error('Error en el proceso de certificación: ' + (error as Error).message, { id: loadingToast });
         }
     };
 

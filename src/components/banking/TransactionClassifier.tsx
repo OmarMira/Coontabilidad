@@ -6,6 +6,7 @@ import { TRANSACTION_STATES } from '../../constants/bankingStates';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { DatabaseService } from '../../database/DatabaseService';
 
 interface ImportedTransaction {
     id: number;
@@ -129,36 +130,74 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
         if (targetIds.length === 0 || !selectedAccount || !user) return;
 
         const loadingToast = toast.loading(targetIds.length > 1
-            ? `Clasificando ${targetIds.length} transacciones...`
-            : 'Clasificando transacción...');
+            ? `Clasificando y generando asientos para ${targetIds.length} transacciones...`
+            : 'Certificando clasificación y generando asiento...');
 
         try {
             const engine = getDBEngine();
+            const getGlCodeForBank = (bankId: number) => {
+                const map: Record<number, string> = { 1: '1112', 2: '1113' };
+                return map[bankId] || '1112';
+            };
 
-            // If single selection, save to memory
-            if (selectedTx && targetIds.length === 1) {
-                await ClassificationMemoryService.saveConfirmation(
-                    selectedTx.description,
-                    selectedAccount.account_code,
-                    selectedAccount.account_name,
-                    user.id
-                );
+            const bankAccountCode = getGlCodeForBank(accountId);
+            let successCount = 0;
+
+            for (const stateId of targetIds) {
+                // 1. Obtener detalles de la transacción para el asiento
+                const txRes = await engine.select(`
+                    SELECT bt.* FROM bank_transactions bt 
+                    JOIN transaction_states ts ON ts.transaction_id = bt.id
+                    WHERE ts.id = ?
+                `, [stateId]);
+
+                if (txRes.length === 0) continue;
+                const tx = txRes[0] as any;
+
+                // 2. Guardar en memoria (solo para la principal si es single)
+                if (targetIds.length === 1) {
+                    await ClassificationMemoryService.saveConfirmation(
+                        tx.description,
+                        selectedAccount.account_code,
+                        selectedAccount.account_name,
+                        user.id
+                    );
+                }
+
+                // 3. GENERAR ASIENTO
+                const amountCents = Math.abs(tx.amount);
+                const entryLines = tx.amount < 0 ? [
+                    { account_code: selectedAccount.account_code, debit: amountCents, credit: 0, description: tx.description },
+                    { account_code: bankAccountCode, debit: 0, credit: amountCents, description: tx.description }
+                ] : [
+                    { account_code: bankAccountCode, debit: amountCents, credit: 0, description: tx.description },
+                    { account_code: selectedAccount.account_code, debit: 0, credit: amountCents, description: tx.description }
+                ];
+
+                await DatabaseService.insertJournalEntry({
+                    description: `Clasificación: ${tx.description}`,
+                    date: tx.transaction_date,
+                    userId: user.id || 1,
+                    items: entryLines
+                });
+
+                // 4. Actualizar estado y marcar como matched
+                await engine.run(`
+                    UPDATE transaction_states 
+                    SET current_state = ?, 
+                        is_verified = 1,
+                        assigned_account_code = ?,
+                        assigned_account_name = ?,
+                        verified_at = CURRENT_TIMESTAMP,
+                        verified_by = ?
+                    WHERE id = ?
+                `, [TRANSACTION_STATES.VERIFIED, selectedAccount.account_code, selectedAccount.account_name, user.id, stateId]);
+
+                await engine.run(`UPDATE bank_transactions SET status = 'matched' WHERE id = ?`, [tx.id]);
+                successCount++;
             }
 
-            // Bulk update status
-            const placeholders = targetIds.map(() => '?').join(',');
-            await engine.run(`
-                UPDATE transaction_states 
-                SET current_state = ?, 
-                    is_verified = 1,
-                    verified_at = CURRENT_TIMESTAMP,
-                    verified_by = ?
-                WHERE id IN (${placeholders})
-            `, [TRANSACTION_STATES.VERIFIED, user.id, ...targetIds]);
-
-            toast.success(targetIds.length > 1
-                ? `${targetIds.length} transacciones clasificadas correctamente`
-                : 'Transacción clasificada correctamente', { id: loadingToast });
+            toast.success(`${successCount} transacciones clasificadas y contabilizadas correctamente`, { id: loadingToast });
 
             setSelectedTx(null);
             setSelectedTxIds(new Set());
@@ -166,9 +205,11 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
             setSearchQuery('');
             setIsAutoSuggested(false);
             loadTransactions();
+            // Notificar a otros componentes
+            window.dispatchEvent(new CustomEvent('bank-import-complete'));
         } catch (error) {
             console.error('Error classifying:', error);
-            toast.error('Error al clasificar', { id: loadingToast });
+            toast.error('Fallo en la certificación contable: ' + (error as Error).message, { id: loadingToast });
         }
     };
 

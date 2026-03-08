@@ -448,8 +448,8 @@ export class DatabaseService {
 
 
 
-            // Insert Lines (Task 6.1.1)
-            const lineStmt = DatabaseService.dbInstance.prepare("INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, ?, ?, ?, ?)");
+            // Insert Lines (Task 6.1.1 — Corrected to journal_details)
+            const lineStmt = DatabaseService.dbInstance.prepare("INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount, description) VALUES (?, ?, ?, ?, ?)");
             for (const item of entry.items) {
                 lineStmt.run([
                     jeId,
