@@ -1989,12 +1989,17 @@ export const initDB = async (password?: string): Promise<any> => {
 const initializeSchema = async (db: any) => {
   // --- MIGRATION: Drop old audit_chain if it lacks logic_clock or event_type ---
   try {
-    const tableInfo = await db.select("PRAGMA table_info(audit_chain)");
+    // Usamos exec() porque en este punto db es la instancia cruda de sql.js (sin el wrapper .select)
+    const tableInfoRaw = db.exec("PRAGMA table_info(audit_chain)");
+    const tableInfo = tableInfoRaw.length > 0
+      ? tableInfoRaw[0].values.map((row: any) => ({ name: row[1] }))
+      : [];
+
     if (Array.isArray(tableInfo) && tableInfo.length > 0) {
-      const cols = tableInfo.map((c: any) => c.name);
+      const cols = tableInfo.map((c: any) => (c as any).name);
       if (!cols.includes("event_type") || !cols.includes("logic_clock")) {
         console.warn("⚠️ Legacy audit_chain table detected. Dropping it to adapt to new schema.");
-        await db.run("DROP TABLE audit_chain");
+        db.run("DROP TABLE audit_chain");
       }
     }
   } catch (e) {
