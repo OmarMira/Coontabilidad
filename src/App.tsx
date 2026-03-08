@@ -118,7 +118,7 @@ import { GeneralLedger } from './components/GeneralLedger';
 import { IncomeStatement } from './components/accounting/IncomeStatement';
 import { ModulePlaceholder } from './components/ModulePlaceholder';
 import { TaxRates } from './components/TaxRates';
-import { DiagnosticPanel } from './debug/DiagnosticPanel';
+
 import { BalanceSheet } from './components/BalanceSheet';
 import { HelpCenter } from './components/HelpCenter';
 import { FloridaTaxReport } from './components/FloridaTaxReport';
@@ -1387,9 +1387,6 @@ function App() {
 
             {/* Renderizado condicional basado en la sección actual */}
             <div className="transition-all duration-500">
-              {state.currentSection === 'debug' && (
-                <DiagnosticPanel />
-              )}
               {state.currentSection === 'sql-diagnostic' && (
                 <DiagnosticSQL />
               )}
