@@ -6,7 +6,7 @@ import { SQLiteEngine } from '../../core/database/SQLiteEngine';
  * Unit tests for AuditChainService
  * 
  * ACCEPTANCE CRITERIA:
- * 1. verifyIntegrity() detects manual SQL changes to ledger_lines
+ * 1. verifyIntegrity() detects manual SQL changes to journal_details
  * 2. Logic clock is verified during restoration
  * 3. Hash chain is unbroken
  * 4. Performance: 1,000 records hashed without blocking
@@ -48,12 +48,12 @@ describe('AuditChainService', () => {
         `);
 
         await db.exec(`
-            CREATE TABLE ledger_lines (
+            CREATE TABLE journal_details (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 journal_entry_id TEXT NOT NULL,
                 account_code TEXT NOT NULL,
-                debit INTEGER DEFAULT 0,
-                credit INTEGER DEFAULT 0,
+                debit_amount INTEGER DEFAULT 0,
+                credit_amount INTEGER DEFAULT 0,
                 logic_clock INTEGER NOT NULL
             )
         `);
@@ -65,18 +65,18 @@ describe('AuditChainService', () => {
         // Reset logic_clock and clear audit_chain
         await db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
         await db.run(`DELETE FROM audit_chain`);
-        await db.run(`DELETE FROM ledger_lines`);
+        await db.run(`DELETE FROM journal_details`);
     });
 
     describe('ACCEPTANCE TEST 1: Detect Manual SQL Changes', () => {
-        it('should detect when ledger_lines is manually modified', async () => {
+        it('should detect when journal_details is manually modified', async () => {
             // Arrange: Create audit record for ledger line
             const chainHash = await auditChainService.recordEvent({
                 eventType: 'ledger_line_created',
-                entityTable: 'ledger_lines',
+                entityTable: 'journal_details',
                 entityId: '1',
                 userId: 'admin',
-                payload: { debit: 10000, credit: 0, account_code: '1020' }
+                payload: { debit_amount: 10000, credit_amount: 0, account_code: '1020' }
             });
 
             // Verify integrity is valid initially
@@ -86,7 +86,7 @@ describe('AuditChainService', () => {
             // Act: Manually modify the audit_chain record (simulate tampering)
             await db.run(`
                 UPDATE audit_chain 
-                SET content_payload = '{"debit":20000,"credit":0,"account_code":"1020"}'
+                SET content_payload = '{"debit_amount":20000,"credit_amount":0,"account_code":"1020"}'
                 WHERE id = 1
             `);
 
@@ -101,7 +101,7 @@ describe('AuditChainService', () => {
             // Arrange
             await auditChainService.recordEvent({
                 eventType: 'test_event',
-                entityTable: 'ledger_lines',
+                entityTable: 'journal_details',
                 entityId: '1',
                 userId: 'admin',
                 payload: { value: 100 }
@@ -401,15 +401,15 @@ describe('AuditChainService', () => {
 
             // Content hashes should be identical (deterministic)
             expect(secondRecord.content_hash).toBe(firstRecord.content_hash);
-            
+
             // Previous hashes should both be GENESIS
             expect(firstRecord.previous_hash).toBe('GENESIS');
             expect(secondRecord.previous_hash).toBe('GENESIS');
-            
+
             // Logic clocks should both be 1
             expect(firstRecord.logic_clock).toBe(1);
             expect(secondRecord.logic_clock).toBe(1);
-            
+
             // Chain hashes should be identical (deterministic)
             expect(hash1).toBe(hash2);
         });
