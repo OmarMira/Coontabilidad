@@ -505,7 +505,7 @@ export class SchemaRepairService {
                     CREATE TABLE IF NOT EXISTS sys_migrations (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         version INTEGER NOT NULL UNIQUE,
-                        migration_name TEXT NOT NULL,
+                        name TEXT NOT NULL,
                         applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     )
                 `);
@@ -514,7 +514,7 @@ export class SchemaRepairService {
 
             // SIEMPRE insertar registro de migración
             try {
-                await this.db.run("INSERT OR IGNORE INTO sys_migrations (version, migration_name) VALUES (7, 'repaired_schema_v7')");
+                await this.db.run("INSERT OR IGNORE INTO sys_migrations (version, name) VALUES (7, 'repaired_schema_v7')");
                 logs.push("✅ Migración v7 registrada");
             } catch (e) {
                 logs.push(`⚠️ Error registrando migración: ${(e as Error).message}`);
@@ -523,7 +523,7 @@ export class SchemaRepairService {
             if (migCols.length > 0 && !migCols.includes('version')) {
                 // Fix missing version column if table existed base level
                 await this.db.run("ALTER TABLE sys_migrations ADD COLUMN version INTEGER DEFAULT 0");
-                await this.db.run("UPDATE sys_migrations SET version = 7 WHERE migration_name = 'initial_schema' OR migration_name = 'repaired_schema_v7'");
+                await this.db.run("UPDATE sys_migrations SET version = 7 WHERE name = 'initial_schema' OR name = 'repaired_schema_v7'");
                 logs.push("✅ Columna version agregada a sys_migrations");
             }
 
