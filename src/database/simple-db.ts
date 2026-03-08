@@ -1598,6 +1598,9 @@ export interface JournalEntry {
   total_debit: number;
   total_credit: number;
   is_balanced: boolean;
+  status: 'DRAFT' | 'POSTED' | 'VOIDED';
+  posted_at?: string;
+  posted_by?: number;
   created_at?: string;
   created_by?: number;
   verified_by?: number;
