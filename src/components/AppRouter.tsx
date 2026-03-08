@@ -70,12 +70,14 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
             >
               Reintentar
             </button>
-            <button
-              onClick={forceAdminBypass}
-              className="px-6 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-slate-300 font-bold transition-all"
-            >
-              Bypass (Dev)
-            </button>
+            {import.meta.env.DEV && (
+              <button
+                onClick={forceAdminBypass}
+                className="px-6 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-slate-300 font-bold transition-all"
+              >
+                Bypass (Dev)
+              </button>
+            )}
           </div>
         </div>
       </div>
