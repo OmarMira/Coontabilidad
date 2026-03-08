@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoginForm from './auth/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
 import { isDatabaseReady } from '@/database/simple-db';
-import { DiagnosticPanel } from './DiagnosticPanel';
+
 
 interface AppRouterProps {
   children: React.ReactNode;
@@ -82,10 +82,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
     );
   }
 
-  // Ruta temporal de diagnóstico — Fase 1 del plan de saneamiento
-  if (window.location.pathname === '/diagnostico') {
-    return <DiagnosticPanel />;
-  }
+
 
   if (!isAuthenticated) {
     return <LoginForm />;
