@@ -29,15 +29,39 @@ let dbEngine: SQLiteEngine | null = null;
 export { db };
 export const getDB = () => db;
 
-// Helpers que normalizan llamadas a la instancia `db` y evitan inferencias problemáticas
 export const dbExec = (sql: string, params?: any[]) => {
   if (!db) return null;
-  return (db as any).exec(sql, params);
+  if (!params || params.length === 0) {
+    return db.exec(sql);
+  }
+  const stmt = db.prepare(sql);
+  try {
+    stmt.bind(params);
+
+
+    const columns = stmt.getColumnNames();
+    const values: any[][] = [];
+
+    while (stmt.step()) {
+      values.push(stmt.get());
+    }
+    return [{ columns, values }];
+  } finally {
+    stmt.free();
+  }
 };
 
 export const dbRun = (sql: string, params?: any[]) => {
   if (!db) throw new Error('Database not initialized');
-  return (db as any).run(sql, params);
+  if (!params || params.length === 0) {
+    return db.run(sql);
+  }
+  const stmt = db.prepare(sql);
+  try {
+    return stmt.run(params);
+  } finally {
+    stmt.free();
+  }
 };
 
 // Exportar la instancia de dbEngine para servicios tipados

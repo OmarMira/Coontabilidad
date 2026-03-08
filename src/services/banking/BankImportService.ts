@@ -12,7 +12,7 @@
  * 8. Rollback si es necesario
  */
 
-import { db } from '@/database/simple-db';
+import { db, dbRun, dbExec } from '@/database/simple-db';
 import { FileParserService, ParsedTransaction } from './FileParserService';
 import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
 import { AICategorizerService, TrainingExample } from './AICategorizerService';
@@ -66,7 +66,7 @@ export class BankImportService {
    */
   private async loadTrainingData(): Promise<void> {
     try {
-      const trainingData = db.exec(`
+      const trainingData = dbExec(`
         SELECT description, category, amount, transaction_type
         FROM ml_training_data
         ORDER BY created_at DESC
@@ -109,15 +109,15 @@ export class BankImportService {
     }
 
     // 2. Create batch
-    const batchNumber = `IMP-${Date.now()}`;
+    const batch_number = `BATCH-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-    db.run(`
+    dbRun(`
       INSERT INTO import_batches (
         batch_number, file_name, file_format, bank_account_id,
         total_transactions, status, created_by
       ) VALUES (?, ?, ?, ?, ?, 'pending', ?)
     `, [
-      batchNumber,
+      batch_number,
       file.name,
       parseResult.format,
       bankAccountId,
@@ -125,7 +125,7 @@ export class BankImportService {
       userId
     ]);
 
-    const batchIdResult = db.exec('SELECT last_insert_rowid() as id');
+    const batchIdResult = dbExec('SELECT last_insert_rowid() as id');
     const batchId = batchIdResult[0].values[0][0] as number;
 
     // 3. Get existing transactions for duplicate detection
@@ -153,7 +153,7 @@ export class BankImportService {
       );
 
       // Insert into temp table
-      db.run(`
+      dbRun(`
         INSERT INTO import_transactions_temp (
           batch_id, transaction_date, description, amount, balance,
           suggested_category, confidence_score,
@@ -175,7 +175,7 @@ export class BankImportService {
         matchResult.confidence || null
       ]);
 
-      const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
+      const txnIdResult = dbExec('SELECT last_insert_rowid() as id');
       const txnId = txnIdResult[0].values[0][0] as number;
 
       importTransactions.push({
@@ -232,7 +232,7 @@ export class BankImportService {
 
     values.push(transactionId);
 
-    db.run(`
+    dbRun(`
       UPDATE import_transactions_temp
       SET ${setClauses.join(', ')}
       WHERE id = ?
@@ -251,10 +251,10 @@ export class BankImportService {
     }
 
     try {
-      db.run('BEGIN TRANSACTION');
+      dbRun('BEGIN TRANSACTION');
 
       // Get transactions to import (not excluded)
-      const txnsResult = db.exec(`
+      const txnsResult = dbExec(`
         SELECT * FROM import_transactions_temp
         WHERE batch_id = ? AND excluded = 0
       `, [batchId]);
@@ -289,7 +289,7 @@ export class BankImportService {
         // El vocabulario TRANSACTION_STATES (IMPORTED, VERIFIED, etc.) pertenece a la tabla
         //   transaction_states (migration 016), que es donde se registra el workflow.
         // Son dos tablas distintas; no mezclar sus vocabolarios.
-        db.run(`
+        dbRun(`
           INSERT OR IGNORE INTO bank_transactions (
             bank_account_id, transaction_date, description, amount, status, import_hash
           ) VALUES (?, ?, ?, ?, 'pending', ?)
@@ -302,7 +302,7 @@ export class BankImportService {
         ]);
 
         // Verificar si se insertó realmente
-        const rowsAffected = db.exec('SELECT changes() as changes')[0].values[0][0] as number;
+        const rowsAffected = dbExec('SELECT changes() as changes')[0].values[0][0] as number;
 
         if (rowsAffected === 0) {
           skippedCount++;
@@ -310,7 +310,7 @@ export class BankImportService {
         }
 
         // Obtener ID de la transacción recién insertada
-        const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
+        const txnIdResult = dbExec('SELECT last_insert_rowid() as id');
         const bankTxnId = txnIdResult[0].values[0][0] as number;
 
         // EVALUAR REGLAS DE CLASIFICACIÓN (Automatización Inteligente)
@@ -322,7 +322,7 @@ export class BankImportService {
         const isAutoClassified = !!autoAccount;
 
         // Insertar en transaction_states
-        db.run(`
+        dbRun(`
           INSERT INTO transaction_states (
             transaction_id, current_state, is_verified, 
             auto_classified, assigned_account_code, assigned_account_name,
@@ -366,7 +366,7 @@ export class BankImportService {
 
         // Save as training data if user corrected the category
         if (txn.user_category && txn.user_category !== txn.suggested_category) {
-          db.run(`
+          dbRun(`
             INSERT INTO ml_training_data (description, category, amount, transaction_type, source)
             VALUES (?, ?, ?, ?, 'user_correction')
           `, [
@@ -389,20 +389,20 @@ export class BankImportService {
       }
 
       // Update batch status
-      db.run(`
+      dbRun(`
         UPDATE import_batches
         SET status = 'completed', imported_count = ?, imported_at = datetime('now')
         WHERE id = ?
       `, [importedCount, batchId]);
 
       // Clean up temp transactions
-      db.run('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
+      dbRun('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
 
-      db.run('COMMIT');
+      dbRun('COMMIT');
       return { imported: importedCount, skipped: skippedCount };
 
     } catch (error) {
-      db.run('ROLLBACK');
+      dbRun('ROLLBACK');
       throw error;
     }
   }
@@ -412,7 +412,7 @@ export class BankImportService {
    */
   async rollbackImport(batchId: number): Promise<void> {
     try {
-      db.run('BEGIN TRANSACTION');
+      dbRun('BEGIN TRANSACTION');
 
       // Check if period is open
       // (This would need to check against accounting_periods table)
@@ -421,16 +421,16 @@ export class BankImportService {
       // Note: This would need to track which journal entries belong to which batch
       // For now, we'll just mark the batch as rolled back
 
-      db.run(`
+      dbRun(`
         UPDATE import_batches
         SET status = 'rolled_back', rolled_back_at = datetime('now')
         WHERE id = ?
       `, [batchId]);
 
-      db.run('COMMIT');
+      dbRun('COMMIT');
 
     } catch (error) {
-      db.run('ROLLBACK');
+      dbRun('ROLLBACK');
       throw error;
     }
   }
@@ -454,7 +454,7 @@ export class BankImportService {
    */
   private async getUnpaidInvoices(): Promise<Invoice[]> {
     try {
-      const result = db.exec(`
+      const result = dbExec(`
         SELECT id, invoice_number, total, date, customer_name
         FROM invoices
         WHERE status = 'unpaid'
@@ -498,7 +498,7 @@ export class BankImportService {
    */
   async getImportHistory(): Promise<ImportBatch[]> {
     try {
-      const result = db.exec(`
+      const result = dbExec(`
         SELECT id, batch_number, file_name, file_format,
                total_transactions, imported_count, duplicate_count,
                status, created_at
