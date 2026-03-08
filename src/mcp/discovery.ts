@@ -290,15 +290,15 @@ export async function getDatabaseSchema(): Promise<any> {
         // Add known tables from Account Express
         const knownTables = [
             'journal_entries',
-            'ledger_lines',
+            'journal_details',
             'chart_of_accounts',
             'invoices',
-            'invoice_items',
+            'invoice_lines',
             'customers',
-            'vendors',
+            'suppliers',
             'products',
-            'audit_events',
-            'system_config',
+            'audit_chain',
+            'company_data',
         ];
 
         for (const table of knownTables) {

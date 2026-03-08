@@ -34,7 +34,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': '/src'
+      '@': '/src',
+      'crypto': '/src/core/security/crypto-polyfill.ts'
     }
   },
   build: {
