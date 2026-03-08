@@ -67,12 +67,12 @@ describe('AccountingService', () => {
         `);
 
         await db.exec(`
-            CREATE TABLE ledger_lines (
+            CREATE TABLE journal_details (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 journal_entry_id TEXT NOT NULL,
                 account_code TEXT NOT NULL,
-                debit INTEGER DEFAULT 0,
-                credit INTEGER DEFAULT 0,
+                debit_amount INTEGER DEFAULT 0,
+                credit_amount INTEGER DEFAULT 0,
                 description TEXT,
                 logic_clock INTEGER NOT NULL,
                 FOREIGN KEY (journal_entry_id) REFERENCES journal_entries(id),
@@ -93,7 +93,7 @@ describe('AccountingService', () => {
 
         await db.exec(`
             CREATE TRIGGER prevent_ledger_delete
-            BEFORE DELETE ON ledger_lines
+            BEFORE DELETE ON journal_details
             FOR EACH ROW
             WHEN (SELECT status FROM journal_entries WHERE id = OLD.journal_entry_id) = 'POSTED'
             BEGIN
@@ -123,15 +123,15 @@ describe('AccountingService', () => {
     beforeEach(async () => {
         // Reset logic_clock before each test
         await db.run(`UPDATE system_config SET value = '0' WHERE key = 'logic_clock'`);
-        
+
         // Clear all journal entries and ledger lines
         // First, temporarily disable triggers to allow deletion of POSTED entries
         await db.exec(`DROP TRIGGER IF EXISTS prevent_journal_delete`);
         await db.exec(`DROP TRIGGER IF EXISTS prevent_ledger_delete`);
-        
-        await db.run(`DELETE FROM ledger_lines`);
+
+        await db.run(`DELETE FROM journal_details`);
         await db.run(`DELETE FROM journal_entries`);
-        
+
         // Recreate triggers
         await db.exec(`
             CREATE TRIGGER prevent_journal_delete
@@ -145,7 +145,7 @@ describe('AccountingService', () => {
 
         await db.exec(`
             CREATE TRIGGER prevent_ledger_delete
-            BEFORE DELETE ON ledger_lines
+            BEFORE DELETE ON journal_details
             FOR EACH ROW
             WHEN (SELECT status FROM journal_entries WHERE id = OLD.journal_entry_id) = 'POSTED'
             BEGIN
@@ -177,10 +177,10 @@ describe('AccountingService', () => {
             expect(entry.length).toBe(1);
             expect((entry[0] as any).status).toBe('POSTED');
 
-            const lines = await db.select('SELECT * FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
+            const lines = await db.select('SELECT * FROM journal_details WHERE journal_entry_id = ?', [entryId]);
 
-            const totalDebits = lines.reduce((sum: number, line: any) => sum + (line.debit || 0), 0);
-            const totalCredits = lines.reduce((sum: number, line: any) => sum + (line.credit || 0), 0);
+            const totalDebits = lines.reduce((sum: number, line: any) => sum + (line.debit_amount || 0), 0);
+            const totalCredits = lines.reduce((sum: number, line: any) => sum + (line.credit_amount || 0), 0);
 
             // Critical assertion: debits = credits
             expect(totalDebits).toBe(totalCredits);
@@ -267,11 +267,11 @@ describe('AccountingService', () => {
                 autoPost: true
             });
 
-            const lines = await db.select('SELECT id FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
+            const lines = await db.select('SELECT id FROM journal_details WHERE journal_entry_id = ?', [entryId]);
 
             // Act & Assert
             await expect(async () => {
-                await db.run('DELETE FROM ledger_lines WHERE id = ?', [(lines[0] as any).id]);
+                await db.run('DELETE FROM journal_details WHERE id = ?', [(lines[0] as any).id]);
             }).rejects.toThrow(/Cannot delete ledger line from POSTED journal entry/);
         });
     });
@@ -290,7 +290,7 @@ describe('AccountingService', () => {
 
             // Assert
             const entry = await db.select('SELECT logic_clock FROM journal_entries WHERE id = ?', [entryId]);
-            const lines = await db.select('SELECT logic_clock FROM ledger_lines WHERE journal_entry_id = ?', [entryId]);
+            const lines = await db.select('SELECT logic_clock FROM journal_details WHERE journal_entry_id = ?', [entryId]);
 
             const entryLogicClock = (entry[0] as any).logic_clock;
 
@@ -364,7 +364,7 @@ describe('AccountingService', () => {
 
             // Assert
             const reversalLines = await db.select(
-                'SELECT * FROM ledger_lines WHERE journal_entry_id = ?',
+                'SELECT * FROM journal_details WHERE journal_entry_id = ?',
                 [reversalId]
             );
 
@@ -372,10 +372,10 @@ describe('AccountingService', () => {
             const arLine = reversalLines.find((l: any) => l.account_code === '1020') as any;
             const revenueLine = reversalLines.find((l: any) => l.account_code === '4010') as any;
 
-            expect(arLine.debit).toBe(0);
-            expect(arLine.credit).toBe(10000); // Swapped
-            expect(revenueLine.debit).toBe(10000); // Swapped
-            expect(revenueLine.credit).toBe(0);
+            expect(arLine.debit_amount).toBe(0);
+            expect(arLine.credit_amount).toBe(10000); // Swapped
+            expect(revenueLine.debit_amount).toBe(10000); // Swapped
+            expect(revenueLine.credit_amount).toBe(0);
 
             // Net effect should be zero
             const arBalance = await accountingService.getAccountBalance('1020');
