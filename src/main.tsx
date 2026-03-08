@@ -95,11 +95,12 @@ async function initializeApplication(): Promise<void> {
 
     // Health check en BACKGROUND — no bloquea el render
     // Si falla, la app ya está montada y el usuario puede trabajar
+    // Fase 5: Health check informativo — sin auto-reparación automática
     setTimeout(async () => {
       try {
         const dbHealth = await DatabaseHealthChecker.checkHealth();
         if (!dbHealth.healthy) {
-          await DatabaseHealthChecker.attemptAutoRepair();
+          console.warn('[main] Health check detectó problemas — revisar manualmente desde panel de administración');
         }
       } catch (healthErr) {
         console.warn('[main] Health check en background falló (no crítico):', healthErr);
