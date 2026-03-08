@@ -80,14 +80,15 @@ export function BackupRecoveryPanel() {
         }
     };
 
-    const restoreFromFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
+    const restoreFromFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFiles = Array.from(event.target.files || []);
+        if (selectedFiles.length === 0) return;
 
+        const fileNames = selectedFiles.map(f => f.name).join(', ');
         const confirmed = window.confirm(
             `⚠️ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
             `${t('settings.backupPrompt')}\n\n` +
-            `¿${t('settings.restoreAction')} ${file.name}?`
+            `¿${t('settings.restoreAction')} ${fileNames}?`
         );
 
         if (!confirmed) {
@@ -96,15 +97,16 @@ export function BackupRecoveryPanel() {
         }
 
         setRestoring(true);
-        setProgress({ percent: 0, message: t('settings.restoringHint') });
-
         try {
-            await RecoveryService.restoreFromFile(file, {
-                skipSafetyBackup: false,
-                onProgress: (percent, message) => {
-                    setProgress({ percent, message });
-                }
-            });
+            for (const file of selectedFiles) {
+                setProgress({ percent: 0, message: `${t('settings.restoringHint')}: ${file.name}` });
+                await RecoveryService.restoreFromFile(file, {
+                    skipSafetyBackup: false,
+                    onProgress: (percent, message) => {
+                        setProgress({ percent, message: `${file.name}: ${message}` });
+                    }
+                });
+            }
 
             alert(`✅ ${t('settings.restoreSuccess')}!\n\nLa aplicación se recargará.`);
             window.location.reload();
@@ -237,7 +239,8 @@ export function BackupRecoveryPanel() {
                     <input
                         type="file"
                         accept=".aex"
-                        onChange={restoreFromFile}
+                        multiple
+                        onChange={restoreFromFiles}
                         disabled={restoring}
                         style={styles.fileInput}
                     />

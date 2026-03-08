@@ -30,7 +30,7 @@ type Step = 'upload' | 'preview' | 'edit' | 'confirm';
 
 export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => { }, onComplete, accounts, selectedAccountId }) => {
   const [step, setStep] = useState<Step>('upload');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [batchId, setBatchId] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<ImportTransaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,8 +86,12 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     }
   };
 
-  const handleFileSelect = (selectedFile: File) => {
-    setFile(selectedFile);
+  const handleFileSelect = (selectedFiles: File | File[] | FileList) => {
+    const newFiles = selectedFiles instanceof File
+      ? [selectedFiles]
+      : Array.from(selectedFiles);
+
+    setFiles(prev => [...prev, ...newFiles]);
     setError(null);
   };
 
@@ -107,32 +111,38 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      if (e.dataTransfer.files.length > 1) {
-        toast.error('Solo se permite un archivo a la vez');
-        return;
-      }
-      handleFileSelect(e.dataTransfer.files[0]);
+      handleFileSelect(e.dataTransfer.files);
     }
   }, []);
 
   const handleProcessFile = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await importService.createImportBatch(file, resolvedAccountId ?? 0, 1);
-      setBatchId(result.batchId);
-      setTransactions(result.transactions);
+      let cumulativeTransactions: ImportTransaction[] = [];
+      let lastBatchId: number | null = null;
+      let accountDetected = false;
 
-      // Auto-match cuenta si el PDF reportó un número de cuenta
-      if (result.detectedAccountNumber) {
-        autoMatchAccount(result.detectedAccountNumber);
+      for (const file of files) {
+        const result = await importService.createImportBatch(file, resolvedAccountId ?? 0, 1);
+        cumulativeTransactions = [...cumulativeTransactions, ...result.transactions];
+        lastBatchId = result.batchId; // For simplicity, we keep the last one or we'd need a list of IDs
+
+        // Auto-match cuenta si el PDF reportó un número de cuenta
+        if (result.detectedAccountNumber && !accountDetected) {
+          autoMatchAccount(result.detectedAccountNumber);
+          accountDetected = true;
+        }
       }
 
+      setBatchId(lastBatchId); // Note: finalizeImport currently only takes one batchId. This is a limitation.
+      setTransactions(cumulativeTransactions);
+
       setStep('preview');
-      toast.success('Heurística de archivo analizada correctamente');
+      toast.success(`${files.length} archivo(s) analizado(s) correctamente`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -229,8 +239,8 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                   <input
                     type="file"
                     accept=".csv,.ofx,.qfx,.pdf"
-                    multiple={false}
-                    onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
+                    multiple
+                    onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
                     className="hidden"
                     id="file-upload"
                   />
@@ -243,8 +253,8 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                 </div>
               </div>
 
-              {file && (
-                <div className="bg-slate-950 border-2 border-slate-800 rounded-[2rem] p-8 flex items-center justify-between shadow-2xl animate-in slide-in-from-top-4 duration-500">
+              {files.length > 0 && files.map((file, index) => (
+                <div key={`${file.name}-${index}`} className="bg-slate-950 border-2 border-slate-800 rounded-[2rem] p-8 flex items-center justify-between shadow-2xl animate-in slide-in-from-top-4 duration-500 mb-4 last:mb-0">
                   <div className="flex items-center gap-6">
                     <div className="w-14 h-14 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-center">
                       <FileText className="w-7 h-7 text-blue-500" />
@@ -257,13 +267,13 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                     </div>
                   </div>
                   <button
-                    onClick={() => setFile(null)}
+                    onClick={() => setFiles(prev => prev.filter((_, i) => i !== index))}
                     className="p-3 bg-slate-900 border border-slate-800 text-slate-600 hover:text-rose-500 hover:border-rose-500/50 rounded-xl transition-all"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-              )}
+              ))}
 
               {error && (
                 <div className="bg-rose-500/5 border border-rose-500/20 rounded-[2rem] p-8 flex items-center gap-6 animate-in shake duration-500">
@@ -280,7 +290,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                 </button>
                 <button
                   onClick={handleProcessFile}
-                  disabled={!file || loading}
+                  disabled={files.length === 0 || loading}
                   className="px-14 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/50 hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4"
                 >
                   {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Zap className="w-4 h-4 fill-current" />}
@@ -372,7 +382,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
               </div>
 
               <div className="flex justify-between gap-6 pt-10 border-t border-slate-800">
-                <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all hover:bg-slate-800 flex items-center gap-3">
+                <button onClick={() => { setStep('upload'); setFiles([]); }} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all hover:bg-slate-800 flex items-center gap-3">
                   <ArrowRight className="w-4 h-4 rotate-180" /> Recalibrar
                 </button>
                 <div className="flex gap-6">

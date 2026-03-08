@@ -14,23 +14,27 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const processFile = async (file: File) => {
-        const id = `ARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`; // Generar ID único para el documento
-
+    const processFiles = async (files: FileList | File[]) => {
+        setUploading(true);
         try {
-            const { data: { text } } = await Tesseract.recognize(file, 'spa', {
-                logger: (info) => console.log(info), // Opcional: para depuración
-            });
+            for (const file of Array.from(files)) {
+                const id = `ARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-            // Parsear el texto reconocido para extraer datos relevantes
-            const parsedResult = parseOCRText(text);
+                try {
+                    const { data: { text } } = await Tesseract.recognize(file, 'spa', {
+                        logger: (info) => console.log(info),
+                    });
 
-            updateARDDocumentStatus(id, 'processed', parsedResult);
+                    const parsedResult = parseOCRText(text);
+                    updateARDDocumentStatus(id, 'processed', parsedResult);
+                } catch (error) {
+                    console.error('Error al procesar OCR:', error);
+                    updateARDDocumentStatus(id, 'error', { error: error instanceof Error ? error.message : 'Error desconocido' });
+                }
+            }
             onDocumentProcessed();
-        } catch (error) {
-            console.error('Error al procesar OCR:', error);
-            updateARDDocumentStatus(id, 'error', { error: error instanceof Error ? error.message : 'Error desconocido' });
-            onDocumentProcessed();
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -71,8 +75,8 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) processFile(files[0]);
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) processFiles(files);
     };
 
     return (
@@ -115,7 +119,7 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
             {!uploading && (
                 <label className="mt-8 px-8 py-3 bg-white text-black font-black text-xs rounded-2xl cursor-pointer hover:bg-slate-200 transition-colors uppercase tracking-widest">
                     {t('ard.selectFile')}
-                    <input type="file" className="hidden" onChange={(e) => e.target.files && processFile(e.target.files[0])} />
+                    <input type="file" className="hidden" multiple onChange={(e) => e.target.files && processFiles(e.target.files)} />
                 </label>
             )}
 

@@ -40,21 +40,33 @@ export const OFXImporter: React.FC = () => {
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const selectedFile = e.target.files[0];
-            setFile(selectedFile);
+        const selectedFiles = Array.from(e.target.files || []);
+        if (selectedFiles.length > 0) {
             setSuccessMsg(null);
             setErrorMsg(null);
             setParsedData(null);
             setLoading(true);
 
             try {
-                const text = await selectedFile.text();
-                const statement = await parseOFX(text);
-                setParsedData(statement);
+                let mergedStatement: OFXStatement | null = null;
+                for (const file of selectedFiles) {
+                    const text = await file.text();
+                    const statement = await parseOFX(text);
+                    if (!mergedStatement) {
+                        mergedStatement = statement;
+                    } else {
+                        // Merge transactions
+                        mergedStatement.transactions.push(...statement.transactions);
+                        // Optionally update end time or balances if they are sequential
+                        if (new Date(statement.endTime) > new Date(mergedStatement.endTime)) {
+                            mergedStatement.endTime = statement.endTime;
+                            mergedStatement.ledgerBalance = statement.ledgerBalance;
+                        }
+                    }
+                }
+                setParsedData(mergedStatement);
             } catch (error) {
-                setErrorMsg(`Error al analizar archivo OFX/QFX: ${(error as Error).message}`);
-                setFile(null);
+                setErrorMsg(`Error al analizar archivos OFX/QFX: ${(error as Error).message}`);
             } finally {
                 setLoading(false);
             }
@@ -155,6 +167,7 @@ export const OFXImporter: React.FC = () => {
                                 <input
                                     type="file"
                                     accept=".ofx,.qfx"
+                                    multiple
                                     onChange={handleFileChange}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />

@@ -22,11 +22,11 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
     if (!ALLOWED_TYPES.includes(file.type)) {
       return 'Formato no válido. Use JPG, PNG, GIF o WebP.';
     }
-    
+
     if (file.size > MAX_FILE_SIZE) {
       return 'El archivo es muy grande. Máximo 5MB.';
     }
-    
+
     return null;
   };
 
@@ -60,7 +60,7 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
             // Calcular dimensiones manteniendo proporción (máximo 400x400)
             const maxSize = 400;
             let { width, height } = img;
-            
+
             if (width > maxSize || height > maxSize) {
               if (width > height) {
                 height = (height * maxSize) / width;
@@ -79,14 +79,14 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
 
             // Convertir a base64
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            
+
             // Generar nombre único para el archivo
             const timestamp = Date.now();
             const logoPath = `company-logo-${timestamp}.jpg`;
-            
+
             // Almacenar en localStorage (en una implementación real, se guardaría en el servidor)
             localStorage.setItem(`logo_${logoPath}`, dataUrl);
-            
+
             logger.info('LogoUploader', 'upload_success', 'Logo cargado exitosamente', {
               logoPath,
               originalSize: file.size,
@@ -96,10 +96,10 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
 
             onLogoChange(logoPath);
             setSuccess('Logo cargado exitosamente');
-            
+
             // Limpiar mensaje de éxito después de 3 segundos
             setTimeout(() => setSuccess(null), 3000);
-            
+
             resolve();
           } catch (error) {
             logger.error('LogoUploader', 'process_failed', 'Error al procesar imagen', null, error as Error);
@@ -124,17 +124,16 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    processFile(file);
+
+    Array.from(files).forEach(file => processFile(file));
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    
+
     if (disabled) return;
-    
+
     handleFileSelect(e.dataTransfer.files);
   };
 
@@ -160,9 +159,9 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
     if (currentLogo) {
       // Eliminar del localStorage
       localStorage.removeItem(`logo_${currentLogo}`);
-      
+
       logger.info('LogoUploader', 'logo_removed', 'Logo eliminado', { logoPath: currentLogo });
-      
+
       onLogoChange(null);
       setSuccess('Logo eliminado');
       setTimeout(() => setSuccess(null), 3000);
@@ -226,7 +225,7 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
         className={`
           relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all
           ${dragOver && !disabled
-            ? 'border-blue-400 bg-blue-900/20' 
+            ? 'border-blue-400 bg-blue-900/20'
             : disabled
               ? 'border-white/10 bg-white/10 cursor-not-allowed'
               : 'border-white/10 hover:border-gray-500 bg-white/5'
@@ -237,6 +236,7 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
           ref={fileInputRef}
           type="file"
           accept={ALLOWED_TYPES.join(',')}
+          multiple
           onChange={(e) => handleFileSelect(e.target.files)}
           className="hidden"
           disabled={disabled}
@@ -293,7 +293,7 @@ export function LogoUploader({ currentLogo, onLogoChange, disabled = false }: Lo
       {/* Información adicional */}
       <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-3">
         <p className="text-blue-200 text-xs">
-          <strong>💡 Recomendación:</strong> Use un logo con fondo transparente (PNG) para mejores resultados en documentos. 
+          <strong>💡 Recomendación:</strong> Use un logo con fondo transparente (PNG) para mejores resultados en documentos.
           El logo aparecerá en facturas, reportes y documentos oficiales.
         </p>
       </div>

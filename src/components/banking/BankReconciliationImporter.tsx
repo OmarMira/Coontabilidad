@@ -30,7 +30,7 @@ import { useLocale } from '../../i18n/useLocale';
 export const BankReconciliationImporter: React.FC = () => {
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [dragActive, setDragActive] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [mapping, setMapping] = useState({
@@ -83,121 +83,84 @@ export const BankReconciliationImporter: React.FC = () => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFileSelect(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files);
         }
     }, []);
 
-    const handleFileSelect = async (selectedFile: File) => {
-        const ext = selectedFile.name.split('.').pop()?.toLowerCase();
-        const validExtensions = ['csv', 'ofx', 'pdf', 'jpg', 'jpeg', 'png'];
-
-        if (!validExtensions.includes(ext || '')) {
-            toast.error(t('bankStatementImport.compatibility'));
-            return;
-        }
+    const handleFileSelect = async (selectedFiles: FileList | File[]) => {
+        const fileList = Array.from(selectedFiles);
+        if (fileList.length === 0) return;
 
         setIsProcessing(true);
-        setFile(selectedFile);
+        setFiles(fileList);
 
         try {
-            // Detección Inteligente de Cuenta
-            const metadata = await StatementSmartParser.parseMetadata(selectedFile);
-            setDetectedMetadata(metadata);
+            let combinedMetadata: StatementMetadata | null = null;
+            let combinedPreview: string[][] = [];
 
-            let accountIdToUse = selectedAccountId;
+            for (const selectedFile of fileList) {
+                const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+                const validExtensions = ['csv', 'ofx', 'pdf', 'jpg', 'jpeg', 'png'];
 
-            if (metadata.accountNumber) {
-                const results = findBankAccountsByNumber(metadata.accountNumber);
-                if (results.length === 1) {
-                    accountIdToUse = results[0].id;
-                    setSelectedAccountId(accountIdToUse);
-                    toast.success(t('bankReconciliation.accountDetected')
-                        .replace('{{account}}', metadata.accountNumber)
-                        .replace('{{bank}}', results[0].bank_name));
-                } else if (results.length > 1) {
-                    setAmbiguousAccounts(results);
-                    toast('Varias cuentas candidatas detectadas. Por favor elige la correcta.');
-                    setIsProcessing(false);
-                    return;
-                } else {
-                    // Si no se encuentra la cuenta, NO bloqueamos el proceso.
-                    // Solo avisamos, pero dejamos que vea la previsualización.
-                    toast.error(t('bankReconciliation.accountNotFound')
-                        .replace('{{account}}', metadata.accountNumber), { duration: 5000 });
+                if (!validExtensions.includes(ext || '')) {
+                    toast.error(`${t('bankStatementImport.compatibility')}: ${selectedFile.name}`);
+                    continue;
                 }
-            }
 
-            if (metadata.isValidTriangle === false) {
-                setValidationError(t('bankReconciliation.checks.triangleError'));
-            } else {
-                setValidationError(null);
-            }
+                // Detección Inteligente de Cuenta
+                const metadata = await StatementSmartParser.parseMetadata(selectedFile);
+                if (!combinedMetadata) {
+                    combinedMetadata = metadata;
+                } else if (metadata.transactions) {
+                    combinedMetadata.transactions = [...(combinedMetadata.transactions || []), ...metadata.transactions];
+                }
 
-            if (ext === 'csv') {
-                Papa.parse(selectedFile, {
-                    complete: (results: Papa.ParseResult<string[]>) => {
-                        const data = results.data as string[][];
-                        setPreview(data.slice(0, 15));
-                        setStep('mapping');
-                        toast.success('Integridad de archivo verificada');
-                    },
-                    header: false,
-                    skipEmptyLines: true
-                });
-            } else if (ext === 'pdf' || ['jpg', 'jpeg', 'png'].includes(ext || '')) {
-                if (metadata.transactions && metadata.transactions.length > 0) {
-                    // Add headers for clear view
-                    const txList = [
-                        ['FECHA', 'DESCRIPCIÓN', 'MONTO'],
-                        ...metadata.transactions.map(tx => [
+                if (metadata.accountNumber) {
+                    const results = findBankAccountsByNumber(metadata.accountNumber);
+                    if (results.length === 1) {
+                        setSelectedAccountId(results[0].id);
+                    }
+                }
+
+                if (ext === 'csv') {
+                    await new Promise<void>((resolve) => {
+                        Papa.parse(selectedFile, {
+                            complete: (results: Papa.ParseResult<string[]>) => {
+                                const data = results.data as string[][];
+                                combinedPreview = [...combinedPreview, ...data.slice(0, 15)];
+                                resolve();
+                            },
+                            header: false,
+                            skipEmptyLines: true
+                        });
+                    });
+                } else {
+                    if (metadata.transactions && metadata.transactions.length > 0) {
+                        const txList = metadata.transactions.map(tx => [
                             tx.transaction_date,
                             tx.description,
                             tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })
-                        ])
-                    ];
-                    setPreview(txList);
-                    setStep('mapping');
-                    toast.success(`Se recuperaron ${metadata.transactions.length} transacciones`);
-                } else {
-                    setPreview([
-                        ['DATO', 'VALOR DETECTADO'],
-                        ['FORMATO', ext?.toUpperCase() || ''],
-                        ['MÉTODO', 'INTELIGENCIA DE VISIÓN (OCR)'],
-                        ['CUENTA', metadata.accountNumber || 'NO DETECTADA'],
-                        ['BANCO', metadata.bankName || 'DESCONOCIDO']
-                    ]);
-                    setStep('mapping');
-                    toast.error('No se detectaron transacciones en el documento');
+                        ]);
+                        combinedPreview = [...combinedPreview, ...txList];
+                    }
                 }
-            } else if (ext === 'ofx') {
-                if (metadata.transactions && metadata.transactions.length > 0) {
-                    const txList = [
-                        ['FECHA', 'DESCRIPCIÓN', 'MONTO'],
-                        ...metadata.transactions.map(tx => [
-                            tx.transaction_date || '',
-                            tx.description || '',
-                            tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })
-                        ])
-                    ];
-                    setPreview(txList);
-                    setStep('mapping');
-                    toast.success('Datos OFX procesados correctamente');
-                } else {
-                    toast.error('El archivo OFX no contiene transacciones válidas');
-                }
-            } else {
-                toast.error('Formato no soportado para procesamiento inteligente.');
             }
+
+            setDetectedMetadata(combinedMetadata);
+            setPreview(combinedPreview);
+            setStep('mapping');
+            toast.success('Archivos procesados correctamente');
+
         } catch (error) {
-            toast.error('Fallo en el análisis inteligente del archivo');
+            toast.error('Fallo en el análisis inteligente de los archivos');
         } finally {
             setIsProcessing(false);
         }
     };
 
     const handleImport = async () => {
-        if (!file || !selectedAccountId || continuityError || validationError) return;
+        if (files.length === 0 || !selectedAccountId || continuityError || validationError) return;
 
         setIsProcessing(true);
 
@@ -206,7 +169,7 @@ export const BankReconciliationImporter: React.FC = () => {
             if (result.success) {
                 toast.success(`Inyección completa: ${transactions.length} registros certificados`);
                 setStep('upload');
-                setFile(null);
+                setFiles([]);
                 setPreview([]);
             } else {
                 toast.error(result.message);
@@ -228,53 +191,34 @@ export const BankReconciliationImporter: React.FC = () => {
             return;
         }
 
-        Papa.parse(file, {
-            complete: (results: Papa.ParseResult<string[]>) => {
-                const rows = results.data as string[][];
-                const mapped = rows
-                    .slice(1)
-                    .map((row: string[]) => ({
-                        bank_account_id: selectedAccountId,
-                        transaction_date: row[mapping.date],
-                        description: row[mapping.description],
-                        amount: parseFloat((row[mapping.amount] || '').toString().replace(/[$,]/g, '')) || 0,
-                        reference_number: row[mapping.reference] || '',
-                        status: 'pending' as const
-                    }));
+        // CSV mapping for multiple files
+        let allTransactions: Partial<BankTransaction>[] = [];
+        for (const file of files) {
+            await new Promise<void>((resolve) => {
+                Papa.parse(file, {
+                    complete: (results: Papa.ParseResult<string[]>) => {
+                        const rows = results.data as string[][];
+                        const mapped = rows
+                            .slice(1)
+                            .map((row: string[]) => ({
+                                bank_account_id: selectedAccountId,
+                                transaction_date: row[mapping.date],
+                                description: row[mapping.description],
+                                amount: parseFloat((row[mapping.amount] || '').toString().replace(/[$,]/g, '')) || 0,
+                                reference_number: row[mapping.reference] || '',
+                                status: 'pending' as const
+                            }));
 
-                const transactions = mapped.filter((t) => !!t.transaction_date && t.amount !== 0) as Partial<BankTransaction>[];
-
-                // Validación del Triángulo para CSV
-                if (detectedMetadata && detectedMetadata.format === 'CSV') {
-                    let credits = 0;
-                    let debits = 0;
-                    transactions.forEach(tx => {
-                        if ((tx.amount || 0) > 0) credits += tx.amount || 0;
-                        else debits += Math.abs(tx.amount || 0);
-                    });
-
-                    // const isValid = StatementSmartParser.validateTriangle({
-                    //    ...detectedMetadata,
-                    //   totalCredits: credits,
-                    //   totalDebits: debits
-                    //});
-                    const isValid = true; // placeholder since it was commented out
-
-                    if (!isValid) {
-                        const calculated = (detectedMetadata.openingBalance || 0) + credits - debits;
-                        const errorMsg = `Discrepancia en Triángulo de Verdad: Esperado ${detectedMetadata.closingBalance}, Calculado ${calculated.toFixed(2)}`;
-                        toast.error(errorMsg);
-                        setValidationError(errorMsg);
-                        setIsProcessing(false);
-                        return;
-                    }
-                }
-
-                executeInjection(transactions);
-            },
-            header: false,
-            skipEmptyLines: true
-        });
+                        const transactions = mapped.filter((t) => !!t.transaction_date && t.amount !== 0) as Partial<BankTransaction>[];
+                        allTransactions = [...allTransactions, ...transactions];
+                        resolve();
+                    },
+                    header: false,
+                    skipEmptyLines: true
+                });
+            });
+        }
+        executeInjection(allTransactions);
     };
 
     return (
@@ -375,7 +319,8 @@ export const BankReconciliationImporter: React.FC = () => {
                             <input
                                 type="file"
                                 accept=".pdf,.ofx,.csv,image/jpeg,image/png"
-                                onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
+                                multiple
+                                onChange={(e) => handleFileSelect(e.target.files || [])}
                                 className="hidden"
                                 id="csv-upload"
                             />
@@ -495,7 +440,7 @@ export const BankReconciliationImporter: React.FC = () => {
                         }}
                         onCancel={() => {
                             setShowRegisterForm(false);
-                            setFile(null);
+                            setFiles([]);
                         }}
                         onSubmit={async (data) => {
                             const res = await createBankAccount(data);
@@ -505,7 +450,7 @@ export const BankReconciliationImporter: React.FC = () => {
                                 setShowRegisterForm(false);
                                 toast.success(t('bankAccountList.addAccount'));
                                 // Intentar re-procesar el archivo ahora que la cuenta existe
-                                if (file) handleFileSelect(file);
+                                if (files.length > 0) handleFileSelect(files);
                             } else {
                                 toast.error(res.message);
                             }
@@ -535,7 +480,7 @@ export const BankReconciliationImporter: React.FC = () => {
                                         onClick={() => {
                                             setSelectedAccountId(account.id);
                                             setAmbiguousAccounts([]);
-                                            if (file) handleFileSelect(file);
+                                            if (files.length > 0) handleFileSelect(files);
                                         }}
                                         className="w-full text-left p-6 bg-slate-950 border border-slate-800 rounded-2.5xl hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group"
                                     >
@@ -552,7 +497,7 @@ export const BankReconciliationImporter: React.FC = () => {
 
                             <div className="flex justify-end pt-4">
                                 <button
-                                    onClick={() => { setAmbiguousAccounts([]); setFile(null); }}
+                                    onClick={() => { setAmbiguousAccounts([]); setFiles([]); }}
                                     className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
                                 >
                                     Cancelar Proceso

@@ -30,14 +30,20 @@ export const BackupRestoreWizard: React.FC = () => {
         }
     };
 
-    const handleRestore = async (file: File) => {
+    const handleRestores = async (files: FileList | File[]) => {
+        const fileList = Array.from(files);
+        if (fileList.length === 0) return;
+
         setStatus('processing');
         try {
-            // Mock
-            setTimeout(() => {
-                setStatus('success');
-                setMessage(t('backup.wizard.successRestore', { name: file.name }));
-            }, 2000);
+            for (const file of fileList) {
+                // Mock individual restore
+                console.log(`Restoring ${file.name}...`);
+            }
+
+            setStatus('success');
+            const fileNames = fileList.map(f => f.name).join(', ');
+            setMessage(t('backup.wizard.successRestore', { name: fileNames }));
         } catch (e) {
             setStatus('error');
             setMessage(t('backup.wizard.errorRestore'));
@@ -146,8 +152,8 @@ export const BackupRestoreWizard: React.FC = () => {
                             <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center bg-white/10/50">
                                 <Upload className="w-10 h-10 text-slate-600 mx-auto mb-2" />
                                 <p className="text-sm text-slate-500">{t('backup.wizard.dragAndDrop')}</p>
-                                <input type="file" className="hidden" id="file-upload" onChange={(e) => {
-                                    if (e.target.files?.[0]) handleRestore(e.target.files[0]);
+                                <input type="file" className="hidden" id="file-upload" multiple onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) handleRestores(e.target.files);
                                 }} />
                                 <label htmlFor="file-upload" className="mt-4 inline-block bg-blue-600 px-4 py-2 rounded cursor-pointer hover:bg-blue-700 text-sm">
                                     {t('backup.wizard.selectFile')}
