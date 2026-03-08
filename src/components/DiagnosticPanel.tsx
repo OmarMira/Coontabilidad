@@ -18,7 +18,6 @@ const QUERIES = [
     { label: 'Estructura: ledger_lines', sql: 'PRAGMA table_info(ledger_lines)' },
     { label: 'Estructura: journal_entry_lines', sql: 'PRAGMA table_info(journal_entry_lines)' },
     { label: 'Estructura: company_data', sql: 'PRAGMA table_info(company_data)' },
-    { label: 'Estructura: company_info', sql: 'PRAGMA table_info(company_info)' },
     { label: 'Filas en journal_entries', sql: 'SELECT COUNT(*) as filas FROM journal_entries' },
 ];
 
