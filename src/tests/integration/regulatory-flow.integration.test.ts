@@ -59,15 +59,15 @@ describe('Regulatory & Forensic Integration Test (L1/L3)', () => {
                 created_by INTEGER
             );
         `);
-        // We also need journal_entry_lines for verification logic to work
+        // We also need journal_details for verification logic to work
         db.run(`
-            CREATE TABLE journal_entry_lines (
+            CREATE TABLE journal_details (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 journal_entry_id INTEGER,
                 account_code TEXT,
                 description TEXT,
-                debit DECIMAL(15,2),
-                credit DECIMAL(15,2)
+                debit_amount DECIMAL(15,2),
+                credit_amount DECIMAL(15,2)
             );
         `);
 
