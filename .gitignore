@@ -323,3 +323,7 @@ sessions/
 #
 # Es mejor pecar de cauteloso que exponer datos sensibles
 # ============================================
+# Phase 8: Legacy and log directories
+.migration-logs/
+.logs/
+docs/legacy/
