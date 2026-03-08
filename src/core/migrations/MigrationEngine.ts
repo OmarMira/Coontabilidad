@@ -22,6 +22,7 @@ import { BankImportSchemaMigration } from './list/020_bank_import_schema';
 import { FixAnomalyDetectorSchemaMigration } from './list/021_fix_anomaly_detector_schema';
 import { FixAuditChainSchemaMigration } from './list/023_fix_audit_chain_schema';
 import { AddStatusToJournalEntriesMigration } from './list/025_add_status_to_journal_entries';
+import { DropCompanyInfoMigration } from './list/026_drop_company_info';
 
 export interface Migration {
     version: number;
@@ -59,7 +60,8 @@ export class MigrationEngine {
         FixAnomalyDetectorSchemaMigration,   // v21
         FixAuditChainSchemaMigration as any, // v23
         new HistoricalDataFixMigration(),    // v24
-        AddStatusToJournalEntriesMigration   // v25
+        AddStatusToJournalEntriesMigration,  // v25
+        DropCompanyInfoMigration             // v26
     ];
 
     private constructor() { }
