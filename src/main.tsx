@@ -54,6 +54,8 @@ async function initializeApplication(): Promise<void> {
     const urlParams = new URLSearchParams(window.location.search);
 
     // VERIFICAR ORDEN NUCLEAR
+    // HERRAMIENTA DE RECUPERACIÓN MANUAL — solo ejecutar intencionalmente via URL ?nuclear
+    // NO usar en producción sin respaldo previo
     if (urlParams.has('nuclear')) {
       await executeNuclearRepair();
       return; // El recargo se encarga de lo demás
