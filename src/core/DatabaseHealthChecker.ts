@@ -35,8 +35,9 @@ export class DatabaseHealthChecker {
             const report = await ForensicDatabaseDiagnostic.performDeepAnalysis();
 
             if (report.recommendations.includes('NUCLEAR_REBUILD_REQUIRED')) {
-                await ForensicDatabaseDiagnostic.executeDefinitiveFix();
-                return true;
+                // Fase 5: Acción nuclear desactivada — solo registrar, nunca ejecutar automáticamente
+                logger.error('NUCLEAR_REBUILD_REQUIRED detectado — acción bloqueada, revisar manualmente', undefined, 'Health', 'nuclear_blocked');
+                return false;
             }
 
             return false;
