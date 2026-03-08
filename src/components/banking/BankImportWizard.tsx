@@ -16,8 +16,9 @@ import {
   Building2
 } from 'lucide-react';
 import { BankImportService, ImportTransaction } from '../../services/banking/BankImportService';
-import { BankAccount, db } from '@/database/simple-db';
+import { BankAccount, db, createBankAccount, getBankAccounts } from '@/database/simple-db';
 import { toast } from 'react-hot-toast';
+import { BankAccountForm } from '../BankAccountForm';
 
 interface BankImportWizardProps {
   onClose?: () => void;
@@ -42,6 +43,8 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   const [detectedAccountNumber, setDetectedAccountNumber] = useState<string | null>(null);
   const [accountMatchStatus, setAccountMatchStatus] = useState<'matched' | 'not_found' | null>(null);
   const [matchedAccountLabel, setMatchedAccountLabel] = useState<string | null>(null);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [detectedBankName, setDetectedBankName] = useState<string | null>(null);
 
   // Si el padre actualiza selectedAccountId (ej. el usuario cambia la cuenta en el selector externo)
   useEffect(() => {
@@ -129,11 +132,17 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
       for (const file of files) {
         const result = await importService.createImportBatch(file, resolvedAccountId ?? 0, 1);
         cumulativeTransactions = [...cumulativeTransactions, ...result.transactions];
-        lastBatchId = result.batchId; // For simplicity, we keep the last one or we'd need a list of IDs
+        lastBatchId = result.batchId;
 
         // Auto-match cuenta si el PDF reportó un número de cuenta
         if (result.detectedAccountNumber && !accountDetected) {
           autoMatchAccount(result.detectedAccountNumber);
+          // Intentar adivinar banco por nombre de archivo si no hay metadatos claros
+          if (file.name.toLowerCase().includes('bofa') || file.name.toLowerCase().includes('estmt')) {
+            setDetectedBankName('Bank of America');
+          } else if (file.name.toLowerCase().includes('chase')) {
+            setDetectedBankName('Chase');
+          }
           accountDetected = true;
         }
       }
@@ -323,10 +332,20 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                   <div className="w-11 h-11 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                   </div>
-                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
-                    No se encontró la cuenta terminada en ...{detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema.
-                    <span className="text-amber-300"> Selecció una cuenta manualmente antes de confirmar la importación.</span>
-                  </p>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                      No se encontró la cuenta terminada en ...{detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema.
+                    </p>
+                    <p className="text-[9px] text-amber-500/70 font-bold uppercase tracking-widest mt-0.5">
+                      Seleccioná una cuenta manualmente o registrala para continuar.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowRegisterForm(true)}
+                    className="px-6 py-3 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 rounded-xl text-[8px] font-black text-amber-400 transition-all uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <Zap className="w-3 h-3 fill-current" /> Registrar Cuenta
+                  </button>
                 </div>
               )}
 
@@ -403,6 +422,36 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
           )}
         </main>
       </div>
+
+      {/* Modal de Registro de Cuenta Automático */}
+      {showRegisterForm && detectedAccountNumber && (
+        <BankAccountForm
+          initialData={{
+            id: 0,
+            account_name: detectedBankName ? `${detectedBankName} (...${detectedAccountNumber.slice(-4)})` : detectedAccountNumber,
+            bank_name: detectedBankName || '',
+            account_number: detectedAccountNumber,
+            account_type: 'checking',
+            balance: 0,
+            currency: 'USD',
+            is_active: true,
+            created_at: new Date().toISOString()
+          }}
+          onCancel={() => setShowRegisterForm(false)}
+          onSubmit={async (data) => {
+            const res = await createBankAccount(data);
+            if (res.success && res.id) {
+              setResolvedAccountId(res.id);
+              setAccountMatchStatus('matched');
+              setMatchedAccountLabel(`${data.account_name}`);
+              setShowRegisterForm(false);
+              toast.success('Cuenta bancaria registrada y vinculada exitosamente');
+            } else {
+              toast.error(res.message || 'Error al registrar cuenta');
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
