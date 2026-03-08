@@ -106,7 +106,11 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      if (e.dataTransfer.files.length > 1) {
+        toast.error('Solo se permite un archivo a la vez');
+        return;
+      }
       handleFileSelect(e.dataTransfer.files[0]);
     }
   }, []);
@@ -225,6 +229,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                   <input
                     type="file"
                     accept=".csv,.ofx,.qfx,.pdf"
+                    multiple={false}
                     onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
                     className="hidden"
                     id="file-upload"
