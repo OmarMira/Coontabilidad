@@ -28,6 +28,13 @@ async function processOutbox() {
     try {
         isProcessing = true;
 
+        // Verify if the table exists before querying (Phase 7 - Silencio Inteligente)
+        const tableCheck = await engine.select("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_outbox'");
+        if (tableCheck.length === 0) {
+            isProcessing = false;
+            return;
+        }
+
         // 1. Get pending items with exponential backoff logic (simplified for now: status = 'pending' or 'failed')
         const items = await engine.select(`
             SELECT * FROM sync_outbox 
