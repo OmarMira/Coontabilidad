@@ -79,7 +79,7 @@ export const SystemSchemaMigration: Migration = {
     down: async (db: SQLiteEngine) => {
         await db.exec("DROP TABLE IF EXISTS system_audit_log");
         await db.exec("DROP TABLE IF EXISTS fiscal_settings");
-        await db.exec("DROP TABLE IF EXISTS user_roles");
+        // user_roles is PROTECTED
         await db.exec("DROP TABLE IF EXISTS company_data");
         await db.exec("DROP TABLE IF EXISTS system_config");
     }

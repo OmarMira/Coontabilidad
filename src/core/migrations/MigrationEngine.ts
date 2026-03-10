@@ -23,6 +23,9 @@ import { FixAnomalyDetectorSchemaMigration } from './list/021_fix_anomaly_detect
 import { FixAuditChainSchemaMigration } from './list/023_fix_audit_chain_schema';
 import { AddStatusToJournalEntriesMigration } from './list/025_add_status_to_journal_entries';
 import { DropCompanyInfoMigration } from './list/026_drop_company_info';
+import { BankAccountGLMappingMigration } from './list/027_bank_account_gl_mapping';
+import { AddAccountNumberMigration } from './list/028_add_account_number';
+import { AddDetailTypeMigration } from './list/029_add_detail_type';
 
 export interface Migration {
     version: number;
@@ -51,6 +54,7 @@ export class MigrationEngine {
         FixedAssetsSchema,                  // v11
         BudgetsSchema,                      // v12
         TaxTransactionsMigration,          // v13
+        // v14: Intencionalmente saltada - no hay migración con este ID
         AddAccountAliasMigration,          // v15
         RemediationSchemaMigration,        // v16
         BankImportHashMigration,           // v17
@@ -61,7 +65,10 @@ export class MigrationEngine {
         FixAuditChainSchemaMigration as any, // v23
         new HistoricalDataFixMigration(),    // v24
         AddStatusToJournalEntriesMigration,  // v25
-        DropCompanyInfoMigration             // v26
+        DropCompanyInfoMigration,             // v26
+        BankAccountGLMappingMigration,        // v27
+        AddAccountNumberMigration,             // v28
+        AddDetailTypeMigration                 // v29
     ];
 
     private constructor() { }

@@ -6,13 +6,14 @@ import { NuclearCleanExecution } from '@/core/NuclearCleanExecution';
 import { DatabaseReconstructor } from '@/database/DatabaseReconstructor';
 import { AIResponseFixer } from '@/services/ai/AIResponseFixer';
 import { DashboardRestorer } from '@/core/DashboardRestorer';
-import { db, initDB } from '@/database/simple-db';
+import { db, initDB, getDBEngine } from '@/database/simple-db';
+import { MigrationEngine } from '@/core/migrations/MigrationEngine';
 import { logger } from '@/utils/logger';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { exhaustiveAuthDiagnostic } from '@/utils/forceInitDB';
 import './index.css';
 import './styles/error-recovery.css';
-import './auto-diagnosis'; // Auto-diagnóstico de usuarios
+
 
 async function executeNuclearRepair() {
   try {
@@ -53,47 +54,31 @@ async function initializeApplication(): Promise<void> {
   try {
     const urlParams = new URLSearchParams(window.location.search);
 
-    // VERIFICAR ORDEN NUCLEAR
-    // HERRAMIENTA DE RECUPERACIÓN MANUAL — solo ejecutar intencionalmente via URL ?nuclear
-    // NO usar en producción sin respaldo previo
-    if (urlParams.has('nuclear')) {
+    // 4. NuclearClean SOLO si viene el parámetro URL ?nuclear=confirm
+    if (urlParams.get('nuclear') === 'confirm') {
       await executeNuclearRepair();
-      return; // El recargo se encarga de lo demás
+      return;
     }
 
-    // VERIFICAR LIMPIEZA BANCARIA SELECTIVA (Solicitada por el usuario)
-    if (urlParams.has('clean_banking')) {
-      try {
-        const { db, forceSaveDB } = await import('@/database/simple-db');
-        await db.run("DELETE FROM bank_transactions");
-        await db.run("DELETE FROM bank_accounts");
-        await db.run("DELETE FROM import_batches"); // Por si acaso
-        await db.run("DELETE FROM import_transactions_temp");
-        await db.run("UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('bank_accounts', 'bank_transactions', 'import_batches')");
-        await forceSaveDB();
-
-        // Limpiar URL y recargar
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('clean_banking');
-        window.location.href = newUrl.pathname;
-        return;
-      } catch (e: any) {
-        console.error('Error en limpieza bancaria:', e);
-      }
-    }
-
-    // Comportamiento normal (incluyendo el clean anterior si existe)
-    const forceClean = urlParams.has('clean') || localStorage.getItem('force_clean_start');
-    if (forceClean) {
-      await NuclearCleanExecution.execute();
-      localStorage.removeItem('force_clean_start');
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete('clean');
-      window.history.replaceState({}, '', newUrl.pathname);
-    }
-
-    // CRÍTICO: Inicializar DB ANTES de renderizar
+    // 1. Inicializar la base de datos (solo motor y carga)
     await initDB();
+
+    // 2. Correr migraciones pendientes (MigrationEngine)
+    const dbEngineInstance = getDBEngine();
+    const migrationEngine = MigrationEngine.getInstance();
+    await migrationEngine.migrate(dbEngineInstance);
+    await dbEngineInstance.sync();
+
+    // 3. FirstRunSetup / Seeding (CORRE DESPUÉS DE MIGRACIONES)
+    try {
+      const { seedUsersAndRoles, seedSystemDefaults } = await import('@/database/simple-db');
+      await seedUsersAndRoles();
+      await seedSystemDefaults();
+      await dbEngineInstance.sync();
+      console.log('[main] FirstRunSetup completado con éxito.');
+    } catch (seedErr) {
+      console.error('[main] Error en FirstRunSetup:', seedErr);
+    }
 
     // Health check en BACKGROUND — no bloquea el render
     // Si falla, la app ya está montada y el usuario puede trabajar

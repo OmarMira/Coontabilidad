@@ -1152,7 +1152,6 @@ const loadFromLocalStorage = async (): Promise<Uint8Array | null> => {
         const tempArray = new Uint8Array(decryptedData.length);
         tempArray.set(decryptedData);
         data = tempArray;
-        console.log('Database decrypted from localStorage');
       } catch (error) {
         console.error('Failed to decrypt from localStorage:', error);
         return null;
@@ -1601,11 +1600,13 @@ export interface SupplierPayment {
 export interface ChartOfAccount {
   id?: number;
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
   normal_balance: 'debit' | 'credit';
   parent_account?: string;
   is_active: boolean;
+  detail_type?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: number;
@@ -1867,7 +1868,7 @@ function setupAutoSave(): void {
     } catch (e) {
       // Silencioso para evitar spam en consola en producción
     }
-  }, 5000);
+  }, 30000);
 
   // Guardar al cerrar la ventana
   if (typeof window !== 'undefined') {
@@ -1932,42 +1933,17 @@ export const initDB = async (password?: string): Promise<any> => {
     // Registrar en el puente para evitar dependencias circulares
     EngineBridge.setEngine(dbEngine);
 
-
     logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
-
-    // Ejecutar inicialización de esquema
-    await initializeSchema(db);
-
-    // NUEVO: Ejecutar reparación profunda y seed de emergencia (Iron Core Protection)
-    await DatabaseInitializer.initializeWithFix(db);
-
-    // DIAGNí“STICO: Distribución de estados de transacciones para calibración de threshold fuzzy
-    try {
-      const res = db.exec(`
-            SELECT 
-                current_state as state,
-                COUNT(*) as total,
-                ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as porcentaje
-            FROM transaction_states
-            GROUP BY current_state
-        `);
-      if (res.length > 0) {
-        console.log('--- CALIBRACIí“N: DISTRIBUCIí“N DE ESTADOS ---');
-        console.table(res[0].values.map((row: any) => ({
-          state: row[0],
-          total: row[1],
-          porcentaje: `${row[2]}%`
-        })));
-      }
-    } catch (e) {
-      console.warn('Error al obtener estadísticas de transacciones:', e);
-    }
 
     // Configurar servicios adicionales
     setupAutoSave();
 
     // DEV: Exponer engine en window para verificación en consola del browser
     if (typeof window !== 'undefined') {
+      // Bloqueo de resets automáticos restantes (Hardening Final)
+      (window as any).NO_RESET = true;
+      logger.info('System', 'hardening_complete', 'Sistema saneado: Persistencia ON, Cifrado ON, Backups ON');
+
       (window as any).__dbEngine = dbEngine;
       (window as any).__db = db;
       (window as any).__runSQL = (sql: string, params?: any[]) => {
@@ -1978,39 +1954,19 @@ export const initDB = async (password?: string): Promise<any> => {
           return { error: String(e) };
         }
       };
-      console.log('🔬 [DEV] window.__dbEngine, window.__db, window.__runSQL disponibles para verificación');
     }
 
   } catch (error) {
     logger.error('Database', 'init_failed', 'Error fatal en inicialización', { error });
-  }
-
-  try {
-    // Seed de roles y usuarios — separado de las migraciones para que
-    // un fallo de migración no lo cancele
-    await seedUsersAndRoles();
-    seedSystemDefaults();
-    // saveDatabase corre en background — no debe bloquear isInitialized
-    setTimeout(() => {
-      saveDatabase().then(() => {
-        console.log('[initDB] ✅ Seed persistido a OPFS.');
-      }).catch(e => {
-        console.warn('[initDB] saveDatabase (background) falló:', e);
-      });
-    }, 500);
-  } catch (seedError) {
-    // El seed falló pero NO debe impedir que el sistema arranque
-    console.error('[initDB] ⚠️ Error en seed — el sistema arrancará sin datos base:', seedError);
   } finally {
-    // isInitialized = true SIEMPRE, pase lo que pase con el seed
     isInitialized = true;
-    console.log('[initDB] ✅ Base de datos lista (con o sin seed).');
   }
 
   return db;
 };
 
 const initializeSchema = async (db: any) => {
+  console.log("--> RUNNING initializeSchema for Migración 029");
   // --- MIGRATION: Drop old audit_chain if it lacks logic_clock or event_type ---
   try {
     // Usamos exec() porque en este punto db es la instancia cruda de sql.js (sin el wrapper .select)
@@ -2732,6 +2688,7 @@ const initializeSchema = async (db: any) => {
     create TABLE IF NOT EXISTS chart_of_accounts(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_code TEXT UNIQUE NOT NULL,
+    number TEXT,
     account_name TEXT NOT NULL,
     account_type TEXT NOT NULL CHECK(account_type IN('asset', 'liability', 'equity', 'revenue', 'expense')),
     normal_balance TEXT NOT NULL CHECK(normal_balance IN('debit', 'credit')),
@@ -2979,8 +2936,6 @@ SELECT
     WHERE status = 'inactive'
   `);
 
-  console.log('Database schema created successfully');
-  console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN NÂ°1 IMPLEMENTADA');
 
   // ==========================================
   // TABLAS DE PRESUPUESTOS (BUDGETS) - FASE 2
@@ -3626,7 +3581,6 @@ GROUP BY ba.id
   (3, '1112', 0, 1605.00, 'Pago en efectivo/banco')
     `);
 
-      console.log('Sample data and Journal Entries inserted successfully');
     } catch (error) {
       console.error('Error inserting sample data:', error);
       throw error;
@@ -3634,7 +3588,6 @@ GROUP BY ba.id
       // PASO 3: Reactivar Foreign Keys
       // -------------------------------
       db.run(`PRAGMA foreign_keys = ON`);
-      console.log('âœ… Foreign Keys Reactivadas - Base de datos segura');
     }
   };
 
@@ -3651,7 +3604,6 @@ GROUP BY ba.id
   ('Servicios de Mantenimiento', 'Servicios de mantenimiento y soporte técnico', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `);
 
-    console.log('Initial product categories inserted successfully');
   };
 
   // Insertar productos iniciales
@@ -3674,7 +3626,6 @@ GROUP BY ba.id
       ('SERV-004', 'Soporte Técnico', 'Servicios de soporte técnico y mantenimiento de sistemas', 120.00, 60.00, 5, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `);
 
-    console.log('Initial products inserted successfully');
   };
 
   const insertInitialTaxRates = async (): Promise<void> => {
@@ -3693,7 +3644,6 @@ GROUP BY ba.id
   ('Lee', 'LEE', 600, 100, 700)
     `);
 
-    console.log('Initial tax rates inserted successfully (2026 rates)');
   };
 
   // Insertar configuraciones iniciales de nï¿½mina
@@ -3712,7 +3662,6 @@ GROUP BY ba.id
         ('company_name', 'Mi Empresa LLC', 'general', 'Nombre de la empresa para reportes'),
         ('ein_number', '00-0000000', 'general', 'Número de identificación del empleador')
       `);
-      console.log('Initial payroll settings inserted successfully');
     } catch (e) {
       console.error('Error inserting payroll settings:', e);
     }
@@ -3782,7 +3731,6 @@ export const saveDatabase = async (): Promise<void> => {
       try {
         const encrypted = await BasicEncryption.encrypt(data, currentPassword);
         data = BasicEncryption.combineEncryptedData(encrypted.encrypted, encrypted.salt, encrypted.iv);
-        console.log('Database encrypted before saving');
       } catch (error) {
         console.error('Encryption failed, saving unencrypted:', error);
       }
@@ -3803,35 +3751,50 @@ export const saveDatabase = async (): Promise<void> => {
       }
       await writable.write(dataBuffer);
       await writable.close();
-      console.log('Database saved to OPFS');
     } else {
       // Fallback a localStorage (comprimido)
       const compressed = await compressData(data);
       localStorage.setItem('accountexpress-db', compressed);
       localStorage.setItem('accountexpress-encrypted', encryptionEnabled.toString());
-      console.log('Database saved to localStorage (compressed)');
     }
   } catch (error) {
     console.error('Error saving database:', error);
   }
 };
 
-/**
- * Persist DB explicitly to IndexedDB (and LocalStorage as fallback if configured)
- * This bypasses the SQLiteEngine's sync if running in sql.js compatibility mode.
- */
-export const forceSaveDB = async () => {
+let saveTimeout: any = null;
+let saveResolvers: (() => void)[] = [];
+
+export const forceSaveDB = async (): Promise<void> => {
   if (!db || typeof db.export !== 'function') return;
 
-  try {
-    const data = db.export();
-    // Save to PersistenceLayer (IndexedDB)
-    const { saveDatabase: persistSave } = await import('./PersistenceLayer');
-    await persistSave(data);
-    logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente en IndexedDB');
-  } catch (e) {
-    logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
-  }
+  return new Promise<void>((resolve) => {
+    saveResolvers.push(resolve);
+
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+
+    saveTimeout = setTimeout(async () => {
+      try {
+        const currentResolvers = [...saveResolvers];
+        saveResolvers = [];
+
+        const data = db.export();
+        // Save to PersistenceLayer (IndexedDB)
+        const { saveDatabase: persistSave } = await import('./PersistenceLayer');
+        await persistSave(data);
+        logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente en IndexedDB (500ms debounce)');
+
+        currentResolvers.forEach(res => res());
+      } catch (e) {
+        logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
+        const currentResolvers = [...saveResolvers];
+        saveResolvers = [];
+        currentResolvers.forEach(res => res());
+      }
+    }, 500);
+  });
 };
 
 
@@ -3857,7 +3820,6 @@ export const changeEncryptionPassword = async (oldPassword: string, newPassword:
     // Guardar con nueva contraseña
     await saveDatabase();
 
-    console.log('Encryption password changed successfully');
     return true;
   } catch (error) {
     console.error('Error changing encryption password:', error);
@@ -3878,7 +3840,6 @@ export const enableEncryption = async (password: string): Promise<boolean> => {
     // Guardar base de datos cifrada
     await saveDatabase();
 
-    console.log('Encryption enabled successfully');
     return true;
   } catch (error) {
     console.error('Error enabling encryption:', error);
@@ -3901,7 +3862,6 @@ export const disableEncryption = async (password: string): Promise<boolean> => {
     // Guardar base de datos sin cifrar
     await saveDatabase();
 
-    console.log('Encryption disabled successfully');
     return true;
   } catch (error) {
     console.error('Error disabling encryption:', error);
@@ -3912,7 +3872,6 @@ export const disableEncryption = async (password: string): Promise<boolean> => {
 // Verificar si la base de datos está lista
 export const isDatabaseReady = (): boolean => {
   const ready = isInitialized && db !== null;
-  console.log('Database ready check:', { isInitialized, dbExists: !!db, ready });
   return ready;
 };
 
@@ -4003,11 +3962,8 @@ export const addCustomer = async (customerData: Partial<Customer>, userId?: numb
 
 // Obtener todos los clientes (con filtro opcional por usuario/rol para aislamiento)
 export const getCustomers = (filters?: { userId?: number, role?: string }): Customer[] => {
-  console.log('=== GETTING CUSTOMERS ===', filters);
-  console.log('Database initialized:', !!db);
 
   if (!db) {
-    console.log('Database not initialized, returning empty array');
     return [];
   }
 
@@ -4041,7 +3997,6 @@ id, name, business_name, document_type, document_number, business_type,
 
     const result = db.exec(query, params);
 
-    console.log('Raw query result:', result);
 
     // Convertir el resultado a array de objetos
     const customers: Customer[] = [];
@@ -4056,8 +4011,6 @@ id, name, business_name, document_type, document_number, business_type,
       });
     }
 
-    console.log('Processed customers:', customers);
-    console.log('Customer count:', customers.length);
     return customers;
 
   } catch (error) {
@@ -4199,7 +4152,6 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>, user
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Customer ${id} updated successfully`);
     return { success: true, message: `Cliente "${customerData.name || oldCustomer.name}" actualizado correctamente` };
 
   } catch (error) {
@@ -4285,7 +4237,6 @@ export const deleteCustomer = (id: number, userId?: number): { success: boolean;
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Customer ${id} deleted successfully`);
     return { success: true, message: `Cliente "${customer.name}" eliminado correctamente` };
 
   } catch (error) {
@@ -4530,7 +4481,6 @@ export const createBackup = async (): Promise<string> => {
     const timestamp = new Date().toISOString();
     localStorage.setItem('accountexpress-last-backup', timestamp);
 
-    console.log('Manual backup created at:', timestamp);
     return timestamp;
   } catch (error) {
     console.error('Error creating backup:', error);
@@ -4829,7 +4779,6 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
           if (!journalResult.success) {
             console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
           } else {
-            console.log('Journal entry created for invoice:', journalResult.entryId);
           }
         });
       }
@@ -5608,10 +5557,6 @@ function generateQuoteNumber(): string {
 
 // Agregar proveedor
 export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): number => {
-  console.log('=== ADD SUPPLIER FUNCTION ===');
-  console.log('Database object:', db);
-  console.log('Is initialized:', isInitialized);
-  console.log('Supplier data:', supplierData);
 
   if (!db) {
     console.error('Database not initialized when trying to add supplier');
@@ -5619,7 +5564,6 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
   }
 
   try {
-    console.log('Starting transaction...');
     // Iniciar transacción
     db.run('BEGIN TRANSACTION');
 
@@ -5660,12 +5604,10 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
       userId || 1
     ];
 
-    console.log('Executing insert with values:', values);
     stmt.run(values);
 
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
     const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
-    console.log('Insert ID:', insertId);
 
     stmt.free();
 
@@ -5674,12 +5616,10 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
 
     // Confirmar transacción
     db.run('COMMIT');
-    console.log('Transaction committed');
 
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier added with ID: ${insertId} `);
     return insertId;
 
   } catch (error) {
@@ -5692,11 +5632,8 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
 // Obtener todos los proveedores
 // Obtener todos los proveedores con aislamiento
 export const getSuppliers = (filters?: { userId?: number, role?: string }): Supplier[] => {
-  console.log('=== GETTING SUPPLIERS ===', filters);
-  console.log('Database initialized:', !!db);
 
   if (!db) {
-    console.log('Database not initialized, returning empty array');
     return [];
   }
 
@@ -5721,7 +5658,6 @@ id, name, business_name, document_type, document_number, business_type,
 
     const result = db.exec(query, params);
 
-    console.log('Raw query result:', result);
 
     // Convertir el resultado a array de objetos
     const suppliers: Supplier[] = [];
@@ -5736,8 +5672,6 @@ id, name, business_name, document_type, document_number, business_type,
       });
     }
 
-    console.log('Processed suppliers:', suppliers);
-    console.log('Supplier count:', suppliers.length);
     return suppliers;
 
   } catch (error) {
@@ -5881,7 +5815,6 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>, user
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier ${id} updated successfully`);
     return { success: true, message: `Proveedor "${supplierData.name || oldSupplier.name}" actualizado correctamente` };
 
   } catch (error) {
@@ -5968,7 +5901,6 @@ export const deleteSupplier = (id: number, userId?: number): { success: boolean;
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier ${id} deleted successfully`);
     return { success: true, message: `Proveedor "${supplier.name}" eliminado correctamente` };
 
   } catch (error) {
@@ -6239,7 +6171,6 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
           if (!journalResult.success) {
             console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
           } else {
-            console.log('Journal entry created for bill:', journalResult.entryId);
           }
         });
       }
@@ -6530,18 +6461,20 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
 
     const stmt = db.prepare(`
       INSERT INTO chart_of_accounts(
-  account_code, account_name, account_type, normal_balance, parent_account,
-  is_active, created_by, updated_by
-) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+  account_code, number, account_name, account_type, normal_balance, parent_account,
+  is_active, detail_type, created_by, updated_by
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
       accountData.account_code || '',
+      accountData.number || '',
       accountData.account_name || '',
       accountData.account_type || 'asset',
       accountData.normal_balance || 'debit',
       accountData.parent_account || null,
       accountData.is_active !== undefined ? (accountData.is_active ? 1 : 0) : 1,
+      accountData.detail_type || null,
       1, // TODO: Implementar sistema de usuarios
       1
     ]);
@@ -6587,27 +6520,24 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
   if (!db) return null;
 
   try {
-    const result = db.exec(`
+    const stmt = db.prepare(`
 SELECT
-id, account_code, account_name, account_type, normal_balance,
+id, account_code, number, account_name, account_type, normal_balance,
   parent_account, is_active, created_at, updated_at, created_by, updated_by
       FROM chart_of_accounts 
       WHERE account_code = ?
-  `, [accountCode]);
+  `);
+    stmt.bind([accountCode]);
 
-    if (!result[0] || result[0].values.length === 0) return null;
+    if (stmt.step()) {
+      const account = stmt.getAsObject() as any;
+      stmt.free();
+      account.is_active = Boolean(account.is_active);
+      return account as ChartOfAccount;
+    }
 
-    const columns = (result[0].columns || (result[0] as any).lc);
-    const row = result[0].values[0];
-
-    const account: any = {};
-    columns.forEach((col: any, index: any) => {
-      account[col] = row[index];
-    });
-
-    account.is_active = Boolean(account.is_active);
-
-    return account as ChartOfAccount;
+    stmt.free();
+    return null;
 
   } catch (error) {
     logger.error('ChartOfAccounts', 'get_by_code_failed', `Error al obtener cuenta ${accountCode} `, { accountCode }, error as Error);
@@ -6621,9 +6551,14 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 
   try {
     // Obtener cuenta actual para auditoría
-    const currentAccount = getChartOfAccountByCode(accountCode);
+    let currentAccount = getChartOfAccountByCode(accountCode);
     if (!currentAccount) {
-      return { success: false, message: 'Cuenta no encontrada' };
+      // Intento de recuperación (Race Condition mitigation)
+      logger.warn('ChartOfAccounts', 'update_retry', `Cuenta ${accountCode} no encontrada inicialmente, reintentando...`);
+      currentAccount = getChartOfAccountByCode(accountCode);
+      if (!currentAccount) {
+        return { success: false, message: 'Cuenta no encontrada' };
+      }
     }
 
     logger.info('ChartOfAccounts', 'update_start', `Actualizando cuenta: ${accountCode} `);
@@ -6632,17 +6567,19 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 
     const stmt = db.prepare(`
       UPDATE chart_of_accounts 
-      SET account_name = ?, account_type = ?, normal_balance = ?,
-  parent_account = ?, is_active = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
+      SET number = ?, account_name = ?, account_type = ?, normal_balance = ?,
+  parent_account = ?, is_active = ?, detail_type = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
       WHERE account_code = ?
   `);
 
     stmt.run([
+      accountData.number || '',
       accountData.account_name || currentAccount.account_name,
       accountData.account_type || currentAccount.account_type,
       accountData.normal_balance || currentAccount.normal_balance,
       accountData.parent_account || currentAccount.parent_account || null,
       accountData.is_active !== undefined ? (accountData.is_active ? 1 : 0) : (currentAccount.is_active ? 1 : 0),
+      accountData.detail_type !== undefined ? (accountData.detail_type || null) : (currentAccount.detail_type || null),
       userId || 1,
       accountCode
     ]);
@@ -6764,162 +6701,163 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
 
     const stmt = db.prepare(`
       INSERT INTO chart_of_accounts(
-    account_code, account_name, account_type, normal_balance, parent_account,
+    account_code, number, account_name, account_type, normal_balance, parent_account,
     is_active, created_by, updated_by
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     // Plan de Cuentas Completo - US GAAP para Florida
     const initialAccounts = [
       // ========== 1000 - ACTIVOS ==========
-      { account_code: '1000', account_name: 'ACTIVOS', account_type: 'asset', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '1000', number: '10000', account_name: 'ACTIVOS', account_type: 'asset', normal_balance: 'debit', parent_account: null, is_active: true },
 
       // 1100 - Activos Corrientes
-      { account_code: '1100', account_name: 'Activos Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
-      { account_code: '1110', account_name: 'Efectivo y Equivalentes', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1111', account_name: 'Caja Chica', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      { account_code: '1112', account_name: 'Cuenta Corriente - Bank of America', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      { account_code: '1113', account_name: 'Cuenta de Ahorros', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      { account_code: '1114', account_name: 'Cuenta Payroll', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1100', number: '11000', account_name: 'Activos Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
+      { account_code: '1110', number: '11100', account_name: 'Efectivo y Equivalentes', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1111', number: '11110', account_name: 'Caja Chica', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1112', number: '11120', account_name: 'Cuenta Corriente - Bank of America', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1113', number: '11130', account_name: 'Cuenta de Ahorros', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1114', number: '11140', account_name: 'Cuenta Payroll', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
 
-      { account_code: '1120', account_name: 'Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1121', account_name: 'Cuentas por Cobrar - Clientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
-      { account_code: '1122', account_name: 'Provisiï¿½n para Cuentas Incobrables', account_type: 'asset', normal_balance: 'credit', parent_account: '1120', is_active: true },
-      { account_code: '1123', account_name: 'Otras Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
+      { account_code: '1120', number: '11200', account_name: 'Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1121', number: '11210', account_name: 'Cuentas por Cobrar - Clientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
+      { account_code: '1122', number: '11220', account_name: 'Provisiï¿½n para Cuentas Incobrables', account_type: 'asset', normal_balance: 'credit', parent_account: '1120', is_active: true },
+      { account_code: '1123', number: '11230', account_name: 'Otras Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
 
-      { account_code: '1130', account_name: 'Inventario', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1131', account_name: 'Inventario - Productos Terminados', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
-      { account_code: '1132', account_name: 'Inventario - Materias Primas', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
-      { account_code: '1133', account_name: 'Inventario - Productos en Proceso', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1130', number: '11300', account_name: 'Inventario', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1131', number: '11310', account_name: 'Inventario - Productos Terminados', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1132', number: '11320', account_name: 'Inventario - Materias Primas', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1133', number: '11330', account_name: 'Inventario - Productos en Proceso', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
 
-      { account_code: '1140', account_name: 'Gastos Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1141', account_name: 'Seguros Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
-      { account_code: '1142', account_name: 'Alquileres Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
+      { account_code: '1140', number: '11400', account_name: 'Gastos Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1141', number: '11410', account_name: 'Seguros Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
+      { account_code: '1142', number: '11420', account_name: 'Alquileres Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
 
       // 1200 - Activos No Corrientes
-      { account_code: '1200', account_name: 'Activos No Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
-      { account_code: '1210', account_name: 'Propiedad, Planta y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
-      { account_code: '1211', account_name: 'Terrenos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1212', account_name: 'Edificios', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1213', account_name: 'Depreciaciï¿½n Acumulada - Edificios', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
-      { account_code: '1214', account_name: 'Maquinaria y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1215', account_name: 'Depreciaciï¿½n Acumulada - Maquinaria', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
-      { account_code: '1216', account_name: 'Vehï¿½culos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1217', account_name: 'Depreciaciï¿½n Acumulada - Vehï¿½culos', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
-      { account_code: '1218', account_name: 'Mobiliario y Equipo de Oficina', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1219', account_name: 'Depreciaciï¿½n Acumulada - Mobiliario', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1200', number: '12000', account_name: 'Activos No Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
+      { account_code: '1210', number: '12100', account_name: 'Propiedad, Planta y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
+      { account_code: '1211', number: '12110', account_name: 'Terrenos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1212', number: '12120', account_name: 'Edificios', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1213', number: '12130', account_name: 'Depreciaciï¿½n Acumulada - Edificios', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1214', number: '12140', account_name: 'Maquinaria y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1215', number: '12150', account_name: 'Depreciaciï¿½n Acumulada - Maquinaria', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1216', number: '12160', account_name: 'Vehï¿½culos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1217', number: '12170', account_name: 'Depreciaciï¿½n Acumulada - Vehï¿½culos', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1218', number: '12180', account_name: 'Mobiliario y Equipo de Oficina', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1219', number: '12190', account_name: 'Depreciaciï¿½n Acumulada - Mobiliario', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
 
-      { account_code: '1220', account_name: 'Activos Intangibles', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
-      { account_code: '1221', account_name: 'Goodwill', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
-      { account_code: '1222', account_name: 'Patentes y Marcas', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
-      { account_code: '1223', account_name: 'Software', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
-      { account_code: '1224', account_name: 'Amortizaciï¿½n Acumulada - Intangibles', account_type: 'asset', normal_balance: 'credit', parent_account: '1220', is_active: true },
+      { account_code: '1220', number: '12200', account_name: 'Activos Intangibles', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
+      { account_code: '1221', number: '12210', account_name: 'Goodwill', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1222', number: '12220', account_name: 'Patentes y Marcas', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1223', number: '12230', account_name: 'Software', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1224', number: '12240', account_name: 'Amortizaciï¿½n Acumulada - Intangibles', account_type: 'asset', normal_balance: 'credit', parent_account: '1220', is_active: true },
 
       // ========== 2000 - PASIVOS ==========
-      { account_code: '2000', account_name: 'PASIVOS', account_type: 'liability', normal_balance: 'credit', parent_account: null, is_active: true },
+      { account_code: '2000', number: '20000', account_name: 'PASIVOS', account_type: 'liability', normal_balance: 'credit', parent_account: null, is_active: true },
 
       // 2100 - Pasivos Corrientes
-      { account_code: '2100', account_name: 'Pasivos Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
-      { account_code: '2110', account_name: 'Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2111', account_name: 'Cuentas por Pagar - Proveedores', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
-      { account_code: '2112', account_name: 'Otras Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
+      { account_code: '2100', number: '21000', account_name: 'Pasivos Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
+      { account_code: '2110', number: '21100', account_name: 'Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2111', number: '21110', account_name: 'Cuentas por Pagar - Proveedores', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
+      { account_code: '2112', number: '21120', account_name: 'Otras Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
 
-      { account_code: '2120', account_name: 'Impuestos por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2121', account_name: 'Impuesto sobre Ventas por Pagar (Sales Tax)', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
-      { account_code: '2122', account_name: 'Impuesto Federal por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
-      { account_code: '2123', account_name: 'Impuesto Estatal FL por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
-      { account_code: '2124', account_name: 'Payroll Taxes por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2120', number: '21200', account_name: 'Impuestos por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2121', number: '21210', account_name: 'Impuesto sobre Ventas por Pagar (Sales Tax)', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2122', number: '21220', account_name: 'Impuesto Federal por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2123', number: '21230', account_name: 'Impuesto Estatal FL por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2124', number: '21240', account_name: 'Payroll Taxes por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
 
-      { account_code: '2130', account_name: 'Nï¿½mina por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2131', account_name: 'Sueldos y Salarios por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
-      { account_code: '2132', account_name: 'Retenciones por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
+      { account_code: '2130', number: '21300', account_name: 'Nï¿½mina por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2131', number: '21310', account_name: 'Sueldos y Salarios por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
+      { account_code: '2132', number: '21320', account_name: 'Retenciones por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
 
-      { account_code: '2140', account_name: 'Prï¿½stamos a Corto Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2141', account_name: 'Lï¿½nea de Crï¿½dito', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
-      { account_code: '2142', account_name: 'Porciï¿½n Corriente de Deuda a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
+      { account_code: '2140', number: '21400', account_name: 'Prï¿½stamos a Corto Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2141', number: '21410', account_name: 'Lï¿½nea de Crï¿½dito', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
+      { account_code: '2142', number: '21420', account_name: 'Porciï¿½n Corriente de Deuda a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
 
       // 2200 - Pasivos No Corrientes
-      { account_code: '2200', account_name: 'Pasivos No Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
-      { account_code: '2210', account_name: 'Prï¿½stamos a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2200', is_active: true },
-      { account_code: '2211', account_name: 'Hipotecas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
-      { account_code: '2212', account_name: 'Prï¿½stamos Bancarios a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
+      { account_code: '2200', number: '22000', account_name: 'Pasivos No Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
+      { account_code: '2210', number: '22110', account_name: 'Prï¿½stamos a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2200', is_active: true },
+      { account_code: '2211', number: '22111', account_name: 'Hipotecas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
+      { account_code: '2212', number: '22120', account_name: 'Prï¿½stamos Bancarios a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
 
       // ========== 3000 - PATRIMONIO ==========
-      { account_code: '3000', account_name: 'PATRIMONIO', account_type: 'equity', normal_balance: 'credit', parent_account: null, is_active: true },
-      { account_code: '3100', account_name: 'Capital Social', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
-      { account_code: '3110', account_name: 'Common Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
-      { account_code: '3120', account_name: 'Preferred Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
-      { account_code: '3200', account_name: 'Utilidades Retenidas', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
-      { account_code: '3210', account_name: 'Utilidades del Ejercicio Actual', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
-      { account_code: '3220', account_name: 'Utilidades de Ejercicios Anteriores', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
-      { account_code: '3300', account_name: 'Dividendos', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
-      { account_code: '3400', account_name: 'Owner\'s Draw', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
+      { account_code: '3000', number: '30000', account_name: 'PATRIMONIO', account_type: 'equity', normal_balance: 'credit', parent_account: null, is_active: true },
+      { account_code: '3100', number: '31000', account_name: 'Capital Social', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
+      { account_code: '3110', number: '31100', account_name: 'Common Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
+      { account_code: '3120', number: '31200', account_name: 'Preferred Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
+      { account_code: '3200', number: '32000', account_name: 'Utilidades Retenidas', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
+      { account_code: '3210', number: '32100', account_name: 'Utilidades del Ejercicio Actual', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
+      { account_code: '3220', number: '32200', account_name: 'Utilidades de Ejercicios Anteriores', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
+      { account_code: '3300', number: '33000', account_name: 'Dividendos', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
+      { account_code: '3400', number: '34000', account_name: 'Owner\'s Draw', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
 
       // ========== 4000 - INGRESOS ==========
-      { account_code: '4000', account_name: 'INGRESOS', account_type: 'revenue', normal_balance: 'credit', parent_account: null, is_active: true },
-      { account_code: '4100', account_name: 'Ingresos Operacionales', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
-      { account_code: '4110', account_name: 'Ventas de Productos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
-      { account_code: '4120', account_name: 'Ventas de Servicios', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
-      { account_code: '4130', account_name: 'Devoluciones y Descuentos sobre Ventas', account_type: 'revenue', normal_balance: 'debit', parent_account: '4100', is_active: true },
-      { account_code: '4200', account_name: 'Otros Ingresos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
-      { account_code: '4210', account_name: 'Ingresos por Intereses', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
-      { account_code: '4220', account_name: 'Ganancia en Venta de Activos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
-      { account_code: '4230', account_name: 'Ingresos Diversos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4000', number: '40000', account_name: 'INGRESOS', account_type: 'revenue', normal_balance: 'credit', parent_account: null, is_active: true },
+      { account_code: '4100', number: '41000', account_name: 'Ingresos Operacionales', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
+      { account_code: '4110', number: '41100', account_name: 'Ventas de Productos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4120', number: '41200', account_name: 'Ventas de Servicios', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4130', number: '41300', account_name: 'Devoluciones y Descuentos sobre Ventas', account_type: 'revenue', normal_balance: 'debit', parent_account: '4100', is_active: true },
+      { account_code: '4200', number: '42000', account_name: 'Otros Ingresos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
+      { account_code: '4210', number: '42100', account_name: 'Ingresos por Intereses', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4220', number: '42200', account_name: 'Ganancia en Venta de Activos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4230', number: '42300', account_name: 'Ingresos Diversos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
 
       // ========== 5000 - COSTO DE VENTAS ==========
-      { account_code: '5000', account_name: 'COSTO DE VENTAS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
-      { account_code: '5100', account_name: 'Costo de Productos Vendidos', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
-      { account_code: '5110', account_name: 'Compras de Mercancï¿½a', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
-      { account_code: '5120', account_name: 'Fletes y Acarreos', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
-      { account_code: '5200', account_name: 'Costo de Servicios', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
-      { account_code: '5210', account_name: 'Mano de Obra Directa', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
-      { account_code: '5220', account_name: 'Materiales Directos', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
+      { account_code: '5000', number: '50000', account_name: 'COSTO DE VENTAS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '5100', number: '51000', account_name: 'Costo de Productos Vendidos', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
+      { account_code: '5110', number: '51100', account_name: 'Compras de Mercancï¿½a', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
+      { account_code: '5120', number: '51200', account_name: 'Fletes y Acarreos', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
+      { account_code: '5200', number: '52000', account_name: 'Costo de Servicios', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
+      { account_code: '5210', number: '52100', account_name: 'Mano de Obra Directa', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
+      { account_code: '5220', number: '52200', account_name: 'Materiales Directos', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
 
       // ========== 6000 - GASTOS OPERACIONALES ==========
-      { account_code: '6000', account_name: 'GASTOS OPERACIONALES', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '6000', number: '60000', account_name: 'GASTOS OPERACIONALES', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
 
       // 6100 - Gastos de Ventas
-      { account_code: '6100', account_name: 'Gastos de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6110', account_name: 'Sueldos - Personal de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
-      { account_code: '6120', account_name: 'Comisiones de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
-      { account_code: '6130', account_name: 'Publicidad y Marketing', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
-      { account_code: '6140', account_name: 'Gastos de Viaje - Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6100', number: '61000', account_name: 'Gastos de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6110', number: '61100', account_name: 'Sueldos - Personal de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6120', number: '61200', account_name: 'Comisiones de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6130', number: '61300', account_name: 'Publicidad y Marketing', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6140', number: '61400', account_name: 'Gastos de Viaje - Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
 
       // 6200 - Gastos Administrativos
-      { account_code: '6200', account_name: 'Gastos Administrativos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6210', account_name: 'Sueldos - Personal Administrativo', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6220', account_name: 'Alquiler de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6230', account_name: 'Servicios Pï¿½blicos', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6240', account_name: 'Telï¿½fono e Internet', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6250', account_name: 'Suministros de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6260', account_name: 'Seguros', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6270', account_name: 'Honorarios Profesionales', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6280', account_name: 'Depreciaciï¿½n y Amortizaciï¿½n', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6290', account_name: 'Gastos de Mantenimiento', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6200', number: '62000', account_name: 'Gastos Administrativos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6210', number: '62100', account_name: 'Sueldos - Personal Administrativo', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6220', number: '62200', account_name: 'Alquiler de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6230', number: '62300', account_name: 'Servicios Pï¿½blicos', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6240', number: '62400', account_name: 'Telï¿½fono e Internet', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6250', number: '62500', account_name: 'Suministros de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6260', number: '62600', account_name: 'Seguros', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6270', number: '62700', account_name: 'Honorarios Profesionales', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6280', number: '62800', account_name: 'Depreciaciï¿½n y Amortizaciï¿½n', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6290', number: '62900', account_name: 'Gastos de Mantenimiento', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
 
       // 6300 - Gastos Financieros
-      { account_code: '6300', account_name: 'Gastos Financieros', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6310', account_name: 'Intereses sobre Prï¿½stamos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
-      { account_code: '6320', account_name: 'Comisiones Bancarias', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
-      { account_code: '6330', account_name: 'Pï¿½rdida en Venta de Activos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6300', number: '63000', account_name: 'Gastos Financieros', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6310', number: '63100', account_name: 'Intereses sobre Prï¿½stamos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6320', number: '63200', account_name: 'Comisiones Bancarias', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6330', number: '63300', account_name: 'Pï¿½rdida en Venta de Activos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
 
       // 6400 - Impuestos
-      { account_code: '6400', account_name: 'Impuestos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6410', account_name: 'Impuesto sobre la Renta', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
-      { account_code: '6420', account_name: 'Impuestos Locales y Estatales', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
-      { account_code: '6430', account_name: 'Property Tax', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true }
+      { account_code: '6400', number: '64000', account_name: 'Impuestos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6410', number: '64100', account_name: 'Impuesto sobre la Renta', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
+      { account_code: '6420', number: '64200', account_name: 'Impuestos Locales y Estatales', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
+      { account_code: '6430', number: '64300', account_name: 'Property Tax', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true }
     ];
 
-    initialAccounts.forEach(account => {
+    initialAccounts.forEach((acc: any) => {
       stmt.run([
-        account.account_code,
-        account.account_name,
-        account.account_type,
-        account.normal_balance,
-        account.parent_account,
-        account.is_active ? 1 : 0,
-        1, // created_by
-        1  // updated_by
+        acc.account_code,
+        acc.number || acc.account_code, // Use account_code as fallback number
+        acc.account_name,
+        acc.account_type,
+        acc.normal_balance,
+        acc.parent_account,
+        acc.is_active ? 1 : 0,
+        1, // admin
+        1  // admin
       ]);
     });
 
@@ -7097,7 +7035,7 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
   try {
     const result = db.exec(`
 SELECT
-account_code, account_name, account_type, normal_balance, parent_account,
+account_code, number, account_name, account_type, normal_balance, parent_account,
   is_active, created_at, updated_at, created_by, updated_by
       FROM chart_of_accounts 
       WHERE is_active = 1
@@ -7869,7 +7807,7 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
 
     const result = db.exec(`
 SELECT
-coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
+coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance,
   COALESCE(SUM(jd.debit_amount), 0) as total_debits,
   COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
@@ -7878,7 +7816,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
       WHERE coa.account_type IN('asset', 'liability', 'equity') 
         AND coa.is_active = 1 
         ${dateFilter}
-      GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
+      GROUP BY coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
   `);
 
@@ -7945,7 +7883,7 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
   try {
     const result = db.exec(`
 SELECT
-coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
+coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance,
   COALESCE(SUM(jd.debit_amount), 0) as total_debits,
   COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
@@ -7954,7 +7892,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
       WHERE coa.account_type IN('revenue', 'expense') 
         AND coa.is_active = 1 
         AND je.entry_date BETWEEN ? AND ?
-  GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
+  GROUP BY coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
     `, [fromDate, toDate]);
 
@@ -11119,6 +11057,7 @@ export function getInventoryMovements(): any[] {
 
 export interface TrialBalanceRow {
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: string;
   normal_balance: 'debit' | 'credit';
@@ -11143,6 +11082,7 @@ export function getTrialBalanceReport(year: number, month: number): TrialBalance
     const query = `
 SELECT
 ca.account_code,
+  ca.number,
   ca.account_name,
   ca.account_type,
   ca.normal_balance,
@@ -11154,7 +11094,7 @@ ca.account_code,
       LEFT JOIN journal_details jd ON ca.account_code = jd.account_code
       LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
       WHERE ca.is_active = 1
-      GROUP BY ca.account_code, ca.account_name, ca.account_type, ca.normal_balance
+      GROUP BY ca.account_code, ca.number, ca.account_name, ca.account_type, ca.normal_balance
       HAVING prev_debit != 0 OR prev_credit != 0 OR period_debit != 0 OR period_credit != 0
       ORDER BY ca.account_code ASC
   `;
@@ -11165,13 +11105,14 @@ ca.account_code,
 
     return result[0].values.map((row: any) => {
       const account_code = String(row[0]);
-      const account_name = String(row[1]);
-      const account_type = String(row[2]);
-      const normal_balance = row[3] as 'debit' | 'credit';
-      const previous_debit = Number(row[4]);
-      const previous_credit = Number(row[5]);
-      const debit = Number(row[6]);
-      const credit = Number(row[7]);
+      const number = row[1] ? String(row[1]) : undefined;
+      const account_name = String(row[2]);
+      const account_type = String(row[3]);
+      const normal_balance = row[4] as 'debit' | 'credit';
+      const previous_debit = Number(row[5]);
+      const previous_credit = Number(row[6]);
+      const debit = Number(row[7]);
+      const credit = Number(row[8]);
 
       let initial_balance = 0;
       if (normal_balance === 'debit') {
@@ -11192,6 +11133,7 @@ ca.account_code,
 
       return {
         account_code,
+        number,
         account_name,
         account_type,
         normal_balance,
@@ -11263,6 +11205,7 @@ export function validateAccountingIntegrity(): { isValid: boolean; errors: strin
 
 export interface IncomeStatementItem {
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: string;
   balance: number;
@@ -11275,6 +11218,7 @@ export function getIncomeStatementReport(startDate: string, endDate: string): In
     const query = `
 SELECT
 ca.account_code,
+  ca.number,
   ca.account_name,
   ca.account_type,
   SUM(jd.debit_amount) as total_debit,
@@ -11285,7 +11229,7 @@ ca.account_code,
 WHERE
 je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
   (LOWER(ca.account_type) = 'revenue' OR LOWER(ca.account_type) = 'expense')
-      GROUP BY ca.account_code, ca.account_name, ca.account_type
+      GROUP BY ca.account_code, ca.number, ca.account_name, ca.account_type
       ORDER BY ca.account_code ASC
     `;
 
@@ -11315,6 +11259,7 @@ je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
 
       return {
         account_code: String(r.account_code),
+        number: r.number ? String(r.number) : undefined,
         account_name: String(r.account_name),
         account_type: type,
         balance: netBalance
@@ -11651,7 +11596,6 @@ export const seedUsersAndRoles = async (): Promise<void> => {
           [r.name, r.display, r.level, new Date().toISOString()]
         );
       }
-      console.log('[seedUsersAndRoles] ✅ 6 roles insertados.');
     }
 
     // Forzar niveles correctos siempre
@@ -11693,11 +11637,9 @@ export const seedUsersAndRoles = async (): Promise<void> => {
           new Date().toISOString()
         ]
       );
-      console.log('[seedUsersAndRoles] ✅ Usuario admin creado (admin/admin123).');
     }
 
     const totalRoles = db.exec("SELECT COUNT(*) FROM user_roles")[0]?.values[0]?.[0] as number ?? 0;
-    console.log(`[seedUsersAndRoles] ✅ Sistema listo — ${totalRoles} roles en DB.`);
 
   } catch (error) {
     logger.error('Database', 'seed_auth_failed', 'Error en seed de autenticación', { error });
@@ -11728,7 +11670,6 @@ function seedCompanyData(): void {
             'America/New_York', 'MM/DD/YYYY', 1
         )
     `);
-  console.log('[seedCompanyData] ✅ Datos de empresa placeholder creados.');
 }
 
 function seedChartOfAccounts(): void {
@@ -11858,7 +11799,6 @@ function seedChartOfAccounts(): void {
       [a.code, a.name, a.type, a.nb, a.parent]
     );
   }
-  console.log(`[seedChartOfAccounts] ✅ ${accounts.length} cuentas US GAAP sembradas.`);
 }
 
 function seedPaymentMethods(): void {
@@ -11876,7 +11816,6 @@ function seedPaymentMethods(): void {
         ('Zelle',                  'digital',       1, 1),
         ('ACH',                    'bank_transfer',  1, 1)
     `);
-  console.log('[seedPaymentMethods] ✅ Métodos de pago base creados.');
 }
 
 function seedSystemConfig(): void {
@@ -11897,16 +11836,14 @@ function seedSystemConfig(): void {
       [key, value]
     );
   }
-  console.log('[seedSystemConfig] ✅ Configuración del sistema inicializada.');
 }
 
-function seedSystemDefaults(): void {
+export async function seedSystemDefaults(): Promise<void> {
   try {
     seedCompanyData();
     seedChartOfAccounts();
     seedPaymentMethods();
     seedSystemConfig();
-    console.log('[seedSystemDefaults] ✅ Todos los datos del sistema inicializados.');
   } catch (e) {
     // Nunca lanzar: el seed no debe impedir el arranque
     console.warn('[seedSystemDefaults] ⚠️ Error parcial en inicialización:', e);
@@ -12274,7 +12211,6 @@ export const getUserRoles = (): any[] => {
         name: row[1] as string,
         description: row[2] as string,
         level: row[3] as number,
-        is_active: 1, // Mock de is_active ya que no existe en el esquema físico real
       }));
   } catch (error: any) {
     logger.error('Users', 'get_roles_failed', `Error getting user roles: ${error.message}`, {}, error);
