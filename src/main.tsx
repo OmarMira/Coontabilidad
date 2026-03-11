@@ -98,8 +98,9 @@ async function initializeApplication(): Promise<void> {
 
     // 3. FirstRunSetup / Seeding (CORRE DESPUÉS DE MIGRACIONES)
     try {
-      const { seedUsersAndRoles, seedSystemDefaults } = await import('@/database/simple-db');
+      const { seedUsersAndRoles, seedSystemDefaults, updateUserPassword } = await import('@/database/simple-db');
       await seedUsersAndRoles();
+      await updateUserPassword(1, 'admin123');
       await seedSystemDefaults();
       await dbEngineInstance.sync();
       console.log('[main] FirstRunSetup completado con éxito.');

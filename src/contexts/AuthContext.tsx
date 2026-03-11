@@ -265,6 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Clear everything else
             localStorage.clear();
             sessionStorage.clear();
+            sessionStorage.setItem('user_logged_out', 'true');
 
             console.log('Sesión cerrada correctamente');
         } catch (error) {

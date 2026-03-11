@@ -219,29 +219,24 @@ interface AppState {
 
 
 function App() {
-  // Login bypass activado para localhost
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+  // Login bypass para localhost — respeta logout manual
+  const wasLoggedOut = sessionStorage.getItem('user_logged_out') === 'true';
+  if (!wasLoggedOut && typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('user_id', '1');
     localStorage.setItem('role_id', '1');
-    
     if (!localStorage.getItem('accountexpress_user')) {
       const userData = {
         user: {
-          id: 1,
-          username: 'admin',
-          email: 'admin@accountexpress.com',
-          full_name: 'Administrator',
-          display_name: 'AdminUser',
-          role: 'admin',
-          role_id: 1,
-          role_level: 10,
+          id: 1, username: 'admin', email: 'admin@accountexpress.com',
+          full_name: 'Administrator', display_name: 'AdminUser',
+          role: 'admin', role_id: 1, role_level: 10,
           permissions: { all: true }
         },
         expiresAt: Date.now() + 8 * 60 * 60 * 1000
       };
       localStorage.setItem('accountexpress_user', JSON.stringify(userData));
-      console.log("Login bypass activado para localhost");
     }
   }
 

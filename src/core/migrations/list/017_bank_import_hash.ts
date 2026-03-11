@@ -10,7 +10,22 @@ export const BankImportHashMigration: Migration = {
   version: 17,
   name: 'Bank Import Deduplication Hash',
   up: async (db: SQLiteEngine) => {
-    // 1. Agregar columna
+    // 0. Crear tabla si no existe (para DB vacía)
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS bank_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bank_account_id INTEGER,
+            date TEXT,
+            description TEXT,
+            amount REAL,
+            type TEXT,
+            balance REAL,
+            reference TEXT,
+            import_hash TEXT DEFAULT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    // 1. Agregar columna (idempotente)
     try {
       await db.exec(`ALTER TABLE bank_transactions ADD COLUMN import_hash TEXT DEFAULT NULL`);
     } catch (e) {
