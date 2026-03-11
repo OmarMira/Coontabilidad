@@ -31,6 +31,7 @@ export const ComplianceHistory: React.FC = () => {
         let isMounted = true;
 
         const loadHistory = async () => {
+            if (!TaxReportingService) return;
             try {
                 const configStatus = await TaxReportingService.hasValidConfiguration();
 
