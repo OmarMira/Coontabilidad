@@ -51,15 +51,15 @@ export const TaxTransactionsMigration: Migration = {
             CREATE TRIGGER IF NOT EXISTS prevent_tax_tx_update
             BEFORE UPDATE ON tax_transactions
             BEGIN
-                SELECT RAISE(ABORT, 'FORENSIC ALERT: Tax transactions are immutable');
-            END
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Tax transactions are immutable.');
+            END;
         `);
         await db.exec(`
             CREATE TRIGGER IF NOT EXISTS prevent_tax_tx_delete
             BEFORE DELETE ON tax_transactions
             BEGIN
-                SELECT RAISE(ABORT, 'FORENSIC ALERT: Tax transactions are immutable');
-            END
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Tax transactions are immutable.');
+            END;
         `);
 
         console.log('✅ Migration 013: tax_transactions table created successfully');

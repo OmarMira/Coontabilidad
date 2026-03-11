@@ -189,15 +189,22 @@ export const FixedAssetsSchema: Migration = {
             `);
         }
 
-        // ── Iron Core: Anti-Tamper Trigger ───────────────────────────────────
-        // fixed_assets is guaranteed to exist at this point.
+        // ── Iron Core: Anti-Tamper Triggers ───────────────────────────────────
+        // fixed_assets and asset_depreciation are guaranteed to exist at this point.
         await db.exec(`
             CREATE TRIGGER IF NOT EXISTS protect_asset_financials
-            BEFORE UPDATE OF purchase_cost ON fixed_assets
-            WHEN OLD.status != 'PENDING'
+            BEFORE UPDATE OF purchase_cost, purchase_date, depreciation_method ON fixed_assets
             BEGIN
-                SELECT RAISE(ABORT, 'FORENSIC ALERT: Cannot modify cost of non-PENDING fixed asset');
-            END
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Fixed Asset financial data is immutable.');
+            END;
+        `);
+
+        await db.exec(`
+            CREATE TRIGGER IF NOT EXISTS prevent_depreciation_tamper
+            BEFORE UPDATE ON asset_depreciation
+            BEGIN
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Depreciation records are immutable.');
+            END;
         `);
 
         console.log('✅ Migration 011: Fixed Assets schema created successfully');
