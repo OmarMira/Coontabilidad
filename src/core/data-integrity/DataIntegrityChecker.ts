@@ -40,7 +40,7 @@ export class DataIntegrityChecker {
     'bill_lines.bill_id': { table: 'bills', field: 'id' },
 
     // Asientos
-    'journal_details.entry_id': { table: 'journal_entries', field: 'id' },
+    'journal_details.journal_id': { table: 'journal_entries', field: 'id' },
     'journal_details.account_code': { table: 'chart_of_accounts', field: 'account_code' },
 
     // Pagos
@@ -234,7 +234,7 @@ export class DataIntegrityChecker {
       // Verificar journal_details.entry_id
       const orphanJournalDetails = db?.exec(`
         SELECT jd.id FROM journal_details jd
-        LEFT JOIN journal_entries je ON jd.entry_id = je.id
+        LEFT JOIN journal_entries je ON jd.journal_id = je.id
         WHERE je.id IS NULL
       `);
 
