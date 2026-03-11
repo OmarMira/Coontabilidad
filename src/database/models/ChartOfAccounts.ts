@@ -7,6 +7,7 @@
 export interface ChartOfAccount {
   id: number;
   code: string;
+  number?: string;
   name: string;
   type: AccountType;
   parent_id?: number;

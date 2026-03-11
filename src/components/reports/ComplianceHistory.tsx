@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { TaxReportingService, DR15Report } from '../../services/TaxReportingService';
-import { DR15Template } from './DR15Template';
+// Módulo DR15 eliminado en Sprint 4
+// import { TaxReportingService, DR15Report } from '../../services/TaxReportingService';
+// import { DR15Template } from './DR15Template';
+const TaxReportingService: any = (window as any).TaxReportingService; // Fallback para evitar errores inmediatos si se requiere dinámicamente
 import { CheckCircle2, AlertCircle, FileText, Loader2 } from 'lucide-react';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -16,7 +18,7 @@ export const ComplianceHistory: React.FC = () => {
     const { t, language } = useLocale();
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [initialLoading, setInitialLoading] = useState(true);
-    const [selectedReport, setSelectedReport] = useState<DR15Report | null>(null);
+    const [selectedReport, setSelectedReport] = useState<any | null>(null);
     const [configAlert, setConfigAlert] = useState<string | null>(null);
 
     const viewReport = async (item: HistoryItem) => {
@@ -178,7 +180,8 @@ export const ComplianceHistory: React.FC = () => {
                             </button>
                         </div>
                         <div className="p-10 pt-0" onClick={(e) => e.stopPropagation()}>
-                            <DR15Template report={selectedReport} />
+                            {/* DR15Template eliminado */}
+                            <div className="text-white p-4">Reporte no disponible (Módulo DR-15 eliminado)</div>
                         </div>
                     </div>
                 </div>

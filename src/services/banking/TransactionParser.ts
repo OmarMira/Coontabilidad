@@ -301,31 +301,48 @@ export class TransactionParser {
             const keywordId = result.matched_keyword_id;
             const isHighRisk = result.state === TRANSACTION_STATES.HIGH_RISK_PERSONAL;
 
-            // Insertar o actualizar estado en transaction_states
-            await this.db.run(`
-                INSERT INTO transaction_states (
-                    transaction_id, current_state, risk_keyword_id,
-                    risk_score, is_verified,
-                    quarantine_started_at, sla_deadline
-                ) VALUES (
-                    ?, ?, ?, ?, ?, 
-                    ${isHighRisk ? "datetime('now')" : "NULL"}, 
-                    ${isHighRisk ? "datetime('now', '+72 hours')" : "NULL"}
-                )
-                ON CONFLICT(transaction_id) DO UPDATE SET
-                    current_state         = excluded.current_state,
-                    risk_keyword_id       = excluded.risk_keyword_id,
-                    risk_score            = excluded.risk_score,
-                    is_verified           = excluded.is_verified,
-                    quarantine_started_at = excluded.quarantine_started_at,
-                    sla_deadline          = excluded.sla_deadline
-            `, [
-                tx.id,
-                result.state,
-                keywordId,
-                result.confidence_score,
-                result.auto_classified ? 1 : 0
-            ]);
+            // UPSERT manual for transaction_states
+            const existingRows = await this.db.select(
+                `SELECT 1 FROM transaction_states WHERE transaction_id = ?`,
+                [tx.id]
+            );
+
+            if (existingRows && existingRows.length > 0) {
+                await this.db.run(`
+                    UPDATE transaction_states SET
+                        current_state         = ?,
+                        risk_keyword_id       = ?,
+                        risk_score            = ?,
+                        is_verified           = ?,
+                        quarantine_started_at = ${isHighRisk ? "datetime('now')" : "NULL"},
+                        sla_deadline          = ${isHighRisk ? "datetime('now', '+72 hours')" : "NULL"}
+                    WHERE transaction_id = ?
+                `, [
+                    result.state,
+                    keywordId,
+                    result.confidence_score,
+                    result.auto_classified ? 1 : 0,
+                    tx.id
+                ]);
+            } else {
+                await this.db.run(`
+                    INSERT INTO transaction_states (
+                        transaction_id, current_state, risk_keyword_id,
+                        risk_score, is_verified,
+                        quarantine_started_at, sla_deadline
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, 
+                        ${isHighRisk ? "datetime('now')" : "NULL"}, 
+                        ${isHighRisk ? "datetime('now', '+72 hours')" : "NULL"}
+                    )
+                `, [
+                    tx.id,
+                    result.state,
+                    keywordId,
+                    result.confidence_score,
+                    result.auto_classified ? 1 : 0
+                ]);
+            }
 
             // Log en quarantine_audit_log para HIGH_RISK
             if (result.state === TRANSACTION_STATES.HIGH_RISK_PERSONAL) {

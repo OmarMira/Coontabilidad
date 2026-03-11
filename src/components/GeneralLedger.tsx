@@ -175,7 +175,7 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
               >
                 <div className="space-y-1">
                   <p className={`text-xs font-bold tracking-tight transition-colors ${selectedAccount?.id === account.id ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}>
-                    {account.account_code}
+                    {account.number ? `${account.number} (${account.account_code})` : account.account_code}
                   </p>
                   <p className={`text-sm font-medium truncate max-w-[150px] ${selectedAccount?.id === account.id ? 'text-blue-400' : 'text-slate-500'}`}>
                     {account.account_name}
@@ -200,7 +200,7 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
                   <div>
                     <div>
                       <h3 className="text-2xl font-bold text-white tracking-tight">
-                        {selectedAccount.account_code} <span className="text-slate-500 mx-2">•</span> {selectedAccount.account_name}
+                        {selectedAccount.number ? `${selectedAccount.number} (${selectedAccount.account_code})` : selectedAccount.account_code} <span className="text-slate-500 mx-2">•</span> {selectedAccount.account_name}
                       </h3>
                       <div className="flex items-center gap-4 mt-1">
                         {getAccountTypeBadge(selectedAccount.account_type)}

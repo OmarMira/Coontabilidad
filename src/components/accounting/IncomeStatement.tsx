@@ -89,7 +89,7 @@ export const IncomeStatement: React.FC = () => {
             doc.text(title.toUpperCase(), 14, finalY + 5);
 
             const body = items.map(i => [
-                i.account_code,
+                i.number ? `${i.number} (${i.account_code})` : i.account_code,
                 i.account_name,
                 formatNumber(i.balance)
             ]);
@@ -199,7 +199,9 @@ export const IncomeStatement: React.FC = () => {
                             revenue.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-bold text-slate-600 font-mono">{item.account_code}</span>
+                                        <span className="text-xs font-bold text-slate-600 font-mono tracking-tight bg-slate-900/50 px-2 py-0.5 rounded-md border border-slate-800">
+                                            {item.number ? `${item.number}` : item.account_code} {item.number && <span className="text-[9px] text-slate-500 font-normal">({item.account_code})</span>}
+                                        </span>
                                         <span className="text-sm font-semibold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
                                     </div>
                                     <div className="text-right">
@@ -247,7 +249,9 @@ export const IncomeStatement: React.FC = () => {
                             expenses.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/row p-4 rounded-2xl bg-slate-950/20 border border-transparent hover:border-slate-800 hover:bg-slate-950/40 transition-all">
                                     <div className="flex flex-col gap-1">
-                                        <span className="text-xs font-bold text-slate-600 font-mono">{item.account_code}</span>
+                                        <span className="text-xs font-bold text-slate-600 font-mono tracking-tight bg-slate-900/50 px-2 py-0.5 rounded-md border border-slate-800">
+                                            {item.number ? `${item.number}` : item.account_code} {item.number && <span className="text-[9px] text-slate-500 font-normal">({item.account_code})</span>}
+                                        </span>
                                         <span className="text-sm font-semibold text-slate-300 group-hover/row:text-white transition-colors">{item.account_name}</span>
                                     </div>
                                     <div className="text-right">

@@ -179,7 +179,7 @@ export const TrialBalanceReport: React.FC = () => {
         doc.text(`${t('accounting.trialBalance.periodLabel')}: ${period}`, 145, 25);
         doc.text(`${t('accounting.trialBalance.sessionID')}: ${Math.random().toString(36).substring(7).toUpperCase()}`, 145, 30);
         const tableData = data.map(row => [
-            row.account_code,
+            row.number ? `${row.number} (${row.account_code})` : row.account_code,
             row.account_name,
             row.normal_balance.toUpperCase(),
             formatCurrency(row.initial_balance),
@@ -236,7 +236,7 @@ export const TrialBalanceReport: React.FC = () => {
         ];
         data.forEach(row => {
             wsData.push([
-                row.account_code,
+                row.number ? `${row.number} (${row.account_code})` : row.account_code,
                 row.account_name,
                 row.normal_balance.toUpperCase(),
                 formatCurrency(row.initial_balance),
@@ -339,7 +339,7 @@ export const TrialBalanceReport: React.FC = () => {
                 <table className="w-full text-sm text-left border-collapse">
                     <thead className="bg-slate-950 text-slate-600 font-bold uppercase tracking-wider text-xs border-b border-slate-800">
                         <tr>
-                            <th className="px-10 py-6">{t('accounting.trialBalance.codeHeader')}</th>
+                            <th className="px-10 py-6 text-center">NÚMERO GAAP / CÓDIGO</th>
                             <th className="px-10 py-6">{t('accounting.trialBalance.descHeader')}</th>
                             <th className="px-10 py-6 text-center">{t('accounting.trialBalance.natHeader')}</th>
                             <th className="px-10 py-6 text-right">{t('accounting.trialBalance.prevBalance')}</th>
@@ -376,8 +376,9 @@ export const TrialBalanceReport: React.FC = () => {
                             data.map((row, i) => (
                                 <tr key={i} className="hover:bg-slate-900/30 transition-all group">
                                     <td className="px-10 py-6">
-                                        <span className="font-mono text-xs text-blue-400 font-bold bg-blue-500/5 px-3 py-1.5 rounded-xl border border-blue-500/10">
-                                            {row.account_code}
+                                        <span className="font-mono text-xs text-blue-400 font-bold bg-blue-500/5 px-3 py-1.5 rounded-xl border border-blue-500/10 flex flex-col items-center">
+                                            <span>{row.number || 'N/A'}</span>
+                                            <span className="text-[9px] text-slate-500">{row.account_code}</span>
                                         </span>
                                     </td>
                                     <td className="px-10 py-6">

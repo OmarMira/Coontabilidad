@@ -44,14 +44,12 @@ export class SQLiteEngine {
             console.log('🔄 Initializing wa-sqlite...');
 
             // 1. Initialize SQLite3 Module
-            // Pass locateFile so wa-sqlite always loads the .wasm from /public
-            // (served verbatim by Vite), not relative to the hashed bundle path.
             const module = await SQLiteFactory({
                 locateFile: (file: string) => `/${file}`
             });
             this.sqlite3 = SQLite.Factory(module);
 
-            // 2. Register Persistent VFS (IDB Batch Atomic for Main Thread compatibility)
+            // 2. Register Persistent VFS (IDB Batch Atomic)
             this.vfs = new IDBBatchAtomicVFS(this.dbName);
             // @ts-ignore
             this.sqlite3.vfs_register(this.vfs, true);
@@ -64,23 +62,19 @@ export class SQLiteEngine {
                 this.dbName
             );
 
-
             // 4. Initialize Database Settings
-            await this.exec('PRAGMA journal_mode=DELETE'); // IDB often prefers DELETE or MEMORY, WAL can be tricky without OPFS
+            await this.exec('PRAGMA journal_mode=DELETE');
             await this.exec('PRAGMA synchronous=NORMAL');
             await this.exec('PRAGMA foreign_keys=ON');
             await this.exec('PRAGMA cache_size=-5000');
 
             console.log('✅ SQLiteEngine (wa-sqlite) initialized successfully');
 
-            // Verify persistence — wrapped separately so a benign wa-sqlite SQLITE_OK
-            // response (caught as "not an error") doesn't abort the full init
+            // Verify persistence
             try {
                 await this.exec('CREATE TABLE IF NOT EXISTS system_check (id INTEGER PRIMARY KEY, initialized_at TEXT)');
                 await this.run('INSERT INTO system_check (initialized_at) VALUES (?)', [new Date().toISOString()]);
             } catch (checkErr: any) {
-                // "not an error" = SQLITE_OK (code 0) misinterpreted by wa-sqlite IDB adapter
-                // This is safe to ignore — the DB IS open and functional
                 if (!String(checkErr?.message ?? checkErr).includes('not an error')) {
                     console.warn('⚠️ system_check warning (non-fatal):', checkErr);
                 }
@@ -118,13 +112,21 @@ export class SQLiteEngine {
 
         let stmt: number | undefined;
         try {
-            // @ts-ignore
-            stmt = await this.sqlite3.prepare_v2(this.db, sql);
-            if (!stmt) throw new Error('Failed to prepare statement');
+            try {
+                // @ts-ignore
+                stmt = await this.sqlite3.prepare_v2(this.db, sql);
+                if (!stmt) throw new Error('Failed to prepare statement');
+            } catch (prepErr: any) {
+                if (String(prepErr?.message || prepErr).includes('not an error')) {
+                    console.warn('[SQLiteEngine] Silenced benign "not an error" during run prepare:', sql);
+                    return;
+                }
+                throw prepErr;
+            }
 
             // Bind parameters
             if (params.length > 0) {
-                // @ts-ignore wa-sqlite bind_collection: expects never but accepts any
+                // @ts-ignore
                 this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
@@ -158,9 +160,17 @@ export class SQLiteEngine {
         let stmt: number | undefined;
 
         try {
-            // @ts-ignore
-            stmt = await this.sqlite3.prepare_v2(this.db, sql);
-            if (!stmt) throw new Error('Failed to prepare statement');
+            try {
+                // @ts-ignore
+                stmt = await this.sqlite3.prepare_v2(this.db, sql);
+                if (!stmt) throw new Error('Failed to prepare statement');
+            } catch (prepErr: any) {
+                if (String(prepErr?.message || prepErr).includes('not an error')) {
+                    console.warn('[SQLiteEngine] Silenced benign "not an error" during select prepare:', sql);
+                    return [];
+                }
+                throw prepErr;
+            }
 
             // Bind parameters
             if (params.length > 0) {
@@ -208,19 +218,15 @@ export class SQLiteEngine {
     async executeTransaction<T>(operation: () => Promise<T>): Promise<T> {
         if (this.sqlJsDB) {
             try {
-                try {
-                    this.sqlJsDB.run('BEGIN TRANSACTION');
-                    const result = await operation();
-                    this.sqlJsDB.run('COMMIT');
-                    return result;
-                } catch (error: any) {
-                    if (error.message && error.message.includes('cannot start a transaction within a transaction')) {
-                        return await operation();
-                    }
-                    this.sqlJsDB.run('ROLLBACK');
-                    throw error;
+                this.sqlJsDB.run('BEGIN TRANSACTION');
+                const result = await operation();
+                this.sqlJsDB.run('COMMIT');
+                return result;
+            } catch (error: any) {
+                if (error.message && error.message.includes('cannot start a transaction within a transaction')) {
+                    return await operation();
                 }
-            } catch (error) {
+                this.sqlJsDB.run('ROLLBACK');
                 throw error;
             }
         }
@@ -229,7 +235,6 @@ export class SQLiteEngine {
 
         try {
             await this.exec('BEGIN IMMEDIATE TRANSACTION');
-            // @ts-ignore
             const result = await operation();
             await this.exec('COMMIT');
             return result;
@@ -254,23 +259,28 @@ export class SQLiteEngine {
         let stmt: number | undefined;
 
         try {
-            // @ts-ignore
-            stmt = await this.sqlite3.prepare_v2(this.db, sql);
-            if (!stmt) throw new Error('Failed to prepare statement');
+            try {
+                // @ts-ignore
+                stmt = await this.sqlite3.prepare_v2(this.db, sql);
+                if (!stmt) throw new Error('Failed to prepare statement');
+            } catch (prepErr: any) {
+                if (String(prepErr?.message || prepErr).includes('not an error')) {
+                    console.warn('[SQLiteEngine] Silenced benign "not an error" during execCompatible prepare:', sql);
+                    return [];
+                }
+                throw prepErr;
+            }
 
-            // @ts-ignore
             if (params.length > 0) {
                 // @ts-ignore
                 this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
-            // Get columns
             const colCount = this.sqlite3.column_count(stmt);
             for (let i = 0; i < colCount; i++) {
                 result.columns.push(this.sqlite3.column_name(stmt, i));
             }
 
-            // Get values
             while (await this.sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
                 const row: any[] = [];
                 for (let i = 0; i < colCount; i++) {
@@ -311,7 +321,6 @@ export class SQLiteEngine {
 
     async sync(): Promise<void> {
         if (!this.sqlite3 || this.db === null) return;
-
         try {
             if (this.vfs && typeof this.vfs.flush === 'function') {
                 await this.vfs.flush();

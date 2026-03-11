@@ -92,7 +92,7 @@ export const AccountLedger: React.FC = () => {
                         >
                             {accounts.map(acc => (
                                 <option key={acc.account_code} value={acc.account_code} className="bg-slate-900 text-white">
-                                    {acc.account_code} - {acc.account_name}
+                                    {acc.number ? `${acc.number} - ` : ''}{acc.account_code} - {acc.account_name}
                                 </option>
                             ))}
                         </select>
@@ -145,7 +145,7 @@ export const AccountLedger: React.FC = () => {
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
                                 <h3 className="text-table-header">{t('reportsDashboard.accountLedger.ledgerTitle')}</h3>
                                 <div className="flex items-center gap-2">
-                                    <span className="badge-elite bg-blue-500/10 text-blue-400 border-blue-500/20">{data.account.account_code}</span>
+                                    <span className="badge-elite bg-blue-500/10 text-blue-400 border-blue-500/20">{data.account.number || data.account.account_code}</span>
                                     <span className="text-xs font-black text-white">{data.account.account_name}</span>
                                 </div>
                             </div>

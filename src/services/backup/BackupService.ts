@@ -412,7 +412,6 @@ export class BackupService {
 
             // Use File System Access API (modern browsers)
             if ('showSaveFilePicker' in window) {
-                console.log('[BACKUP] Abriendo selector de archivos...');
                 try {
                     const handle = await (window as any).showSaveFilePicker({
                         suggestedName: fname,
@@ -425,7 +424,6 @@ export class BackupService {
                     const writable = await handle.createWritable();
                     await writable.write(backup.data);
                     await writable.close();
-                    console.log('[BACKUP] Selector completado, archivo guardado');
 
                     ProductionLogger.info('BackupService', 'Backup saved to local disk', { filename: fname });
                 } catch (e: any) {
@@ -1010,17 +1008,14 @@ export class BackupService {
         const results: any[] = [];
 
         try {
-            // TEST 1: Foreign Keys
             const fkCheck = dbInstance.exec('PRAGMA foreign_key_check;');
             results.push({ test: 'foreign_keys', passed: fkCheck.length === 0 });
             if (fkCheck.length > 0) failures.push(`Violaciones de FK detectadas: ${fkCheck.length} filas`);
 
-            // TEST 2: Integrity Check de SQLite
             const integrityCheck = dbInstance.exec('PRAGMA integrity_check;');
             results.push({ test: 'physical_integrity', value: integrityCheck[0].values[0][0] });
             if (integrityCheck[0].values[0][0] !== 'ok') failures.push(`Inconsistencia física: ${integrityCheck[0].values[0][0]}`);
 
-            // TEST 3: Esquema crítico
             const tablesRes = dbInstance.exec("SELECT name FROM sqlite_master WHERE type='table'");
             const tableCount = tablesRes.length > 0 ? tablesRes[0].values.length : 0;
             results.push({ test: 'schema_completeness', count: tableCount });
@@ -1100,7 +1095,6 @@ export class BackupService {
     }
 
     public static async restoreBackupWithFileChoice(): Promise<boolean> {
-        console.log('[RESTORE] Iniciando restoreBackupWithFileChoice');
         if (!(window as any).showOpenFilePicker) {
             throw new Error('Tu navegador no soporta File System Access API. Usá Chrome o Edge versión 86+.');
         }

@@ -71,9 +71,10 @@ export function BalanceSheet() {
       {accounts.map((account) => (
         <div key={account.account_code} className="flex items-center justify-between p-4 bg-slate-950/40 hover:bg-slate-950/80 border border-slate-800/50 hover:border-slate-700/80 rounded-2xl transition-all group">
           <div className="flex items-center gap-4">
-            <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/5 px-2.5 py-1.5 rounded-xl border border-blue-500/10 shadow-sm">
-              {account.account_code}
-            </span>
+            <div className="flex flex-col items-center font-mono text-xs font-bold text-blue-400 bg-blue-500/5 px-2.5 py-1 rounded-xl border border-blue-500/10 shadow-sm leading-tight">
+              <span>{account.number || 'N/A'}</span>
+              <span className="text-[9px] text-slate-500">{account.account_code}</span>
+            </div>
             <span className="text-sm font-semibold text-slate-400 group-hover:text-slate-100 transition-colors">
               {account.account_name}
             </span>

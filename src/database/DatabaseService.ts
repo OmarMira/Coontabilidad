@@ -9,8 +9,14 @@ export class DatabaseService {
 
     private static dbInstance: any = null;
 
-    static setDB(db: any) {
+    static async setDB(db: any) {
         this.dbInstance = db;
+        // Ensure core tables exist as soon as the DB is set
+        try {
+            await this.initializeForensicLayer();
+        } catch (e) {
+            console.error('Error initializing forensic layer after setDB:', e);
+        }
     }
 
     /**
@@ -157,6 +163,18 @@ export class DatabaseService {
         last_error TEXT,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+
+        // 4b. Tabla: BACKUPS LOG (Sanitation Step 4)
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS backups_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now')),
+        filename TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        type TEXT NOT NULL,            -- 'manual', 'auto'
+        success BOOLEAN DEFAULT 1
       );
     `);
 
@@ -309,6 +327,23 @@ export class DatabaseService {
                 // ignore
             }
         }
+
+        // --- ARREGLO DE ESQUEMA PARA VERIFICACION ---
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE products ADD COLUMN description TEXT");
+        } catch (e) { }
+
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE user_roles ADD COLUMN is_active BOOLEAN DEFAULT 1");
+        } catch (e) { }
+
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE user_roles ADD COLUMN is_system_role BOOLEAN DEFAULT 0");
+        } catch (e) { }
+
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE chart_of_accounts ADD COLUMN parent_code TEXT");
+        } catch (e) { }
     }
 
     public static async createForensicTriggers(): Promise<void> {
@@ -709,5 +744,69 @@ export class DatabaseService {
             const v = c === 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    }
+
+    /**
+     * Ejecuta la descarga de un respaldo local en formato .sqlite
+     * Sanitation Step 4.2
+     */
+    static async backupDB(manual: boolean = false): Promise<void> {
+        if (!DatabaseService.dbInstance) return;
+
+        const isAutoEnabled = localStorage.getItem('auto_backup_enabled') === 'true';
+        if (!manual && !isAutoEnabled) return;
+
+        try {
+            const dbData = DatabaseService.dbInstance.export();
+            const blob = new Blob([dbData], { type: 'application/x-sqlite3' });
+            const url = URL.createObjectURL(blob);
+
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+            const filename = `account-express-backup-${dateStr}-${timeStr}.sqlite`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            const type = manual ? 'manual' : 'auto';
+            const logMsg = manual ? `Backup manual creado: ${filename}` : `Backup automático creado: ${filename}`;
+
+            logger.info('BackupService', 'backup_success', logMsg, { filename, size: dbData.byteLength });
+
+            // Registrar en la tabla de logs (Sanitation Step 4.2)
+            try {
+                const ts = new Date().toISOString();
+                const size = dbData.byteLength;
+                DatabaseService.dbInstance.run(
+                    `INSERT INTO backups_log (timestamp, filename, size, type, success) VALUES (?, ?, ?, ?, 1)`,
+                    [ts, filename, size, type]
+                );
+            } catch (dbError) {
+                console.error('Error logging backup to DB:', dbError);
+                logger.error('DatabaseService', 'backup_log_failed', 'Resumen: No se pudo registrar en la tabla logs', { error: String(dbError) });
+            }
+
+        } catch (error) {
+            logger.error('BackupService', 'backup_error', 'Fallo crítico al crear backup', null, error as Error);
+        }
+    }
+
+    /**
+     * Inicia el timer de backups automáticos (cada 5 min)
+     * Sanitation Step 4.1
+     */
+    static startAutoBackupTimer(): void {
+        logger.info('DatabaseService', 'auto_timer_init', 'Iniciando temporizador de backups automáticos (5 min)');
+
+        // Ejecutar cada 5 minutos (300,000 ms)
+        setInterval(() => {
+            DatabaseService.backupDB(false);
+        }, 300000);
     }
 }

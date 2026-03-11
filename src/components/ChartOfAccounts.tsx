@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import {
   Plus, Edit2, Eye, Search,
   Building, TrendingUp, DollarSign, CreditCard,
-  ChevronRight, ChevronDown, AlertCircle, CheckCircle, XCircle
+  ChevronRight, ChevronDown, AlertCircle, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
 import { logger } from '../core/logging/SystemLogger';
-import { getChartOfAccounts, ChartOfAccount, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/database/simple-db';
+import { ChartOfAccount, getChartOfAccounts, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/database/simple-db';
 import { useLocale } from '../i18n/useLocale';
+import { suggestAccountNumber, validateAccountNumber } from '../utils/accountingUtils';
+import { DoubleEntryValidator } from '../services/accounting/DoubleEntryValidator';
 
 // Extender la interfaz para incluir propiedades de jerarquía
 interface ChartOfAccountWithHierarchy extends ChartOfAccount {
@@ -27,14 +29,40 @@ export function ChartOfAccounts() {
   // Estados para CRUD
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<ChartOfAccount | null>(null);
+  // detail_type options grouped by account_type
+  const DETAIL_TYPE_OPTIONS: Record<string, string[]> = {
+    asset: ['Cash', 'Checking Account', 'Accounts Receivable', 'Inventory'],
+    liability: ['Accounts Payable', 'Credit Card Payable', 'Sales Tax Payable (DR-15)', 'Reemployment Tax Payable (RT-6)'],
+    equity: ["Owner's Equity", 'Retained Earnings'],
+    revenue: ['Sales', 'Service Income'],
+    expense: ['Cost of Goods Sold', 'Direct Labor', 'Office Supplies', 'Utilities', 'Rent', 'Advertising', 'Payroll Expenses', 'Bank Fees']
+  };
+
   const [formData, setFormData] = useState<Partial<ChartOfAccount>>({
     account_code: '',
+    number: '',
     account_name: '',
     account_type: 'asset',
     normal_balance: 'debit',
     parent_account: '',
-    is_active: true
+    is_active: true,
+    detail_type: ''
   });
+  const [numberWarning, setNumberWarning] = useState<string | null>(null);
+  // Warning de clasificación preventiva (Fase 4)
+  const [classificationAlert, setClassificationAlert] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'create' | 'update' | null>(null);
+
+  useEffect(() => {
+    if (showForm && !editingAccount && !formData.number && formData.account_type) {
+      setFormData(prev => ({ ...prev, number: suggestAccountNumber(prev.account_type || 'asset') }));
+    }
+  }, [showForm, editingAccount, formData.account_type]);
+
+  useEffect(() => {
+    const warning = validateAccountNumber(formData.number || '', formData.account_type || 'asset');
+    setNumberWarning(warning);
+  }, [formData.number, formData.account_type]);
 
   useEffect(() => {
     loadChartOfAccounts();
@@ -59,24 +87,42 @@ export function ChartOfAccounts() {
     }
   };
 
-  const handleCreateAccount = async () => {
+  const handleCreateAccount = async (force = false) => {
+    // Validación preventiva de clasificación
+    if (!force && formData.detail_type) {
+      const warn = DoubleEntryValidator.validateAccountDefinition(
+        formData.account_type || 'asset',
+        formData.detail_type
+      );
+      if (warn) {
+        setClassificationAlert(warn.reason);
+        setPendingAction('create');
+        return;
+      }
+    }
+    setClassificationAlert(null);
+    setPendingAction(null);
+
     try {
       logger.info('ChartOfAccounts', 'create_start', 'Iniciando creación de nueva cuenta', { accountCode: formData.account_code });
+      console.info(`[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
 
       const result = await createChartOfAccount(formData);
 
       if (result.success) {
-        logger.info('ChartOfAccounts', 'create_success', 'Account created successfully', { accountCode: formData.account_code });
+        logger.info('ChartOfAccounts', 'create_success', 'Account created successfully', { accountCode: formData.account_code, detailType: formData.detail_type || null });
         setShowForm(false);
         setFormData({
           account_code: '',
+          number: '',
           account_name: '',
           account_type: 'asset',
           normal_balance: 'debit',
           parent_account: '',
-          is_active: true
+          is_active: true,
+          detail_type: ''
         });
-        await loadChartOfAccounts(); // Recargar datos
+        await loadChartOfAccounts();
       } else {
         logger.error('ChartOfAccounts', 'create_failed', 'Error al crear cuenta', { error: result.message });
         setError(result.message);
@@ -92,36 +138,56 @@ export function ChartOfAccounts() {
     setEditingAccount(account);
     setFormData({
       account_code: account.account_code,
+      number: account.number || '',
       account_name: account.account_name,
       account_type: account.account_type,
       normal_balance: account.normal_balance,
       parent_account: account.parent_account || '',
-      is_active: account.is_active
+      is_active: account.is_active,
+      detail_type: account.detail_type || ''
     });
     setShowForm(true);
   };
 
-  const handleUpdateAccount = async () => {
+  const handleUpdateAccount = async (force = false) => {
     if (!editingAccount) return;
+
+    // Validación preventiva de clasificación
+    if (!force && formData.detail_type) {
+      const warn = DoubleEntryValidator.validateAccountDefinition(
+        formData.account_type || 'asset',
+        formData.detail_type
+      );
+      if (warn) {
+        setClassificationAlert(warn.reason);
+        setPendingAction('update');
+        return;
+      }
+    }
+    setClassificationAlert(null);
+    setPendingAction(null);
 
     try {
       logger.info('ChartOfAccounts', 'update_start', 'Iniciando actualización de cuenta', { accountCode: editingAccount.account_code });
+      console.info(`[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
 
       const result = await updateChartOfAccount(editingAccount.account_code, formData);
 
       if (result.success) {
-        logger.info('ChartOfAccounts', 'update_success', 'Account updated successfully', { accountCode: editingAccount.account_code });
+        logger.info('ChartOfAccounts', 'update_success', 'Account updated successfully', { accountCode: editingAccount.account_code, detailType: formData.detail_type || null });
         setShowForm(false);
         setEditingAccount(null);
         setFormData({
           account_code: '',
+          number: '',
           account_name: '',
           account_type: 'asset',
           normal_balance: 'debit',
           parent_account: '',
-          is_active: true
+          is_active: true,
+          detail_type: ''
         });
-        await loadChartOfAccounts(); // Recargar datos
+        await loadChartOfAccounts();
       } else {
         logger.error('ChartOfAccounts', 'update_failed', 'Error al actualizar cuenta', { error: result.message });
         setError(result.message);
@@ -169,11 +235,13 @@ export function ChartOfAccounts() {
     setEditingAccount(null);
     setFormData({
       account_code: '',
+      number: '',
       account_name: '',
       account_type: 'asset',
       normal_balance: 'debit',
       parent_account: '',
-      is_active: true
+      is_active: true,
+      detail_type: ''
     });
   };
 
@@ -274,8 +342,9 @@ export function ChartOfAccounts() {
           </div>
 
           {/* Código de cuenta */}
-          <div className="w-20 text-sm font-mono text-slate-400">
-            {account.account_code}
+          <div className="w-20 font-mono text-slate-400 flex flex-col justify-center leading-tight">
+            <span className="text-sm font-bold text-blue-400">{account.number || 'N/A'}</span>
+            <span className="text-[10px] opacity-70">{account.account_code}</span>
           </div>
 
           {/* Nombre de cuenta */}
@@ -495,19 +564,40 @@ export function ChartOfAccounts() {
 
             <form onSubmit={handleFormSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
-                    {t('chartOfAccounts.formCode')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.account_code}
-                    onChange={(e) => setFormData({ ...formData, account_code: e.target.value })}
-                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono"
-                    placeholder="1000"
-                    required
-                    disabled={!!editingAccount}
-                  />
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                      {t('chartOfAccounts.formCode')}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.account_code}
+                      onChange={(e) => setFormData({ ...formData, account_code: e.target.value })}
+                      className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono text-sm"
+                      placeholder="e.g. 1000"
+                      required
+                      disabled={!!editingAccount}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                      NÚMERO GAAP
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={5}
+                      value={formData.number || ''}
+                      onChange={(e) => setFormData({ ...formData, number: e.target.value.replace(/\D/g, '') })}
+                      className={`w-full bg-slate-950/50 border text-white px-4 py-3 rounded-2xl focus:outline-none transition-all font-mono text-sm ${numberWarning ? 'border-orange-500/50 focus:border-orange-500/50' : 'border-slate-800/50 focus:border-blue-500/50'}`}
+                      placeholder="e.g. 10100"
+                    />
+                    {numberWarning && (
+                      <div className="flex items-center gap-1 mt-2 text-orange-400">
+                        <AlertCircle className="w-3 h-3" />
+                        <span className="text-[9px] font-medium">{numberWarning}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -573,6 +663,32 @@ export function ChartOfAccounts() {
                 />
               </div>
 
+              {/* Detail Type — filtrado dinámicamente por account_type */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                  DETAIL TYPE
+                  <span className="ml-2 text-slate-600 normal-case font-normal">(opcional)</span>
+                </label>
+                <select
+                  id="detail_type"
+                  value={formData.detail_type || ''}
+                  onChange={(e) => setFormData({ ...formData, detail_type: e.target.value })}
+                  className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-sm"
+                >
+                  <option value="" className="bg-slate-900 text-slate-400">— Sin clasificar —</option>
+                  {(DETAIL_TYPE_OPTIONS[formData.account_type || 'asset'] || []).map((opt) => (
+                    <option key={opt} value={opt} className="bg-slate-900">
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+                {formData.detail_type && (
+                  <p className="mt-1.5 text-[10px] text-blue-400 px-1">
+                    ✓ Detail type: <span className="font-bold">{formData.detail_type}</span>
+                  </p>
+                )}
+              </div>
+
               <div className="flex items-center gap-3 px-1">
                 <input
                   type="checkbox"
@@ -585,6 +701,44 @@ export function ChartOfAccounts() {
                   {t('chartOfAccounts.formActive')}
                 </label>
               </div>
+
+              {/* ── ALERTA DE CLASIFICACIÓN PREVENTIVA (Fase 4) ── */}
+              {classificationAlert && (
+                <div className="bg-orange-900/20 border border-orange-500/40 rounded-2xl p-4 animate-in slide-in-from-top duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 bg-orange-500/10 rounded-lg shrink-0">
+                      <AlertTriangle className="w-4 h-4 text-orange-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1.5">
+                        Alerta de Clasificación
+                      </p>
+                      <p className="text-xs text-orange-200 font-bold leading-relaxed italic">
+                        {classificationAlert}
+                      </p>
+                      <div className="flex gap-3 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => setClassificationAlert(null)}
+                          className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+                        >
+                          Corregir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (pendingAction === 'create') handleCreateAccount(true);
+                            if (pendingAction === 'update') handleUpdateAccount(true);
+                          }}
+                          className="text-[9px] font-black uppercase tracking-widest text-orange-400 hover:text-orange-300 transition-colors"
+                        >
+                          Continuar de todas formas
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-4 pt-6">
                 <button

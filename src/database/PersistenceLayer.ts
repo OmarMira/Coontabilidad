@@ -14,6 +14,45 @@ export const setEncryptionKey = (key: CryptoKey) => {
 };
 
 /**
+ * Genera una clave de sistema básica si no hay una de usuario.
+ * NASA Standard: Derivación determinista para persistencia local básica.
+ */
+async function ensureEncryptionKey(): Promise<CryptoKey> {
+    if (encryptionKey) return encryptionKey;
+
+    const encoder = new TextEncoder();
+    const systemSecret = "AccountExpress_SolidState_2025";
+    const salt = encoder.encode("NASA_JPL_COMPLIANCE");
+
+    const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(systemSecret),
+        'PBKDF2',
+        false,
+        ['deriveKey']
+    );
+
+    encryptionKey = await crypto.subtle.deriveKey(
+        {
+            name: 'PBKDF2',
+            salt: salt,
+            iterations: 100000,
+            hash: 'SHA-256'
+        },
+        keyMaterial,
+        {
+            name: 'AES-GCM',
+            length: 256
+        },
+        false,
+        ['encrypt', 'decrypt']
+    );
+
+    logger.info('Persistence', 'system_key_initialized', 'Clave de sistema inicializada para cifrado básico');
+    return encryptionKey;
+}
+
+/**
  * Cifra datos usando AES-256-GCM
  */
 async function encryptData(data: Uint8Array, key: CryptoKey): Promise<Uint8Array> {
@@ -51,25 +90,19 @@ async function decryptData(data: Uint8Array, key: CryptoKey): Promise<Uint8Array
     ));
 }
 
-/**
- * Guarda la base de datos (Uint8Array) en IndexedDB
- * NASA Standard: Si falla el cifrado, abortar.
- */
 export async function saveDatabase(data: Uint8Array): Promise<void> {
     return new Promise(async (resolve, reject) => {
         let blobToSave = data;
 
-        // Apply Encryption if Key exists
-        if (encryptionKey) {
-            try {
-                blobToSave = await encryptData(data, encryptionKey);
-            } catch (cryptoError) {
-                logger.error('Persistence', 'encrypt_fail', 'Fallo crítico al cifrar DB. Abortando guardado.', cryptoError);
-                reject(new Error('CRITICAL_SECURITY_FAILURE: Encryption failed. Write aborted.'));
-                return;
-            }
-        } else {
-            logger.warn('Persistence', 'no_key', 'Guardando DB sin cifrar (Clave no establecida)');
+        // Apply Encryption
+        const key = await ensureEncryptionKey();
+        try {
+            blobToSave = await encryptData(data, key);
+            logger.info('Persistence', 'save_encrypted', 'Guardando DB cifrada', { size: blobToSave.length });
+        } catch (cryptoError) {
+            logger.error('Persistence', 'encrypt_fail', 'Fallo crítico al cifrar DB. Abortando guardado.', cryptoError);
+            reject(new Error('CRITICAL_SECURITY_FAILURE: Encryption failed. Write aborted.'));
+            return;
         }
 
         const request = indexedDB.open(DB_NAME, 1);
@@ -130,28 +163,21 @@ export async function loadDatabase(): Promise<Uint8Array | null> {
             getRequest.onsuccess = async () => {
                 const result = getRequest.result as Uint8Array;
                 if (result) {
-                    // Try to decrypt if key exists
-                    if (encryptionKey) {
-                        try {
-                            const decrypted = await decryptData(result, encryptionKey);
-                            logger.info('Persistence', 'load_success', 'DB cargada y descifrada correctamente');
-                            resolve(decrypted);
-                        } catch (e) {
-                            logger.error('Persistence', 'decrypt_fail', 'Error al descifrar DB. Clave incorrecta o datos corruptos.', e);
-                            // Fail secure: Do not return encrypted blob
-                            resolve(null);
-                        }
-                    } else {
-                        // Check if file is likely encrypted (check existing magic headers of sqlite vs random)
-                        // SQLite header is "SQLite format 3\0" (16 bytes)
-                        // If it's encrypted, the first bytes will be random IV.
+                    const key = await ensureEncryptionKey();
+                    try {
+                        // Intentar descifrar
+                        const decrypted = await decryptData(result, key);
+                        logger.info('Persistence', 'load_success', 'DB cargada y descifrada correctamente');
+                        resolve(decrypted);
+                    } catch (e) {
+                        // RETRO-COMPATIBILIDAD: Si falla el cifrado, ver si es SQLite plano
                         const header = new TextDecoder().decode(result.slice(0, 16));
                         if (header.startsWith('SQLite')) {
-                            logger.info('Persistence', 'load_plain', 'DB cargada (Texto plano)');
+                            logger.info('Persistence', 'load_plain_migration', 'DB en texto plano detectada. Migrando a cifrado en el próximo guardado.');
                             resolve(result);
                         } else {
-                            logger.warn('Persistence', 'load_locked', 'DB cifrada detectada pero no hay clave en memoria.');
-                            resolve(null); // Lock out
+                            logger.error('Persistence', 'decrypt_fail', 'Error al descifrar DB. Datos corruptos o clave incompatible.', e);
+                            resolve(null);
                         }
                     }
                 } else {

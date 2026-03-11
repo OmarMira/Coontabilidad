@@ -48,7 +48,7 @@ const PayrollSettings = lazy(() => import('./components/payroll/PayrollSettings'
 const EmployeeManager = lazy(() => import('./components/payroll/EmployeeManager').then(m => ({ default: m.EmployeeManager })));
 const BankReconciliation = lazy(() => import('./components/banking/BankReconciliation').then(m => ({ default: m.BankReconciliation })));
 const DiscrepancyAnalysis = lazy(() => import('./components/banking/DiscrepancyAnalysis').then(m => ({ default: m.DiscrepancyAnalysis })));
-const DR15PreparationWizard = lazy(() => import('./components/dr15/DR15PreparationWizard').then(m => ({ default: m.DR15PreparationWizard })));
+const FloridaTaxSummary = lazy(() => import('./components/FloridaTaxSummary').then(m => ({ default: m.FloridaTaxSummary })));
 const InventoryReports = lazy(() => import('./components/inventory/InventoryReports').then(m => ({ default: m.InventoryReports })));
 const InventoryMovements = lazy(() => import('./components/inventory/InventoryMovements').then(m => ({ default: m.InventoryMovements })));
 const InventoryAdjustments = lazy(() => import('./components/inventory/InventoryAdjustments').then(m => ({ default: m.InventoryAdjustments })));
@@ -78,7 +78,7 @@ import { FinancialStatements } from './components/accounting/FinancialStatements
 import { QuotesList, ReceivableReports } from './components/invoices/ARComponents';
 import { QuoteForm } from './features/quotes/components/QuoteForm';
 import { QuoteDetailView } from './features/quotes/components/QuoteDetailView';
-import { TaxCalendar, TaxReports } from './components/dr15/TaxComponents';
+// Módulo DR15 eliminado — TaxComponents ya no existe
 import { BackupPanel } from './components/BackupPanel';
 import { LiveVerification } from './pages/LiveVerification';
 import { InvoiceForm } from './components/InvoiceForm';
@@ -121,7 +121,7 @@ import { TaxRates } from './components/TaxRates';
 
 import { BalanceSheet } from './components/BalanceSheet';
 import { HelpCenter } from './components/HelpCenter';
-import { FloridaTaxReport } from './components/FloridaTaxReport';
+// FloridaTaxReport eliminado — reemplazado por FloridaTaxSummary
 import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
 import { MigrationEngine } from './core/migrations/MigrationEngine';
@@ -217,6 +217,32 @@ interface AppState {
 
 
 function App() {
+  // Login bypass activado para localhost
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('user_id', '1');
+    localStorage.setItem('role_id', '1');
+    
+    if (!localStorage.getItem('accountexpress_user')) {
+      const userData = {
+        user: {
+          id: 1,
+          username: 'admin',
+          email: 'admin@accountexpress.com',
+          full_name: 'Administrator',
+          display_name: 'AdminUser',
+          role: 'admin',
+          role_id: 1,
+          role_level: 10,
+          permissions: { all: true }
+        },
+        expiresAt: Date.now() + 8 * 60 * 60 * 1000
+      };
+      localStorage.setItem('accountexpress_user', JSON.stringify(userData));
+      console.log("Login bypass activado para localhost");
+    }
+  }
+
   const { user } = useAuth();
   const { t, language } = useLocale();
   const [showUnifiedAssistant, setShowUnifiedAssistant] = useState(false);
@@ -270,13 +296,11 @@ function App() {
       // Usar 'sw.js' en producción (ubicado en public)
       navigator.serviceWorker.register('/sw.js')
         .then(reg => {
-          console.log('[App] Service Worker registrado con éxito');
           // Forzar actualización si hay un nuevo SW
           reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
             newWorker?.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[App] Nueva versión disponible. Recarga para actualizar.');
               }
             });
           });
@@ -336,7 +360,7 @@ function App() {
         const db = await initDB();
 
         // CRITICAL: Set DatabaseService instance
-        DatabaseService.setDB(db);
+        await DatabaseService.setDB(db);
 
         setState(prev => ({ ...prev, initializationStep: t('system.loadingData') }));
 
@@ -348,6 +372,8 @@ function App() {
 
         try {
           await DatabaseService.scheduleAutoBackup();
+          // Sanitation Step 4.1: Start Local Auto-Backup Timer (5 min)
+          DatabaseService.startAutoBackupTimer();
           logger.info('App', 'auto_backup_scheduled', 'Automatic backups scheduled successfully');
         } catch (backupError) {
           console.error('Error scheduling auto-backup:', backupError);
@@ -510,8 +536,6 @@ function App() {
 
   const handleAddCustomer = async (customerData: any) => {
     try {
-      console.log('=== ADDING CUSTOMER ===');
-      console.log('Input data:', customerData);
 
       // Verificar que la aplicación esté completamente cargada
       if (state.isLoading) {
@@ -526,7 +550,6 @@ function App() {
       }
 
       const customerId = await addCustomer(customerData, user?.id);
-      console.log('Customer added with ID:', customerId);
 
       await loadData();
 
@@ -606,8 +629,6 @@ function App() {
 
   const handleCreateInvoice = async (data: any) => {
     try {
-      console.log('=== CREATING INVOICE (NEXT-GEN) ===');
-      console.log('Data:', data);
 
       const engine = new SQLiteEngine();
       engine.setDB(db);
@@ -698,8 +719,6 @@ function App() {
 
   const handleAddSupplier = async (supplierData: any) => {
     try {
-      console.log('=== ADDING SUPPLIER ===');
-      console.log('Input data:', supplierData);
 
       // Verificar que la aplicación esté completamente cargada
       if (state.isLoading) {
@@ -714,7 +733,6 @@ function App() {
       }
 
       const supplierId = addSupplier(supplierData, user?.id);
-      console.log('Supplier added with ID:', supplierId);
 
       await loadData();
 
@@ -794,9 +812,6 @@ function App() {
 
   const handleCreateBill = async (billData: Partial<Bill>, items: Partial<BillItem>[]) => {
     try {
-      console.log('=== CREATING BILL ===');
-      console.log('Bill data:', billData);
-      console.log('Items:', items);
 
       const result = createBill(billData, items);
       if (result.success) {
@@ -914,8 +929,6 @@ function App() {
 
   const handleCreateProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('=== CREATING PRODUCT ===');
-      console.log('Product data:', productData);
 
       const result = createProduct(productData);
       if (result.success) {
@@ -997,8 +1010,6 @@ function App() {
 
   const handleCreateProductCategory = async (categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('=== CREATING PRODUCT CATEGORY ===');
-      console.log('Category data:', categoryData);
 
       const result = createProductCategory(categoryData);
       if (result.success) {
@@ -1980,16 +1991,16 @@ function App() {
               {/* FIXED: Render FloridaTaxReport correctly */}
               {state.currentSection === 'florida-dr15' && (
                 <Suspense fallback={<LoadingSpinner />}>
-                  <DR15PreparationWizard />
+                  <FloridaTaxSummary />
                 </Suspense>
               )}
 
               {/* FIXED: Render TaxRates component */}
               {state.currentSection === 'tax-rates' && <TaxRates />}
 
-              {state.currentSection === 'tax-reports' && <TaxReports />}
-
-              {state.currentSection === 'tax-calendar' && <TaxCalendar />}
+{/* TaxReports y TaxCalendar eliminados */}
+{/* {state.currentSection === 'tax-reports' && <TaxReports />} */}
+{/* {state.currentSection === 'tax-calendar' && <TaxCalendar />} */}
               {state.currentSection === 'backups' && <BackupPanel />}
               {state.currentSection === 'verify' && <LiveVerification />}
 

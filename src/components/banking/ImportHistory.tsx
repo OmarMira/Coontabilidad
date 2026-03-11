@@ -19,12 +19,16 @@ import {
 } from 'lucide-react';
 import { BankImportService, ImportBatch } from '../../services/banking/BankImportService';
 import { toast } from 'react-hot-toast';
+import { BatchTransactionClassifier } from './BatchTransactionClassifier';
+import { Edit3 } from 'lucide-react';
 
 export const ImportHistory: React.FC = () => {
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<ImportBatch | null>(null);
   const [showRollbackConfirm, setShowRollbackConfirm] = useState(false);
+  const [showClassifier, setShowClassifier] = useState(false);
+  const [classifyingBatchId, setClassifyingBatchId] = useState<number | null>(null);
 
   const importService = new BankImportService();
 
@@ -155,6 +159,17 @@ export const ImportHistory: React.FC = () => {
                         <RotateCcw className="w-3.5 h-3.5" /> Revertir
                       </button>
                     )}
+                    {batch.status === 'pending' && (
+                      <button
+                        onClick={() => {
+                          setClassifyingBatchId(batch.id);
+                          setShowClassifier(true);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-amber-600/10 border border-amber-500/20 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl font-black uppercase tracking-widest text-[9px] transition-all"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" /> Clasificar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -207,6 +222,17 @@ export const ImportHistory: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showClassifier && classifyingBatchId && (
+        <BatchTransactionClassifier
+          batchId={classifyingBatchId}
+          onClose={() => {
+            setShowClassifier(false);
+            setClassifyingBatchId(null);
+            loadHistory();
+          }}
+        />
       )}
     </div>
   );

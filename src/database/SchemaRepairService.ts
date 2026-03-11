@@ -178,6 +178,12 @@ export class SchemaRepairService {
             }
 
             // NOTA: La creación del usuario admin se ha movido al flujo FirstTimeSetup.
+            // Pero lo forzamos aquí por solicitud explícita del usuario para desarrollo.
+            await this.db.run(`
+                INSERT OR REPLACE INTO users (id, username, email, password_hash, full_name, display_name, role_id, is_active)
+                VALUES (1, 'admin', 'admin@accountexpress.com', 'MTIzNDU2Nzg5MDEyMzQ1NnFUwWSIGxPafapyeY9dnaHK5wmryavbK+SD8mnFAeOW', 'Administrator', 'AdminUser', 1, 1)
+            `);
+            console.log("Usuario admin forzado con contraseña admin123!");
             // No recreamos usuarios aquí para permitir que el sistema inicie en estado "vacio".
 
 
@@ -455,6 +461,17 @@ export class SchemaRepairService {
                             logs.push(`⚠️ Error agregando columna ${col.name}: ${(e as Error).message}`);
                         }
                     }
+                }
+            }
+
+            // 8.1. REPARAR BANK_TRANSACTIONS (DED)
+            const bankTxCols = await this.getTableColumns('bank_transactions');
+            if (bankTxCols.length > 0 && !bankTxCols.includes('import_batch_id')) {
+                try {
+                    await this.db.run("ALTER TABLE bank_transactions ADD COLUMN import_batch_id TEXT");
+                    logs.push("✅ Columna 'import_batch_id' agregada a bank_transactions");
+                } catch (e) {
+                    logs.push(`⚠️ Error agregando columna import_batch_id: ${(e as Error).message}`);
                 }
             }
 

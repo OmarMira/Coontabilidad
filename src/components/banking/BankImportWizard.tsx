@@ -45,6 +45,17 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   const [matchedAccountLabel, setMatchedAccountLabel] = useState<string | null>(null);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [detectedBankName, setDetectedBankName] = useState<string | null>(null);
+  const [internalAccounts, setInternalAccounts] = useState<BankAccount[]>(accounts || []);
+
+  // Cargar cuentas si no vienen por props
+  useEffect(() => {
+    if (!accounts || accounts.length === 0) {
+      const loaded = getBankAccounts();
+      setInternalAccounts(loaded);
+    } else {
+      setInternalAccounts(accounts);
+    }
+  }, [accounts]);
 
   // Si el padre actualiza selectedAccountId (ej. el usuario cambia la cuenta en el selector externo)
   useEffect(() => {
@@ -178,7 +189,12 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
     setError(null);
 
     try {
-      const result = await importService.finalizeImport(batchId, 1, resolvedAccountId);
+      const result = await importService.finalizeImport(batchId, 1, Number(resolvedAccountId));
+
+      if (result.imported === 0 && result.skipped > 0) {
+        toast.error('No se importó nada: todas las transacciones ya existen.');
+        return;
+      }
 
       if (result.skipped > 0) {
         toast.success(`${result.imported} transacciones importadas, ${result.skipped} duplicadas salteadas`);
@@ -188,7 +204,9 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
 
       onComplete();
     } catch (err) {
+      console.error('Finalize error:', err);
       setError((err as Error).message);
+      toast.error('Error al inyectar: ' + (err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -327,25 +345,51 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                 </div>
               )}
 
-              {accountMatchStatus === 'not_found' && detectedAccountNumber && (
-                <div className="bg-amber-500/5 border border-amber-500/20 rounded-[2rem] p-6 flex items-center gap-5 animate-in slide-in-from-top-4 duration-500">
-                  <div className="w-11 h-11 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+              {/* Selector Manual si no hay match */}
+              {(!resolvedAccountId || accountMatchStatus === 'not_found') && (
+                <div className="bg-slate-950 border-2 border-slate-800 rounded-[2.5rem] p-8 space-y-4 animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-4 text-amber-500 mb-4">
+                    <Building2 className="w-6 h-6" />
+                    <h4 className="text-sm font-black uppercase tracking-widest">Vincular Cuenta Bancaria</h4>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
-                      No se encontró la cuenta terminada en ...{detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema.
-                    </p>
-                    <p className="text-[9px] text-amber-500/70 font-bold uppercase tracking-widest mt-0.5">
-                      Seleccioná una cuenta manualmente o registrala para continuar.
-                    </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <select
+                      value={resolvedAccountId || ''}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setResolvedAccountId(val);
+                        if (val > 0) {
+                          setAccountMatchStatus('matched');
+                          const acc = internalAccounts?.find(a => a.id === val);
+                          setMatchedAccountLabel(acc ? acc.account_name : 'Cuenta Seleccionada');
+                          setError(null);
+                        }
+                      }}
+                      className="bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-xs font-bold outline-none focus:border-blue-500 transition-all"
+                    >
+                      <option value="">-- SELECCIONAR CUENTA DE DESTINO --</option>
+                      {internalAccounts?.map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.account_name} ({acc.account_number})</option>
+                      ))}
+                    </select>
+
+                    <button
+                      onClick={() => setShowRegisterForm(true)}
+                      className="px-6 py-3 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-xl text-[10px] font-black text-blue-400 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-3 h-3 fill-current" /> O Registrar Nueva Cuenta
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setShowRegisterForm(true)}
-                    className="px-6 py-3 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 rounded-xl text-[8px] font-black text-amber-400 transition-all uppercase tracking-widest flex items-center gap-2"
-                  >
-                    <Zap className="w-3 h-3 fill-current" /> Registrar Cuenta
-                  </button>
+                </div>
+              )}
+
+              {error && (
+                <div className="bg-rose-500/5 border border-rose-500/20 rounded-[2rem] p-8 flex items-center gap-6 animate-in shake duration-500">
+                  <div className="w-12 h-12 bg-rose-500/10 rounded-2xl border border-rose-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-6 h-6 text-rose-500" />
+                  </div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">{error}</p>
                 </div>
               )}
 
@@ -410,7 +454,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                   </button>
                   <button
                     onClick={handleFinalizeImport}
-                    disabled={loading || transactions.filter(t => !t.isDuplicate).length === 0}
+                    disabled={loading || !resolvedAccountId || transactions.filter(t => !t.isDuplicate).length === 0}
                     className="px-14 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/50 hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4"
                   >
                     {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ShieldCheck className="w-4 h-4" />}

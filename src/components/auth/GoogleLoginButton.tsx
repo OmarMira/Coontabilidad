@@ -95,6 +95,8 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
         });
     }, [isGoogleConfigured]);
 
+    /* 
+    // Google OAuth desactivado temporalmente para localhost
     if (!isGoogleConfigured) {
         return (
             <div className="w-full">
@@ -141,4 +143,9 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
             <GoogleLoginInner onSuccess={onSuccess} onError={onError} isConfigured={isGoogleConfigured} />
         </GoogleOAuthProvider>
     );
+    */
+    
+    // Google OAuth desactivado temporalmente por solicitud del usuario para evitar bloqueo origin_mismatch
+    console.log("Google OAuth desactivado temporalmente para localhost");
+    return null;
 };

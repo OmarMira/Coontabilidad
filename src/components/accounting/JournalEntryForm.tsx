@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus, Trash2, Save, Calculator, AlertCircle, Hash, History, CheckCircle2, XCircle } from 'lucide-react';
+import { FileText, Plus, Trash2, Save, Calculator, AlertCircle, Hash, History, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { type JournalEntry, type JournalLine } from '../../modules/accounting/Accounting.types';
 import { useLocale } from '../../i18n/useLocale';
+import { DoubleEntryValidator, type ClassificationWarning } from '../../services/accounting/DoubleEntryValidator';
 
 interface JournalEntryFormProps {
     onCancel?: () => void;
@@ -18,6 +19,9 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ onCancel, on
         { account_code: '', debit: 0, credit: 0, description: '' },
         { account_code: '', debit: 0, credit: 0, description: '' }
     ]);
+    // Warnings de clasificación preventiva
+    const [classificationWarnings, setClassificationWarnings] = useState<ClassificationWarning[]>([]);
+    const [forceOverride, setForceOverride] = useState(false);
 
     const addLine = () => setLines([...lines, { account_code: '', debit: 0, credit: 0, description: '' }]);
 
@@ -46,6 +50,26 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ onCancel, on
     };
 
     const handleSave = () => {
+        // Validación preventiva de clasificación
+        const classResult = DoubleEntryValidator.validateAccountTypeConsistency(
+            lines.map(l => ({
+                account_code: l.account_code,
+                debit: Number(l.debit),
+                credit: Number(l.credit),
+                description: l.description
+            }))
+        );
+
+        // Si hay warnings y el usuario no forzó, mostrar banner y detener
+        if (classResult.warnings.length > 0 && !forceOverride) {
+            setClassificationWarnings(classResult.warnings);
+            return;
+        }
+
+        // Limpiar warnings si se forzó o si no hubo
+        setClassificationWarnings([]);
+        setForceOverride(false);
+
         if (onSave && balanced && description) {
             onSave({ entry_date: date, description } as JournalEntry, lines);
         }
@@ -219,6 +243,49 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ onCancel, on
                             </div>
                         </div>
                     </div>
+
+                    {/* ── Banner de Validación Preventiva ── */}
+                    {classificationWarnings.length > 0 && (
+                        <div className="mx-10 mb-4 bg-orange-900/20 border border-orange-500/40 rounded-[1.5rem] p-6 animate-in slide-in-from-bottom duration-300">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2 bg-orange-500/10 rounded-xl shrink-0">
+                                    <AlertTriangle className="w-6 h-6 text-orange-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-[11px] font-black text-orange-400 uppercase tracking-widest mb-3">
+                                        ⚠ Validación Preventiva — Copiloto Contable
+                                    </p>
+                                    <ul className="space-y-2">
+                                        {classificationWarnings.map((w, i) => (
+                                            <li key={i} className="flex items-start gap-2">
+                                                <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md shrink-0 mt-0.5 ${w.severity === 'error'
+                                                        ? 'bg-red-500/20 text-red-400'
+                                                        : 'bg-orange-500/20 text-orange-400'
+                                                    }`}>
+                                                    {w.severity === 'error' ? 'ERROR' : 'WARN'}
+                                                </span>
+                                                <span className="text-sm text-orange-200 font-bold leading-relaxed">{w.reason}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="flex items-center gap-3 mt-5">
+                                        <button
+                                            onClick={() => { setClassificationWarnings([]); setForceOverride(false); }}
+                                            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95"
+                                        >
+                                            Corregir
+                                        </button>
+                                        <button
+                                            onClick={() => { setForceOverride(true); handleSave(); }}
+                                            className="px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-lg shadow-orange-900/30"
+                                        >
+                                            Forzar de todas formas
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <footer className="p-10 border-t border-slate-800 bg-slate-950/50 relative z-10 flex items-center justify-between transition-all">
                         <button

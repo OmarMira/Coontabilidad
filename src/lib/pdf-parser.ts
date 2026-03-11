@@ -175,6 +175,13 @@ export const parseBankPDF = async (file: File): Promise<BankStatementResults> =>
 
                 results.push(result);
             }
+        } else if (results.length > 0 && !ignoreSection && !cleanLine.match(/Page \d|Balance|Saldo|Continued|Statement|Period|Beginning|Ending|Summary|Total|Account/i)) {
+            // Append continuation lines to the previous transaction's description
+            // Very common in Bank of America and Chase PDFs where details span 2-3 lines
+            const lastRes = results[results.length - 1];
+            if (lastRes && lastRes.data && cleanLine.length < 150) {
+                lastRes.data.description += " " + cleanLine.replace(/\s+/g, ' ').trim();
+            }
         }
     });
 
