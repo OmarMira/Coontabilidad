@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LoginForm from './auth/LoginForm';
 import { useAuth } from '../contexts/AuthContext';
-import { isDatabaseReady } from '@/database/simple-db';
+import { isDatabaseReady, hasUsers } from '@/database/simple-db';
 
 
 interface AppRouterProps {
@@ -12,6 +12,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
   const { isAuthenticated, forceAdminBypass } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
   const [initTimeout, setInitTimeout] = useState(false);
+  const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
     let attempts = 0;
@@ -21,6 +22,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
       attempts++;
 
       if (isDatabaseReady()) {
+        setNeedsSetup(!hasUsers());
         setIsChecking(false);
         return;
       }
@@ -83,8 +85,25 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
       </div>
     );
   }
-
-
+  if (needsSetup) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="text-white text-center max-w-md p-8">
+          <h2 className="text-2xl font-bold mb-4">Bienvenido a Account Express</h2>
+          <p className="text-slate-400 mb-6">
+            No se encontraron usuarios en el sistema.
+            Por favor recarga la página para completar la configuración inicial.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-bold"
+          >
+            Iniciar Configuración
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LoginForm />;

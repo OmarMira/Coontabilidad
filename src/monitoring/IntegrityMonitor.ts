@@ -3,32 +3,48 @@ import { logger } from '../utils/logger';
 import { BackupService } from '../services/backup/BackupService';
 
 export class IntegrityMonitor {
-    private static intervalId: any = null;
-    private static readonly CHECK_INTERVAL = 60000; // Cada minuto para propósitos de demostración/seguridad
+    private static timeoutId: any = null;
+    private static readonly CHECK_INTERVAL = 300000; // 5 minutos (antes 60s)
 
     /**
      * Inicia el monitoreo continuo de integridad del sistema.
      */
     static startContinuousMonitoring(): void {
-        if (this.intervalId) return;
+        if (this.timeoutId) return;
 
-        logger.info('Monitor de Integridad 24/7 activado.', undefined, 'Monitor', 'startup');
+        logger.info('Monitor de Integridad 24/7 activado (Fondo).', undefined, 'Monitor', 'startup');
 
-        this.intervalId = setInterval(async () => {
-            await this.performPulseCheck();
-        }, this.CHECK_INTERVAL);
+        const scheduleNextCheck = () => {
+            this.timeoutId = setTimeout(() => {
+                if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                    (window as any).requestIdleCallback(async () => {
+                        await this.performPulseCheck();
+                        scheduleNextCheck();
+                    }, { timeout: 5000 });
+                } else {
+                    // Fallback para entornos sin requestIdleCallback
+                    this.performPulseCheck().then(scheduleNextCheck);
+                }
+            }, this.CHECK_INTERVAL);
+        };
 
-        // Ejecutar chequeo inmediato
-        this.performPulseCheck();
+        // Ejecutar chequeo inicial de forma no bloqueante
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            (window as any).requestIdleCallback(() => this.performPulseCheck());
+        } else {
+            this.performPulseCheck();
+        }
+
+        scheduleNextCheck();
     }
 
     /**
      * Detiene el monitoreo.
      */
     static stopMonitoring(): void {
-        if (this.intervalId) {
-            clearInterval(this.intervalId);
-            this.intervalId = null;
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
             logger.warn('Monitor de Integridad detenido manualmente.', undefined, 'Monitor', 'shutdown');
         }
     }
