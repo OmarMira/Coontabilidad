@@ -2,6 +2,16 @@
 
 ![Build](https://img.shields.io/badge/Build-✅_Exitoso-success) ![Progreso](https://img.shields.io/badge/Progreso-100%25-brightgreen) ![Florida Tax](https://img.shields.io/badge/Florida_Compliance-100%25-blue) ![Integrity](https://img.shields.io/badge/Integrity-NASA_Certified-purple) ![Score](https://img.shields.io/badge/Score-9.7/10-green) ![RFC3161](https://img.shields.io/badge/RFC_3161-✅_Implemented-success) ![Cloud](https://img.shields.io/badge/Cloud_Sync-✅_Complete-success)
 
+## ⚠️ Arquitectura Single-User (Local-First)
+
+Account Express es un sistema **Local-First, Single-User**. Los datos residen exclusivamente en la base de datos local de tu navegador (IndexedDB) para máxima privacidad y velocidad.
+
+- **🚫 Multi-pestaña:** No se permite abrir el sistema en varias pestañas simultáneamente para evitar colisiones en la base de datos.
+- **🚫 Multi-dispositivo:** Los datos NO se sincronizan automáticamente entre diferentes computadoras o navegadores (a menos que uses la función de Backup/Restore con Google Drive).
+- **✅ Integridad Total:** Esta arquitectura garantiza que tus datos financieros nunca salgan de tu control sin tu permiso explícito.
+
+---
+
 > **Última actualización:** 22 de Febrero, 2026 - 20:45 hrs  
 > **Versión:** 1.1.0 (I18n Consolidation & Cash Flow Optimization)  
 > **Estado:** Operacional - Producción Validada - Auditoría NASA Certificable  

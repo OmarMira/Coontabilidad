@@ -52,6 +52,33 @@ async function executeNuclearRepair() {
 
 async function initializeApplication(): Promise<void> {
   try {
+
+    // FIX-06 — BroadcastChannel guard
+    const instanceChannel = new BroadcastChannel('accountexpress_instance');
+    let isActiveInstance = true;
+
+    instanceChannel.onmessage = (event) => {
+      if (event.data === 'NEW_INSTANCE_OPENING') {
+        isActiveInstance = false;
+        document.body.innerHTML = `
+          <div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#cbd5e1;font-family:sans-serif;text-align:center;padding:20px;">
+            <h1 style="color:#ef4444;font-size:2rem;margin-bottom:1rem;">⚠️ ACCESO BLOQUEADO</h1>
+            <p style="font-size:1.2rem;max-width:600px;line-height:1.6;">
+              Account Express ya está abierto en otra pestaña.
+              Por seguridad e integridad de la base de datos local, solo se permite una instancia activa a la vez.
+            </p>
+            <p style="margin-top:2rem;opacity:0.6;">Cerrá esta pestaña y usá la que ya está abierta.</p>
+          </div>
+        `;
+      }
+    };
+
+    instanceChannel.postMessage('NEW_INSTANCE_OPENING');
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    if (!isActiveInstance) return;
+    // FIN FIX-06
+
     const urlParams = new URLSearchParams(window.location.search);
 
     // 4. NuclearClean SOLO si viene el parámetro URL ?nuclear=confirm
