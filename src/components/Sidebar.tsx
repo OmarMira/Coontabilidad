@@ -240,6 +240,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       </nav>
 
       <div className="p-4 border-t border-slate-900/50 mt-auto space-y-2">
+        {!isCollapsed && (
+          <div className="flex flex-col gap-2.5 pt-2 pb-4 border-b border-slate-900/30 mb-2 px-1">
+            <button
+              onClick={() => onNavigate('terms')}
+              className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'terms' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Términos
+            </button>
+            <button
+              onClick={() => onNavigate('privacy')}
+              className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'privacy' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Privacidad
+            </button>
+            <button
+              onClick={() => onNavigate('help')}
+              className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'help' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Soporte
+            </button>
+          </div>
+        )}
 
         {/* Language Switcher deshabilitado por simplificación i18n */}
         {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}

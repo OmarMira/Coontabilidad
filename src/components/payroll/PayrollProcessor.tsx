@@ -355,11 +355,11 @@ export const PayrollProcessor: React.FC = () => {
                             </div>
 
                             <CardContent className="p-8 space-y-8 relative z-10">
-                                <PremiumInputMini label={t('payrollProcessor.form.descriptor')} value={periodMeta.name} onChange={(v) => setPeriodMeta(p => ({ ...p, name: v }))} icon={FileText} />
+                                <PremiumInputMini label={t('payrollProcessor.form.descriptor')} value={periodMeta.name} onChange={(v: any) => setPeriodMeta(p => ({ ...p, name: v }))} icon={FileText} />
 
                                 <div className="grid grid-cols-2 gap-6">
-                                    <PremiumInputMini label={t('payrollProcessor.form.payDate')} value={periodMeta.pay_date} onChange={(v) => setPeriodMeta(p => ({ ...p, pay_date: v }))} icon={Calendar} type="date" />
-                                    <PremiumInputMini label={t('payrollProcessor.form.reference')} value={periodMeta.reference} onChange={(v) => setPeriodMeta(p => ({ ...p, reference: v }))} icon={ShieldCheck} />
+                                    <PremiumInputMini label={t('payrollProcessor.form.payDate')} value={periodMeta.pay_date} onChange={(v: any) => setPeriodMeta(p => ({ ...p, pay_date: v }))} icon={Calendar} type="date" />
+                                    <PremiumInputMini label={t('payrollProcessor.form.reference')} value={periodMeta.reference} onChange={(v: any) => setPeriodMeta(p => ({ ...p, reference: v }))} icon={ShieldCheck} />
                                 </div>
 
                                 <div className="p-8 bg-slate-950/50 rounded-[3rem] border border-slate-800 space-y-6 shadow-inner relative overflow-hidden">

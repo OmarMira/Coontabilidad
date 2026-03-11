@@ -121,6 +121,8 @@ import { TaxRates } from './components/TaxRates';
 
 import { BalanceSheet } from './components/BalanceSheet';
 import { HelpCenter } from './components/HelpCenter';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 // FloridaTaxReport eliminado — reemplazado por FloridaTaxSummary
 import { InvoiceService } from './services/invoicing/InvoiceService';
 import { SQLiteEngine } from './core/database/SQLiteEngine';
@@ -1379,11 +1381,23 @@ function App() {
 
           <main className="p-8 relative">
             {state.error && (
-              <div className="mb-6 rounded-2xl bg-rose-500/10 p-4 text-rose-300 border border-rose-500/20 shadow-lg flex items-center animate-in slide-in-from-top-2">
-                <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center mr-3">
-                  <span className="text-rose-400">⚠️</span>
+              <div className="mb-6 rounded-2xl bg-rose-500/10 p-5 text-rose-300 border border-rose-500/20 shadow-xl flex items-center justify-between animate-in slide-in-from-top-2 backdrop-blur-md">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center shadow-inner">
+                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">{t('system.error')}</span>
+                    <span className="font-bold tracking-tight text-white/90">{state.error}</span>
+                  </div>
                 </div>
-                <span className="font-black tracking-tight">{state.error}</span>
+                <button 
+                  onClick={() => handleNavigate('help')}
+                  className="px-4 py-2 bg-rose-500/20 hover:bg-rose-600 text-rose-100 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-rose-500/30 flex items-center gap-2 group"
+                >
+                  <BookOpen className="w-3.5 h-3.5 group-hover:-rotate-6 transition-transform" />
+                  Soporte
+                </button>
               </div>
             )}
 
@@ -1987,6 +2001,10 @@ function App() {
               {state.currentSection === 'tax-config' && <FiscalSettingsForm onClose={() => handleNavigate('dashboard')} />}
 
               {state.currentSection === 'help' && <HelpCenter />}
+
+              {state.currentSection === 'terms' && <TermsOfService />}
+
+              {state.currentSection === 'privacy' && <PrivacyPolicy />}
 
               {/* FIXED: Render FloridaTaxReport correctly */}
               {state.currentSection === 'florida-dr15' && (

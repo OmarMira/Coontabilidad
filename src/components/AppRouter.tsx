@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LoginForm from './auth/LoginForm';
+import OnboardingWizard from './auth/OnboardingWizard';
 import { useAuth } from '../contexts/AuthContext';
 import { isDatabaseReady, hasUsers } from '@/database/simple-db';
 
@@ -86,23 +87,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
     );
   }
   if (needsSetup) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <div className="text-white text-center max-w-md p-8">
-          <h2 className="text-2xl font-bold mb-4">Bienvenido a Account Express</h2>
-          <p className="text-slate-400 mb-6">
-            No se encontraron usuarios en el sistema.
-            Por favor recarga la página para completar la configuración inicial.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-bold"
-          >
-            Iniciar Configuración
-          </button>
-        </div>
-      </div>
-    );
+    return <OnboardingWizard />;
   }
 
   if (!isAuthenticated) {

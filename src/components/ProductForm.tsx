@@ -166,9 +166,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     </div>
                   </div>
 
-                  <PremiumInput label="SKU / Hash" icon={Hash} value={formData.sku} error={errors.sku} onChange={(v) => handleInputChange('sku', v)} placeholder="SKU-999-X" required />
+                  <PremiumInput label="SKU / Hash" icon={Hash} value={formData.sku} error={errors.sku} onChange={(v: any) => handleInputChange('sku', v)} placeholder="SKU-999-X" required />
                   <div className="md:col-span-2">
-                    <PremiumInput label="Nombre del Activo" icon={Package} value={formData.name} error={errors.name} onChange={(v) => handleInputChange('name', v)} placeholder="NOMBRE DESCRIPTIVO" required />
+                    <PremiumInput label="Nombre del Activo" icon={Package} value={formData.name} error={errors.name} onChange={(v: any) => handleInputChange('name', v)} placeholder="NOMBRE DESCRIPTIVO" required />
                   </div>
 
                   <div className="space-y-3">
@@ -200,8 +200,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     </select>
                   </div>
 
-                  <PremiumInput label="Precio Venta (Unit)" icon={DollarSign} value={formData.price.toString()} error={errors.price} onChange={(v) => handleInputChange('price', parseFloat(v) || 0)} type="number" />
-                  <PremiumInput label="Costo Adquisición" icon={DollarSign} value={formData.cost.toString()} error={errors.cost} onChange={(v) => handleInputChange('cost', parseFloat(v) || 0)} type="number" />
+                  <PremiumInput label="Precio Venta (Unit)" icon={DollarSign} value={formData.price.toString()} error={errors.price} onChange={(v: any) => handleInputChange('price', parseFloat(v) || 0)} type="number" />
+                  <PremiumInput label="Costo Adquisición" icon={DollarSign} value={formData.cost.toString()} error={errors.cost} onChange={(v: any) => handleInputChange('cost', parseFloat(v) || 0)} type="number" />
                 </div>
               </div>
             )}
@@ -216,10 +216,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <PremiumInput label="Stock Actual" icon={Box} value={formData.stock_quantity.toString()} onChange={(v) => handleInputChange('stock_quantity', parseInt(v) || 0)} type="number" />
-                    <PremiumInput label="Mínimo Seguridad" icon={AlertTriangle} value={formData.min_stock_level.toString()} onChange={(v) => handleInputChange('min_stock_level', parseInt(v) || 0)} type="number" />
-                    <PremiumInput label="Punto de Reorden" icon={Zap} value={formData.reorder_point.toString()} onChange={(v) => handleInputChange('reorder_point', parseInt(v) || 0)} type="number" />
-                    <PremiumInput label="Máximo Permitido" icon={Maximize2} value={formData.max_stock_level.toString()} onChange={(v) => handleInputChange('max_stock_level', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Stock Actual" icon={Box} value={formData.stock_quantity.toString()} onChange={(v: any) => handleInputChange('stock_quantity', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Mínimo Seguridad" icon={AlertTriangle} value={formData.min_stock_level.toString()} onChange={(v: any) => handleInputChange('min_stock_level', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Punto de Reorden" icon={Zap} value={formData.reorder_point.toString()} onChange={(v: any) => handleInputChange('reorder_point', parseInt(v) || 0)} type="number" />
+                    <PremiumInput label="Máximo Permitido" icon={Maximize2} value={formData.max_stock_level.toString()} onChange={(v: any) => handleInputChange('max_stock_level', parseInt(v) || 0)} type="number" />
 
                     <div className="md:col-span-2 space-y-3">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
@@ -236,7 +236,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     </div>
 
                     <div className="md:col-span-2">
-                      <PremiumInput label="Código EAN / Barras" icon={Hash} value={formData.barcode} onChange={(v) => handleInputChange('barcode', v)} placeholder="0000000000" />
+                      <PremiumInput label="Código EAN / Barras" icon={Hash} value={formData.barcode} onChange={(v: any) => handleInputChange('barcode', v)} placeholder="0000000000" />
                     </div>
                   </div>
                 )}
@@ -246,8 +246,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             {activeTab === 'advanced' && (
               <div className="space-y-10 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <PremiumInput label="Garantía (Días)" icon={ShieldCheck} value={formData.warranty_period?.toString() || ''} onChange={(v) => handleInputChange('warranty_period', parseInt(v) || undefined)} type="number" />
-                  {formData.is_service && <PremiumInput label="Duración (Minutos)" icon={Zap} value={formData.service_duration?.toString() || ''} onChange={(v) => handleInputChange('service_duration', parseInt(v) || undefined)} type="number" />}
+                  <PremiumInput label="Garantía (Días)" icon={ShieldCheck} value={formData.warranty_period?.toString() || ''} onChange={(v: any) => handleInputChange('warranty_period', parseInt(v) || undefined)} type="number" />
+                  {formData.is_service && <PremiumInput label="Duración (Minutos)" icon={Zap} value={formData.service_duration?.toString() || ''} onChange={(v: any) => handleInputChange('service_duration', parseInt(v) || undefined)} type="number" />}
 
                   <div className="md:col-span-2 space-y-3">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">

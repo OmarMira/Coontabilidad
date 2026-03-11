@@ -350,20 +350,20 @@ export function CompanyDataForm({ onClose }: CompanyDataFormProps) {
                       <div className="lg:col-span-8 space-y-12">
                         <section className="space-y-10">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            <DataInput label={t('companyData.field.companyName')} value={formData.company_name || ''} onChange={(v) => handleInputChange('company_name', v)} />
-                            <DataInput label={t('companyData.field.legalName')} value={formData.legal_name || ''} onChange={(v) => handleInputChange('legal_name', v)} />
+                            <DataInput label={t('companyData.field.companyName')} value={formData.company_name || ''} onChange={(v: any) => handleInputChange('company_name', v)} />
+                            <DataInput label={t('companyData.field.legalName')} value={formData.legal_name || ''} onChange={(v: any) => handleInputChange('legal_name', v)} />
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                            <DataInput label={t('companyData.field.taxId')} value={formData.tax_id || ''} onChange={(v) => handleInputChange('tax_id', v)} mono />
+                            <DataInput label={t('companyData.field.taxId')} value={formData.tax_id || ''} onChange={(v: any) => handleInputChange('tax_id', v)} mono />
                             <div className="md:col-span-2">
-                              <DataInput label={t('companyData.field.address')} value={formData.address || ''} onChange={(v) => handleInputChange('address', v)} />
+                              <DataInput label={t('companyData.field.address')} value={formData.address || ''} onChange={(v: any) => handleInputChange('address', v)} />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-10">
                             <div className="col-span-2">
-                              <DataInput label={t('companyData.field.city')} value={formData.city || ''} onChange={(v) => handleInputChange('city', v)} />
+                              <DataInput label={t('companyData.field.city')} value={formData.city || ''} onChange={(v: any) => handleInputChange('city', v)} />
                             </div>
                             <div className="space-y-4">
                               <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 block">{t('companyData.field.state')}</label>
@@ -381,14 +381,14 @@ export function CompanyDataForm({ onClose }: CompanyDataFormProps) {
                                 <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 font-black">▼</div>
                               </div>
                             </div>
-                            <DataInput label={t('companyData.field.zipCode')} value={formData.zip_code || ''} onChange={(v) => handleInputChange('zip_code', v)} mono />
+                            <DataInput label={t('companyData.field.zipCode')} value={formData.zip_code || ''} onChange={(v: any) => handleInputChange('zip_code', v)} mono />
                           </div>
                         </section>
 
                         <section className="pt-12 border-t border-slate-800 space-y-10">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                            <DataInput label={t('companyData.field.phone')} value={formData.phone || ''} onChange={(v) => handleInputChange('phone', v)} type="tel" />
-                            <DataInput label={t('companyData.field.email')} value={formData.email || ''} onChange={(v) => handleInputChange('email', v)} type="email" />
+                            <DataInput label={t('companyData.field.phone')} value={formData.phone || ''} onChange={(v: any) => handleInputChange('phone', v)} type="tel" />
+                            <DataInput label={t('companyData.field.email')} value={formData.email || ''} onChange={(v: any) => handleInputChange('email', v)} type="email" />
                           </div>
                         </section>
                       </div>
@@ -405,8 +405,8 @@ export function CompanyDataForm({ onClose }: CompanyDataFormProps) {
                         </header>
 
                         <div className="grid grid-cols-1 gap-10">
-                          <DataInput label={t('companyData.finance.commission')} value={formData.sales_commission_percentage?.toString() || '0'} onChange={(v) => handleInputChange('sales_commission_percentage', parseFloat(v) || 0)} type="number" suffix="%" />
-                          <DataInput label={t('companyData.finance.shipping')} value={formData.shipping_rate?.toString() || '0'} onChange={(v) => handleInputChange('shipping_rate', parseFloat(v) || 0)} type="number" prefix="$" />
+                          <DataInput label={t('companyData.finance.commission')} value={formData.sales_commission_percentage?.toString() || '0'} onChange={(v: any) => handleInputChange('sales_commission_percentage', parseFloat(v) || 0)} type="number" suffix="%" />
+                          <DataInput label={t('companyData.finance.shipping')} value={formData.shipping_rate?.toString() || '0'} onChange={(v: any) => handleInputChange('shipping_rate', parseFloat(v) || 0)} type="number" prefix="$" />
                         </div>
                       </div>
 
@@ -418,8 +418,8 @@ export function CompanyDataForm({ onClose }: CompanyDataFormProps) {
                         </header>
 
                         <div className="grid grid-cols-1 gap-10">
-                          <DataInput label={t('companyData.finance.lateFee')} value={formData.late_fee_percentage?.toString() || '0'} onChange={(v) => handleInputChange('late_fee_percentage', parseFloat(v) || 0)} type="number" suffix="%" />
-                          <DataInput label={t('companyData.finance.gracePeriod')} value={formData.grace_period_days?.toString() || '0'} onChange={(v) => handleInputChange('grace_period_days', parseInt(v) || 0)} type="number" suffix={t('companyData.finance.days')} />
+                          <DataInput label={t('companyData.finance.lateFee')} value={formData.late_fee_percentage?.toString() || '0'} onChange={(v: any) => handleInputChange('late_fee_percentage', parseFloat(v) || 0)} type="number" suffix="%" />
+                          <DataInput label={t('companyData.finance.gracePeriod')} value={formData.grace_period_days?.toString() || '0'} onChange={(v: any) => handleInputChange('grace_period_days', parseInt(v) || 0)} type="number" suffix={t('companyData.finance.days')} />
                         </div>
                       </div>
                     </div>

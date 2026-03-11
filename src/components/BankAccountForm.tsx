@@ -100,8 +100,8 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
 
                 <form onSubmit={handleSubmit} className="p-10 space-y-12 relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <PremiumInput label={t('bankAccountForm.label.accountAlias')} icon={Building2} value={formData.account_name} error={errors.account_name} onChange={(v) => handleChange('account_name', v)} placeholder={t('bankAccountForm.placeholder.accountAlias')} required t={t} />
-                        <PremiumInput label={t('bankAccountForm.label.bankEntity')} icon={Landmark} value={formData.bank_name} error={errors.bank_name} onChange={(v) => handleChange('bank_name', v)} placeholder={t('bankAccountForm.placeholder.bankEntity')} required t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.accountAlias')} icon={Building2} value={formData.account_name} error={errors.account_name} onChange={(v: any) => handleChange('account_name', v)} placeholder={t('bankAccountForm.placeholder.accountAlias')} required t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.bankEntity')} icon={Landmark} value={formData.bank_name} error={errors.bank_name} onChange={(v: any) => handleChange('bank_name', v)} placeholder={t('bankAccountForm.placeholder.bankEntity')} required t={t} />
 
                         <div className="space-y-4">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
@@ -136,10 +136,10 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
                             </select>
                         </div>
 
-                        <PremiumInput label={t('bankAccountForm.label.accountId')} icon={Layers} value={formData.account_number} error={errors.account_number} onChange={(v) => handleChange('account_number', v)} placeholder={t('bankAccountForm.placeholder.accountId')} required t={t} />
-                        <PremiumInput label={t('bankAccountForm.label.routing')} icon={ShieldCheck} value={formData.routing_number} onChange={(v) => handleChange('routing_number', v)} placeholder={t('bankAccountForm.placeholder.routing')} t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.accountId')} icon={Layers} value={formData.account_number} error={errors.account_number} onChange={(v: any) => handleChange('account_number', v)} placeholder={t('bankAccountForm.placeholder.accountId')} required t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.routing')} icon={ShieldCheck} value={formData.routing_number} onChange={(v: any) => handleChange('routing_number', v)} placeholder={t('bankAccountForm.placeholder.routing')} t={t} />
 
-                        <PremiumInput label={t('bankAccountForm.label.initialBalance')} icon={DollarSign} value={formData.balance.toString()} onChange={(v) => handleChange('balance', parseFloat(v) || 0)} type="number" t={t} />
+                        <PremiumInput label={t('bankAccountForm.label.initialBalance')} icon={DollarSign} value={formData.balance.toString()} onChange={(v: any) => handleChange('balance', parseFloat(v) || 0)} type="number" t={t} />
 
                         <div className="flex items-center gap-6 p-6 bg-slate-950 border border-slate-800 rounded-3xl h-[58px] self-end">
                             <label className="flex items-center gap-4 cursor-pointer group">

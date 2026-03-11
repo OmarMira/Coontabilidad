@@ -224,7 +224,7 @@ export class BankImportService {
       const columns = txnsResult[0].columns;
       const transactions = txnsResult[0].values.map((row: any) => {
         const obj: any = {};
-        columns.forEach((col, idx) => { obj[col] = row[idx]; });
+        columns.forEach((col: any, idx: any) => { obj[col] = row[idx]; });
         return obj;
       });
 
@@ -380,7 +380,7 @@ export class BankImportService {
       const columns = result[0].columns;
       return result[0].values.map((row: any) => {
         const obj: any = {};
-        columns.forEach((col, idx) => { obj[col] = row[idx]; });
+        columns.forEach((col: any, idx: any) => { obj[col] = row[idx]; });
         return obj;
       });
     } catch (error) {
@@ -464,7 +464,7 @@ export class BankImportService {
       `, [batchId.toString()]);
 
       if (txnsResult && txnsResult.length > 0 && txnsResult[0].values.length > 0) {
-        const jeIds = txnsResult[0].values.map(v => v[0]);
+        const jeIds = txnsResult[0].values.map((v: any) => v[0]);
         for (const jeId of jeIds) {
           dbRun('DELETE FROM journal_details WHERE journal_entry_id = ?', [jeId]);
           dbRun('DELETE FROM journal_entries WHERE id = ?', [jeId]);

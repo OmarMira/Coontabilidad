@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { SystemIntegrityReport } from '../../types/integrity.types';
-import { AlertTriangle, CheckCircle, XCircle, Wrench, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Wrench, RefreshCw, HelpCircle, BookOpen, Bot } from 'lucide-react';
 import { useLocale } from '../../i18n/useLocale';
 
 interface Props {
@@ -89,10 +89,17 @@ export const SystemRepairPanel: React.FC<Props> = ({
                                     <p className="mt-2 font-medium">{check.result.message}</p>
 
                                     {check.result.details && (
-                                        <div className="mt-2 text-xs opacity-70">
-                                            <pre className="whitespace-pre-wrap">
-                                                {JSON.stringify(check.result.details, null, 2)}
+                                        <div className="mt-3 p-3 bg-black/5 rounded-lg border border-black/5">
+                                            <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-2">Detalles Técnicos para Soporte:</p>
+                                            <pre className="text-xs font-mono whitespace-pre-wrap overflow-x-auto max-h-40 custom-scrollbar opacity-90 leading-relaxed">
+                                                {typeof check.result.details === 'string' 
+                                                    ? check.result.details 
+                                                    : JSON.stringify(check.result.details, null, 2)}
                                             </pre>
+                                            <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                                                <HelpCircle className="w-3 h-3" />
+                                                ¿Necesitas ayuda? Contacta a soporte mencionando el ID: {check.id}
+                                            </div>
                                         </div>
                                     )}
 
@@ -149,8 +156,31 @@ export const SystemRepairPanel: React.FC<Props> = ({
                 </div>
 
                 {/* Footer Info */}
-                <div className="px-6 py-3 bg-gray-100 text-xs text-slate-700 text-center">
-                    {t('security.messages.lastCheck', { date: new Date(report.timestamp).toLocaleString(language === 'es' ? 'es-ES' : 'en-US') })}
+                <div className="px-6 py-4 bg-gray-100 border-t border-gray-200 flex flex-col items-center gap-3">
+                    <div className="text-xs text-slate-700 font-medium">
+                        {t('security.messages.lastCheck', { date: new Date(report.timestamp).toLocaleString(language === 'es' ? 'es-ES' : 'en-US') })}
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <a 
+                            href="/help" 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'help' }));
+                            }}
+                            className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+                        >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            Guía de Ayuda
+                        </a>
+                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                        <a 
+                            href="mailto:soporte@accountexpress.com" 
+                            className="text-xs font-bold text-slate-500 hover:text-slate-800 uppercase tracking-widest flex items-center gap-1.5 transition-colors"
+                        >
+                            <Bot className="w-3.5 h-3.5" />
+                            Contactar Soporte
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

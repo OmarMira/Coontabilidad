@@ -91,7 +91,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 icon={User}
                 value={formData.name}
                 error={errors.name}
-                onChange={(v) => handleInputChange('name', v)}
+                onChange={(v: any) => handleInputChange('name', v)}
                 placeholder={t('customerForm.namePlaceholder')}
                 required
               />
@@ -102,7 +102,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 icon={Mail}
                 value={formData.email}
                 error={errors.email}
-                onChange={(v) => handleInputChange('email', v)}
+                onChange={(v: any) => handleInputChange('email', v)}
                 placeholder={t('customerForm.emailPlaceholder')}
                 type="email"
               />
@@ -113,7 +113,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 icon={Phone}
                 value={formData.phone}
                 error={errors.phone}
-                onChange={(v) => handleInputChange('phone', v)}
+                onChange={(v: any) => handleInputChange('phone', v)}
                 placeholder={t('customerForm.phonePlaceholder')}
                 type="tel"
               />
