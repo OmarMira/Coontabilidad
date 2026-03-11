@@ -30,7 +30,7 @@ import { Sidebar } from './components/Sidebar';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { Dashboard } from './components/Dashboard';
 import { Toaster } from 'react-hot-toast';
-import { CheckCircle, XCircle, Brain } from 'lucide-react';
+import { CheckCircle, XCircle, Brain, AlertTriangle, BookOpen } from 'lucide-react';
 import { logger } from './core/logging/SystemLogger';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -435,9 +435,13 @@ function App() {
     }
   }, [user]);
 
-  // Asegurar que siempre iniciamos en dashboard
+  // Detectar sección inicial desde la URL (Soporte/Legales públicos)
   useEffect(() => {
-    setState(prev => ({ ...prev, currentSection: 'dashboard' }));
+    const path = window.location.pathname;
+    if (path === '/terms') setState(prev => ({ ...prev, currentSection: 'terms' }));
+    else if (path === '/privacy') setState(prev => ({ ...prev, currentSection: 'privacy' }));
+    else if (path === '/help') setState(prev => ({ ...prev, currentSection: 'help' }));
+    else setState(prev => ({ ...prev, currentSection: 'dashboard' }));
   }, []);
 
 
@@ -1361,6 +1365,36 @@ function App() {
           />
         </div>
       </div>
+    );
+  }
+
+  const isPublicSection = ['terms', 'privacy', 'help'].includes(state.currentSection);
+
+  // Layout limpio para acceso público sin sesión (ToS, Privacy, Soporte)
+  if (isPublicSection && !user) {
+    return (
+      <AppRouter>
+        <div className="min-h-screen bg-slate-950 p-4 md:p-12 flex flex-col items-center">
+          <div className="w-full max-w-5xl bg-slate-900/50 border border-slate-800 rounded-[2.5rem] shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+            {/* Elemento decorativo */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px] pointer-events-none"></div>
+            
+            <div className="p-1">
+              {state.currentSection === 'terms' && <TermsOfService />}
+              {state.currentSection === 'privacy' && <PrivacyPolicy />}
+              {state.currentSection === 'help' && <HelpCenter />}
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="mt-12 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl text-white font-black uppercase tracking-widest text-xs transition-all shadow-2xl shadow-blue-600/20 hover:scale-105 active:scale-95"
+          >
+            {t('common.backToStart') || 'Volver al Inicio'}
+          </button>
+        </div>
+        <Toaster position="top-right" />
+      </AppRouter>
     );
   }
 

@@ -86,6 +86,14 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
       </div>
     );
   }
+
+  const isPublicPath = ['/terms', '/privacy', '/help'].includes(window.location.pathname);
+
+  // Si es una ruta pública, renderizar children directamente (el layout de App debe manejar el estado limpio)
+  if (isPublicPath) {
+    return <>{children}</>;
+  }
+
   if (needsSetup) {
     return <OnboardingWizard />;
   }
