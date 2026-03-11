@@ -27,6 +27,7 @@ import { payrollReportGenerator, Form941Data, W2Data, W3Data } from '../../servi
 import { getEmployees, Employee } from '@/database/simple-db';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { toast } from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';
 
 interface CompanyData {
@@ -431,7 +432,10 @@ export const PayrollReports: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={handleDownloadForm941PDF}
+                        onClick={() => toast.error(
+                          'Para generar formularios oficiales W-2, W-3 y 941, ' +
+                          'exporte los datos a CSV y consulte con su contador.'
+                        )}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-emerald-500 hover:text-white hover:bg-emerald-600 font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
                       >
                         <Download className="w-4 h-4" />
@@ -525,7 +529,10 @@ export const PayrollReports: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={handleDownloadW2PDF}
+                        onClick={() => toast.error(
+                          'Para generar formularios oficiales W-2, W-3 y 941, ' +
+                          'exporte los datos a CSV y consulte con su contador.'
+                        )}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-blue-500/50 text-blue-500 hover:text-white hover:bg-blue-600 font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
                       >
                         <Download className="w-4 h-4" />
@@ -609,7 +616,10 @@ export const PayrollReports: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={handleDownloadW3PDF}
+                        onClick={() => toast.error(
+                          'Para generar formularios oficiales W-2, W-3 y 941, ' +
+                          'exporte los datos a CSV y consulte con su contador.'
+                        )}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-emerald-500 hover:text-white hover:bg-emerald-600 font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
                       >
                         <Download className="w-4 h-4" />

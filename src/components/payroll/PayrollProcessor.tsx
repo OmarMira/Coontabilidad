@@ -171,6 +171,13 @@ export const PayrollProcessor: React.FC = () => {
 
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            <div className='bg-yellow-50 border border-yellow-400 p-3 rounded mb-4'>
+                <p className='text-sm font-bold text-yellow-800'>
+                    ⚠️ Los cálculos de nómina son estimaciones basadas en proyecciones IRS.
+                    Valide todos los montos con un CPA certificado antes de presentar
+                    declaraciones al IRS. Account Express no garantiza exactitud fiscal.
+                </p>
+            </div>
             {/* Header Hub */}
             <div className="mb-8 border-b border-slate-800 pb-6">
                 <div className="flex items-center gap-4">

@@ -11838,12 +11838,36 @@ function seedSystemConfig(): void {
   }
 }
 
+async function seedTaxRates(): Promise<void> {
+  try {
+    const engine = dbEngine || EngineBridge.getEngine();
+    const rates = [
+      [2026, 'SOCIAL_SECURITY_RATE', 0.062, 'Social Security employee rate 6.2%'],
+      [2026, 'SOCIAL_SECURITY_WAGE_BASE', 168600, 'Social Security wage base limit 2026'],
+      [2026, 'MEDICARE_RATE', 0.0145, 'Medicare employee rate 1.45%'],
+      [2026, 'ADDITIONAL_MEDICARE_RATE', 0.009, 'Additional Medicare rate 0.9% over threshold'],
+      [2026, 'ADDITIONAL_MEDICARE_THRESHOLD_SINGLE', 200000, 'Additional Medicare threshold single filer'],
+      [2026, 'ADDITIONAL_MEDICARE_THRESHOLD_MARRIED', 250000, 'Additional Medicare threshold married filing jointly'],
+    ];
+    for (const [year, key, value, desc] of rates) {
+      await engine.run(
+        'INSERT INTO tax_rates_config (tax_year, rate_key, rate_value, description) VALUES (?, ?, ?, ?) ON CONFLICT(tax_year, rate_key) DO NOTHING',
+        [year, key, value, desc]
+      );
+    }
+    console.log('[seedTaxRates] Tasas fiscales 2026 cargadas.');
+  } catch (e) {
+    console.warn('[seedTaxRates] Error cargando tasas:', e);
+  }
+}
+
 export async function seedSystemDefaults(): Promise<void> {
   try {
     seedCompanyData();
     seedChartOfAccounts();
     seedPaymentMethods();
     seedSystemConfig();
+    await seedTaxRates();
   } catch (e) {
     // Nunca lanzar: el seed no debe impedir el arranque
     console.warn('[seedSystemDefaults] ⚠️ Error parcial en inicialización:', e);

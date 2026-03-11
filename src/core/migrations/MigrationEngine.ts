@@ -26,6 +26,7 @@ import { DropCompanyInfoMigration } from './list/026_drop_company_info';
 import { BankAccountGLMappingMigration } from './list/027_bank_account_gl_mapping';
 import { AddAccountNumberMigration } from './list/028_add_account_number';
 import { AddDetailTypeMigration } from './list/029_add_detail_type';
+import { TaxRatesConfigMigration } from './list/030_tax_rates_config';
 
 export interface Migration {
     version: number;
@@ -68,7 +69,8 @@ export class MigrationEngine {
         DropCompanyInfoMigration,             // v26
         BankAccountGLMappingMigration,        // v27
         AddAccountNumberMigration,             // v28
-        AddDetailTypeMigration                 // v29
+        AddDetailTypeMigration,                // v29
+        TaxRatesConfigMigration                 // v30
     ];
 
     private constructor() { }
