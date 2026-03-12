@@ -366,36 +366,40 @@ export class DataIntegrityChecker {
       }
 
       // Verificar que bill total_amount = suma de líneas + impuestos
-      const inconsistentBills = db?.exec(`
-        SELECT b.id, b.total_amount,
-               COALESCE(SUM(bl.line_total), 0) as lines_sum,
-               b.tax_amount
-        FROM bills b
-        LEFT JOIN bill_lines bl ON b.id = bl.bill_id
-        GROUP BY b.id
-        HAVING b.total_amount != (COALESCE(SUM(bl.line_total), 0) + b.tax_amount)
-      `);
+      try {
+        const inconsistentBills = db?.exec(`
+          SELECT b.id, b.total_amount,
+                 COALESCE(SUM(bl.line_total), 0) as lines_sum,
+                 b.tax_amount
+          FROM bills b
+          LEFT JOIN bill_lines bl ON b.id = bl.bill_id
+          GROUP BY b.id
+          HAVING b.total_amount != (COALESCE(SUM(bl.line_total), 0) + b.tax_amount)
+        `);
 
-      if (inconsistentBills?.[0]?.values.length) {
-        inconsistentBills[0].values.forEach((row: any) => {
-          errors.push({
-            severity: 'high',
-            table: 'bills',
-            recordId: row[0],
-            message: `Total inconsistente: ${row[1]} vs (líneas:${row[2]} + impuestos:${row[3]})`,
-            suggestion: 'Recalcular totales',
-            repairable: true
+        if (inconsistentBills?.[0]?.values.length) {
+          inconsistentBills[0].values.forEach((row: any) => {
+            errors.push({
+              severity: 'high',
+              table: 'bills',
+              recordId: row[0],
+              message: `Total inconsistente: ${row[1]} vs (líneas:${row[2]} + impuestos:${row[3]})`,
+              suggestion: 'Recalcular totales',
+              repairable: true
+            });
           });
-        });
+        }
+      } catch (e) {
+        // bill_lines no existe en instancia legacy, ignorar
       }
 
       // Verificar que journal_entries esté balanceado (débitos = créditos)
       const unbalancedJournals = db?.exec(`
         SELECT je.id, 
-               SUM(CASE WHEN debit_amount > 0 THEN debit_amount ELSE 0 END) as total_debit,
-               SUM(CASE WHEN credit_amount > 0 THEN credit_amount ELSE 0 END) as total_credit
+               SUM(CASE WHEN jd.debit > 0 THEN jd.debit ELSE 0 END) as total_debit,
+               SUM(CASE WHEN jd.credit > 0 THEN jd.credit ELSE 0 END) as total_credit
         FROM journal_entries je
-        JOIN journal_details jd ON je.id = jd.entry_id
+        JOIN journal_details jd ON je.id = jd.journal_id
         GROUP BY je.id
         HAVING total_debit != total_credit
       `);
