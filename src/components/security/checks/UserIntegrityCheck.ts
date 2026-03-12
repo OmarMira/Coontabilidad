@@ -116,39 +116,9 @@ export class UserIntegrityCheck implements IntegrityCheck {
                 };
             }
 
-            // Verificar usuario demo
-            const demoResult = db.exec(`
-                SELECT id, password_hash, is_active 
-                FROM users 
-                WHERE username = 'demo'
-            `);
-
-            const hasDemo = demoResult.length > 0 && demoResult[0].values.length > 0;
-            const demoActive = hasDemo && demoResult[0].values[0][2];
-
-            if (!hasDemo || !demoActive) {
-                return {
-                    passed: true,
-                    message: `✅ Usuario admin configurado (demo ${hasDemo ? 'inactivo' : 'faltante'})`,
-                    details: {
-                        admin: 'ok',
-                        demo: hasDemo ? 'inactive' : 'missing'
-                    },
-                    canAutoRepair: true,
-                    repairAction: async () => {
-                        const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
-                        const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
-                        const engine = new SQLiteEngine();
-                        engine.setDB(db);
-                        const repair = new SchemaRepairService(engine);
-                        await repair.repairSchema();
-                    }
-                };
-            }
-
             return {
                 passed: true,
-                message: '✅ Usuarios admin y demo configurados correctamente',
+                message: '✅ Usuario admin configurado correctamente',
                 canAutoRepair: false
             };
         } catch (error) {
