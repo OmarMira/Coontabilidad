@@ -58,6 +58,22 @@ export const UsersAndCompanyDataMigration: Migration = {
             )
         `);
 
+        await db.exec(`
+            CREATE TABLE IF NOT EXISTS bills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bill_number TEXT UNIQUE NOT NULL,
+                supplier_id INTEGER NOT NULL,
+                issue_date DATE DEFAULT CURRENT_DATE,
+                due_date DATE,
+                total_amount INTEGER NOT NULL DEFAULT 0,
+                status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'overdue', 'cancelled')),
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(supplier_id) REFERENCES suppliers(id)
+            )
+        `);
+
         console.log('✅ Migration 031: users, user_roles y company_data creadas en motor persistente');
     },
     down: async (db: SQLiteEngine) => {
