@@ -6,8 +6,13 @@ export const BankAccountGLMappingMigration: Migration = {
     name: 'Add gl_account_code to bank_accounts',
 
     up: async (db: SQLiteEngine) => {
-        // SQLite no soporta IF NOT EXISTS en ADD COLUMN directametne de forma sencilla en SQL.JS
-        // Pero PRAGMA table_info nos permite verificar
+        // Verificar que la tabla existe antes de operar
+        const tables = await db.select("SELECT name FROM sqlite_master WHERE type='table' AND name='bank_accounts'");
+        if (tables.length === 0) {
+            console.warn('Migration 027: bank_accounts table does not exist yet, skipping.');
+            return;
+        }
+
         const tableInfo = await db.select("PRAGMA table_info(bank_accounts)");
         const hasColumn = tableInfo.some((col: any) => col.name === 'gl_account_code');
 
