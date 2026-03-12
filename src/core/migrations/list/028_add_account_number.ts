@@ -17,7 +17,7 @@ export const AddAccountNumberMigration: Migration = {
             await db.run("CREATE INDEX idx_chart_accounts_number ON chart_of_accounts(number)");
 
             // Auto-populate old legacy accounts without number using GAAP 5 digit suggestions
-            const accounts = await db.select('SELECT id, account_type FROM chart_of_accounts WHERE number IS NULL OR number = ""');
+            const accounts = await db.select('SELECT id, type AS account_type FROM chart_of_accounts WHERE number IS NULL OR number = ""');
             for (const acc of accounts) {
                 const suggestedNum = suggestAccountNumber(acc.account_type);
                 await db.run('UPDATE chart_of_accounts SET number = ? WHERE id = ?', [suggestedNum, acc.id]);
