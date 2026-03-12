@@ -32,6 +32,7 @@ import { AddCountyCodeToFloridaTaxRatesMigration } from './list/032_add_county_c
 import { SeedFloridaTaxRatesMigration } from './list/033_seed_florida_tax_rates';
 import { AddIsActiveToBankAccountsMigration } from './list/034_add_is_active_to_bank_accounts';
 import { AddQuotesTablesMigration } from './list/035_add_quotes_tables';
+import { FixBankTransactionsSchemaMigration } from './list/036_fix_bank_transactions_schema';
 
 export interface Migration {
     version: number;
@@ -80,7 +81,8 @@ export class MigrationEngine {
         AddCountyCodeToFloridaTaxRatesMigration, // v32
         SeedFloridaTaxRatesMigration,            // v33
         AddIsActiveToBankAccountsMigration,      // v34
-        AddQuotesTablesMigration                 // v35
+        AddQuotesTablesMigration,                 // v35
+        FixBankTransactionsSchemaMigration        // v36
     ];
 
     private constructor() { }
