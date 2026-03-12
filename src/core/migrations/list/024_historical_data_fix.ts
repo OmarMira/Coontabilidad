@@ -65,7 +65,7 @@ export class HistoricalDataFixMigration implements Migration {
         }
 
         // 3. REPAIR AUDIT CHAIN (Full Re-hash)
-        const nodes = await engine.select("SELECT id, table_name, record_id, operation, created_at, created_by FROM audit_chain ORDER BY id ASC");
+        const nodes = await engine.select("SELECT id, entity_table AS table_name, entity_id AS record_id, operation, created_at, created_by FROM audit_chain ORDER BY id ASC");
 
         if (nodes.length === 0) return;
 
@@ -98,13 +98,13 @@ export class HistoricalDataFixMigration implements Migration {
                 } else {
                     // Record deleted or missing
                     // Fallback to existing hash to avoid breaking chain if record is gone
-                    const existing = await engine.select("SELECT data_hash FROM audit_chain WHERE id = ?", [auditId]);
-                    dataHash = existing[0]?.data_hash || 'MISSING';
+                    const existing = await engine.select("SELECT content_hash FROM audit_chain WHERE id = ?", [auditId]);
+                    dataHash = existing[0]?.content_hash || 'MISSING';
                 }
             } else {
-                // Preserve existing data_hash for non-journal_entries
-                const existing = await engine.select("SELECT data_hash FROM audit_chain WHERE id = ?", [auditId]);
-                dataHash = existing[0]?.data_hash || '';
+                // Preserve existing content_hash for non-journal_entries
+                const existing = await engine.select("SELECT content_hash FROM audit_chain WHERE id = ?", [auditId]);
+                dataHash = existing[0]?.content_hash || '';
             }
 
             // Calculate Current Hash (Seal)
@@ -114,7 +114,7 @@ export class HistoricalDataFixMigration implements Migration {
 
             // Update Node
             await engine.run(
-                "UPDATE audit_chain SET previous_hash = ?, data_hash = ?, current_hash = ? WHERE id = ?",
+                "UPDATE audit_chain SET previous_hash = ?, content_hash = ?, chain_hash = ? WHERE id = ?",
                 [lastHash, dataHash, currentHash, auditId]
             );
 

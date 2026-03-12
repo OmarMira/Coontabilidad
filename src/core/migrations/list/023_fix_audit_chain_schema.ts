@@ -2,8 +2,8 @@ export const FixAuditChainSchemaMigration = {
     version: 23,
     name: 'fix_audit_chain_event_type_column',
     up: async (db: any) => {
-        const columns = db.exec("PRAGMA table_info(audit_chain)");
-        const columnNames = columns[0]?.values?.map((r: any) => r[1]) || [];
+        const columns = await db.select("PRAGMA table_info(audit_chain)");
+        const columnNames = columns.map((c: any) => c.name);
 
         const toAdd = [
             { name: 'event_type', def: 'TEXT' },
