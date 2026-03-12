@@ -11655,21 +11655,25 @@ function seedCompanyData(): void {
   const count = db.exec("SELECT COUNT(*) FROM company_data")[0]?.values[0]?.[0] as number ?? 0;
   if (count > 0) return;
 
-  db.run(`
-        INSERT INTO company_data (
-            company_name, legal_name, tax_id,
-            address, city, state, zip_code,
-            phone, email, website,
-            fiscal_year_start, currency, language,
-            timezone, date_format, is_active
-        ) VALUES (
-            'Mi Empresa LLC', 'Mi Empresa LLC', '00-0000000',
-            '123 Main Street', 'Orlando', 'FL', '32801',
-            '(407) 000-0000', 'admin@miempresa.com', '',
-            '01-01', 'USD', 'es',
-            'America/New_York', 'MM/DD/YYYY', 1
-        )
-    `);
+  try {
+    db.run(`
+          INSERT INTO company_data (
+              company_name, legal_name, tax_id,
+              address, city, state, zip_code,
+              phone, email, website,
+              fiscal_year_start, currency, language,
+              timezone, date_format, is_active
+          ) VALUES (
+              'Mi Empresa LLC', 'Mi Empresa LLC', '00-0000000',
+              '123 Main Street', 'Orlando', 'FL', '32801',
+              '(407) 000-0000', 'admin@miempresa.com', '',
+              '01-01', 'USD', 'es',
+              'America/New_York', 'MM/DD/YYYY', 1
+          )
+      `);
+  } catch (e) {
+    console.warn('[seedCompanyData] Skipped: schema mismatch in legacy instance', e);
+  }
 }
 
 function seedChartOfAccounts(): void {
