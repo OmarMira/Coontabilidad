@@ -37,7 +37,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 01 — Tipos e Interfaces
 **Líneas:** 88 – 1826
 **Archivo destino:** `src/database/modules/db-types.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Interfaces exportadas:**
 - `MonthlySummary`, `Employee`, `PayrollPeriod`, `PayrollEntry`, `PayrollLineItem`, `PayrollSetting`, `Payroll`, `TaxBracket`
 - `AssetCategory`, `FixedAsset`, `AssetDepreciation`
@@ -489,7 +489,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | Módulo | Archivo destino | Estado | Prioridad |
 |--------|----------------|--------|-----------|
 | 00 Core | db-core.ts | pendiente | ÚLTIMO |
-| 01 Tipos | db-types.ts | pendiente | PRIMERO |
+| 01 Tipos | db-types.ts | completado | PRIMERO |
 | 02 Init/Schema | db-init.ts | pendiente | PENÚLTIMO |
 | 03 Persistencia | db-persistence.ts | pendiente | baja |
 | 04 Customers | db-customers.ts | pendiente | alta |
