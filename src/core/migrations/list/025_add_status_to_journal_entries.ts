@@ -58,7 +58,6 @@ export const AddStatusToJournalEntriesMigration: Migration = {
             )
         `);
 
-        // Migrar datos existentes (mapeando verified_at -> posted_at por seguridad histórica)
         await db.exec(`
             INSERT INTO journal_entries_new (
                 id, entry_date, reference, description, notes, 
@@ -67,12 +66,12 @@ export const AddStatusToJournalEntriesMigration: Migration = {
                 status, posted_at, posted_by
             )
             SELECT 
-                id, entry_date, reference, description, notes, 
-                total_debit, total_credit, created_at, updated_at, 
-                created_by, updated_by, verified_by, verified_at,
-                CASE WHEN verified_at IS NOT NULL THEN 'POSTED' ELSE 'DRAFT' END,
-                verified_at,
-                verified_by
+                id, entry_date, reference, description, NULL as notes, 
+                total as total_debit, total as total_credit, created_at, created_at as updated_at, 
+                1 as created_by, 1 as updated_by, NULL as verified_by, NULL as verified_at,
+                'POSTED' as status,
+                created_at as posted_at,
+                1 as posted_by
             FROM journal_entries
         `);
 
@@ -88,9 +87,9 @@ export const AddStatusToJournalEntriesMigration: Migration = {
         await db.exec(`
             CREATE VIEW financial_summary_view AS
             SELECT 
-                (SELECT SUM(debit_amount - credit_amount) FROM journal_details jd JOIN chart_of_accounts ca ON jd.account_code = ca.account_code WHERE ca.account_type = 'asset') as total_assets,
-                (SELECT SUM(credit_amount - debit_amount) FROM journal_details jd JOIN chart_of_accounts ca ON jd.account_code = ca.account_code WHERE ca.account_type = 'liability') as total_liabilities,
-                (SELECT SUM(credit_amount - debit_amount) FROM journal_details jd JOIN chart_of_accounts ca ON jd.account_code = ca.account_code WHERE ca.account_type = 'equity') as total_equity,
+                (SELECT SUM(debit - credit) FROM journal_details jd JOIN chart_of_accounts ca ON jd.account_code = ca.account_code WHERE ca.type = 'asset') as total_assets,
+                (SELECT SUM(credit - debit) FROM journal_details jd JOIN chart_of_accounts ca ON jd.account_code = ca.account_code WHERE ca.type = 'liability') as total_liabilities,
+                (SELECT SUM(credit - debit) FROM journal_details jd JOIN chart_of_accounts ca ON jd.account_code = ca.account_code WHERE ca.type = 'equity') as total_equity,
                 (SELECT COUNT(*) FROM invoices WHERE status = 'overdue') as overdue_invoices_count,
                 CURRENT_DATE as report_date
         `);
@@ -100,13 +99,13 @@ export const AddStatusToJournalEntriesMigration: Migration = {
             CREATE VIEW v_trial_balance_live AS
             SELECT 
                 jd.account_code,
-                ca.account_name,
-                ca.account_type,
-                SUM(jd.debit_amount) as total_debit,
-                SUM(jd.credit_amount) as total_credit,
-                SUM(jd.debit_amount) - SUM(jd.credit_amount) as net_balance
+                ca.name as account_name,
+                ca.type as account_type,
+                SUM(jd.debit) as total_debit,
+                SUM(jd.credit) as total_credit,
+                SUM(jd.debit) - SUM(jd.credit) as net_balance
             FROM journal_details jd
-            JOIN journal_entries je ON jd.journal_entry_id = je.id
+            JOIN journal_entries je ON jd.journal_id = je.id
             JOIN chart_of_accounts ca ON jd.account_code = ca.account_code
             WHERE je.status = 'POSTED'
             GROUP BY jd.account_code
@@ -117,10 +116,10 @@ export const AddStatusToJournalEntriesMigration: Migration = {
             CREATE VIEW v_financial_health AS
             SELECT
                 'LIQUIDITY' as metric_category, COUNT(DISTINCT je.id) as total_journal_entries,
-                SUM(jd.debit_amount) as cash_inflows, SUM(jd.credit_amount) as cash_outflows,
+                SUM(jd.debit) as cash_inflows, SUM(jd.credit) as cash_outflows,
                 strftime('%Y-%m', je.entry_date) as period
             FROM journal_entries je
-            JOIN journal_details jd ON je.id = jd.journal_entry_id
+            JOIN journal_details jd ON je.id = jd.journal_id
             WHERE jd.account_code LIKE '11%' 
                 AND je.entry_date >= date('now', '-180 days')
             GROUP BY period
