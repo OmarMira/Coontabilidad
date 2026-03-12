@@ -54,13 +54,13 @@ export class AnomalyDetector {
           je.id,
           je.entry_date as date,
           je.description,
-          SUM(jd.debit_amount) as total_debits,
-          SUM(jd.credit_amount) as total_credits
+          SUM(jd.debit) as total_debits,
+          SUM(jd.credit) as total_credits
         FROM journal_entries je
-        LEFT JOIN journal_details jd ON je.id = jd.journal_entry_id
+        LEFT JOIN journal_details jd ON je.id = jd.journal_id
         WHERE je.status != 'voided'
         GROUP BY je.id
-        HAVING ABS(SUM(jd.debit_amount) - SUM(jd.credit_amount)) > 0.01
+        HAVING ABS(SUM(jd.debit) - SUM(jd.credit)) > 0.01
         ORDER BY je.entry_date DESC
         LIMIT 10
       `);
@@ -215,14 +215,14 @@ export class AnomalyDetector {
             // Calcular promedio y desviación estándar de gastos por categoría
             const stats = await this.engine.select(`
         SELECT 
-          ca.account_name as category,
-          AVG(jd.debit_amount) as avg_amount,
+          ca.name as category,
+          AVG(jd.debit) as avg_amount,
           COUNT(*) as count
         FROM journal_details jd
-        JOIN chart_of_accounts ca ON jd.account_code = ca.account_code
-        WHERE ca.account_type = 'expense'
-        AND jd.debit_amount > 0
-        GROUP BY ca.account_name
+        JOIN chart_of_accounts ca ON jd.account_code = ca.code
+        WHERE ca.type = 'expense'
+        AND jd.debit > 0
+        GROUP BY ca.name
         HAVING COUNT(*) >= 5
       `);
 
@@ -235,13 +235,13 @@ export class AnomalyDetector {
             je.id,
             je.entry_date as date,
             je.description,
-            jd.debit_amount as amount,
-            ca.account_name as category
+            jd.debit as amount,
+            ca.name as category
           FROM journal_details jd
-          JOIN journal_entries je ON jd.journal_entry_id = je.id
-          JOIN chart_of_accounts ca ON jd.account_code = ca.account_code
+          JOIN journal_entries je ON jd.journal_id = je.id
+          JOIN chart_of_accounts ca ON jd.account_code = ca.code
           WHERE ca.account_name = ?
-          AND jd.debit_amount > ?
+          AND jd.debit > ?
           AND je.entry_date >= date('now', '-90 days')
           AND je.status != 'voided'
           ORDER BY jd.debit_amount DESC
@@ -282,16 +282,16 @@ export class AnomalyDetector {
             const negative = await this.engine.select(`
         SELECT 
           a.id,
-          a.account_code as code,
-          a.account_name as name,
-          a.account_type as type,
-          SUM(jd.debit_amount - jd.credit_amount) as balance
+          a.code as code,
+          a.name as name,
+          a.type as type,
+          SUM(jd.debit - jd.credit) as balance
         FROM chart_of_accounts a
-        LEFT JOIN journal_details jd ON a.account_code = jd.account_code
-        LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
+        LEFT JOIN journal_details jd ON a.code = jd.account_code
+        LEFT JOIN journal_entries je ON jd.journal_id = je.id
         WHERE (je.status IS NULL OR je.status != 'voided')
-        AND a.account_type IN ('asset', 'expense')
-        GROUP BY a.id, a.account_code, a.account_name, a.account_type
+        AND a.type IN ('asset', 'expense')
+        GROUP BY a.id, a.code, a.name, a.type
         HAVING balance < -0.01
         ORDER BY balance ASC
         LIMIT 10
