@@ -26,7 +26,7 @@ export class HistoricalDataFixMigration implements Migration {
         }
 
         // 1. Fetch all journal entries
-        const allEntries = await engine.select("SELECT id, total_debit, total_credit, description, entry_date FROM journal_entries");
+        const allEntries = await engine.select("SELECT id, total, total AS total_debit, total AS total_credit, description, entry_date FROM journal_entries");
 
         // 2. BACKFILL LINES
         for (const je of allEntries) {
@@ -36,30 +36,28 @@ export class HistoricalDataFixMigration implements Migration {
             const desc = je.description;
 
             // Check if lines exist in Forensic Table
-            const linesRes = await engine.select("SELECT COUNT(*) as count FROM journal_entry_lines WHERE journal_entry_id = ?", [id]);
+            const linesRes = await engine.select("SELECT COUNT(*) as count FROM journal_entry_lines WHERE journal_id = ?", [id]);
             const lineCount = linesRes[0].count;
-
             if (lineCount === 0) {
                 // Check legacy journal_details
-                const detailsRes = await engine.select("SELECT account_code, debit_amount, credit_amount, description FROM journal_details WHERE journal_entry_id = ?", [id]);
-
+                const detailsRes = await engine.select("SELECT account_code, debit AS debit_amount, credit AS credit_amount, description FROM journal_details WHERE journal_id = ?", [id]);
                 if (detailsRes.length > 0) {
                     // Backfill from legacy
                     for (const d of detailsRes) {
                         const d_desc = d.description || desc;
                         await engine.run(
-                            "INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, ?, ?, ?, ?)",
+                            "INSERT INTO journal_entry_lines (journal_id, account_code, debit, credit, description) VALUES (?, ?, ?, ?, ?)",
                             [id, d.account_code, d.debit_amount, d.credit_amount, d_desc]
                         );
                     }
                 } else {
                     // Create Dummy Lines (Correction)
                     await engine.run(
-                        "INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, '9999', ?, 0, ?)",
+                        "INSERT INTO journal_entry_lines (journal_id, account_code, debit, credit, description) VALUES (?, '9999', ?, 0, ?)",
                         [id, debit, desc + ' (Correction)']
                     );
                     await engine.run(
-                        "INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, '9999', 0, ?, ?)",
+                        "INSERT INTO journal_entry_lines (journal_id, account_code, debit, credit, description) VALUES (?, '9999', 0, ?, ?)",
                         [id, credit, desc + ' (Correction)']
                     );
                 }
@@ -78,11 +76,11 @@ export class HistoricalDataFixMigration implements Migration {
             let dataHash = '';
 
             if (node.table_name === 'journal_entries') {
-                const jeRes = await engine.select("SELECT id, total_debit, total_credit FROM journal_entries WHERE id = ?", [node.record_id]);
+                const jeRes = await engine.select("SELECT id, total AS total_debit, total AS total_credit FROM journal_entries WHERE id = ?", [node.record_id]);
                 if (jeRes.length > 0) {
                     const je = jeRes[0];
                     // Fetch Lines
-                    const lRes = await engine.select("SELECT account_code, debit, credit, description FROM journal_entry_lines WHERE journal_entry_id = ?", [node.record_id]);
+                    const lRes = await engine.select("SELECT account_code, debit, credit, description FROM journal_entry_lines WHERE journal_id = ?", [node.record_id]);
                     const items = lRes.map(v => ({
                         account_code: v.account_code,
                         debit: v.debit,
