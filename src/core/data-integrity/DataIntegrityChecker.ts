@@ -211,24 +211,28 @@ export class DataIntegrityChecker {
       }
 
       // Verificar bill_lines.bill_id
-      const orphanBillLines = db?.exec(`
-        SELECT bl.id, bl.bill_id FROM bill_lines bl
-        LEFT JOIN bills b ON bl.bill_id = b.id
-        WHERE b.id IS NULL
-      `);
+      try {
+        const orphanBillLines = db?.exec(`
+          SELECT bl.id, bl.bill_id FROM bill_lines bl
+          LEFT JOIN bills b ON bl.bill_id = b.id
+          WHERE b.id IS NULL
+        `);
 
-      if (orphanBillLines?.[0]?.values.length) {
-        orphanBillLines[0].values.forEach((row: any) => {
-          errors.push({
-            severity: 'high',
-            table: 'bill_lines',
-            recordId: row[0],
-            field: 'bill_id',
-            message: `Línea de compra huérfana: referencia factura inexistente`,
-            suggestion: 'Eliminar línea huérfana',
-            repairable: true
+        if (orphanBillLines?.[0]?.values.length) {
+          orphanBillLines[0].values.forEach((row: any) => {
+            errors.push({
+              severity: 'high',
+              table: 'bill_lines',
+              recordId: row[0],
+              field: 'bill_id',
+              message: `Línea de compra huérfana: referencia factura inexistente`,
+              suggestion: 'Eliminar línea huérfana',
+              repairable: true
+            });
           });
-        });
+        }
+      } catch (e) {
+        // bill_lines no existe en instancia legacy, ignorar
       }
 
       // Verificar journal_details.entry_id
