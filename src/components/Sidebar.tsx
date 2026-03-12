@@ -225,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
               <h1 className="text-white font-bold text-xl tracking-tight leading-none">AccountExpress</h1>
               <p className="text-blue-500/70 text-[10px] uppercase font-bold tracking-wider mt-1.5 flex items-center gap-1.5">
-                <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="w-1 h-1 bg-blue-500 rounded-full animate-pulse inline-block"></span>
                 {t('common.systemVersion')}
               </p>
             </div>
