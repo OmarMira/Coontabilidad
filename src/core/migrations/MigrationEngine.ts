@@ -28,6 +28,7 @@ import { AddAccountNumberMigration } from './list/028_add_account_number';
 import { AddDetailTypeMigration } from './list/029_add_detail_type';
 import { TaxRatesConfigMigration } from './list/030_tax_rates_config';
 import { UsersAndCompanyDataMigration } from './list/031_users_and_company_data';
+import { AddCountyCodeToFloridaTaxRatesMigration } from './list/032_add_county_code_to_florida_tax_rates';
 
 export interface Migration {
     version: number;
@@ -72,7 +73,8 @@ export class MigrationEngine {
         AddAccountNumberMigration,             // v28
         AddDetailTypeMigration,                // v29
         TaxRatesConfigMigration,                 // v30
-        UsersAndCompanyDataMigration             // v31
+        UsersAndCompanyDataMigration,            // v31
+        AddCountyCodeToFloridaTaxRatesMigration  // v32
     ];
 
     private constructor() { }
