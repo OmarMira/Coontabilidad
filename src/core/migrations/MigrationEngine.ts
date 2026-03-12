@@ -31,6 +31,7 @@ import { UsersAndCompanyDataMigration } from './list/031_users_and_company_data'
 import { AddCountyCodeToFloridaTaxRatesMigration } from './list/032_add_county_code_to_florida_tax_rates';
 import { SeedFloridaTaxRatesMigration } from './list/033_seed_florida_tax_rates';
 import { AddIsActiveToBankAccountsMigration } from './list/034_add_is_active_to_bank_accounts';
+import { AddQuotesTablesMigration } from './list/035_add_quotes_tables';
 
 export interface Migration {
     version: number;
@@ -78,7 +79,8 @@ export class MigrationEngine {
         UsersAndCompanyDataMigration,            // v31
         AddCountyCodeToFloridaTaxRatesMigration, // v32
         SeedFloridaTaxRatesMigration,            // v33
-        AddIsActiveToBankAccountsMigration       // v34
+        AddIsActiveToBankAccountsMigration,      // v34
+        AddQuotesTablesMigration                 // v35
     ];
 
     private constructor() { }
