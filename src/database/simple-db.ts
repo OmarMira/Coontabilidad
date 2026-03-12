@@ -7034,12 +7034,10 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
 
   try {
     const result = db.exec(`
-SELECT
-account_code, number, account_name, account_type, normal_balance, parent_account,
-  is_active, created_at, updated_at, created_by, updated_by
+      SELECT * 
       FROM chart_of_accounts 
-      WHERE is_active = 1
-      ORDER BY account_code
+      WHERE active = 1
+      ORDER BY code
   `);
 
     if (!result[0]) return [];
@@ -7054,7 +7052,7 @@ account_code, number, account_name, account_type, normal_balance, parent_account
       });
 
       // Calcular balance actual
-      account.balance = getAccountBalance(account.account_code);
+      account.balance = getAccountBalance(account.code);
 
       accounts.push(account as ChartOfAccount);
     });
