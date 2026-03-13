@@ -7052,10 +7052,15 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
 
   try {
     const result = db.exec(`
-      SELECT * 
+      SELECT 
+        id,
+        COALESCE(code, account_code) as code,
+        COALESCE(name, account_name) as name,
+        COALESCE(type, account_type) as type,
+        COALESCE(active, is_active) as active
       FROM chart_of_accounts 
-      WHERE active = 1
-      ORDER BY code
+      WHERE COALESCE(active, is_active) = 1
+      ORDER BY COALESCE(code, account_code)
   `);
 
     if (!result[0]) return [];
