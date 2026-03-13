@@ -1930,6 +1930,24 @@ export const initDB = async (password?: string): Promise<any> => {
     dbEngine = new SQLiteEngine();
     dbEngine.setDB(db);
 
+    // Garantizar tablas críticas en motor RAM (IF NOT EXISTS — seguro siempre)
+    db.run(`CREATE TABLE IF NOT EXISTS bills (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bill_number TEXT UNIQUE NOT NULL,
+      supplier_id INTEGER NOT NULL,
+      issue_date DATE DEFAULT CURRENT_DATE,
+      due_date DATE,
+      subtotal DECIMAL(12,2) DEFAULT 0.00,
+      tax_amount DECIMAL(12,2) DEFAULT 0.00,
+      total_amount DECIMAL(12,2) DEFAULT 0.00,
+      status TEXT DEFAULT 'draft' CHECK(status IN('draft','received','approved','paid','overdue','cancelled')),
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER DEFAULT 1,
+      updated_by INTEGER DEFAULT 1
+    )`);
+
     // Registrar en el puente para evitar dependencias circulares
     EngineBridge.setEngine(dbEngine);
 
