@@ -11683,17 +11683,15 @@ function seedCompanyData(): void {
   try {
     db.run(`
           INSERT INTO company_data (
-              company_name, legal_name, tax_id,
-              address, city, state, zip_code,
+              name, tax_id,
+              address, city, state, zip,
               phone, email, website,
-              fiscal_year_start, currency, language,
-              timezone, date_format, is_active
+              currency_code, is_active
           ) VALUES (
-              'Mi Empresa LLC', 'Mi Empresa LLC', '00-0000000',
+              'Mi Empresa LLC', '00-0000000',
               '123 Main Street', 'Orlando', 'FL', '32801',
               '(407) 000-0000', 'admin@miempresa.com', '',
-              '01-01', 'USD', 'es',
-              'America/New_York', 'MM/DD/YYYY', 1
+              'USD', 1
           )
       `);
   } catch (e) {
