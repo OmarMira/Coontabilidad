@@ -7054,13 +7054,13 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
     const result = db.exec(`
       SELECT 
         id,
-        COALESCE(code, account_code) as code,
-        COALESCE(name, account_name) as name,
-        COALESCE(type, account_type) as type,
-        COALESCE(active, is_active) as active
+        account_code as code,
+        account_name as name,
+        account_type as type,
+        is_active as active
       FROM chart_of_accounts 
-      WHERE COALESCE(active, is_active) = 1
-      ORDER BY COALESCE(code, account_code)
+      WHERE is_active = 1
+      ORDER BY account_code
   `);
 
     if (!result[0]) return [];
