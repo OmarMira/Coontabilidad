@@ -8398,7 +8398,26 @@ export function getCompanyData(): CompanyData | null {
     }
 
     const result = db.exec(`
-SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
+      SELECT 
+        id,
+        name as company_name,
+        name as legal_name,
+        tax_id,
+        address,
+        city,
+        state,
+        zip as zip_code,
+        phone,
+        email,
+        website,
+        currency_code as currency,
+        is_active,
+        fiscal_year_start,
+        fiscal_year_end,
+        netIncreaseInCash
+      FROM company_data 
+      WHERE is_active = 1 
+      LIMIT 1
     `);
 
     if (result.length === 0 || result[0].values.length === 0) {
@@ -8475,16 +8494,14 @@ export async function updateCompanyData(companyData: Partial<CompanyData>): Prom
       logger.warn('CompanyData', 'upsert_insert', 'No existe fila — creando con datos del usuario');
       sqlRun(`
         INSERT INTO company_data (
-          company_name, legal_name, tax_id,
-          address, city, state, zip_code,
+          name, tax_id,
+          address, city, state, zip,
           phone, email, website,
-          fiscal_year_start, currency, language,
-          timezone, date_format, fiscal_year_end,
+          fiscal_year_start, currency_code,
           is_active, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
       `, [
         companyData.company_name || 'Mi Empresa LLC',
-        companyData.legal_name || 'Mi Empresa LLC',
         companyData.tax_id || '00-0000000',
         companyData.address || '',
         companyData.city || '',
@@ -8495,10 +8512,6 @@ export async function updateCompanyData(companyData: Partial<CompanyData>): Prom
         companyData.website || null,
         companyData.fiscal_year_start || '01-01',
         companyData.currency || 'USD',
-        companyData.language || 'es',
-        companyData.timezone || 'America/New_York',
-        companyData.date_format || 'MM/DD/YYYY',
-        companyData.fiscal_year_end || '12-31',
         new Date().toISOString()
       ]);
       logger.info('CompanyData', 'upsert_insert_ok', 'Empresa creada correctamente');
@@ -8513,13 +8526,12 @@ export async function updateCompanyData(companyData: Partial<CompanyData>): Prom
       logger.warn('CompanyData', 'update_fallback', 'getCompanyData() null con row presente — UPDATE simple WHERE is_active=1');
       sqlRun(`
         UPDATE company_data SET
-          company_name = ?, legal_name = ?, tax_id = ?,
-          address = ?, city = ?, state = ?, zip_code = ?,
+          name = ?, tax_id = ?,
+          address = ?, city = ?, state = ?, zip = ?,
           phone = ?, email = ?, updated_at = ?
         WHERE is_active = 1
       `, [
         companyData.company_name || '',
-        companyData.legal_name || '',
         companyData.tax_id || '',
         companyData.address || '',
         companyData.city || '',
@@ -8547,43 +8559,28 @@ export async function updateCompanyData(companyData: Partial<CompanyData>): Prom
     // UPDATE completo con Statement API (patrón correcto sql.js)
     sqlRun(`
       UPDATE company_data SET
-        company_name = ?,
-        legal_name = ?,
+        name = ?,
         tax_id = ?,
         address = ?,
         city = ?,
         state = ?,
-        zip_code = ?,
+        zip = ?,
         phone = ?,
         email = ?,
         website = ?,
         logo_path = ?,
         fiscal_year_start = ?,
-        currency = ?,
-        language = ?,
-        timezone = ?,
-        sales_commission_rate = ?,
+        currency_code = ?,
         sales_commission_percentage = ?,
-        discount_amount = ?,
-        discount_percentage = ?,
         shipping_rate = ?,
-        shipping_percentage = ?,
-        reposition_policy_days = ?,
-        late_fee_amount = ?,
         late_fee_percentage = ?,
-        annual_interest_rate = ?,
         grace_period_days = ?,
-        documentation_cost = ?,
-        other_costs = ?,
-        chart_of_accounts_name = ?,
-        date_format = ?,
         fiscal_year_end = ?,
         netIncreaseInCash = ?,
         updated_at = ?
       WHERE id = ? AND is_active = 1
     `, [
       updateData.company_name,
-      updateData.legal_name,
       updateData.tax_id,
       updateData.address,
       updateData.city,
@@ -8595,23 +8592,10 @@ export async function updateCompanyData(companyData: Partial<CompanyData>): Prom
       updateData.logo_path || null,
       updateData.fiscal_year_start || '01-01',
       updateData.currency || 'USD',
-      updateData.language || 'es',
-      updateData.timezone || 'America/New_York',
-      updateData.sales_commission_rate || 0,
       updateData.sales_commission_percentage || 0,
-      updateData.discount_amount || 50,
-      updateData.discount_percentage || 0,
       updateData.shipping_rate || 0,
-      updateData.shipping_percentage || 0,
-      updateData.reposition_policy_days || 32,
-      updateData.late_fee_amount || 0,
       updateData.late_fee_percentage || 0,
-      updateData.annual_interest_rate || 0,
       updateData.grace_period_days || 0,
-      updateData.documentation_cost || 0,
-      updateData.other_costs || 0,
-      updateData.chart_of_accounts_name || 'Plan de Cuenta Ejemplo',
-      updateData.date_format || 'MM/DD/YYYY',
       updateData.fiscal_year_end || '12-31',
       updateData.netIncreaseInCash || 0,
       updateData.updated_at,
@@ -8840,21 +8824,16 @@ export function initializeCompanyData(): void {
 
     const stmt = db.prepare(`
       INSERT INTO company_data(
-    company_name, legal_name, tax_id, address, city, state, zip_code,
-    phone, email, website, logo_path, fiscal_year_start, currency,
-    language, timezone, sales_commission_rate, sales_commission_percentage,
-    discount_amount, discount_percentage, shipping_rate, shipping_percentage,
-    reposition_policy_days, late_fee_amount, late_fee_percentage,
-    annual_interest_rate, grace_period_days, documentation_cost,
-    other_costs, chart_of_accounts_name, date_format,
-    fiscal_year_end, netIncreaseInCash,
-    created_at, updated_at, is_active
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        name, tax_id, address, city, state, zip,
+        phone, email, website, logo_path, fiscal_year_start, currency_code,
+        sales_commission_percentage, shipping_rate, late_fee_percentage,
+        grace_period_days, fiscal_year_end, netIncreaseInCash,
+        created_at, updated_at, is_active
+      ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
       defaultCompany.company_name,
-      defaultCompany.legal_name,
       defaultCompany.tax_id,
       defaultCompany.address,
       defaultCompany.city,
@@ -8866,23 +8845,10 @@ export function initializeCompanyData(): void {
       defaultCompany.logo_path || null,
       defaultCompany.fiscal_year_start,
       defaultCompany.currency,
-      defaultCompany.language,
-      defaultCompany.timezone,
-      defaultCompany.sales_commission_rate || 0,
       defaultCompany.sales_commission_percentage || 0,
-      defaultCompany.discount_amount || 50,
-      defaultCompany.discount_percentage || 0,
       defaultCompany.shipping_rate || 0,
-      defaultCompany.shipping_percentage || 0,
-      defaultCompany.reposition_policy_days || 32,
-      defaultCompany.late_fee_amount || 0,
       defaultCompany.late_fee_percentage || 0,
-      defaultCompany.annual_interest_rate || 0,
       defaultCompany.grace_period_days || 0,
-      defaultCompany.documentation_cost || 0,
-      defaultCompany.other_costs || 0,
-      defaultCompany.chart_of_accounts_name || 'Plan de Cuenta Ejemplo',
-      defaultCompany.date_format || 'MM/DD/AAAA',
       defaultCompany.fiscal_year_end || '12-31',
       defaultCompany.netIncreaseInCash || 0,
       defaultCompany.created_at,
