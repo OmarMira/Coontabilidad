@@ -398,7 +398,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 23 — Users y Roles
 **Líneas:** 11539 – 12404
 **Archivo destino:** `src/database/modules/db-users.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `hasActiveUsers`
 - `seedUsersAndRoles`
@@ -511,7 +511,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 20 Reconciliation | db-reconciliation.ts | pendiente | media |
 | 21 Trial Balance | db-reports-trial.ts | pendiente | media |
 | 22 Bank Transactions | db-bank-transactions.ts | pendiente | media |
-| 23 Users | db-users.ts | pendiente | ⚠️ alta |
+| 23 Users | db-users.ts | completado | ⚠️ alta |
 | 24 Purchase Orders | db-purchase-orders.ts | pendiente | baja |
 | 25 Inventory | db-inventory.ts | pendiente | baja |
 | 26 Budgets | db-budgets.ts | pendiente | baja |
