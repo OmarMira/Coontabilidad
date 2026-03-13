@@ -2389,23 +2389,22 @@ const initializeSchema = async (db: any) => {
   db.run(`
     create TABLE IF NOT EXISTS company_data(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    company_name TEXT NOT NULL,
-    legal_name TEXT NOT NULL,
+    name TEXT NOT NULL,
     tax_id TEXT NOT NULL, --EIN o Tax ID
-      address TEXT NOT NULL,
+    address TEXT NOT NULL,
     city TEXT NOT NULL,
     state TEXT NOT NULL DEFAULT 'FL',
-    zip_code TEXT NOT NULL,
+    zip TEXT NOT NULL,
     phone TEXT NOT NULL,
     email TEXT NOT NULL,
     website TEXT,
     logo_path TEXT,
     fiscal_year_start TEXT DEFAULT '01-01', --MM - DD format
-      currency TEXT DEFAULT 'USD',
+    currency_code TEXT DEFAULT 'USD',
     language TEXT DEFAULT 'es',
     timezone TEXT DEFAULT 'America/New_York',
     --Configuraciones financieras
-      sales_commission_rate DECIMAL(10, 2) DEFAULT 0.00,
+    sales_commission_rate DECIMAL(10, 2) DEFAULT 0.00,
     sales_commission_percentage DECIMAL(5, 2) DEFAULT 0.00,
     discount_amount DECIMAL(10, 2) DEFAULT 50.00,
     discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
@@ -2426,7 +2425,6 @@ const initializeSchema = async (db: any) => {
     sales_tax_method TEXT DEFAULT 'accrual', --accrual, cash
     dr15_filing_day INTEGER DEFAULT 20,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT 1
   )
@@ -3444,12 +3442,12 @@ GROUP BY ba.id
       // 1.2 Datos de la Empresa (Sin FK)
       db.run(`
       INSERT OR IGNORE INTO company_data(
-      company_name, legal_name, address, city, state, zip_code, phone, email, tax_id,
-      fiscal_year_start, currency, timezone, date_format, is_active
+      name, address, city, state, zip, phone, email, tax_id,
+      fiscal_year_start, currency_code, is_active
     ) VALUES(
-      'Mi Empresa LLC', 'Mi Empresa LLC', '123 Main Street', 'Orlando', 'FL', '32801', '(407) 000-0000',
+      'Mi Empresa LLC', '123 Main Street', 'Orlando', 'FL', '32801', '(407) 000-0000',
       'admin@miempresa.com', '00-0000000',
-      '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
+      '01-01', 'USD', 1
     )
       `);
 
