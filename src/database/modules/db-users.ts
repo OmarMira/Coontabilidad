@@ -54,11 +54,10 @@ async function seedCompanyData(): Promise<void> {
     const res = db.exec("SELECT COUNT(*) FROM company_data");
     if (res[0].values[0][0] === 0) {
       sqlRunWithParams(db,
-        `INSERT INTO company_data (company_name, legal_name, tax_id, address, city, state, zip_code, phone, email, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO company_data (name, tax_id, address, city, state, zip, phone, email, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'AccountExpress Demo',
-          'AccountExpress Solutions LLC',
           '12-3456789',
           '123 Business Way',
           'Miami',
