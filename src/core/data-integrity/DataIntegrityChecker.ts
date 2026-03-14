@@ -238,7 +238,7 @@ export class DataIntegrityChecker {
       // Verificar journal_details.entry_id
       const orphanJournalDetails = db?.exec(`
         SELECT jd.id FROM journal_details jd
-        LEFT JOIN journal_entries je ON jd.journal_id = je.id
+        LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
         WHERE je.id IS NULL
       `);
 
@@ -396,10 +396,10 @@ export class DataIntegrityChecker {
       // Verificar que journal_entries esté balanceado (débitos = créditos)
       const unbalancedJournals = db?.exec(`
         SELECT je.id, 
-               SUM(CASE WHEN jd.debit > 0 THEN jd.debit ELSE 0 END) as total_debit,
-               SUM(CASE WHEN jd.credit > 0 THEN jd.credit ELSE 0 END) as total_credit
+               SUM(CASE WHEN jd.debit_amount > 0 THEN jd.debit_amount ELSE 0 END) as total_debit,
+               SUM(CASE WHEN jd.credit_amount > 0 THEN jd.credit_amount ELSE 0 END) as total_credit
         FROM journal_entries je
-        JOIN journal_details jd ON je.id = jd.journal_id
+        JOIN journal_details jd ON je.id = jd.journal_entry_id
         GROUP BY je.id
         HAVING total_debit != total_credit
       `);
