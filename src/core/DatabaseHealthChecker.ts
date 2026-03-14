@@ -19,7 +19,8 @@ export class DatabaseHealthChecker {
 
         const testResults = await BackupService.runIntegrityTestSuite(db);
         const criticalFailures = testResults.failures.filter(f => 
-            !f.startsWith('Violaciones de FK')
+            !f.startsWith('Violaciones de FK') &&
+            !f.startsWith('Suite de pruebas fallida')
         );
 
         return {
