@@ -60,8 +60,8 @@ export const getAccountBalance = (accountCode: string): number => {
     const result = db.exec(`
       SELECT
         coa.normal_balance,
-        COALESCE(SUM(jd.debit), 0) as total_debits,
-        COALESCE(SUM(jd.credit), 0) as total_credits
+        COALESCE(SUM(jd.debit_amount), 0) as total_debits,
+        COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
       LEFT JOIN journal_details jd ON coa.account_code = jd.account_code
       WHERE coa.account_code = ?
@@ -107,8 +107,8 @@ export const createJournalEntry = async (
     let totalCredits = 0;
 
     details.forEach(detail => {
-      totalDebits += Number(detail.debit) || 0;
-      totalCredits += Number(detail.credit) || 0;
+      totalDebits += Number(detail.debit_amount) || 0;
+      totalCredits += Number(detail.credit_amount) || 0;
     });
 
     const diff = Math.abs(totalDebits - totalCredits);
@@ -141,7 +141,7 @@ export const createJournalEntry = async (
 
     const detailStmt = db.prepare(`
       INSERT INTO journal_details(
-        journal_id, account_code, debit, credit, description
+        journal_entry_id, account_code, debit_amount, credit_amount, description
       ) VALUES(?, ?, ?, ?, ?)
     `);
 
@@ -156,8 +156,8 @@ export const createJournalEntry = async (
       detailStmt.run([
         entryId,
         detail.account_code || '',
-        Number(detail.debit) || 0,
-        Number(detail.credit) || 0,
+        Number(detail.debit_amount) || 0,
+        Number(detail.credit_amount) || 0,
         detail.description || ''
       ]);
     });
@@ -245,12 +245,12 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
   try {
     const result = db.exec(`
       SELECT
-        jd.id, jd.journal_id, jd.account_code, jd.debit,
-        jd.credit, jd.description,
+        jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount,
+        jd.credit_amount, jd.description,
         coa.account_name, coa.account_type, coa.normal_balance
       FROM journal_details jd
       JOIN chart_of_accounts coa ON jd.account_code = coa.account_code
-      WHERE jd.journal_id = ?
+      WHERE jd.journal_entry_id = ?
       ORDER BY jd.id
     `, [entryId]);
 
