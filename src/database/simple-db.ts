@@ -1174,7 +1174,7 @@ export const PRIVILEGED_ROLES = ['admin', 'contador', 'auditor', 'viewer', 'acco
 /**
  * Mapea una fila de base de datos a una entidad tipada
  */
-function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
+export function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
   const entity = {} as Record<string, unknown>;
   columns.forEach((col, index) => {
     entity[col] = row[index];
