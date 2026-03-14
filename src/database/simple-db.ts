@@ -1931,6 +1931,14 @@ export const initDB = async (password?: string): Promise<any> => {
     dbEngine.setDB(db);
 
     // Garantizar tablas críticas en motor RAM (IF NOT EXISTS — seguro siempre)
+    db.run(`CREATE TABLE IF NOT EXISTS payment_methods (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      method_name TEXT NOT NULL,
+      method_type TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      requires_reference INTEGER DEFAULT 0
+    )`);
+
     db.run(`CREATE TABLE IF NOT EXISTS bills (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       bill_number TEXT UNIQUE NOT NULL,
