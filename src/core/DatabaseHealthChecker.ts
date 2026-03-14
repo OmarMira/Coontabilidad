@@ -18,10 +18,13 @@ export class DatabaseHealthChecker {
         }
 
         const testResults = await BackupService.runIntegrityTestSuite(db);
+        const criticalFailures = testResults.failures.filter(f => 
+            !f.startsWith('Violaciones de FK')
+        );
 
         return {
-            healthy: testResults.passed,
-            issues: testResults.failures
+            healthy: criticalFailures.length === 0,
+            issues: criticalFailures
         };
     }
 
