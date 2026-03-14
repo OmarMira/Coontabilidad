@@ -212,7 +212,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 11 — Journal (Asientos Contables)
 **Líneas:** 7027 – 7417
 **Archivo destino:** `src/database/modules/db-journal.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getChartOfAccounts`
 - `getAccountBalance`
@@ -499,7 +499,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 08 Suppliers | db-suppliers.ts | pendiente | alta |
 | 09 Bills | db-bills.ts | pendiente | alta |
 | 10 Chart of Accounts | db-chart-of-accounts.ts | pendiente | ⚠️ alta |
-| 11 Journal | db-journal.ts | pendiente | ⚠️ crítico |
+| 11 Journal | db-journal.ts | completado | ⚠️ crítico |
 | 12 Journal Auto | db-journal-auto.ts | pendiente | alta |
 | 13 Payments | db-payments.ts | pendiente | alta |
 | 14 Reports Financial | db-reports-financial.ts | pendiente | media |
