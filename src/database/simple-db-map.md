@@ -124,7 +124,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 06 — Invoices (Facturas de Venta)
 **Líneas:** 4510 – 5078
 **Archivo destino:** `src/database/modules/db-invoices.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `FLORIDA_COUNTIES` (constante)
 - `generateInvoiceNumber`
@@ -494,7 +494,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 03 Persistencia | db-persistence.ts | pendiente | baja |
 | 04 Customers | db-customers.ts | completado | alta |
 | 05 Auditoría | db-audit.ts | pendiente | media |
-| 06 Invoices | db-invoices.ts | pendiente | alta |
+| 06 Invoices | db-invoices.ts | completado | alta |
 | 07 Quotes | db-quotes.ts | pendiente | media |
 | 08 Suppliers | db-suppliers.ts | completado | alta |
 | 09 Bills | db-bills.ts | pendiente | alta |
