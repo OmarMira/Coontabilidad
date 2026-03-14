@@ -443,6 +443,10 @@ export interface QuoteLine {
   tax_amount?: number;
   line_total: number;
   discount_percent?: number;
+  discount_percentage?: number;
+  taxable?: boolean | number;
+  product_name?: string;
+  sku?: string;
 }
 
 export interface ChartOfAccount {
