@@ -162,7 +162,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 08 — Suppliers (Proveedores)
 **Líneas:** 5558 – 5912
 **Archivo destino:** `src/database/modules/db-suppliers.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `addSupplier`
 - `getSuppliers`
@@ -496,7 +496,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 05 Auditoría | db-audit.ts | pendiente | media |
 | 06 Invoices | db-invoices.ts | pendiente | alta |
 | 07 Quotes | db-quotes.ts | pendiente | media |
-| 08 Suppliers | db-suppliers.ts | pendiente | alta |
+| 08 Suppliers | db-suppliers.ts | completado | alta |
 | 09 Bills | db-bills.ts | pendiente | alta |
 | 10 Chart of Accounts | db-chart-of-accounts.ts | pendiente | ⚠️ alta |
 | 11 Journal | db-journal.ts | completado | ⚠️ crítico |
