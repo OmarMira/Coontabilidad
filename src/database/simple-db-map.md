@@ -146,7 +146,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 07 — Quotes (Cotizaciones)
 **Líneas:** 5079 – 5557
 **Archivo destino:** `src/database/modules/db-quotes.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getQuotes`
 - `getQuoteById`
@@ -495,7 +495,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 04 Customers | db-customers.ts | completado | alta |
 | 05 Auditoría | db-audit.ts | pendiente | media |
 | 06 Invoices | db-invoices.ts | completado | alta |
-| 07 Quotes | db-quotes.ts | pendiente | media |
+| 07 Quotes | db-quotes.ts | completado | media |
 | 08 Suppliers | db-suppliers.ts | completado | alta |
 | 09 Bills | db-bills.ts | completado | alta |
 | 10 Chart of Accounts | db-chart-of-accounts.ts | pendiente | ⚠️ alta |
