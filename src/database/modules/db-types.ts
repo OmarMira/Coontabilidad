@@ -349,15 +349,23 @@ export interface Bill {
   bill_number: string;
   supplier_id: number;
   supplier_name?: string;
-  date: string;
+  supplier_business_name?: string;
+  supplier_email?: string;
+  issue_date: string;
   due_date: string;
   category?: string;
   subtotal: number;
   tax_amount: number;
   total_amount: number;
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'received' | 'approved' | 'pending' | 'paid' | 'overdue' | 'cancelled';
   notes?: string;
   journal_entry_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
+  supplier?: Supplier;
+  items?: BillItem[];
 }
 
 export interface BillItem {
@@ -370,6 +378,11 @@ export interface BillItem {
   tax_rate?: number;
   tax_amount?: number;
   line_total: number;
+  taxable?: boolean | number;
+  product?: {
+    name: string;
+    sku: string;
+  };
 }
 
 export interface Payment {
