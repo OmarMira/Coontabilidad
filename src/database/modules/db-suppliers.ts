@@ -1,15 +1,13 @@
 /**
  * Módulo 08 — Suppliers (Proveedores)
- * Extraído de simple-db.ts líneas 5582–5935
+ * Extraído de simple-db.ts líneas 5583–5935
  */
 
 import { db } from '../simple-db';
 import { saveDatabase, logAuditEvent, rowToEntity, PRIVILEGED_ROLES } from '../simple-db';
-import { logger } from '../../core/logging/SystemLogger';
 import type { Supplier } from './db-types';
 
-// Función auxiliar para procesar una fila de proveedor
-const processSupplierRow = (row: Record<string, unknown>): Supplier => {
+const processSupplierRow = (row: any): Supplier => {
   return {
     id: Number(row.id),
     name: String(row.name || ''),
@@ -40,11 +38,8 @@ const processSupplierRow = (row: Record<string, unknown>): Supplier => {
   };
 };
 
-export const addSupplier = async (supplierData: Partial<Supplier>, userId?: number): Promise<number> => {
-  logger.debug('SupplierModule', 'add_supplier_start', 'Iniciando proceso de agregar proveedor', { supplierName: supplierData.name });
-
+export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): number => {
   if (!db) {
-    logger.error('SupplierModule', 'add_supplier_failed', 'Base de datos no inicializada al intentar agregar proveedor');
     throw new Error('Database not initialized. Please wait for the system to load completely.');
   }
 
@@ -95,23 +90,15 @@ export const addSupplier = async (supplierData: Partial<Supplier>, userId?: numb
 
     stmt.free();
 
-    await logAuditEvent('suppliers', insertId, 'INSERT', null, supplierData, userId);
+    logAuditEvent('suppliers', insertId, 'INSERT', null, supplierData, userId);
 
     db.run('COMMIT');
 
     setTimeout(() => saveDatabase(), 1000);
 
-    logger.info('SupplierModule', 'add_supplier_success', `Proveedor agregado exitosamente con ID: ${insertId}`, {
-      supplierId: insertId,
-      supplierName: supplierData.name
-    });
-
     return insertId;
 
   } catch (error) {
-    logger.error('SupplierModule', 'add_supplier_failed', `Error al agregar proveedor: ${error instanceof Error ? error.message : 'Unknown error'}`, {
-      supplierData: { name: supplierData.name }
-    }, error as Error);
     db?.run('ROLLBACK');
     throw error;
   }
