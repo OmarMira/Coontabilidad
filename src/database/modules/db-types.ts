@@ -478,10 +478,10 @@ export interface JournalEntry {
 
 export interface JournalDetail {
   id: number;
-  journal_entry_id: number;
+  journal_id: number;
   account_code: string;
-  debit_amount: number;
-  credit_amount: number;
+  debit: number;
+  credit: number;
   description?: string;
   account_name?: string;
   account_type?: string;
