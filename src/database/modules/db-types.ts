@@ -300,18 +300,31 @@ export interface Invoice {
   invoice_number: string;
   customer_id: number;
   customer_name?: string;
-  date: string;
+  customer_business_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  customer_city?: string;
+  customer_state?: string;
+  customer_zip?: string;
+  issue_date: string;
   due_date: string;
   subtotal: number;
   tax_amount: number;
   total_amount: number;
-  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'pending' | 'paid' | 'overdue' | 'cancelled';
   notes?: string;
   hash?: string;
   signed_at?: string;
   signed_by?: number;
   version?: number;
   journal_entry_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
+  customer?: Customer;
+  items?: InvoiceItem[];
 }
 
 export interface InvoiceItem {
@@ -324,6 +337,11 @@ export interface InvoiceItem {
   tax_rate?: number;
   tax_amount?: number;
   line_total: number;
+  taxable?: boolean | number;
+  product?: {
+    name: string;
+    sku: string;
+  };
 }
 
 export interface Bill {

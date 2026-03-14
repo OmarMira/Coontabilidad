@@ -6909,7 +6909,7 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
 };
 
 // Función auxiliar para auditoría (alias para compatibilidad)
-const logAuditAction = logAuditEvent;
+export const logAuditAction = logAuditEvent;
 
 // Función para verificar integridad de la cadena de auditoría
 export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors: string[]; totalRecords: number }> => {
