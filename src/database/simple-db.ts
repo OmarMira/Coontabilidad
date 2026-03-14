@@ -4383,7 +4383,7 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
 // Función auxiliar para hash síncrono (para funciones no async)
 
 
-const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any, userId?: number): Promise<void> => {
+export const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any, userId?: number): Promise<void> => {
   if (!db) return;
 
   try {

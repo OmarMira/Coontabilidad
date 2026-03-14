@@ -389,25 +389,38 @@ export interface ChartOfAccount {
 
 export interface JournalEntry {
   id: number;
-  entry_number: string;
+  entry_number?: string;
   description: string;
-  transaction_date: string;
+  transaction_date?: string;
   entry_date: string;
   reference?: string;
+  reference_number?: string;
   total_debit: number;
   total_credit: number;
+  is_balanced?: boolean;
+  created_at?: string;
   created_by?: number;
+  verified_by?: number;
+  verified_at?: string;
   details?: JournalDetail[];
 }
 
 export interface JournalDetail {
   id: number;
-  journal_id: number;
+  journal_entry_id: number;
   account_code: string;
-  debit: number;
-  credit: number;
+  debit_amount: number;
+  credit_amount: number;
   description?: string;
   account_name?: string;
+  account_type?: string;
+  normal_balance?: string;
+  account?: {
+    account_code: string;
+    account_name: string;
+    account_type: string;
+    normal_balance: string;
+  };
 }
 
 export interface FloridaDR15Report {
