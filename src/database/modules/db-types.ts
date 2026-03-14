@@ -218,13 +218,31 @@ export interface Customer {
 export interface Supplier {
   id: number;
   name: string;
+  business_name?: string;
+  document_type?: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
+  document_number?: string;
+  business_type?: string;
   email?: string;
+  email_secondary?: string;
   phone?: string;
-  address?: string;
+  phone_secondary?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  florida_county?: string;
+  credit_limit?: number;
+  payment_terms?: number;
+  paymentCount?: number;
+  tax_exempt?: boolean;
   tax_id?: string;
+  assigned_buyer?: string;
+  status?: 'active' | 'inactive' | 'suspended';
   notes?: string;
   is_active?: number;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface KardexFilters {
