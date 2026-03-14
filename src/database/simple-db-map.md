@@ -178,7 +178,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 09 — Bills (Facturas de Compra)
 **Líneas:** 5913 – 6429
 **Archivo destino:** `src/database/modules/db-bills.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `generateBillNumber`
 - `getBills`
@@ -497,7 +497,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 06 Invoices | db-invoices.ts | completado | alta |
 | 07 Quotes | db-quotes.ts | pendiente | media |
 | 08 Suppliers | db-suppliers.ts | completado | alta |
-| 09 Bills | db-bills.ts | pendiente | alta |
+| 09 Bills | db-bills.ts | completado | alta |
 | 10 Chart of Accounts | db-chart-of-accounts.ts | pendiente | ⚠️ alta |
 | 11 Journal | db-journal.ts | completado | ⚠️ crítico |
 | 12 Journal Auto | db-journal-auto.ts | pendiente | alta |
