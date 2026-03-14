@@ -91,7 +91,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 04 — Customers (Clientes)
 **Líneas:** 3878 – 4317
 **Archivo destino:** `src/database/modules/db-customers.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `addCustomer`
 - `getCustomers`
@@ -492,7 +492,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 01 Tipos | db-types.ts | completado | PRIMERO |
 | 02 Init/Schema | db-init.ts | pendiente | PENÚLTIMO |
 | 03 Persistencia | db-persistence.ts | pendiente | baja |
-| 04 Customers | db-customers.ts | pendiente | alta |
+| 04 Customers | db-customers.ts | completado | alta |
 | 05 Auditoría | db-audit.ts | pendiente | media |
 | 06 Invoices | db-invoices.ts | pendiente | alta |
 | 07 Quotes | db-quotes.ts | pendiente | media |
