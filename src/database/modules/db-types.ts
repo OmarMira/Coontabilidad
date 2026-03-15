@@ -744,22 +744,42 @@ export interface KardexEntry extends StockMovement {
 }
 
 export interface CompanyData {
-  id?: number;
-  name: string;
-  legal_name?: string;
-  tax_id?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  phone?: string;
-  email?: string;
+  id: number;
+  company_name: string;
+  legal_name: string;
+  tax_id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  phone: string;
+  email: string;
   website?: string;
   logo_path?: string;
-  florida_county?: string;
-  fiscal_year_start?: string;
-  created_at?: string;
-  updated_at?: string;
+  fiscal_year_start: string;
+  fiscal_year_end: string;
+  currency: string;
+  language: string;
+  timezone: string;
+  sales_commission_rate: number;
+  sales_commission_percentage: number;
+  discount_amount: number;
+  discount_percentage: number;
+  shipping_rate: number;
+  shipping_percentage: number;
+  reposition_policy_days: number;
+  late_fee_amount: number;
+  late_fee_percentage: number;
+  annual_interest_rate: number;
+  grace_period_days: number;
+  documentation_cost: number;
+  other_costs: number;
+  chart_of_accounts_name: string;
+  date_format: string;
+  netIncreaseInCash: number;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
 }
 
 export interface FiscalSettings {
