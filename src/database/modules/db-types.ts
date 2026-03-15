@@ -562,6 +562,7 @@ export interface BankTransaction {
   transaction_date: string;
   description: string;
   amount: number;
+  reference_number?: string;
   reference?: string;
   status: 'pending' | 'matched' | 'unmatched' | 'excluded';
   fit_id?: string;
@@ -574,20 +575,24 @@ export interface ReconciliationStatement {
   id: number;
   bank_account_id: number;
   statement_date: string;
-  beginning_balance: number;
-  ending_balance: number;
-  status: 'open' | 'completed';
-  period_start?: string;
-  period_end?: string;
+  statement_balance: number;
+  system_balance: number;
+  difference?: number;
+  status: 'pending' | 'completed' | 'reviewed';
+  notes?: string;
+  created_at?: string;
 }
 
 export interface ReconciliationMatch {
   id: number;
   statement_id: number;
   bank_transaction_id: number;
-  journal_entry_id: number;
-  match_type: 'system' | 'manual';
-  match_score?: number;
+  journal_entry_id?: number;
+  match_confidence: number;
+  match_type: 'automatic' | 'manual';
+  matched_by?: number;
+  notes?: string;
+  matched_at?: string;
 }
 
 export interface PaymentMethod {
