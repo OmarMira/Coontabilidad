@@ -271,7 +271,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 15 — Company Data y Aging Reports
 **Líneas:** 8087 – 8874
 **Archivo destino:** `src/database/modules/db-company.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getAgingReport`
 - `getAccountLedger`
@@ -503,7 +503,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 12 Journal Auto | db-journal-auto.ts | pendiente | alta |
 | 13 Payments | db-payments.ts | completado | alta |
 | 14 Reports Financial | db-reports-financial.ts | pendiente | media |
-| 15 Company | db-company.ts | pendiente | ⚠️ alta |
+| 15 Company | db-company.ts | completado | ⚠️ alta |
 | 16 Products | db-products.ts | pendiente | media |
 | 17 Florida Tax | db-florida-tax.ts | pendiente | ⚠️ alta |
 | 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
