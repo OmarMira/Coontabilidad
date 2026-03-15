@@ -289,7 +289,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 16 — Products y Categorías
 **Líneas:** 8875 – 9576
 **Archivo destino:** `src/database/modules/db-products.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getProductCategories`, `createProductCategory`, `updateProductCategory`, `deleteProductCategory`
 - `getProducts`, `createProduct`, `updateProduct`, `deleteProduct`
@@ -504,7 +504,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 13 Payments | db-payments.ts | completado | alta |
 | 14 Reports Financial | db-reports-financial.ts | completado | media |
 | 15 Company | db-company.ts | completado | ⚠️ alta |
-| 16 Products | db-products.ts | pendiente | media |
+| 16 Products | db-products.ts | completado | media |
 | 17 Florida Tax | db-florida-tax.ts | completado | ⚠️ alta |
 | 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
 | 19 Bank Accounts | db-bank-accounts.ts | completado | media |
