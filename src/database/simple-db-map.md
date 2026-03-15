@@ -241,7 +241,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 13 — Payments (Pagos)
 **Líneas:** 7528 – 7800
 **Archivo destino:** `src/database/modules/db-payments.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `generatePaymentNumber`
 - `generateSupplierPaymentNumber`
@@ -501,7 +501,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 10 Chart of Accounts | db-chart-of-accounts.ts | pendiente | ⚠️ alta |
 | 11 Journal | db-journal.ts | completado | ⚠️ crítico |
 | 12 Journal Auto | db-journal-auto.ts | pendiente | alta |
-| 13 Payments | db-payments.ts | pendiente | alta |
+| 13 Payments | db-payments.ts | completado | alta |
 | 14 Reports Financial | db-reports-financial.ts | pendiente | media |
 | 15 Company | db-company.ts | pendiente | ⚠️ alta |
 | 16 Products | db-products.ts | pendiente | media |
