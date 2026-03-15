@@ -3,16 +3,11 @@
 // Extraído de simple-db.ts líneas 88-292 y 1327-1846
 // ==========================================
 
-export interface MonthlySummary {
-  month: string;
-  revenue: number;
-  expenses: number;
-  netIncome: number;
-  growth: number;
-}
+
 
 export interface Employee {
   id: number;
+  employee_number?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -52,17 +47,14 @@ export interface PayrollPeriod {
 
 export interface PayrollEntry {
   id: number;
-  payroll_id: number;
+  period_id: number;
   employee_id: number;
   first_name?: string;
   last_name?: string;
-  gross_pay: number;
-  net_pay: number;
-  deductions: number;
-  status: 'pending' | 'calculated' | 'approved' | 'paid' | 'cancelled';
-  payment_method?: string;
-  payment_date?: string;
-  payment_reference?: string;
+  gross_amount: number;
+  net_amount: number;
+  deductions_amount: number;
+  status: 'draft' | 'pending' | 'calculated' | 'approved' | 'paid' | 'cancelled';
   notes?: string;
 }
 
@@ -78,9 +70,10 @@ export interface PayrollLineItem {
 
 export interface PayrollSetting {
   id: number;
-  key: string;
-  value: string;
+  setting_key: string;
+  setting_value: string;
   description?: string;
+  updated_at?: string;
 }
 
 export interface Payroll {
@@ -139,20 +132,32 @@ export interface AssetCategory {
 
 export interface FixedAsset {
   id?: number;
+  asset_code: string;
+  name: string;
+  description?: string;
   category_id: number;
-  asset_number: string;
-  description: string;
   purchase_date: string;
   purchase_cost: number;
   salvage_value?: number;
-  depreciation_method: 'SL' | 'DB' | 'SYD';
+  depreciation_method: 'straight_line' | 'declining_balance' | 'sum_of_years';
   useful_life_years: number;
+  useful_life_months: number;
+  current_value?: number;
+  accumulated_depreciation?: number;
   location?: string;
   serial_number?: string;
+  manufacturer?: string;
+  model?: string;
+  purchase_order?: string;
+  supplier_id?: number;
+  warranty_expiration?: string;
+  notes?: string;
   status: 'active' | 'disposed' | 'fully_depreciated';
-  is_active?: number;
+  disposal_date?: string;
+  disposal_value?: number;
+  disposal_reason?: string;
+  created_by?: number;
   created_at?: string;
-  accumulated_depreciation?: number;
   book_value?: number;
   category_name?: string;
 }
@@ -160,9 +165,11 @@ export interface FixedAsset {
 export interface AssetDepreciation {
   id?: number;
   asset_id: number;
-  period_month: number;
-  period_year: number;
-  amount: number;
+  period_date: string;
+  depreciation_amount: number;
+  accumulated_depreciation: number;
+  net_book_value: number;
+  is_posted?: number;
   journal_entry_id?: number;
   created_at?: string;
 }
@@ -791,10 +798,19 @@ export interface CompanyData {
 }
 
 export interface FiscalSettings {
-  fiscal_year_start_month: number;
-  fiscal_year_start_day: number;
-  default_currency: string;
-  tax_method: 'cash' | 'accrual';
+  id?: number;
+  tax_year_start?: string;
+  tax_frequency?: string;
+  sales_tax_method?: string;
+  dr15_filing_day?: number;
+  default_tax_rate?: number;
+  active?: boolean;
+}
+
+export interface MonthlySummary {
+  month: string;
+  revenue: number;
+  expenses: number;
 }
 
 export interface MatchCandidate {
