@@ -318,7 +318,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 18 — DR15 Periods y Payment Methods
 **Líneas:** 9941 – 10473
 **Archivo destino:** `src/database/modules/db-payment-methods.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getAvailableDR15Periods`
 - `getPaymentMethods`, `getAllPaymentMethods`
@@ -506,7 +506,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 15 Company | db-company.ts | completado | ⚠️ alta |
 | 16 Products | db-products.ts | completado | media |
 | 17 Florida Tax | db-florida-tax.ts | completado | ⚠️ alta |
-| 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
+| 18 Payment Methods | db-payment-methods.ts | completado | baja |
 | 19 Bank Accounts | db-bank-accounts.ts | completado | media |
 | 20 Reconciliation | db-reconciliation.ts | completado | media |
 | 21 Trial Balance | db-reports-trial.ts | completado | media |
