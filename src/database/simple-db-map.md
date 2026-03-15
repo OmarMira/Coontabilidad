@@ -382,7 +382,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 22 — Bank Transactions e Import
 **Líneas:** 11279 – 11538
 **Archivo destino:** `src/database/modules/db-bank-transactions.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `insertBankTransactions`
 - `getBankTransactions`
@@ -510,7 +510,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 19 Bank Accounts | db-bank-accounts.ts | completado | media |
 | 20 Reconciliation | db-reconciliation.ts | completado | media |
 | 21 Trial Balance | db-reports-trial.ts | completado | media |
-| 22 Bank Transactions | db-bank-transactions.ts | pendiente | media |
+| 22 Bank Transactions | db-bank-transactions.ts | completado | media |
 | 23 Users | db-users.ts | completado | ⚠️ alta |
 | 24 Purchase Orders | db-purchase-orders.ts | pendiente | baja |
 | 25 Inventory | db-inventory.ts | pendiente | baja |
