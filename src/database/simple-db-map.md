@@ -257,7 +257,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 14 — Financial Reports (Reportes Financieros)
 **Líneas:** 7797 – 8090
 **Archivo destino:** `src/database/modules/db-reports-financial.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `generateBalanceSheet`
 - `generateIncomeStatement`
@@ -502,7 +502,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 11 Journal | db-journal.ts | completado | ⚠️ crítico |
 | 12 Journal Auto | db-journal-auto.ts | completado | alta |
 | 13 Payments | db-payments.ts | completado | alta |
-| 14 Reports Financial | db-reports-financial.ts | pendiente | media |
+| 14 Reports Financial | db-reports-financial.ts | completado | media |
 | 15 Company | db-company.ts | completado | ⚠️ alta |
 | 16 Products | db-products.ts | pendiente | media |
 | 17 Florida Tax | db-florida-tax.ts | completado | ⚠️ alta |
