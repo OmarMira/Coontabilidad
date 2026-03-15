@@ -499,10 +499,8 @@ export interface JournalDetail {
 }
 
 export interface FloridaDR15Report {
-  periodMonth: number;
-  periodYear: number;
-  grossSales: number;
-  taxableSales: number;
+  period: string;
+  totalTaxableSales: number;
   totalTaxCollected: number;
   countyBreakdown: Array<{
     county: string;
