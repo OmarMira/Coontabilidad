@@ -332,7 +332,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 19 — Bank Accounts
 **Líneas:** 10474 – 10768
 **Archivo destino:** `src/database/modules/db-bank-accounts.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getBankAccounts`
 - `getBankAccountById`
@@ -507,7 +507,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 16 Products | db-products.ts | pendiente | media |
 | 17 Florida Tax | db-florida-tax.ts | completado | ⚠️ alta |
 | 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
-| 19 Bank Accounts | db-bank-accounts.ts | pendiente | media |
+| 19 Bank Accounts | db-bank-accounts.ts | completado | media |
 | 20 Reconciliation | db-reconciliation.ts | pendiente | media |
 | 21 Trial Balance | db-reports-trial.ts | pendiente | media |
 | 22 Bank Transactions | db-bank-transactions.ts | pendiente | media |
