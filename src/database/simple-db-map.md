@@ -350,7 +350,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 20 — Bank Reconciliation
 **Líneas:** 10769 – 11025
 **Archivo destino:** `src/database/modules/db-reconciliation.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getReconciliationStatements`
 - `getLastReconciliationStatement`
@@ -508,7 +508,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 17 Florida Tax | db-florida-tax.ts | completado | ⚠️ alta |
 | 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
 | 19 Bank Accounts | db-bank-accounts.ts | completado | media |
-| 20 Reconciliation | db-reconciliation.ts | pendiente | media |
+| 20 Reconciliation | db-reconciliation.ts | completado | media |
 | 21 Trial Balance | db-reports-trial.ts | pendiente | media |
 | 22 Bank Transactions | db-bank-transactions.ts | pendiente | media |
 | 23 Users | db-users.ts | completado | ⚠️ alta |
