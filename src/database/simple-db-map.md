@@ -368,7 +368,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 21 — Trial Balance e Income Statement Reports
 **Líneas:** 11026 – 11278
 **Archivo destino:** `src/database/modules/db-reports-trial.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getTrialBalanceReport`
 - `getAccountMovementsDetails`
@@ -509,7 +509,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
 | 19 Bank Accounts | db-bank-accounts.ts | completado | media |
 | 20 Reconciliation | db-reconciliation.ts | completado | media |
-| 21 Trial Balance | db-reports-trial.ts | pendiente | media |
+| 21 Trial Balance | db-reports-trial.ts | completado | media |
 | 22 Bank Transactions | db-bank-transactions.ts | pendiente | media |
 | 23 Users | db-users.ts | completado | ⚠️ alta |
 | 24 Purchase Orders | db-purchase-orders.ts | pendiente | baja |
