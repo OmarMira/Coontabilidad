@@ -550,9 +550,9 @@ export interface BankAccount {
   routing_number?: string;
   account_type: 'checking' | 'savings' | 'credit_card';
   currency: string;
-  current_balance: number;
-  active: number;
-  is_active?: number;
+  balance: number;
+  is_active: boolean;
+  notes?: string;
   created_at?: string;
 }
 
