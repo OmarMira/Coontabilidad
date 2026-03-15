@@ -74,7 +74,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 03 — Persistencia y Cifrado
 **Líneas:** 3723 – 3877
 **Archivo destino:** `src/database/modules/db-persistence.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `saveDatabase`
 - `forceSaveDB`
@@ -491,7 +491,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 00 Core | db-core.ts | pendiente | ÚLTIMO |
 | 01 Tipos | db-types.ts | completado | PRIMERO |
 | 02 Init/Schema | db-init.ts | pendiente | PENÚLTIMO |
-| 03 Persistencia | db-persistence.ts | pendiente | baja |
+| 03 Persistencia | db-persistence.ts | completado | baja |
 | 04 Customers | db-customers.ts | completado | alta |
 | 05 Auditoría | db-audit.ts | completado | media |
 | 06 Invoices | db-invoices.ts | completado | alta |
