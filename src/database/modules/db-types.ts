@@ -389,26 +389,30 @@ export interface Payment {
   id: number;
   payment_number: string;
   invoice_id?: number;
-  customer_id?: number;
-  date: string;
+  customer_id: number;
+  payment_date: string;
   amount: number;
   payment_method: 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'other';
   reference_number?: string;
   notes?: string;
-  created_at: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
 }
 
 export interface SupplierPayment {
   id: number;
   payment_number: string;
   bill_id?: number;
-  supplier_id?: number;
-  date: string;
+  supplier_id: number;
+  payment_date: string;
   amount: number;
   payment_method: 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'other';
   reference_number?: string;
   notes?: string;
-  created_at: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
 }
 
 export interface Quote {
