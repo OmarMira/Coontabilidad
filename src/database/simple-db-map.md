@@ -302,7 +302,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 17 — Florida Tax / DR15
 **Líneas:** 9577 – 9940
 **Archivo destino:** `src/database/modules/db-florida-tax.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `calculateFloridaDR15Report`
 - `saveDR15Report`
@@ -505,7 +505,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 14 Reports Financial | db-reports-financial.ts | pendiente | media |
 | 15 Company | db-company.ts | completado | ⚠️ alta |
 | 16 Products | db-products.ts | pendiente | media |
-| 17 Florida Tax | db-florida-tax.ts | pendiente | ⚠️ alta |
+| 17 Florida Tax | db-florida-tax.ts | completado | ⚠️ alta |
 | 18 Payment Methods | db-payment-methods.ts | pendiente | baja |
 | 19 Bank Accounts | db-bank-accounts.ts | pendiente | media |
 | 20 Reconciliation | db-reconciliation.ts | pendiente | media |
