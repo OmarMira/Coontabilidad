@@ -604,10 +604,11 @@ export interface ReconciliationMatch {
 
 export interface PaymentMethod {
   id: number;
-  name: string;
-  type: 'cash' | 'credit_card' | 'bank_transfer' | 'check' | 'other';
-  details?: string;
-  active: boolean;
+  method_name: string;
+  method_type: string;
+  is_active: boolean;
+  requires_reference: boolean;
+  created_at?: string;
 }
 
 export interface AuditEntry {
