@@ -107,7 +107,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 05 — Auditoría
 **Líneas:** 4318 – 4509
 **Archivo destino:** `src/database/modules/db-audit.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `generateSimpleHash`
 - `generateAuditHash` (interna)
@@ -493,7 +493,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 02 Init/Schema | db-init.ts | pendiente | PENÚLTIMO |
 | 03 Persistencia | db-persistence.ts | pendiente | baja |
 | 04 Customers | db-customers.ts | completado | alta |
-| 05 Auditoría | db-audit.ts | pendiente | media |
+| 05 Auditoría | db-audit.ts | completado | media |
 | 06 Invoices | db-invoices.ts | completado | alta |
 | 07 Quotes | db-quotes.ts | completado | media |
 | 08 Suppliers | db-suppliers.ts | completado | alta |
