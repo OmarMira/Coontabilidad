@@ -228,7 +228,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 12 — Journal Entries Automáticos
 **Líneas:** 7418 – 7527
 **Archivo destino:** `src/database/modules/db-journal-auto.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `generateSalesJournalEntry`
 - `generatePurchaseJournalEntry`
@@ -500,7 +500,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 09 Bills | db-bills.ts | completado | alta |
 | 10 Chart of Accounts | db-chart-of-accounts.ts | pendiente | ⚠️ alta |
 | 11 Journal | db-journal.ts | completado | ⚠️ crítico |
-| 12 Journal Auto | db-journal-auto.ts | pendiente | alta |
+| 12 Journal Auto | db-journal-auto.ts | completado | alta |
 | 13 Payments | db-payments.ts | completado | alta |
 | 14 Reports Financial | db-reports-financial.ts | pendiente | media |
 | 15 Company | db-company.ts | completado | ⚠️ alta |
