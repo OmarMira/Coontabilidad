@@ -463,7 +463,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ## MÓDULO 27 — Payroll (Nómina)
 **Líneas:** 289 – 1124 y 13939 – 14209
 **Archivo destino:** `src/database/modules/db-payroll.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 - `getMonthlyFinancialSummary`
 - `getEmployees`, `getEmployeeById`, `createEmployee`, `updateEmployee`
@@ -515,7 +515,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 24 Purchase Orders | db-purchase-orders.ts | pendiente | baja |
 | 25 Inventory | db-inventory.ts | pendiente | baja |
 | 26 Budgets | db-budgets.ts | pendiente | baja |
-| 27 Payroll | db-payroll.ts | pendiente | media |
+| 27 Payroll | db-payroll.ts | completado | media |
 
 ---
 
