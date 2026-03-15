@@ -455,11 +455,16 @@ export interface QuoteLine {
 
 export interface ChartOfAccount {
   id: number;
-  code: string;
-  name: string;
-  type: string;
+  account_code: string;
+  number?: string;
+  account_name: string;
+  account_type: string;
+  normal_balance: 'debit' | 'credit';
+  description?: string;
+  is_active: boolean;
+  balance?: number;
   subtype?: string;
-  active: boolean;
+  parent_code?: string;
 }
 
 export interface JournalEntry {
