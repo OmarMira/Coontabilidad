@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CreditCard, Check, X, AlertCircle } from 'lucide-react';
-import { PaymentMethod, getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '@/database/simple-db';
+import { getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '@/database/modules/db-payment-methods';
+import type { PaymentMethod } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface PaymentMethodsProps {
@@ -18,7 +19,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
   const [formData, setFormData] = useState({
     method_name: '',
-    method_type: 'other' as 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'other',
+    method_type: 'other' as string,
     is_active: true,
     requires_reference: false
   });
@@ -241,7 +242,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                           </span>
                         )}
                         <span className="opacity-60 text-xs font-medium tracking-tight">
-                          ID: {method.id} • {new Date(method.created_at).toLocaleDateString()}
+                          ID: {method.id} · {new Date(method.created_at ?? Date.now()).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
