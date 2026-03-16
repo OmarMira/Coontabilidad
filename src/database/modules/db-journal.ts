@@ -3,8 +3,25 @@
  * Extraído de simple-db.ts líneas 7051–7447
  */
 
-import { db } from '../simple-db';
-import { forceSaveDB, isDateLocked, logAuditEvent, PRIVILEGED_ROLES } from '../simple-db';
+import { db, PRIVILEGED_ROLES } from './db-core';
+import { forceSaveDB } from './db-persistence';
+import { logAuditEvent } from './db-audit';
+
+export function isDateLocked(dateStr: string): boolean {
+  if (!db) return false;
+  try {
+    const date = new Date(dateStr).toISOString().split('T')[0];
+    const res = db.exec(`
+      SELECT status 
+      FROM accounting_periods
+      WHERE date(?) BETWEEN date(start_date) AND date(end_date)
+      AND status IN ('closed', 'locked')
+    `, [date]);
+    return res.length > 0 && res[0].values.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
 import { logger } from '../../core/logging/SystemLogger';
 import type { ChartOfAccount, JournalEntry, JournalDetail } from './db-types';
 
