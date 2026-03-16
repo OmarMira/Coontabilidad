@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Edit, FileText, Calendar, DollarSign, Truck, MapPin, Phone, Mail } from 'lucide-react';
-import { Bill } from '@/database/simple-db';
+import type { Bill } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface BillDetailViewProps {
@@ -154,7 +154,7 @@ export const BillDetailView: React.FC<BillDetailViewProps> = ({
 
             <div>
               <p className="text-slate-500 text-sm">{t('billDetail.label.created')}</p>
-              <p className="text-white">{new Date(bill.created_at).toLocaleString()}</p>
+              <p className="text-white">{new Date(bill.created_at ?? Date.now()).toLocaleString()}</p>
             </div>
 
             {bill.notes && (
