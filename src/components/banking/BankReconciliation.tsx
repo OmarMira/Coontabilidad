@@ -25,21 +25,16 @@ import {
     ChevronRight,
     Landmark
 } from 'lucide-react';
-import {
-    getBankAccounts,
-    getReconciliationStatements,
-    getUnreconciledTransactions,
-    createReconciliationStatement,
-    autoMatchTransactions,
-    BankAccount,
-    ReconciliationStatement,
-    BankTransaction
-} from '@/database/simple-db';
+import type { BankAccount, ReconciliationStatement, BankTransaction } from '@/database/modules/db-types';
+import { getBankAccounts } from '@/database/modules/db-bank-accounts';
+import { getReconciliationStatements, getUnreconciledTransactions, createReconciliationStatement, autoMatchTransactions } from '@/database/modules/db-reconciliation';
 import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 import { ReconciliationTask, ReconciliationResult } from '../../workers/reconciliation.worker';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';
-import { db, getChartOfAccounts, ChartOfAccount } from '@/database/simple-db';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
 import { TRANSACTION_STATES } from '../../constants/bankingStates';
@@ -156,7 +151,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
             const task: ReconciliationTask = {
                 type: 'AUTO_MATCH',
                 statementId,
-                transactions: unreconciledTransactions,
+                transactions: unreconciledTransactions as any,
                 matchingCriteria: {
                     amountTolerance: 0.01,
                     dateTolerance: 3,
@@ -437,9 +432,9 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                                     </td>
                                                     <td className="px-8 py-6 text-right font-mono font-black text-slate-300 text-sm">${statement.statement_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-8 py-6 text-right font-mono font-black text-slate-300 text-sm">${statement.system_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                                    <td className={`px-8 py-6 text-right font-mono font-black ${Math.abs(statement.difference) < 0.01 ? 'text-emerald-500' : 'text-rose-500'
+                                                    <td className={`px-8 py-6 text-right font-mono font-black ${Math.abs(statement.difference ?? 0) < 0.01 ? 'text-emerald-500' : 'text-rose-500'
                                                         } text-base tracking-tighter`}>
-                                                        ${statement.difference.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        ${(statement.difference ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </td>
                                                     <td className="px-8 py-6">
                                                         <StatusBadge status={statement.status} />
