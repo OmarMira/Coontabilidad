@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Users, UserPlus, CheckCircle2 } from 'lucide-react';
-import { getCustomers, assignCustomerToARDDocument, Customer } from '@/database/simple-db';
+import { getCustomers } from '@/database/modules/db-customers';
+import { assignCustomerToARDDocument } from '@/database/modules/db-company';
+import type { Customer } from '@/database/modules/db-types';
 import { useLocale } from '../../i18n/useLocale';
 
 interface ARDAssignCustomerModalProps {
