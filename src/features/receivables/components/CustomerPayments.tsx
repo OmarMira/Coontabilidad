@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, DollarSign, FileText, Search, Plus, Check, X, Zap } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Invoice, Customer, getPaymentMethods, PaymentMethod, createPayment, Payment } from '@/database/simple-db';
+import type { Invoice, Customer, PaymentMethod, Payment } from '@/database/modules/db-types';
+import { getPaymentMethods } from '@/database/modules/db-payment-methods';
+import { createPayment } from '@/database/modules/db-payments';
 import { useLocale } from '../../../i18n/useLocale';
 
 interface CustomerPayment {
