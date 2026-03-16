@@ -11,7 +11,7 @@
  * - Cuentas con saldo negativo inesperado
  */
 
-import { db, getDBEngine } from '@/database/simple-db';
+import { db, getDBEngine } from '@/database/modules/db-core';
 import { DraftProposalService } from '../DraftProposalService';
 import { logger } from '../../core/logging/SystemLogger';
 
