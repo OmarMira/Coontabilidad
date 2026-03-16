@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Save, XCircle, Calculator, User, Calendar, ShieldCheck } from 'lucide-react';
-import { Customer, Product, Invoice, InvoiceItem, getFloridaTaxRate } from '@/database/simple-db';
+import type { Customer, Product, Invoice, InvoiceItem } from '@/database/modules/db-types';
+import { getFloridaTaxRate } from '@/database/modules/db-invoices';
 import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceFormProps {
@@ -16,7 +17,7 @@ interface FormData {
   customer_id: number | '';
   issue_date: string;
   due_date: string;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
   notes: string;
 }
 
@@ -51,7 +52,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
       description: item.description,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      taxable: item.taxable
+      taxable: !!item.taxable
     })) || [
       { product_id: '', description: '', quantity: 1, unit_price: 0, taxable: true }
     ]
