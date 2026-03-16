@@ -3,7 +3,7 @@
  * Extraído de simple-db.ts líneas 7452–7557 y 7701–7724
  */
 
-import { db } from '../simple-db';
+import { db } from './db-core';
 import { createJournalEntry } from './db-journal';
 import type { Invoice, Bill, Payment, SupplierPayment, Customer, Supplier, JournalDetail } from './db-types';
 
