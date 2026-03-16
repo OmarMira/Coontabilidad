@@ -496,7 +496,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 
 **Líneas:** 12739 – 13090
 **Archivo destino:** `src/database/modules/db-inventory.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 
 - `createInventoryMovement`
@@ -582,7 +582,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 22 Bank Transactions | db-bank-transactions.ts | completado | media |
 | 23 Users | db-users.ts | completado | ⚠️ alta |
 | 24 Purchase Orders | db-purchase-orders.ts | completado | baja |
-| 25 Inventory | db-inventory.ts | pendiente | baja |
+| 25 Inventory | db-inventory.ts | completado | baja |
 | 26 Budgets | db-budgets.ts | pendiente | baja |
 | 27 Payroll | db-payroll.ts | completado | media |
 
