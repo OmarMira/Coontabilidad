@@ -3,7 +3,7 @@ import {
   Users, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus,
   Target, Zap, Activity, Filter, ArrowRight
 } from 'lucide-react';
-import { Customer } from '@/database/simple-db';
+import type { Customer } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface CustomerListProps {
@@ -27,8 +27,8 @@ export const CustomerList: React.FC<CustomerListProps> = ({
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm);
+      (customer.email ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (customer.phone ?? '').includes(searchTerm);
     const matchesCounty = selectedCounty === '' || customer.florida_county === selectedCounty;
     return matchesSearch && matchesCounty;
   });
@@ -132,7 +132,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({
                         ID: {customer.id.toString().padStart(4, '0')}
                       </span>
                       <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                        {formatDate(customer.created_at)}
+                        {formatDate(customer.created_at ?? '')}
                       </span>
                     </div>
                   </div>
