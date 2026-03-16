@@ -3,8 +3,8 @@
  * Extraído de simple-db.ts líneas 13091–13920
  */
 
-import { db } from '../simple-db';
-import { forceSaveDB, rowToEntity } from '../simple-db';
+import { db, rowToEntity } from './db-core';
+import { forceSaveDB } from './db-persistence';
 import { logger } from '../../core/logging/SystemLogger';
 import { AuditChainService as AuditTrailService } from '../../core/audit/AuditChainService';
 
