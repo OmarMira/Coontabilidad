@@ -17,7 +17,7 @@ import {
     History,
     Loader2
 } from 'lucide-react';
-import { getIncomeStatementReport, IncomeStatementItem } from '@/database/simple-db';
+import { getIncomeStatementReport, IncomeStatementItem } from '@/database/modules/db-reports-trial';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useLocale } from '@/i18n/useLocale';
