@@ -16,7 +16,9 @@ import {
   Building2
 } from 'lucide-react';
 import { BankImportService, ImportTransaction } from '../../services/banking/BankImportService';
-import { BankAccount, db, createBankAccount, getBankAccounts } from '@/database/simple-db';
+import type { BankAccount } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { createBankAccount, getBankAccounts } from '@/database/modules/db-bank-accounts';
 import { toast } from 'react-hot-toast';
 import { BankAccountForm } from '../BankAccountForm';
 

@@ -555,7 +555,7 @@ export interface BankAccount {
   bank_name: string;
   account_number: string;
   routing_number?: string;
-  account_type: 'checking' | 'savings' | 'credit_card';
+  account_type: 'checking' | 'savings' | 'credit' | 'other';
   currency: string;
   balance: number;
   is_active: boolean;

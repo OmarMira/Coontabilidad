@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BankTransaction, MatchCandidate, findPotentialMatches, confirmMatch, unmatchTransaction } from '@/database/simple-db';
+import type { BankTransaction } from '@/database/modules/db-types';
+import type { MatchCandidate } from '@/database/modules/db-bank-transactions';
+import { findPotentialMatches, confirmMatch, unmatchTransaction } from '@/database/modules/db-bank-transactions';
 import { Check, X, AlertTriangle, ArrowRight, RefreshCw, Scale, Search } from 'lucide-react';
 
 interface Props {
