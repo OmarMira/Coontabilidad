@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { getBudgetVarianceAnalysis, getBudgetSummary } from '@/database/simple-db';
+import { getBudgetVarianceAnalysis, getBudgetSummary } from '@/database/modules/db-budgets';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useLocale } from '@/i18n/useLocale';
 
