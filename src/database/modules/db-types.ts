@@ -819,3 +819,34 @@ export interface MatchCandidate {
   score: number;
   matchReason: string;
 }
+
+export interface PayrollRecord {
+  id?: number;
+  employee_id: number;
+  pay_period_start: string;
+  pay_period_end: string;
+  pay_date: string;
+  regular_hours: number;
+  overtime_hours: number;
+  hourly_rate?: number;
+  regular_pay: number;
+  overtime_pay: number;
+  bonuses: number;
+  commissions: number;
+  gross_pay: number;
+  social_security_tax: number;
+  medicare_tax: number;
+  medicare_additional_tax: number;
+  federal_income_tax: number;
+  other_deductions: number;
+  total_deductions: number;
+  net_pay: number;
+  journal_entry_id?: number;
+  status: 'draft' | 'approved' | 'paid' | 'voided';
+  processed_by?: number;
+  processed_at?: string;
+  approved_by?: number;
+  approved_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
