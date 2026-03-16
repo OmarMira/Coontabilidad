@@ -3,8 +3,9 @@
  * Extraído de simple-db.ts líneas 8876–9572
  */
 
-import { db } from '../simple-db';
-import { saveDatabase, logAuditEvent } from '../simple-db';
+import { db } from './db-core';
+import { saveDatabase } from './db-persistence';
+import { logAuditEvent } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
 import type { Product, ProductCategory, Supplier } from './db-types';
 
