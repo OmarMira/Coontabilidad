@@ -24,14 +24,9 @@ import {
     ChevronRight,
     Loader2
 } from 'lucide-react';
-import {
-    getTrialBalanceReport,
-    getAccountMovementsDetails,
-    validateAccountingIntegrity,
-    createChartOfAccount,
-    getChartOfAccountByCode,
-    createJournalEntry
-} from '@/database/simple-db';
+import { getTrialBalanceReport, getAccountMovementsDetails, validateAccountingIntegrity } from '@/database/modules/db-reports-trial';
+import { createChartOfAccount, getChartOfAccountByCode } from '@/database/modules/db-chart-of-accounts';
+import { createJournalEntry } from '@/database/modules/db-journal';
 import type { TrialBalanceRow } from '../../modules/accounting/Accounting.types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
