@@ -1,6 +1,6 @@
 ✅ Commit 775f5d1. Módulo 18 completo y mapeado.
 
-Estado actual — 24 módulos completados: ✅ 01, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 27
+Estado actual — 26 módulos completados: ✅ 01, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
 
 Tag de checkpoint.
 
@@ -512,7 +512,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 
 **Líneas:** 13091 – 13938
 **Archivo destino:** `src/database/modules/db-budgets.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 
 - `createBudget`, `getBudgets`, `getBudgetById`
@@ -583,7 +583,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 23 Users | db-users.ts | completado | ⚠️ alta |
 | 24 Purchase Orders | db-purchase-orders.ts | completado | baja |
 | 25 Inventory | db-inventory.ts | completado | baja |
-| 26 Budgets | db-budgets.ts | pendiente | baja |
+| 26 Budgets | db-budgets.ts | completado | baja |
 | 27 Payroll | db-payroll.ts | completado | media |
 
 ---
