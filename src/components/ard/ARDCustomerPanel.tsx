@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, FileStack, TrendingUp, CheckCircle, Search, UserMinus, PlusCircle, ArrowRight } from 'lucide-react';
-import { getARDCustomerSummary } from '@/database/simple-db';
+import { getARDCustomerSummary } from '@/database/modules/db-company';
 import { ARDCustomerSummary } from '../../modules/ard/ARD.types';
 import { useLocale } from '../../i18n/useLocale';
 
