@@ -22,7 +22,8 @@ import {
     Layers,
     Info
 } from 'lucide-react';
-import { getEmployees, createEmployee, updateEmployee, Employee } from '@/database/simple-db';
+import { getEmployees, createEmployee, updateEmployee } from '@/database/modules/db-employees';
+import type { Employee } from '@/database/modules/db-types';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -106,7 +107,7 @@ export const EmployeeManager: React.FC = () => {
 
     const filteredEmployees = employees.filter(emp =>
         `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employee_number.toLowerCase().includes(searchTerm.toLowerCase())
+        emp.employee_number?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getStatusConfig = (status: string) => {
