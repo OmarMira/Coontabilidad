@@ -15,7 +15,8 @@ import {
   Target,
   Users2
 } from 'lucide-react';
-import { getCustomers, getInvoices } from '@/database/simple-db';
+import { getCustomers } from '@/database/modules/db-customers';
+import { getInvoices } from '@/database/modules/db-invoices';
 import { useLocale } from '../../i18n/useLocale';
 
 interface CustomerStats {
@@ -68,7 +69,7 @@ export const CustomerDashboard: React.FC = () => {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const newCustomers = customers.filter(c => new Date(c.created_at) >= firstDayOfMonth);
+      const newCustomers = customers.filter(c => new Date(c.created_at ?? Date.now()) >= firstDayOfMonth);
       let totalRevenue = 0;
       let overdueAR = 0;
 
