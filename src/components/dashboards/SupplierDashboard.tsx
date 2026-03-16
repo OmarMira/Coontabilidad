@@ -16,7 +16,8 @@ import {
     ShieldAlert,
     Maximize2
 } from 'lucide-react';
-import { getSuppliers, getBills } from '@/database/simple-db';
+import { getSuppliers } from '@/database/modules/db-suppliers';
+import { getBills } from '@/database/modules/db-bills';
 import { useLocale } from '../../i18n/useLocale';
 
 interface SupplierStats {
@@ -69,7 +70,7 @@ export const SupplierDashboard: React.FC = () => {
             const now = new Date();
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-            const newSuppliers = suppliers.filter(s => new Date(s.created_at) >= firstDayOfMonth);
+            const newSuppliers = suppliers.filter(s => new Date(s.created_at ?? Date.now()) >= firstDayOfMonth);
             let totalExpenses = 0;
             let overdueAP = 0;
 
