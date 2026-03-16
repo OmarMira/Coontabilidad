@@ -4,7 +4,7 @@
  */
 
 import { IntegrityCheck, CheckResult } from '../../../types/integrity.types';
-import { getDB } from '@/database/simple-db';
+import { getDB } from '@/database/modules/db-core';
 
 export class TaxDataIntegrityCheck implements IntegrityCheck {
     id = 'tax-data-integrity';
