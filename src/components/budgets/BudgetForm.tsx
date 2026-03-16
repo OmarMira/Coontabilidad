@@ -7,10 +7,10 @@ import { Plus, Trash2, AlertTriangle, Save, XCircle, Target, ShieldCheck, Loader
 import {
   createBudget,
   updateBudget,
-  getChartOfAccounts,
   type Budget,
   type BudgetLine
-} from '@/database/simple-db';
+} from '@/database/modules/db-budgets';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 import { BudgetLineEditor } from './BudgetLineEditor';
 import { useLocale } from '@/i18n/useLocale';
 
