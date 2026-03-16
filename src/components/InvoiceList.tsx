@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, Edit, Trash2, FileText, Calendar, DollarSign, User, Filter, Plus, Zap } from 'lucide-react';
-import { Invoice } from '@/database/simple-db';
+import type { Invoice } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceListProps {
@@ -214,7 +214,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({
                     <div className="flex items-center gap-2 text-slate-400">
                       <div>
                         <p className="text-white text-xs">
-                          {t('invoiceList.created')}: {new Date(invoice.created_at).toLocaleDateString()}
+                          {t('invoiceList.created')}: {new Date(invoice.created_at ?? Date.now()).toLocaleDateString()}
                         </p>
                         {invoice.notes && (
                           <p className="text-slate-500 text-xs truncate max-w-32" title={invoice.notes}>
