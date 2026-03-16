@@ -19,7 +19,8 @@ import {
   Loader2,
   Cpu
 } from 'lucide-react';
-import { ChartOfAccount, createJournalEntry, getJournalEntries, JournalEntry, JournalDetail } from '@/database/simple-db';
+import type { ChartOfAccount, JournalEntry, JournalDetail } from '@/database/modules/db-types';
+import { createJournalEntry, getJournalEntries } from '@/database/modules/db-journal';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../i18n/useLocale';
 
@@ -80,13 +81,13 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
     try {
       const dbEntries = getJournalEntries(200);
       const mappedEntries: ManualJournalEntry[] = dbEntries.map(entry => ({
-        id: entry.id,
+        id: entry.id ?? 0,
         date: entry.entry_date,
         reference: entry.reference || entry.reference_number || '',
         description: entry.description,
         total_debits: entry.total_debit,
         total_credits: entry.total_credit,
-        is_balanced: entry.is_balanced,
+        is_balanced: !!entry.is_balanced,
         lines: []
       }));
       setEntries(mappedEntries);
