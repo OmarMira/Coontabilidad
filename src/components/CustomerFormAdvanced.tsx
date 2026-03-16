@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Save, X, User, MapPin, CreditCard, FileText } from 'lucide-react';
-import { FLORIDA_COUNTIES } from '@/database/simple-db';
+import { FLORIDA_COUNTIES } from '@/database/modules/db-invoices';
 import { AddressAutocomplete } from './ui/AddressAutocomplete';
 import { useLocale } from '../i18n/useLocale';
 
