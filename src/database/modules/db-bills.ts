@@ -3,16 +3,11 @@
  * Extraído de simple-db.ts líneas 5942–6451
  */
 
-import { db } from '../simple-db';
-import {
-  saveDatabase,
-  forceSaveDB,
-  logAuditEvent,
-  rowToEntity,
-  PRIVILEGED_ROLES,
-  isDateLocked,
-  generatePurchaseJournalEntry
-} from '../simple-db';
+import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
+import { saveDatabase, forceSaveDB } from './db-persistence';
+import { logAuditEvent } from './db-audit';
+import { isDateLocked } from './db-journal';
+import { generatePurchaseJournalEntry } from './db-journal-auto';
 import { getFloridaTaxRate } from './db-invoices';
 import { getSupplierById } from './db-suppliers';
 import type { Bill, BillItem, Supplier } from './db-types';
