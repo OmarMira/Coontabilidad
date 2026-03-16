@@ -20,7 +20,11 @@ import {
     Calendar,
     ChevronRight
 } from 'lucide-react';
-import { BankAccount, BankTransaction, getBankAccounts, insertBankTransactions, findBankAccountsByNumber, createBankAccount, getLastReconciliationStatement, db } from '@/database/simple-db';
+import type { BankAccount, BankTransaction } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { getBankAccounts, findBankAccountsByNumber, createBankAccount } from '@/database/modules/db-bank-accounts';
+import { insertBankTransactions } from '@/database/modules/db-bank-transactions';
+import { getLastReconciliationStatement } from '@/database/modules/db-reconciliation';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import Papa from 'papaparse';
 import { toast } from 'react-hot-toast';
