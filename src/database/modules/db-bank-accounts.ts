@@ -3,8 +3,9 @@
  * Extraído de simple-db.ts líneas 10474–10761
  */
 
-import { db } from '../simple-db';
-import { forceSaveDB, saveDatabase, generateSimpleHash } from '../simple-db';
+import { db } from './db-core';
+import { forceSaveDB, saveDatabase } from './db-persistence';
+import { generateSimpleHash } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
 import type { BankAccount } from './db-types';
 
