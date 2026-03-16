@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Save, X, Calculator, User, MapPin } from 'lucide-react';
-import { Customer, Product } from '@/database/simple-db';
+import type { Customer, Product } from '@/database/modules/db-types';
 import { useLocale } from '../../../i18n/useLocale';
 // Note: We use the simple-db types for UI compatibility, 
 // but the submission will go to the robust InvoiceService.
