@@ -17,15 +17,11 @@ import {
   ShieldAlert,
   Loader2
 } from 'lucide-react';
-import {
-  createJournalEntry,
-  getJournalEntries,
-  generateSalesJournalEntry,
-  generatePurchaseJournalEntry,
-  JournalEntry,
-  getInvoiceById,
-  getBillById
-} from '@/database/simple-db';
+import type { JournalEntry } from '@/database/modules/db-types';
+import { createJournalEntry, getJournalEntries } from '@/database/modules/db-journal';
+import { generateSalesJournalEntry, generatePurchaseJournalEntry } from '@/database/modules/db-journal-auto';
+import { getInvoiceById } from '@/database/modules/db-invoices';
+import { getBillById } from '@/database/modules/db-bills';
 import { logger } from '../core/logging/SystemLogger';
 import { useLocale } from '../i18n/useLocale';
 
