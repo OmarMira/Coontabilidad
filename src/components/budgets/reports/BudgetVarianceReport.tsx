@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getBudgetVarianceAnalysis, type BudgetVarianceAnalysis } from '@/database/simple-db';
+import { getBudgetVarianceAnalysis, type BudgetVarianceAnalysis } from '@/database/modules/db-budgets';
 import { Download, Filter } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
