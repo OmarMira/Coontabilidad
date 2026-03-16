@@ -19,7 +19,7 @@ import {
   getBudgetExecutionStatus,
   approveBudget,
   type Budget
-} from '@/database/simple-db';
+} from '@/database/modules/db-budgets';
 import { BudgetLinesTable } from './BudgetLinesTable';
 import { BudgetVarianceReport } from './reports/BudgetVarianceReport';
 import { BudgetPerformanceChart } from './reports/BudgetPerformanceChart';
