@@ -1,6 +1,6 @@
 ✅ Commit 775f5d1. Módulo 18 completo y mapeado.
 
-Estado actual — 27 módulos completados: ✅ 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+Estado actual — 28 módulos completados: ✅ TODOS (00-27)
 
 Tag de checkpoint.
 
@@ -37,7 +37,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 
 **Líneas:** 1 – 87
 **Archivo destino:** `src/database/modules/db-core.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
 
 - `getDB`
@@ -557,7 +557,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 
 | Módulo | Archivo destino | Estado | Prioridad |
 |--------|----------------|--------|-----------|
-| 00 Core | db-core.ts | pendiente | ÚLTIMO |
+| 00 Core | db-core.ts | completado | ÚLTIMO |
 | 01 Tipos | db-types.ts | completado | PRIMERO |
 | 02 Init/Schema | db-init.ts | completado | PENÚLTIMO |
 | 03 Persistencia | db-persistence.ts | completado | baja |
