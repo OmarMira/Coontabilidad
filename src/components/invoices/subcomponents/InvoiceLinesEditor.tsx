@@ -1,5 +1,5 @@
 import React from 'react';
-import { Product } from '@/database/simple-db';
+import type { Product } from '@/database/modules/db-types';
 import { Plus, X } from 'lucide-react';
 import { InvoiceLine } from '../InvoiceSchemas';
 
