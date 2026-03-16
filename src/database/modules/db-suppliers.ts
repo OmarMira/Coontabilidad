@@ -3,8 +3,9 @@
  * Extraído de simple-db.ts líneas 5583–5935
  */
 
-import { db } from '../simple-db';
-import { saveDatabase, logAuditEvent, rowToEntity, PRIVILEGED_ROLES } from '../simple-db';
+import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
+import { saveDatabase } from './db-persistence';
+import { logAuditEvent } from './db-audit';
 import type { Supplier } from './db-types';
 
 const processSupplierRow = (row: any): Supplier => {
