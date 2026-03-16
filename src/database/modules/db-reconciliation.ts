@@ -3,8 +3,8 @@
  * Extraído de simple-db.ts líneas 10769–11049
  */
 
-import { db } from '../simple-db';
-import { saveDatabase, rowToEntity } from '../simple-db';
+import { db, rowToEntity } from './db-core';
+import { saveDatabase } from './db-persistence';
 import type { ReconciliationStatement, ReconciliationMatch, BankTransaction, JournalEntry } from './db-types';
 
 export function getReconciliationStatements(accountId?: number): ReconciliationStatement[] {
