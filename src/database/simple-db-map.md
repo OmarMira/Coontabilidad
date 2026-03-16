@@ -1,4 +1,16 @@
-# Mapa de Módulos — simple-db.ts
+✅ Commit 775f5d1. Módulo 18 completo y mapeado.
+
+Estado actual — 24 módulos completados: ✅ 01, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 27
+
+Tag de checkpoint.
+
+REGLA ABSOLUTA: Solo ejecutas el comando exacto que te ordena el operador. Si encuentras un problema, DETENTE y repórtalo con el output exacto. No corrijas nada, no ejecutes comandos adicionales, no hagas análisis extra. Espera la siguiente orden.
+
+Orden para Antigravity:
+
+`git tag v47-modulos-03-16-18-27-completados; git push origin v47-modulos-03-16-18-27-completados`
+
+Reportar output exacto. Nada más.# Mapa de Módulos — simple-db.ts
 **Archivo:** `src/database/simple-db.ts`
 **Total líneas:** 14,209
 **Fecha de análisis:** 2026-03-12
@@ -9,6 +21,7 @@
 ## INSTRUCCIONES DE USO
 
 Cada módulo indica:
+
 - **Líneas:** rango exacto en simple-db.ts
 - **Archivo destino:** nombre del nuevo archivo modular
 - **Funciones:** lista de exports
@@ -21,10 +34,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 00 — Core / Bootstrap
+
 **Líneas:** 1 – 87
 **Archivo destino:** `src/database/modules/db-core.ts`
 **Estado:** pendiente
 **Funciones:**
+
 - `getDB`
 - `dbExec`
 - `dbRun`
@@ -35,10 +50,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 01 — Tipos e Interfaces
+
 **Líneas:** 88 – 1826
 **Archivo destino:** `src/database/modules/db-types.ts`
 **Estado:** completado
 **Interfaces exportadas:**
+
 - `MonthlySummary`, `Employee`, `PayrollPeriod`, `PayrollEntry`, `PayrollLineItem`, `PayrollSetting`, `Payroll`, `TaxBracket`
 - `AssetCategory`, `FixedAsset`, `AssetDepreciation`
 - `FiscalYear`, `AccountingPeriod`
@@ -59,10 +76,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 02 — Inicialización y Schema
+
 **Líneas:** 1849 – 3722
 **Archivo destino:** `src/database/modules/db-init.ts`
 **Estado:** pendiente
 **Funciones:**
+
 - `resetDB`
 - `initDB`
 - `initializeSchema` (función interna, ~1750 líneas — contiene el CREATE TABLE completo del legacy)
@@ -72,10 +91,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 03 — Persistencia y Cifrado
+
 **Líneas:** 3723 – 3877
 **Archivo destino:** `src/database/modules/db-persistence.ts`
 **Estado:** completado
 **Funciones:**
+
 - `saveDatabase`
 - `forceSaveDB`
 - `isEncryptionEnabled`
@@ -89,10 +110,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 04 — Customers (Clientes)
+
 **Líneas:** 3878 – 4317
 **Archivo destino:** `src/database/modules/db-customers.ts`
 **Estado:** completado
 **Funciones:**
+
 - `addCustomer`
 - `getCustomers`
 - `getCustomerById`
@@ -105,10 +128,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 05 — Auditoría
+
 **Líneas:** 4318 – 4509
 **Archivo destino:** `src/database/modules/db-audit.ts`
 **Estado:** completado
 **Funciones:**
+
 - `generateSimpleHash`
 - `generateAuditHash` (interna)
 - `logAuditEvent` (interna)
@@ -122,10 +147,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 06 — Invoices (Facturas de Venta)
+
 **Líneas:** 4510 – 5078
 **Archivo destino:** `src/database/modules/db-invoices.ts`
 **Estado:** completado
 **Funciones:**
+
 - `FLORIDA_COUNTIES` (constante)
 - `generateInvoiceNumber`
 - `getInvoices`
@@ -144,10 +171,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 07 — Quotes (Cotizaciones)
+
 **Líneas:** 5079 – 5557
 **Archivo destino:** `src/database/modules/db-quotes.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getQuotes`
 - `getQuoteById`
 - `createQuote`
@@ -160,10 +189,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 08 — Suppliers (Proveedores)
+
 **Líneas:** 5558 – 5912
 **Archivo destino:** `src/database/modules/db-suppliers.ts`
 **Estado:** completado
 **Funciones:**
+
 - `addSupplier`
 - `getSuppliers`
 - `getSupplierById`
@@ -176,10 +207,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 09 — Bills (Facturas de Compra)
+
 **Líneas:** 5913 – 6429
 **Archivo destino:** `src/database/modules/db-bills.ts`
 **Estado:** completado
 **Funciones:**
+
 - `generateBillNumber`
 - `getBills`
 - `getBillById`
@@ -193,10 +226,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 10 — Chart of Accounts (Plan de Cuentas)
+
 **Líneas:** 6430 – 7026
 **Archivo destino:** `src/database/modules/db-chart-of-accounts.ts`
 **Estado:** pendiente
 **Funciones:**
+
 - `createChartOfAccount`
 - `getChartOfAccountByCode`
 - `updateChartOfAccount`
@@ -210,10 +245,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 11 — Journal (Asientos Contables)
+
 **Líneas:** 7027 – 7417
 **Archivo destino:** `src/database/modules/db-journal.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getChartOfAccounts`
 - `getAccountBalance`
 - `diagnoseAccountingSystem`
@@ -226,10 +263,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 12 — Journal Entries Automáticos
+
 **Líneas:** 7418 – 7527
 **Archivo destino:** `src/database/modules/db-journal-auto.ts`
 **Estado:** completado
 **Funciones:**
+
 - `generateSalesJournalEntry`
 - `generatePurchaseJournalEntry`
 - `generatePaymentReceivedJournalEntry`
@@ -239,10 +278,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 13 — Payments (Pagos)
+
 **Líneas:** 7528 – 7800
 **Archivo destino:** `src/database/modules/db-payments.ts`
 **Estado:** completado
 **Funciones:**
+
 - `generatePaymentNumber`
 - `generateSupplierPaymentNumber`
 - `createPayment`
@@ -255,10 +296,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 14 — Financial Reports (Reportes Financieros)
+
 **Líneas:** 7797 – 8090
 **Archivo destino:** `src/database/modules/db-reports-financial.ts`
 **Estado:** completado
 **Funciones:**
+
 - `generateBalanceSheet`
 - `generateIncomeStatement`
 - `generateClosingEntry`
@@ -269,10 +312,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 15 — Company Data y Aging Reports
+
 **Líneas:** 8087 – 8874
 **Archivo destino:** `src/database/modules/db-company.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getAgingReport`
 - `getAccountLedger`
 - `getCompanyData`
@@ -287,10 +332,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 16 — Products y Categorías
+
 **Líneas:** 8875 – 9576
 **Archivo destino:** `src/database/modules/db-products.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getProductCategories`, `createProductCategory`, `updateProductCategory`, `deleteProductCategory`
 - `getProducts`, `createProduct`, `updateProduct`, `deleteProduct`
 - `getProductById`, `updateProductStock`, `getProductsLowStock`
@@ -300,10 +347,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 17 — Florida Tax / DR15
+
 **Líneas:** 9577 – 9940
 **Archivo destino:** `src/database/modules/db-florida-tax.ts`
 **Estado:** completado
 **Funciones:**
+
 - `calculateFloridaDR15Report`
 - `saveDR15Report`
 - `getDR15Reports`
@@ -316,10 +365,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 18 — DR15 Periods y Payment Methods
+
 **Líneas:** 9941 – 10473
 **Archivo destino:** `src/database/modules/db-payment-methods.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getAvailableDR15Periods`
 - `getPaymentMethods`, `getAllPaymentMethods`
 - `createPaymentMethod`, `updatePaymentMethod`, `deletePaymentMethod`
@@ -330,10 +381,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 19 — Bank Accounts
+
 **Líneas:** 10474 – 10768
 **Archivo destino:** `src/database/modules/db-bank-accounts.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getBankAccounts`
 - `getBankAccountById`
 - `getBankAccountTransactionCount`
@@ -348,10 +401,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 20 — Bank Reconciliation
+
 **Líneas:** 10769 – 11025
 **Archivo destino:** `src/database/modules/db-reconciliation.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getReconciliationStatements`
 - `getLastReconciliationStatement`
 - `createReconciliationStatement`
@@ -366,10 +421,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 21 — Trial Balance e Income Statement Reports
+
 **Líneas:** 11026 – 11278
 **Archivo destino:** `src/database/modules/db-reports-trial.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getTrialBalanceReport`
 - `getAccountMovementsDetails`
 - `validateAccountingIntegrity`
@@ -380,10 +437,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 22 — Bank Transactions e Import
+
 **Líneas:** 11279 – 11538
 **Archivo destino:** `src/database/modules/db-bank-transactions.ts`
 **Estado:** completado
 **Funciones:**
+
 - `insertBankTransactions`
 - `getBankTransactions`
 - `findPotentialMatches`
@@ -396,10 +455,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 23 — Users y Roles
+
 **Líneas:** 11539 – 12404
 **Archivo destino:** `src/database/modules/db-users.ts`
 **Estado:** completado
 **Funciones:**
+
 - `hasActiveUsers`
 - `seedUsersAndRoles`
 - `seedCompanyData` (interna)
@@ -417,10 +478,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 24 — Purchase Orders e Inventory
+
 **Líneas:** 12405 – 12738
 **Archivo destino:** `src/database/modules/db-purchase-orders.ts`
-**Estado:** pendiente
+**Estado:** completado
 **Funciones:**
+
 - `getPurchaseOrders`, `createPurchaseOrder`, `receivePurchaseOrder`
 - `getStockMovements`
 - `getKardexMovements`
@@ -430,10 +493,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 25 — Inventory Movements y Locations
+
 **Líneas:** 12739 – 13090
 **Archivo destino:** `src/database/modules/db-inventory.ts`
 **Estado:** pendiente
 **Funciones:**
+
 - `createInventoryMovement`
 - `getInventoryMovementsWithFilters`
 - `createLocation`, `getLocations`, `updateLocation`, `deleteLocation`
@@ -444,10 +509,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 26 — Budgets (Presupuestos)
+
 **Líneas:** 13091 – 13938
 **Archivo destino:** `src/database/modules/db-budgets.ts`
 **Estado:** pendiente
 **Funciones:**
+
 - `createBudget`, `getBudgets`, `getBudgetById`
 - `getBudgetLines`, `getBudgetPeriods`
 - `updateBudget`, `deleteBudget`, `approveBudget`
@@ -461,10 +528,12 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 ---
 
 ## MÓDULO 27 — Payroll (Nómina)
+
 **Líneas:** 289 – 1124 y 13939 – 14209
 **Archivo destino:** `src/database/modules/db-payroll.ts`
 **Estado:** completado
 **Funciones:**
+
 - `getMonthlyFinancialSummary`
 - `getEmployees`, `getEmployeeById`, `createEmployee`, `updateEmployee`
 - `getPayrollPeriods`, `getPayrollSettings`, `updatePayrollSetting`
@@ -512,7 +581,7 @@ Cuando algo falla en una pantalla, busca la pantalla en la columna "Pantallas qu
 | 21 Trial Balance | db-reports-trial.ts | completado | media |
 | 22 Bank Transactions | db-bank-transactions.ts | completado | media |
 | 23 Users | db-users.ts | completado | ⚠️ alta |
-| 24 Purchase Orders | db-purchase-orders.ts | pendiente | baja |
+| 24 Purchase Orders | db-purchase-orders.ts | completado | baja |
 | 25 Inventory | db-inventory.ts | pendiente | baja |
 | 26 Budgets | db-budgets.ts | pendiente | baja |
 | 27 Payroll | db-payroll.ts | completado | media |
