@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin, Plus, Edit, X, Save } from 'lucide-react';
-import { createLocation, getLocations } from '@/database/simple-db';
+import { createLocation, getLocations } from '@/database/modules/db-inventory';
 import toast from 'react-hot-toast';
 import { useLocale } from '@/i18n/useLocale';
 
