@@ -3,15 +3,11 @@
  * Extraído de simple-db.ts líneas 4533–5101
  */
 
-import { db } from '../simple-db';
-import {
-  saveDatabase,
-  logAuditAction,
-  rowToEntity,
-  PRIVILEGED_ROLES,
-  isDateLocked,
-  generateSalesJournalEntry
-} from '../simple-db';
+import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
+import { saveDatabase } from './db-persistence';
+import { logAuditEvent as logAuditAction } from './db-audit';
+import { isDateLocked } from './db-journal';
+import { generateSalesJournalEntry } from './db-journal-auto';
 import type { Invoice, InvoiceItem, Product, Customer } from './db-types';
 
 export const FLORIDA_COUNTIES = [
