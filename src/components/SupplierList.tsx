@@ -3,7 +3,7 @@ import {
   Truck, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus,
   Zap, Activity, ShieldCheck, Target, Building2
 } from 'lucide-react';
-import { Supplier } from '@/database/simple-db';
+import type { Supplier } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface SupplierListProps {
@@ -27,8 +27,8 @@ export const SupplierList: React.FC<SupplierListProps> = ({
 
   const filteredSuppliers = suppliers.filter(supplier => {
     const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.phone.includes(searchTerm);
+      (supplier.email ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (supplier.phone ?? '').includes(searchTerm);
     const matchesCounty = selectedCounty === '' || supplier.florida_county === selectedCounty;
     return matchesSearch && matchesCounty;
   });
