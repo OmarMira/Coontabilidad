@@ -3,7 +3,8 @@ import {
   Plus, Save, XCircle, Calculator, Truck, Calendar,
   ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Info, Layers, Clock, Trash2
 } from 'lucide-react';
-import { Supplier, Product, Bill, BillItem, getFloridaTaxRate } from '@/database/simple-db';
+import type { Supplier, Product, Bill, BillItem } from '@/database/modules/db-types';
+import { getFloridaTaxRate } from '@/database/modules/db-invoices';
 import { useLocale } from '../i18n/useLocale';
 
 interface BillFormProps {
@@ -19,7 +20,7 @@ interface FormData {
   supplier_id: number | '';
   issue_date: string;
   due_date: string;
-  status: 'draft' | 'received' | 'approved' | 'paid' | 'overdue' | 'cancelled';
+  status: 'draft' | 'received' | 'approved' | 'paid' | 'overdue' | 'cancelled' | 'pending';
   notes: string;
 }
 
@@ -54,7 +55,7 @@ export const BillForm: React.FC<BillFormProps> = ({
       description: item.description,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      taxable: item.taxable
+      taxable: !!item.taxable
     })) || [
       { product_id: '', description: '', quantity: 1, unit_price: 0, taxable: true }
     ]
@@ -186,7 +187,7 @@ export const BillForm: React.FC<BillFormProps> = ({
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-[8px] font-bold text-slate-600 uppercase">{t('billForm.jurisdiction')}</p>
-                          <p className="text-[10px] font-black text-white">{selectedSupplier.florida_county.toUpperCase()}</p>
+                          <p className="text-[10px] font-black text-white">{(selectedSupplier.florida_county ?? '').toUpperCase()}</p>
                         </div>
                         <div>
                           <p className="text-[8px] font-bold text-slate-600 uppercase">{t('billForm.terms')}</p>
