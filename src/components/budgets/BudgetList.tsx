@@ -13,7 +13,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { deleteBudget, type Budget } from '@/database/simple-db';
+import { deleteBudget, type Budget } from '@/database/modules/db-budgets';
 import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetListProps {
