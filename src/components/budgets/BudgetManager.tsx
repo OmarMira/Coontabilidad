@@ -17,7 +17,7 @@ import {
   getBudgetSummary,
   getBudgetExecutionStatus,
   type Budget
-} from '@/database/simple-db';
+} from '@/database/modules/db-budgets';
 import { useAuth } from '@/contexts/AuthContext';
 import { BudgetList } from './BudgetList';
 import { BudgetForm } from './BudgetForm';
