@@ -3,7 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, DollarSign } from 'lucide-react';
-import { getChartOfAccounts, type BudgetLine } from '@/database/simple-db';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
+import type { BudgetLine } from '@/database/modules/db-budgets';
 import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetLineEditorProps {
