@@ -6,7 +6,7 @@ import {
   getBudgetVarianceAnalysis,
   type BudgetLine,
   type BudgetVarianceAnalysis
-} from '@/database/simple-db';
+} from '@/database/modules/db-budgets';
 import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetLinesTableProps {
