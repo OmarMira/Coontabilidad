@@ -1,5 +1,5 @@
 // UnifiedNotificationService.ts - Sistema de notificaciones cruzadas entre módulos
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 
 export interface SystemNotification {
   id: string;

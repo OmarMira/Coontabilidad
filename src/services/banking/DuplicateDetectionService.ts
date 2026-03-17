@@ -1,4 +1,4 @@
-import { BankTransaction } from '@/database/simple-db';
+import type { BankTransaction } from '@/database/modules/db-types';
 
 export interface DuplicateMatch {
     existingTransaction: BankTransaction;

@@ -1,5 +1,5 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
-import { db as globalDb } from '@/database/simple-db';
+import { db as globalDb } from '@/database/modules/db-core';
 import { BackupLocationService } from '../BackupLocationService';
 
 import { AuditChainService } from '../audit/AuditChainService';
