@@ -5,7 +5,9 @@ import {
     FileText, RefreshCw, ArrowDownLeft, ArrowUpRight, AlertTriangle,
     Search, Filter, Package, Zap
 } from 'lucide-react';
-import { getKardexMovements, getProducts, KardexEntry, Product } from '@/database/simple-db';
+import type { KardexEntry, Product } from '@/database/modules/db-types';
+import { getProducts } from '@/database/modules/db-products';
+import { getKardexMovements } from '@/database/modules/db-purchase-orders';
 import { useLocale } from '@/i18n/useLocale';
 
 interface KardexViewerProps {
@@ -147,11 +149,11 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
                             </thead>
                             <tbody className="divide-y divide-slate-800/50">
                                 {filtered.map((m) => {
-                                    const typeInfo = getTypeDisplay(m.reference_type, m.quantity);
+                                    const typeInfo = getTypeDisplay(m.reference_type ?? '', m.quantity);
                                     return (
                                         <tr key={m.id} className="hover:bg-slate-800/30 transition-colors">
                                             <td className="px-6 py-4 font-mono text-slate-400 text-xs">
-                                                {m.formatted_date || new Date(m.created_at).toLocaleDateString()}
+                                                {m.formatted_date || new Date(m.created_at ?? Date.now()).toLocaleDateString()}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
