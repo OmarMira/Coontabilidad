@@ -1,6 +1,6 @@
 // payroll.worker.ts - Heavy payroll calculations worker
 import { calculateEmployeePayroll, CalculationResult } from '../utils/payroll-tax-calculator';
-import { Employee, PayrollSetting, TaxBracket } from '@/database/simple-db';
+import type { Employee, PayrollSetting, TaxBracket } from '@/database/modules/db-types';
 
 export interface PayrollCalculationTask {
   type: 'CALCULATE_PAYROLL' | 'BULK_CALCULATE' | 'TAX_CALCULATION' | 'GENERATE_PAYSLIPS';
