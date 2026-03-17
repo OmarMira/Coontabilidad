@@ -3,7 +3,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, TrendingUp, Package, ArrowRight, Zap } from 'lucide-react';
-import { getProducts, getKardexMovements, Product, KardexEntry } from '@/database/simple-db';
+import type { Product, KardexEntry } from '@/database/modules/db-types';
+import { getProducts } from '@/database/modules/db-products';
+import { getKardexMovements } from '@/database/modules/db-purchase-orders';
 import { useLocale } from '@/i18n/useLocale';
 
 export const InventoryDashboard: React.FC<{

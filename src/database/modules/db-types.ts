@@ -745,7 +745,7 @@ export interface PurchaseOrderItem {
 export interface StockMovement {
   id: number;
   product_id: number;
-  movement_type: 'in' | 'out' | 'adjustment';
+  movement_type: 'in' | 'out' | 'adjustment' | 'purchase' | 'sale' | 'return' | 'initial';
   quantity: number;
   reference_type?: string;
   reference_id?: number;
@@ -755,8 +755,11 @@ export interface StockMovement {
 
 export interface KardexEntry extends StockMovement {
   product_name?: string;
+  product_sku?: string;
   sku?: string;
   running_balance?: number;
+  user_name?: string;
+  formatted_date?: string;
 }
 
 export interface CompanyData {
