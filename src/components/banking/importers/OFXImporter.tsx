@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { db, BankAccount, insertBankTransactions, BankTransaction } from '@/database/simple-db';
+import type { BankAccount, BankTransaction } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { insertBankTransactions } from '@/database/modules/db-bank-transactions';
 import { parseOFX } from '@/lib/ofx-parser';
 import { OFXStatement } from '@/types/ofx';
 import { Upload, FileCode, Check, ArrowRight, RefreshCw, AlertTriangle } from 'lucide-react';

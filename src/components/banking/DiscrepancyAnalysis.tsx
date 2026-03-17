@@ -13,14 +13,9 @@ import {
     BarChart3
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import {
-    getBankAccounts,
-    getReconciliationStatements,
-    getUnreconciledTransactions,
-    BankAccount,
-    ReconciliationStatement,
-    BankTransaction
-} from '@/database/simple-db';
+import type { BankAccount, ReconciliationStatement, BankTransaction } from '@/database/modules/db-types';
+import { getBankAccounts } from '@/database/modules/db-bank-accounts';
+import { getReconciliationStatements, getUnreconciledTransactions } from '@/database/modules/db-reconciliation';
 import { WorkerOrchestrator } from '../../core/workers/WorkerOrchestrator';
 import { ReconciliationTask, ReconciliationResult, Discrepancy } from '../../workers/reconciliation.worker';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';

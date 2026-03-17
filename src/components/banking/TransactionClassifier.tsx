@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle2, ListChecks, Activity } from 'lucide-react';
-import { getDBEngine, getChartOfAccounts, ChartOfAccount } from '@/database/simple-db';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { getDBEngine } from '@/database/modules/db-core';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { TRANSACTION_STATES } from '../../constants/bankingStates';
 import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';

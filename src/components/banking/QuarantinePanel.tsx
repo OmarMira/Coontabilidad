@@ -3,7 +3,9 @@ import {
     ShieldAlert, Clock, ArrowRight, CheckCircle2, AlertCircle,
     Search, Filter, ChevronRight, Calculator, MoreHorizontal, Activity
 } from 'lucide-react';
-import { db, getChartOfAccounts, ChartOfAccount } from '@/database/simple-db';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import toast from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';

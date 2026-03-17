@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { BankImportService } from '../../services/banking/BankImportService';
 import { ClassificationRulesService } from '../../services/banking/ClassificationRulesService';
-import { getChartOfAccounts, ChartOfAccount } from '@/database/simple-db';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
