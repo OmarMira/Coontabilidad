@@ -264,11 +264,15 @@ export interface ProductCategory {
   name: string;
   description?: string;
   parent_id?: number | null;
+  parent?: ProductCategory;
+  tax_rate?: number;
   image_path?: string;
   slug?: string;
   active: boolean;
   created_at?: string;
   updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
 export interface Product {

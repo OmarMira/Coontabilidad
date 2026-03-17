@@ -19,7 +19,7 @@ import {
   Activity,
   Maximize2
 } from 'lucide-react';
-import { Product, ProductCategory } from '@/database/simple-db';
+import type { Product, ProductCategory } from '@/database/modules/db-types';
 import { useLocale } from '@/i18n/useLocale';
 
 interface ProductListProps {
