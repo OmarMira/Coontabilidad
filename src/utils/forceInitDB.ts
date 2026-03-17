@@ -1,16 +1,9 @@
 /**
  * Diagnóstico y Restauración Exhaustiva de Autenticación
  */
-import {
-    initDB,
-    db,
-    getUserRoles,
-    createUserRole,
-    createUser,
-    updateUserPassword,
-    getUserByUsername,
-    hasUsers
-} from '@/database/simple-db';
+import { initDB } from '@/database/modules/db-init';
+import { db } from '@/database/modules/db-core';
+import { getUserRoles, createUserRole, createUser, updateUserPassword, getUserByUsername, hasUsers } from '@/database/modules/db-users';
 import { logger } from '../core/logging/SystemLogger';
 
 export const exhaustiveAuthDiagnostic = async () => {
