@@ -16,7 +16,8 @@ import {
   Target,
   ArrowRight
 } from 'lucide-react';
-import { getEmployees, Employee } from '@/database/simple-db';
+import type { Employee } from '@/database/modules/db-types';
+import { getEmployees } from '@/database/modules/db-payroll';
 import { PayrollProcessor, PayrollResult } from '../../services/payroll/PayrollProcessor';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';

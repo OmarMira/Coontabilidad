@@ -10,16 +10,8 @@ import {
     AlertCircle,
     Zap
 } from 'lucide-react';
-import {
-    getPayrollSettings,
-    updatePayrollSetting,
-    getTaxBrackets,
-    createTaxBracket,
-    updateTaxBracket,
-    deleteTaxBracket,
-    PayrollSetting,
-    TaxBracket
-} from '@/database/simple-db';
+import type { PayrollSetting, TaxBracket } from '@/database/modules/db-types';
+import { getPayrollSettings, updatePayrollSetting, getTaxBrackets, createTaxBracket, updateTaxBracket, deleteTaxBracket } from '@/database/modules/db-payroll';
 import { toast } from 'react-hot-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';

@@ -25,19 +25,9 @@ import {
     FileSearch,
     BrainCircuit
 } from 'lucide-react';
-import {
-    getEmployees,
-    getPayrollPeriods,
-    getPayrollSettings,
-    getTaxBrackets,
-    createPayrollPeriod,
-    createPayrollEntry,
-    createJournalEntry,
-    Employee,
-    PayrollPeriod,
-    PayrollSetting,
-    TaxBracket
-} from '@/database/simple-db';
+import type { Employee, PayrollPeriod, PayrollSetting, TaxBracket } from '@/database/modules/db-types';
+import { getEmployees, getPayrollPeriods, getPayrollSettings, getTaxBrackets, createPayrollPeriod, createPayrollEntry } from '@/database/modules/db-payroll';
+import { createJournalEntry } from '@/database/modules/db-journal';
 import { calculateEmployeePayroll, CalculationResult } from '../../utils/payroll-tax-calculator';
 import { toast } from 'react-hot-toast';
 import { Button } from '../ui/button';

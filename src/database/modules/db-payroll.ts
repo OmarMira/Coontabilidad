@@ -8,7 +8,7 @@ import { saveDatabase, rowToEntity } from '../simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 import type {
   Employee, PayrollPeriod, PayrollSetting, PayrollEntry, PayrollLineItem,
-  Payroll, TaxBracket, AssetCategory, FixedAsset, AssetDepreciation,
+  Payroll, PayrollRecord, TaxBracket, AssetCategory, FixedAsset, AssetDepreciation,
   MonthlySummary, FiscalSettings
 } from './db-types';
 
@@ -469,7 +469,7 @@ export interface PayrollFilter {
   year?: number;
 }
 
-export function getPayrolls(filters: PayrollFilter = {}): Payroll[] {
+export function getPayrolls(filters: PayrollFilter = {}): PayrollRecord[] {
   if (!db) return [];
   try {
     let query = "SELECT * FROM payroll WHERE 1=1";
@@ -480,7 +480,7 @@ export function getPayrolls(filters: PayrollFilter = {}): Payroll[] {
     query += " ORDER BY pay_date DESC";
     const res = db.exec(query, params);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<Payroll>((res[0].columns || (res[0] as any).lc), row));
+    return res[0].values.map((row: any) => rowToEntity<PayrollRecord>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) { console.error('Error fetching payrolls:', e); return []; }
 }
 
@@ -496,12 +496,12 @@ export function hasUsers(): boolean {
   } catch (error) { console.error('Error checking users:', error); return false; }
 }
 
-export function getPayroll(payrollId: number): Payroll | null {
+export function getPayroll(payrollId: number): PayrollRecord | null {
   if (!db) return null;
   try {
     const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
     if (result.length === 0) return null;
-    return rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), result[0].values[0]);
+    return rowToEntity<PayrollRecord>((result[0].columns || (result[0] as any).lc), result[0].values[0]);
   } catch (error) { console.error('Error getting payroll:', error); return null; }
 }
 
