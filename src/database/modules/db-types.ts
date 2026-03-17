@@ -727,14 +727,18 @@ export interface IncomeStatementItem {
 
 export interface PurchaseOrder {
   id: number;
-  po_number: string;
+  po_number?: string;
+  order_number?: string;
   supplier_id: number;
+  supplier_name?: string;
   order_date: string;
   expected_date?: string;
-  status: 'draft' | 'sent' | 'partial' | 'received' | 'cancelled';
+  status: 'draft' | 'sent' | 'approved' | 'partial' | 'received' | 'cancelled';
   total_amount: number;
   notes?: string;
+  items?: PurchaseOrderItem[];
   created_at?: string;
+  created_by?: number;
 }
 
 export interface PurchaseOrderItem {

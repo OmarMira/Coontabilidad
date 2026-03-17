@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Filter, AlertCircle, RefreshCw, ChevronRight, User, Calendar, CreditCard } from 'lucide-react';
-import { getAgingReport } from '@/database/simple-db';
+import { getAgingReport } from '@/database/modules/db-company';
 import { ReportExporter } from './ReportExporter';
 import { logger } from '../../core/logging/SystemLogger';
 import { useLocale } from '../../i18n/useLocale';

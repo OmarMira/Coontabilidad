@@ -3,7 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Plus, Save, Trash2, XCircle, ShieldCheck } from 'lucide-react';
-import { getSuppliers, getActiveProducts, createPurchaseOrder, Supplier, Product } from '@/database/simple-db';
+import type { Supplier, Product } from '@/database/modules/db-types';
+import { getSuppliers } from '@/database/modules/db-suppliers';
+import { getActiveProducts } from '@/database/modules/db-invoices';
+import { createPurchaseOrder } from '@/database/modules/db-purchase-orders';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 

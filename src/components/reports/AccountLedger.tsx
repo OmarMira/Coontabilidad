@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Search, Calendar, RefreshCw, AlertCircle, ArrowLeftRight, FileBarChart } from 'lucide-react';
-import { getAccountLedger, getChartOfAccounts } from '@/database/simple-db';
+import { getAccountLedger } from '@/database/modules/db-company';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 import { ReportExporter } from './ReportExporter';
 import { logger } from '../../core/logging/SystemLogger';
 import { useLocale } from '../../i18n/useLocale';
