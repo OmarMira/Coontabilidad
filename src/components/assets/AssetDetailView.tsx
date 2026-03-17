@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { getFixedAssetsController } from '@/services/accounting/fixed-assets';
 import type { FixedAsset, AssetCategory, DepreciationEntry } from '@/services/accounting/fixed-assets';
 import { useLocale } from '@/i18n/useLocale';

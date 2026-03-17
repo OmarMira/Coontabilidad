@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { dbEngine } from '@/database/simple-db';
+import { dbEngine } from '@/database/modules/db-core';
 
 interface TaxRate {
   id: number;

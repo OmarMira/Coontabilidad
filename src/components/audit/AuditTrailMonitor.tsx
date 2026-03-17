@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AuditChainService } from '@/core/audit/AuditChainService';
-import { getDBEngine } from '@/database/simple-db';
+import { getDBEngine } from '@/database/modules/db-core';
 import { Shield, ShieldAlert, ShieldCheck, RefreshCw, Activity } from 'lucide-react';
 import { useLocale } from '@/i18n/useLocale';
 

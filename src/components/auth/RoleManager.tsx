@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Plus, Edit, Trash2, Save, X, AlertCircle, Check } from 'lucide-react';
-import { getUserRoles, createUserRole, updateUserRole, deleteUserRole } from '@/database/simple-db';
+import { getUserRoles, createUserRole, updateUserRole, deleteUserRole } from '@/database/modules/db-users';
 import type { UserRole } from '../../types/user.types';
 import { useLocale } from '../../i18n/useLocale';
 

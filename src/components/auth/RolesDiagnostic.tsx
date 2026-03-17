@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getUserRoles } from '@/database/simple-db';
+import { getUserRoles } from '@/database/modules/db-users';
 import { Shield, AlertCircle, CheckCircle } from 'lucide-react';
 
 export const RolesDiagnostic: React.FC = () => {
