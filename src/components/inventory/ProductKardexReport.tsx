@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';
-import { getKardexMovements, getProducts, KardexEntry, Product } from '@/database/simple-db';
+import type { KardexEntry, Product } from '@/database/modules/db-types';
+import { getProducts } from '@/database/modules/db-products';
+import { getKardexMovements } from '@/database/modules/db-purchase-orders';
 import { useLocale } from '@/i18n/useLocale';
 
 interface Props {
@@ -98,11 +100,11 @@ export const ProductKardexReport: React.FC<Props> = ({ productId, onClose }) => 
                         </tr>
                     ) : (
                         movements.map((m) => {
-                            const moveType = getMovementType(m.reference_type, m.quantity);
+                            const moveType = getMovementType(m.reference_type ?? '', m.quantity);
                             return (
                                 <tr key={m.id} className="border-b border-slate-200 hover:bg-slate-50">
                                     <td className="py-2 font-mono text-slate-600">
-                                        {m.formatted_date || new Date(m.created_at).toLocaleDateString()}
+                                        {m.formatted_date || new Date(m.created_at ?? Date.now()).toLocaleDateString()}
                                     </td>
                                     <td className="py-2">
                                         <span className="font-bold">{m.reference_id || '—'}</span>
