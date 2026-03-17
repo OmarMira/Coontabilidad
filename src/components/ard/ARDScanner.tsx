@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, File, X, Sparkles, Loader2 } from 'lucide-react';
-import { saveARDDocument, updateARDDocumentStatus } from '@/database/simple-db';
+import { saveARDDocument, updateARDDocumentStatus } from '@/database/modules/db-company';
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { useLocale } from '../../i18n/useLocale';
 import Tesseract from 'tesseract.js';
