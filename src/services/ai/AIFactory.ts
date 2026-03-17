@@ -1,7 +1,7 @@
 import { SemanticQueryAnalyzer } from './SemanticQueryAnalyzer';
 import { IntelligentSQLGenerator } from './IntelligentSQLGenerator';
 import { logger } from '../../core/logging/SystemLogger';
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { translationEngine } from '@/features/i18n/TranslationEngine';
 import { EngineBridge } from '../../core/database/EngineBridge';
 import { SYSTEM_GUIDES } from '../../knowledge/SystemKnowledge';

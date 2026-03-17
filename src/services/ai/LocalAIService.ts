@@ -1,5 +1,5 @@
 
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { IAnalysisService, AIResponse, DeepSeekAIResponse } from './types';
 
 // Translation map for entities

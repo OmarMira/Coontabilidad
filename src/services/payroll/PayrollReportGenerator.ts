@@ -9,7 +9,7 @@
  * UPDATED: Ahora usa AsyncPDFService para generar PDFs sin bloquear la UI
  */
 
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import type { Payroll, Employee } from '@/database/simple-db';
 import { asyncPDFService, type PDFGenerationOptions } from '../pdf/AsyncPDFService';
 

@@ -1,5 +1,5 @@
 // IntegrationService.ts - Servicio de integración entre módulos
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { intelligentCache } from '../core/cache/IntelligentCache';
 
 export interface UnifiedView {
