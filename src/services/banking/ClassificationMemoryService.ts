@@ -1,5 +1,5 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
-import { getDBEngine } from '@/database/simple-db';
+import { getDBEngine } from '@/database/modules/db-core';
 
 export interface MemorySuggestion {
     accountCode: string;

@@ -1,4 +1,6 @@
-import { getDBEngine, ChartOfAccount, getChartOfAccounts } from '@/database/simple-db';
+import { getDBEngine } from '@/database/modules/db-core';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
 
 export interface ClassificationRule {
     id: number;

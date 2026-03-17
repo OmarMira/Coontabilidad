@@ -2,7 +2,7 @@
  * BankImportService - Orquestador principal de importación bancaria
  */
 
-import { dbRun, dbExec } from '@/database/simple-db';
+import { dbRun, dbExec } from '@/database/modules/db-core';
 import { FileParserService, ParsedTransaction } from './FileParserService';
 import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
 import { AICategorizerService, TrainingExample } from './AICategorizerService';
