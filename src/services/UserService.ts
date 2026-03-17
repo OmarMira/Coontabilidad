@@ -13,7 +13,7 @@ import {
     updateUserPassword as dbUpdateUserPassword,
     verifyPassword,
     hashPassword
-} from '@/database/simple-db';
+} from '@/database/modules/db-users';
 import { logger } from '../core/logging/SystemLogger';
 import type { User, UserRole, CreateUserDto, UpdateUserDto, UserFilters, UserServiceResponse } from '../types/user.types';
 

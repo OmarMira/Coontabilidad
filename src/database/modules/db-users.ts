@@ -230,7 +230,7 @@ export async function createUser(userData: any): Promise<{ success: boolean; mes
   }
 }
 
-export const getUsers = (): any[] => {
+export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
   const db = getDB();
   if (!db) return [];
   try {
