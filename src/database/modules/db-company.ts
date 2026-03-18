@@ -3,8 +3,9 @@
  * Extraído de simple-db.ts líneas 8240–8871
  */
 
-import { db } from '../simple-db';
-import { forceSaveDB, logAuditEvent, rowToEntity } from '../simple-db';
+import { db, rowToEntity } from './db-core';
+import { forceSaveDB } from './db-persistence';
+import { logAuditEvent } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
 import type { CompanyData } from './db-types';
 

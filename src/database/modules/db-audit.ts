@@ -3,8 +3,8 @@
  * Extraído de simple-db.ts líneas 4342–4531
  */
 
-import { db } from '../simple-db';
-import { saveDatabase } from '../simple-db';
+import { db } from './db-core';
+import { saveDatabase } from './db-persistence';
 import { DatabaseService } from '../DatabaseService';
 import { logger } from '../../core/logging/SystemLogger';
 

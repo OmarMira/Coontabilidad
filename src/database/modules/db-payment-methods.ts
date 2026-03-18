@@ -3,8 +3,9 @@
  * Extraído de simple-db.ts líneas 9941–10470
  */
 
-import { db } from '../simple-db';
-import { saveDatabase, forceSaveDB, generateSimpleHash } from '../simple-db';
+import { db } from './db-core';
+import { saveDatabase, forceSaveDB } from './db-persistence';
+import { generateSimpleHash } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
 import type { PaymentMethod } from './db-types';
 

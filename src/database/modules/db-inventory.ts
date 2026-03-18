@@ -3,8 +3,7 @@
  * Extraído de simple-db.ts líneas 12739–13083
  */
 
-import { db } from '../simple-db';
-import { rowToEntity } from '../simple-db';
+import { db, rowToEntity } from './db-core';
 import { logger } from '../../core/logging/SystemLogger';
 
 // ==========================================

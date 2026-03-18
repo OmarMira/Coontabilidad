@@ -3,7 +3,7 @@
  * Extraído de simple-db.ts líneas 11056–11269
  */
 
-import { db } from '../simple-db';
+import { db } from './db-core';
 import { logger } from '../../core/logging/SystemLogger';
 
 export interface TrialBalanceItem {

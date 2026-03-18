@@ -3,8 +3,8 @@
  * Extraído de simple-db.ts líneas 289–1129 y 13935–14173
  */
 
-import { db } from '../simple-db';
-import { saveDatabase, rowToEntity } from '../simple-db';
+import { db, rowToEntity } from './db-core';
+import { saveDatabase } from './db-persistence';
 import { logger } from '../../core/logging/SystemLogger';
 import type {
   Employee, PayrollPeriod, PayrollSetting, PayrollEntry, PayrollLineItem,

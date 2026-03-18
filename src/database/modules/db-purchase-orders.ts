@@ -3,38 +3,10 @@
  * Extraído de simple-db.ts líneas 12404–12731
  */
 
-import { db } from '../simple-db';
-import { logAuditEvent } from '../simple-db';
+import { db } from './db-core';
+import { logAuditEvent } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
-
-// ==========================================
-// INTERFACES LOCALES
-// ==========================================
-
-export interface PurchaseOrder {
-  id: number;
-  supplier_id: number;
-  order_number: string;
-  order_date: string;
-  expected_date?: string;
-  status: 'draft' | 'sent' | 'approved' | 'received' | 'cancelled';
-  total_amount: number;
-  notes?: string;
-  items?: PurchaseOrderItem[];
-  supplier_name?: string;
-  created_at?: string;
-  created_by?: number;
-}
-
-export interface PurchaseOrderItem {
-  id?: number;
-  purchase_order_id?: number;
-  product_id: number;
-  quantity: number;
-  unit_price: number;
-  received_quantity?: number;
-  product_name?: string;
-}
+import type { PurchaseOrder, PurchaseOrderItem } from './db-types';
 
 export interface StockMovement {
   id: number;

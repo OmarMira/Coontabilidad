@@ -3,12 +3,9 @@
  * Extraído de simple-db.ts líneas 5109–5560
  */
 
-import { db } from '../simple-db';
-import {
-  saveDatabase,
-  logAuditAction,
-  rowToEntity
-} from '../simple-db';
+import { db, rowToEntity } from './db-core';
+import { saveDatabase } from './db-persistence';
+import { logAuditEvent as logAuditAction } from './db-audit';
 import { getFloridaTaxRate, createInvoice } from './db-invoices';
 import { getCustomerById } from './db-customers';
 import type { Quote, QuoteLine, Invoice, InvoiceItem } from './db-types';

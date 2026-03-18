@@ -3,8 +3,9 @@
  * Extraído de simple-db.ts líneas 9577–9940 + auxiliares 9942–10039
  */
 
-import { db } from '../simple-db';
-import { rowToEntity, saveDatabase, generateSimpleHash } from '../simple-db';
+import { db, rowToEntity } from './db-core';
+import { saveDatabase } from './db-persistence';
+import { generateSimpleHash } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
 import type { FloridaDR15Report } from './db-types';
 

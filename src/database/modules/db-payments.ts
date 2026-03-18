@@ -3,15 +3,12 @@
  * Extraído de simple-db.ts líneas 7563–7826
  */
 
-import { db } from '../simple-db';
-import {
-  forceSaveDB,
-  logAuditEvent,
-  isDateLocked,
-  createJournalEntry,
-  generatePaymentReceivedJournalEntry,
-  generatePaymentSentJournalEntry
-} from '../simple-db';
+import { db } from './db-core';
+import { forceSaveDB } from './db-persistence';
+import { logAuditEvent } from './db-audit';
+import { isDateLocked } from './db-journal';
+import { createJournalEntry } from './db-journal';
+import { generatePaymentReceivedJournalEntry, generatePaymentSentJournalEntry } from './db-journal-auto';
 import { logger } from '../../core/logging/SystemLogger';
 import { getCustomerById } from './db-customers';
 import { getSupplierById } from './db-suppliers';

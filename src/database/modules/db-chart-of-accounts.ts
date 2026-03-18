@@ -4,7 +4,7 @@
 // Correcciones: columnas alineadas con esquema persistente (US GAAP 1xxx-5xxx)
 // ==========================================
 
-import { getDB, getDBEngine } from '../simple-db';
+import { getDB, getDBEngine } from './db-core';
 import { logger } from '../../core/logging/SystemLogger';
 import { ChartOfAccount } from './db-types';
 
