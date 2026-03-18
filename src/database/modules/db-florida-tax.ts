@@ -1,6 +1,6 @@
-/**
- * Módulo 17 — Florida Tax / DR-15
- * Extraído de simple-db.ts líneas 9577–9940 + auxiliares 9942–10039
+﻿/**
+ * MÃ³dulo 17 â€” Florida Tax / DR-15
+ * ExtraÃ­do de simple-db.ts lÃ­neas 9577â€“9940 + auxiliares 9942â€“10039
  */
 
 import { db, rowToEntity } from './db-core';
@@ -104,7 +104,7 @@ export function calculateFloridaDR15Report(period: string): FloridaDR15Report | 
     `, [startDate, endDate]);
 
     if (invoicesResult.length === 0 || invoicesResult[0].values.length === 0) {
-      logger.warn('DR15', 'calculate_no_data', 'No hay facturas para el período', { period });
+      logger.warn('DR15', 'calculate_no_data', 'No hay facturas para el perÃ­odo', { period });
       return createEmptyDR15Report(period);
     }
 
@@ -181,7 +181,7 @@ export function saveDR15Report(report: FloridaDR15Report): { success: boolean; m
     );
 
     if (existingResult.length > 0 && existingResult[0].values.length > 0) {
-      return { success: false, message: `Ya existe un reporte para el período ${report.period}` };
+      return { success: false, message: `Ya existe un reporte para el perÃ­odo ${report.period}` };
     }
 
     db.exec(`
@@ -344,7 +344,7 @@ export function getAllFloridaTaxRates(): { id: number; county: string; stateRate
     const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => rowToEntity<any>(columns, row));
   } catch (error) {
-    console.error('Error getting all tax rates:', error);
+    logger.error('db-florida-tax', 'get_all_tax_rates', 'Error getting all tax rates', error);
     return [];
   }
 }
@@ -357,7 +357,7 @@ export function updateFloridaTaxRate(id: number, discretionaryRate: number): { s
     setTimeout(() => saveDatabase(), 500);
     return { success: true, message: 'Tasa actualizada correctamente' };
   } catch (error) {
-    console.error('Error updating tax rate:', error);
+    logger.error('db-florida-tax', 'update_tax_rate', 'Error updating tax rate', error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 }
@@ -402,3 +402,4 @@ export function getAvailableDR15Periods(): string[] {
 
   return periods;
 }
+
