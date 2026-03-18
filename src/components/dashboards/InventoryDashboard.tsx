@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   Maximize2
 } from 'lucide-react';
-import { getProducts, getInvoices } from '@/database/simple-db';
+import { getProducts } from '@/database/modules/db-products';
+import { getInvoices } from '@/database/modules/db-invoices';
 import { useLocale } from '../../i18n/useLocale';
 
 interface InventoryStats {

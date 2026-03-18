@@ -12,13 +12,9 @@ import {
     ArrowRight,
     Zap
 } from 'lucide-react';
-import {
-    AccountingPeriod,
-    TrialBalanceRow,
-    getTrialBalanceReport,
-    closePeriod,
-    generateClosingEntry
-} from '@/database/simple-db';
+import type { AccountingPeriod, TrialBalanceRow } from '@/database/modules/db-types';
+import { getTrialBalanceReport } from '@/database/modules/db-reports-trial';
+import { closePeriod, generateClosingEntry } from '@/database/modules/db-reports-financial';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { toast } from 'react-hot-toast';
@@ -62,8 +58,8 @@ export const PeriodClosingWizard: React.FC<PeriodClosingWizardProps> = ({ period
         return () => clearTimeout(timer);
     }, [period, year]);
 
-    const totalDebits = trialBalance.reduce((acc, row) => acc + row.period_debit, 0);
-    const totalCredits = trialBalance.reduce((acc, row) => acc + row.period_credit, 0);
+    const totalDebits = trialBalance.reduce((acc, row) => acc + (row.period_debit ?? 0), 0);
+    const totalCredits = trialBalance.reduce((acc, row) => acc + (row.period_credit ?? 0), 0);
     const isBalanced = Math.abs(totalDebits - totalCredits) < 0.01;
 
     const handleFinalClose = async () => {
@@ -187,8 +183,8 @@ export const PeriodClosingWizard: React.FC<PeriodClosingWizardProps> = ({ period
                                                     <span className="text-blue-400 font-mono text-xs">{row.account_code}</span>
                                                     <span className="ml-3 font-semibold text-slate-300">{row.account_name}</span>
                                                 </td>
-                                                <td className="px-6 py-4 text-right font-mono text-slate-400">${row.period_debit.toLocaleString()}</td>
-                                                <td className="px-6 py-4 text-right font-mono text-slate-400">${row.period_credit.toLocaleString()}</td>
+                                                <td className="px-6 py-4 text-right font-mono text-slate-400">${(row.period_debit ?? 0).toLocaleString()}</td>
+                                                <td className="px-6 py-4 text-right font-mono text-slate-400">${(row.period_credit ?? 0).toLocaleString()}</td>
                                             </tr>
                                         )) : (
                                             <tr>

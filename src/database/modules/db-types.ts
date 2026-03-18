@@ -718,10 +718,19 @@ export interface PayrollFilter {
 
 export interface TrialBalanceRow {
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: string;
-  debit_balance: number;
-  credit_balance: number;
+  normal_balance?: 'debit' | 'credit';
+  debit_balance?: number;
+  credit_balance?: number;
+  previous_debit?: number;
+  previous_credit?: number;
+  period_debit?: number;
+  period_credit?: number;
+  total_debit?: number;
+  total_credit?: number;
+  initial_balance?: number;
 }
 
 export interface IncomeStatementItem {

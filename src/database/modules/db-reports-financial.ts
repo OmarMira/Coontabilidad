@@ -4,8 +4,9 @@
  */
 
 import { db } from '../simple-db';
+import { rowToEntity } from './db-core';
 import { createJournalEntry } from './db-journal';
-import type { ChartOfAccount, JournalDetail } from './db-types';
+import type { ChartOfAccount, JournalDetail, AccountingPeriod } from './db-types';
 
 export const generateBalanceSheet = (asOfDate?: string): {
   assets: ChartOfAccount[];
@@ -262,3 +263,25 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
     return { netIncome: 0, operatingActivities: [], investingActivities: [], financingActivities: [], netIncreaseInCash: 0, startingCash: 0, endingCash: 0 };
   }
 };
+
+export async function closePeriod(periodId: number, userId: number): Promise<{ success: boolean; message: string }> {
+  if (!db) return { success: false, message: 'Database not initialized' };
+  try {
+    const periodRes = db.exec("SELECT * FROM accounting_periods WHERE id = ?", [periodId]);
+    if (periodRes.length === 0) return { success: false, message: 'Periodo no encontrado' };
+    const period = rowToEntity<AccountingPeriod>((periodRes[0].columns || (periodRes[0] as any).lc), periodRes[0].values[0]);
+    if (period.status === 'closed' || period.status === 'locked') {
+      return { success: false, message: 'El periodo ya está cerrado' };
+    }
+    const tb = db.exec(`SELECT SUM(debit_amount) as total_debit, SUM(credit_amount) as total_credit FROM journal_details jd JOIN journal_entries je ON jd.journal_entry_id = je.id WHERE date(je.entry_date) BETWEEN date(?) AND date(?)`, [period.start_date, period.end_date]);
+    const totalDebit = tb[0]?.values[0]?.[0] as number || 0;
+    const totalCredit = tb[0]?.values[0]?.[1] as number || 0;
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      return { success: false, message: 'No se puede cerrar: El balance no cuadra (Diferencia: ' + (totalDebit - totalCredit).toFixed(2) + ')' };
+    }
+    db.run(`UPDATE accounting_periods SET status = 'closed', closed_at = CURRENT_TIMESTAMP, closed_by = ? WHERE id = ?`, [userId, periodId]);
+    return { success: true, message: `Periodo ${period.month} cerrado exitosamente` };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
