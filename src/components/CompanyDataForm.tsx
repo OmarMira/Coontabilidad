@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, AlertTriangle, CheckCircle, Save, RefreshCw, Shield, FileText, Users, Receipt, XCircle, Cloud } from 'lucide-react';
-import { getCompanyData, updateCompanyData, checkAccountingDataAssociation, CompanyData } from '@/database/simple-db';
+import type { CompanyData } from '@/database/modules/db-types';
+import { getCompanyData, updateCompanyData, checkAccountingDataAssociation } from '@/database/modules/db-company';
 import { logger } from '../core/logging/SystemLogger';
 import { LogoUploader } from './LogoUploader';
 import { BackupService } from '../services/backup/BackupService';

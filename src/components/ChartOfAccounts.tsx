@@ -5,7 +5,9 @@ import {
   ChevronRight, ChevronDown, AlertCircle, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
 import { logger } from '../core/logging/SystemLogger';
-import { ChartOfAccount, getChartOfAccounts, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/database/simple-db';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
+import { createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/database/modules/db-chart-of-accounts';
 import { useLocale } from '../i18n/useLocale';
 import { suggestAccountNumber, validateAccountNumber } from '../utils/accountingUtils';
 import { DoubleEntryValidator } from '../services/accounting/DoubleEntryValidator';

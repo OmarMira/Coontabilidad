@@ -8,7 +8,7 @@ import {
   History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
 } from 'lucide-react';
 // import { LanguageSwitcher } from './LanguageSwitcher';
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { useEffect } from 'react';
 

@@ -245,3 +245,38 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
     return { totalRecords: 0, byTable: {}, byAction: {}, lastRecord: 'N/A' };
   }
 };
+
+export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; message: string; details: any }> => {
+  const db = getDB();
+  if (!db) {
+    return { success: false, message: 'Database not initialized', details: { error: 'Database connection not available' } };
+  }
+  try {
+    logger.info('AccountingDiagnosis', 'start_diagnosis', 'Iniciando diagnóstico del sistema contable');
+    const tablesResult = db.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND name IN('chart_of_accounts', 'journal_entries', 'journal_details') ORDER BY name`);
+    const existingTables = tablesResult[0]?.values.map((row: any) => row[0]) || [];
+    const accountsResult = db.exec('SELECT COUNT(*) as count FROM chart_of_accounts');
+    const accountCount = accountsResult[0]?.values[0]?.[0] as number || 0;
+    const mainAccountsResult = db.exec(`SELECT account_code, account_name, account_type FROM chart_of_accounts WHERE account_code IN('1000', '2000', '3000', '4000', '5000') ORDER BY account_code`);
+    const mainAccounts = mainAccountsResult[0]?.values || [];
+    const journalResult = db.exec('SELECT COUNT(*) as count FROM journal_entries');
+    const journalCount = journalResult[0]?.values[0]?.[0] as number || 0;
+    const diagnosis = { tablesExist: existingTables.length === 3, accountsCount: accountCount, journalCount, mainAccounts: mainAccounts.length, existingTables, mainAccountsData: mainAccounts };
+    if (existingTables.length < 3) {
+      return { success: false, message: 'Faltan tablas de contabilidad', details: diagnosis };
+    }
+    if (accountCount === 0) {
+      try {
+        const insertResult = await insertInitialChartOfAccounts();
+        if (!insertResult.success) {
+          return { success: false, message: 'Error al inicializar plan de cuentas', details: { ...diagnosis, insertError: insertResult.message } };
+        }
+      } catch (insertError) {
+        logger.error('AccountingDiagnosis', 'insert_error', 'Excepción al insertar plan de cuentas', null, insertError as Error);
+      }
+    }
+    return { success: true, message: 'Sistema contable funcionando correctamente', details: diagnosis };
+  } catch (error) {
+    return { success: false, message: `Error en diagnóstico: ${error instanceof Error ? error.message : 'Unknown error'}`, details: { error: error instanceof Error ? error.stack : 'Unknown error' } };
+  }
+};

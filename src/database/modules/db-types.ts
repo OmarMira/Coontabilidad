@@ -465,7 +465,7 @@ export interface QuoteLine {
 }
 
 export interface ChartOfAccount {
-  id: number;
+  id?: number;
   account_code: string;
   number?: string;
   account_name: string;
@@ -476,6 +476,12 @@ export interface ChartOfAccount {
   balance?: number;
   subtype?: string;
   parent_code?: string;
+  parent_account?: string;
+  detail_type?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
 }
 
 export interface JournalEntry {
