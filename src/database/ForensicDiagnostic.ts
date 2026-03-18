@@ -1,4 +1,4 @@
-import { db, DB_NAME } from './simple-db';
+import { db, DB_NAME } from './modules/db-core';
 import { logger } from '../utils/logger';
 
 export interface DiagnosticReport {

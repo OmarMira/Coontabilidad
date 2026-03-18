@@ -9,7 +9,7 @@
  * - Estados inconsistentes
  */
 
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { RepairOperation } from './DataIntegrityCore';
 import { logger } from '../../core/logging/SystemLogger';
 import { BasicEncryption } from '../security/BasicEncryption';
@@ -355,7 +355,7 @@ export class DataRepairEngine {
       logger.warn('DataRepairEngine', 'rollback_init', '🔄 INICIANDO RESTAURACIÓN DE EMERGENCIA (Rollback)...');
 
       // Import dinámico para evitar posibles ciclos
-      const { restoreDatabaseFromBackup } = await import('../../database/simple-db');
+      const { restoreDatabaseFromBackup } = await import('../../database/modules/db-bank-transactions');
       await restoreDatabaseFromBackup(backup);
 
       logger.info('DataRepairEngine', 'rollback_success', 'Base de datos restaurada al estado previo a la reparación.');

@@ -6,6 +6,7 @@
  */
 
 export { db, getDB, dbExec, dbRun, dbEngine, getDBEngine } from '../simple-db';
+export const DB_NAME = 'accountexpress.db';
 
 export const PRIVILEGED_ROLES = ['admin', 'contador', 'auditor', 'viewer', 'accountant'];
 

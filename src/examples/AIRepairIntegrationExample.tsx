@@ -10,7 +10,7 @@ import { AIRepairService } from '../services/ai/AIRepairService';
 import { RepairProposalCard } from '../components/ai/RepairProposalCard';
 import { RepairHistoryPanel } from '../components/ai/RepairHistoryPanel';
 import { RepairProposal, RepairCategory } from '../types/ai-repair';
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import toast from 'react-hot-toast';
 
 /**

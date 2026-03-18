@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDBEngine } from '@/database/simple-db';
+import { getDBEngine } from '@/database/modules/db-core';
 
 interface QueryResult {
     query: string;

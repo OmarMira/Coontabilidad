@@ -1,4 +1,4 @@
-import { getFloridaTaxRate } from '@/database/simple-db';
+import { getFloridaTaxRate } from '@/database/modules/db-invoices';
 
 export interface TaxExplanationContext {
     subtotal: number;

@@ -1,4 +1,6 @@
-import { getCustomers, getInvoices, getProducts } from '@/database/simple-db';
+import { getCustomers } from '@/database/modules/db-customers';
+import { getInvoices } from '@/database/modules/db-invoices';
+import { getProducts } from '@/database/modules/db-products';
 import { getNavigationPath } from '../config/NavigationConfig';
 
 /**

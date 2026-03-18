@@ -1,4 +1,4 @@
-import { db } from '@/database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { logger } from '../utils/logger';
 import { BackupService } from '../services/backup/BackupService';
 
