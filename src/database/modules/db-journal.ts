@@ -1,11 +1,12 @@
-/**
- * Módulo 11 — Journal (Asientos Contables)
- * Extraído de simple-db.ts líneas 7051–7447
+﻿/**
+ * MÃ³dulo 11 â€” Journal (Asientos Contables)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 7051â€“7447
  */
 
 import { db, PRIVILEGED_ROLES } from './db-core';
 import { forceSaveDB } from './db-persistence';
 import { logAuditEvent } from './db-audit';
+import { logger } from '../../core/logging/SystemLogger';
 
 export function isDateLocked(dateStr: string): boolean {
   if (!db) return false;
@@ -64,12 +65,12 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
 
     return accounts;
   } catch (error) {
-    console.error('Error getting chart of accounts:', error);
+    logger.error('db-journal', 'get_chart_of_accounts', 'Error getting chart of accounts', error);
     return [];
   }
 };
 
-// Obtener balance de una cuenta específica
+// Obtener balance de una cuenta especÃ­fica
 export const getAccountBalance = (accountCode: string): number => {
   if (!db) return 0;
 
@@ -113,11 +114,11 @@ export const createJournalEntry = async (
   try {
     const entryDate = entryData.entry_date || new Date().toISOString().split('T')[0];
     if (isDateLocked(entryDate)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha estÃ¡ cerrado o bloqueado.' };
     }
 
     if (!details || details.length < 2) {
-      return { success: false, message: 'Un asiento contable debe tener al menos 2 líneas' };
+      return { success: false, message: 'Un asiento contable debe tener al menos 2 lÃ­neas' };
     }
 
     let totalDebits = 0;
@@ -130,8 +131,8 @@ export const createJournalEntry = async (
 
     const diff = Math.abs(totalDebits - totalCredits);
     if (diff > 0.01) {
-      const msg = `VIOLACIÓN DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}. Débitos: $${totalDebits.toFixed(2)}, Créditos: $${totalCredits.toFixed(2)}`;
-      console.error(msg);
+      const msg = `VIOLACIÃ“N DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}. DÃ©bitos: $${totalDebits.toFixed(2)}, CrÃ©ditos: $${totalCredits.toFixed(2)}`;
+      logger.error('db-journal', 'double_entry_validation', msg);
       throw new Error(msg);
     }
 
@@ -201,7 +202,7 @@ export const createJournalEntry = async (
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error creating journal entry:', error);
+    logger.error('db-journal', 'create_journal_entry', 'Error creating journal entry', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error al crear el asiento contable'
@@ -250,12 +251,12 @@ export const getJournalEntries = (limit: number = 50, filters?: { userId?: numbe
 
     return entries;
   } catch (error) {
-    console.error('Error getting journal entries:', error);
+    logger.error('db-journal', 'get_journal_entries', 'Error getting journal entries', error);
     return [];
   }
 };
 
-// Obtener detalles de un asiento específico
+// Obtener detalles de un asiento especÃ­fico
 export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
   if (!db) return [];
 
@@ -294,7 +295,9 @@ export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {
 
     return details;
   } catch (error) {
-    console.error('Error getting journal entry details:', error);
+    logger.error('db-journal', 'get_journal_entry_details', 'Error getting journal entry details', error);
     return [];
   }
 };
+
+

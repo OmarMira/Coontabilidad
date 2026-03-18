@@ -1,6 +1,6 @@
-/**
- * Módulo 07 — Quotes (Cotizaciones)
- * Extraído de simple-db.ts líneas 5109–5560
+﻿/**
+ * MÃ³dulo 07 â€” Quotes (Cotizaciones)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 5109â€“5560
  */
 
 import { db, rowToEntity } from './db-core';
@@ -9,6 +9,7 @@ import { logAuditEvent as logAuditAction } from './db-audit';
 import { getFloridaTaxRate, createInvoice } from './db-invoices';
 import { getCustomerById } from './db-customers';
 import type { Quote, QuoteLine, Invoice, InvoiceItem } from './db-types';
+import { logger } from '../../core/logging/SystemLogger';
 
 const generateQuoteNumber = (): string => {
   if (!db) return `QT-${Date.now()}`;
@@ -55,7 +56,7 @@ export const getQuotes = (filters?: { userId?: number; role?: string; status?: s
       rowToEntity<Quote>((result[0].columns || (result[0] as any).lc), row)
     );
   } catch (error) {
-    console.error('Error getting quotes:', error);
+    logger.error('db-quotes', 'get_quotes', 'Error getting quotes', error);
     return [];
   }
 };
@@ -90,7 +91,7 @@ export const getQuoteById = (id: number): Quote | null => {
 
     return quote;
   } catch (error) {
-    console.error('Error getting quote by ID:', error);
+    logger.error('db-quotes', 'get_quote_by_id', 'Error getting quote by ID', error);
     return null;
   }
 };
@@ -198,13 +199,13 @@ export const createQuote = (
 
     return {
       success: true,
-      message: `Cotización ${quoteNumber} creada exitosamente`,
+      message: `CotizaciÃ³n ${quoteNumber} creada exitosamente`,
       quoteId
     };
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error creating quote:', error);
+    logger.error('db-quotes', 'create_quote', 'Error creating quote', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error creating quote'
@@ -323,11 +324,11 @@ export const updateQuote = (
 
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Cotización actualizada exitosamente' };
+    return { success: true, message: 'CotizaciÃ³n actualizada exitosamente' };
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error updating quote:', error);
+    logger.error('db-quotes', 'update_quote', 'Error updating quote', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error updating quote'
@@ -357,11 +358,11 @@ export const deleteQuote = (id: number, userId?: number): { success: boolean; me
 
     logAuditAction('quotes', id, 'DELETE', quote, null, userId);
 
-    return { success: true, message: 'Cotización eliminada exitosamente' };
+    return { success: true, message: 'CotizaciÃ³n eliminada exitosamente' };
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error deleting quote:', error);
+    logger.error('db-quotes', 'delete_quote', 'Error deleting quote', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error deleting quote'
@@ -394,7 +395,7 @@ export const convertQuoteToInvoice = (
       issue_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'draft',
-      notes: `Convertida desde cotización ${quote.quote_number}`
+      notes: `Convertida desde cotizaciÃ³n ${quote.quote_number}`
     };
 
     const invoiceItems: Partial<InvoiceItem>[] = (quote.items || []).map(item => ({
@@ -416,7 +417,7 @@ export const convertQuoteToInvoice = (
 
       return {
         success: true,
-        message: `Cotización convertida a factura exitosamente`,
+        message: `CotizaciÃ³n convertida a factura exitosamente`,
         invoiceId: result.invoiceId
       };
     }
@@ -424,10 +425,11 @@ export const convertQuoteToInvoice = (
     return result;
 
   } catch (error) {
-    console.error('Error converting quote to invoice:', error);
+    logger.error('db-quotes', 'convert_quote_to_invoice', 'Error converting quote to invoice', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error converting quote'
     };
   }
 };
+

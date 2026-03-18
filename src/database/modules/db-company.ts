@@ -1,6 +1,6 @@
-/**
- * Módulo 15 — Company Data, Aging Reports y ARD
- * Extraído de simple-db.ts líneas 8240–8871
+﻿/**
+ * MÃ³dulo 15 â€” Company Data, Aging Reports y ARD
+ * ExtraÃ­do de simple-db.ts lÃ­neas 8240â€“8871
  */
 
 import { db, rowToEntity } from './db-core';
@@ -108,7 +108,7 @@ export const getAgingReport = (type: 'receivable' | 'payable'): {
     return { total, buckets, details };
 
   } catch (error) {
-    console.error('Error generating aging report:', error);
+    logger.error('db-company', 'generate_aging_report', 'Error generating aging report', error);
     return { total: 0, buckets: {}, details: [] };
   }
 };
@@ -184,7 +184,7 @@ export const getAccountLedger = (accountCode: string, fromDate: string, toDate: 
     return { account, startingBalance, transactions, endingBalance: runningBalance, totalDebit, totalCredit };
 
   } catch (error) {
-    console.error('Error generating account ledger:', error);
+    logger.error('db-company', 'generate_account_ledger', 'Error generating account ledger', error);
     return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
   }
 };
@@ -438,7 +438,7 @@ export function getARDDocuments(): any[] {
       return doc;
     });
   } catch (e) {
-    console.error('Error fetching ARD docs:', e);
+    logger.error('db-company', 'fetch_ard_docs', 'Error fetching ARD docs', e);
     return [];
   }
 }
@@ -457,7 +457,7 @@ export function saveARDDocument(doc: any): { success: boolean; id: string } {
     ]);
     return { success: true, id: doc.id };
   } catch (e) {
-    console.error('Error saving ARD doc:', e);
+    logger.error('db-company', 'save_ard_doc', 'Error saving ARD doc', e);
     return { success: false, id: '' };
   }
 }
@@ -475,7 +475,7 @@ export function updateARDDocumentStatus(id: string, status: string, results?: an
       db.run('UPDATE ard_documents SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, id]);
     }
   } catch (e) {
-    console.error('Error updating ARD doc:', e);
+    logger.error('db-company', 'update_ard_doc', 'Error updating ARD doc', e);
   }
 }
 
@@ -512,7 +512,8 @@ export function getARDCustomerSummary(): any[] {
       return obj;
     });
   } catch (e) {
-    console.error('Error fetching ARD customer summary:', e);
+    logger.error('db-company', 'fetch_ard_customer_summary', 'Error fetching ARD customer summary', e);
     return [];
   }
 }
+
