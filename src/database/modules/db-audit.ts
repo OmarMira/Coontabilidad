@@ -1,6 +1,6 @@
-/**
- * Módulo 05 — Auditoría
- * Extraído de simple-db.ts líneas 4342–4531
+﻿/**
+ * MÃ³dulo 05 â€” AuditorÃ­a
+ * ExtraÃ­do de simple-db.ts lÃ­neas 4342â€“4531
  */
 
 import { db } from './db-core';
@@ -115,7 +115,7 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
     return sha256(dataToHash);
 
   } catch (error) {
-    console.error('Error generating audit hash:', error);
+    logger.error('db-audit', 'generate_audit_hash', 'Error generating audit hash', error);
     return sha256(Date.now().toString());
   }
 };
@@ -198,7 +198,7 @@ export const getAuditLog = (limit: number = 100): Array<Record<string, any>> => 
 
     return Array.isArray(result) ? result as Array<Record<string, any>> : [];
   } catch (error) {
-    console.error('Error getting audit log:', error);
+    logger.error('db-audit', 'get_audit_log', 'Error getting audit log', error);
     return [];
   }
 };
@@ -228,7 +228,7 @@ export const getDatabaseInfo = () => {
 
     return info;
   } catch (error) {
-    console.error('Error getting database info:', error);
+    logger.error('db-audit', 'get_database_info', 'Error getting database info', error);
     return null;
   }
 };
@@ -242,7 +242,7 @@ export const createBackup = async (): Promise<string> => {
     localStorage.setItem('accountexpress-last-backup', timestamp);
     return timestamp;
   } catch (error) {
-    console.error('Error creating backup:', error);
+    logger.error('db-audit', 'create_backup', 'Error creating backup', error);
     throw error;
   }
 };
@@ -255,7 +255,8 @@ export const getStats = () => {
     const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
     return { customers: customerCount };
   } catch (error) {
-    console.error('Error getting stats:', error);
+    logger.error('db-audit', 'get_stats', 'Error getting stats', error);
     return { customers: 0 };
   }
 };
+

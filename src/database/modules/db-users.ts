@@ -1,13 +1,13 @@
-// ==========================================
-// MÓDULO 23 — Users, Roles y Seeds
-// Extraído de simple-db.ts líneas 11539-12402 y 13938-13955
+﻿// ==========================================
+// MÃ“DULO 23 â€” Users, Roles y Seeds
+// ExtraÃ­do de simple-db.ts lÃ­neas 11539-12402 y 13938-13955
 // Correcciones: columnas company_data y chart_of_accounts alineadas con esquema persistente
 // ==========================================
 
 import { getDB, getDBEngine } from '../simple-db';
 import { logger } from '../../core/logging/SystemLogger';
 
-// Helper para vinculación de parámetros en sql.js
+// Helper para vinculaciÃ³n de parÃ¡metros en sql.js
 const sqlRunWithParams = (database: any, sql: string, params: any[]): void => {
   const stmt = database.prepare(sql);
   try { stmt.run(params); } finally { stmt.free(); }
@@ -42,7 +42,7 @@ export function hasUsers(): boolean {
     }
     return false;
   } catch (error) {
-    console.error('Error checking if users exist:', error);
+    logger.error('db-users', 'check_users_exist', 'Error checking if users exist', error);
     return false;
   }
 }
@@ -70,7 +70,7 @@ async function seedCompanyData(): Promise<void> {
       );
     }
   } catch (e) {
-    console.warn('[seedCompanyData] Skipped:', e);
+    logger.warn('db-users', 'seed_company_data', '[seedCompanyData] Skipped');
   }
 }
 
@@ -91,7 +91,7 @@ async function seedChartOfAccounts(): Promise<void> {
       { code: '1114', name: 'Cuenta Payroll', type: 'asset' },
       { code: '1120', name: 'Cuentas por Cobrar', type: 'asset' },
       { code: '1121', name: 'Cuentas por Cobrar - Clientes', type: 'asset' },
-      { code: '1122', name: 'Provisión Cuentas Incobrables', type: 'asset' },
+      { code: '1122', name: 'ProvisiÃ³n Cuentas Incobrables', type: 'asset' },
       { code: '1123', name: 'Otras Cuentas por Cobrar', type: 'asset' },
       { code: '1130', name: 'Inventario', type: 'asset' },
       { code: '1131', name: 'Inventario - Productos Terminados', type: 'asset' },
@@ -117,18 +117,18 @@ async function seedChartOfAccounts(): Promise<void> {
       { code: '5000', name: 'COSTO DE VENTAS', type: 'expense' },
       { code: '5100', name: 'Costo de Productos Vendidos', type: 'expense' },
       { code: '6000', name: 'GASTOS OPERATIVOS', type: 'expense' },
-      { code: '6100', name: 'Gastos de Administración', type: 'expense' },
+      { code: '6100', name: 'Gastos de AdministraciÃ³n', type: 'expense' },
       { code: '6110', name: 'Sueldos y Salarios', type: 'expense' },
       { code: '6120', name: 'Renta y Arrendamientos', type: 'expense' },
-      { code: '6130', name: 'Servicios Públicos', type: 'expense' },
+      { code: '6130', name: 'Servicios PÃºblicos', type: 'expense' },
       { code: '6140', name: 'Seguros', type: 'expense' },
       { code: '6200', name: 'Gastos de Ventas', type: 'expense' },
       { code: '6210', name: 'Publicidad y Marketing', type: 'expense' },
       { code: '6220', name: 'Comisiones de Ventas', type: 'expense' },
       { code: '6300', name: 'Gastos Financieros', type: 'expense' },
-      { code: '6310', name: 'Intereses sobre Préstamos', type: 'expense' },
+      { code: '6310', name: 'Intereses sobre PrÃ©stamos', type: 'expense' },
       { code: '6320', name: 'Comisiones Bancarias', type: 'expense' },
-      { code: '6330', name: 'Pérdida en Venta de Activos', type: 'expense' },
+      { code: '6330', name: 'PÃ©rdida en Venta de Activos', type: 'expense' },
       { code: '6400', name: 'Impuestos', type: 'expense' },
       { code: '6410', name: 'Impuesto sobre la Renta', type: 'expense' },
       { code: '6420', name: 'Impuestos Locales y Estatales', type: 'expense' },
@@ -142,7 +142,7 @@ async function seedChartOfAccounts(): Promise<void> {
       );
     }
   } catch (e) {
-    console.warn('[seedChartOfAccounts] Skipped:', e);
+    logger.warn('db-users', 'seed_chart_of_accounts', '[seedChartOfAccounts] Skipped');
   }
 }
 
@@ -192,7 +192,7 @@ export async function seedSystemDefaults(): Promise<void> {
     await seedCompanyData();
     await seedChartOfAccounts();
   } catch (e) {
-    console.warn('[seedSystemDefaults] Error parcial en inicialización:', e);
+    logger.warn('db-users', 'seed_system_defaults', '[seedSystemDefaults] Error parcial en inicializacion');
   }
 }
 
@@ -342,10 +342,10 @@ export const updateUserPassword = async (id: number, newPassword: string): Promi
   try {
     const hashedPassword = await hashPassword(newPassword);
     sqlRunWithParams(db, "UPDATE users SET password_hash = ? WHERE id = ?", [hashedPassword, id]);
-    return { success: true, message: 'Contraseña actualizada' };
+    return { success: true, message: 'ContraseÃ±a actualizada' };
   } catch (error) {
-    logger.error('Database', 'update_password_error', `Error al actualizar contraseña: ${error}`);
-    return { success: false, message: `Error al actualizar contraseña: ${error}` };
+    logger.error('Database', 'update_password_error', `Error al actualizar contraseÃ±a: ${error}`);
+    return { success: false, message: `Error al actualizar contraseÃ±a: ${error}` };
   }
 };
 
@@ -400,7 +400,7 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
     const roleName = checkProtected[0].values[0][0] as string;
     const protectedRoles = ['admin', 'contador', 'vendedor', 'auditor', 'viewer', 'comprador'];
     if (protectedRoles.includes(roleName)) {
-      return { success: false, message: 'No se pueden eliminar los roles críticos del sistema' };
+      return { success: false, message: 'No se pueden eliminar los roles crÃ­ticos del sistema' };
     }
     const usersInRole = db.exec("SELECT COUNT(*) FROM users WHERE role_id = ?", [id]);
     const userCount = usersInRole[0].values[0][0] as number;
@@ -414,3 +414,5 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 };
+
+

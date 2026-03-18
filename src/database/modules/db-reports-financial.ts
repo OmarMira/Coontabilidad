@@ -1,12 +1,13 @@
-/**
- * Módulo 14 — Financial Reports (Reportes Financieros)
- * Extraído de simple-db.ts líneas 7831–8116
+﻿/**
+ * MÃ³dulo 14 â€” Financial Reports (Reportes Financieros)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 7831â€“8116
  */
 
 import { db } from '../simple-db';
 import { rowToEntity } from './db-core';
 import { createJournalEntry } from './db-journal';
 import type { ChartOfAccount, JournalDetail, AccountingPeriod } from './db-types';
+import { logger } from '../../core/logging/SystemLogger';
 
 export const generateBalanceSheet = (asOfDate?: string): {
   assets: ChartOfAccount[];
@@ -72,7 +73,7 @@ export const generateBalanceSheet = (asOfDate?: string): {
     return { assets, liabilities, equity, totalAssets, totalLiabilitiesEquity, isBalanced };
 
   } catch (error) {
-    console.error('Error generating balance sheet:', error);
+    logger.error('db-reports-financial', 'generate_balance_sheet', 'Error generating balance sheet', error);
     return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesEquity: 0, isBalanced: false };
   }
 };
@@ -132,7 +133,7 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): {
     return { revenue, expenses, totalRevenue, totalExpenses, netIncome: totalRevenue - totalExpenses };
 
   } catch (error) {
-    console.error('Error generating income statement:', error);
+    logger.error('db-reports-financial', 'generate_income_statement', 'Error generating income statement', error);
     return { revenue: [], expenses: [], totalRevenue: 0, totalExpenses: 0, netIncome: 0 };
   }
 };
@@ -180,7 +181,7 @@ export const generateClosingEntry = async (
         account_code: '3130',
         debit_amount: isProfit ? 0 : Math.abs(incomeData.netIncome),
         credit_amount: isProfit ? Math.abs(incomeData.netIncome) : 0,
-        description: isProfit ? 'Registro de Utilidad del Periodo' : 'Registro de Pérdida del Periodo'
+        description: isProfit ? 'Registro de Utilidad del Periodo' : 'Registro de PÃ©rdida del Periodo'
       });
     }
 
@@ -222,7 +223,7 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
     const endAR = endBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('cobrar')).reduce((sum, a) => sum + (a.balance || 0), 0);
     const deltaAR = endAR - startAR;
     if (deltaAR !== 0) {
-      operatingActivities.push({ title: deltaAR > 0 ? 'Aumento en Cuentas por Cobrar' : 'Disminución en Cuentas por Cobrar', amount: -deltaAR });
+      operatingActivities.push({ title: deltaAR > 0 ? 'Aumento en Cuentas por Cobrar' : 'DisminuciÃ³n en Cuentas por Cobrar', amount: -deltaAR });
       operatingTotal -= deltaAR;
     }
 
@@ -230,7 +231,7 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
     const endInv = endBalanceSheet.assets.filter(a => a.account_name.toLowerCase().includes('inventario')).reduce((sum, a) => sum + (a.balance || 0), 0);
     const deltaInv = endInv - startInv;
     if (deltaInv !== 0) {
-      operatingActivities.push({ title: deltaInv > 0 ? 'Aumento en Inventario' : 'Disminución en Inventario', amount: -deltaInv });
+      operatingActivities.push({ title: deltaInv > 0 ? 'Aumento en Inventario' : 'DisminuciÃ³n en Inventario', amount: -deltaInv });
       operatingTotal -= deltaInv;
     }
 
@@ -238,7 +239,7 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
     const endAP = endBalanceSheet.liabilities.filter(l => l.account_name.toLowerCase().includes('pagar')).reduce((sum, l) => sum + (l.balance || 0), 0);
     const deltaAP = endAP - startAP;
     if (deltaAP !== 0) {
-      operatingActivities.push({ title: deltaAP > 0 ? 'Aumento en Cuentas por Pagar' : 'Disminución en Cuentas por Pagar', amount: deltaAP });
+      operatingActivities.push({ title: deltaAP > 0 ? 'Aumento en Cuentas por Pagar' : 'DisminuciÃ³n en Cuentas por Pagar', amount: deltaAP });
       operatingTotal += deltaAP;
     }
 
@@ -259,7 +260,7 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
     };
 
   } catch (error) {
-    console.error('Error generating cash flow statement:', error);
+    logger.error('db-reports-financial', 'generate_cash_flow', 'Error generating cash flow statement', error);
     return { netIncome: 0, operatingActivities: [], investingActivities: [], financingActivities: [], netIncreaseInCash: 0, startingCash: 0, endingCash: 0 };
   }
 };
@@ -271,7 +272,7 @@ export async function closePeriod(periodId: number, userId: number): Promise<{ s
     if (periodRes.length === 0) return { success: false, message: 'Periodo no encontrado' };
     const period = rowToEntity<AccountingPeriod>((periodRes[0].columns || (periodRes[0] as any).lc), periodRes[0].values[0]);
     if (period.status === 'closed' || period.status === 'locked') {
-      return { success: false, message: 'El periodo ya está cerrado' };
+      return { success: false, message: 'El periodo ya estÃ¡ cerrado' };
     }
     const tb = db.exec(`SELECT SUM(debit_amount) as total_debit, SUM(credit_amount) as total_credit FROM journal_details jd JOIN journal_entries je ON jd.journal_entry_id = je.id WHERE date(je.entry_date) BETWEEN date(?) AND date(?)`, [period.start_date, period.end_date]);
     const totalDebit = tb[0]?.values[0]?.[0] as number || 0;
@@ -285,3 +286,4 @@ export async function closePeriod(periodId: number, userId: number): Promise<{ s
     return { success: false, message: error.message };
   }
 }
+
