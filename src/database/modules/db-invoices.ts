@@ -1,6 +1,6 @@
-/**
- * Módulo 06 — Invoices (Facturas de Venta)
- * Extraído de simple-db.ts líneas 4533–5101
+﻿/**
+ * MÃ³dulo 06 â€” Invoices (Facturas de Venta)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 4533â€“5101
  */
 
 import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
@@ -9,6 +9,7 @@ import { logAuditEvent as logAuditAction } from './db-audit';
 import { isDateLocked } from './db-journal';
 import { generateSalesJournalEntry } from './db-journal-auto';
 import type { Invoice, InvoiceItem, Product, Customer } from './db-types';
+import { logger } from '../../core/logging/SystemLogger';
 
 export const FLORIDA_COUNTIES = [
   'Alachua', 'Baker', 'Bay', 'Bradford', 'Brevard', 'Broward', 'Calhoun',
@@ -32,7 +33,7 @@ export const generateInvoiceNumber = (): string => {
     const year = new Date().getFullYear();
     return `INV-${year}-${count.toString().padStart(4, '0')}`;
   } catch (error) {
-    console.error('Error generating invoice number:', error);
+    logger.error('db-invoices', 'generate_invoice_number', 'Error generating invoice number', error);
     const timestamp = Date.now().toString().slice(-6);
     return `INV-${new Date().getFullYear()}-${timestamp}`;
   }
@@ -53,7 +54,7 @@ export const getFloridaTaxRate = (county: string): number => {
       return Number(result[0].values[0][0]) || 0.06;
     }
   } catch (error) {
-    console.error('Error getting tax rate for county:', county, error);
+    logger.error('db-invoices', 'get_tax_rate', 'Error getting tax rate for county', error);
   }
 
   const fallbackRates: Record<string, number> = {
@@ -140,7 +141,7 @@ export const getInvoices = (filters?: { userId?: number, role?: string }): Invoi
 
     return invoices;
   } catch (error) {
-    console.error('Error getting invoices:', error);
+    logger.error('db-invoices', 'get_invoices', 'Error getting invoices', error);
     return [];
   }
 };
@@ -219,7 +220,7 @@ export const getInvoiceById = (id: number): Invoice | null => {
 
     return invoice as Invoice;
   } catch (error) {
-    console.error('Error getting invoice by ID:', error);
+    logger.error('db-invoices', 'get_invoice_by_id', 'Error getting invoice by ID', error);
     return null;
   }
 };
@@ -238,7 +239,7 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
 
     const issueDateStr = invoiceData.issue_date || new Date().toISOString().split('T')[0];
     if (isDateLocked(issueDateStr)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha estÃ¡ cerrado o bloqueado.' };
     }
 
     const invoiceNumber = invoiceData.invoice_number || generateInvoiceNumber();
@@ -317,7 +318,7 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
       if (fullInvoice) {
         generateSalesJournalEntry(fullInvoice as any, userId).then(journalResult => {
           if (!journalResult.success) {
-            console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
+            logger.warn('db-invoices', 'create_invoice_journal', 'Warning: Could not generate journal entry for invoice');
           }
         });
       }
@@ -332,7 +333,7 @@ export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<Invo
     };
 
   } catch (error) {
-    console.error('Error creating invoice:', error);
+    logger.error('db-invoices', 'create_invoice', 'Error creating invoice', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error creating invoice'
@@ -351,7 +352,7 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
 
     const dateToCheck = invoiceData.issue_date || currentInvoice.issue_date;
     if (isDateLocked(dateToCheck)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha estÃ¡ cerrado o bloqueado.' };
     }
 
     const updateFields: string[] = [];
@@ -436,7 +437,7 @@ export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?:
     return { success: true, message: 'Invoice updated successfully' };
 
   } catch (error) {
-    console.error('Error updating invoice:', error);
+    logger.error('db-invoices', 'update_invoice', 'Error updating invoice', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error updating invoice'
@@ -467,7 +468,7 @@ export const deleteInvoice = (id: number, userId?: number): { success: boolean; 
     return { success: true, message: 'Invoice deleted successfully' };
 
   } catch (error) {
-    console.error('Error deleting invoice:', error);
+    logger.error('db-invoices', 'delete_invoice', 'Error deleting invoice', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error deleting invoice'
@@ -500,7 +501,7 @@ export const getActiveProducts = (): Product[] => {
 
     return products;
   } catch (error) {
-    console.error('Error getting active products:', error);
+    logger.error('db-invoices', 'get_active_products', 'Error getting active products', error);
     return [];
   }
 };
@@ -520,7 +521,8 @@ export const getStatsWithInvoices = () => {
     return { customers: customerCount, invoices: invoiceCount, revenue };
 
   } catch (error) {
-    console.error('Error getting stats with invoices:', error);
+    logger.error('db-invoices', 'get_stats_invoices', 'Error getting stats with invoices', error);
     return { customers: 0, invoices: 0, revenue: 0 };
   }
 };
+

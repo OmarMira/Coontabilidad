@@ -1,6 +1,6 @@
-/**
- * Módulo 26 — Budgets (Presupuestos)
- * Extraído de simple-db.ts líneas 13091–13920
+﻿/**
+ * MÃ³dulo 26 â€” Budgets (Presupuestos)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 13091â€“13920
  */
 
 import { db, rowToEntity } from './db-core';
@@ -119,7 +119,7 @@ export async function createBudget(
   try {
     const linesTotal = budgetLines.reduce((sum, line) => sum + line.annual_amount, 0);
     if (Math.abs(linesTotal - budgetData.total_budget_amount) > 1) {
-      return { success: false, message: `Total de líneas (${(linesTotal / 100).toFixed(2)}) no coincide con total del presupuesto (${(budgetData.total_budget_amount / 100).toFixed(2)})` };
+      return { success: false, message: `Total de lÃ­neas (${(linesTotal / 100).toFixed(2)}) no coincide con total del presupuesto (${(budgetData.total_budget_amount / 100).toFixed(2)})` };
     }
 
     db.run('BEGIN TRANSACTION');
@@ -179,7 +179,7 @@ export function getBudgets(filters?: { fiscal_year?: number; status?: string; us
     const res = db.exec(query, params);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<Budget>((res[0].columns || (res[0] as any).lc), row));
-  } catch (error) { console.error('Error fetching budgets:', error); return []; }
+  } catch (error) { logger.error('db-budgets', 'fetch_budgets', 'Error fetching budgets', error); return []; }
 }
 
 export function getBudgetById(id: number): Budget | null {
@@ -188,7 +188,7 @@ export function getBudgetById(id: number): Budget | null {
     const res = db.exec('SELECT * FROM budgets WHERE id = ?', [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
     return rowToEntity<Budget>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
-  } catch (error) { console.error('Error fetching budget:', error); return null; }
+  } catch (error) { logger.error('db-budgets', 'fetch_budget', 'Error fetching budget', error); return null; }
 }
 
 export function getBudgetLines(budgetId: number): BudgetLine[] {
@@ -197,7 +197,7 @@ export function getBudgetLines(budgetId: number): BudgetLine[] {
     const res = db.exec('SELECT * FROM budget_lines WHERE budget_id = ? ORDER BY account_number ASC', [budgetId]);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<BudgetLine>((res[0].columns || (res[0] as any).lc), row));
-  } catch (error) { console.error('Error fetching budget lines:', error); return []; }
+  } catch (error) { logger.error('db-budgets', 'fetch_budget_lines', 'Error fetching budget lines', error); return []; }
 }
 
 export function getBudgetPeriods(budgetLineId: number): BudgetPeriod[] {
@@ -206,7 +206,7 @@ export function getBudgetPeriods(budgetLineId: number): BudgetPeriod[] {
     const res = db.exec('SELECT * FROM budget_periods WHERE budget_line_id = ? ORDER BY period_number ASC', [budgetLineId]);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<BudgetPeriod>((res[0].columns || (res[0] as any).lc), row));
-  } catch (error) { console.error('Error fetching budget periods:', error); return []; }
+  } catch (error) { logger.error('db-budgets', 'fetch_budget_periods', 'Error fetching budget periods', error); return []; }
 }
 
 export function updateBudget(id: number, budgetData: Partial<Budget>, budgetLines?: Partial<BudgetLine>[]): { success: boolean; message: string } {
@@ -214,7 +214,7 @@ export function updateBudget(id: number, budgetData: Partial<Budget>, budgetLine
   try {
     const existing = getBudgetById(id);
     if (!existing) return { success: false, message: 'Presupuesto no encontrado' };
-    if (existing.status !== 'DRAFT' && budgetLines) return { success: false, message: 'No se puede editar un presupuesto que no está en borrador' };
+    if (existing.status !== 'DRAFT' && budgetLines) return { success: false, message: 'No se puede editar un presupuesto que no estÃ¡ en borrador' };
 
     db.run('BEGIN TRANSACTION');
 
@@ -316,7 +316,7 @@ export function calculateActualsByAccount(accountNumber: number, startDate: stri
     const totalDebit = res[0].values[0][0] as number || 0;
     const totalCredit = res[0].values[0][1] as number || 0;
     return accountNumber >= 5000 ? totalDebit - totalCredit : totalCredit - totalDebit;
-  } catch (error) { console.error('Error calculating actuals:', error); return 0; }
+  } catch (error) { logger.error('db-budgets', 'calculate_actuals', 'Error calculating actuals', error); return 0; }
 }
 
 export function getBudgetVarianceAnalysis(budgetId: number, asOfDate?: string): BudgetVarianceAnalysis[] {
@@ -367,11 +367,11 @@ export function updatePeriodActuals(budgetId: number): { success: boolean; messa
       }
     }
     db.run('COMMIT');
-    logger.info('Budgets', 'periods_updated', `Períodos actualizados: ${periodsUpdated}`, { budgetId });
-    return { success: true, message: `${periodsUpdated} períodos actualizados`, periodsUpdated };
+    logger.info('Budgets', 'periods_updated', `PerÃ­odos actualizados: ${periodsUpdated}`, { budgetId });
+    return { success: true, message: `${periodsUpdated} perÃ­odos actualizados`, periodsUpdated };
   } catch (error: any) {
     db?.run('ROLLBACK');
-    logger.error('Budgets', 'period_update_failed', 'Error al actualizar períodos', { error: error.message });
+    logger.error('Budgets', 'period_update_failed', 'Error al actualizar perÃ­odos', { error: error.message });
     return { success: false, message: error.message, periodsUpdated: 0 };
   }
 }
@@ -395,7 +395,7 @@ export function getBudgetSummary(budgetId: number): { budget_id: number; budget_
       if (va.ytd_variance > 0) linesOverBudget++; else if (va.ytd_variance < 0) linesUnderBudget++; else linesOnBudget++;
     }
     return { budget_id: budgetId, budget_name: budget.budget_name, fiscal_year: budget.fiscal_year, status: budget.status, total_budgeted: totalBudgeted, total_actual: totalActual, total_variance: totalVariance, total_variance_percent: totalVariancePercent, lines_count: lines.length, lines_over_budget: linesOverBudget, lines_under_budget: linesUnderBudget, lines_on_budget: linesOnBudget, alert_count: alertCount };
-  } catch (error) { console.error('Error getting budget summary:', error); return null; }
+  } catch (error) { logger.error('db-budgets', 'get_budget_summary', 'Error getting budget summary', error); return null; }
 }
 
 export function generateBudgetAlerts(budgetId: number): Array<{ budget_id: number; budget_line_id: number; account_number: number; account_name: string; alert_type: 'over_budget' | 'under_budget'; severity: 'warning' | 'critical'; variance_amount: number; variance_percent: number; threshold_percent: number; message: string }> {
@@ -420,7 +420,7 @@ export function generateBudgetAlerts(budgetId: number): Array<{ budget_id: numbe
     }
     if (alerts.length > 0) logger.warn('Budgets', 'alerts_generated', `${alerts.length} alertas generadas`, { budgetId, alertCount: alerts.length });
     return alerts;
-  } catch (error) { console.error('Error generating budget alerts:', error); return []; }
+  } catch (error) { logger.error('db-budgets', 'generate_budget_alerts', 'Error generating budget alerts', error); return []; }
 }
 
 export function getBudgetExecutionStatus(budgetId: number): { budget_id: number; execution_percent: number; status: 'on_track' | 'at_risk' | 'over_budget'; days_elapsed: number; days_remaining: number; period_progress_percent: number; budget_consumed_percent: number; pace_indicator: 'ahead' | 'on_pace' | 'behind' } | null {
@@ -449,5 +449,6 @@ export function getBudgetExecutionStatus(budgetId: number): { budget_id: number;
     else if (summary.alert_count > 0 || paceIndicator === 'ahead') status = 'at_risk';
     else status = budgetConsumedPercent > 100 ? 'over_budget' : 'on_track';
     return { budget_id: budgetId, execution_percent: executionPercent, status, days_elapsed: daysElapsed, days_remaining: daysRemaining, period_progress_percent: periodProgressPercent, budget_consumed_percent: budgetConsumedPercent, pace_indicator: paceIndicator };
-  } catch (error) { console.error('Error getting budget execution status:', error); return null; }
+  } catch (error) { logger.error('db-budgets', 'get_budget_execution_status', 'Error getting budget execution status', error); return null; }
 }
+

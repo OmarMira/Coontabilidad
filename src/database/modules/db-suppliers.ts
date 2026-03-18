@@ -1,12 +1,13 @@
-/**
- * Módulo 08 — Suppliers (Proveedores)
- * Extraído de simple-db.ts líneas 5583–5935
+﻿/**
+ * MÃ³dulo 08 â€” Suppliers (Proveedores)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 5583â€“5935
  */
 
 import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
 import { saveDatabase } from './db-persistence';
 import { logAuditEvent } from './db-audit';
 import type { Supplier } from './db-types';
+import { logger } from '../../core/logging/SystemLogger';
 
 const processSupplierRow = (row: any): Supplier => {
   return {
@@ -144,7 +145,7 @@ export const getSuppliers = (filters?: { userId?: number, role?: string }): Supp
     return suppliers;
 
   } catch (error) {
-    console.error('Error getting suppliers:', error);
+    logger.error('db-suppliers', 'get_suppliers', 'Error getting suppliers', error);
     return [];
   }
 };
@@ -179,7 +180,7 @@ export const getSupplierById = (id: number): Supplier | null => {
     return null;
 
   } catch (error) {
-    console.error('Error getting supplier by ID:', error);
+    logger.error('db-suppliers', 'get_supplier_by_id', 'Error getting supplier by ID', error);
     return null;
   }
 };
@@ -251,7 +252,7 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>, user
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error updating supplier:', error);
+    logger.error('db-suppliers', 'update_supplier', 'Error updating supplier', error);
     return { success: false, message: `Error al actualizar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
 };
@@ -277,7 +278,7 @@ export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; rea
     return { canDelete: true };
 
   } catch (error) {
-    console.error('Error checking if supplier can be deleted:', error);
+    logger.error('db-suppliers', 'check_supplier_delete', 'Error checking if supplier can be deleted', error);
     return { canDelete: false, reason: 'Error al verificar las dependencias del proveedor' };
   }
 };
@@ -318,7 +319,8 @@ export const deleteSupplier = (id: number, userId?: number): { success: boolean;
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error deleting supplier:', error);
+    logger.error('db-suppliers', 'delete_supplier', 'Error deleting supplier', error);
     return { success: false, message: `Error al eliminar el proveedor: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
 };
+

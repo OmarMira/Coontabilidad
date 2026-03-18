@@ -1,6 +1,6 @@
-/**
- * Módulo 27 — Payroll, Employees, Fixed Assets, Fiscal Settings
- * Extraído de simple-db.ts líneas 289–1129 y 13935–14173
+﻿/**
+ * MÃ³dulo 27 â€” Payroll, Employees, Fixed Assets, Fiscal Settings
+ * ExtraÃ­do de simple-db.ts lÃ­neas 289â€“1129 y 13935â€“14173
  */
 
 import { db, rowToEntity } from './db-core';
@@ -43,7 +43,7 @@ export function getMonthlyFinancialSummary(): MonthlySummary[] {
     if (expenseRes.length > 0) expenseRes[0].values.forEach((row: any) => { summary[row[0] as string].expenses = row[1] as number; });
     return Object.values(summary);
   } catch (e) {
-    console.error('Error fetching monthly summary:', e);
+    logger.error('db-payroll', 'fetch_monthly_summary', 'Error fetching monthly summary', e);
     return [];
   }
 }
@@ -58,7 +58,7 @@ export function getEmployees(): Employee[] {
     const res = db.exec("SELECT * FROM employees ORDER BY last_name, first_name");
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<Employee>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching employees:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_employees', 'Error fetching employees', e); return []; }
 }
 
 export function getEmployeeById(id: number): Employee | null {
@@ -67,7 +67,7 @@ export function getEmployeeById(id: number): Employee | null {
     const res = db.exec("SELECT * FROM employees WHERE id = ?", [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
     return rowToEntity<Employee>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
-  } catch (e) { console.error('Error fetching employee:', e); return null; }
+  } catch (e) { logger.error('db-payroll', 'fetch_employee', 'Error fetching employee', e); return null; }
 }
 
 export function createEmployee(empData: Partial<Employee>): { success: boolean; message: string; id?: number } {
@@ -95,8 +95,8 @@ export function createEmployee(empData: Partial<Employee>): { success: boolean; 
     ]);
     const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
     stmt.free();
-    return { success: true, message: 'Empleado registrado con éxito', id };
-  } catch (e: any) { console.error('Error creating employee:', e); return { success: false, message: e.message }; }
+    return { success: true, message: 'Empleado registrado con Ã©xito', id };
+  } catch (e: any) { logger.error('db-payroll', 'create_employee', 'Error creating employee', e); return { success: false, message: e.message }; }
 }
 
 export function updateEmployee(id: number, empData: Partial<Employee>): { success: boolean; message: string } {
@@ -121,7 +121,7 @@ export function updateEmployee(id: number, empData: Partial<Employee>): { succes
       (empData.florida_county || 'Miami-Dade') as string,
       id
     ]);
-    return { success: true, message: 'Empleado actualizado con éxito' };
+    return { success: true, message: 'Empleado actualizado con Ã©xito' };
   } catch (e: any) { return { success: false, message: e.message }; }
 }
 
@@ -135,7 +135,7 @@ export function getPayrollPeriods(): PayrollPeriod[] {
     const res = db.exec("SELECT * FROM payroll_periods ORDER BY start_date DESC");
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<PayrollPeriod>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching payroll periods:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_payroll_periods', 'Error fetching payroll periods', e); return []; }
 }
 
 export function getPayrollSettings(): PayrollSetting[] {
@@ -144,14 +144,14 @@ export function getPayrollSettings(): PayrollSetting[] {
     const res = db.exec("SELECT * FROM payroll_settings");
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<PayrollSetting>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching payroll settings:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_payroll_settings', 'Error fetching payroll settings', e); return []; }
 }
 
 export function updatePayrollSetting(key: string, value: string): { success: boolean; message: string } {
   if (!db) return { success: false, message: 'Database not initialized' };
   try {
     db.run("UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?", [value, key]);
-    return { success: true, message: 'Configuración actualizada' };
+    return { success: true, message: 'ConfiguraciÃ³n actualizada' };
   } catch (e: any) { return { success: false, message: e.message }; }
 }
 
@@ -165,14 +165,14 @@ export function getTaxBrackets(): TaxBracket[] {
     const res = db.exec("SELECT * FROM tax_brackets ORDER BY min_income ASC");
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<TaxBracket>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching tax brackets:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_tax_brackets', 'Error fetching tax brackets', e); return []; }
 }
 
 export function createTaxBracket(bracket: Partial<TaxBracket>): { success: boolean; message: string; id?: number } {
   if (!db) return { success: false, message: 'Database not initialized' };
   try {
-    if (bracket.min_income === undefined || bracket.min_income < 0) return { success: false, message: 'Ingreso mínimo inválido' };
-    if (bracket.fixed_amount === undefined || bracket.fixed_amount < 0) return { success: false, message: 'Cuota fija inválida' };
+    if (bracket.min_income === undefined || bracket.min_income < 0) return { success: false, message: 'Ingreso mÃ­nimo invÃ¡lido' };
+    if (bracket.fixed_amount === undefined || bracket.fixed_amount < 0) return { success: false, message: 'Cuota fija invÃ¡lida' };
     if (bracket.percentage === undefined || bracket.percentage < 0 || bracket.percentage > 1) return { success: false, message: 'Porcentaje debe estar entre 0 y 100' };
 
     const existing = getTaxBrackets();
@@ -226,12 +226,12 @@ export function getAssetCategories(): AssetCategory[] {
     const res = db.exec("SELECT * FROM asset_categories WHERE is_active = 1 ORDER BY name");
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<AssetCategory>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching asset categories:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_asset_categories', 'Error fetching asset categories', e); return []; }
 }
 
 export function createAssetCategory(category: Partial<AssetCategory>): { success: boolean; message: string; id?: number } {
   if (!db) return { success: false, message: 'Database not initialized' };
-  if (!category.name) return { success: false, message: 'El nombre de la categoría es requerido' };
+  if (!category.name) return { success: false, message: 'El nombre de la categorÃ­a es requerido' };
   try {
     db.run('BEGIN TRANSACTION');
     const stmt = db.prepare(`
@@ -244,7 +244,7 @@ export function createAssetCategory(category: Partial<AssetCategory>): { success
     stmt.free();
     const id = db.exec('SELECT last_insert_rowid() as id')[0]?.values[0]?.[0] as number;
     db.run('COMMIT');
-    return { success: true, message: 'Categoría creada', id };
+    return { success: true, message: 'CategorÃ­a creada', id };
   } catch (e: any) { db?.run('ROLLBACK'); return { success: false, message: e.message }; }
 }
 
@@ -257,7 +257,7 @@ export function getFixedAssets(status?: string): FixedAsset[] {
     const res = db.exec(query);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<FixedAsset>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching fixed assets:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_fixed_assets', 'Error fetching fixed assets', e); return []; }
 }
 
 export function getFixedAssetById(id: number): FixedAsset | null {
@@ -266,20 +266,20 @@ export function getFixedAssetById(id: number): FixedAsset | null {
     const res = db.exec("SELECT * FROM fixed_assets WHERE id = ?", [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
     return rowToEntity<FixedAsset>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
-  } catch (e) { console.error('Error fetching fixed asset:', e); return null; }
+  } catch (e) { logger.error('db-payroll', 'fetch_fixed_asset', 'Error fetching fixed asset', e); return null; }
 }
 
 export function createFixedAsset(asset: Partial<FixedAsset>, userId: number): { success: boolean; message: string; id?: number } {
   if (!db) return { success: false, message: 'Database not initialized' };
   if (!asset.name) return { success: false, message: 'El nombre es requerido' };
-  if (!asset.category_id) return { success: false, message: 'La categoría es requerida' };
-  if (!asset.purchase_cost || asset.purchase_cost <= 0) return { success: false, message: 'El costo de adquisición debe ser mayor a 0' };
-  if (!asset.purchase_date) return { success: false, message: 'La fecha de adquisición es requerida' };
+  if (!asset.category_id) return { success: false, message: 'La categorÃ­a es requerida' };
+  if (!asset.purchase_cost || asset.purchase_cost <= 0) return { success: false, message: 'El costo de adquisiciÃ³n debe ser mayor a 0' };
+  if (!asset.purchase_date) return { success: false, message: 'La fecha de adquisiciÃ³n es requerida' };
   try {
     db.run('BEGIN TRANSACTION');
     const assetCode = asset.asset_code || `FA-${Date.now().toString().slice(-6)}`;
     const check = db.exec("SELECT id FROM fixed_assets WHERE asset_code = ?", [assetCode]);
-    if (check.length > 0 && check[0].values.length > 0) return { success: false, message: 'El código de activo ya existe' };
+    if (check.length > 0 && check[0].values.length > 0) return { success: false, message: 'El cÃ³digo de activo ya existe' };
     const usefulLifeMonths = (asset.useful_life_years ?? 0) * 12;
     const stmt = db.prepare(`
       INSERT INTO fixed_assets (
@@ -340,7 +340,7 @@ export function disposeAsset(id: number, disposalDate: string, disposalValue: nu
     const netBookValue = (asset.current_value || asset.purchase_cost) - (asset.accumulated_depreciation || 0);
     const gainLoss = disposalValue - netBookValue;
     db.run('COMMIT');
-    return { success: true, message: `Activo dado de baja. ${gainLoss >= 0 ? 'Ganancia' : 'Pérdida'}: $${Math.abs(gainLoss).toFixed(2)}` };
+    return { success: true, message: `Activo dado de baja. ${gainLoss >= 0 ? 'Ganancia' : 'PÃ©rdida'}: $${Math.abs(gainLoss).toFixed(2)}` };
   } catch (e: any) { db?.run('ROLLBACK'); return { success: false, message: e.message }; }
 }
 
@@ -350,15 +350,15 @@ export function getAssetDepreciations(assetId: number): AssetDepreciation[] {
     const res = db.exec("SELECT * FROM asset_depreciations WHERE asset_id = ? ORDER BY period_date DESC", [assetId]);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<AssetDepreciation>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching asset depreciations:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_asset_depreciations', 'Error fetching asset depreciations', e); return []; }
 }
 
 export function recordDepreciation(depreciation: Partial<AssetDepreciation>): { success: boolean; message: string; id?: number } {
   if (!db) return { success: false, message: 'Database not initialized' };
   if (!depreciation.asset_id) return { success: false, message: 'Asset ID requerido' };
-  if (!depreciation.period_date) return { success: false, message: 'Fecha del período requerida' };
-  if (depreciation.depreciation_amount == null) return { success: false, message: 'Monto de depreciación requerido' };
-  if (depreciation.accumulated_depreciation == null) return { success: false, message: 'Depreciación acumulada requerida' };
+  if (!depreciation.period_date) return { success: false, message: 'Fecha del perÃ­odo requerida' };
+  if (depreciation.depreciation_amount == null) return { success: false, message: 'Monto de depreciaciÃ³n requerido' };
+  if (depreciation.accumulated_depreciation == null) return { success: false, message: 'DepreciaciÃ³n acumulada requerida' };
   if (depreciation.net_book_value == null) return { success: false, message: 'Valor neto en libros requerido' };
   try {
     db.run('BEGIN TRANSACTION');
@@ -373,7 +373,7 @@ export function recordDepreciation(depreciation: Partial<AssetDepreciation>): { 
       [depreciation.accumulated_depreciation, depreciation.net_book_value, depreciation.asset_id]);
     const id = db.exec('SELECT last_insert_rowid() as id')[0]?.values[0]?.[0] as number;
     db.run('COMMIT');
-    return { success: true, message: 'Depreciación registrada', id };
+    return { success: true, message: 'DepreciaciÃ³n registrada', id };
   } catch (e: any) { db?.run('ROLLBACK'); return { success: false, message: e.message }; }
 }
 
@@ -402,7 +402,7 @@ export function calculateMonthlyDepreciation(year: number, month: number): { suc
         }
       }
     }
-    return { success: true, message: `Depreciación calculada para ${processed} activos`, processed };
+    return { success: true, message: `DepreciaciÃ³n calculada para ${processed} activos`, processed };
   } catch (e: any) { return { success: false, message: e.message, processed: 0 }; }
 }
 
@@ -418,7 +418,7 @@ export function createPayrollPeriod(period: Partial<PayrollPeriod>): { success: 
       (period.pay_date || '') as string, (period.status || 'open') as string, (period.total_gross || 0) as number, (period.total_net || 0) as number]);
     const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
     stmt.free();
-    return { success: true, message: 'Periodo creado con éxito', id };
+    return { success: true, message: 'Periodo creado con Ã©xito', id };
   } catch (e: any) { return { success: false, message: e.message }; }
 }
 
@@ -432,7 +432,7 @@ export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_
     `, [periodId]);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<PayrollEntry & { employee_name: string }>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching payroll entries:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_payroll_entries', 'Error fetching payroll entries', e); return []; }
 }
 
 export function createPayrollEntry(entry: Partial<PayrollEntry>, items: Partial<PayrollLineItem>[]): { success: boolean; message: string; id?: number } {
@@ -450,7 +450,7 @@ export function createPayrollEntry(entry: Partial<PayrollEntry>, items: Partial<
     }
     itemStmt.free();
     db.run("COMMIT");
-    return { success: true, message: 'Nómina procesada para empleado', id: entryId };
+    return { success: true, message: 'NÃ³mina procesada para empleado', id: entryId };
   } catch (e: any) { db.run("ROLLBACK"); return { success: false, message: e.message }; }
 }
 
@@ -460,7 +460,7 @@ export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
     const res = db.exec("SELECT * FROM payroll_line_items WHERE payroll_entry_id = ?", [entryId]);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<PayrollLineItem>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching payroll line items:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_payroll_line_items', 'Error fetching payroll line items', e); return []; }
 }
 
 export interface PayrollFilter {
@@ -481,7 +481,7 @@ export function getPayrolls(filters: PayrollFilter = {}): PayrollRecord[] {
     const res = db.exec(query, params);
     if (res.length === 0) return [];
     return res[0].values.map((row: any) => rowToEntity<PayrollRecord>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) { console.error('Error fetching payrolls:', e); return []; }
+  } catch (e) { logger.error('db-payroll', 'fetch_payrolls', 'Error fetching payrolls', e); return []; }
 }
 
 // ==========================================
@@ -493,7 +493,7 @@ export function hasUsers(): boolean {
   try {
     const res = db.exec("SELECT COUNT(*) FROM users");
     return res.length > 0 && (res[0].values[0][0] as number) > 0;
-  } catch (error) { console.error('Error checking users:', error); return false; }
+  } catch (error) { logger.error('db-payroll', 'check_users', 'Error checking users', error); return false; }
 }
 
 export function getPayroll(payrollId: number): PayrollRecord | null {
@@ -502,7 +502,7 @@ export function getPayroll(payrollId: number): PayrollRecord | null {
     const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
     if (result.length === 0) return null;
     return rowToEntity<PayrollRecord>((result[0].columns || (result[0] as any).lc), result[0].values[0]);
-  } catch (error) { console.error('Error getting payroll:', error); return null; }
+  } catch (error) { logger.error('db-payroll', 'get_payroll', 'Error getting payroll', error); return null; }
 }
 
 export function getAllPayrolls(filters?: { employeeId?: number; startDate?: string; endDate?: string; status?: 'draft' | 'approved' | 'voided' }): Payroll[] {
@@ -518,7 +518,7 @@ export function getAllPayrolls(filters?: { employeeId?: number; startDate?: stri
     const result = db.exec(query, params);
     if (result.length === 0) return [];
     return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
-  } catch (error) { console.error('Error getting all payrolls:', error); return []; }
+  } catch (error) { logger.error('db-payroll', 'get_all_payrolls', 'Error getting all payrolls', error); return []; }
 }
 
 export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
@@ -531,7 +531,7 @@ export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
       [`${year}-${months[0]}-01`, `${year}-${months[2]}-31`]);
     if (result.length === 0) return [];
     return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
-  } catch (error) { console.error('Error getting quarterly payrolls:', error); return []; }
+  } catch (error) { logger.error('db-payroll', 'get_quarterly_payrolls', 'Error getting quarterly payrolls', error); return []; }
 }
 
 export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
@@ -541,7 +541,7 @@ export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
       [employeeId, year.toString()]);
     if (result.length === 0) return [];
     return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
-  } catch (error) { console.error('Error getting annual payrolls:', error); return []; }
+  } catch (error) { logger.error('db-payroll', 'get_annual_payrolls', 'Error getting annual payrolls', error); return []; }
 }
 
 // ==========================================
@@ -567,7 +567,7 @@ export function getFiscalSettings(): FiscalSettings {
       active: data.is_active ?? true
     };
   } catch (error) {
-    console.error('Error getting fiscal settings:', error);
+    logger.error('db-payroll', 'get_fiscal_settings', 'Error getting fiscal settings', error);
     return { tax_year_start: '2025-01-01', tax_frequency: 'monthly', sales_tax_method: 'accrual', default_tax_rate: 0.06, dr15_filing_day: 20, active: true };
   }
 }
@@ -589,9 +589,10 @@ export function updateFiscalSettings(settings: Partial<FiscalSettings>): { succe
     params.push(companyId);
     db.run(`UPDATE company_data SET ${keys.map(k => `${k} = ?`).join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, params);
     setTimeout(() => saveDatabase(), 1000);
-    return { success: true, message: 'Configuración fiscal actualizada correctamente' };
+    return { success: true, message: 'ConfiguraciÃ³n fiscal actualizada correctamente' };
   } catch (error) {
-    console.error('Error updating fiscal settings:', error);
+    logger.error('db-payroll', 'update_fiscal_settings', 'Error updating fiscal settings', error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 }
+

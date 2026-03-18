@@ -1,11 +1,12 @@
-/**
- * Módulo 20 — Bank Reconciliation
- * Extraído de simple-db.ts líneas 10769–11049
+﻿/**
+ * MÃ³dulo 20 â€” Bank Reconciliation
+ * ExtraÃ­do de simple-db.ts lÃ­neas 10769â€“11049
  */
 
 import { db, rowToEntity } from './db-core';
 import { saveDatabase } from './db-persistence';
 import type { ReconciliationStatement, ReconciliationMatch, BankTransaction, JournalEntry } from './db-types';
+import { logger } from '../../core/logging/SystemLogger';
 
 export function getReconciliationStatements(accountId?: number): ReconciliationStatement[] {
   if (!db) return [];
@@ -26,7 +27,7 @@ export function getReconciliationStatements(accountId?: number): ReconciliationS
       rowToEntity<ReconciliationStatement>((res[0].columns || (res[0] as any).lc), row)
     );
   } catch (e) {
-    console.error('Error fetching reconciliation statements:', e);
+    logger.error('db-reconciliation', 'fetch_statements', 'Error fetching reconciliation statements', e);
     return [];
   }
 }
@@ -61,7 +62,7 @@ export function createReconciliationStatement(
 
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Estado de conciliación creado', id };
+    return { success: true, message: 'Estado de conciliaciÃ³n creado', id };
   } catch (e: any) {
     return { success: false, message: e.message };
   }
@@ -82,7 +83,7 @@ export function getUnreconciledTransactions(accountId: number): BankTransaction[
       rowToEntity<BankTransaction>((res[0].columns || (res[0] as any).lc), row)
     );
   } catch (e) {
-    console.error('Error fetching unreconciled transactions:', e);
+    logger.error('db-reconciliation', 'fetch_unreconciled', 'Error fetching unreconciled transactions', e);
     return [];
   }
 }
@@ -106,7 +107,7 @@ export function findSimilarJournalEntries(transaction: BankTransaction): Journal
       rowToEntity<JournalEntry>((res[0].columns || (res[0] as any).lc), row)
     );
   } catch (e) {
-    console.error('Error finding similar journal entries:', e);
+    logger.error('db-reconciliation', 'find_similar_entries', 'Error finding similar journal entries', e);
     return [];
   }
 }
@@ -142,7 +143,7 @@ export function createReconciliationMatch(
 
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Match de conciliación creado', id };
+    return { success: true, message: 'Match de conciliaciÃ³n creado', id };
   } catch (e: any) {
     db.run("ROLLBACK");
     return { success: false, message: e.message };
@@ -231,7 +232,7 @@ export function autoMatchTransactions(statementId: number): { success: boolean; 
       }
     }
 
-    return { success: true, message: `${matchesFound} matches automáticos creados`, matchesFound };
+    return { success: true, message: `${matchesFound} matches automÃ¡ticos creados`, matchesFound };
   } catch (e: any) {
     return { success: false, message: e.message, matchesFound: 0 };
   }
@@ -256,7 +257,8 @@ export function getInventoryMovements(): any[] {
       return obj;
     });
   } catch (error) {
-    console.error('Error fetching inventory movements:', error);
+    logger.error('db-reconciliation', 'fetch_inventory_movements', 'Error fetching inventory movements', error);
     return [];
   }
 }
+

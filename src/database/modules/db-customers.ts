@@ -1,6 +1,6 @@
-/**
- * Módulo 04 — Customers (Clientes)
- * Extraído de simple-db.ts líneas 3902–4271
+﻿/**
+ * MÃ³dulo 04 â€” Customers (Clientes)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 3902â€“4271
  */
 
 import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
@@ -9,7 +9,7 @@ import { logAuditEvent } from './db-audit';
 import { logger } from '../../core/logging/SystemLogger';
 import type { Customer } from './db-types';
 
-// Función auxiliar para procesar una fila de cliente
+// FunciÃ³n auxiliar para procesar una fila de cliente
 const processCustomerRow = (row: Record<string, unknown>): Customer => {
   return {
     id: Number(row.id),
@@ -158,7 +158,7 @@ export const getCustomers = (filters?: { userId?: number, role?: string }): Cust
     return customers;
 
   } catch (error) {
-    console.error('Error getting customers:', error);
+    logger.error('db-customers', 'get_customers', 'Error getting customers', error);
     return [];
   }
 };
@@ -193,7 +193,7 @@ export const getCustomerById = (id: number): Customer | null => {
     return null;
 
   } catch (error) {
-    console.error('Error getting customer by ID:', error);
+    logger.error('db-customers', 'get_customer_by_id', 'Error getting customer by ID', error);
     return null;
   }
 };
@@ -265,7 +265,7 @@ export const updateCustomer = (id: number, customerData: Partial<Customer>, user
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error updating customer:', error);
+    logger.error('db-customers', 'update_customer', 'Error updating customer', error);
     return { success: false, message: `Error al actualizar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
 };
@@ -291,7 +291,7 @@ export const canDeleteCustomer = (customerId: number): { canDelete: boolean; rea
     return { canDelete: true };
 
   } catch (error) {
-    console.error('Error checking if customer can be deleted:', error);
+    logger.error('db-customers', 'check_customer_delete', 'Error checking if customer can be deleted', error);
     return { canDelete: false, reason: 'Error al verificar las dependencias del cliente' };
   }
 };
@@ -332,7 +332,8 @@ export const deleteCustomer = (id: number, userId?: number): { success: boolean;
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error deleting customer:', error);
+    logger.error('db-customers', 'delete_customer', 'Error deleting customer', error);
     return { success: false, message: `Error al eliminar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'}` };
   }
 };
+

@@ -1,6 +1,6 @@
-/**
- * Módulo 09 — Bills (Facturas de Compra)
- * Extraído de simple-db.ts líneas 5942–6451
+﻿/**
+ * MÃ³dulo 09 â€” Bills (Facturas de Compra)
+ * ExtraÃ­do de simple-db.ts lÃ­neas 5942â€“6451
  */
 
 import { db, rowToEntity, PRIVILEGED_ROLES } from './db-core';
@@ -10,6 +10,7 @@ import { isDateLocked } from './db-journal';
 import { generatePurchaseJournalEntry } from './db-journal-auto';
 import { getFloridaTaxRate } from './db-invoices';
 import { getSupplierById } from './db-suppliers';
+import { logger } from '../../core/logging/SystemLogger';
 import type { Bill, BillItem, Supplier } from './db-types';
 
 export const generateBillNumber = (): string => {
@@ -21,7 +22,7 @@ export const generateBillNumber = (): string => {
     const year = new Date().getFullYear();
     return `BILL-${year}-${count.toString().padStart(4, '0')}`;
   } catch (error) {
-    console.error('Error generating bill number:', error);
+    logger.error('db-bills', 'generate_bill_number', 'Error generating bill number', error);
     const timestamp = Date.now().toString().slice(-6);
     return `BILL-${new Date().getFullYear()}-${timestamp}`;
   }
@@ -73,7 +74,7 @@ export const getBills = (filters?: { userId?: number, role?: string }): Bill[] =
 
     return bills;
   } catch (error) {
-    console.error('Error getting bills:', error);
+    logger.error('db-bills', 'get_bills', 'Error getting bills', error);
     return [];
   }
 };
@@ -152,7 +153,7 @@ export const getBillById = (id: number): Bill | null => {
 
     return bill as Bill;
   } catch (error) {
-    console.error('Error getting bill by ID:', error);
+    logger.error('db-bills', 'get_bill_by_id', 'Error getting bill by ID', error);
     return null;
   }
 };
@@ -171,7 +172,7 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
 
     const issueDateStr = billData.issue_date || new Date().toISOString().split('T')[0];
     if (isDateLocked(issueDateStr)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha estÃ¡ cerrado o bloqueado.' };
     }
 
     const billNumber = billData.bill_number || generateBillNumber();
@@ -250,7 +251,7 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
       if (fullBill) {
         generatePurchaseJournalEntry(fullBill as any, userId).then(journalResult => {
           if (!journalResult.success) {
-            console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
+            logger.warn('db-bills', 'create_bill_journal', 'Warning: Could not generate journal entry for bill');
           }
         });
       }
@@ -265,7 +266,7 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
     };
 
   } catch (error) {
-    console.error('Error creating bill:', error);
+    logger.error('db-bills', 'create_bill', 'Error creating bill', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error creating bill'
@@ -305,7 +306,7 @@ export const getStatsWithSuppliers = (filters?: { userId?: number, role?: string
     return { customers: customerCount, invoices: invoiceCount, revenue, suppliers: supplierCount, bills: billCount, expenses };
 
   } catch (error) {
-    console.error('Error getting stats with suppliers:', error);
+    logger.error('db-bills', 'get_stats_suppliers', 'Error getting stats with suppliers', error);
     return { customers: 0, invoices: 0, revenue: 0, suppliers: 0, bills: 0, expenses: 0 };
   }
 };
@@ -321,7 +322,7 @@ export const updateBill = async (id: number, billData: Partial<Bill>, items?: Pa
 
     const dateToCheck = billData.issue_date || currentBill.issue_date;
     if (isDateLocked(dateToCheck)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
+      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha estÃ¡ cerrado o bloqueado.' };
     }
 
     db.run('BEGIN TRANSACTION');
@@ -412,7 +413,7 @@ export const updateBill = async (id: number, billData: Partial<Bill>, items?: Pa
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error updating bill:', error);
+    logger.error('db-bills', 'update_bill', 'Error updating bill', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error al actualizar la factura de compra'
@@ -467,10 +468,11 @@ export const deleteBill = (id: number, userId?: number): { success: boolean; mes
 
   } catch (error) {
     db?.run('ROLLBACK');
-    console.error('Error deleting bill:', error);
+    logger.error('db-bills', 'delete_bill', 'Error deleting bill', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error al eliminar la factura de compra'
     };
   }
 };
+
