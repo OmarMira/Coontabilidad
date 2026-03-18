@@ -1,3 +1,0 @@
-SNAPSHOT_FECHA: 2026-02-28 16:18:54
-BRANCH: restore-point-jan29
-ULTIMO_COMMIT: 9904a81 feat: calibrate transaction parser fuzzy threshold to 0.85
