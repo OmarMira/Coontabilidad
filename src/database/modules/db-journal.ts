@@ -98,7 +98,7 @@ export const getAccountBalance = (accountCode: string): number => {
       return credits - debits;
     }
   } catch (error) {
-    console.error(`Error getting balance for account ${accountCode}:`, error);
+    logger.error('db-journal', 'get_account_balance', 'Error getting account balance', error);
     return 0;
   }
 };
