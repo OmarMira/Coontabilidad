@@ -6,7 +6,8 @@ import { NuclearCleanExecution } from '@/core/NuclearCleanExecution';
 import { DatabaseReconstructor } from '@/database/DatabaseReconstructor';
 import { AIResponseFixer } from '@/services/ai/AIResponseFixer';
 import { DashboardRestorer } from '@/core/DashboardRestorer';
-import { db, initDB, getDBEngine } from '@/database/simple-db';
+import { db, getDBEngine } from '@/database/modules/db-core';
+import { initDB } from '@/database/modules/db-init';
 import { MigrationEngine } from '@/core/migrations/MigrationEngine';
 import { logger } from '@/utils/logger';
 import { LanguageProvider } from './i18n/LanguageContext';
@@ -98,7 +99,7 @@ async function initializeApplication(): Promise<void> {
 
     // 3. FirstRunSetup / Seeding (CORRE DESPUÉS DE MIGRACIONES)
     try {
-      const { seedUsersAndRoles, seedSystemDefaults } = await import('@/database/simple-db');
+      const { seedUsersAndRoles, seedSystemDefaults } = await import('@/database/modules/db-users');
       await seedUsersAndRoles();
       await seedSystemDefaults();
       await dbEngineInstance.sync();

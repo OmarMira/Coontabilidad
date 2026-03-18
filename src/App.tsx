@@ -7,21 +7,24 @@ import './styles/elite-styles.css';
 
 import { useLocale } from './i18n/useLocale';
 
-import {
-  initDB, addCustomer, getCustomers, updateCustomer, deleteCustomer, canDeleteCustomer, getStatsWithSuppliers, isDatabaseReady, Customer,
-  getInvoices, getInvoiceById, createInvoice, updateInvoice, deleteInvoice, getActiveProducts, Invoice, Product, InvoiceItem,
-  addSupplier, getSuppliers, updateSupplier, deleteSupplier, canDeleteSupplier, Supplier,
-  getBills, getBillById, createBill, updateBill, deleteBill, Bill, BillItem,
-  getChartOfAccounts, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount, ChartOfAccount,
-  diagnoseAccountingSystem,
-  createJournalEntry, getJournalEntries, generateSalesJournalEntry, generatePurchaseJournalEntry,
-  generateBalanceSheet, generateIncomeStatement,
-  getCompanyData, updateCompanyData, CompanyData,
-  getProducts, createProduct, updateProduct, deleteProduct, getProductById, ProductCategory,
-  getProductCategories, createProductCategory, updateProductCategory, deleteProductCategory,
-  getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount, BankAccount, db,
-  getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice, Quote, QuoteLine
-} from '@/database/simple-db';
+import type { Customer, Invoice, Product, InvoiceItem, Supplier, Bill, BillItem, ChartOfAccount, CompanyData, ProductCategory, BankAccount, Quote, QuoteLine } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { initDB } from '@/database/modules/db-init';
+import { isDatabaseReady } from '@/database/modules/db-persistence';
+import { addCustomer, getCustomers, updateCustomer, deleteCustomer, canDeleteCustomer } from '@/database/modules/db-customers';
+import { getStatsWithSuppliers, getBillById, createBill, updateBill, deleteBill } from '@/database/modules/db-bills';
+import { getBills } from '@/database/modules/db-bills';
+import { getInvoices, getInvoiceById, createInvoice, updateInvoice, deleteInvoice, getActiveProducts } from '@/database/modules/db-invoices';
+import { addSupplier, getSuppliers, updateSupplier, deleteSupplier, canDeleteSupplier } from '@/database/modules/db-suppliers';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
+import { createChartOfAccount, updateChartOfAccount, deleteChartOfAccount, diagnoseAccountingSystem } from '@/database/modules/db-chart-of-accounts';
+import { createJournalEntry, getJournalEntries } from '@/database/modules/db-journal';
+import { generateSalesJournalEntry, generatePurchaseJournalEntry } from '@/database/modules/db-journal-auto';
+import { generateBalanceSheet, generateIncomeStatement } from '@/database/modules/db-reports-financial';
+import { getCompanyData, updateCompanyData } from '@/database/modules/db-company';
+import { getProducts, createProduct, updateProduct, deleteProduct, getProductById, getProductCategories, createProductCategory, updateProductCategory, deleteProductCategory } from '@/database/modules/db-products';
+import { getBankAccounts, createBankAccount, updateBankAccount, deleteBankAccount } from '@/database/modules/db-bank-accounts';
+import { getQuotes, getQuoteById, createQuote, updateQuote, deleteQuote, convertQuoteToInvoice } from '@/database/modules/db-quotes';
 import { DatabaseService } from '@/database/DatabaseService';
 
 // Core components (always loaded)
