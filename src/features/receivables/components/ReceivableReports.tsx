@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, Users, DollarSign, Clock, Filter, Printer, Download, Zap } from 'lucide-react';
-import { getInvoices, Invoice, getCustomers, Customer } from '@/database/simple-db';
+import type { Invoice, Customer } from '@/database/modules/db-types';
+import { getInvoices } from '@/database/modules/db-invoices';
+import { getCustomers } from '@/database/modules/db-customers';
 import { useLocale } from '../../../i18n/useLocale';
 
 export const ReceivableReports: React.FC = () => {

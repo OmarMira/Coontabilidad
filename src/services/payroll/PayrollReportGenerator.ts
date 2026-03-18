@@ -10,7 +10,8 @@
  */
 
 import { db } from '@/database/modules/db-core';
-import type { Payroll, Employee } from '@/database/simple-db';
+import type { Employee } from '@/database/modules/db-types';
+import type { PayrollRecord as Payroll } from '@/database/modules/db-types';
 import { asyncPDFService, type PDFGenerationOptions } from '../pdf/AsyncPDFService';
 
 // ==========================================

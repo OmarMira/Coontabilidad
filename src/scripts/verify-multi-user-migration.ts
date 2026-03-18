@@ -1,5 +1,7 @@
 
-import { db, initDB, getUsers, createUserRole, createUser, DB_NAME } from '@/database/simple-db';
+import { db, DB_NAME } from '@/database/modules/db-core';
+import { initDB } from '@/database/modules/db-init';
+import { getUsers, createUserRole, createUser } from '@/database/modules/db-users';
 import { logger } from '../core/logging/SystemLogger';
 
 // Helper to run query safely

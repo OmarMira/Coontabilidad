@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Quote, QuoteLine, Customer, Product } from '@/database/simple-db';
+import type { Quote, QuoteLine, Customer, Product } from '@/database/modules/db-types';
 import { X, Plus, Trash2, Save, Calculator } from 'lucide-react';
 import { useLocale } from '../../../i18n/useLocale';
 
