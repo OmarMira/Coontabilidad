@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import LoginForm from './auth/LoginForm';
 import OnboardingWizard from './auth/OnboardingWizard';
 import { useAuth } from '../contexts/AuthContext';
-import { isDatabaseReady, hasUsers } from '@/database/simple-db';
+import { isDatabaseReady } from '@/database/modules/db-persistence';
+import { hasUsers } from '@/database/modules/db-users';
 
 
 interface AppRouterProps {
