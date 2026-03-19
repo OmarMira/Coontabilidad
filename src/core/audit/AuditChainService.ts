@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../database/SQLiteEngine';
 import { db as globalDb } from '@/database/modules/db-core';
 import { logger } from '../../utils/logger';
@@ -58,8 +59,8 @@ export class AuditChainService {
             const result = await this.processSingleEvent(currentEvent);
             if (currentEvent.resolve) currentEvent.resolve(result);
         } catch (error) {
-            console.error('[Audit] Fatal Chain Error', error);
-            if (currentEvent.reject) currentEvent.reject(error);
+            logger.error('AuditChainService', 'fatal_chain_error', '[Audit] Fatal Chain Error', error);
+            logger.error('AuditChainService', 'fatal_chain_error', '[Audit] Fatal Chain Error', error);
             // Critical decision: If audit fails, do we clear the queue? 
             // Yes, because subsequent items might depend on this one's success if inside same transaction logic on generic level.
             // But usually this service is called transactionally. 
@@ -86,8 +87,8 @@ export class AuditChainService {
         try {
             newHash = await this.calculateHashInWorker(previousHash, event.content);
         } catch (workerError) {
-            console.error('[Audit] Worker Hashing Failed', workerError);
-            throw new Error('AUDIT_INTEGRITY_FAILURE: Could not verify hash integrity via Worker.');
+            logger.error('AuditChainService', 'worker_hashing_failed', '[Audit] Worker Hashing Failed', workerError);
+            logger.error('AuditChainService', 'worker_hashing_failed', '[Audit] Worker Hashing Failed', workerError);
         }
 
         if (!newHash || newHash.length < 32) {
@@ -110,8 +111,8 @@ export class AuditChainService {
             newHash
         ]);
 
-        console.log(`[Audit] Sealed: ${event.eventType} | Chain: ${previousHash.substring(0, 4)}->${newHash.substring(0, 4)}`);
-
+            logger.info('AuditChainService', 'sealed', '[Audit] Sealed event');
+            logger.info('AuditChainService', 'sealed', '[Audit] Sealed event');
         // Return for compatibility
         return {
             id: lastRecord[0]?.id || 0,

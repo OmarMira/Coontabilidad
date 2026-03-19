@@ -1,4 +1,4 @@
-import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+﻿import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { db as globalDb } from '@/database/modules/db-core';
 import { BackupLocationService } from '../BackupLocationService';
 
@@ -170,7 +170,7 @@ export class BackupService {
                     });
 
                     // Continue without timestamp (degraded mode)
-                    // En producción enterprise, esto debería ser un error fatal
+                    // En producciÃ³n enterprise, esto deberÃ­a ser un error fatal
                 }
 
                 const backup: EncryptedBackup = {
@@ -428,9 +428,9 @@ export class BackupService {
                     ProductionLogger.info('BackupService', 'Backup saved to local disk', { filename: fname });
                 } catch (e: any) {
                     // User cancelled or API not available
-                    console.error('[BACKUP] Error en selector:', e.name, e.message);
+                    ProductionLogger.error('BackupService', '[BACKUP] Error en selector', e);
                     ProductionLogger.error('BackupService', 'Failed to save file', e as Error);
-                    throw e; // re-lanzá el error para que llegue al UI
+                    throw e; // re-lanzÃ¡ el error para que llegue al UI
                 }
             } else {
                 // Fallback: Download via blob
@@ -1014,7 +1014,7 @@ export class BackupService {
 
             const integrityCheck = dbInstance.exec('PRAGMA integrity_check;');
             results.push({ test: 'physical_integrity', value: integrityCheck[0].values[0][0] });
-            if (integrityCheck[0].values[0][0] !== 'ok') failures.push(`Inconsistencia física: ${integrityCheck[0].values[0][0]}`);
+            if (integrityCheck[0].values[0][0] !== 'ok') failures.push(`Inconsistencia fÃ­sica: ${integrityCheck[0].values[0][0]}`);
 
             const tablesRes = dbInstance.exec("SELECT name FROM sqlite_master WHERE type='table'");
             const tableCount = tablesRes.length > 0 ? tablesRes[0].values.length : 0;
@@ -1089,14 +1089,14 @@ export class BackupService {
 
             return true;
         } catch (e) {
-            console.error('Legacy backup failed', e);
+            ProductionLogger.error('BackupService', 'Legacy backup failed', e);
             return false;
         }
     }
 
     public static async restoreBackupWithFileChoice(): Promise<boolean> {
         if (!(window as any).showOpenFilePicker) {
-            throw new Error('Tu navegador no soporta File System Access API. Usá Chrome o Edge versión 86+.');
+            throw new Error('Tu navegador no soporta File System Access API. UsÃ¡ Chrome o Edge versiÃ³n 86+.');
         }
 
         try {
@@ -1112,8 +1112,8 @@ export class BackupService {
             await service.restoreBackup(content, 'LEGACY_MODE_ENCRYPTION_REQD');
             return true;
         } catch (e) {
-            console.error('[RESTORE] Error completo:', e);
-            console.error('Legacy restore failed', e);
+            ProductionLogger.error('BackupService', '[RESTORE] Error completo', e);
+            ProductionLogger.error('BackupService', 'Legacy restore failed', e);
             return false;
         }
     }
@@ -1134,7 +1134,7 @@ export class BackupService {
 
             await service.restoreBackup(backupData, 'LEGACY_MODE_ENCRYPTION_REQD');
 
-            this.eventEmitter.emit('backup-progress', { stage: 'COMPLETADO', percentage: 100, message: '¡Restauración exitosa!', timestamp: new Date() });
+            this.eventEmitter.emit('backup-progress', { stage: 'COMPLETADO', percentage: 100, message: 'Â¡RestauraciÃ³n exitosa!', timestamp: new Date() });
 
             const res: RestoreResult = {
                 success: true,
@@ -1161,7 +1161,7 @@ export class BackupService {
     public static initiateCloudLink(): void {
         import('../../services/GoogleAuthService').then(mod => {
             mod.GoogleAuthService.signIn().catch(err => {
-                console.error('Google Auth Error:', err);
+                ProductionLogger.error('BackupService', 'Google Auth Error', err);
                 alert('Cloud Link Error: ' + err.message);
             });
         });

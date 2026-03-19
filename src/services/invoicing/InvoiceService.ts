@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { z } from 'zod';
 import { TransactionManager } from '../transactions/TransactionManager';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
@@ -55,8 +56,8 @@ export class InvoiceService {
         // Ensure strictly typed numbers for calculations if needed, but Manager handles Big.js conversion.
         // We pass the raw DTO which matches the interface mostly.
 
-        console.log('[InvoiceService] Processing Validated Invoice...');
-
+        logger.info('InvoiceService', 'processing', '[InvoiceService] Processing Validated Invoice');
+        logger.info('InvoiceService', 'processing', '[InvoiceService] Processing Validated Invoice');
         try {
             await this.transactionManager.processSale({
                 customerId: validatedData.customerId,
@@ -67,10 +68,10 @@ export class InvoiceService {
                     cost: l.cost || 0
                 }))
             });
-            console.log('[InvoiceService] Invoice created successfully.');
-        } catch (error: any) {
-            console.error('[InvoiceService] Transaction Failed:', error);
-            throw error; // Re-throw for UI handling
+            logger.info('InvoiceService', 'created', '[InvoiceService] Invoice created successfully');
+            logger.info('InvoiceService', 'created', '[InvoiceService] Invoice created successfully');
+            logger.error('InvoiceService', 'transaction_failed', '[InvoiceService] Transaction Failed', error);
+            logger.error('InvoiceService', 'transaction_failed', '[InvoiceService] Transaction Failed', error);
         }
     }
 }

@@ -1,8 +1,9 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * PayrollJournalService.ts
  * 
- * Genera asientos contables para nómina:
- * - Asiento de nómina (gross pay → net pay + taxes)
+ * Genera asientos contables para nÃ³mina:
+ * - Asiento de nÃ³mina (gross pay â†’ net pay + taxes)
  * - Asiento de impuestos patronales (employer portion)
  * 
  * @author Kiro AI
@@ -69,7 +70,7 @@ const ACCOUNTS = {
 export class PayrollJournalService {
   
   /**
-   * Genera asiento contable para nómina
+   * Genera asiento contable para nÃ³mina
    * 
    * Estructura del asiento:
    * DR: Payroll Expense (gross pay)
@@ -198,10 +199,10 @@ export class PayrollJournalService {
    * Crea un item de journal entry
    * 
    * @param journalEntryId - ID del journal entry
-   * @param accountCode - Código de cuenta
+   * @param accountCode - CÃ³digo de cuenta
    * @param accountName - Nombre de cuenta
-   * @param debit - Monto débito
-   * @param credit - Monto crédito
+   * @param debit - Monto dÃ©bito
+   * @param credit - Monto crÃ©dito
    */
   private createJournalItem(
     journalEntryId: number,
@@ -218,10 +219,10 @@ export class PayrollJournalService {
   }
   
   /**
-   * Verifica que un journal entry esté balanceado (debits = credits)
+   * Verifica que un journal entry estÃ© balanceado (debits = credits)
    * 
    * @param journalEntryId - ID del journal entry
-   * @returns true si está balanceado
+   * @returns true si estÃ¡ balanceado
    */
   private isBalanced(journalEntryId: number): boolean {
     try {
@@ -243,7 +244,7 @@ export class PayrollJournalService {
       // Comparar con tolerancia de 1 centavo
       return Math.abs(totalDebits - totalCredits) < 0.01;
     } catch (error) {
-      console.error('Error checking balance:', error);
+      logger.error('PayrollJournalService', 'check_balance', 'Error checking balance', error);
       return false;
     }
   }
@@ -272,7 +273,7 @@ export class PayrollJournalService {
       
       return payroll as Payroll;
     } catch (error) {
-      console.error('Error getting payroll:', error);
+      logger.error('PayrollJournalService', 'get_payroll', 'Error getting payroll', error);
       return null;
     }
   }
@@ -328,7 +329,7 @@ export class PayrollJournalService {
         items
       };
     } catch (error) {
-      console.error('Error getting journal entry:', error);
+      logger.error('PayrollJournalService', 'get_journal_entry', 'Error getting journal entry', error);
       return null;
     }
   }
@@ -336,3 +337,4 @@ export class PayrollJournalService {
 
 // Exportar instancia singleton
 export const payrollJournalService = new PayrollJournalService();
+
