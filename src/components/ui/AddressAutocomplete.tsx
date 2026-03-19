@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface AddressComponents {
@@ -28,7 +29,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     value,
     onChange,
     onAddressSelect,
-    placeholder = "Ingrese dirección",
+    placeholder = "Ingrese direcciÃ³n",
     className = "",
     disabled = false
 }) => {
@@ -37,7 +38,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        // Verificar si Google Maps ya está cargado
+        // Verificar si Google Maps ya estÃ¡ cargado
         if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
             setIsLoaded(true);
         } else {
@@ -49,7 +50,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                 }
             }, 100);
 
-            // Timeout después de 10 segundos
+            // Timeout despuÃ©s de 10 segundos
             setTimeout(() => clearInterval(checkGoogleMaps), 10000);
 
             return () => clearInterval(checkGoogleMaps);
@@ -67,7 +68,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                 types: ['address'] // Solo direcciones completas
             });
 
-            // Listener para cuando se selecciona una dirección
+            // Listener para cuando se selecciona una direcciÃ³n
             autocompleteRef.current.addListener('place_changed', () => {
                 const place = autocompleteRef.current?.getPlace();
 
@@ -82,7 +83,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                     county: ''
                 };
 
-                // Extraer componentes de la dirección
+                // Extraer componentes de la direcciÃ³n
                 let streetNumber = '';
                 let route = '';
 
@@ -110,17 +111,17 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                     }
                 });
 
-                // Construir dirección completa
+                // Construir direcciÃ³n completa
                 addressData.address = `${streetNumber} ${route}`.trim();
 
-                // Actualizar campo de dirección
+                // Actualizar campo de direcciÃ³n
                 onChange(addressData.address);
 
                 // Notificar componente padre con todos los datos
                 onAddressSelect(addressData);
             });
         } catch (error) {
-            console.error('Error initializing Google Places Autocomplete:', error);
+            logger.error('AddressAutocomplete', 'places_init_error', 'Error initializing Google Places Autocomplete', error);
         }
 
         return () => {

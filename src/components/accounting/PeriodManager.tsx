@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLocale } from '@/i18n/useLocale';
@@ -22,12 +23,12 @@ import PeriodClosureWizard from './PeriodClosureWizard';
 /**
  * PeriodManager
  * 
- * Componente para gestionar períodos contables:
- * - Lista de períodos con estado
- * - Creación de períodos mensuales
- * - Cierre de períodos
+ * Componente para gestionar perÃ­odos contables:
+ * - Lista de perÃ­odos con estado
+ * - CreaciÃ³n de perÃ­odos mensuales
+ * - Cierre de perÃ­odos
  * - Reapertura (solo admin)
- * - Bloqueo de períodos
+ * - Bloqueo de perÃ­odos
  */
 export const PeriodManager: React.FC = () => {
   const { t, language } = useLocale();
@@ -51,7 +52,7 @@ export const PeriodManager: React.FC = () => {
       const allPeriods = accountingPeriodService.getPeriods();
       setPeriods(allPeriods);
     } catch (err) {
-      console.error('Error loading periods:', err);
+      logger.error('PeriodManager', 'load_periods', 'Error loading periods', err);
       setError(err instanceof Error ? err.message : t('accounting.periods.errorLoading'));
     } finally {
       setLoading(false);
@@ -74,7 +75,7 @@ export const PeriodManager: React.FC = () => {
         setError(result.message);
       }
     } catch (err) {
-      console.error('Error creating periods:', err);
+      logger.error('PeriodManager', 'create_periods', 'Error creating periods', err);
       setError(err instanceof Error ? err.message : t('accounting.periods.errorLoading'));
     } finally {
       setLoading(false);
@@ -95,7 +96,7 @@ export const PeriodManager: React.FC = () => {
       if (!validation.canClose) {
         const errorMessages = [
           ...validation.errors,
-          ...validation.warnings.map(w => `⚠️ ${w}`)
+          ...validation.warnings.map(w => `âš ï¸ ${w}`)
         ];
         setError(`Imposible procesar cierre:\n${errorMessages.join('\n')}`);
         setLoading(false);
@@ -112,7 +113,7 @@ export const PeriodManager: React.FC = () => {
         setError(result.message);
       }
     } catch (err) {
-      console.error('Error closing period:', err);
+      logger.error('PeriodManager', 'close_period', 'Error closing period', err);
       setError(err instanceof Error ? err.message : 'Fallo en motor de cierre');
     } finally {
       setLoading(false);
@@ -137,7 +138,7 @@ export const PeriodManager: React.FC = () => {
         setError(result.message);
       }
     } catch (err) {
-      console.error('Error reopening period:', err);
+      logger.error('PeriodManager', 'reopen_period', 'Error reopening period', err);
       setError(err instanceof Error ? err.message : 'Error en protocolo de reapertura');
     } finally {
       setLoading(false);
@@ -163,7 +164,7 @@ export const PeriodManager: React.FC = () => {
         setError(result.message);
       }
     } catch (err) {
-      console.error('Error locking period:', err);
+      logger.error('PeriodManager', 'lock_period', 'Error locking period', err);
       setError(err instanceof Error ? err.message : 'Error en bloqueo de seguridad');
     } finally {
       setLoading(false);
@@ -451,7 +452,7 @@ export const PeriodManager: React.FC = () => {
           onComplete={() => {
             setShowWizard(false);
             setWizardPeriodId(null);
-            setSuccess('Período consolidado mediante asistente industrial.');
+            setSuccess('PerÃ­odo consolidado mediante asistente industrial.');
             loadPeriods();
             setTimeout(() => setSuccess(null), 5000);
           }}
@@ -460,3 +461,4 @@ export const PeriodManager: React.FC = () => {
     </div>
   );
 };
+

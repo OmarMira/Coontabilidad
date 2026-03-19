@@ -1,3 +1,4 @@
+﻿import { logger } from './core/logging/SystemLogger';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { DynamicErrorBoundary } from '@/components/error/DynamicErrorBoundary';
@@ -18,15 +19,15 @@ import './styles/error-recovery.css';
 
 async function executeNuclearRepair() {
   try {
-    logger.emergency('INICIANDO REPARACIÓN NUCLEAR SOLICITADA', null, undefined, 'System', 'nuclear_repair_init');
+    logger.emergency('INICIANDO REPARACIÃ“N NUCLEAR SOLICITADA', null, undefined, 'System', 'nuclear_repair_init');
 
     // 1. Limpieza Nuclear
     await NuclearCleanExecution.execute();
 
-    // 2. Reinicializar DB (esto crea el archivo vacío en OPFS)
+    // 2. Reinicializar DB (esto crea el archivo vacÃ­o en OPFS)
     const newDb = await initDB();
 
-    // 3. Reconstruir con orden jerárquico correcto
+    // 3. Reconstruir con orden jerÃ¡rquico correcto
     await DatabaseReconstructor.reconstruct(newDb);
 
     // 4. Fix IA
@@ -35,26 +36,26 @@ async function executeNuclearRepair() {
     // 5. Restaurar Dashboard
     DashboardRestorer.restore();
 
-    logger.success('REPARACIÓN NUCLEAR COMPLETADA. REINICIANDO...', null, 'System', 'nuclear_repair_success');
+    logger.success('REPARACIÃ“N NUCLEAR COMPLETADA. REINICIANDO...', null, 'System', 'nuclear_repair_success');
 
-    // Pequeña espera para asegurar que todo se guardó
+    // PequeÃ±a espera para asegurar que todo se guardÃ³
     await new Promise(r => setTimeout(r, 1000));
 
-    // Limpiar parámetros y recargar
+    // Limpiar parÃ¡metros y recargar
     const url = new URL(window.location.href);
     url.searchParams.delete('nuclear');
     window.location.href = url.pathname;
 
   } catch (error: any) {
-    logger.critical('FALLO CATASTRÓFICO EN REPARACIÓN NUCLEAR', { error: error.message }, error, 'System', 'nuclear_repair_failed');
-    alert('Error en reparación nuclear: ' + error.message);
+    logger.critical('FALLO CATASTRÃ“FICO EN REPARACIÃ“N NUCLEAR', { error: error.message }, error, 'System', 'nuclear_repair_failed');
+    alert('Error en reparaciÃ³n nuclear: ' + error.message);
   }
 }
 
 async function initializeApplication(): Promise<void> {
   try {
 
-    // FIX-06 — BroadcastChannel guard
+    // FIX-06 â€” BroadcastChannel guard
     const instanceChannel = new BroadcastChannel('accountexpress_instance');
     let isActiveInstance = true;
 
@@ -63,12 +64,12 @@ async function initializeApplication(): Promise<void> {
         isActiveInstance = false;
         document.body.innerHTML = `
           <div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#cbd5e1;font-family:sans-serif;text-align:center;padding:20px;">
-            <h1 style="color:#ef4444;font-size:2rem;margin-bottom:1rem;">⚠️ ACCESO BLOQUEADO</h1>
+            <h1 style="color:#ef4444;font-size:2rem;margin-bottom:1rem;">âš ï¸ ACCESO BLOQUEADO</h1>
             <p style="font-size:1.2rem;max-width:600px;line-height:1.6;">
-              Account Express ya está abierto en otra pestaña.
+              Account Express ya estÃ¡ abierto en otra pestaÃ±a.
               Por seguridad e integridad de la base de datos local, solo se permite una instancia activa a la vez.
             </p>
-            <p style="margin-top:2rem;opacity:0.6;">Cerrá esta pestaña y usá la que ya está abierta.</p>
+            <p style="margin-top:2rem;opacity:0.6;">CerrÃ¡ esta pestaÃ±a y usÃ¡ la que ya estÃ¡ abierta.</p>
           </div>
         `;
       }
@@ -82,7 +83,7 @@ async function initializeApplication(): Promise<void> {
 
     const urlParams = new URLSearchParams(window.location.search);
 
-    // 4. NuclearClean SOLO si viene el parámetro URL ?nuclear=confirm
+    // 4. NuclearClean SOLO si viene el parÃ¡metro URL ?nuclear=confirm
     if (urlParams.get('nuclear') === 'confirm') {
       await executeNuclearRepair();
       return;
@@ -97,28 +98,28 @@ async function initializeApplication(): Promise<void> {
     await migrationEngine.migrate(dbEngineInstance);
     await dbEngineInstance.sync();
 
-    // 3. FirstRunSetup / Seeding (CORRE DESPUÉS DE MIGRACIONES)
+    // 3. FirstRunSetup / Seeding (CORRE DESPUÃ‰S DE MIGRACIONES)
     try {
       const { seedUsersAndRoles, seedSystemDefaults } = await import('@/database/modules/db-users');
       await seedUsersAndRoles();
       await seedSystemDefaults();
       await dbEngineInstance.sync();
-      console.log('[main] FirstRunSetup completado con éxito.');
+  logger.info('main', 'first_run_complete', '[main] FirstRunSetup completado con exito');
     } catch (seedErr) {
-      console.error('[main] Error en FirstRunSetup:', seedErr);
+      logger.error('main', 'first_run_setup', '[main] Error en FirstRunSetup', seedErr);
     }
 
-    // Health check en BACKGROUND — no bloquea el render
-    // Si falla, la app ya está montada y el usuario puede trabajar
-    // Fase 5: Health check informativo — sin auto-reparación automática
+    // Health check en BACKGROUND â€” no bloquea el render
+    // Si falla, la app ya estÃ¡ montada y el usuario puede trabajar
+    // Fase 5: Health check informativo â€” sin auto-reparaciÃ³n automÃ¡tica
     setTimeout(async () => {
       try {
         const dbHealth = await DatabaseHealthChecker.checkHealth();
         if (!dbHealth.healthy) {
-          console.warn('[main] Health check detectó problemas — revisar manualmente desde panel de administración');
+          logger.warn('main', 'health_check_issues', '[main] Health check detecto problemas');
         }
       } catch (healthErr) {
-        console.warn('[main] Health check en background falló (no crítico):', healthErr);
+        logger.warn('main', 'health_check_failed', '[main] Health check en background fallo (no critico)');
       }
     }, 2000);
 
@@ -145,17 +146,17 @@ async function initializeApplication(): Promise<void> {
     );
 
   } catch (error: any) {
-    logger.critical('Fallo en inicialización', { error: error.message }, error, 'Main', 'startup_error');
+    logger.critical('Fallo en inicializaciÃ³n', { error: error.message }, error, 'Main', 'startup_error');
 
     // Renderizar pantalla de error en lugar de pantalla negra
     const root = document.getElementById('root');
     const isSpanish = (localStorage.getItem('account_express_locale') || 'es') === 'es';
 
     const messages = {
-      title: isSpanish ? 'Error de Inicialización' : 'Initialization Error',
-      reload: isSpanish ? 'Recargar Aplicación' : 'Reload Application',
-      contact: isSpanish ? 'Si el problema persiste, contacta al soporte técnico' : 'If the problem persists, contact technical support',
-      unknown: isSpanish ? 'Error desconocido al inicializar la aplicación' : 'Unknown initialization error'
+      title: isSpanish ? 'Error de InicializaciÃ³n' : 'Initialization Error',
+      reload: isSpanish ? 'Recargar AplicaciÃ³n' : 'Reload Application',
+      contact: isSpanish ? 'Si el problema persiste, contacta al soporte tÃ©cnico' : 'If the problem persists, contact technical support',
+      unknown: isSpanish ? 'Error desconocido al inicializar la aplicaciÃ³n' : 'Unknown initialization error'
     };
 
     if (root) {
@@ -181,3 +182,4 @@ async function initializeApplication(): Promise<void> {
 }
 
 initializeApplication();
+

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React from 'react';
 import { GoogleOAuthProvider, GoogleLogin, CredentialResponse, useGoogleOneTapLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -30,12 +31,12 @@ const GoogleLoginInner: React.FC<GoogleLoginButtonProps & { isConfigured: boolea
         onSuccess: (credentialResponse) => {
             if (credentialResponse.credential) {
                 const decoded = jwtDecode<GoogleUserInfo>(credentialResponse.credential);
-                console.log('✅ Google One Tap success:', decoded);
+                logger.info('GoogleLoginButton', 'one_tap_success', 'Google One Tap success');
                 onSuccess(decoded);
             }
         },
         onError: () => {
-            console.log('One Tap skipped or failed');
+            logger.info('GoogleLoginButton', 'one_tap_skipped', 'One Tap skipped or failed');
         },
         disabled: !isConfigured,
     });
@@ -44,17 +45,17 @@ const GoogleLoginInner: React.FC<GoogleLoginButtonProps & { isConfigured: boolea
         try {
             if (credentialResponse.credential) {
                 const decoded = jwtDecode<GoogleUserInfo>(credentialResponse.credential);
-                console.log('✅ Google login exitoso:', decoded);
+                logger.info('GoogleLoginButton', 'login_success', 'Google login exitoso');
                 onSuccess(decoded);
             }
         } catch (error) {
-            console.error('❌ Error decodificando credencial de Google:', error);
+            logger.error('GoogleLoginButton', 'decode_error', 'Error decodificando credencial de Google', error);
             onError();
         }
     };
 
     const handleError = () => {
-        console.error('❌ Error en login de Google');
+        logger.error('GoogleLoginButton', 'login_error', 'Error en login de Google');
         onError();
     };
 
@@ -88,7 +89,7 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
     }, []);
 
     React.useEffect(() => {
-        console.log('🔐 Google Auth Init:', {
+        logger.info('GoogleLoginButton', 'auth_init', 'Google Auth Init');
             mode: isGoogleConfigured ? 'PRODUCTION' : 'SIMULATION_READY',
             recoveredKeyUsed: FINAL_CLIENT_ID === RECOVERED_ID,
             keyPreview: FINAL_CLIENT_ID ? `${FINAL_CLIENT_ID.substring(0, 10)}...` : 'NONE'
@@ -102,8 +103,8 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
             <div className="w-full">
                 <button
                     onClick={() => {
-                        // Confirmación explícita para evitar bypass no deseado
-                        if (!window.confirm("⚠️ Google Client ID no detectado o inválido.\n\n¿Desea acceder al sistema usando MODO SIMULACIÓN?")) {
+                        // ConfirmaciÃ³n explÃ­cita para evitar bypass no deseado
+                        if (!window.confirm("âš ï¸ Google Client ID no detectado o invÃ¡lido.\n\nÂ¿Desea acceder al sistema usando MODO SIMULACIÃ“N?")) {
                             return;
                         }
 
@@ -146,6 +147,6 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
     */
     
     // Google OAuth desactivado temporalmente por solicitud del usuario para evitar bloqueo origin_mismatch
-    console.log("Google OAuth desactivado temporalmente para localhost");
+    logger.info('GoogleLoginButton', 'oauth_disabled', 'Google OAuth desactivado temporalmente para localhost');
     return null;
 };
