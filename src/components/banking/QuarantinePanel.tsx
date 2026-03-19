@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     ShieldAlert, Clock, ArrowRight, CheckCircle2, AlertCircle,
@@ -103,7 +104,7 @@ export const QuarantinePanel: React.FC = () => {
 
             setTransactions(rows as any);
         } catch (error) {
-            console.error('Error loading quarantine data:', error);
+            logger.error('QuarantinePanel', 'error', 'Error loading quarantine data:', error);
             toast.error('Error al cargar zona de cuarentena');
         } finally {
             setLoading(false);
@@ -132,13 +133,13 @@ export const QuarantinePanel: React.FC = () => {
 
     const extractReference = (description: string) => {
         const match = description.match(/CONF#\s*(\S+)/i);
-        return match ? match[1] : '—';
+        return match ? match[1] : 'â€”';
     };
 
     const handleReclassify = async () => {
         if (!selectedTx || !selectedAccount || !user) return;
 
-        const loadingToast = toast.loading('Procesando reclasificación...');
+        const loadingToast = toast.loading('Procesando reclasificaciÃ³n...');
         try {
             const engine = new SQLiteEngine();
             engine.setDB(db);
@@ -161,7 +162,7 @@ export const QuarantinePanel: React.FC = () => {
                 WHERE id = ?
             `, [TRANSACTION_STATES.VERIFIED, user.id, selectedTx.id]);
 
-            // 3. Registrar en log de auditoría
+            // 3. Registrar en log de auditorÃ­a
             await engine.run(`
                 INSERT INTO quarantine_audit_log (
                     transaction_id, state_id, action_type, performed_by, 
@@ -178,7 +179,7 @@ export const QuarantinePanel: React.FC = () => {
                 notes || 'Manual reclassification'
             ]);
 
-            toast.success('Transacción reclasificada con éxito', { id: loadingToast });
+            toast.success('TransacciÃ³n reclasificada con Ã©xito', { id: loadingToast });
             setSelectedTx(null);
             loadQuarantineData();
 
@@ -186,7 +187,7 @@ export const QuarantinePanel: React.FC = () => {
             window.dispatchEvent(new CustomEvent('quarantine-updated'));
 
         } catch (error) {
-            console.error('Error in reclassification:', error);
+            logger.error('QuarantinePanel', 'error', 'Error in reclassification:', error);
             toast.error('Error al reclasificar', { id: loadingToast });
         }
     };
@@ -212,7 +213,7 @@ export const QuarantinePanel: React.FC = () => {
                         <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Zona de Cuarentena</h1>
                         <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
                             <Clock className="w-4 h-4 text-amber-500" />
-                            Auditoría Forense: {transactions.length} transacciones bajo revisión de 72h SLA
+                            AuditorÃ­a Forense: {transactions.length} transacciones bajo revisiÃ³n de 72h SLA
                         </p>
                     </div>
                 </div>
@@ -233,7 +234,7 @@ export const QuarantinePanel: React.FC = () => {
                 <div className="bg-slate-900/30 border-2 border-dashed border-slate-800 rounded-3xl p-20 text-center">
                     <CheckCircle2 className="w-16 h-16 text-emerald-500/30 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-slate-400">Todo en orden</h3>
-                    <p className="text-slate-500">No hay transacciones interceptadas en las últimas 72 horas.</p>
+                    <p className="text-slate-500">No hay transacciones interceptadas en las Ãºltimas 72 horas.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -315,7 +316,7 @@ export const QuarantinePanel: React.FC = () => {
                                         <AlertCircle className="w-8 h-8 text-slate-600" />
                                     </div>
                                     <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                                        Selecciona una transacción para auditar
+                                        Selecciona una transacciÃ³n para auditar
                                     </div>
                                 </div>
                             ) : (
@@ -323,12 +324,12 @@ export const QuarantinePanel: React.FC = () => {
                                     <div className="p-6 border-b border-slate-800 bg-gradient-to-br from-blue-600/5 to-transparent">
                                         <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
                                             <Calculator className="w-5 h-5 text-blue-500" />
-                                            Resolución de Auditoría
+                                            ResoluciÃ³n de AuditorÃ­a
                                         </h3>
                                     </div>
 
                                     <div className="p-6 space-y-6">
-                                        {/* Sección 1 — Descriptor bancario */}
+                                        {/* SecciÃ³n 1 â€” Descriptor bancario */}
                                         <div className="p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
                                             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Descriptor Original</div>
                                             <div className="text-xs font-mono text-slate-300 break-words leading-relaxed">
@@ -336,7 +337,7 @@ export const QuarantinePanel: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Sección 2 — Sugerencias */}
+                                        {/* SecciÃ³n 2 â€” Sugerencias */}
                                         <div className="space-y-3">
                                             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Sugerencias Disponibles</div>
                                             <div className="space-y-2">
@@ -378,9 +379,9 @@ export const QuarantinePanel: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Sección 3 — Buscador Libre */}
+                                        {/* SecciÃ³n 3 â€” Buscador Libre */}
                                         <div className="space-y-3">
-                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Codificación Contable</div>
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">CodificaciÃ³n Contable</div>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                     <Search size={14} className="text-slate-500" />
@@ -389,7 +390,7 @@ export const QuarantinePanel: React.FC = () => {
                                                     type="text"
                                                     value={searchQuery}
                                                     onChange={(e) => handleSearchChange(e.target.value)}
-                                                    placeholder="Buscar cuenta o código..."
+                                                    placeholder="Buscar cuenta o cÃ³digo..."
                                                     className="w-full bg-slate-950 text-white pl-10 pr-4 py-4 rounded-xl border border-slate-800 text-xs font-bold focus:outline-none focus:border-blue-500 transition-all"
                                                 />
                                                 {filteredAccounts.length > 0 && (
@@ -404,7 +405,7 @@ export const QuarantinePanel: React.FC = () => {
                                                                 }}
                                                                 className="w-full text-left p-3 hover:bg-slate-800 text-xs text-slate-300 hover:text-white border-b border-slate-800 last:border-0"
                                                             >
-                                                                <span className="font-black">{account.account_code}</span> — {account.account_name}
+                                                                <span className="font-black">{account.account_code}</span> â€” {account.account_name}
                                                             </button>
                                                         ))}
                                                     </div>
@@ -418,15 +419,15 @@ export const QuarantinePanel: React.FC = () => {
                                             )}
                                         </div>
 
-                                        {/* Sección 4 — Nota */}
+                                        {/* SecciÃ³n 4 â€” Nota */}
                                         <div className="space-y-2">
-                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Justificación (Opcional)</div>
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">JustificaciÃ³n (Opcional)</div>
                                             <textarea
                                                 value={notes}
                                                 onChange={(e) => setNotes(e.target.value)}
                                                 rows={2}
                                                 className="w-full bg-slate-950 text-slate-300 p-4 rounded-xl border border-slate-800 text-xs font-medium focus:outline-none focus:border-blue-500 transition-all resize-none"
-                                                placeholder="Agregar nota sobre esta reclasificación..."
+                                                placeholder="Agregar nota sobre esta reclasificaciÃ³n..."
                                             />
                                         </div>
 

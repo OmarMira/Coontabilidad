@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Download, Calendar, TrendingDown, X } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -71,7 +72,7 @@ export const DepreciationScheduleReport: React.FC<DepreciationScheduleReportProp
 
             setSchedule(projections);
         } catch (err) {
-            console.error('Error loading depreciation schedule:', err);
+            logger.error('DepreciationScheduleReport', 'error', 'Error loading depreciation schedule:', err);
         } finally {
             setLoading(false);
         }

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SystemKnowledge } from '../../knowledge/SystemKnowledge';
 import { DatabaseService } from '../database/DatabaseService';
 import { AssistantContext, KnowledgeSnippet } from './types';
@@ -11,9 +12,9 @@ export class ContextBuilder {
     }
 
     async buildContext(userQuery: string, userId: number): Promise<AssistantContext> {
-        console.log(`[ContextBuilder] Building context for user ${userId}, query: "${userQuery}"`);
+        logger.info('ContextBuilder', 'info', `[ContextBuilder] Building context for user ${userId}, query: "${userQuery}"`);
 
-        // 1. ANÁLISIS DE INTENCIÓN
+        // 1. ANÃLISIS DE INTENCIÃ“N
         const topics = await this.extractTopicsAndIntent(userQuery);
 
         // 2. CONOCIMIENTO LOCAL RELEVANTE
@@ -28,7 +29,7 @@ export class ContextBuilder {
         // 5. ESTADO DEL SISTEMA
         const systemState = await this.getSystemState();
 
-        // 6. HISTORIAL DE CONVERSACIÓN
+        // 6. HISTORIAL DE CONVERSACIÃ“N
         const conversationHistory = await this.getConversationHistory(userId);
 
         return {
@@ -48,11 +49,11 @@ export class ContextBuilder {
 
         // Detectar temas contables
         const accountingTerms = {
-            'depreciación': ['depreciación', 'amortización', 'activo fijo', 'vida útil'],
+            'depreciaciÃ³n': ['depreciaciÃ³n', 'amortizaciÃ³n', 'activo fijo', 'vida Ãºtil'],
             'impuestos': ['impuesto', 'tax', 'florida', 'condado', 'DR-15', 'surtax'],
-            'inventario': ['inventario', 'stock', 'lote', 'SKU', 'rotación'],
-            'facturación': ['factura', 'invoice', 'cliente', 'proveedor', 'pago'],
-            'contabilidad': ['asiento', 'débito', 'crédito', 'balance', 'partida doble']
+            'inventario': ['inventario', 'stock', 'lote', 'SKU', 'rotaciÃ³n'],
+            'facturaciÃ³n': ['factura', 'invoice', 'cliente', 'proveedor', 'pago'],
+            'contabilidad': ['asiento', 'dÃ©bito', 'crÃ©dito', 'balance', 'partida doble']
         };
 
         const queryLower = query.toLowerCase();
@@ -99,7 +100,7 @@ export class ContextBuilder {
             queries.push('SELECT * FROM tax_summary_florida');
         }
 
-        if (topics.includes('facturación')) {
+        if (topics.includes('facturaciÃ³n')) {
             queries.push('SELECT * FROM v_facturas_reales');
         }
 
@@ -170,7 +171,7 @@ export class ContextBuilder {
                 timestamp: row.timestamp
             }));
         } catch (error) {
-            console.warn('[ContextBuilder] Could not fetch history', error);
+            logger.warn('ContextBuilder', 'warn', '[ContextBuilder] Could not fetch history', error);
             return [];
         }
     }

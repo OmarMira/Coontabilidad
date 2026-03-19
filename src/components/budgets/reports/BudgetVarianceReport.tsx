@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
       const data = getBudgetVarianceAnalysis(budgetId);
       setVarianceData(data);
     } catch (error) {
-      console.error('Error loading variance report:', error);
+      logger.error('BudgetVarianceReport', 'error', 'Error loading variance report:', error);
     } finally {
       setLoading(false);
     }
@@ -83,11 +84,11 @@ export const BudgetVarianceReport: React.FC<BudgetVarianceReportProps> = ({ budg
   const exportToPDF = () => {
     const doc = new jsPDF();
 
-    // Título del reporte
+    // TÃ­tulo del reporte
     doc.setFontSize(18);
     doc.text(t('budgets.reports.title'), 14, 22);
 
-    // Fecha de generación
+    // Fecha de generaciÃ³n
     doc.setFontSize(11);
     doc.setTextColor(100);
     const date = new Date().toLocaleDateString(t('common.localeCode') === 'es' ? 'es-ES' : 'en-US');

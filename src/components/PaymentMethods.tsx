@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CreditCard, Check, X, AlertCircle } from 'lucide-react';
 import { getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '@/database/modules/db-payment-methods';
@@ -33,7 +34,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       const methods = getAllPaymentMethods();
       setPaymentMethods(methods);
     } catch (error) {
-      console.error('Error loading payment methods:', error);
+      logger.error('PaymentMethods', 'error', 'Error loading payment methods:', error);
       setError(t('paymentMethods.error.load'));
     }
   };
@@ -74,7 +75,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         setError(result.message);
       }
     } catch (error) {
-      console.error('Error saving payment method:', error);
+      logger.error('PaymentMethods', 'error', 'Error saving payment method:', error);
       setError(t('paymentMethods.error.save'));
     } finally {
       setIsLoading(false);
@@ -117,7 +118,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         setError(result.message);
       }
     } catch (error) {
-      console.error('Error deleting payment method:', error);
+      logger.error('PaymentMethods', 'error', 'Error deleting payment method:', error);
       setError(t('paymentMethods.error.delete'));
     }
   };
@@ -189,7 +190,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         </div>
       )}
 
-      {/* Lista de métodos de pago */}
+      {/* Lista de mÃ©todos de pago */}
       <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
         <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
@@ -242,7 +243,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                           </span>
                         )}
                         <span className="opacity-60 text-xs font-medium tracking-tight">
-                          ID: {method.id} · {new Date(method.created_at ?? Date.now()).toLocaleDateString()}
+                          ID: {method.id} Â· {new Date(method.created_at ?? Date.now()).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
@@ -316,11 +317,11 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                     className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium appearance-none cursor-pointer"
                     required
                   >
-                    <option value="cash">💵 Efectivo (Cash)</option>
-                    <option value="check">✍️ Cheque (Check)</option>
-                    <option value="credit_card">💳 Tarjeta (Card)</option>
-                    <option value="bank_transfer">🏦 Transferencia (ACH/Zelle)</option>
-                    <option value="other">⚙️ Otro (Other)</option>
+                    <option value="cash">ðŸ’µ Efectivo (Cash)</option>
+                    <option value="check">âœï¸ Cheque (Check)</option>
+                    <option value="credit_card">ðŸ’³ Tarjeta (Card)</option>
+                    <option value="bank_transfer">ðŸ¦ Transferencia (ACH/Zelle)</option>
+                    <option value="other">âš™ï¸ Otro (Other)</option>
                   </select>
                 </div>
 

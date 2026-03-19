@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { Plus, Save, XCircle, User, MapPin, CreditCard, FileText, ShieldCheck } from 'lucide-react';
 import { FLORIDA_COUNTIES } from '@/database/modules/db-invoices';
@@ -21,7 +22,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   const { t } = useLocale();
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
-    // Información personal
+    // InformaciÃ³n personal
     name: initialData?.name || '',
     business_name: initialData?.business_name || '',
     document_type: initialData?.document_type || 'EIN',
@@ -34,7 +35,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
     phone: initialData?.phone || '',
     phone_secondary: initialData?.phone_secondary || '',
 
-    // Dirección
+    // DirecciÃ³n
     address_line1: initialData?.address_line1 || '',
     address_line2: initialData?.address_line2 || '',
     city: initialData?.city || 'Miami',
@@ -137,9 +138,9 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   };
 
   const handleAddressSelect = async (addressDetails: any) => {
-    console.log('Address selected:', addressDetails);
+    logger.info('SupplierForm', 'info', 'Address selected:', addressDetails);
 
-    // Actualizar los campos de dirección con los datos seleccionados
+    // Actualizar los campos de direcciÃ³n con los datos seleccionados
     setFormData(prev => ({
       ...prev,
       city: addressDetails.city,
@@ -154,7 +155,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   const handleZipCodeChange = async (zipCode: string) => {
     handleInputChange('zip_code', zipCode);
 
-    // Si el código postal tiene 5 dígitos, buscar automáticamente
+    // Si el cÃ³digo postal tiene 5 dÃ­gitos, buscar automÃ¡ticamente
     if (zipCode.length === 5 && /^\d{5}$/.test(zipCode)) {
       try {
         const result = await addressService.searchByZipCode(zipCode);
@@ -168,7 +169,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
           }));
         }
       } catch (error) {
-        console.error('Error searching by zip code:', error);
+        logger.error('SupplierForm', 'error', 'Error searching by zip code:', error);
       }
     }
   };
@@ -502,10 +503,10 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
             <option value="">{t('customerForm.unassigned')}</option>
-            <option value="Ana García">Ana García</option>
-            <option value="Carlos López">Carlos López</option>
-            <option value="María Rodríguez">María Rodríguez</option>
-            <option value="Juan Martínez">Juan Martínez</option>
+            <option value="Ana GarcÃ­a">Ana GarcÃ­a</option>
+            <option value="Carlos LÃ³pez">Carlos LÃ³pez</option>
+            <option value="MarÃ­a RodrÃ­guez">MarÃ­a RodrÃ­guez</option>
+            <option value="Juan MartÃ­nez">Juan MartÃ­nez</option>
           </select>
         </div>
       </div>
@@ -581,7 +582,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
           )}
         </header>
 
-        {/* Pestañas */}
+        {/* PestaÃ±as */}
         <div className="flex px-10 border-b border-slate-800/50 bg-slate-950/20 relative z-10">
           {tabs.map((tab) => (
             <button

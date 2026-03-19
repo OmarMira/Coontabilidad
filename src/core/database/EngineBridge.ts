@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 
 import { SQLiteEngine } from './SQLiteEngine';
 
@@ -16,7 +17,7 @@ class EngineBridge {
         if (!this.instance) {
             // Internal fallback to prevent hard crash if not initialized yet
             // Though proper initialization flow should call setEngine first.
-            console.warn('EngineBridge: Accessing engine before initialization.');
+            logger.warn('EngineBridge', 'warn', 'EngineBridge: Accessing engine before initialization.');
             this.instance = new SQLiteEngine();
         }
         return this.instance;

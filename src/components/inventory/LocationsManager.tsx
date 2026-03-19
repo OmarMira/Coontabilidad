@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,7 @@ export const LocationsManager: React.FC = () => {
             setForm({ name: '', code: '' });
             loadLocations();
         } catch (err) {
-            console.error(err);
+            logger.error('LocationsManager', 'error', err);
         }
     };
 

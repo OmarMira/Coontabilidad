@@ -1,4 +1,4 @@
-import { logger } from '../core/logging/SystemLogger';
+﻿import { logger } from '../core/logging/SystemLogger';
 import { getDB } from '@/database/modules/db-core';
 import { GoogleAuthService } from './GoogleAuthService';
 
@@ -15,7 +15,7 @@ const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours
 export class AuthService {
 
     /**
-     * Inicia sesión con Email y Contraseña
+     * Inicia sesiÃ³n con Email y ContraseÃ±a
      */
     static async login(email: string, passwordHash: string): Promise<UserSession | null> {
         const db = getDB();
@@ -31,14 +31,14 @@ export class AuthService {
             }
             return null;
         } catch (e) {
-            console.error('AUTH ERROR:', e);
+            logger.error('AuthService', 'error', 'AUTH ERROR:', e);
             logger.error('AuthService', 'login_fail', 'Error during local login', null, e as Error);
             return null;
         }
     }
 
     /**
-     * Crea una sesión real para un usuario autenticado
+     * Crea una sesiÃ³n real para un usuario autenticado
      */
     static createSession(userId: number, email: string, role: string): UserSession {
         const session: UserSession = {
@@ -53,7 +53,7 @@ export class AuthService {
     }
 
     /**
-     * Crea sesión para modo Demo (Sin persistencia real de usuario)
+     * Crea sesiÃ³n para modo Demo (Sin persistencia real de usuario)
      */
     static createDemoSession(): UserSession {
         const session: UserSession = {
@@ -68,14 +68,14 @@ export class AuthService {
     }
 
     /**
-     * Guarda la sesión en localStorage
+     * Guarda la sesiÃ³n en localStorage
      */
     private static saveSession(session: UserSession) {
         localStorage.setItem('ae_session', JSON.stringify(session));
     }
 
     /**
-     * Recupera la sesión activa si es válida
+     * Recupera la sesiÃ³n activa si es vÃ¡lida
      */
     static getSession(): UserSession | null {
         try {

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     AlertTriangle,
@@ -51,7 +52,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
         try {
             const task: ReconciliationTask = {
                 type: 'DISCREPANCY_DETECTION',
-                statementId: 0, // No necesario para análisis de discrepancias
+                statementId: 0, // No necesario para anÃ¡lisis de discrepancias
                 transactions: unreconciledTransactions
             };
 
@@ -60,7 +61,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
             setAnalysisResults(result);
             setDiscrepancies(result.discrepancies || []);
         } catch (error) {
-            console.error('Error analyzing discrepancies:', error);
+            logger.error('DiscrepancyAnalysis', 'error', 'Error analyzing discrepancies:', error);
         } finally {
             setIsAnalyzing(false);
         }
@@ -69,7 +70,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
     const handleViewDetails = (discrepancy: Discrepancy) => {
         toast.success(discrepancy.description, {
             duration: 5000,
-            icon: '🔍',
+            icon: 'ðŸ”',
             style: {
                 borderRadius: '15px',
                 background: '#0f172a',
@@ -84,7 +85,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
         newDiscrepancies.splice(index, 1);
         setDiscrepancies(newDiscrepancies);
         toast.success('Discrepancia marcada como resuelta', {
-            icon: '✅',
+            icon: 'âœ…',
             style: {
                 borderRadius: '15px',
                 background: '#064e3b',
@@ -96,7 +97,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
     const handleExport = () => {
         if (discrepancies.length === 0) return;
 
-        const headers = ["Tipo", "Severidad", "Descripción", "Acción Sugerida"];
+        const headers = ["Tipo", "Severidad", "DescripciÃ³n", "AcciÃ³n Sugerida"];
         const rows = discrepancies.map(d => [
             d.type,
             d.severity,
@@ -144,7 +145,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
         }
     };
 
-    // Análisis estadístico de transacciones
+    // AnÃ¡lisis estadÃ­stico de transacciones
     const getTransactionStats = () => {
         if (unreconciledTransactions.length === 0) return null;
 
@@ -226,7 +227,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
                 <div className="lg:col-span-3 space-y-6">
                     {selectedAccount ? (
                         <>
-                            {/* Estadísticas de Transacciones */}
+                            {/* EstadÃ­sticas de Transacciones */}
                             {stats && (
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                     <Card className="bg-slate-900 border-slate-800">
@@ -291,7 +292,7 @@ export const DiscrepancyAnalysis: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Resultados del Análisis */}
+                            {/* Resultados del AnÃ¡lisis */}
                             {analysisResults && (
                                 <Card className="bg-slate-900 border-slate-800">
                                     <CardHeader className="border-b border-slate-800">

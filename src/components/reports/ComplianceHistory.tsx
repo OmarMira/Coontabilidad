@@ -1,8 +1,9 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useEffect, useState } from 'react';
-// Módulo DR15 eliminado en Sprint 4
+// MÃ³dulo DR15 eliminado en Sprint 4
 // import { TaxReportingService, DR15Report } from '../../services/TaxReportingService';
 // import { DR15Template } from './DR15Template';
-const TaxReportingService: any = (window as any).TaxReportingService; // Fallback para evitar errores inmediatos si se requiere dinámicamente
+const TaxReportingService: any = (window as any).TaxReportingService; // Fallback para evitar errores inmediatos si se requiere dinÃ¡micamente
 import { CheckCircle2, AlertCircle, FileText, Loader2 } from 'lucide-react';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -89,7 +90,7 @@ export const ComplianceHistory: React.FC = () => {
                             });
                         }
                     } catch (e) {
-                        console.error(`Error loading month ${m.month}/${m.year}:`, e);
+                        logger.error('ComplianceHistory', 'error', `Error loading month ${m.month}/${m.year}:`, e);
                         if (isMounted) {
                             setHistory(prev => {
                                 const newHistory = [...prev];
@@ -100,7 +101,7 @@ export const ComplianceHistory: React.FC = () => {
                     }
                 }
             } catch (e) {
-                console.error("Compliance History Critical Load Error:", e);
+                logger.error('ComplianceHistory', 'error', "Compliance History Critical Load Error:", e);
                 if (isMounted) {
                     setConfigAlert(`${t('reportsdashboard.compliance.error')}: ${e instanceof Error ? e.message : 'Unknown error'}`);
                 }
@@ -185,7 +186,7 @@ export const ComplianceHistory: React.FC = () => {
                         </div>
                         <div className="p-10 pt-0" onClick={(e) => e.stopPropagation()}>
                             {/* DR15Template eliminado */}
-                            <div className="text-white p-4">Reporte no disponible (Módulo DR-15 eliminado)</div>
+                            <div className="text-white p-4">Reporte no disponible (MÃ³dulo DR-15 eliminado)</div>
                         </div>
                     </div>
                 </div>

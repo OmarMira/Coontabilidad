@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { runSystemAudit, generateAuditReportHTML, SystemAuditReport, AuditResult } from '../../utils/systemAudit';
 import { AlertCircle, CheckCircle, AlertTriangle, Download, Play, Search, Activity, ShieldCheck, Database, FileText, ChevronRight, Loader2, Gauge } from 'lucide-react';
@@ -12,8 +13,8 @@ export const SystemAudit: React.FC = () => {
       const auditReport = await runSystemAudit();
       setReport(auditReport);
     } catch (error) {
-      console.error('Error running audit:', error);
-      alert('Error ejecutando auditoría. Ver consola para detalles.');
+      logger.error('SystemAudit', 'error', 'Error running audit:', error);
+      alert('Error ejecutando auditorÃ­a. Ver consola para detalles.');
     } finally {
       setIsRunning(false);
     }
@@ -91,10 +92,10 @@ export const SystemAudit: React.FC = () => {
             <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20">
               <ShieldCheck className="w-10 h-10 text-blue-500" />
             </div>
-            Auditoría de Integridad
+            AuditorÃ­a de Integridad
           </h1>
           <p className="text-slate-400 font-bold ml-1 text-sm max-w-2xl leading-relaxed">
-            Diagnóstico exhaustivo de la base de datos, integridad de foreign keys, balances contables y seguridad criptográfica.
+            DiagnÃ³stico exhaustivo de la base de datos, integridad de foreign keys, balances contables y seguridad criptogrÃ¡fica.
           </p>
         </div>
 
@@ -109,7 +110,7 @@ export const SystemAudit: React.FC = () => {
             ) : (
               <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
             )}
-            {isRunning ? 'ESCANEANDO SISTEMA...' : 'EJECUTAR AUDITORÍA'}
+            {isRunning ? 'ESCANEANDO SISTEMA...' : 'EJECUTAR AUDITORÃA'}
           </button>
 
           {report && (
@@ -132,7 +133,7 @@ export const SystemAudit: React.FC = () => {
           </div>
           <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight">Escaneando Infraestructura</h3>
           <p className="text-slate-500 font-bold max-w-xs uppercase text-[10px] tracking-widest">
-            Analizando tablas, transacciones, activos y cadenas de auditoría inmutables...
+            Analizando tablas, transacciones, activos y cadenas de auditorÃ­a inmutables...
           </p>
         </div>
       )}
@@ -167,7 +168,7 @@ export const SystemAudit: React.FC = () => {
             </div>
 
             <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 flex flex-col justify-between hover:bg-slate-900 transition-colors">
-              <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4">Fallos Críticos</div>
+              <div className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4">Fallos CrÃ­ticos</div>
               <div className="text-4xl font-black text-red-400 tabular-nums">{report.failed}</div>
               <div className="mt-4 w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
                 <div className="bg-red-500 h-full" style={{ width: `${(report.failed / report.totalChecks) * 100}%` }} />
@@ -187,20 +188,20 @@ export const SystemAudit: React.FC = () => {
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Estado Sanitario Global</p>
                 <h3 className="text-2xl font-black text-white tracking-tight uppercase">
-                  SISTEMA {report.overallStatus === 'pass' ? 'ÍNTEGRO' : report.overallStatus === 'warning' ? 'CON OBSERVACIONES' : ' COMPROMETIDO'}
+                  SISTEMA {report.overallStatus === 'pass' ? 'ÃNTEGRO' : report.overallStatus === 'warning' ? 'CON OBSERVACIONES' : ' COMPROMETIDO'}
                 </h3>
               </div>
             </div>
             <div className="text-right">
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest italic">Reporte ID: AUD-{new Date().getTime().toString().slice(-6)}</p>
-              <p className="text-xs font-bold text-slate-600 mt-1">Sello de Auditoría: {new Date(report.timestamp).toLocaleString()}</p>
+              <p className="text-xs font-bold text-slate-600 mt-1">Sello de AuditorÃ­a: {new Date(report.timestamp).toLocaleString()}</p>
             </div>
           </div>
 
           {/* Critical Issues Highlight */}
           {report.results.filter(r => r.severity === 'critical' && r.status === 'fail').length > 0 && (
             <div className="space-y-4">
-              <h2 className="text-[10px] font-black text-red-500 uppercase tracking-widest px-2">PROBLEMAS QUE REQUIEREN ACCIÓN INMEDIATA</h2>
+              <h2 className="text-[10px] font-black text-red-500 uppercase tracking-widest px-2">PROBLEMAS QUE REQUIEREN ACCIÃ“N INMEDIATA</h2>
               <div className="grid grid-cols-1 gap-4">
                 {report.results
                   .filter(r => r.severity === 'critical' && r.status === 'fail')
@@ -215,7 +216,7 @@ export const SystemAudit: React.FC = () => {
                             {result.details && (
                               <details className="mt-4 group/details">
                                 <summary className="text-[9px] font-black text-red-500/50 uppercase tracking-widest cursor-pointer hover:text-red-400 transition-colors list-none flex items-center gap-2">
-                                  CONSOLA TÉCNICA (BREAKDOWN)
+                                  CONSOLA TÃ‰CNICA (BREAKDOWN)
                                   <ChevronRight className="w-3 h-3 group-open/details:rotate-90 transition-transform" />
                                 </summary>
                                 <div className="mt-3 p-4 bg-slate-950/80 rounded-xl border border-red-500/20">
@@ -302,9 +303,9 @@ export const SystemAudit: React.FC = () => {
             <div className="w-24 h-24 bg-blue-600/10 rounded-3xl border border-blue-500/20 flex items-center justify-center mx-auto mb-8 animate-bounce transition-transform group-hover:scale-110">
               <ShieldCheck className="w-12 h-12 text-blue-500" />
             </div>
-            <h3 className="text-3xl font-black text-white tracking-tighter mb-4 uppercase">Verificación de Integridad Industrial</h3>
+            <h3 className="text-3xl font-black text-white tracking-tighter mb-4 uppercase">VerificaciÃ³n de Integridad Industrial</h3>
             <p className="text-slate-500 font-bold mb-10 max-w-xl mx-auto uppercase text-xs tracking-[0.2em] leading-relaxed">
-              Inicia el motor de auditoría para validar la salud estructural, contable y fiscal de AccountExpress Next-Gen.
+              Inicia el motor de auditorÃ­a para validar la salud estructural, contable y fiscal de AccountExpress Next-Gen.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-left max-w-4xl mx-auto">
               {[

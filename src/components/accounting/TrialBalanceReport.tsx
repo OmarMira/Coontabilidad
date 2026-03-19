@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -36,7 +37,7 @@ import { useLocale } from '../../i18n/useLocale';
 
 export const TrialBalanceReport: React.FC = () => {
     const { t, language } = useLocale();
-    // Estado para filtro de período
+    // Estado para filtro de perÃ­odo
     const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
     const [data, setData] = useState<TrialBalanceRow[]>([]);
     const [loading, setLoading] = useState(false);
@@ -71,7 +72,7 @@ export const TrialBalanceReport: React.FC = () => {
             const reportData = getTrialBalanceReport(year, month);
             setData(reportData);
         } catch (error) {
-            console.error('Error loading trial balance:', error);
+            logger.error('TrialBalanceReport', 'error', 'Error loading trial balance:', error);
         } finally {
             setTimeout(() => setLoading(false), 300); // Smooth transition
         }
@@ -101,7 +102,7 @@ export const TrialBalanceReport: React.FC = () => {
         }, 800);
     };
 
-    // Herramientas de Reparación
+    // Herramientas de ReparaciÃ³n
     const handleRepairAccounts = () => {
         const requiredAccounts = [
             { code: '1112', name: 'Banco Operativo', type: 'asset', normal_balance: 'debit', parent: '1100' },
@@ -334,7 +335,7 @@ export const TrialBalanceReport: React.FC = () => {
                 <table className="w-full text-sm text-left border-collapse">
                     <thead className="bg-slate-950 text-slate-600 font-bold uppercase tracking-wider text-xs border-b border-slate-800">
                         <tr>
-                            <th className="px-10 py-6 text-center">NÚMERO GAAP / CÓDIGO</th>
+                            <th className="px-10 py-6 text-center">NÃšMERO GAAP / CÃ“DIGO</th>
                             <th className="px-10 py-6">{t('accounting.trialBalance.descHeader')}</th>
                             <th className="px-10 py-6 text-center">{t('accounting.trialBalance.natHeader')}</th>
                             <th className="px-10 py-6 text-right">{t('accounting.trialBalance.prevBalance')}</th>

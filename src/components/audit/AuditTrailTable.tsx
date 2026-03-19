@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { History, Search, Filter, User, Activity, Clock, Database } from 'lucide-react';
 import { AuditChainService as AuditTrailService } from '../../core/audit/AuditChainService';
@@ -31,7 +32,7 @@ export const AuditTrailTable: React.FC = () => {
             });
             setEntries(data);
         } catch (error) {
-            console.error('Error loading audit trail:', error);
+            logger.error('AuditTrailTable', 'error', 'Error loading audit trail:', error);
         } finally {
             setLoading(false);
         }

@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, FileText, BarChart3, Download, ArrowRight, ArrowDownCircle, ChevronRight, TrendingUp, TrendingDown, History, ShieldCheck, Box, Loader2 } from 'lucide-react';
 import type { ChartOfAccount } from '@/database/modules/db-types';
@@ -80,7 +81,7 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
         total_credits: result.totalCredit
       });
     } catch (error) {
-      console.error('Core Ledger Load Error:', error);
+      logger.error('GeneralLedger', 'error', 'Core Ledger Load Error:', error);
     } finally {
       setTimeout(() => setIsLoading(false), 400);
     }
@@ -201,12 +202,12 @@ export const GeneralLedger: React.FC<GeneralLedgerProps> = ({ chartOfAccounts })
                   <div>
                     <div>
                       <h3 className="text-2xl font-bold text-white tracking-tight">
-                        {selectedAccount.number ? `${selectedAccount.number} (${selectedAccount.account_code})` : selectedAccount.account_code} <span className="text-slate-500 mx-2">•</span> {selectedAccount.account_name}
+                        {selectedAccount.number ? `${selectedAccount.number} (${selectedAccount.account_code})` : selectedAccount.account_code} <span className="text-slate-500 mx-2">â€¢</span> {selectedAccount.account_name}
                       </h3>
                       <div className="flex items-center gap-4 mt-1">
                         {getAccountTypeBadge(selectedAccount.account_type)}
                         <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                          <Calendar className="w-3 h-3" /> {new Date(dateFrom).toLocaleDateString()} — {new Date(dateTo).toLocaleDateString()}
+                          <Calendar className="w-3 h-3" /> {new Date(dateFrom).toLocaleDateString()} â€” {new Date(dateTo).toLocaleDateString()}
                         </span>
                       </div>
                     </div>

@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { BackupService } from '../services/backup/BackupService';
 import { BackupLocationSelector } from './backup/BackupLocationSelector';
@@ -24,7 +25,7 @@ export const TestingTools = () => {
             const currentStats = await importService.getHistoryStats();
             setStats(currentStats);
         } catch (error) {
-            console.error('Error loading stats:', error);
+            logger.error('BackupPanel', 'error', 'Error loading stats:', error);
         }
     };
 
@@ -34,7 +35,7 @@ export const TestingTools = () => {
             const currentStats = await importService.getHistoryStats();
             setStats(currentStats);
             if (currentStats.duplicates > 0) {
-                toast.error(`ATENCIÓN: Se han detectado ${currentStats.duplicates} grupos de registros duplicados.`);
+                toast.error(`ATENCIÃ“N: Se han detectado ${currentStats.duplicates} grupos de registros duplicados.`);
             } else {
                 toast.success("CONTROL EXITOSO: No se detectaron transacciones duplicadas.");
             }
@@ -101,10 +102,10 @@ export const TestingTools = () => {
                             <AlertTriangle className="w-8 h-8 text-rose-500" />
                         </div>
                         <h3 className="text-white text-xl font-black text-center mb-4 uppercase tracking-tighter">
-                            Aviso Crítico
+                            Aviso CrÃ­tico
                         </h3>
                         <p className="text-slate-400 text-sm text-center mb-8 leading-relaxed">
-                            Vas a eliminar de forma permanente TODOS los registros importados ({stats.total} transacciones). Esta acción no se puede deshacer. ¿Proceder con purga?
+                            Vas a eliminar de forma permanente TODOS los registros importados ({stats.total} transacciones). Esta acciÃ³n no se puede deshacer. Â¿Proceder con purga?
                         </p>
                         <div className="flex gap-4">
                             <button
@@ -152,7 +153,7 @@ export const BackupPanel: React.FC = () => {
 
             setStatus(`${t('backupPanel.savingBackupAt')} ${customPath || location}...`);
 
-            // Usar el nuevo sistema de selección de ubicación
+            // Usar el nuevo sistema de selecciÃ³n de ubicaciÃ³n
             const success = await BackupService.createBackupWithLocationChoice();
 
             if (success) {
@@ -172,7 +173,7 @@ export const BackupPanel: React.FC = () => {
         setError('');
         setStatus('');
 
-        if (!window.confirm('⚠️ ADVERTENCIA: Esta operación reemplazará TODOS los datos actuales con el contenido del archivo de respaldo seleccionado. Esta acción no se puede deshacer. ¿Desea continuar?')) {
+        if (!window.confirm('âš ï¸ ADVERTENCIA: Esta operaciÃ³n reemplazarÃ¡ TODOS los datos actuales con el contenido del archivo de respaldo seleccionado. Esta acciÃ³n no se puede deshacer. Â¿Desea continuar?')) {
             return;
         }
 
@@ -188,7 +189,7 @@ export const BackupPanel: React.FC = () => {
                 setStatus(t('backupPanel.restoreComplete'));
                 window.setTimeout(() => window.location.reload(), 2000);
             } else {
-                // null retornado = usuario canceló el picker, no es un error real
+                // null retornado = usuario cancelÃ³ el picker, no es un error real
                 setError('');
                 setStatus('');
             }
@@ -196,7 +197,7 @@ export const BackupPanel: React.FC = () => {
             setError(t('backupPanel.criticalRestoreFailure') + (e?.message ?? 'Error desconocido'));
             setStatus('');
         } finally {
-            // SIEMPRE liberar el loading, sin importar qué pasó
+            // SIEMPRE liberar el loading, sin importar quÃ© pasÃ³
             setLoading(false);
         }
     };
@@ -229,9 +230,9 @@ export const BackupPanel: React.FC = () => {
                     onClick={async () => {
                         const granted = await PersistentStorageService.requestPersistence();
                         if (granted) {
-                            alert("✅ Persistencia concedida. Tus datos están protegidos.");
+                            alert("âœ… Persistencia concedida. Tus datos estÃ¡n protegidos.");
                         } else {
-                            alert("❌ Persistencia denegada — ve a chrome://settings/content y permite para localhost:3000");
+                            alert("âŒ Persistencia denegada â€” ve a chrome://settings/content y permite para localhost:3000");
                         }
                     }}
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-blue-900/20"
@@ -248,7 +249,7 @@ export const BackupPanel: React.FC = () => {
                             <RefreshCw className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-white font-bold text-sm">Respaldo Automático Local</h3>
+                            <h3 className="text-white font-bold text-sm">Respaldo AutomÃ¡tico Local</h3>
                             <p className="text-xs text-slate-500">Descarga una copia .sqlite cada 5 minutos.</p>
                         </div>
                     </div>
@@ -262,10 +263,10 @@ export const BackupPanel: React.FC = () => {
                                 setAutoBackupEnabled(enabled);
                                 if (enabled) {
                                     localStorage.setItem('auto_backup_enabled', 'true');
-                                    toast.success("Backups automáticos activados");
+                                    toast.success("Backups automÃ¡ticos activados");
                                 } else {
                                     localStorage.removeItem('auto_backup_enabled');
-                                    toast.success("Backups automáticos desactivados");
+                                    toast.success("Backups automÃ¡ticos desactivados");
                                 }
                             }}
                         />
@@ -287,7 +288,7 @@ export const BackupPanel: React.FC = () => {
                 </div>
             </div>
 
-            {/* Selector de Ubicación Modal */}
+            {/* Selector de UbicaciÃ³n Modal */}
             {showLocationSelector && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-slate-900 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-800 shadow-2xl">
@@ -384,13 +385,13 @@ export const BackupPanel: React.FC = () => {
                     <ShieldAlert className="w-6 h-6 text-rose-500" />
                     <h3 className="text-rose-500 font-black uppercase text-sm tracking-widest">Zona de Peligro</h3>
                 </div>
-                <p className="text-slate-400 text-sm mb-6">Esta sección contiene herramientas altamente destructivas. Úsalas solo bajo supervisión técnica o en situaciones de emergencia total.</p>
+                <p className="text-slate-400 text-sm mb-6">Esta secciÃ³n contiene herramientas altamente destructivas. Ãšsalas solo bajo supervisiÃ³n tÃ©cnica o en situaciones de emergencia total.</p>
                 
                 <button
                     onClick={async () => {
-                        const c1 = window.confirm('¿Seguro? PERDERÁS TODOS LOS DATOS.');
+                        const c1 = window.confirm('Â¿Seguro? PERDERÃS TODOS LOS DATOS.');
                         if (!c1) return;
-                        const c2 = window.confirm('Esta acción NO se puede deshacer. ¿Continuar?');
+                        const c2 = window.confirm('Esta acciÃ³n NO se puede deshacer. Â¿Continuar?');
                         if (!c2) return;
                         const typed = window.prompt('Escribe BORRAR para confirmar:');
                         if (typed !== 'BORRAR') return;

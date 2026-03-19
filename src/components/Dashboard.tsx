@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   Shield,
@@ -89,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         const summary = await TaxService.getTaxLiabilitySummary();
         setRealTaxLiability(summary.totalAccrued);
         setPendingTaxCount(summary.pendingCount);
-      } catch (e) { console.error(e); }
+      } catch (e) { logger.error('Dashboard', 'error', e); }
     };
     fetchTax();
 
@@ -103,7 +104,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         const proposals = await DraftProposalService.getPendingProposals();
         setAiProposalCount(proposals.length);
       } catch (e) {
-        console.error('Error fetching AI proposals:', e);
+        logger.error('Dashboard', 'error', 'Error fetching AI proposals:', e);
       }
     };
     fetchAIProposals();

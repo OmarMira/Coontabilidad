@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SecurityValidation } from './types';
 import { DatabaseService } from '../database/DatabaseService';
 
@@ -7,7 +8,7 @@ export class SecurityValidator {
     validateQuery(userQuery: string): SecurityValidation {
         const queryLower = userQuery.toLowerCase();
 
-        // 1. DETECCIÓN DE INYECCIÓN SQL
+        // 1. DETECCIÃ“N DE INYECCIÃ“N SQL
         const sqlPatterns = [
             /;.*--/, /union.*select/i, /drop.*table/i, /insert.*into/i,
             /update.*set/i, /delete.*from/i, /alter.*table/i,
@@ -26,7 +27,7 @@ export class SecurityValidator {
 
         // 2. BLOQUEO DE PALABRAS CLAVE PELIGROSAS
         const dangerousKeywords = [
-            'contraseña', 'password', 'clave', 'credencial',
+            'contraseÃ±a', 'password', 'clave', 'credencial',
             'eliminar', 'borrar', 'modificar', 'cambiar',
             'root', 'admin', 'superuser', 'grant', 'revoke'
         ];
@@ -43,14 +44,14 @@ export class SecurityValidator {
             };
         }
 
-        // 3. DETECCIÓN DE INTENCIÓN DE ESCRITURA
+        // 3. DETECCIÃ“N DE INTENCIÃ“N DE ESCRITURA
         const writeIntents = ['inserta', 'actualiza', 'borra', 'elimina', 'cambia', 'modifica'];
         const hasWriteIntent = writeIntents.some(intent => queryLower.includes(intent));
 
         if (hasWriteIntent) {
             const theoreticalIndicators = [
-                /cómo se/i, /qué es/i, /explica/i, /diferencia entre/i,
-                /ejemplo de/i, /para qué sirve/i, /cuándo se usa/i
+                /cÃ³mo se/i, /quÃ© es/i, /explica/i, /diferencia entre/i,
+                /ejemplo de/i, /para quÃ© sirve/i, /cuÃ¡ndo se usa/i
             ];
 
             const isTheoretical = theoreticalIndicators.some(indicator =>
@@ -111,7 +112,7 @@ export class SecurityValidator {
                 ]
             );
         } catch (error) {
-            console.error('[SecurityValidator] Audit logging failed', error);
+            logger.error('SecurityValidator', 'error', '[SecurityValidator] Audit logging failed', error);
         }
     }
 }

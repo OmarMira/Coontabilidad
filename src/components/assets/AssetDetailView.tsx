@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   Package,
@@ -61,7 +62,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
       }
 
     } catch (error) {
-      console.error('Error loading asset details:', error);
+      logger.error('AssetDetailView', 'error', 'Error loading asset details:', error);
     } finally {
       setLoading(false);
     }
@@ -411,7 +412,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-medium text-white">{t('assets.disposal')}</h4>
-                        {formatDate(asset.disposal_date)} • {asset.disposal_method && t(`assets.disposalForm.methods.${asset.disposal_method.toLowerCase()}`)}
+                        {formatDate(asset.disposal_date)} â€¢ {asset.disposal_method && t(`assets.disposalForm.methods.${asset.disposal_method.toLowerCase()}`)}
                       </div>
                       {asset.disposal_amount && (
                         <span className="font-mono text-slate-400">

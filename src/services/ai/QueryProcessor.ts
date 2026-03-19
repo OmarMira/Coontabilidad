@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { DatabaseService } from '../database/DatabaseService';
 import { DeepSeekAIResponse } from './types';
 
@@ -23,7 +24,7 @@ export class NaturalLanguageQueryProcessor {
     static analyzeIntent(question: string): QueryIntent {
         const lowerQ = question.toLowerCase();
 
-        if (lowerQ.includes('cliente') && (lowerQ.includes('cuanto') || lowerQ.includes('cuánto') || lowerQ.includes('cuantos') || lowerQ.includes('cuántos') || lowerQ.includes('cantidad'))) {
+        if (lowerQ.includes('cliente') && (lowerQ.includes('cuanto') || lowerQ.includes('cuÃ¡nto') || lowerQ.includes('cuantos') || lowerQ.includes('cuÃ¡ntos') || lowerQ.includes('cantidad'))) {
             return { type: 'CUSTOMER_COUNT', priority: 'HIGH' };
         }
         if (lowerQ.includes('cliente') && (lowerQ.includes('ranking') || lowerQ.includes('mejor') || lowerQ.includes('importante'))) {
@@ -35,8 +36,8 @@ export class NaturalLanguageQueryProcessor {
         if (lowerQ.includes('factura') && (lowerQ.includes('compra') || lowerQ.includes('venta') || lowerQ.includes('resumen'))) {
             return { type: 'INVOICE_SUMMARY', priority: 'MEDIUM' };
         }
-        if (lowerQ.includes('articulo') || lowerQ.includes('artículo') || lowerQ.includes('producto')) {
-            if (lowerQ.includes('mas') || lowerQ.includes('más') || lowerQ.includes('vendido')) {
+        if (lowerQ.includes('articulo') || lowerQ.includes('artÃ­culo') || lowerQ.includes('producto')) {
+            if (lowerQ.includes('mas') || lowerQ.includes('mÃ¡s') || lowerQ.includes('vendido')) {
                 return { type: 'TOP_PRODUCT', priority: 'MEDIUM' };
             }
         }
@@ -49,7 +50,7 @@ export class NaturalLanguageQueryProcessor {
         try {
             return await this.dbService.executeSafeQuery(`SELECT * FROM ${view} LIMIT 10`);
         } catch (error) {
-            console.warn(`[QueryProcessor] Could not fetch data for view ${view}`, error);
+            logger.warn('QueryProcessor', 'warn', `[QueryProcessor] Could not fetch data for view ${view}`, error);
             return [];
         }
     }

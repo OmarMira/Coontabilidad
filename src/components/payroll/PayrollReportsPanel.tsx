@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { payrollReportGenerator } from '../../services/payroll/PayrollReportGenerator';
 import { getCompanyData } from '@/database/modules/db-company';
@@ -37,7 +38,7 @@ export function PayrollReportsPanel() {
             link.click();
             URL.revokeObjectURL(url);
         } catch (error: any) {
-            console.error('Error generating Form 941:', error);
+            logger.error('PayrollReportsPanel', 'error', 'Error generating Form 941:', error);
         } finally {
             setIsGenerating(false);
             setProgress({ percent: 0, message: '' });
@@ -69,7 +70,7 @@ export function PayrollReportsPanel() {
                 URL.revokeObjectURL(url);
             }
         } catch (error: any) {
-            console.error('Error generating W2s:', error);
+            logger.error('PayrollReportsPanel', 'error', 'Error generating W2s:', error);
         } finally {
             setIsGenerating(false);
             setBatchProgress({ current: 0, total: 0, name: '' });

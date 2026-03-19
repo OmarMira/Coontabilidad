@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,7 +114,7 @@ export const BudgetManager: React.FC = () => {
       });
 
     } catch (err) {
-      console.error('Error loading budgets:', err);
+      logger.error('BudgetManager', 'error', 'Error loading budgets:', err);
       setError(err instanceof Error ? err.message : t('budgets.loading'));
     } finally {
       setLoading(false);

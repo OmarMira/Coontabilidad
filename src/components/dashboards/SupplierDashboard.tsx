@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -132,7 +133,7 @@ export const SupplierDashboard: React.FC = () => {
             });
             setApAging(aging);
         } catch (error) {
-            console.error('Error loading supplier data:', error);
+            logger.error('SupplierDashboard', 'error', 'Error loading supplier data:', error);
         } finally {
             setLoading(false);
         }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { FileDown, FileText, Table as TableIcon, Share2, Printer, CheckCircle, AlertCircle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -119,9 +119,9 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
             showStatus('success', t('reportsDashboard.common.pdfSuccess') || 'PDF generated successfully');
             logger.info('ReportExporter', 'pdf_success', `Exportado PDF: ${data.fileName}`);
         } catch (error) {
-            console.error(error);
+            logger.error('ReportExporter', 'error', error);
             showStatus('error', t('reportsDashboard.common.pdfError') || 'Error generating PDF');
-            logger.error('ReportExporter', 'pdf_error', 'Fallo exportación PDF', null, error as Error);
+            logger.error('ReportExporter', 'pdf_error', 'Fallo exportaciÃ³n PDF', null, error as Error);
         } finally {
             setExporting(null);
         }
@@ -138,7 +138,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
             logger.info('ReportExporter', 'excel_success', `Exportado Excel: ${data.fileName}`);
         } catch (error) {
             showStatus('error', t('reportsDashboard.common.excelError') || 'Error generating Excel');
-            logger.error('ReportExporter', 'excel_error', 'Fallo exportación Excel', null, error as Error);
+            logger.error('ReportExporter', 'excel_error', 'Fallo exportaciÃ³n Excel', null, error as Error);
         } finally {
             setExporting(null);
         }

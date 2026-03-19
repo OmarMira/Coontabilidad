@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 
 // Lazy import with error handling
 let pipelineModule: any = null;
@@ -41,19 +42,19 @@ export class SemanticQueryAnalyzer {
     private readonly ENTITY_EMBEDDINGS: Record<string, number[][]> = {};
 
     private readonly INTENT_SEEDS: Record<string, string[]> = {
-        COUNT: ["cuantos", "cuántos", "cantidad de", "número de", "contar", "how many", "count", "number of"],
-        SUM: ["cuánto es", "cuanto es", "suma total", "monto", "total de dinero", "valorizado", "how much", "total amount", "sum of"],
-        FIND_MAX: ["más alto", "máximo", "mejor", "superior", "highest", "best", "top", "maximum"],
-        FIND_MIN: ["más bajo", "mínimo", "peor", "inferior", "lowest", "worst", "minimum"],
-        EXPLAIN: ["qué es", "que es", "que significa", "definición", "concepto", "explicar", "explicame", "what is", "definition", "meaning", "concept", "explain"],
-        HOW_TO: ["cómo", "como", "pasos para", "procedimiento", "guía", "instrucciones", "how do I", "how to", "steps for", "procedure"],
-        LIST: ["mostrar", "ver", "listar", "lista de", "catálogo", "show", "view", "list", "catalog"]
+        COUNT: ["cuantos", "cuÃ¡ntos", "cantidad de", "nÃºmero de", "contar", "how many", "count", "number of"],
+        SUM: ["cuÃ¡nto es", "cuanto es", "suma total", "monto", "total de dinero", "valorizado", "how much", "total amount", "sum of"],
+        FIND_MAX: ["mÃ¡s alto", "mÃ¡ximo", "mejor", "superior", "highest", "best", "top", "maximum"],
+        FIND_MIN: ["mÃ¡s bajo", "mÃ­nimo", "peor", "inferior", "lowest", "worst", "minimum"],
+        EXPLAIN: ["quÃ© es", "que es", "que significa", "definiciÃ³n", "concepto", "explicar", "explicame", "what is", "definition", "meaning", "concept", "explain"],
+        HOW_TO: ["cÃ³mo", "como", "pasos para", "procedimiento", "guÃ­a", "instrucciones", "how do I", "how to", "steps for", "procedure"],
+        LIST: ["mostrar", "ver", "listar", "lista de", "catÃ¡logo", "show", "view", "list", "catalog"]
     };
 
     private readonly ENTITY_SEEDS: Record<string, string[]> = {
         CUSTOMER: ["clientes", "cliente", "compradores", "customers", "client", "buyer"],
         SUPPLIER: ["proveedores", "proveedor", "vendedores", "vendors", "supplier", "distributor"],
-        PRODUCT: ["productos", "inventario", "stock", "mercancías", "artículos", "products", "inventory", "items"],
+        PRODUCT: ["productos", "inventario", "stock", "mercancÃ­as", "artÃ­culos", "products", "inventory", "items"],
         INVOICE: ["facturas", "recibos", "invoices", "ventas", "invoice", "sale", "receipt"],
         ACCOUNT: ["cuentas contables", "plan de cuentas", "ledger", "asientos", "accounts", "chart of accounts"],
         ASSET: ["activos", "bienes", "propiedades", "assets", "property"],
@@ -66,8 +67,8 @@ export class SemanticQueryAnalyzer {
         'cuanlto': 'cuanto',
         'cliennte': 'cliente',
         'proveedorr': 'proveedor',
-        'vendi': 'vendí',
-        'compre': 'compré',
+        'vendi': 'vendÃ­',
+        'compre': 'comprÃ©',
         'factrua': 'factura'
     };
 
@@ -109,9 +110,9 @@ export class SemanticQueryAnalyzer {
             for (const [key, seeds] of Object.entries(this.ENTITY_SEEDS)) {
                 this.ENTITY_EMBEDDINGS[key] = await Promise.all(seeds.map(s => this.getEmbedding(s)));
             }
-            console.log('✅ AI model loaded successfully');
+            logger.info('SemanticQueryAnalyzer', 'info', 'âœ… AI model loaded successfully');
         } catch (error) {
-            console.warn('⚠️ AI model loading failed, using keyword-based fallback mode');
+            logger.warn('SemanticQueryAnalyzer', 'warn', 'âš ï¸ AI model loading failed, using keyword-based fallback mode');
             this.modelLoaded = false;
             this.embedder = null;
             this.initializationFailed = true;
@@ -141,18 +142,18 @@ export class SemanticQueryAnalyzer {
 
         // PRIORIDAD 1: Keywords claras para Knowledge Base
         const lower = processedQuery;
-        if (/\b(qu[é|e] es|significa|definici[ó|o]n|expl[í|i]ca|what is|meaning|definition|explain)\b/i.test(lower)) {
+        if (/\b(qu[Ã©|e] es|significa|definici[Ã³|o]n|expl[Ã­|i]ca|what is|meaning|definition|explain)\b/i.test(lower)) {
             const fallback = this.analyzeQueryFallback(processedQuery, language);
             if (fallback.intent.key === 'EXPLAIN') return fallback;
         }
-        if (/\b(c[ó|o]mo|pasos|procedimiento|instrucciones|gu[í|i]a|how to|steps|procedure|guide)\b/i.test(lower)) {
+        if (/\b(c[Ã³|o]mo|pasos|procedimiento|instrucciones|gu[Ã­|i]a|how to|steps|procedure|guide)\b/i.test(lower)) {
             const fallback = this.analyzeQueryFallback(processedQuery, language);
             if (fallback.intent.key === 'HOW_TO') return fallback;
         }
 
         if (!this.modelLoaded) return this.analyzeQueryFallback(processedQuery, language);
 
-        // PRIORIDAD 2: Semántica con embeddings
+        // PRIORIDAD 2: SemÃ¡ntica con embeddings
         const queryEmbedding = await this.getEmbedding(processedQuery);
         const intent = this.findBestMatch(queryEmbedding, this.INTENT_EMBEDDINGS, 0.4);
         const entity = this.findBestMatch(queryEmbedding, this.ENTITY_EMBEDDINGS, 0.4);
@@ -177,15 +178,15 @@ export class SemanticQueryAnalyzer {
         const lowerText = text.toLowerCase();
         const normalizedText = this.normalizeText(lowerText);
 
-        // 1. Indicadores fuertes de ESPAÑOL
+        // 1. Indicadores fuertes de ESPAÃ‘OL
         const spanishStrong = [
             /\b(cliente|proveedor|factura|gasto|ingreso|producto|asiento|cuenta|banco|activo|pasivo|patrimonio|impuesto|procedimiento|conciliacion)s?\b/i,
             /\b(cuanto|cuanto|que|como|donde|cuando|cual|cuales|quien|quienes)\b/i,
             /\b(tengo|tienes|tenemos|hay|vendi|compre|pague|recibi|hacer|registrar)\b/i,
-            /[áéíóúñ]/i
+            /[Ã¡Ã©Ã­Ã³ÃºÃ±]/i
         ];
 
-        // 2. Indicadores fuertes de INGLÉS
+        // 2. Indicadores fuertes de INGLÃ‰S
         const englishStrong = [
             /\b(customer|supplier|invoice|expense|revenue|product|entry|account|bank|asset|liability|equity|tax|procedure|reconciliation)s?\b/i,
             /\b(how|what|where|when|why|many|much|which|who)\b/i,
@@ -201,7 +202,7 @@ export class SemanticQueryAnalyzer {
         if (spanishMatches > englishMatches) return 'es';
         if (englishMatches > spanishMatches) return 'en';
 
-        // 4. Heurística de palabras de estructura (Common Words)
+        // 4. HeurÃ­stica de palabras de estructura (Common Words)
         const esCommonWords = ['el', 'la', 'los', 'las', 'de', 'y', 'en', 'con', 'por', 'un', 'una', 'para', 'que', 'su', 'mi'];
         const enCommonWords = ['the', 'a', 'an', 'and', 'in', 'with', 'for', 'to', 'of', 'on', 'at', 'that', 'it', 'is', 'my'];
 
@@ -215,7 +216,7 @@ export class SemanticQueryAnalyzer {
         if (enCommonCount > esCommonCount) return 'en';
 
         // 5. Desempate final
-        return (/[áéíóúñ]/i.test(text)) ? 'es' : (englishMatches > 0 ? 'en' : 'es');
+        return (/[Ã¡Ã©Ã­Ã³ÃºÃ±]/i.test(text)) ? 'es' : (englishMatches > 0 ? 'en' : 'es');
     }
 
     private normalizeText(text: string): string {
@@ -228,17 +229,17 @@ export class SemanticQueryAnalyzer {
         let entityKey = 'UNKNOWN';
 
         // Intents
-        if (/\b(cu[á|a]ntos|contar|n[ú|u]mero|cantidad|how many|count)\b/i.test(lower)) intentKey = 'COUNT';
-        else if (/\b(cu[á|a]nto|suma|monto|total|valor|how much|sum)\b/i.test(lower)) intentKey = 'SUM';
-        else if (/\b(qu[é|e] es|significa|concepto|definici[ó|o]n|expl[í|i]ca|what is|meaning|definition|explain)\b/i.test(lower)) intentKey = 'EXPLAIN';
-        else if (/\b(c[ó|o]mo|pasos|procedimiento|instrucciones|gu[í|i]a|how to|procedure|steps)\b/i.test(lower)) intentKey = 'HOW_TO';
-        else if (/\b(mejor|m[á|a]ximo|m[á|a]s alto|superior|best|highest|maximum)\b/i.test(lower)) intentKey = 'FIND_MAX';
-        else if (/\b(peor|m[í|i]nimo|m[á|a]s bajo|inferior|worst|lowest|minimum)\b/i.test(lower)) intentKey = 'FIND_MIN';
+        if (/\b(cu[Ã¡|a]ntos|contar|n[Ãº|u]mero|cantidad|how many|count)\b/i.test(lower)) intentKey = 'COUNT';
+        else if (/\b(cu[Ã¡|a]nto|suma|monto|total|valor|how much|sum)\b/i.test(lower)) intentKey = 'SUM';
+        else if (/\b(qu[Ã©|e] es|significa|concepto|definici[Ã³|o]n|expl[Ã­|i]ca|what is|meaning|definition|explain)\b/i.test(lower)) intentKey = 'EXPLAIN';
+        else if (/\b(c[Ã³|o]mo|pasos|procedimiento|instrucciones|gu[Ã­|i]a|how to|procedure|steps)\b/i.test(lower)) intentKey = 'HOW_TO';
+        else if (/\b(mejor|m[Ã¡|a]ximo|m[Ã¡|a]s alto|superior|best|highest|maximum)\b/i.test(lower)) intentKey = 'FIND_MAX';
+        else if (/\b(peor|m[Ã­|i]nimo|m[Ã¡|a]s bajo|inferior|worst|lowest|minimum)\b/i.test(lower)) intentKey = 'FIND_MIN';
 
         // Entities
         if (/\b(cliente(s)?|customer(s)?|client(s)?)\b/i.test(lower)) entityKey = 'CUSTOMER';
         else if (/\b(proveedor(es)?|vendor(s)?|supplier(s)?)\b/i.test(lower)) entityKey = 'SUPPLIER';
-        else if (/\b(producto(s)?|inventario|stock|art[í|i]culo(s)?|product(s)?|item(s)?)\b/i.test(lower)) entityKey = 'PRODUCT';
+        else if (/\b(producto(s)?|inventario|stock|art[Ã­|i]culo(s)?|product(s)?|item(s)?)\b/i.test(lower)) entityKey = 'PRODUCT';
         else if (/\b(factura(s)?|venta(s)?|invoice(s)?|sale(s)?)\b/i.test(lower)) entityKey = 'INVOICE';
         else if (/\b(activo(s)?|asset(s)?|bien(es)?)\b/i.test(lower)) entityKey = 'ASSET';
         else if (/\b(pasivo(s)?|liability|deuda(s)?|liabilities)\b/i.test(lower)) entityKey = 'LIABILITY';

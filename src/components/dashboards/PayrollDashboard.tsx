@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -81,7 +82,7 @@ export const PayrollDashboard: React.FC = () => {
       setDepartmentData(mockDepartments);
       setMonthlyPayroll(generateMockMonthlyData());
     } catch (error) {
-      console.error('Error loading payroll data:', error);
+      logger.error('PayrollDashboard', 'error', 'Error loading payroll data:', error);
     } finally {
       setLoading(false);
     }
@@ -140,7 +141,7 @@ export const PayrollDashboard: React.FC = () => {
       // fallback to empty below
     }
 
-    // Sin datos: retorna los últimos 12 meses con cero (sin aleatorios)
+    // Sin datos: retorna los Ãºltimos 12 meses con cero (sin aleatorios)
     const currentMonth = new Date().getMonth();
     return Array.from({ length: 12 }, (_, i) => {
       const monthIndex = (currentMonth - 11 + i + 12) % 12;

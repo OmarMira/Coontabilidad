@@ -1,8 +1,9 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * AIProposalPanel (Iron Clad Upgrade - Phase 3, Day 1)
  * 
  * Panel para mostrar y gestionar propuestas generadas por la IA.
- * La IA detecta anomalías y propone correcciones automáticamente.
+ * La IA detecta anomalÃ­as y propone correcciones automÃ¡ticamente.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -39,7 +40,7 @@ export function AIProposalPanel() {
             const pending = await DraftProposalService.getPendingProposals();
             setProposals(pending);
         } catch (error) {
-            console.error('Error loading proposals:', error);
+            logger.error('AIProposalPanel', 'error', 'Error loading proposals:', error);
         } finally {
             setLoading(false);
         }
@@ -89,7 +90,7 @@ export function AIProposalPanel() {
     if (proposals.length === 0) {
         return (
             <div style={styles.emptyState}>
-                <div style={styles.emptyIcon}>🤖</div>
+                <div style={styles.emptyIcon}>ðŸ¤–</div>
                 <h3 style={styles.emptyTitle}>{t('aiAssistant.proposals.emptyTitle')}</h3>
                 <p style={styles.emptyText}>
                     {t('aiAssistant.proposals.emptyText')}
@@ -102,7 +103,7 @@ export function AIProposalPanel() {
         <div style={styles.container}>
             <div style={styles.header}>
                 <h2 style={styles.title}>
-                    🤖 {t('aiAssistant.proposals.title')}
+                    ðŸ¤– {t('aiAssistant.proposals.title')}
                     <span style={styles.badge}>{proposals.length}</span>
                 </h2>
                 <p style={styles.subtitle}>
@@ -140,7 +141,7 @@ export function AIProposalPanel() {
                         </div>
 
                         <div style={styles.proposalReason}>
-                            <div style={styles.reasonIcon}>💡</div>
+                            <div style={styles.reasonIcon}>ðŸ’¡</div>
                             <div>
                                 <strong style={styles.reasonLabel}>{t('aiAssistant.proposals.reason')}:</strong>
                                 <p style={styles.reasonText}>{proposal.ai_proposal_reason}</p>
@@ -162,7 +163,7 @@ export function AIProposalPanel() {
                                     handleApprove(proposal.id);
                                 }}
                             >
-                                ✅ {t('aiAssistant.apply')}
+                                âœ… {t('aiAssistant.apply')}
                             </button>
                             <button
                                 style={{ ...styles.button, ...styles.buttonReject }}
@@ -171,7 +172,7 @@ export function AIProposalPanel() {
                                     handleReject(proposal.id);
                                 }}
                             >
-                                ❌ {t('aiAssistant.reject')}
+                                âŒ {t('aiAssistant.reject')}
                             </button>
                         </div>
                     </div>
@@ -180,7 +181,7 @@ export function AIProposalPanel() {
 
             <div style={styles.footer}>
                 <p style={styles.footerText}>
-                    💡 {t('aiAssistant.proposals.footerTip')}
+                    ðŸ’¡ {t('aiAssistant.proposals.footerTip')}
                 </p>
             </div>
         </div>

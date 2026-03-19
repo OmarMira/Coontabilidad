@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { XCircle, AlertCircle, TrendingUp, TrendingDown, DollarSign, Calendar, CheckCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -56,7 +57,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
         }
 
         if (!user?.id) {
-            console.error('[AssetDisposalForm] userId no disponible. Operación abortada.');
+            logger.error('AssetDisposalForm', 'error', '[AssetDisposalForm] userId no disponible. OperaciÃ³n abortada.');
             return;
         }
 
@@ -196,7 +197,7 @@ export const AssetDisposalForm: React.FC<AssetDisposalFormProps> = ({
                                             <option value="TRADE_IN">{t('assets.disposalForm.methods.trade_in')}</option>
                                             <option value="LOST">{t('assets.disposalForm.methods.lost')}</option>
                                         </select>
-                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">▼</div>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
                                     </div>
                                 </div>
 

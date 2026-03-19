@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 /**
  * External Timestamp Service
  * Provides RFC 3161 compliant timestamp authority integration
@@ -43,7 +44,7 @@ export class ExternalTimestampService {
             return this.arrayBufferToBase64(responseBytes);
 
         } catch (error) {
-            console.error('Failed to get external timestamp from FreeTSA:', error);
+            logger.error('ExternalTimestampService', 'error', 'Failed to get external timestamp from FreeTSA:', error);
             // Fallback: don't break the app, but log weakness
             return null;
         }

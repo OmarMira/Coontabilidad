@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Save, XCircle, Building2, AlertCircle, ShieldCheck, Zap, Cpu, Sparkles, DollarSign, Landmark, Layers, Info } from 'lucide-react';
 import type { BankAccount } from '@/database/modules/db-types';
@@ -67,7 +68,7 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
         try {
             await onSubmit(formData);
         } catch (error) {
-            console.error('Error submitting form:', error);
+            logger.error('BankAccountForm', 'error', 'Error submitting form:', error);
         } finally {
             setIsSubmitting(false);
         }

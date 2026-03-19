@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { XCircle, Save, Building2, Calendar, DollarSign, Info, AlertCircle, TrendingDown, CheckCircle, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -122,7 +123,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
         setError('');
 
         if (!user?.id) {
-            console.error('[AssetForm] userId no disponible. Operación abortada.');
+            logger.error('AssetForm', 'error', '[AssetForm] userId no disponible. OperaciÃ³n abortada.');
             return;
         }
 
@@ -261,7 +262,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                                 </option>
                                             ))}
                                         </select>
-                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">▼</div>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
                                     </div>
                                     {selectedCategory && !isEdit && (
                                         <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 mt-2 flex items-center gap-3">
@@ -355,7 +356,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                         mono
                                     />
                                     <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-1 ml-1">
-                                        {formData.useful_life_months > 0 && `≈ ${(formData.useful_life_months / 12).toFixed(1)} ${t('assets.form.years')}`}
+                                        {formData.useful_life_months > 0 && `â‰ˆ ${(formData.useful_life_months / 12).toFixed(1)} ${t('assets.form.years')}`}
                                     </p>
                                 </div>
 
@@ -374,11 +375,11 @@ export const AssetForm: React.FC<AssetFormProps> = ({ asset, onSave, onCancel, d
                                             <option value="STRAIGHT_LINE">{t('assets.form.methodStraightLine')}</option>
                                             <option value="DECLINING_BALANCE_200">{t('assets.form.methodDeclining')}</option>
                                         </select>
-                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">▼</div>
+                                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
                                     </div>
                                     {isEdit && asset?.status !== 'PENDING' && (
                                         <div className="flex items-center gap-2 mt-1 ml-1">
-                                            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">🔒 {t('assets.form.lockedIRS')}</span>
+                                            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">ðŸ”’ {t('assets.form.lockedIRS')}</span>
                                         </div>
                                     )}
                                 </div>

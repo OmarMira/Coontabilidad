@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ export const InvoiceForm: React.FC = () => {
     const handleSave = async () => {
         const savedId = await saveInvoice();
         if (savedId) {
-            console.log('Factura guardada con ID:', savedId);
+            logger.info('InvoiceForm', 'info', 'Factura guardada con ID:', savedId);
         }
     };
 
@@ -51,7 +52,7 @@ export const InvoiceForm: React.FC = () => {
                         </div>
                         <div>
                             <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">
-                                {t('invoiceForm.forensicTitle') || 'Facturación Forense'}
+                                {t('invoiceForm.forensicTitle') || 'FacturaciÃ³n Forense'}
                             </h2>
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -94,7 +95,7 @@ export const InvoiceForm: React.FC = () => {
                                 className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-20 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-900/20"
                             >
                                 <PlusCircle className="w-4 h-4" />
-                                {t('invoiceForm.addLine') || 'AGREGAR LÍNEA'}
+                                {t('invoiceForm.addLine') || 'AGREGAR LÃNEA'}
                             </button>
                         </div>
 
@@ -103,9 +104,9 @@ export const InvoiceForm: React.FC = () => {
                                 <div key={line.id} className="bg-slate-950/30 border border-slate-800/50 rounded-[2rem] p-8 flex flex-col md:flex-row gap-8 items-end group hover:bg-slate-950/50 transition-all">
                                     <div className="flex-1 space-y-4 w-full">
                                         <div className="space-y-2">
-                                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1 ml-1">{t('invoiceForm.description') || 'DESCRIPCIÓN'}</label>
+                                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1 ml-1">{t('invoiceForm.description') || 'DESCRIPCIÃ“N'}</label>
                                             <input
-                                                placeholder={t('invoiceForm.descriptionPlaceholder') || "Descripción del servicio..."}
+                                                placeholder={t('invoiceForm.descriptionPlaceholder') || "DescripciÃ³n del servicio..."}
                                                 value={line.description}
                                                 onChange={(e) => updateLine(line.id, { description: e.target.value })}
                                                 disabled={loading}
@@ -167,7 +168,7 @@ export const InvoiceForm: React.FC = () => {
                                             <ShieldCheck className="w-5 h-5 text-emerald-500" />
                                         </div>
                                         <div>
-                                            <p className="text-[11px] font-black text-emerald-400 uppercase tracking-widest leading-none">Transacción Auditada</p>
+                                            <p className="text-[11px] font-black text-emerald-400 uppercase tracking-widest leading-none">TransacciÃ³n Auditada</p>
                                             <p className="text-[8px] font-bold text-emerald-500/60 uppercase tracking-[0.2em] mt-2">Inmutable Chain Verified</p>
                                         </div>
                                     </div>
@@ -214,7 +215,7 @@ export const InvoiceForm: React.FC = () => {
                             </>
                         ) : (
                             <>
-                                <span>{t('invoiceForm.saveWithAudit') || 'GUARDAR CON AUDITORÍA'}</span>
+                                <span>{t('invoiceForm.saveWithAudit') || 'GUARDAR CON AUDITORÃA'}</span>
                                 <ShieldCheck className="w-5 h-5" />
                             </>
                         )}

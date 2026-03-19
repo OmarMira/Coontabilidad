@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +39,7 @@ export const IncomeStatement: React.FC = () => {
             const result = getIncomeStatementReport(startDate, endDate);
             setData(result);
         } catch (error) {
-            console.error('Error loading P&L Flow:', error);
+            logger.error('IncomeStatement', 'error', 'Error loading P&L Flow:', error);
         } finally {
             setTimeout(() => setLoading(false), 500);
         }

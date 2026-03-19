@@ -1,7 +1,8 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * ARQUITECTURA MULTICAPA - RESILIENT STORAGE
  * 
- * Sistema de almacenamiento resiliente con múltiples capas de fallback
+ * Sistema de almacenamiento resiliente con mÃºltiples capas de fallback
  */
 
 export interface StorageLayer {
@@ -64,7 +65,7 @@ export class ResilientStorage {
           return data;
         }
       } catch (error) {
-        console.warn(`ResilientStorage: Error reading from ${layer.name}`, error);
+        logger.warn('ResilientStorage', 'warn', `ResilientStorage: Error reading from ${layer.name}`, error);
       }
     }
     
@@ -84,7 +85,7 @@ export class ResilientStorage {
         success = true;
         break;
       } catch (error) {
-        console.warn(`ResilientStorage: Error writing to ${layer.name}`, error);
+        logger.warn('ResilientStorage', 'warn', `ResilientStorage: Error writing to ${layer.name}`, error);
       }
     }
     
@@ -94,29 +95,29 @@ export class ResilientStorage {
   }
   
   private async readFromOPFS(key: string): Promise<any> {
-    // Implementación OPFS
+    // ImplementaciÃ³n OPFS
     return null;
   }
   
   private async writeToOPFS(key: string, data: any): Promise<void> {
-    // Implementación OPFS
+    // ImplementaciÃ³n OPFS
   }
   
   private async deleteFromOPFS(key: string): Promise<void> {
-    // Implementación OPFS
+    // ImplementaciÃ³n OPFS
   }
   
   private async readFromIndexedDB(key: string): Promise<any> {
-    // Implementación IndexedDB
+    // ImplementaciÃ³n IndexedDB
     return null;
   }
   
   private async writeToIndexedDB(key: string, data: any): Promise<void> {
-    // Implementación IndexedDB
+    // ImplementaciÃ³n IndexedDB
   }
   
   private async deleteFromIndexedDB(key: string): Promise<void> {
-    // Implementación IndexedDB
+    // ImplementaciÃ³n IndexedDB
   }
   
   private async readFromLocalStorage(key: string): Promise<any> {

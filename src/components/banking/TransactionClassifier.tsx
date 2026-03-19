@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle2, ListChecks, Activity } from 'lucide-react';
 import type { ChartOfAccount } from '@/database/modules/db-types';
@@ -72,7 +73,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
             `, [accountId, TRANSACTION_STATES.IMPORTED]);
             setTransactions(rows as any);
         } catch (error) {
-            console.error('Error loading transactions:', error);
+            logger.error('TransactionClassifier', 'error', 'Error loading transactions:', error);
             toast.error('Error al cargar transacciones');
         } finally {
             setLoading(false);
@@ -133,7 +134,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
 
         const loadingToast = toast.loading(targetIds.length > 1
             ? `Clasificando y generando asientos para ${targetIds.length} transacciones...`
-            : 'Certificando clasificación y generando asiento...');
+            : 'Certificando clasificaciÃ³n y generando asiento...');
 
         try {
             const engine = getDBEngine();
@@ -146,7 +147,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
             let successCount = 0;
 
             for (const stateId of targetIds) {
-                // 1. Obtener detalles de la transacción para el asiento
+                // 1. Obtener detalles de la transacciÃ³n para el asiento
                 const txRes = await engine.select(`
                     SELECT bt.* FROM bank_transactions bt 
                     JOIN transaction_states ts ON ts.transaction_id = bt.id
@@ -177,7 +178,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                 ];
 
                 await DatabaseService.insertJournalEntry({
-                    description: `Clasificación: ${tx.description}`,
+                    description: `ClasificaciÃ³n: ${tx.description}`,
                     date: tx.transaction_date,
                     userId: user.id || 1,
                     items: entryLines
@@ -210,8 +211,8 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
             // Notificar a otros componentes
             window.dispatchEvent(new CustomEvent('bank-import-complete'));
         } catch (error) {
-            console.error('Error classifying:', error);
-            toast.error('Fallo en la certificación contable: ' + (error as Error).message, { id: loadingToast });
+            logger.error('TransactionClassifier', 'error', 'Error classifying:', error);
+            toast.error('Fallo en la certificaciÃ³n contable: ' + (error as Error).message, { id: loadingToast });
         }
     };
 
@@ -299,7 +300,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                                         <ListChecks className="w-8 h-8 text-slate-600" />
                                     </div>
                                     <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">
-                                        Seleccioná una transacción
+                                        SeleccionÃ¡ una transacciÃ³n
                                     </div>
                                 </div>
                             ) : (
@@ -310,15 +311,15 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                                     <div className="p-6 space-y-6">
                                         <div className="p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
                                             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                                                {selectedTxIds.size > 1 ? `${selectedTxIds.size} Transacciones Seleccionadas` : 'Descripción'}
+                                                {selectedTxIds.size > 1 ? `${selectedTxIds.size} Transacciones Seleccionadas` : 'DescripciÃ³n'}
                                             </div>
                                             <div className="text-xs font-mono text-slate-300 break-words">
                                                 {selectedTxIds.size > 1 ? (
                                                     <div className="space-y-1">
                                                         {transactions.filter(t => selectedTxIds.has(t.state_id)).slice(0, 3).map(t => (
-                                                            <div key={t.state_id} className="truncate">• {t.description}</div>
+                                                            <div key={t.state_id} className="truncate">â€¢ {t.description}</div>
                                                         ))}
-                                                        {selectedTxIds.size > 3 && <div>... y {selectedTxIds.size - 3} más</div>}
+                                                        {selectedTxIds.size > 3 && <div>... y {selectedTxIds.size - 3} mÃ¡s</div>}
                                                     </div>
                                                 ) : (
                                                     selectedTx.description
@@ -356,7 +357,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                                                     type="text"
                                                     value={searchQuery}
                                                     onChange={(e) => handleSearchChange(e.target.value)}
-                                                    placeholder="Nombre o código de cuenta..."
+                                                    placeholder="Nombre o cÃ³digo de cuenta..."
                                                     className="w-full bg-slate-950 text-white pl-10 pr-4 py-4 rounded-xl border border-slate-800 text-xs font-bold focus:outline-none focus:border-emerald-500 transition-all"
                                                 />
                                                 {filteredAccounts.length > 0 && (
@@ -369,7 +370,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                                                                     setFilteredAccounts([]);
                                                                 }}
                                                                 className="w-full text-left p-3 hover:bg-slate-800 text-xs text-slate-300 hover:text-white border-b border-slate-800 last:border-0">
-                                                                <span className="font-black">{account.account_code}</span> — {account.account_name}
+                                                                <span className="font-black">{account.account_code}</span> â€” {account.account_name}
                                                             </button>
                                                         ))}
                                                     </div>
@@ -402,7 +403,7 @@ export const TransactionClassifier: React.FC<TransactionClassifierProps> = ({ ac
                                                     : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>
                                             {selectedTxIds.size > 1
                                                 ? `Clasificar ${selectedTxIds.size} transacciones`
-                                                : 'Confirmar Clasificación'}
+                                                : 'Confirmar ClasificaciÃ³n'}
                                         </button>
                                     </div>
                                 </div>

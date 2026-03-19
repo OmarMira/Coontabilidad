@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import LoginForm from './auth/LoginForm';
 import OnboardingWizard from './auth/OnboardingWizard';
@@ -30,7 +31,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
       }
 
       if (attempts >= MAX_ATTEMPTS) {
-        console.error('[AppRouter] Timeout esperando DB.');
+        logger.error('AppRouter', 'error', '[AppRouter] Timeout esperando DB.');
         setIsChecking(false);
         setInitTimeout(true);
         return;
@@ -54,18 +55,18 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
     );
   }
 
-  // Pantalla de error si la DB tardó más de 60 segundos
+  // Pantalla de error si la DB tardÃ³ mÃ¡s de 60 segundos
   if (initTimeout) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-8 flex flex-col items-center text-center max-w-md">
           <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
-            <span className="text-2xl">⚠️</span>
+            <span className="text-2xl">âš ï¸</span>
           </div>
-          <h3 className="text-xl font-black text-rose-300 mb-2">Error Crítico del Sistema</h3>
+          <h3 className="text-xl font-black text-rose-300 mb-2">Error CrÃ­tico del Sistema</h3>
           <p className="text-rose-200/70 font-medium mb-6">
-            La base de datos no pudo inicializarse después de 60 segundos.
-            Recarga la página o limpia el almacenamiento del navegador.
+            La base de datos no pudo inicializarse despuÃ©s de 60 segundos.
+            Recarga la pÃ¡gina o limpia el almacenamiento del navegador.
           </p>
           <div className="flex gap-4">
             <button
@@ -90,7 +91,7 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
 
   const isPublicPath = ['/terms', '/privacy', '/help'].includes(window.location.pathname);
 
-  // Si es una ruta pública, renderizar children directamente (el layout de App debe manejar el estado limpio)
+  // Si es una ruta pÃºblica, renderizar children directamente (el layout de App debe manejar el estado limpio)
   if (isPublicPath) {
     return <>{children}</>;
   }
@@ -103,6 +104,6 @@ export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
     return <LoginForm />;
   }
 
-  // Autenticado → App principal
+  // Autenticado â†’ App principal
   return <>{children}</>;
 };

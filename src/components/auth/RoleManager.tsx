@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Shield, Plus, Edit, Trash2, Save, X, AlertCircle, Check } from 'lucide-react';
 import { getUserRoles, createUserRole, updateUserRole, deleteUserRole } from '@/database/modules/db-users';
@@ -110,7 +111,7 @@ export const RoleManager: React.FC = () => {
             setRoles(allRoles as UserRole[]);
         } catch (err) {
             setError(t('roleManager.error.load'));
-            console.error(err);
+            logger.error('RoleManager', 'error', err);
         }
     };
 
@@ -156,7 +157,7 @@ export const RoleManager: React.FC = () => {
         try {
             parsedPermissions = JSON.parse(role.permissions_json || '{}');
         } catch (e) {
-            console.error('Error parsing permissions JSON', e);
+            logger.error('RoleManager', 'error', 'Error parsing permissions JSON', e);
         }
 
         setFormData({

@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { DatabaseService } from '@/database/DatabaseService';
 import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
 import { BasicEncryption } from '../core/security/BasicEncryption';
@@ -140,7 +141,7 @@ export class TaxReportingService {
                 outdatedRates: hasBadRates
             };
         } catch (e) {
-            console.error("Error in hasValidConfiguration:", e);
+            logger.error('TaxReportingService', 'error', "Error in hasValidConfiguration:", e);
             return {
                 valid: false,
                 counties: 0,

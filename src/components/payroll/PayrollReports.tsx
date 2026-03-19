@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * PayrollReports.tsx
  * 
@@ -75,7 +76,7 @@ export const PayrollReports: React.FC = () => {
       const allEmployees = getEmployees();
       setEmployees(allEmployees);
     } catch (err) {
-      console.error('Error loading employees:', err);
+      logger.error('PayrollReports', 'error', 'Error loading employees:', err);
       showError(t('payroll.reports.errorLoadingEmployees'));
     }
   };

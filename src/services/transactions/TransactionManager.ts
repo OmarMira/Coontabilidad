@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../../core/audit/AuditChainService';
 import { FloridaTaxEngine, FloridaTaxRate } from '../accounting/FloridaTaxEngine';
@@ -183,6 +184,6 @@ export class TransactionManager {
             });
         });
 
-        console.log(`Transaction Completed Successfully.`);
+        logger.info('TransactionManager', 'info', `Transaction Completed Successfully.`);
     }
 }

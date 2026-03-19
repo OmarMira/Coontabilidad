@@ -1,10 +1,11 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Lock, User, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { GoogleLoginButton } from './GoogleLoginButton';
 import { useLocale } from '../../i18n/useLocale';
 
-// Verificar si Google está configurado (Soporte VITE/REACT_APP)
+// Verificar si Google estÃ¡ configurado (Soporte VITE/REACT_APP)
 const isGoogleConfigured = () => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ||
         import.meta.env.REACT_APP_GOOGLE_CLIENT_ID ||
@@ -20,7 +21,7 @@ const LoginForm: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const { login, loginWithGoogle } = useAuth();
     const { t } = useLocale();
-    const showGoogleLogin = true; // Forzar mostrar botón de Google
+    const showGoogleLogin = true; // Forzar mostrar botÃ³n de Google
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,11 +31,11 @@ const LoginForm: React.FC = () => {
         try {
             const success = await login(username, password);
             if (!success) {
-                setError('Usuario o contraseña incorrectos');
+                setError('Usuario o contraseÃ±a incorrectos');
             }
         } catch (err) {
             setError(t('login.error'));
-            console.error('Login error:', err);
+            logger.error('LoginForm', 'error', 'Login error:', err);
         } finally {
             setLoading(false);
         }
@@ -47,19 +48,19 @@ const LoginForm: React.FC = () => {
         try {
             const success = await loginWithGoogle(userInfo);
             if (!success) {
-                setError('Error al iniciar sesión con Google. Verifica la consola del navegador para más detalles.');
+                setError('Error al iniciar sesiÃ³n con Google. Verifica la consola del navegador para mÃ¡s detalles.');
             }
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
             setError(`Error al procesar login de Google: ${errorMsg}`);
-            console.error('Google login error:', err);
+            logger.error('LoginForm', 'error', 'Google login error:', err);
         } finally {
             setLoading(false);
         }
     };
 
     const handleGoogleError = () => {
-        setError('Error al iniciar sesión con Google. Por favor intenta de nuevo.');
+        setError('Error al iniciar sesiÃ³n con Google. Por favor intenta de nuevo.');
     };
 
     return (
@@ -134,7 +135,7 @@ const LoginForm: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full px-6 py-4 bg-slate-950/50 border border-white/10 rounded-2xl text-white placeholder:text-slate-700 focus:outline-none focus:border-blue-500/50 transition-all text-sm"
-                                placeholder="••••••••"
+                                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                                 required
                             />
                         </div>
@@ -159,7 +160,7 @@ const LoginForm: React.FC = () => {
                 {/* Footer Info */}
                 <div className="mt-10 text-center animate-in fade-in duration-1000 delay-300">
                     <p className="text-slate-600 text-[9px] font-bold uppercase tracking-[0.3em]">
-                        SECURED BY IRON CORE ENCRYPTION © 2026
+                        SECURED BY IRON CORE ENCRYPTION Â© 2026
                     </p>
                 </div>
             </div>

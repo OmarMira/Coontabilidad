@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     CheckCircle,
@@ -78,7 +79,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
 
     const extractReference = (description: string) => {
         const match = description.match(/CONF#\s*(\S+)/i);
-        return match ? match[1] : '—';
+        return match ? match[1] : 'â€”';
     };
 
     // Form state for new reconciliation
@@ -127,7 +128,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
             });
 
             if (result.success) {
-                toast.success('Protocolo de conciliación iniciado correctamente');
+                toast.success('Protocolo de conciliaciÃ³n iniciado correctamente');
                 setShowNewStatementForm(false);
                 setNewStatement({
                     statement_date: new Date().toISOString().split('T')[0],
@@ -139,7 +140,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                 toast.error(result.message);
             }
         } catch (error) {
-            toast.error('Fallo en la creación del estado de conciliación');
+            toast.error('Fallo en la creaciÃ³n del estado de conciliaciÃ³n');
         }
     };
 
@@ -165,14 +166,14 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
             toast.success(`Proceso completado: ${result.summary.highConfidenceMatches} transacciones conciliadas`);
             loadData();
         } catch (error) {
-            toast.error('Error en el motor de conciliación');
+            toast.error('Error en el motor de conciliaciÃ³n');
         } finally {
             setIsProcessing(false);
         }
     };
 
     const openClassifierModal = async (tx: BankTransaction) => {
-        const loadingToast = toast.loading('Analizando memoria de clasificación...');
+        const loadingToast = toast.loading('Analizando memoria de clasificaciÃ³n...');
         try {
             const suggestions = await ClassificationMemoryService.getSuggestions(tx.description);
             const allAccounts = getChartOfAccounts();
@@ -203,16 +204,16 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
         const { transaction, selectedAccount: acc } = classifierModal;
         if (!transaction || !acc || !user) return;
 
-        const loadingToast = toast.loading('Certificando clasificación y generando asiento...');
+        const loadingToast = toast.loading('Certificando clasificaciÃ³n y generando asiento...');
         try {
             const engine = new SQLiteEngine();
             engine.setDB(db);
 
-            // 1. Encontrar el state_id para esta transacción bank_transaction_id.
+            // 1. Encontrar el state_id para esta transacciÃ³n bank_transaction_id.
             const stateRes = await engine.select('SELECT id FROM transaction_states WHERE transaction_id = ?', [transaction.id]);
             const stateId = (stateRes as any[])[0]?.id;
 
-            if (!stateId) throw new Error('Estado de transacción no encontrado');
+            if (!stateId) throw new Error('Estado de transacciÃ³n no encontrado');
 
             // 2. Guardar en memoria
             await ClassificationMemoryService.saveConfirmation(
@@ -235,7 +236,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                 WHERE id = ?
             `, [TRANSACTION_STATES.VERIFIED, acc.account_code, acc.account_name, user.id, stateId]);
 
-            // 4. GENERACIÓN DE ASIENTO
+            // 4. GENERACIÃ“N DE ASIENTO
             const getGlCodeForBank = (bankId: number) => {
                 const map: Record<number, string> = { 1: '1112', 2: '1113' };
                 return map[bankId] || '1112';
@@ -244,8 +245,8 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
             const bankAccountCode = getGlCodeForBank(transaction.bank_account_id);
             const amountCents = Math.abs(transaction.amount);
 
-            // Si monto < 0 (Egreso): Débito a la Cuenta Clasificada, Crédito a Banco
-            // Si monto > 0 (Ingreso): Débito a Banco, Crédito a la Cuenta Clasificada
+            // Si monto < 0 (Egreso): DÃ©bito a la Cuenta Clasificada, CrÃ©dito a Banco
+            // Si monto > 0 (Ingreso): DÃ©bito a Banco, CrÃ©dito a la Cuenta Clasificada
             const entryLines = transaction.amount < 0 ? [
                 { account_code: acc.account_code, debit: amountCents, credit: 0, description: transaction.description },
                 { account_code: bankAccountCode, debit: 0, credit: amountCents, description: transaction.description }
@@ -255,7 +256,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
             ];
 
             await DatabaseService.insertJournalEntry({
-                description: `Clasificación Manual: ${transaction.description}`,
+                description: `ClasificaciÃ³n Manual: ${transaction.description}`,
                 date: transaction.transaction_date,
                 userId: user.id || 1,
                 items: entryLines
@@ -264,12 +265,12 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
             // 5. Marcar como 'matched' en bank_transactions y el estado visual
             await engine.run(`UPDATE bank_transactions SET status = 'matched' WHERE id = ?`, [transaction.id]);
 
-            toast.success('Clasificación certificada y asiento generado correctamente', { id: loadingToast });
+            toast.success('ClasificaciÃ³n certificada y asiento generado correctamente', { id: loadingToast });
             setClassifierModal(prev => ({ ...prev, show: false }));
             loadData();
         } catch (error) {
-            console.error('Error classifying inline:', error);
-            toast.error('Error en el proceso de certificación: ' + (error as Error).message, { id: loadingToast });
+            logger.error('BankReconciliation', 'error', 'Error classifying inline:', error);
+            toast.error('Error en el proceso de certificaciÃ³n: ' + (error as Error).message, { id: loadingToast });
         }
     };
 
@@ -354,7 +355,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                 <div className="xl:col-span-3 space-y-10">
                     {selectedAccount ? (
                         <>
-                            {/* Formulario Nueva Conciliación - Protocol Opening */}
+                            {/* Formulario Nueva ConciliaciÃ³n - Protocol Opening */}
                             {showNewStatementForm && (
                                 <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center z-[70] p-6">
                                     <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] shadow-4xl w-full max-w-4xl my-auto animate-in zoom-in-95 duration-500 overflow-hidden relative">
@@ -397,7 +398,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                 </div>
                             )}
 
-                            {/* Estados de Conciliación - Timeline */}
+                            {/* Estados de ConciliaciÃ³n - Timeline */}
                             <div className="bg-slate-900 border-2 border-slate-800 rounded-[3.5rem] overflow-hidden shadow-3xl relative group">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] pointer-events-none transition-all duration-700 group-hover:bg-blue-500/10"></div>
 
@@ -549,7 +550,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                 <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
                                     <Layers className="w-6 h-6 text-amber-500" />
                                 </div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-tight">Clasificar Excepción</h3>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight">Clasificar ExcepciÃ³n</h3>
                             </div>
                             <button onClick={() => setClassifierModal(prev => ({ ...prev, show: false }))} className="p-2 hover:bg-slate-800 rounded-lg text-slate-500 transition-all">
                                 <X size={20} />
@@ -558,7 +559,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
 
                         <div className="p-8 space-y-6">
                             <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800">
-                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Transacción</div>
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">TransacciÃ³n</div>
                                 <div className="text-sm font-bold text-white uppercase mb-1">{classifierModal.transaction.description}</div>
                                 <div className={`text-xl font-black ${classifierModal.transaction.amount < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
                                     ${Math.abs(classifierModal.transaction.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -600,7 +601,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                         type="text"
                                         value={classifierModal.searchQuery}
                                         onChange={(e) => handleSearchAccounts(e.target.value)}
-                                        placeholder="Buscar por nombre o código..."
+                                        placeholder="Buscar por nombre o cÃ³digo..."
                                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-4 text-xs font-bold text-white focus:border-amber-500 focus:outline-none transition-all"
                                     />
                                     {classifierModal.filteredAccounts.length > 0 && (
@@ -616,7 +617,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                                     }))}
                                                     className="w-full text-left p-4 hover:bg-slate-800 border-b border-slate-800 last:border-0 text-xs text-slate-300"
                                                 >
-                                                    <span className="font-black text-white">{acc.account_code}</span> — {acc.account_name}
+                                                    <span className="font-black text-white">{acc.account_code}</span> â€” {acc.account_name}
                                                 </button>
                                             ))}
                                         </div>
@@ -640,7 +641,7 @@ export const BankReconciliation: React.FC<BankReconciliationProps> = ({ onNaviga
                                         ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-xl shadow-amber-500/20 hover:-translate-y-1'
                                         : 'bg-slate-800 text-slate-600'}`}
                             >
-                                Certificar Clasificación
+                                Certificar ClasificaciÃ³n
                             </button>
 
                             <button

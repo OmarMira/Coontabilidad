@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { DatabaseService } from '../database/DatabaseService';
 
 /**
@@ -20,7 +21,7 @@ export class LogicClockService {
             const lastClock = result[0]?.last_clock || 0;
             return lastClock + 1;
         } catch (e) {
-            console.error('[LogicClockService] Error fetching clock, defaulting to 1', e);
+            logger.error('LogicClockService', 'error', '[LogicClockService] Error fetching clock, defaulting to 1', e);
             return 1;
         }
     }

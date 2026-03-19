@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -56,7 +57,7 @@ export const InventoryDashboard: React.FC<{
             setRecentMovements(movements.slice(0, 5)); // Top 5 recent
 
         } catch (error) {
-            console.error("Error loading inventory dashboard", error);
+            logger.error('InventoryDashboard', 'error', "Error loading inventory dashboard", error);
         }
     };
 
@@ -149,7 +150,7 @@ export const InventoryDashboard: React.FC<{
                                             <div className={`mt-1 w-2 h-2 rounded-full ${m.quantity > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                                             <div>
                                                 <p className="text-sm font-medium text-slate-200">{m.product_name}</p>
-                                                <p className="text-xs text-slate-500">{m.formatted_date} • {t('inv.dashboard.ref')}: {m.reference_type}</p>
+                                                <p className="text-xs text-slate-500">{m.formatted_date} â€¢ {t('inv.dashboard.ref')}: {m.reference_type}</p>
                                             </div>
                                         </div>
                                         <div className={`text-sm font-mono font-bold ${m.quantity > 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -187,7 +188,7 @@ export const InventoryDashboard: React.FC<{
                                             </span>
                                         </AlertTitle>
                                         <AlertDescription className="text-xs text-amber-400/70 mt-1">
-                                            {t('inv.dashboard.minLevel')}: {p.min_stock_level} • SKU: {p.sku}
+                                            {t('inv.dashboard.minLevel')}: {p.min_stock_level} â€¢ SKU: {p.sku}
                                         </AlertDescription>
                                     </Alert>
                                 ))

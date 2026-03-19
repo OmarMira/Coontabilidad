@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../audit/AuditChainService';
 import { FinancialReportingService } from '../accounting/FinancialReportingService';
@@ -62,12 +63,12 @@ Response format:
         this.auditChainService = new AuditChainService(db);
         this.accountingService = new AccountingService(db);
         this.reportingService = new FinancialReportingService(db);
-        this.smartAI = new SmartAIProvider(db); // ✅ Pass DB for full data access
+        this.smartAI = new SmartAIProvider(db); // âœ… Pass DB for full data access
         this.resolver = new SemanticQueryResolver(db);
 
         // Initialize AI in background
         this.smartAI.initialize().catch((err: unknown) => {
-            console.error('Failed to initialize Smart AI:', err);
+            logger.error('AIAssistantService', 'error', 'Failed to initialize Smart AI:', err);
         });
     }
 
@@ -425,7 +426,7 @@ To enable AI analysis, configure the API key in environment variables.`;
     }
 
     /**
-     * Obtener el contexto dinámico del esquema generado por el crawler
+     * Obtener el contexto dinÃ¡mico del esquema generado por el crawler
      */
     public async getSchemaContext(): Promise<SchemaContext | null> {
         const result = await this.db.select(`

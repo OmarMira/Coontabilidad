@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   AlertCircle,
   CheckCircle,
@@ -47,7 +47,7 @@ export function BalanceSheet() {
       const result = generateBalanceSheet(dateToUse);
       setBalanceSheet(result);
     } catch (error) {
-      console.error('Balance Sheet Load Error:', error);
+      logger.error('BalanceSheet', 'error', 'Balance Sheet Load Error:', error);
       setError(t('balanceSheet.error'));
     } finally {
       setTimeout(() => setLoading(false), 600);

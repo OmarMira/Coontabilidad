@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { DatabaseService } from '../database/DatabaseService';
 import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
 
@@ -43,7 +44,7 @@ export class AssetDepreciationService {
     static calculateMACRSDepreciation(costInCents: number, lifeYears: number, yearOfLife: number): number {
         const rates = this.MACRS_RATES[lifeYears];
         if (!rates) {
-            console.warn(`MACRS Tables for ${lifeYears} years not implemented. Returning 0.`);
+            logger.warn('AssetDepreciationService', 'warn', `MACRS Tables for ${lifeYears} years not implemented. Returning 0.`);
             return 0;
         }
 

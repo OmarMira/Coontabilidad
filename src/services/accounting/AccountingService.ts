@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -5,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
  * AccountingService - Double-Entry Bookkeeping Engine
  * 
  * Implements US GAAP double-entry accounting with:
- * - Accounting equation validation: Σ Debits = Σ Credits
+ * - Accounting equation validation: Î£ Debits = Î£ Credits
  * - Immutability enforcement (once posted, cannot modify)
  * - Logic clock integration for audit trail
  * - Automatic journal entry creation from business events
  * 
  * HARD CONSTRAINTS:
- * - REJECT any transaction where debits ≠ credits
+ * - REJECT any transaction where debits â‰  credits
  * - PROHIBIT deletion/modification of posted entries
  * - REQUIRE reversal entries for corrections (Storno method)
  * - ALL amounts must be INTEGER cents
@@ -24,7 +25,7 @@ export class AccountingService {
      * 
      * @param entry - Journal entry data
      * @returns Journal entry ID (UUID)
-     * @throws Error if debits ≠ credits or validation fails
+     * @throws Error if debits â‰  credits or validation fails
      */
     public async createJournalEntry(entry: CreateJournalEntryDTO): Promise<string> {
         return this.db.executeTransaction(async () => {
@@ -34,7 +35,7 @@ export class AccountingService {
 
             if (totalDebits !== totalCredits) {
                 throw new Error(
-                    `Accounting equation violated: Debits (${totalDebits}) ≠ Credits (${totalCredits}). ` +
+                    `Accounting equation violated: Debits (${totalDebits}) â‰  Credits (${totalCredits}). ` +
                     `Difference: ${Math.abs(totalDebits - totalCredits)} cents`
                 );
             }
@@ -365,7 +366,7 @@ export class AccountingService {
 
         // Verify trial balance
         if (totalDebits !== totalCredits) {
-            console.error(`⚠️ TRIAL BALANCE OUT OF BALANCE: Debits=${totalDebits}, Credits=${totalCredits}`);
+            logger.error('AccountingService', 'error', `âš ï¸ TRIAL BALANCE OUT OF BALANCE: Debits=${totalDebits}, Credits=${totalCredits}`);
         }
 
         return trialBalance;

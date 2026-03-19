@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * StatementSmartParser
  * 
@@ -49,11 +50,11 @@ export class StatementSmartParser {
             // y luego OCR como respaldo definitivo.
             let text = '';
 
-            // Intentar leer texto básico del PDF (si no es escaneado)
+            // Intentar leer texto bÃ¡sico del PDF (si no es escaneado)
             try {
                 text = await file.text();
             } catch (e) {
-                console.warn('Text reading failed, using OCR');
+                logger.warn('StatementSmartParser', 'warn', 'Text reading failed, using OCR');
             }
 
             // Si el texto plano es basura o muy corto, usamos OCR
@@ -66,7 +67,7 @@ export class StatementSmartParser {
             const lines = text.split('\n');
 
             // Buscador de transacciones ultra-permisivo
-            // Busca cualquier línea que tenga algo parecido a una fecha (XX/XX) y un número
+            // Busca cualquier lÃ­nea que tenga algo parecido a una fecha (XX/XX) y un nÃºmero
             const dateEx = /(\d{1,2}[/.-]\d{1,2})/;
             const amountEx = /([-+]?\s?\$?\d+[\.,]\d{2})/;
 
@@ -78,22 +79,22 @@ export class StatementSmartParser {
                     const desc = line.replace(dMatch[0], '').replace(aMatch[0], '').trim();
                     transactions.push({
                         transaction_date: dMatch[0],
-                        description: desc || 'Transacción Detectada',
+                        description: desc || 'TransacciÃ³n Detectada',
                         amount: parseFloat(aMatch[0].replace(/[$\s]/g, '').replace(',', '.')),
                         status: 'pending'
                     });
                 }
             });
 
-            // Si no detectó nada con el patrón, simplemente volcamos todos los números encontrados 
-            // para que el usuario no vea una tabla vacía.
+            // Si no detectÃ³ nada con el patrÃ³n, simplemente volcamos todos los nÃºmeros encontrados 
+            // para que el usuario no vea una tabla vacÃ­a.
             if (transactions.length === 0) {
                 const amounts = text.match(/([-+]?\d+[\.,]\d{2})/g);
                 if (amounts) {
                     amounts.slice(0, 15).forEach((amt, i) => {
                         transactions.push({
                             transaction_date: 'Detectado',
-                            description: `Movimiento extraído #${i + 1}`,
+                            description: `Movimiento extraÃ­do #${i + 1}`,
                             amount: parseFloat(amt.replace(',', '.')),
                             status: 'pending'
                         });
@@ -112,7 +113,7 @@ export class StatementSmartParser {
         } catch (error) {
             return {
                 accountNumber: '',
-                bankName: 'Revisión Manual',
+                bankName: 'RevisiÃ³n Manual',
                 currency: 'USD',
                 format: 'PDF',
                 extractionMethod: 'OCR',

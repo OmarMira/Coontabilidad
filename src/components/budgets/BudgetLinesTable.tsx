@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChevronDown, ChevronRight, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
@@ -32,7 +33,7 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
       setLines(linesData);
       setVarianceData(varianceAnalysis);
     } catch (error) {
-      console.error('Error loading budget lines:', error);
+      logger.error('BudgetLinesTable', 'error', 'Error loading budget lines:', error);
     } finally {
       setLoading(false);
     }

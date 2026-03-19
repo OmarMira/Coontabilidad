@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import { useState, useEffect } from 'react';
 import ClosureChecklist, { ChecklistItem, ValidationResult } from '../ClosureChecklist';
 import { getDB } from '@/database/modules/db-core';
@@ -149,7 +150,7 @@ export default function PayrollValidationStep({
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        console.error('Error validating payroll:', error);
+        logger.error('PayrollValidationStep', 'error', 'Error validating payroll:', error);
       }
     };
 
@@ -175,7 +176,7 @@ export default function PayrollValidationStep({
             </div>
             <div className="text-3xl font-black text-white tracking-tighter">{payrollSummary.totalPayrolls}</div>
             <p className="text-xs font-black text-slate-500 mt-2 uppercase tracking-tight">
-              <span className="text-emerald-500">{payrollSummary.approvedPayrolls} {t('accounting.closure.steps.payroll.messages.ok')}</span> •
+              <span className="text-emerald-500">{payrollSummary.approvedPayrolls} {t('accounting.closure.steps.payroll.messages.ok')}</span> â€¢
               <span className="text-orange-500 ml-1">{payrollSummary.pendingPayrolls} {t('accounting.closure.steps.payroll.messages.pnd')}</span>
             </p>
           </div>

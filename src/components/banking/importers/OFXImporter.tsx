@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export const OFXImporter: React.FC = () => {
                 if (loadedAccounts.length > 0) setSelectedAccountId(loadedAccounts[0].id);
             }
         } catch (e) {
-            console.error("Error loading accounts", e);
+            logger.error('OFXImporter', 'error', "Error loading accounts", e);
         }
     };
 
@@ -103,7 +104,7 @@ export const OFXImporter: React.FC = () => {
                     });
                 } else {
                     invalidCount++;
-                    console.warn("OFX Transaction failed normalization", t, normalized.error);
+                    logger.warn('OFXImporter', 'warn', "OFX Transaction failed normalization", t, normalized.error);
                 }
             });
 
@@ -111,20 +112,20 @@ export const OFXImporter: React.FC = () => {
                 const result = insertBankTransactions(transactions);
 
                 if (result.success) {
-                    setSuccessMsg(`Importación completada: ${result.importedCount} transacciones de OFX.`);
-                    if (invalidCount > 0) setErrorMsg(`Atención: ${invalidCount} transacciones ignoradas por datos inválidos.`);
+                    setSuccessMsg(`ImportaciÃ³n completada: ${result.importedCount} transacciones de OFX.`);
+                    if (invalidCount > 0) setErrorMsg(`AtenciÃ³n: ${invalidCount} transacciones ignoradas por datos invÃ¡lidos.`);
                     setFile(null);
                     setParsedData(null);
                 } else {
                     setErrorMsg(result.message);
                 }
             } else {
-                setErrorMsg("No se encontraron transacciones válidas.");
+                setErrorMsg("No se encontraron transacciones vÃ¡lidas.");
             }
 
         } catch (err) {
-            setErrorMsg("Error crítico al importar datos.");
-            console.error(err);
+            setErrorMsg("Error crÃ­tico al importar datos.");
+            logger.error('OFXImporter', 'error', err);
         } finally {
             setLoading(false);
         }
@@ -137,7 +138,7 @@ export const OFXImporter: React.FC = () => {
                     <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                         Importador OFX/QFX
                     </h2>
-                    <p className="text-slate-400">Importación directa de formatos bancarios estándar Open Financial Exchange.</p>
+                    <p className="text-slate-400">ImportaciÃ³n directa de formatos bancarios estÃ¡ndar Open Financial Exchange.</p>
                 </div>
             </div>
 
@@ -232,7 +233,7 @@ export const OFXImporter: React.FC = () => {
                                     <thead className="text-xs uppercase bg-slate-950 text-slate-300 sticky top-0">
                                         <tr>
                                             <th className="px-4 py-3">Fecha</th>
-                                            <th className="px-4 py-3">Descripción</th>
+                                            <th className="px-4 py-3">DescripciÃ³n</th>
                                             <th className="px-4 py-3 text-right">Monto</th>
                                         </tr>
                                     </thead>

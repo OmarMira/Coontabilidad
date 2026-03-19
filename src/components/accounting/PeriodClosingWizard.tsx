@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     CheckCircle,
@@ -46,11 +47,11 @@ export const PeriodClosingWizard: React.FC<PeriodClosingWizardProps> = ({ period
     ]);
 
     useEffect(() => {
-        // Cargar balance de comprobación para el paso 1
+        // Cargar balance de comprobaciÃ³n para el paso 1
         const tb = getTrialBalanceReport(year, period.month);
         setTrialBalance(tb);
 
-        // Simular validaciones rápidas
+        // Simular validaciones rÃ¡pidas
         const timer = setTimeout(() => {
             setValidations(prev => prev.map(v => ({ ...v, status: 'success' })));
         }, 1500);
@@ -66,7 +67,7 @@ export const PeriodClosingWizard: React.FC<PeriodClosingWizardProps> = ({ period
         if (!user) return;
         setIsLoading(true);
         try {
-            // 1. Generar asiento de cierre si el usuario lo pidió
+            // 1. Generar asiento de cierre si el usuario lo pidiÃ³
             if (shouldGenerateClosingEntry) {
                 const fromDate = `${year}-${String(period.month).padStart(2, '0')}-01`;
                 const nextMonth = new Date(year, period.month, 0);
@@ -90,7 +91,7 @@ export const PeriodClosingWizard: React.FC<PeriodClosingWizardProps> = ({ period
                 toast.error(res.message);
             }
         } catch (error) {
-            console.error('[PeriodClosingWizard] Error al cerrar periodo:', error);
+            logger.error('PeriodClosingWizard', 'error', '[PeriodClosingWizard] Error al cerrar periodo:', error);
             toast.error(t('periodClosing.closingError'));
         } finally {
             setIsLoading(false);

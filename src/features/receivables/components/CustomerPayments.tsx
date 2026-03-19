@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, DollarSign, FileText, Search, Plus, Check, X, Zap } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -59,12 +60,12 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
       const methods = getPaymentMethods();
       setPaymentMethods(methods);
 
-      // Si hay métodos disponibles, seleccionar el primero por defecto
+      // Si hay mÃ©todos disponibles, seleccionar el primero por defecto
       if (methods.length > 0 && !paymentForm.payment_method) {
         setPaymentForm(prev => ({ ...prev, payment_method: methods[0].method_name }));
       }
     } catch (error) {
-      console.error('Error loading payment methods:', error);
+      logger.error('CustomerPayments', 'error', 'Error loading payment methods:', error);
     }
   };
 
@@ -77,7 +78,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
   };
 
   const loadPayments = () => {
-    // En una implementación real, esto vendría de la base de datos
+    // En una implementaciÃ³n real, esto vendrÃ­a de la base de datos
     // Por ahora simulamos algunos pagos
     const mockPayments: CustomerPayment[] = [];
     setPayments(mockPayments);
@@ -149,7 +150,7 @@ export const CustomerPayments: React.FC<CustomerPaymentsProps> = ({
 
       onPaymentCreated();
     } catch (error) {
-      console.error('Error creating payment:', error);
+      logger.error('CustomerPayments', 'error', 'Error creating payment:', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,8 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * FileParserService - Parsea archivos bancarios (CSV, OFX, QFX, PDF)
  *
- * Soporta múltiples formatos de archivos bancarios.
+ * Soporta mÃºltiples formatos de archivos bancarios.
  * Para PDF delega al parser pdfjs-dist en src/lib/pdf-parser.ts.
  */
 
@@ -18,16 +19,16 @@ export interface ParseResult {
   format: 'CSV' | 'OFX' | 'QFX' | 'PDF';
   transactions: ParsedTransaction[];
   errors: string[];
-  accountNumber?: string; // Extraído del encabezado del extracto (pe. BofA)
+  accountNumber?: string; // ExtraÃ­do del encabezado del extracto (pe. BofA)
 }
 
 export class FileParserService {
 
   /**
-   * Detecta automáticamente el formato del archivo
+   * Detecta automÃ¡ticamente el formato del archivo
    */
   static detectFormat(content: string, fileName?: string): 'CSV' | 'OFX' | 'QFX' | 'PDF' | 'UNKNOWN' {
-    // PDF detection — by filename extension or binary magic bytes (%PDF)
+    // PDF detection â€” by filename extension or binary magic bytes (%PDF)
     if (fileName?.toLowerCase().endsWith('.pdf') || content.startsWith('%PDF')) {
       return 'PDF';
     }
@@ -49,7 +50,7 @@ export class FileParserService {
   }
 
   /**
-   * Valida el tamaño del archivo (max 10MB)
+   * Valida el tamaÃ±o del archivo (max 10MB)
    */
   static validateFileSize(file: File): boolean {
     const maxSize = 10 * 1024 * 1024; // 10MB
@@ -65,7 +66,7 @@ export class FileParserService {
       return {
         format: 'CSV',
         transactions: [],
-        errors: ['El archivo excede el tamaño máximo de 10MB']
+        errors: ['El archivo excede el tamaÃ±o mÃ¡ximo de 10MB']
       };
     }
 
@@ -111,11 +112,11 @@ export class FileParserService {
    * Parsea archivo PDF bancario.
    *
    * Delega a parseBankPDF en src/lib/pdf-parser.ts, que utiliza
-   * pdfjs-dist con file.arrayBuffer() para extraer texto real del PDF —
+   * pdfjs-dist con file.arrayBuffer() para extraer texto real del PDF â€”
    * incluyendo PDFs de Bank of America (eStmt_*.pdf).
    *
-   * Nota de conversión: NormalizedTransaction.amount viene en centavos
-   * (p.ej. 1050 = $10.50). El pipeline de ImportTransaction espera dólares
+   * Nota de conversiÃ³n: NormalizedTransaction.amount viene en centavos
+   * (p.ej. 1050 = $10.50). El pipeline de ImportTransaction espera dÃ³lares
    * flotantes, por lo que dividimos por 100.
    */
   private static async parsePDF(file: File): Promise<ParseResult> {
@@ -127,18 +128,18 @@ export class FileParserService {
         return {
           format: 'PDF',
           transactions: [],
-          errors: ['El PDF no contiene transacciones detectables. Verificá que el archivo sea un estado de cuenta bancario con capa de texto.']
+          errors: ['El PDF no contiene transacciones detectables. VerificÃ¡ que el archivo sea un estado de cuenta bancario con capa de texto.']
         };
       }
 
-      // Convertir NormalizationResult[] → ParsedTransaction[]
-      // amount viene en centavos enteros — convertir a dólares
+      // Convertir NormalizationResult[] â†’ ParsedTransaction[]
+      // amount viene en centavos enteros â€” convertir a dÃ³lares
       const transactions: ParsedTransaction[] = rawItems
         .filter(r => r.success && r.data)
         .map(r => ({
           date: r.data!.transaction_date,
           description: r.data!.description,
-          amount: r.data!.amount / 100, // centavos → dólares
+          amount: r.data!.amount / 100, // centavos â†’ dÃ³lares
           balance: r.data!.metadata?.extracted_balance
             ? parseFloat(String(r.data!.metadata.extracted_balance).replace(/[$,]/g, ''))
             : undefined
@@ -146,16 +147,16 @@ export class FileParserService {
 
       const errors: string[] = [];
       if (result.bankName) {
-        console.info(`[FileParserService] PDF detectado: ${result.bankName}`);
+        logger.info('FileParserService', 'info', `[FileParserService] PDF detectado: ${result.bankName}`);
       }
       if (transactions.length < rawItems.length) {
-        errors.push(`${rawItems.length - transactions.length} líneas no pudieron normalizarse y fueron omitidas.`);
+        errors.push(`${rawItems.length - transactions.length} lÃ­neas no pudieron normalizarse y fueron omitidas.`);
       }
 
       return { format: 'PDF', transactions, errors, accountNumber: result.accountNumber };
 
     } catch (err) {
-      console.error('[FileParserService] parsePDF error:', err);
+      logger.error('FileParserService', 'error', '[FileParserService] parsePDF error:', err);
       return {
         format: 'PDF',
         transactions: [],
@@ -179,7 +180,7 @@ export class FileParserService {
       const lines = content.split('\n').filter(line => line.trim());
 
       if (lines.length === 0) {
-        return { format: 'CSV', transactions: [], errors: ['Archivo vacío'] };
+        return { format: 'CSV', transactions: [], errors: ['Archivo vacÃ­o'] };
       }
 
       // Detect header row
@@ -196,7 +197,7 @@ export class FileParserService {
         return {
           format: 'CSV',
           transactions: [],
-          errors: ['No se pudieron detectar las columnas requeridas (fecha, descripción, monto)']
+          errors: ['No se pudieron detectar las columnas requeridas (fecha, descripciÃ³n, monto)']
         };
       }
 
@@ -218,7 +219,7 @@ export class FileParserService {
             transactions.push({ date, description, amount, balance });
           }
         } catch (e) {
-          errors.push(`Error en línea ${i + 1}: ${(e as Error).message}`);
+          errors.push(`Error en lÃ­nea ${i + 1}: ${(e as Error).message}`);
         }
       }
 
@@ -258,12 +259,12 @@ export class FileParserService {
           if (dateMatch && amountMatch) {
             const date = this.parseOFXDate(dateMatch[1]);
             const amount = parseFloat(amountMatch[1]);
-            const description = (descMatch?.[1] || memoMatch?.[1] || 'Sin descripción').trim();
+            const description = (descMatch?.[1] || memoMatch?.[1] || 'Sin descripciÃ³n').trim();
 
             transactions.push({ date, description, amount });
           }
         } catch (e) {
-          errors.push(`Error al parsear transacción OFX: ${(e as Error).message}`);
+          errors.push(`Error al parsear transacciÃ³n OFX: ${(e as Error).message}`);
         }
       }
 
@@ -338,7 +339,7 @@ export class FileParserService {
   }
 
   /**
-   * Divide una línea CSV respetando comillas
+   * Divide una lÃ­nea CSV respetando comillas
    */
   private static splitCSVLine(line: string, delimiter: string): string[] {
     const result: string[] = [];
@@ -363,24 +364,24 @@ export class FileParserService {
   }
 
   /**
-   * Parsea una fecha en múltiples formatos, incluyendo Bank of America.
+   * Parsea una fecha en mÃºltiples formatos, incluyendo Bank of America.
    *
    * Soporta:
    *   - ISO: YYYY-MM-DD
    *   - MM/DD/YYYY, MM/DD/YY (BofA, Chase)
-   *   - DD/MM/YYYY (heurística: día > 12)
+   *   - DD/MM/YYYY (heurÃ­stica: dÃ­a > 12)
    *   - "Jan 31, 2025" / "Jan 31 2025" (BofA eStatement)
    *   - DD-MM-YYYY, DD.MM.YYYY
    */
   private static parseDate(dateStr: string): string | null {
     const cleaned = dateStr.trim().replace(/"/g, '').replace(/,/g, '');
 
-    // ─ ISO: YYYY-MM-DD ────────────────────────────────────────────
+    // â”€ ISO: YYYY-MM-DD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (/^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
       return cleaned.substring(0, 10);
     }
 
-    // ─ Mes abreviado: "Jan 31 2025" (BofA eStatement) ───────────────
+    // â”€ Mes abreviado: "Jan 31 2025" (BofA eStatement) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const MONTHS: Record<string, string> = {
       jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
       jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
@@ -393,17 +394,17 @@ export class FileParserService {
       return `${year}-${month}-${day}`;
     }
 
-    // ─ Numérico con separadores / - . ────────────────────────────
+    // â”€ NumÃ©rico con separadores / - . â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const numeric = cleaned.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})$/);
     if (numeric) {
       let [, a, b, y] = numeric;
-      // Normalizar año de 2 dígitos → 4 dígitos (00-30 → 2000-2030, resto → 19xx)
+      // Normalizar aÃ±o de 2 dÃ­gitos â†’ 4 dÃ­gitos (00-30 â†’ 2000-2030, resto â†’ 19xx)
       if (y.length === 2) {
         y = parseInt(y) <= 30 ? `20${y}` : `19${y}`;
       }
       const aNum = parseInt(a);
       const bNum = parseInt(b);
-      // Heurística: si a > 12 debe ser DD/MM, si b > 12 debe ser MM/DD
+      // HeurÃ­stica: si a > 12 debe ser DD/MM, si b > 12 debe ser MM/DD
       if (aNum > 12) {
         // DD/MM/YYYY
         return `${y}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
@@ -413,7 +414,7 @@ export class FileParserService {
       }
     }
 
-    // ─ Fallback: Date nativo ──────────────────────────────────────
+    // â”€ Fallback: Date nativo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const date = new Date(cleaned);
     if (!isNaN(date.getTime())) {
       return date.toISOString().substring(0, 10);
@@ -437,7 +438,7 @@ export class FileParserService {
    */
   private static parseAmount(amountStr: string): number {
     // Remove quotes, currency symbols, and spaces
-    let cleaned = amountStr.trim().replace(/"/g, '').replace(/[$€£]/g, '').replace(/\s/g, '');
+    let cleaned = amountStr.trim().replace(/"/g, '').replace(/[$â‚¬Â£]/g, '').replace(/\s/g, '');
 
     // Handle parentheses as negative (accounting format)
     if (cleaned.startsWith('(') && cleaned.endsWith(')')) {

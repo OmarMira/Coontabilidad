@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import initSqlJs from 'sql.js';
 
 // Import worker utilities
@@ -29,7 +30,7 @@ self.onmessage = async (event: MessageEvent) => {
                 break;
 
             default:
-                console.warn(`Unknown message type: ${type}`);
+                logger.warn('database.worker', 'warn', `Unknown message type: ${type}`);
         }
     } catch (error: any) {
         self.postMessage({
@@ -210,7 +211,7 @@ async function importSQL(payload: any): Promise<any> {
 
 // Handle errors gracefully
 self.onerror = (error) => {
-    console.error('Database worker error:', error);
+    logger.error('database.worker', 'error', 'Database worker error:', error);
     self.postMessage({
         type: 'ERROR',
         error: 'Worker error occurred'

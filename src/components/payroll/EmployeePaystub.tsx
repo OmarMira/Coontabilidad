@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Download, Printer, DollarSign, User, Calendar, FileText, CheckCircle2 } from 'lucide-react';
 import { getPayroll, getEmployeeById } from '@/database/modules/db-payroll';
@@ -31,7 +32,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
         setEmployee(empData);
       }
     } catch (error) {
-      console.error('Error loading paystub:', error);
+      logger.error('EmployeePaystub', 'error', 'Error loading paystub:', error);
     } finally {
       setLoading(false);
     }
@@ -58,7 +59,7 @@ export const EmployeePaystub: React.FC<EmployeePaystubProps> = ({ payrollId, onB
   };
 
   const handleDownload = () => {
-    console.log('Download paystub as PDF');
+    logger.info('EmployeePaystub', 'info', 'Download paystub as PDF');
   };
 
   if (loading) {

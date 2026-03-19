@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
 
         setIsSubmitting(true);
         try {
-            // Asumimos userId 1 por ahora, en un sistema real vendría del AuthContext
+            // Asumimos userId 1 por ahora, en un sistema real vendrÃ­a del AuthContext
             const result = receivePurchaseOrder(order.id, 1);
 
             if (result.success) {
@@ -35,7 +36,7 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
             }
         } catch (error) {
             toast.error(t('poReceiving.error unexpected'));
-            console.error(error);
+            logger.error('PurchaseOrderReceiving', 'error', error);
         } finally {
             setIsSubmitting(false);
         }

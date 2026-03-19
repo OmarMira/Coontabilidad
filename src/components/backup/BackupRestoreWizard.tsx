@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +39,7 @@ export const BackupRestoreWizard: React.FC = () => {
         try {
             for (const file of fileList) {
                 // Mock individual restore
-                console.log(`Restoring ${file.name}...`);
+                logger.info('BackupRestoreWizard', 'info', `Restoring ${file.name}...`);
             }
 
             setStatus('success');

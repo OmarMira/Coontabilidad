@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, DollarSign, FileText, Search, Filter, Plus, Check, X, Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,12 +60,12 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
       const methods = getPaymentMethods();
       setPaymentMethods(methods);
 
-      // Si hay métodos disponibles, seleccionar el primero por defecto
+      // Si hay mÃ©todos disponibles, seleccionar el primero por defecto
       if (methods.length > 0 && !paymentForm.payment_method) {
         setPaymentForm(prev => ({ ...prev, payment_method: methods[0].method_name }));
       }
     } catch (error) {
-      console.error('Error loading payment methods:', error);
+      logger.error('SupplierPayments', 'error', 'Error loading payment methods:', error);
     }
   };
 
@@ -77,7 +78,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
   };
 
   const loadPayments = () => {
-    // En una implementación real, esto vendría de la base de datos
+    // En una implementaciÃ³n real, esto vendrÃ­a de la base de datos
     // Por ahora simulamos algunos pagos
     const mockPayments: SupplierPayment[] = [];
     setPayments(mockPayments);
@@ -154,7 +155,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
       onPaymentCreated();
     } catch (error) {
-      console.error('Error creating payment:', error);
+      logger.error('SupplierPayments', 'error', 'Error creating payment:', error);
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +173,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
 
   const calculateDaysUntilDue = (billDate: string) => {
     const dueDate = new Date(billDate);
-    dueDate.setDate(dueDate.getDate() + 30); // Asumiendo 30 días de plazo
+    dueDate.setDate(dueDate.getDate() + 30); // Asumiendo 30 dÃ­as de plazo
     const today = new Date();
     const diffTime = dueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -189,7 +190,7 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
         </div>
       </div>
 
-      {/* Filtros y búsqueda */}
+      {/* Filtros y bÃºsqueda */}
       <div className="bg-white/10 p-4 rounded-lg shadow-sm border border-white/10">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">

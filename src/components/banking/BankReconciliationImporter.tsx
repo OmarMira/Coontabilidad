@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useCallback } from 'react';
 import {
     Upload,
@@ -69,7 +70,7 @@ export const BankReconciliationImporter: React.FC = () => {
             if (lastStatement) {
                 const diff = Math.abs(lastStatement.statement_balance - detectedMetadata.openingBalance);
                 if (diff > 0.05) {
-                    setContinuityError(`Hueco temporal detectado: El saldo inicial del archivo ($${detectedMetadata.openingBalance}) no coincide con el último saldo conciliado ($${lastStatement.statement_balance}).`);
+                    setContinuityError(`Hueco temporal detectado: El saldo inicial del archivo ($${detectedMetadata.openingBalance}) no coincide con el Ãºltimo saldo conciliado ($${lastStatement.statement_balance}).`);
                 } else {
                     setContinuityError(null);
                 }
@@ -118,7 +119,7 @@ export const BankReconciliationImporter: React.FC = () => {
                     continue;
                 }
 
-                // Detección Inteligente de Cuenta
+                // DetecciÃ³n Inteligente de Cuenta
                 const metadata = await StatementSmartParser.parseMetadata(selectedFile);
                 if (!combinedMetadata) {
                     combinedMetadata = metadata;
@@ -163,7 +164,7 @@ export const BankReconciliationImporter: React.FC = () => {
             toast.success('Archivos procesados correctamente');
 
         } catch (error) {
-            toast.error('Fallo en el análisis inteligente de los archivos');
+            toast.error('Fallo en el anÃ¡lisis inteligente de los archivos');
         } finally {
             setIsProcessing(false);
         }
@@ -182,8 +183,8 @@ export const BankReconciliationImporter: React.FC = () => {
                 let count = 0;
                 const batchId = `BATCH-REC-${Date.now()}`;
 
-                // NOTA: Para mantener integridad, lo hacemos uno por uno para poder evaluar reglas y auditoría
-                // aunque sea un poco más lento, es lo que pide el workflow de auditoría forense.
+                // NOTA: Para mantener integridad, lo hacemos uno por uno para poder evaluar reglas y auditorÃ­a
+                // aunque sea un poco mÃ¡s lento, es lo que pide el workflow de auditorÃ­a forense.
                 const getGlCodeForBank = (bankId: number) => {
                     const map: Record<number, string> = { 1: '1112', 2: '1113' };
                     return map[bankId] || '1112';
@@ -192,7 +193,7 @@ export const BankReconciliationImporter: React.FC = () => {
                 for (const txn of transactions) {
                     if (!txn.transaction_date || txn.amount === 0) continue;
 
-                    // 1. Evaluar Reglas Automáticas
+                    // 1. Evaluar Reglas AutomÃ¡ticas
                     const autoAccount = await ClassificationRulesService.evaluateTransaction(txn.description || '');
 
                     // 2. Insertar Bank Transaction
@@ -216,7 +217,7 @@ export const BankReconciliationImporter: React.FC = () => {
 
                     const bankTxId = (bankTxIdRes as any).lastID;
 
-                    // 3. Crear Estado de Auditoría (transaction_states)
+                    // 3. Crear Estado de AuditorÃ­a (transaction_states)
                     const isAutoClassified = !!autoAccount;
                     await engine.run(`
                         INSERT INTO transaction_states (
@@ -235,15 +236,15 @@ export const BankReconciliationImporter: React.FC = () => {
                         isAutoClassified ? user.id : null
                     ]);
 
-                    // 4. GENERACIÓN DE ASIENTO (Si está auto-clasificado)
+                    // 4. GENERACIÃ“N DE ASIENTO (Si estÃ¡ auto-clasificado)
                     if (isAutoClassified && autoAccount) {
                         try {
                             const bankAccountCode = getGlCodeForBank(selectedAccountId);
                             const amountCents = Math.abs(txn.amount || 0);
                             const finalAmount = txn.amount || 0;
 
-                            // Si monto < 0 (Egreso): Débito a la Cuenta Clasificada, Crédito a Banco
-                            // Si monto > 0 (Ingreso): Débito a Banco, Crédito a la Cuenta Clasificada
+                            // Si monto < 0 (Egreso): DÃ©bito a la Cuenta Clasificada, CrÃ©dito a Banco
+                            // Si monto > 0 (Ingreso): DÃ©bito a Banco, CrÃ©dito a la Cuenta Clasificada
                             const entryLines = finalAmount < 0 ? [
                                 { account_code: autoAccount.account_code, debit: amountCents, credit: 0, description: txn.description },
                                 { account_code: bankAccountCode, debit: 0, credit: amountCents, description: txn.description }
@@ -259,26 +260,26 @@ export const BankReconciliationImporter: React.FC = () => {
                                 items: entryLines
                             });
 
-                            // Marcar como 'matched' si el asiento se creó exitosamente
+                            // Marcar como 'matched' si el asiento se creÃ³ exitosamente
                             await engine.run(`UPDATE bank_transactions SET status = 'matched' WHERE id = ?`, [bankTxId]);
                         } catch (jeError) {
-                            console.error('Error creating auto-journal entry:', jeError);
-                            // No fallamos la importación completa por un error de asiento individual
+                            logger.error('BankReconciliationImporter', 'error', 'Error creating auto-journal entry:', jeError);
+                            // No fallamos la importaciÃ³n completa por un error de asiento individual
                         }
                     }
 
                     count++;
                 }
 
-                toast.success(`Inyección completa: ${count} registros certificados bajo Batch ${batchId}`);
+                toast.success(`InyecciÃ³n completa: ${count} registros certificados bajo Batch ${batchId}`);
                 setStep('upload');
                 setFiles([]);
                 setPreview([]);
                 // Forzar refresco de datos en componentes padres si es necesario
                 window.dispatchEvent(new CustomEvent('bank-import-complete'));
             } catch (error) {
-                console.error('Failure in smart injection:', error);
-                toast.error('Fallo en la inyección de seguridad auditada');
+                logger.error('BankReconciliationImporter', 'error', 'Failure in smart injection:', error);
+                toast.error('Fallo en la inyecciÃ³n de seguridad auditada');
             } finally {
                 setIsProcessing(false);
             }
@@ -469,7 +470,7 @@ export const BankReconciliationImporter: React.FC = () => {
                                 <div className="p-6 bg-rose-500/10 border-2 border-rose-500/20 rounded-3xl flex items-center gap-6 animate-pulse">
                                     <AlertCircle className="w-8 h-8 text-rose-500 shrink-0" />
                                     <div>
-                                        <p className="text-xs font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Bloqueo de Integridad (Triángulo)</p>
+                                        <p className="text-xs font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Bloqueo de Integridad (TriÃ¡ngulo)</p>
                                         <p className="text-[10px] text-rose-400 font-bold uppercase tracking-wider">{validationError}</p>
                                     </div>
                                 </div>
@@ -478,8 +479,8 @@ export const BankReconciliationImporter: React.FC = () => {
                             {(!detectedMetadata || detectedMetadata.format === 'CSV') && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <MappingField label="Timestamp (Fecha)" icon={Calendar} value={mapping.date} onChange={(v) => setMapping(prev => ({ ...prev, date: v }))} />
-                                    <MappingField label="Descriptor (Descripción)" icon={Target} value={mapping.description} onChange={(v) => setMapping(prev => ({ ...prev, description: v }))} />
-                                    <MappingField label="Cuantía (Monto)" icon={Activity} value={mapping.amount} onChange={(v) => setMapping(prev => ({ ...prev, amount: v }))} />
+                                    <MappingField label="Descriptor (DescripciÃ³n)" icon={Target} value={mapping.description} onChange={(v) => setMapping(prev => ({ ...prev, description: v }))} />
+                                    <MappingField label="CuantÃ­a (Monto)" icon={Activity} value={mapping.amount} onChange={(v) => setMapping(prev => ({ ...prev, amount: v }))} />
                                     <MappingField label="Referencia (ID)" icon={ShieldCheck} value={mapping.reference} onChange={(v) => setMapping(prev => ({ ...prev, reference: v }))} />
                                 </div>
                             )}
@@ -530,7 +531,7 @@ export const BankReconciliationImporter: React.FC = () => {
                     )}
                 </div>
             </div>
-            {/* Modal de Registro de Cuenta Automático */}
+            {/* Modal de Registro de Cuenta AutomÃ¡tico */}
             {
                 showRegisterForm && detectedMetadata && (
                     <BankAccountForm
@@ -565,7 +566,7 @@ export const BankReconciliationImporter: React.FC = () => {
                     />
                 )
             }
-            {/* Modal de Desambiguación */}
+            {/* Modal de DesambiguaciÃ³n */}
             {
                 ambiguousAccounts.length > 0 && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
@@ -576,7 +577,7 @@ export const BankReconciliationImporter: React.FC = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Varias Cuentas Detectadas</h3>
-                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">El número de cuenta termina en "{detectedMetadata?.accountNumber}" en múltiples entidades.</p>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">El nÃºmero de cuenta termina en "{detectedMetadata?.accountNumber}" en mÃºltiples entidades.</p>
                                 </div>
                             </div>
 
@@ -594,7 +595,7 @@ export const BankReconciliationImporter: React.FC = () => {
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <div className="font-black text-white uppercase tracking-tight">{account.account_name}</div>
-                                                <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{account.bank_name} • ****{account.account_number.slice(-4)}</div>
+                                                <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{account.bank_name} â€¢ ****{account.account_number.slice(-4)}</div>
                                             </div>
                                             <ArrowRight className="w-5 h-5 text-slate-700 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                                         </div>

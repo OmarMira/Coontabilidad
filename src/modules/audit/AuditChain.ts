@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { BasicEncryption } from '../../core/security/BasicEncryption';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditEventSchema, AuditVerificationResultSchema, type AuditEvent, type AuditVerificationResult } from './AuditEvent.types';
@@ -52,7 +53,7 @@ export class AuditChain {
             await (this.engine as any).exec(query);
         } catch (e) {
             // Fallback or ignore if already exists
-            console.warn('Could not ensure audit_chain table', e);
+            logger.warn('AuditChain', 'warn', 'Could not ensure audit_chain table', e);
         }
     }
 
@@ -121,7 +122,7 @@ export class AuditChain {
             ]);
         } else {
             // Fallback for mock/test
-            console.log('Mock Insert:', validatedEvent);
+            logger.info('AuditChain', 'info', 'Mock Insert:', validatedEvent);
         }
 
         return validatedEvent;

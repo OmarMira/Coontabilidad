@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, RefreshCw, FileOutput } from 'lucide-react';
 import '../../styles/emergency.css';
@@ -13,7 +14,7 @@ export const EmergencyScreen: React.FC<EmergencyScreenProps> = ({ message, onRet
     const [logs, setLogs] = useState<string[]>([]);
 
     useEffect(() => {
-        // Simulación de progreso de inicialización de emergencia
+        // SimulaciÃ³n de progreso de inicializaciÃ³n de emergencia
         const interval = setInterval(() => {
             setProgress(prev => {
                 const next = prev + (Math.random() * 8);
@@ -31,9 +32,9 @@ export const EmergencyScreen: React.FC<EmergencyScreenProps> = ({ message, onRet
         <div className="emergency-screen">
             <header className="emergency-header">
                 <AlertTriangle className="emergency-icon" size={64} />
-                <h1 className="emergency-title">Modo de Recuperación</h1>
+                <h1 className="emergency-title">Modo de RecuperaciÃ³n</h1>
                 <p className="emergency-subtitle">
-                    AccountExpress está solucionando un conflicto de integridad en la base de datos.
+                    AccountExpress estÃ¡ solucionando un conflicto de integridad en la base de datos.
                 </p>
             </header>
 
@@ -58,7 +59,7 @@ export const EmergencyScreen: React.FC<EmergencyScreenProps> = ({ message, onRet
                 </section>
 
                 <section className="logs-section">
-                    <h3>Registro de Recuperación:</h3>
+                    <h3>Registro de RecuperaciÃ³n:</h3>
                     <div className="logs-container">
                         {logs.map((log, index) => (
                             <div key={index} className="log-entry">
@@ -70,8 +71,8 @@ export const EmergencyScreen: React.FC<EmergencyScreenProps> = ({ message, onRet
 
                 <section className="actions-section">
                     <p className="instructions">
-                        <strong>No cierre esta ventana.</strong> El sistema está analizando las tablas y reparando las relaciones externas de forma segura.
-                        El proceso finalizará automáticamente.
+                        <strong>No cierre esta ventana.</strong> El sistema estÃ¡ analizando las tablas y reparando las relaciones externas de forma segura.
+                        El proceso finalizarÃ¡ automÃ¡ticamente.
                     </p>
 
                     <div className="emergency-actions">
@@ -83,10 +84,10 @@ export const EmergencyScreen: React.FC<EmergencyScreenProps> = ({ message, onRet
                         </button>
 
                         <button
-                            onClick={onExport || (() => console.log('Exporting debug info...'))}
+                            onClick={onExport || (() => logger.info('EmergencyScreen', 'info', 'Exporting debug info...'))}
                             className="emergency-btn emergency-btn-destructive flex items-center gap-2"
                         >
-                            <FileOutput size={18} /> Exportar Diagnóstico
+                            <FileOutput size={18} /> Exportar DiagnÃ³stico
                         </button>
                     </div>
                 </section>
@@ -95,7 +96,7 @@ export const EmergencyScreen: React.FC<EmergencyScreenProps> = ({ message, onRet
             <footer className="emergency-footer">
                 <div className="footer-inner">
                     <Shield size={16} />
-                    <span>AccountExpress Next-Gen • Sistema Forense Florida • Motor de Recuperación Atómica</span>
+                    <span>AccountExpress Next-Gen â€¢ Sistema Forense Florida â€¢ Motor de RecuperaciÃ³n AtÃ³mica</span>
                 </div>
             </footer>
         </div>

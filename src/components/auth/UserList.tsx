@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Shield, CheckCircle, XCircle } from 'lucide-react';
 import UserService from '../../services/UserService';
@@ -26,7 +27,7 @@ export const UserList: React.FC = () => {
             const allUsers = UserService.getUsers();
             setUsers(allUsers);
         } catch (error) {
-            console.error('Error loading users:', error);
+            logger.error('UserList', 'error', 'Error loading users:', error);
         } finally {
             setLoading(false);
         }

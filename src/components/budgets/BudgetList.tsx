@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +62,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
         alert(result.message);
       }
     } catch (error) {
-      console.error('Error deleting budget:', error);
+      logger.error('BudgetList', 'error', 'Error deleting budget:', error);
       alert(t('common.error'));
     } finally {
       setDeletingId(null);
@@ -87,7 +88,7 @@ export const BudgetList: React.FC<BudgetListProps> = ({
     );
   };
 
-  // Generate year options (current year ± 5 years)
+  // Generate year options (current year Â± 5 years)
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 

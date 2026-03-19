@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { S3Provider } from '../../services/cloud/S3Provider';
 import { BasicEncryption } from '../../core/security/BasicEncryption';
@@ -57,7 +58,7 @@ export function CloudBackupSettings() {
                 setConfig(loadedConfig);
             }
         } catch (error) {
-            console.error('Error loading cloud config:', error);
+            logger.error('CloudBackupSettings', 'error', 'Error loading cloud config:', error);
         }
     };
 
@@ -86,7 +87,7 @@ export function CloudBackupSettings() {
             if (canConnect) {
                 setTestResult({
                     success: true,
-                    message: `✅ ${t('settings.testSuccess')}`
+                    message: `âœ… ${t('settings.testSuccess')}`
                 });
             } else {
                 throw new Error('No se pudo conectar al servicio');
@@ -95,7 +96,7 @@ export function CloudBackupSettings() {
         } catch (error: any) {
             setTestResult({
                 success: false,
-                message: `❌ Error: ${error.message}`
+                message: `âŒ Error: ${error.message}`
             });
         } finally {
             setTesting(false);
@@ -116,13 +117,13 @@ export function CloudBackupSettings() {
             // Schedule auto-backups if enabled
             if (config.enabled) {
                 await DatabaseService.scheduleAutoBackup();
-                alert(`✅ ${t('settings.autoBackupEnabled')}`);
+                alert(`âœ… ${t('settings.autoBackupEnabled')}`);
             } else {
-                alert(`✅ ${t('settings.configSaved')}`);
+                alert(`âœ… ${t('settings.configSaved')}`);
             }
 
         } catch (error: any) {
-            alert(`❌ Error al guardar: ${error.message}`);
+            alert(`âŒ Error al guardar: ${error.message}`);
         } finally {
             setSaving(false);
         }
@@ -158,10 +159,10 @@ export function CloudBackupSettings() {
                 })
             ]);
 
-            alert(`✅ ${t('settings.manualBackupSuccess', { filename })}`);
+            alert(`âœ… ${t('settings.manualBackupSuccess', { filename })}`);
 
         } catch (error: any) {
-            alert(`❌ ${t('settings.forcedBackupError')}: ${error.message}`);
+            alert(`âŒ ${t('settings.forcedBackupError')}: ${error.message}`);
         } finally {
             setCreatingBackup(false);
         }
@@ -170,7 +171,7 @@ export function CloudBackupSettings() {
     return (
         <div className="cloud-backup-settings" style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.title}>☁️ {t('settings.backup')}</h2>
+                <h2 style={styles.title}>â˜ï¸ {t('settings.backup')}</h2>
                 <p style={styles.subtitle}>
                     {t('settings.subtitleContent')}
                 </p>
@@ -221,7 +222,7 @@ export function CloudBackupSettings() {
                         />
                     </label>
                     <small style={styles.hint}>
-                        Región de AWS (ej: us-east-1, eu-west-1)
+                        RegiÃ³n de AWS (ej: us-east-1, eu-west-1)
                     </small>
                 </div>
 
@@ -292,7 +293,7 @@ export function CloudBackupSettings() {
                         disabled={testing}
                         style={{ ...styles.button, ...styles.buttonSecondary }}
                     >
-                        {testing ? `🔍 ${t('settings.testConnection')}...` : `🔍 ${t('settings.testConnection')}`}
+                        {testing ? `ðŸ” ${t('settings.testConnection')}...` : `ðŸ” ${t('settings.testConnection')}`}
                     </button>
 
                     <button
@@ -300,7 +301,7 @@ export function CloudBackupSettings() {
                         disabled={saving}
                         style={{ ...styles.button, ...styles.buttonPrimary }}
                     >
-                        {saving ? `💾 ${t('settings.saveConfig')}...` : `💾 ${t('settings.saveConfig')}`}
+                        {saving ? `ðŸ’¾ ${t('settings.saveConfig')}...` : `ðŸ’¾ ${t('settings.saveConfig')}`}
                     </button>
                 </div>
 
@@ -316,18 +317,18 @@ export function CloudBackupSettings() {
                         disabled={creatingBackup || !config.enabled}
                         style={{ ...styles.button, ...styles.buttonSuccess }}
                     >
-                        {creatingBackup ? `⏳ ${t('settings.forcedBackupStarted')}` : `📦 ${t('settings.backupNow')}`}
+                        {creatingBackup ? `â³ ${t('settings.forcedBackupStarted')}` : `ðŸ“¦ ${t('settings.backupNow')}`}
                     </button>
                     {!config.enabled && (
                         <small style={styles.warning}>
-                            ⚠️ {t('settings.noBackupsHint')}
+                            âš ï¸ {t('settings.noBackupsHint')}
                         </small>
                     )}
                 </div>
             </div>
 
             <div style={styles.infoBox}>
-                <h4 style={styles.infoTitle}>ℹ️ {t('settings.infoTitle')}</h4>
+                <h4 style={styles.infoTitle}>â„¹ï¸ {t('settings.infoTitle')}</h4>
                 <ul style={styles.infoList}>
                     {t<string[]>('settings.infoItems').map((item, i) => (
                         <li key={i}>{item}</li>

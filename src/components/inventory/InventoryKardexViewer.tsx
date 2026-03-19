@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
             const prods = getProducts();
             setProducts(prods);
         } catch (err) {
-            console.error(err);
+            logger.error('InventoryKardexViewer', 'error', err);
         }
     };
 
@@ -42,7 +43,7 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
             const data = getKardexMovements({});
             setMovements(data);
         } catch (err) {
-            console.error(t('inv.kardex.errorLoading'), err);
+            logger.error('InventoryKardexViewer', 'error', t('inv.kardex.errorLoading'), err);
         } finally {
             setLoading(false);
         }
@@ -100,7 +101,7 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
                             >
                                 <option value="">{t('inv.kardex.allProducts')}</option>
                                 {products.map(p => (
-                                    <option key={p.id} value={p.id?.toString()}>{p.sku} — {p.name}</option>
+                                    <option key={p.id} value={p.id?.toString()}>{p.sku} â€” {p.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -161,7 +162,7 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
                                                     <span className="text-white font-bold text-xs">{m.product_name}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 font-mono text-slate-500 text-[10px]">{m.reference_id || '—'}</td>
+                                            <td className="px-6 py-4 font-mono text-slate-500 text-[10px]">{m.reference_id || 'â€”'}</td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${typeInfo.color}`}>
                                                     {m.quantity > 0 ? <ArrowDownLeft className="w-3 h-3" /> : <ArrowUpRight className="w-3 h-3" />}
@@ -175,9 +176,9 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
                                                 {m.quantity < 0 ? m.quantity : ''}
                                             </td>
                                             <td className="px-6 py-4 text-right font-mono text-white font-black">
-                                                —
+                                                â€”
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500 text-xs">{m.user_name || '—'}</td>
+                                            <td className="px-6 py-4 text-slate-500 text-xs">{m.user_name || 'â€”'}</td>
                                         </tr>
                                     );
                                 })}

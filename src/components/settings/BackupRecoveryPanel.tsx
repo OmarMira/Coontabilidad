@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { RecoveryService, BackupMetadata } from '../../services/RecoveryService';
 import { useLocale } from '@/i18n/useLocale';
@@ -33,8 +34,8 @@ export function BackupRecoveryPanel() {
             const availableBackups = await RecoveryService.listAvailableBackups();
             setBackups(availableBackups);
         } catch (error: any) {
-            console.error('Error loading backups:', error);
-            alert(`❌ ${t('settings.restoreError')}: ${error.message}`);
+            logger.error('BackupRecoveryPanel', 'error', 'Error loading backups:', error);
+            alert(`âŒ ${t('settings.restoreError')}: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -45,15 +46,15 @@ export function BackupRecoveryPanel() {
             const recoveryStats = await RecoveryService.getRecoveryStats();
             setStats(recoveryStats);
         } catch (error) {
-            console.error('Error loading stats:', error);
+            logger.error('BackupRecoveryPanel', 'error', 'Error loading stats:', error);
         }
     };
 
     const restoreFromCloud = async (filename: string) => {
         const confirmed = window.confirm(
-            `⚠️ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
+            `âš ï¸ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
             `${t('settings.backupPrompt')}\n\n` +
-            `¿${t('settings.restoreAction')} ${filename}?`
+            `Â¿${t('settings.restoreAction')} ${filename}?`
         );
 
         if (!confirmed) return;
@@ -69,11 +70,11 @@ export function BackupRecoveryPanel() {
                 }
             });
 
-            alert(`✅ ${t('settings.restoreSuccess')}!\n\nLa aplicación se recargará.`);
+            alert(`âœ… ${t('settings.restoreSuccess')}!\n\nLa aplicaciÃ³n se recargarÃ¡.`);
             window.location.reload();
 
         } catch (error: any) {
-            alert(`❌ ${t('settings.restoreError')}:\n\n${error.message}`);
+            alert(`âŒ ${t('settings.restoreError')}:\n\n${error.message}`);
         } finally {
             setRestoring(false);
             setProgress({ percent: 0, message: '' });
@@ -86,9 +87,9 @@ export function BackupRecoveryPanel() {
 
         const fileNames = selectedFiles.map(f => f.name).join(', ');
         const confirmed = window.confirm(
-            `⚠️ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
+            `âš ï¸ ${t('settings.securityWarning').toUpperCase()}: ${t('settings.overwriteWarning')}\n\n` +
             `${t('settings.backupPrompt')}\n\n` +
-            `¿${t('settings.restoreAction')} ${fileNames}?`
+            `Â¿${t('settings.restoreAction')} ${fileNames}?`
         );
 
         if (!confirmed) {
@@ -108,11 +109,11 @@ export function BackupRecoveryPanel() {
                 });
             }
 
-            alert(`✅ ${t('settings.restoreSuccess')}!\n\nLa aplicación se recargará.`);
+            alert(`âœ… ${t('settings.restoreSuccess')}!\n\nLa aplicaciÃ³n se recargarÃ¡.`);
             window.location.reload();
 
         } catch (error: any) {
-            alert(`❌ ${t('settings.restoreError')}:\n\n${error.message}`);
+            alert(`âŒ ${t('settings.restoreError')}:\n\n${error.message}`);
         } finally {
             setRestoring(false);
             setProgress({ percent: 0, message: '' });
@@ -139,7 +140,7 @@ export function BackupRecoveryPanel() {
     return (
         <div style={styles.container}>
             <div style={styles.header}>
-                <h2 style={styles.title}>🔄 {t('settings.recovery')}</h2>
+                <h2 style={styles.title}>ðŸ”„ {t('settings.recovery')}</h2>
                 <p style={styles.subtitle}>
                     {t('settings.subtitle')}
                 </p>
@@ -160,7 +161,7 @@ export function BackupRecoveryPanel() {
                     <div style={styles.stat}>
                         <span style={styles.statLabel}>{t('settings.hasSafetyBackup')}</span>
                         <span style={styles.statValue}>
-                            {stats.hasSafetyBackup ? `✅ ${t('settings.available')}` : `❌ ${t('settings.notAvailable')}`}
+                            {stats.hasSafetyBackup ? `âœ… ${t('settings.available')}` : `âŒ ${t('settings.notAvailable')}`}
                         </span>
                     </div>
                 </div>
@@ -179,13 +180,13 @@ export function BackupRecoveryPanel() {
 
             <div style={styles.section}>
                 <div style={styles.sectionHeader}>
-                    <h3 style={styles.sectionTitle}>☁️ {t('settings.backup')}</h3>
+                    <h3 style={styles.sectionTitle}>â˜ï¸ {t('settings.backup')}</h3>
                     <button
                         onClick={loadBackups}
                         disabled={loading || restoring}
                         style={{ ...styles.button, ...styles.buttonSmall }}
                     >
-                        {loading ? `🔄 ${t('settings.update')}...` : `🔄 ${t('settings.update')}`}
+                        {loading ? `ðŸ”„ ${t('settings.update')}...` : `ðŸ”„ ${t('settings.update')}`}
                     </button>
                 </div>
 
@@ -194,7 +195,7 @@ export function BackupRecoveryPanel() {
                 ) : backups.length === 0 ? (
                     <div style={styles.emptyState}>
                         <p style={styles.emptyText}>
-                            📭 {t('settings.noBackups')}
+                            ðŸ“­ {t('settings.noBackups')}
                         </p>
                         <small style={styles.emptyHint}>
                             {t('settings.noBackupsHint')}
@@ -207,11 +208,11 @@ export function BackupRecoveryPanel() {
                                 <div style={styles.backupInfo}>
                                     <div style={styles.backupName}>
                                         {index === 0 && <span style={styles.badge}>{t('settings.mostRecent')}</span>}
-                                        📦 {backup.filename}
+                                        ðŸ“¦ {backup.filename}
                                     </div>
                                     <div style={styles.backupMeta}>
                                         <span>{formatDate(backup.created)}</span>
-                                        <span>•</span>
+                                        <span>â€¢</span>
                                         <span>{formatFileSize(backup.size)}</span>
                                     </div>
                                 </div>
@@ -220,7 +221,7 @@ export function BackupRecoveryPanel() {
                                     disabled={restoring}
                                     style={{ ...styles.button, ...styles.buttonPrimary }}
                                 >
-                                    🔄 {t('settings.restoreAction')}
+                                    ðŸ”„ {t('settings.restoreAction')}
                                 </button>
                             </div>
                         ))}
@@ -231,7 +232,7 @@ export function BackupRecoveryPanel() {
             <div style={styles.divider}></div>
 
             <div style={styles.section}>
-                <h3 style={styles.sectionTitle}>💾 {t('settings.restoreLocal')}</h3>
+                <h3 style={styles.sectionTitle}>ðŸ’¾ {t('settings.restoreLocal')}</h3>
                 <p style={styles.sectionText}>
                     {t('settings.loadBackup')}
                 </p>
@@ -245,13 +246,13 @@ export function BackupRecoveryPanel() {
                         style={styles.fileInput}
                     />
                     <span style={{ ...styles.button, ...styles.buttonSecondary }}>
-                        📁 {t('settings.selectFile')}
+                        ðŸ“ {t('settings.selectFile')}
                     </span>
                 </label>
             </div>
 
             <div style={styles.warningBox}>
-                <h4 style={styles.warningTitle}>⚠️ {t('settings.securityWarning')}</h4>
+                <h4 style={styles.warningTitle}>âš ï¸ {t('settings.securityWarning')}</h4>
                 <ul style={styles.warningList}>
                     {t<string[]>('settings.warningItems').map((item, i) => (
                         <li key={i}>{item}</li>

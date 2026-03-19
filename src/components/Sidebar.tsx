@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -50,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           setQuarantineCount(result[0].values[0][0] as number);
         }
       } catch {
-        // tabla no lista aún — silencioso
+        // tabla no lista aÃºn â€” silencioso
       }
     };
     loadQuarantineCount();
@@ -247,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
               className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'terms' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
             >
               <FileText className="w-3.5 h-3.5" />
-              Términos
+              TÃ©rminos
             </button>
             <button
               onClick={() => onNavigate('privacy')}
@@ -266,13 +267,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           </div>
         )}
 
-        {/* Language Switcher deshabilitado por simplificación i18n */}
+        {/* Language Switcher deshabilitado por simplificaciÃ³n i18n */}
         {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
 
 
         <button
           onClick={() => {
-            console.log('🚪 Logout initiated by user');
+            logger.info('Sidebar', 'info', 'ðŸšª Logout initiated by user');
             logout();
           }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs tracking-widest"

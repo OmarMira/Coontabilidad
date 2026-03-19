@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { getBudgetVarianceAnalysis, getBudgetSummary } from '@/database/modules/db-budgets';
@@ -17,7 +18,7 @@ export const BudgetPerformanceChart: React.FC<BudgetPerformanceChartProps> = ({ 
       const summary = getBudgetSummary(budgetId);
       return { variance, summary };
     } catch (error) {
-      console.error('Error fetching chart data:', error);
+      logger.error('BudgetPerformanceChart', 'error', 'Error fetching chart data:', error);
       return { variance: [], summary: null };
     }
   }, [budgetId]);

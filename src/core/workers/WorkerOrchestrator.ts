@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 export type WorkerType = 'ENCRYPTION' | 'DATABASE' | 'ACCOUNTING' | 'PDF_GENERATION' | 'CSV_PROCESSING' | 'REPORTS' | 'PAYROLL' | 'RECONCILIATION' | 'QUOTES_PROCESSING' | 'INVENTORY_ANALYSIS';
 
 export interface WorkerConfig {
@@ -23,19 +24,19 @@ interface Task {
     timeout: number;
 }
 
-// Sistema centralizado de gestión de Web Workers
+// Sistema centralizado de gestiÃ³n de Web Workers
 export class WorkerOrchestrator {
     private workerPools: Map<WorkerType, Worker[]> = new Map();
-    private poolSize: number = 2; // Máximo 2 workers por tipo de tarea
+    private poolSize: number = 2; // MÃ¡ximo 2 workers por tipo de tarea
     private workers: Map<string, Worker> = new Map();
     private workerToType: Map<string, WorkerType> = new Map();
     private taskQueue: Map<string, Task> = new Map();
-    private maxConcurrentWorkers: number = 8; // Límite global
+    private maxConcurrentWorkers: number = 8; // LÃ­mite global
 
     async spawnWorker(type: WorkerType, config?: WorkerConfig): Promise<string> {
         if (this.workers.size >= this.maxConcurrentWorkers) {
             await this.cleanupIdleWorkers();
-            // Si aún estamos llenos, forzar limpieza de los más antiguos sin tareas
+            // Si aÃºn estamos llenos, forzar limpieza de los mÃ¡s antiguos sin tareas
             if (this.workers.size >= this.maxConcurrentWorkers) {
                 this.forceTerminateOldestIdle();
             }
@@ -116,7 +117,7 @@ export class WorkerOrchestrator {
         this.workers.set(workerId, worker);
         this.workerToType.set(workerId, type);
 
-        // Agregar al pool específico
+        // Agregar al pool especÃ­fico
         if (!this.workerPools.has(type)) {
             this.workerPools.set(type, []);
         }
@@ -177,7 +178,7 @@ export class WorkerOrchestrator {
 
         const pool = this.workerPools.get(type)!;
 
-        // 1. Buscar worker en el pool que no esté procesando ninguna tarea
+        // 1. Buscar worker en el pool que no estÃ© procesando ninguna tarea
         for (const workerObj of pool) {
             // Encontrar el workerId asociado al objeto worker
             const workerId = Array.from(this.workers.entries())
@@ -193,7 +194,7 @@ export class WorkerOrchestrator {
             }
         }
 
-        // 2. Si llegamos aquí, todos están ocupados. ¿Podemos crear otro en el pool?
+        // 2. Si llegamos aquÃ­, todos estÃ¡n ocupados. Â¿Podemos crear otro en el pool?
         if (pool.length < this.poolSize) {
             return await this.spawnWorker(type);
         }
@@ -221,7 +222,7 @@ export class WorkerOrchestrator {
             // Safety timeout para la espera del pool
             setTimeout(() => {
                 clearInterval(checkInterval);
-                // Si llegamos aquí, forzar la creación de uno nuevo ignorando poolSize 
+                // Si llegamos aquÃ­, forzar la creaciÃ³n de uno nuevo ignorando poolSize 
                 // pero respetando maxConcurrentWorkers
                 this.spawnWorker(type).then(resolve);
             }, 5000);
@@ -242,7 +243,7 @@ export class WorkerOrchestrator {
     }
 
     private handleWorkerError(workerId: string, error: ErrorEvent) {
-        console.error(`Worker ${workerId} error:`, error);
+        logger.error('WorkerOrchestrator', 'error', `Worker ${workerId} error:`, error);
         this.terminateWorker(workerId);
     }
 
@@ -277,7 +278,7 @@ export class WorkerOrchestrator {
         for (const [workerId, worker] of this.workers) {
             if (!busyWorkerIds.has(workerId)) {
                 this.terminateWorker(workerId);
-                console.log(`🧹 Worker ${workerId} limpiado por inactividad`);
+                logger.info('WorkerOrchestrator', 'info', `ðŸ§¹ Worker ${workerId} limpiado por inactividad`);
             }
         }
     }

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { getDBEngine } from '@/database/modules/db-core';
 import type { ChartOfAccount } from '@/database/modules/db-types';
 import { getChartOfAccounts } from '@/database/modules/db-journal';
@@ -31,13 +32,13 @@ export class ClassificationRulesService {
                 is_active: row.is_active === 1
             })) as ClassificationRule[];
         } catch (e) {
-            console.error('Error fetching classification rules:', e);
+            logger.error('ClassificationRulesService', 'error', 'Error fetching classification rules:', e);
             return [];
         }
     }
 
     /**
-     * Evalúa una descripción contra las reglas
+     * EvalÃºa una descripciÃ³n contra las reglas
      */
     static async evaluateTransaction(description: string): Promise<ChartOfAccount | null> {
         const rules = await this.getRules();
@@ -102,7 +103,7 @@ export class ClassificationRulesService {
             ]);
             return true;
         } catch (e) {
-            console.error('Error saving rule:', e);
+            logger.error('ClassificationRulesService', 'error', 'Error saving rule:', e);
             return false;
         }
     }

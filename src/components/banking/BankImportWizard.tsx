@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Upload,
@@ -67,13 +68,13 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   const importService = new BankImportService();
 
   /**
-   * Intenta auto-matchear el número de cuenta extraído del PDF
+   * Intenta auto-matchear el nÃºmero de cuenta extraÃ­do del PDF
    * contra las cuentas existentes en bank_accounts.
-   * Busca por sufijo (los últimos 4 dígitos del número detectado).
+   * Busca por sufijo (los Ãºltimos 4 dÃ­gitos del nÃºmero detectado).
    */
   const autoMatchAccount = (rawAccountNumber: string) => {
     try {
-      // Extraer los últimos 4 dígitos del número detectado
+      // Extraer los Ãºltimos 4 dÃ­gitos del nÃºmero detectado
       const digits = rawAccountNumber.replace(/\D/g, '');
       const suffix = digits.slice(-4);
       if (!suffix) return;
@@ -98,7 +99,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
         setMatchedAccountLabel(null);
       }
     } catch (e) {
-      console.warn('[BankImportWizard] autoMatchAccount error:', e);
+      logger.warn('BankImportWizard', 'warn', '[BankImportWizard] autoMatchAccount error:', e);
     }
   };
 
@@ -147,7 +148,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
         cumulativeTransactions = [...cumulativeTransactions, ...result.transactions];
         lastBatchId = result.batchId;
 
-        // Auto-match cuenta si el PDF reportó un número de cuenta
+        // Auto-match cuenta si el PDF reportÃ³ un nÃºmero de cuenta
         if (result.detectedAccountNumber && !accountDetected) {
           autoMatchAccount(result.detectedAccountNumber);
           // Intentar adivinar banco por nombre de archivo si no hay metadatos claros
@@ -173,15 +174,15 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
   };
 
   const handleFinalizeImport = async () => {
-    console.log('handleFinalizeImport called', { resolvedAccountId, batchId, selectedAccountId });
+    logger.info('BankImportWizard', 'info', 'handleFinalizeImport called', { resolvedAccountId, batchId, selectedAccountId });
     if (!batchId) return;
 
     // CAMBIO 5: Validar resolvedAccountId y mostrar error claro.
     // resolvedAccountId ya se actualiza en autoMatchAccount(result.detectedAccountNumber)
     if (!resolvedAccountId || resolvedAccountId <= 0) {
       const msg = detectedAccountNumber
-        ? `No se encontró la cuenta terminada en ${detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema. Seleccioná una cuenta manualmente.`
-        : 'Seleccioná una cuenta bancaria antes de importar';
+        ? `No se encontrÃ³ la cuenta terminada en ${detectedAccountNumber.replace(/\D/g, '').slice(-4)} en el sistema. SeleccionÃ¡ una cuenta manualmente.`
+        : 'SeleccionÃ¡ una cuenta bancaria antes de importar';
       toast.error(msg);
       setError(msg);
       return;
@@ -194,7 +195,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
       const result = await importService.finalizeImport(batchId, 1, Number(resolvedAccountId));
 
       if (result.imported === 0 && result.skipped > 0) {
-        toast.error('No se importó nada: todas las transacciones ya existen.');
+        toast.error('No se importÃ³ nada: todas las transacciones ya existen.');
         return;
       }
 
@@ -206,7 +207,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
 
       onComplete();
     } catch (err) {
-      console.error('Finalize error:', err);
+      logger.error('BankImportWizard', 'error', 'Finalize error:', err);
       setError((err as Error).message);
       toast.error('Error al inyectar: ' + (err as Error).message);
     } finally {
@@ -225,7 +226,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
               <Cpu className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Protocolo de Importación</h2>
+              <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Protocolo de ImportaciÃ³n</h2>
               <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Neural Ledger Interface v2.4
               </p>
@@ -240,7 +241,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
           <div className="flex items-center gap-10">
             <StepIndicator active={step === 'upload'} completed={step !== 'upload'} step="01" label="CARGA" icon={Upload} />
             <div className={`w-32 h-px ${step !== 'upload' ? 'bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-800'}`}></div>
-            <StepIndicator active={step !== 'upload'} completed={false} step="02" label="VERIFICACIÓN" icon={Target} />
+            <StepIndicator active={step !== 'upload'} completed={false} step="02" label="VERIFICACIÃ“N" icon={Target} />
           </div>
         </div>
 
@@ -260,9 +261,9 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                   <div className={`w-24 h-24 bg-slate-950 rounded-2.5xl border border-slate-800 flex items-center justify-center mx-auto mb-8 shadow-2xl transition-all duration-500 ${dragActive ? 'scale-110 border-blue-500/50' : 'group-hover:scale-105'}`}>
                     <Upload className={`w-10 h-10 ${dragActive ? 'text-blue-500 animate-bounce' : 'text-slate-600'}`} />
                   </div>
-                  <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-4">Inyección de Archivo Fuente</h3>
+                  <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-4">InyecciÃ³n de Archivo Fuente</h3>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm mx-auto mb-10">
-                    ARRASTRA TU BASE DE DATOS AQUÍ O HAZ CLIC PARA SELECCIONAR. SOPORTA <span className="text-blue-400">CSV / OFX / QFX / PDF</span>. HASTA 10MB POR CICLO.
+                    ARRASTRA TU BASE DE DATOS AQUÃ O HAZ CLIC PARA SELECCIONAR. SOPORTA <span className="text-blue-400">CSV / OFX / QFX / PDF</span>. HASTA 10MB POR CICLO.
                   </p>
 
                   <input
@@ -315,7 +316,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
 
               <div className="flex justify-end gap-6 pt-10 border-t border-slate-800">
                 <button onClick={onClose} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all hover:bg-slate-800">
-                  Abortar Misión
+                  Abortar MisiÃ³n
                 </button>
                 <button
                   onClick={handleProcessFile}
@@ -342,7 +343,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                     <Building2 className="w-5 h-5 text-emerald-500" />
                   </div>
                   <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
-                    ✓ Cuenta autodetectada: <span className="text-emerald-300">{matchedAccountLabel}</span>
+                    âœ“ Cuenta autodetectada: <span className="text-emerald-300">{matchedAccountLabel}</span>
                   </p>
                 </div>
               )}
@@ -403,7 +404,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
                         <th className="px-8 py-6">Timestamp</th>
                         <th className="px-8 py-6">Descriptor</th>
                         <th className="px-8 py-6 text-right">Monto</th>
-                        <th className="px-8 py-6">Categoría IA</th>
+                        <th className="px-8 py-6">CategorÃ­a IA</th>
                         <th className="px-8 py-6 text-center">Status</th>
                       </tr>
                     </thead>
@@ -469,7 +470,7 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
         </main>
       </div>
 
-      {/* Modal de Registro de Cuenta Automático */}
+      {/* Modal de Registro de Cuenta AutomÃ¡tico */}
       {showRegisterForm && detectedAccountNumber && (
         <BankAccountForm
           initialData={{

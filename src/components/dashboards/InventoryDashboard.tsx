@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -118,7 +119,7 @@ export const InventoryDashboard: React.FC = () => {
         .map(([name, data]) => ({ name, value: data.value, count: data.count }))
         .sort((a, b) => b.value - a.value).slice(0, 8));
     } catch (error) {
-      console.error('Error loading inventory data:', error);
+      logger.error('InventoryDashboard', 'error', 'Error loading inventory data:', error);
     } finally {
       setLoading(false);
     }

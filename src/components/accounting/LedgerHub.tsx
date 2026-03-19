@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     Book,
@@ -31,7 +32,7 @@ export const LedgerHub: React.FC<LedgerHubProps> = ({ chartOfAccounts = [], onNa
     const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
-        console.log('LedgerHub Protocol Initialized', { activeTab, session: new Date().toISOString() });
+        logger.info('LedgerHub', 'info', 'LedgerHub Protocol Initialized', { activeTab, session: new Date().toISOString() });
     }, [activeTab]);
 
     if (hasError) {

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useCallback } from 'react';
 import { Upload, File, X, Sparkles, Loader2 } from 'lucide-react';
 import { saveARDDocument, updateARDDocumentStatus } from '@/database/modules/db-company';
@@ -22,13 +23,13 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
 
                 try {
                     const { data: { text } } = await Tesseract.recognize(file, 'spa', {
-                        logger: (info) => console.log(info),
+                        logger: (info) => logger.info('ARDScanner', 'info', info),
                     });
 
                     const parsedResult = parseOCRText(text);
                     updateARDDocumentStatus(id, 'processed', parsedResult);
                 } catch (error) {
-                    console.error('Error al procesar OCR:', error);
+                    logger.error('ARDScanner', 'error', 'Error al procesar OCR:', error);
                     updateARDDocumentStatus(id, 'error', { error: error instanceof Error ? error.message : 'Error desconocido' });
                 }
             }
@@ -39,7 +40,7 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
     };
 
     const parseOCRText = (text: string): { amount: number; tax: number; vendor: string; date: string } => {
-        // Implementar lógica para extraer datos como monto, impuesto, proveedor y fecha del texto reconocido
+        // Implementar lÃ³gica para extraer datos como monto, impuesto, proveedor y fecha del texto reconocido
         const amount = extractAmount(text);
         const tax = extractTax(text);
         const vendor = extractVendor(text);
@@ -49,25 +50,25 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
     };
 
     const extractAmount = (text: string): number => {
-        // Lógica para extraer el monto del texto
+        // LÃ³gica para extraer el monto del texto
         const match = text.match(/\b\d+(\.\d{1,2})?\b/);
         return match ? parseFloat(match[0]) : 0;
     };
 
     const extractTax = (text: string): number => {
-        // Lógica para extraer el impuesto del texto (en inglés y español)
+        // LÃ³gica para extraer el impuesto del texto (en inglÃ©s y espaÃ±ol)
         const match = text.match(/(?:impuesto|tax|sales tax):\s*(\d+(\.\d{1,2})?)/i);
         return match ? parseFloat(match[1]) : 0;
     };
 
     const extractVendor = (text: string): string => {
-        // Lógica para extraer el nombre del proveedor del texto (en inglés y español)
+        // LÃ³gica para extraer el nombre del proveedor del texto (en inglÃ©s y espaÃ±ol)
         const match = text.match(/(?:proveedor|vendor|from|bill to):\s*(.+)/i);
         return match ? match[1].trim() : 'Desconocido';
     };
 
     const extractDate = (text: string): string => {
-        // Lógica para extraer la fecha del texto
+        // LÃ³gica para extraer la fecha del texto
         const match = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
         return match ? match[0] : new Date().toISOString().split('T')[0];
     };

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,7 +128,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
 
       onSave();
     } catch (err) {
-      console.error('Error saving budget:', err);
+      logger.error('BudgetForm', 'error', 'Error saving budget:', err);
       setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setLoading(false);
@@ -170,7 +171,7 @@ export const BudgetForm: React.FC<BudgetFormProps> = ({ budget, onSave, onCancel
               <div className="flex items-center gap-4">
                 <AlertTriangle className="w-6 h-6 text-rose-500" />
                 <p className="text-[11px] font-black text-rose-500 uppercase tracking-widest leading-none">
-                  {t('common.error') || 'ERROR DE VALIDACIÓN'}
+                  {t('common.error') || 'ERROR DE VALIDACIÃ“N'}
                 </p>
               </div>
               <ul className="list-disc list-inside space-y-1">

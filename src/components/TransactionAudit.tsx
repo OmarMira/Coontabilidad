@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import { logger } from '../core/logging/SystemLogger';
+import React, { useState, useEffect } from 'react';
 import { useLocale } from '../i18n/useLocale';
 import { Shield, Search, FileText, CheckCircle, Hash, User, Clock } from 'lucide-react';
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
@@ -36,7 +37,7 @@ export const TransactionAudit: React.FC = () => {
             const data = await auditService.getAuditLog(50);
             setLogs(data);
         } catch (error) {
-            console.error("Error loading audit log", error);
+            logger.error('TransactionAudit', 'error', "Error loading audit log", error);
         } finally {
             setLoading(false);
         }

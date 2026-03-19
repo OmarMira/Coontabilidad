@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 /**
  * Accounting Worker
  * 
@@ -50,7 +51,7 @@ self.onmessage = async (event: MessageEvent) => {
                 break;
 
             default:
-                console.warn(`Unknown message type: ${type}`);
+                logger.warn('accounting.worker', 'warn', `Unknown message type: ${type}`);
         }
     } catch (error: any) {
         self.postMessage({
@@ -405,7 +406,7 @@ function isFirstMonthPartial(purchaseDate: Date, periodDate: Date): boolean {
 // Handle errors gracefully
 self.onerror = (event: string | Event) => {
     const error = typeof event === 'string' ? event : (event as ErrorEvent).message || 'Unknown worker error';
-    console.error('Accounting worker error:', error);
+    logger.error('accounting.worker', 'error', 'Accounting worker error:', error);
     self.postMessage({
         type: 'ERROR',
         error

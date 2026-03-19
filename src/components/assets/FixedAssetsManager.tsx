@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -85,7 +86,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setSummary(summaryData);
 
     } catch (err) {
-      console.error('Error loading fixed assets:', err);
+      logger.error('FixedAssetsManager', 'error', 'Error loading fixed assets:', err);
       setError(err instanceof Error ? err.message : t('fixedAssets.loading'));
     } finally {
       setLoading(false);
@@ -98,7 +99,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setError(null);
 
       if (!user?.id) {
-        console.error('[FixedAssetsManager] userId no disponible. Operación abortada.');
+        logger.error('FixedAssetsManager', 'error', '[FixedAssetsManager] userId no disponible. OperaciÃ³n abortada.');
         return;
       }
 
@@ -107,7 +108,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
 
       const result = await controller.runDepreciationBatch(now, user.id);
 
-      setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: ${(result.total_depreciation_amount / 100).toFixed(2)}`);
+      setSuccess(`DepreciaciÃ³n procesada: ${result.total_assets_processed} activos, Total: ${(result.total_depreciation_amount / 100).toFixed(2)}`);
 
       // Reload data
       await loadData();
@@ -115,7 +116,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setTimeout(() => setSuccess(null), 5000);
 
     } catch (err) {
-      console.error('Error running depreciation:', err);
+      logger.error('FixedAssetsManager', 'error', 'Error running depreciation:', err);
       setError(err instanceof Error ? err.message : t('fixedAssets.messages.depreciationError'));
     } finally {
       setLoading(false);

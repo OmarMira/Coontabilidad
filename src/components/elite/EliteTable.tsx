@@ -1,11 +1,12 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { ReactNode } from 'react';
 
 export interface EliteTableColumn {
-    /** Clave única de la columna */
+    /** Clave Ãºnica de la columna */
     key: string;
     /** Texto del header */
     header: string;
-    /** Alineación del contenido */
+    /** AlineaciÃ³n del contenido */
     align?: 'left' | 'center' | 'right';
     /** Ancho fijo (opcional) */
     width?: string;
@@ -14,15 +15,15 @@ export interface EliteTableColumn {
 }
 
 interface EliteTableProps {
-    /** Definición de columnas */
+    /** DefiniciÃ³n de columnas */
     columns: EliteTableColumn[];
     /** Datos a mostrar */
     data: any[];
-    /** Función que se ejecuta al hacer click en una fila */
+    /** FunciÃ³n que se ejecuta al hacer click en una fila */
     onRowClick?: (row: any) => void;
     /** Mensaje cuando no hay datos */
     emptyMessage?: string;
-    /** Icono para el estado vacío */
+    /** Icono para el estado vacÃ­o */
     emptyIcon?: ReactNode;
     /** Estado de carga */
     loading?: boolean;
@@ -47,7 +48,7 @@ interface EliteTableProps {
  *     { key: 'amount', header: 'Monto', align: 'right', render: (val) => `$${val}` }
  *   ]}
  *   data={items}
- *   onRowClick={(row) => console.log(row)}
+ *   onRowClick={(row) => logger.info('EliteTable', 'info', row)}
  *   emptyMessage="No hay registros"
  * />
  * ```

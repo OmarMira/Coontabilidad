@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { BackupService as EnhancedBackupService, ProgressData, RestoreResult } from '../../services/backup/BackupService';
 import '../../styles/backup-progress.css';
@@ -26,8 +27,8 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
             setResult(res);
             setIsRestoring(false);
 
-            // Si fue exitoso, el servicio ya programó la redirección, 
-            // pero podríamos cerrar el modal aquí después de un tiempo
+            // Si fue exitoso, el servicio ya programÃ³ la redirecciÃ³n, 
+            // pero podrÃ­amos cerrar el modal aquÃ­ despuÃ©s de un tiempo
             if (res.success) {
                 setTimeout(() => {
                     onClose();
@@ -51,7 +52,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
         try {
             await EnhancedBackupService.restoreBackupStatic(selectedBackupId);
         } catch (err: any) {
-            console.error('Error in restoration trigger:', err);
+            logger.error('BackupRestoreModal', 'error', 'Error in restoration trigger:', err);
             setIsRestoring(false);
         }
     };
@@ -63,7 +64,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
             <div className="bg-[#1f2937] border border-[#374151] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
                 <div className="p-6 border-b border-[#374151] flex justify-between items-center bg-[#111827]">
                     <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                        <span className="text-blue-500">🛡️</span> {t('backup.modal.title')}
+                        <span className="text-blue-500">ðŸ›¡ï¸</span> {t('backup.modal.title')}
                     </h2>
                     {!isRestoring && !result && (
                         <button onClick={onClose} className="text-slate-500 hover:text-white text-2xl">&times;</button>
@@ -73,7 +74,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                 <div className="p-8">
                     {!isRestoring && !result ? (
                         <div className="text-center">
-                            <div className="text-5xl mb-6">📦</div>
+                            <div className="text-5xl mb-6">ðŸ“¦</div>
                             <h3 className="text-lg font-semibold text-white mb-2">{t('backup.modal.confirmTitle')}</h3>
                             <p className="text-slate-500 mb-8">
                                 {t('backup.modal.confirmMessage', { id: selectedBackupId })}
@@ -95,7 +96,7 @@ export const BackupRestoreModal: React.FC<BackupRestoreModalProps> = ({ isOpen, 
                         </div>
                     ) : result ? (
                         <div className={`completion-card ${result.success ? 'bg-green-900/10' : 'bg-red-900/10'}`}>
-                            <div className="success-icon-animate">{result.success ? '✅' : '❌'}</div>
+                            <div className="success-icon-animate">{result.success ? 'âœ…' : 'âŒ'}</div>
                             <h3 className="text-white">{result.success ? t('backup.modal.successTitle') : t('backup.modal.errorTitle')}</h3>
                             <p className="text-slate-500 mb-4">{result.message}</p>
                             {result.success && (

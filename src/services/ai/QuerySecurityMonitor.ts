@@ -1,7 +1,8 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 
 /**
  * QuerySecurityMonitor.ts
- * Monitor de seguridad para validación de consultas SQL y prevención de abusos.
+ * Monitor de seguridad para validaciÃ³n de consultas SQL y prevenciÃ³n de abusos.
  */
 
 export interface SecurityValidationResult {
@@ -24,7 +25,7 @@ export class QuerySecurityMonitor {
         /union\s+select/i,
         /or\s+['"]?1['"]?\s*=\s*['"]?1['"]?/i,
         /--/, // Comentarios SQL
-        /\/\*/, // Comentarios multilínea
+        /\/\*/, // Comentarios multilÃ­nea
         /xp_cmdshell/i,
         /exec\s+/i
     ];
@@ -43,28 +44,28 @@ export class QuerySecurityMonitor {
         this.queryCounts.set(userId, userStats);
 
         if (userStats.count > this.MAX_QUERIES_PER_MINUTE) {
-            return { isValid: false, reason: 'Límite de consultas (30/min) excedido.', incidentType: 'rate_limit' };
+            return { isValid: false, reason: 'LÃ­mite de consultas (30/min) excedido.', incidentType: 'rate_limit' };
         }
 
-        // 2. Verificar Patrones Bloqueados (Prevención de inyección y mutación)
+        // 2. Verificar Patrones Bloqueados (PrevenciÃ³n de inyecciÃ³n y mutaciÃ³n)
         for (const pattern of this.BLOCKED_PATTERNS) {
             if (pattern.test(sql)) {
-                console.error(`🚨 ALERTA DE SEGURIDAD: Patrón bloqueado detectado en query: "${sql}"`);
-                return { isValid: false, reason: 'Operación no permitida detectada.', incidentType: 'blocked_pattern' };
+                logger.error('QuerySecurityMonitor', 'error', `ðŸš¨ ALERTA DE SEGURIDAD: PatrÃ³n bloqueado detectado en query: "${sql}"`);
+                return { isValid: false, reason: 'OperaciÃ³n no permitida detectada.', incidentType: 'blocked_pattern' };
             }
         }
 
-        // 3. Sanitización básica adicional
+        // 3. SanitizaciÃ³n bÃ¡sica adicional
         if (sql.includes(';') && !sql.endsWith(';')) {
-            // Prevenir queries múltiples
-            return { isValid: false, reason: 'Consultas múltiples no permitidas.', incidentType: 'blocked_pattern' };
+            // Prevenir queries mÃºltiples
+            return { isValid: false, reason: 'Consultas mÃºltiples no permitidas.', incidentType: 'blocked_pattern' };
         }
 
         return { isValid: true, reason: 'Consulta validada correctamente.' };
     }
 
     static logSecurityIncident(type: string, query: string, userId: number) {
-        // En una implementación real, esto iría a una tabla de auditoría persistente
-        console.warn(`[SECURITY_INCIDENT] User: ${userId} | Type: ${type} | Query: ${query}`);
+        // En una implementaciÃ³n real, esto irÃ­a a una tabla de auditorÃ­a persistente
+        logger.warn('QuerySecurityMonitor', 'warn', `[SECURITY_INCIDENT] User: ${userId} | Type: ${type} | Query: ${query}`);
     }
 }

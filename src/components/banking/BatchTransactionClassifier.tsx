@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     X,
@@ -53,9 +54,9 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
             const allAccounts = getChartOfAccounts();
             setAccounts(allAccounts);
 
-            console.log('BatchTransactionClassifier: loading batchId:', batchId);
+            logger.info('BatchTransactionClassifier', 'info', 'BatchTransactionClassifier: loading batchId:', batchId);
             const batchTxns = await importService.getBatchTransactions(batchId);
-            console.log('BatchTransactionClassifier: transactions from service:', batchTxns);
+            logger.info('BatchTransactionClassifier', 'info', 'BatchTransactionClassifier: transactions from service:', batchTxns);
 
             const processed: ClassifiedTransaction[] = [];
             for (const tx of batchTxns) {
@@ -73,7 +74,7 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
                     isAutoMatched: !!ruleMatch
                 });
             }
-            console.log('BatchTransactionClassifier: processed transactions:', processed);
+            logger.info('BatchTransactionClassifier', 'info', 'BatchTransactionClassifier: processed transactions:', processed);
             setTransactions(processed);
         } catch (error) {
             toast.error('Error al cargar transacciones del batch');
@@ -89,7 +90,7 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
     const handleConfirm = async () => {
         const unclassified = transactions.filter(t => !t.accountCode);
         if (unclassified.length > 0) {
-            toast.error(`Aún faltan ${unclassified.length} transacciones por clasificar`);
+            toast.error(`AÃºn faltan ${unclassified.length} transacciones por clasificar`);
             return;
         }
 
@@ -99,7 +100,7 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
             toast.success('Batch certificado e inyectado en el Libro Mayor');
             onClose();
         } catch (error) {
-            toast.error('Fallo en la inyección contable: ' + (error as Error).message);
+            toast.error('Fallo en la inyecciÃ³n contable: ' + (error as Error).message);
         } finally {
             setSaving(false);
         }
@@ -124,7 +125,7 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
                             <ShieldCheck className="w-8 h-8" />
                         </div>
                         <div>
-                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Clasificación Certificada</h2>
+                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">ClasificaciÃ³n Certificada</h2>
                             <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
                                 <Target className="w-3.5 h-3.5 text-indigo-500" /> Batch Processing :: ID #{batchId}
                             </p>
@@ -141,7 +142,7 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
                             <thead className="bg-slate-900/80 sticky top-0 z-20">
                                 <tr className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
                                     <th className="px-8 py-6">Fecha</th>
-                                    <th className="px-8 py-6">Descripción</th>
+                                    <th className="px-8 py-6">DescripciÃ³n</th>
                                     <th className="px-8 py-6 text-right">Monto</th>
                                     <th className="px-8 py-6">Cuenta Contable</th>
                                     <th className="px-8 py-6 text-center">Protocolo</th>
@@ -217,7 +218,7 @@ export const BatchTransactionClassifier: React.FC<BatchTransactionClassifierProp
                 <footer className="p-10 border-t border-slate-800 bg-slate-950/50 relative z-10 flex items-center justify-between">
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Progreso de Clasificación</span>
+                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Progreso de ClasificaciÃ³n</span>
                             <span className="text-xl font-black text-white font-mono tracking-tighter">
                                 {transactions.filter(t => t.accountCode).length} / {transactions.length}
                             </span>

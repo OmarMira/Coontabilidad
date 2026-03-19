@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -121,7 +122,7 @@ export const InventoryReports: React.FC = () => {
                     setData([
                         { sku: 'PHARM-001', name: 'Amoxicilina 500mg', batch_number: 'LOT-2023-A9', expiry_date: '2024-02-15', quantity: 450, days_left: 45 },
                         { sku: 'PHARM-012', name: 'Paracetamol 1g', batch_number: 'LOT-2023-B2', expiry_date: '2024-03-10', quantity: 1200, days_left: 70 },
-                        { sku: 'CHEM-99', name: 'Alcohol Isopropílico', batch_number: 'LOT-XP-14', expiry_date: '2024-01-20', quantity: 55, days_left: 21 },
+                        { sku: 'CHEM-99', name: 'Alcohol IsopropÃ­lico', batch_number: 'LOT-XP-14', expiry_date: '2024-01-20', quantity: 55, days_left: 21 },
                     ]);
                 }
             } else if (selectedReport === 'TURNOVER') {
@@ -165,7 +166,7 @@ export const InventoryReports: React.FC = () => {
                 }
             }
         } catch (e) {
-            console.error(e);
+            logger.error('InventoryReports', 'error', e);
         } finally {
             setLoading(false);
         }

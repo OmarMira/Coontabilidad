@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   Plus, Edit2, Eye, Search,
   Building, TrendingUp, DollarSign, CreditCard,
@@ -12,7 +12,7 @@ import { useLocale } from '../i18n/useLocale';
 import { suggestAccountNumber, validateAccountNumber } from '../utils/accountingUtils';
 import { DoubleEntryValidator } from '../services/accounting/DoubleEntryValidator';
 
-// Extender la interfaz para incluir propiedades de jerarquía
+// Extender la interfaz para incluir propiedades de jerarquÃ­a
 interface ChartOfAccountWithHierarchy extends ChartOfAccount {
   children?: ChartOfAccountWithHierarchy[];
   level?: number;
@@ -51,7 +51,7 @@ export function ChartOfAccounts() {
     detail_type: ''
   });
   const [numberWarning, setNumberWarning] = useState<string | null>(null);
-  // Warning de clasificación preventiva (Fase 4)
+  // Warning de clasificaciÃ³n preventiva (Fase 4)
   const [classificationAlert, setClassificationAlert] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<'create' | 'update' | null>(null);
 
@@ -75,7 +75,7 @@ export function ChartOfAccounts() {
       setLoading(true);
       logger.info('ChartOfAccounts', 'load_start', 'Iniciando carga del plan de cuentas');
 
-      // Usar función real de la base de datos
+      // Usar funciÃ³n real de la base de datos
       const flatAccounts = getChartOfAccounts();
       const hierarchicalAccounts = buildAccountHierarchy(flatAccounts);
       setAccounts(hierarchicalAccounts);
@@ -90,7 +90,7 @@ export function ChartOfAccounts() {
   };
 
   const handleCreateAccount = async (force = false) => {
-    // Validación preventiva de clasificación
+    // ValidaciÃ³n preventiva de clasificaciÃ³n
     if (!force && formData.detail_type) {
       const warn = DoubleEntryValidator.validateAccountDefinition(
         formData.account_type || 'asset',
@@ -106,8 +106,8 @@ export function ChartOfAccounts() {
     setPendingAction(null);
 
     try {
-      logger.info('ChartOfAccounts', 'create_start', 'Iniciando creación de nueva cuenta', { accountCode: formData.account_code });
-      console.info(`[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
+      logger.info('ChartOfAccounts', 'create_start', 'Iniciando creaciÃ³n de nueva cuenta', { accountCode: formData.account_code });
+      logger.info('ChartOfAccounts', 'info', `[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
 
       const result = await createChartOfAccount(formData);
 
@@ -136,7 +136,7 @@ export function ChartOfAccounts() {
   };
 
   const handleEditAccount = (account: ChartOfAccount) => {
-    logger.info('ChartOfAccounts', 'edit_start', 'Iniciando edición de cuenta', { accountCode: account.account_code });
+    logger.info('ChartOfAccounts', 'edit_start', 'Iniciando ediciÃ³n de cuenta', { accountCode: account.account_code });
     setEditingAccount(account);
     setFormData({
       account_code: account.account_code,
@@ -154,7 +154,7 @@ export function ChartOfAccounts() {
   const handleUpdateAccount = async (force = false) => {
     if (!editingAccount) return;
 
-    // Validación preventiva de clasificación
+    // ValidaciÃ³n preventiva de clasificaciÃ³n
     if (!force && formData.detail_type) {
       const warn = DoubleEntryValidator.validateAccountDefinition(
         formData.account_type || 'asset',
@@ -170,8 +170,8 @@ export function ChartOfAccounts() {
     setPendingAction(null);
 
     try {
-      logger.info('ChartOfAccounts', 'update_start', 'Iniciando actualización de cuenta', { accountCode: editingAccount.account_code });
-      console.info(`[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
+      logger.info('ChartOfAccounts', 'update_start', 'Iniciando actualizaciÃ³n de cuenta', { accountCode: editingAccount.account_code });
+      logger.info('ChartOfAccounts', 'info', `[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
 
       const result = await updateChartOfAccount(editingAccount.account_code, formData);
 
@@ -206,7 +206,7 @@ export function ChartOfAccounts() {
     }
 
     try {
-      logger.info('ChartOfAccounts', 'delete_start', 'Iniciando eliminación de cuenta', { accountCode: account.account_code });
+      logger.info('ChartOfAccounts', 'delete_start', 'Iniciando eliminaciÃ³n de cuenta', { accountCode: account.account_code });
 
       const result = await deleteChartOfAccount(account.account_code);
 
@@ -256,7 +256,7 @@ export function ChartOfAccounts() {
       accountMap.set(account.account_code, { ...account, children: [], level: 0 });
     });
 
-    // Construir jerarquía
+    // Construir jerarquÃ­a
     flatAccounts.forEach(account => {
       const accountNode = accountMap.get(account.account_code)!;
 
@@ -343,7 +343,7 @@ export function ChartOfAccounts() {
             {getAccountTypeIcon(account.account_type)}
           </div>
 
-          {/* Código de cuenta */}
+          {/* CÃ³digo de cuenta */}
           <div className="w-20 font-mono text-slate-400 flex flex-col justify-center leading-tight">
             <span className="text-sm font-bold text-blue-400">{account.number || 'N/A'}</span>
             <span className="text-[10px] opacity-70">{account.account_code}</span>
@@ -583,7 +583,7 @@ export function ChartOfAccounts() {
                   </div>
                   <div className="flex-1">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
-                      NÚMERO GAAP
+                      NÃšMERO GAAP
                     </label>
                     <input
                       type="text"
@@ -665,7 +665,7 @@ export function ChartOfAccounts() {
                 />
               </div>
 
-              {/* Detail Type — filtrado dinámicamente por account_type */}
+              {/* Detail Type â€” filtrado dinÃ¡micamente por account_type */}
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
                   DETAIL TYPE
@@ -677,7 +677,7 @@ export function ChartOfAccounts() {
                   onChange={(e) => setFormData({ ...formData, detail_type: e.target.value })}
                   className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-sm"
                 >
-                  <option value="" className="bg-slate-900 text-slate-400">— Sin clasificar —</option>
+                  <option value="" className="bg-slate-900 text-slate-400">â€” Sin clasificar â€”</option>
                   {(DETAIL_TYPE_OPTIONS[formData.account_type || 'asset'] || []).map((opt) => (
                     <option key={opt} value={opt} className="bg-slate-900">
                       {opt}
@@ -686,7 +686,7 @@ export function ChartOfAccounts() {
                 </select>
                 {formData.detail_type && (
                   <p className="mt-1.5 text-[10px] text-blue-400 px-1">
-                    ✓ Detail type: <span className="font-bold">{formData.detail_type}</span>
+                    âœ“ Detail type: <span className="font-bold">{formData.detail_type}</span>
                   </p>
                 )}
               </div>
@@ -704,7 +704,7 @@ export function ChartOfAccounts() {
                 </label>
               </div>
 
-              {/* ── ALERTA DE CLASIFICACIÓN PREVENTIVA (Fase 4) ── */}
+              {/* â”€â”€ ALERTA DE CLASIFICACIÃ“N PREVENTIVA (Fase 4) â”€â”€ */}
               {classificationAlert && (
                 <div className="bg-orange-900/20 border border-orange-500/40 rounded-2xl p-4 animate-in slide-in-from-top duration-300">
                   <div className="flex items-start gap-3">
@@ -713,7 +713,7 @@ export function ChartOfAccounts() {
                     </div>
                     <div className="flex-1">
                       <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1.5">
-                        Alerta de Clasificación
+                        Alerta de ClasificaciÃ³n
                       </p>
                       <p className="text-xs text-orange-200 font-bold leading-relaxed italic">
                         {classificationAlert}

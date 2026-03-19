@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line, BarChart, Bar,
@@ -49,7 +50,7 @@ export const FinancialDashboard: React.FC = () => {
 
       setMonthlyData(filteredData);
     } catch (error) {
-      console.error('Error loading financial data:', error);
+      logger.error('FinancialDashboard', 'error', 'Error loading financial data:', error);
     } finally {
       setLoading(false);
     }

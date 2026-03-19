@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * AsyncPDFService (Iron Clad Upgrade - Phase 2, Day 7 - Updated)
  * 
@@ -121,7 +122,7 @@ export class AsyncPDFService {
      * in WorkerPoolManager if needed.
      */
     cancel(): void {
-        console.warn('Cancel not implemented with Worker Pool. Task will complete in background.');
+        logger.warn('AsyncPDFService', 'warn', 'Cancel not implemented with Worker Pool. Task will complete in background.');
     }
 }
 

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Download, TrendingUp, TrendingDown, X, Calendar } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -37,7 +38,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
 
             setDisposals(yearDisposals);
         } catch (err) {
-            console.error('Error loading disposal summary:', err);
+            logger.error('DisposalSummaryReport', 'error', 'Error loading disposal summary:', err);
         } finally {
             setLoading(false);
         }

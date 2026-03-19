@@ -1,6 +1,7 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 /**
  * Check 1: Integridad Estructural del Schema
- * Verifica que todas las tablas críticas existan
+ * Verifica que todas las tablas crÃ­ticas existan
  */
 
 import { IntegrityCheck, CheckResult } from '../../../types/integrity.types';
@@ -9,7 +10,7 @@ import { getDB } from '@/database/modules/db-core';
 export class SchemaIntegrityCheck implements IntegrityCheck {
     id = 'schema-integrity';
     name = 'Integridad Estructural';
-    description = 'Verifica que todas las tablas críticas del sistema existan';
+    description = 'Verifica que todas las tablas crÃ­ticas del sistema existan';
     severity = 'critical' as const;
     status = 'pending' as const;
 
@@ -43,18 +44,18 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                     const { getDBEngine } = await import('../../../database/simple-db');
 
                     try {
-                        // Usar la instancia única del motor que gestiona la persistencia real
+                        // Usar la instancia Ãºnica del motor que gestiona la persistencia real
                         const engine = getDBEngine();
                         const repair = new SchemaRepairService(engine);
                         await repair.repairSchema();
 
-                        // Forzar sincronización si es necesaria
+                        // Forzar sincronizaciÃ³n si es necesaria
                         if (typeof engine.sync === 'function') {
                             await engine.sync();
                         }
                     } catch (e) {
-                        // Fallback si el motor no está inicializado (raro en arranque, pero posible)
-                        console.warn('DB Engine not ready, trying init...', e);
+                        // Fallback si el motor no estÃ¡ inicializado (raro en arranque, pero posible)
+                        logger.warn('SchemaIntegrityCheck', 'warn', 'DB Engine not ready, trying init...', e);
                         const { initDB } = await import('../../../database/simple-db');
                         const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
 
@@ -86,14 +87,14 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
             if (missingTables.length === 0) {
                 return {
                     passed: true,
-                    message: `✅ Todas las ${this.CRITICAL_TABLES.length} tablas críticas existen`,
+                    message: `âœ… Todas las ${this.CRITICAL_TABLES.length} tablas crÃ­ticas existen`,
                     canAutoRepair: false
                 };
             }
 
             return {
                 passed: false,
-                message: `❌ Faltan ${missingTables.length} tablas críticas`,
+                message: `âŒ Faltan ${missingTables.length} tablas crÃ­ticas`,
                 details: {
                     missingTables,
                     existingTables: existingTables.length,
@@ -116,20 +117,20 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                         const repair = new SchemaRepairService(engine);
                         await repair.repairSchema();
 
-                        // CRÍTICO: Forzar persistencia
+                        // CRÃTICO: Forzar persistencia
                         if (typeof engine.sync === 'function') {
                             await engine.sync();
                         }
 
-                        // Forzar exportación explicita a IndexedDB
+                        // Forzar exportaciÃ³n explicita a IndexedDB
                         try {
                             const { forceSaveDB } = await import('../../../database/simple-db');
                             if (forceSaveDB) await forceSaveDB();
                         } catch (e) {
-                            console.warn('Force save failed', e);
+                            logger.warn('SchemaIntegrityCheck', 'warn', 'Force save failed', e);
                         }
                     } catch (e) {
-                        console.error("Critical Repair Fail", e);
+                        logger.error('SchemaIntegrityCheck', 'error', "Critical Repair Fail", e);
                     }
 
                     // Esperar un momento para asegurar que IndexedDB termine
@@ -139,7 +140,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
         } catch (error) {
             return {
                 passed: false,
-                message: `❌ Error verificando schema: ${(error as Error).message}`,
+                message: `âŒ Error verificando schema: ${(error as Error).message}`,
                 canAutoRepair: false
             };
         }

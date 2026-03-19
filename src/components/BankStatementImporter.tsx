@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import {
     Upload, FileText, Check, AlertCircle, Sparkles, ArrowRight, Table,
@@ -142,7 +143,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
 
             setStep('review');
         } catch (e) {
-            console.error('Error parsing PDFs', e);
+            logger.error('BankStatementImporter', 'error', 'Error parsing PDFs', e);
             setStep('upload');
         }
     };
@@ -157,7 +158,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
             // Resolve bank account ID from account number
             const matched = bankAccounts.find(a => a.account_number === accountNumber);
             if (!matched) {
-                setImportResult({ success: false, message: 'Cuenta bancaria no encontrada. Complete la documentación primero.' });
+                setImportResult({ success: false, message: 'Cuenta bancaria no encontrada. Complete la documentaciÃ³n primero.' });
                 return;
             }
             // Map parsed transactions to DB format
@@ -165,13 +166,13 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                 bank_account_id: matched.id,
                 transaction_date: tx.date,
                 description: tx.description,
-                amount: tx.amount, // Ya está en dólares desde el preview
+                amount: tx.amount, // Ya estÃ¡ en dÃ³lares desde el preview
                 reference_number: tx.id,
             }));
             const result = insertBankTransactions(toInsert);
             if (result.success) {
                 await forceSaveDB();
-                setImportResult({ success: true, message: `✓ ${result.importedCount} transacciones consolidadas exitosamente.` });
+                setImportResult({ success: true, message: `âœ“ ${result.importedCount} transacciones consolidadas exitosamente.` });
                 onImportComplete?.(result.importedCount);
             } else {
                 setImportResult({ success: false, message: result.message });
@@ -227,7 +228,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                                     className="flex items-center gap-3 px-6 py-3 bg-[#f43f5e] hover:bg-[#e11d48] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-rose-900/40 animate-pulse hover:animate-none"
                                 >
                                     <Building2 className="w-4 h-4 shrink-0" />
-                                    Completar<br />Documentación
+                                    Completar<br />DocumentaciÃ³n
                                 </button>
                             )}
                         </div>
@@ -264,8 +265,8 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                         <div className="w-32 h-32 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin"></div>
                         <Cpu className="w-10 h-10 text-emerald-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                     </div>
-                    <h3 className="text-xl font-bold text-white tracking-tight mb-4">Ejecutando Heurística Neural...</h3>
-                    <p className="text-slate-500 text-xs font-medium max-w-sm mx-auto">Mapeando descripciones a códigos contables US GAAP y detectando anomalías en tiempo real.</p>
+                    <h3 className="text-xl font-bold text-white tracking-tight mb-4">Ejecutando HeurÃ­stica Neural...</h3>
+                    <p className="text-slate-500 text-xs font-medium max-w-sm mx-auto">Mapeando descripciones a cÃ³digos contables US GAAP y detectando anomalÃ­as en tiempo real.</p>
 
                     <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
                         <div
@@ -304,10 +305,10 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                             <thead className="bg-slate-950/50">
                                 <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
                                     <th className="px-8 py-5">Forensic Status</th>
-                                    <th className="px-8 py-5">Temporalidad / Descripción</th>
-                                    <th className="px-8 py-5">Valorización</th>
-                                    <th className="px-8 py-5">Categoría IA</th>
-                                    <th className="px-8 py-5">Vínculo Contable</th>
+                                    <th className="px-8 py-5">Temporalidad / DescripciÃ³n</th>
+                                    <th className="px-8 py-5">ValorizaciÃ³n</th>
+                                    <th className="px-8 py-5">CategorÃ­a IA</th>
+                                    <th className="px-8 py-5">VÃ­nculo Contable</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/40">
@@ -362,8 +363,8 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                                         <AlertCircle className="w-6 h-6 text-rose-500" />
                                     </div>
                                     <div>
-                                        <p className="text-[11px] font-black text-white uppercase tracking-widest">Atención: Documentación Incompleta</p>
-                                        <p className="text-[10px] font-black text-rose-400/70 uppercase tracking-[0.2em] mt-1">La documentación de esta cuenta no está cargada en el sistema.</p>
+                                        <p className="text-[11px] font-black text-white uppercase tracking-widest">AtenciÃ³n: DocumentaciÃ³n Incompleta</p>
+                                        <p className="text-[10px] font-black text-rose-400/70 uppercase tracking-[0.2em] mt-1">La documentaciÃ³n de esta cuenta no estÃ¡ cargada en el sistema.</p>
                                     </div>
                                 </div>
                                 <button
@@ -371,7 +372,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                                     className="px-10 py-5 bg-[#f43f5e] hover:bg-[#e11d48] text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-3 shadow-2xl shadow-rose-900/40 hover:-translate-y-1 active:scale-95"
                                 >
                                     <Building2 className="w-5 h-5" />
-                                    COMPLETAR DOCUMENTACIÓN
+                                    COMPLETAR DOCUMENTACIÃ“N
                                 </button>
                             </div>
                         )}
@@ -386,7 +387,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
                         )}
                         <div className="flex justify-end gap-6 flex-wrap">
                             <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
-                                Abortar Sincronización
+                                Abortar SincronizaciÃ³n
                             </button>
                             <button
                                 onClick={handleConsolidate}

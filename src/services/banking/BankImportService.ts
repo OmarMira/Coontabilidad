@@ -1,5 +1,6 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
- * BankImportService - Orquestador principal de importación bancaria
+ * BankImportService - Orquestador principal de importaciÃ³n bancaria
  */
 
 import { dbRun, dbExec } from '@/database/modules/db-core';
@@ -71,7 +72,7 @@ export class BankImportService {
         this.categorizer.train(examples);
       }
     } catch (error) {
-      console.error('Error loading training data:', error);
+      logger.error('BankImportService', 'error', 'Error loading training data:', error);
     }
   }
 
@@ -205,7 +206,7 @@ export class BankImportService {
 
   async finalizeImport(batchId: number, userId: number, bankAccountId: number): Promise<{ imported: number, skipped: number }> {
     if (!bankAccountId || bankAccountId <= 0) {
-      throw new Error('Seleccioná una cuenta bancaria antes de importar');
+      throw new Error('SeleccionÃ¡ una cuenta bancaria antes de importar');
     }
 
     try {
@@ -449,7 +450,7 @@ export class BankImportService {
       dbRun(`UPDATE import_batches SET status = 'completed', updated_at = datetime('now') WHERE id = ?`, [batchId]);
 
     } catch (error) {
-      console.error('Finalization failure:', error);
+      logger.error('BankImportService', 'error', 'Finalization failure:', error);
       throw error;
     }
   }
@@ -481,7 +482,7 @@ export class BankImportService {
   }
 
   /**
-   * Obtiene estadísticas del historial de importación (Total de todas las tablas y Duplicados)
+   * Obtiene estadÃ­sticas del historial de importaciÃ³n (Total de todas las tablas y Duplicados)
    */
   async getHistoryStats(): Promise<{ total: number; duplicates: number }> {
     // Sumamos transacciones de lotes pendientes + transacciones ya procesadas

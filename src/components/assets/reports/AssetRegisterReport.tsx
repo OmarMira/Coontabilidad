@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Download, Printer, Filter, X } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -50,7 +51,7 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
             setAssets(filtered);
             setCategories(categoriesData);
         } catch (err) {
-            console.error('Error loading asset register:', err);
+            logger.error('AssetRegisterReport', 'error', 'Error loading asset register:', err);
         } finally {
             setLoading(false);
         }

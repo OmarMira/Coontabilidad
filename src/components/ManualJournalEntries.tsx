@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   Plus,
@@ -92,7 +93,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
       }));
       setEntries(mappedEntries);
     } catch (error) {
-      console.error('Error loading entries:', error);
+      logger.error('ManualJournalEntries', 'error', 'Error loading entries:', error);
       toast.error(t('journal.syncError'));
     }
   };
@@ -384,7 +385,7 @@ export const ManualJournalEntries: React.FC<ManualJournalEntriesProps> = ({
                             <option value="">{t('journal.selectNode')}</option>
                             {chartOfAccounts.map((account) => (
                               <option key={account.id} value={account.id}>
-                                {account.account_code} • {account.account_name}
+                                {account.account_code} â€¢ {account.account_name}
                               </option>
                             ))}
                           </select>

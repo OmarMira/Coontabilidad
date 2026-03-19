@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { Plus, Save, X, User, MapPin, CreditCard, FileText } from 'lucide-react';
 import { FLORIDA_COUNTIES } from '@/database/modules/db-invoices';
@@ -20,7 +21,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
   const { t } = useLocale();
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
-    // Información personal
+    // InformaciÃ³n personal
     name: initialData?.name || '',
     business_name: initialData?.business_name || '',
     document_type: initialData?.document_type || 'SSN',
@@ -33,7 +34,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
     phone: initialData?.phone || '',
     phone_secondary: initialData?.phone_secondary || '',
 
-    // Dirección
+    // DirecciÃ³n
     address_line1: initialData?.address_line1 || '',
     address_line2: initialData?.address_line2 || '',
     city: initialData?.city || 'Miami',
@@ -135,9 +136,9 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
   };
 
   const handleAddressSelect = async (addressDetails: any) => {
-    console.log('Address selected:', addressDetails);
+    logger.info('CustomerFormAdvanced', 'info', 'Address selected:', addressDetails);
 
-    // Actualizar los campos de dirección con los datos seleccionados
+    // Actualizar los campos de direcciÃ³n con los datos seleccionados
     setFormData(prev => ({
       ...prev,
       address_line1: addressDetails.address,
@@ -423,16 +424,16 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
         </div>
       )}
 
-      {/* Información adicional */}
+      {/* InformaciÃ³n adicional */}
       <div className="bg-slate-900 rounded-lg p-4 mt-6">
         <h4 className="text-slate-400 font-medium mb-2">{t('customerForm.infoTitle')}</h4>
         <div className="text-sm text-slate-500 space-y-1">
-          <p>• <strong>{t('customerForm.infoItem1')}</strong></p>
-          <p>• <strong>{t('customerForm.infoItem2')}</strong></p>
-          <p>• <strong>{t('customerForm.infoItem3')}</strong></p>
-          <p>• <strong>{t('customerForm.infoItem4')}</strong></p>
-          <p>• <strong>{t('customerForm.infoItem5')}</strong></p>
-          <p>• {t('common.requiredField')}</p>
+          <p>â€¢ <strong>{t('customerForm.infoItem1')}</strong></p>
+          <p>â€¢ <strong>{t('customerForm.infoItem2')}</strong></p>
+          <p>â€¢ <strong>{t('customerForm.infoItem3')}</strong></p>
+          <p>â€¢ <strong>{t('customerForm.infoItem4')}</strong></p>
+          <p>â€¢ <strong>{t('customerForm.infoItem5')}</strong></p>
+          <p>â€¢ {t('common.requiredField')}</p>
         </div>
       </div>
     </div>
@@ -498,10 +499,10 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
             className="w-full bg-white/5 text-white px-4 py-2 rounded-md border border-white/10 focus:border-blue-500 focus:outline-none"
           >
             <option value="">{t('customerForm.unassigned')}</option>
-            <option value="Ana García">Ana García</option>
-            <option value="Carlos López">Carlos López</option>
-            <option value="María Rodríguez">María Rodríguez</option>
-            <option value="Juan Martínez">Juan Martínez</option>
+            <option value="Ana GarcÃ­a">Ana GarcÃ­a</option>
+            <option value="Carlos LÃ³pez">Carlos LÃ³pez</option>
+            <option value="MarÃ­a RodrÃ­guez">MarÃ­a RodrÃ­guez</option>
+            <option value="Juan MartÃ­nez">Juan MartÃ­nez</option>
           </select>
         </div>
       </div>
@@ -566,7 +567,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
         )}
       </h2>
 
-      {/* Pestañas */}
+      {/* PestaÃ±as */}
       <div className="flex space-x-1 mb-6 bg-slate-900 p-1 rounded-lg">
         {tabs.map((tab) => (
           <button
@@ -584,7 +585,7 @@ export const CustomerFormAdvanced: React.FC<CustomerFormAdvancedProps> = ({
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Contenido de las pestañas */}
+        {/* Contenido de las pestaÃ±as */}
         <div className="min-h-[400px]">
           {activeTab === 'personal' && renderPersonalTab()}
           {activeTab === 'contact' && renderContactTab()}
