@@ -1,9 +1,10 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 /**
- * Sistema de Auditoría Completa de AccountExpress
+ * Sistema de AuditorÃ­a Completa de AccountExpress
  * 
  * Este script audita todos los aspectos del sistema para asegurar:
  * 1. Integridad de datos
- * 2. Correcta enlazación de módulos
+ * 2. Correcta enlazaciÃ³n de mÃ³dulos
  * 3. Flujos de procesos completos
  * 4. Validaciones funcionando
  * 5. Seguridad implementada
@@ -30,7 +31,7 @@ export interface SystemAuditReport {
 }
 
 /**
- * 1. AUDITORÍA DE ASIENTOS CONTABLES
+ * 1. AUDITORÃA DE ASIENTOS CONTABLES
  */
 export async function auditJournalEntries(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
@@ -79,7 +80,7 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
       });
     }
 
-    // 1.2 Verificar que no haya asientos sin líneas
+    // 1.2 Verificar que no haya asientos sin lÃ­neas
     const entriesWithoutLinesQuery = `
       SELECT je.id, je.entry_date, je.description
       FROM journal_entries je
@@ -106,7 +107,7 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
       });
     }
 
-    // 1.3 Verificar que todas las cuentas en líneas existan
+    // 1.3 Verificar que todas las cuentas en lÃ­neas existan
     const invalidAccountsQuery = `
       SELECT jd.id, jd.journal_entry_id, jd.account_code
       FROM journal_details jd
@@ -146,7 +147,7 @@ export async function auditJournalEntries(): Promise<AuditResult[]> {
 }
 
 /**
- * 2. AUDITORÍA DE PERÍODOS CONTABLES
+ * 2. AUDITORÃA DE PERÃODOS CONTABLES
  */
 export async function auditAccountingPeriods(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
@@ -162,7 +163,7 @@ export async function auditAccountingPeriods(): Promise<AuditResult[]> {
   }
 
   try {
-    // 2.1 Verificar que no haya transacciones en períodos cerrados
+    // 2.1 Verificar que no haya transacciones en perÃ­odos cerrados
     const transactionsInClosedPeriodsQuery = `
       SELECT 
         je.id,
@@ -195,7 +196,7 @@ export async function auditAccountingPeriods(): Promise<AuditResult[]> {
       });
     }
 
-    // 2.2 Verificar que no haya períodos superpuestos
+    // 2.2 Verificar que no haya perÃ­odos superpuestos
     const overlappingPeriodsQuery = `
       SELECT 
         ap1.id as period1_id,
@@ -246,7 +247,7 @@ export async function auditAccountingPeriods(): Promise<AuditResult[]> {
 }
 
 /**
- * 3. AUDITORÍA DE FOREIGN KEYS
+ * 3. AUDITORÃA DE FOREIGN KEYS
  */
 export async function auditForeignKeys(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
@@ -262,7 +263,7 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
   }
 
   try {
-    // 3.1 Verificar invoices → customers
+    // 3.1 Verificar invoices â†’ customers
     const orphanInvoicesQuery = `
       SELECT i.id, i.invoice_number, i.customer_id
       FROM invoices i
@@ -289,7 +290,7 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
       });
     }
 
-    // 3.2 Verificar bills → suppliers
+    // 3.2 Verificar bills â†’ suppliers
     const orphanBillsQuery = `
       SELECT b.id, b.bill_number, b.supplier_id
       FROM bills b
@@ -316,7 +317,7 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
       });
     }
 
-    // 3.3 Verificar fixed_assets → asset_categories
+    // 3.3 Verificar fixed_assets â†’ asset_categories
     const orphanAssetsQuery = `
       SELECT fa.id, fa.name, fa.category_id
       FROM fixed_assets fa
@@ -356,7 +357,7 @@ export async function auditForeignKeys(): Promise<AuditResult[]> {
 }
 
 /**
- * 4. AUDITORÍA DE VALIDACIONES DE NEGOCIO
+ * 4. AUDITORÃA DE VALIDACIONES DE NEGOCIO
  */
 export async function auditBusinessRules(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
@@ -372,7 +373,7 @@ export async function auditBusinessRules(): Promise<AuditResult[]> {
   }
 
   try {
-    // 4.1 Verificar que no haya montos negativos donde no deberían
+    // 4.1 Verificar que no haya montos negativos donde no deberÃ­an
     const negativeAmountsQuery = `
       SELECT 'invoices' as table_name, id, total_amount as amount
       FROM invoices
@@ -406,7 +407,7 @@ export async function auditBusinessRules(): Promise<AuditResult[]> {
       });
     }
 
-    // 4.2 Verificar que no haya fechas futuras inválidas
+    // 4.2 Verificar que no haya fechas futuras invÃ¡lidas
     const futureDatesQuery = `
       SELECT 'invoices' as table_name, id, issue_date as date
       FROM invoices
@@ -453,7 +454,7 @@ export async function auditBusinessRules(): Promise<AuditResult[]> {
 }
 
 /**
- * 5. AUDITORÍA DE ACTIVOS FIJOS
+ * 5. AUDITORÃA DE ACTIVOS FIJOS
  */
 export async function auditFixedAssets(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
@@ -502,7 +503,7 @@ export async function auditFixedAssets(): Promise<AuditResult[]> {
       });
     }
 
-    // 5.2 Verificar que la depreciación acumulada no exceda el precio de compra
+    // 5.2 Verificar que la depreciaciÃ³n acumulada no exceda el precio de compra
     const excessiveDepreciationQuery = `
       SELECT id, name, purchase_cost, total_accumulated_depreciation
       FROM fixed_assets
@@ -541,7 +542,7 @@ export async function auditFixedAssets(): Promise<AuditResult[]> {
 }
 
 /**
- * 6. AUDITORÍA DE REPORTES FINANCIEROS
+ * 6. AUDITORÃA DE REPORTES FINANCIEROS
  */
 export async function auditFinancialReports(): Promise<AuditResult[]> {
   const results: AuditResult[] = [];
@@ -603,14 +604,14 @@ export async function auditFinancialReports(): Promise<AuditResult[]> {
 }
 
 /**
- * FUNCIÓN PRINCIPAL DE AUDITORÍA
+ * FUNCIÃ“N PRINCIPAL DE AUDITORÃA
  */
 export async function runSystemAudit(): Promise<SystemAuditReport> {
-  console.log('🔍 Starting system audit...');
+  logger.info('systemAudit', 'audit_start', 'Starting system audit');
 
   const allResults: AuditResult[] = [];
 
-  // Ejecutar todas las auditorías
+  // Ejecutar todas las auditorÃ­as
   const journalEntriesResults = await auditJournalEntries();
   const accountingPeriodsResults = await auditAccountingPeriods();
   const foreignKeysResults = await auditForeignKeys();
@@ -626,7 +627,7 @@ export async function runSystemAudit(): Promise<SystemAuditReport> {
   allResults.push(...fixedAssetsResults);
   allResults.push(...financialReportsResults);
 
-  // Calcular estadísticas
+  // Calcular estadÃ­sticas
   const totalChecks = allResults.length;
   const passed = allResults.filter(r => r.status === 'pass').length;
   const warnings = allResults.filter(r => r.status === 'warning').length;
@@ -650,17 +651,17 @@ export async function runSystemAudit(): Promise<SystemAuditReport> {
     results: allResults
   };
 
-  console.log('✅ System audit completed');
-  console.log(`Total checks: ${totalChecks}`);
-  console.log(`Passed: ${passed}`);
-  console.log(`Warnings: ${warnings}`);
-  console.log(`Failed: ${failed}`);
+  logger.info('systemAudit', 'audit_complete', 'System audit completed');
+  logger.info('systemAudit', 'audit_total', 'Total checks completed');
+  logger.info('systemAudit', 'audit_passed', 'Checks passed');
+  logger.info('systemAudit', 'audit_warnings', 'Warnings found');
+  logger.info('systemAudit', 'audit_failed', 'Checks failed');
 
   return report;
 }
 
 /**
- * FUNCIÓN PARA GENERAR REPORTE HTML
+ * FUNCIÃ“N PARA GENERAR REPORTE HTML
  */
 export function generateAuditReportHTML(report: SystemAuditReport): string {
   const criticalIssues = report.results.filter(r => r.severity === 'critical' && r.status === 'fail');
@@ -693,7 +694,7 @@ export function generateAuditReportHTML(report: SystemAuditReport): string {
 </head>
 <body>
   <div class="header">
-    <h1>🔍 System Audit Report</h1>
+    <h1>ðŸ” System Audit Report</h1>
     <p>Generated: ${new Date(report.timestamp).toLocaleString()}</p>
     <p>Overall Status: <strong class="${report.overallStatus}">${report.overallStatus.toUpperCase()}</strong></p>
   </div>
@@ -719,7 +720,7 @@ export function generateAuditReportHTML(report: SystemAuditReport): string {
   
   ${criticalIssues.length > 0 ? `
   <div class="section">
-    <h2>🚨 Critical Issues (${criticalIssues.length})</h2>
+    <h2>ðŸš¨ Critical Issues (${criticalIssues.length})</h2>
     ${criticalIssues.map(issue => `
       <div class="issue fail">
         <h4>${issue.category}</h4>
@@ -732,7 +733,7 @@ export function generateAuditReportHTML(report: SystemAuditReport): string {
   
   ${highIssues.length > 0 ? `
   <div class="section">
-    <h2>⚠️ High Priority Issues (${highIssues.length})</h2>
+    <h2>âš ï¸ High Priority Issues (${highIssues.length})</h2>
     ${highIssues.map(issue => `
       <div class="issue fail">
         <h4>${issue.category}</h4>
@@ -745,7 +746,7 @@ export function generateAuditReportHTML(report: SystemAuditReport): string {
   
   ${mediumIssues.length > 0 ? `
   <div class="section">
-    <h2>⚡ Medium Priority Issues (${mediumIssues.length})</h2>
+    <h2>âš¡ Medium Priority Issues (${mediumIssues.length})</h2>
     ${mediumIssues.map(issue => `
       <div class="issue warning">
         <h4>${issue.category}</h4>
@@ -757,7 +758,7 @@ export function generateAuditReportHTML(report: SystemAuditReport): string {
   ` : ''}
   
   <div class="section">
-    <h2>✅ All Checks</h2>
+    <h2>âœ… All Checks</h2>
     ${report.results.map(issue => `
       <div class="issue ${issue.status}">
         <h4>${issue.category}</h4>

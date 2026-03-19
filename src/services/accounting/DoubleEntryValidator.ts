@@ -1,9 +1,11 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * VALIDADOR DE PARTIDA DOBLE
  *
- * Validación automática de integridad contable + validaciones preventivas de clasificación (Fase 4).
+ * ValidaciÃ³n automÃ¡tica de integridad contable + validaciones preventivas de clasificaciÃ³n (Fase 4).
  */
 
+import { logger } from '../../core/logging/SystemLogger';
 export interface JournalEntry {
   id: number;
   date: string;
@@ -26,9 +28,9 @@ export class DoubleEntryValidator {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // 1. Verificar que hay al menos 2 líneas
+    // 1. Verificar que hay al menos 2 lÃ­neas
     if (entry.details.length < 2) {
-      errors.push('Un asiento contable debe tener al menos 2 líneas');
+      errors.push('Un asiento contable debe tener al menos 2 lÃ­neas');
     }
 
     // 2. Calcular totales
@@ -38,20 +40,20 @@ export class DoubleEntryValidator {
     // 3. Verificar balance (permitir diferencia de centavos por redondeo)
     const difference = Math.abs(totalDebits - totalCredits);
     if (difference > 0.01) {
-      errors.push(`Los débitos (${totalDebits.toFixed(2)}) no igualan los créditos (${totalCredits.toFixed(2)}). Diferencia: ${difference.toFixed(2)}`);
+      errors.push(`Los dÃ©bitos (${totalDebits.toFixed(2)}) no igualan los crÃ©ditos (${totalCredits.toFixed(2)}). Diferencia: ${difference.toFixed(2)}`);
     }
 
-    // 4. Verificar que cada línea tenga débito O crédito (no ambos)
+    // 4. Verificar que cada lÃ­nea tenga dÃ©bito O crÃ©dito (no ambos)
     for (const detail of entry.details) {
       const hasDebit = (detail.debit || 0) > 0;
       const hasCredit = (detail.credit || 0) > 0;
 
       if (hasDebit && hasCredit) {
-        errors.push(`La cuenta ${detail.account_code} no puede tener débito Y crédito en la misma línea`);
+        errors.push(`La cuenta ${detail.account_code} no puede tener dÃ©bito Y crÃ©dito en la misma lÃ­nea`);
       }
 
       if (!hasDebit && !hasCredit) {
-        errors.push(`La cuenta ${detail.account_code} debe tener débito O crédito`);
+        errors.push(`La cuenta ${detail.account_code} debe tener dÃ©bito O crÃ©dito`);
       }
     }
 
@@ -118,14 +120,14 @@ export class DoubleEntryValidator {
     };
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // VALIDACIONES PREVENTIVAS — Fase 4 Copiloto
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // VALIDACIONES PREVENTIVAS â€” Fase 4 Copiloto
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /**
-   * Infiere el tipo de cuenta según el prefijo del código (US GAAP estándar).
-   * 1xxx → asset | 2xxx → liability | 3xxx → equity
-   * 4xxx → revenue | 5xxx-6xxx → expense
+   * Infiere el tipo de cuenta segÃºn el prefijo del cÃ³digo (US GAAP estÃ¡ndar).
+   * 1xxx â†’ asset | 2xxx â†’ liability | 3xxx â†’ equity
+   * 4xxx â†’ revenue | 5xxx-6xxx â†’ expense
    */
   static inferAccountType(accountCode: string): string {
     if (!accountCode) return 'unknown';
@@ -139,8 +141,8 @@ export class DoubleEntryValidator {
   }
 
   /**
-   * Valida la consistencia de clasificación en las líneas de un asiento.
-   * Detecta combinaciones contablemente inválidas antes de persistir.
+   * Valida la consistencia de clasificaciÃ³n en las lÃ­neas de un asiento.
+   * Detecta combinaciones contablemente invÃ¡lidas antes de persistir.
    */
   static validateAccountTypeConsistency(
     lines: Array<{
@@ -154,7 +156,7 @@ export class DoubleEntryValidator {
   ): ClassificationResult {
     const warnings: ClassificationWarning[] = [];
 
-    const PAYROLL_KEYWORDS = ['payroll', 'wages', 'nomina', 'nómina', 'salario'];
+    const PAYROLL_KEYWORDS = ['payroll', 'wages', 'nomina', 'nÃ³mina', 'salario'];
 
     lines.forEach((line, idx) => {
       const code = (line.account_code || '').trim();
@@ -166,17 +168,17 @@ export class DoubleEntryValidator {
       const detailType = (line.detail_type || '').toLowerCase();
       const lineLabel = `cuenta ${code}`;
 
-      // Regla 1: Gastos no deben recibir crédito directo
+      // Regla 1: Gastos no deben recibir crÃ©dito directo
       if (inferredType === 'expense' && credit > 0) {
-        const reason = `Clasificación inválida: Los Gastos (${lineLabel}) normalmente reciben Débito, no Crédito. Verifique si corresponde a una reversión.`;
-        console.warn(`[WARN] Validación preventiva fallida: ${reason}`);
+        const reason = `ClasificaciÃ³n invÃ¡lida: Los Gastos (${lineLabel}) normalmente reciben DÃ©bito, no CrÃ©dito. Verifique si corresponde a una reversiÃ³n.`;
+        logger.warn('DoubleEntryValidator', 'preventive_validation', '[WARN] Validacion preventiva fallida');
         warnings.push({ lineIndex: idx, account_code: code, reason, severity: 'warning' });
       }
 
-      // Regla 2: Ingresos no deben recibir débito directo
+      // Regla 2: Ingresos no deben recibir dÃ©bito directo
       if (inferredType === 'revenue' && debit > 0) {
-        const reason = `Clasificación inválida: Los Ingresos (${lineLabel}) normalmente reciben Crédito, no Débito. Verifique si corresponde a una devolución.`;
-        console.warn(`[WARN] Validación preventiva fallida: ${reason}`);
+        const reason = `ClasificaciÃ³n invÃ¡lida: Los Ingresos (${lineLabel}) normalmente reciben CrÃ©dito, no DÃ©bito. Verifique si corresponde a una devoluciÃ³n.`;
+        logger.warn('DoubleEntryValidator', 'preventive_validation', '[WARN] Validacion preventiva fallida');
         warnings.push({ lineIndex: idx, account_code: code, reason, severity: 'warning' });
       }
 
@@ -187,8 +189,8 @@ export class DoubleEntryValidator {
       );
       if ((isPayrollDetail || isPayrollDesc) && (inferredType === 'asset' || inferredType === 'equity')) {
         const typeName = inferredType === 'asset' ? 'Activo' : 'Patrimonio';
-        const reason = `Clasificación inválida: Gastos de nómina/salarios (${lineLabel}) no deben registrarse en cuentas de ${typeName}. Use una cuenta de Gasto (6xxx).`;
-        console.warn(`[WARN] Validación preventiva fallida: ${reason}`);
+        const reason = `ClasificaciÃ³n invÃ¡lida: Gastos de nÃ³mina/salarios (${lineLabel}) no deben registrarse en cuentas de ${typeName}. Use una cuenta de Gasto (6xxx).`;
+        logger.warn('DoubleEntryValidator', 'preventive_validation', '[WARN] Validacion preventiva fallida');
         warnings.push({ lineIndex: idx, account_code: code, reason, severity: 'error' });
       }
 
@@ -197,8 +199,8 @@ export class DoubleEntryValidator {
         const desc = (line.description || '').toLowerCase();
         const isOpEx = ['gasto', 'expense', 'suministro', 'alquiler', 'servicio'].some(kw => desc.includes(kw));
         if (isOpEx) {
-          const reason = `Clasificación inválida: Gastos operativos en ${lineLabel} (Patrimonio/3xxx). Los gastos deben ir en cuentas 5xxx-6xxx.`;
-          console.warn(`[WARN] Validación preventiva fallida: ${reason}`);
+          const reason = `ClasificaciÃ³n invÃ¡lida: Gastos operativos en ${lineLabel} (Patrimonio/3xxx). Los gastos deben ir en cuentas 5xxx-6xxx.`;
+          logger.warn('DoubleEntryValidator', 'preventive_validation', '[WARN] Validacion preventiva fallida');
           warnings.push({ lineIndex: idx, account_code: code, reason, severity: 'warning' });
         }
       }
@@ -211,8 +213,8 @@ export class DoubleEntryValidator {
   }
 
   /**
-   * Valida la combinación account_type + detail_type al crear o editar una cuenta.
-   * Retorna un ClassificationWarning si hay problema, o null si todo está correcto.
+   * Valida la combinaciÃ³n account_type + detail_type al crear o editar una cuenta.
+   * Retorna un ClassificationWarning si hay problema, o null si todo estÃ¡ correcto.
    */
   static validateAccountDefinition(
     accountType: string,
@@ -220,14 +222,14 @@ export class DoubleEntryValidator {
   ): ClassificationWarning | null {
     if (!detailType) return null;
 
-    const PAYROLL_KEYWORDS = ['payroll', 'wages', 'nomina', 'nómina', 'salario'];
+    const PAYROLL_KEYWORDS = ['payroll', 'wages', 'nomina', 'nÃ³mina', 'salario'];
     const dt = detailType.toLowerCase();
     const isPayroll = PAYROLL_KEYWORDS.some(kw => dt.includes(kw));
 
     if (isPayroll && (accountType === 'asset' || accountType === 'equity')) {
       const typeName = accountType === 'asset' ? 'Activo' : 'Patrimonio';
-      const reason = `¡Atención! "${detailType}" es un gasto de nómina y no debería clasificarse como ${typeName}. Considere usar tipo Gasto (Expense).`;
-      console.warn(`[WARN] Validación preventiva fallida: ${reason}`);
+      const reason = `Â¡AtenciÃ³n! "${detailType}" es un gasto de nÃ³mina y no deberÃ­a clasificarse como ${typeName}. Considere usar tipo Gasto (Expense).`;
+      logger.warn('DoubleEntryValidator', 'preventive_validation', '[WARN] Validacion preventiva fallida');
       return { lineIndex: -1, account_code: '', reason, severity: 'warning' };
     }
 
@@ -235,8 +237,8 @@ export class DoubleEntryValidator {
     const isIncome = INCOME_DETAILS.some(kw => dt.includes(kw));
     if (isIncome && (accountType === 'expense' || accountType === 'asset')) {
       const typeName = accountType === 'expense' ? 'Gasto' : 'Activo';
-      const reason = `¡Atención! "${detailType}" es un tipo de ingreso y no debería clasificarse como ${typeName}. Use tipo Ingreso (Revenue).`;
-      console.warn(`[WARN] Validación preventiva fallida: ${reason}`);
+      const reason = `Â¡AtenciÃ³n! "${detailType}" es un tipo de ingreso y no deberÃ­a clasificarse como ${typeName}. Use tipo Ingreso (Revenue).`;
+      logger.warn('DoubleEntryValidator', 'preventive_validation', '[WARN] Validacion preventiva fallida');
       return { lineIndex: -1, account_code: '', reason, severity: 'warning' };
     }
 
@@ -287,3 +289,4 @@ export interface BalanceSheet {
     balanced: boolean;
   };
 }
+

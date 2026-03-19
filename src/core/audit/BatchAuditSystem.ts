@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 
 import { v4 as uuidv4 } from 'uuid';
 import { ExternalTimestampService } from '../../services/ExternalTimestampService';
@@ -25,7 +26,7 @@ export interface StoredAuditEvent extends AuditEvent {
 }
 
 /**
- * SISTEMA DE AUDITORÍA POR LOTES - NEXT GEN
+ * SISTEMA DE AUDITORÃA POR LOTES - NEXT GEN
  * Integridad Forense Nivel NASA con RFC 3161
  */
 export class BatchAuditSystem {
@@ -44,7 +45,7 @@ export class BatchAuditSystem {
         this.ensureSchema();
     }
 
-    // Registrar evento de auditoría
+    // Registrar evento de auditorÃ­a
     public logEvent(event: { action: string; userId?: number; entityType?: string; entityId?: number; changes?: any; critical?: boolean }) {
         if (this.systemLocked) {
             throw new Error('SECURITY_LOCKDOWN: Audit System Failed (RFC 3161 Unreachable). Writes are suspended.');
@@ -68,7 +69,7 @@ export class BatchAuditSystem {
 
         this.pendingEvents.push(auditEvent);
 
-        // Procesar inmediatamente si es crítico
+        // Procesar inmediatamente si es crÃ­tico
         if (event.critical) {
             this.processBatch(true);
         }
@@ -109,7 +110,7 @@ export class BatchAuditSystem {
             } catch { }
 
         } catch (e) {
-            console.error('Audit schema init failed:', e);
+            logger.error('BatchAuditSystem', 'schema_init', 'Audit schema init failed', e);
         }
     }
 
@@ -152,14 +153,14 @@ export class BatchAuditSystem {
                 witnessStatus = 'VERIFIED';
                 this.retryAttempts = 0;
             } catch (error) {
-                console.error('⚠️ External Witness failed after retries:', error);
+                logger.error('BatchAuditSystem', 'external_witness', 'External Witness failed after retries', error);
                 this.retryAttempts++;
                 witnessStatus = 'FAILED';
 
                 // NASA Standard: Lockdown after max retries
                 if (this.retryAttempts >= this.maxRetries) {
                     this.systemLocked = true;
-                    console.error('⛔ SYSTEM LOCKED: Integrity Compromised or TSA Unreachable.');
+                    logger.error('BatchAuditSystem', 'system_locked', 'SYSTEM LOCKED: Integrity Compromised or TSA Unreachable');
                     // Alert User? (In real app, trigger UI modal)
                 }
             }
@@ -171,10 +172,10 @@ export class BatchAuditSystem {
             // 3. Persistencia
             await this.saveBatch(batch);
 
-            console.log(`✅ Batch audit processed: ${batch.length} events. Status: ${witnessStatus}`);
+            logger.info('BatchAuditSystem', 'batch_processed', 'Batch audit processed');
 
         } catch (error) {
-            console.error('❌ Batch audit CRITICAL failure:', error);
+            logger.error('BatchAuditSystem', 'batch_audit_critical', 'Batch audit CRITICAL failure', error);
             // Re-queue events at the start to ensure no data loss
             this.pendingEvents.unshift(...batch);
         } finally {
@@ -194,14 +195,14 @@ export class BatchAuditSystem {
                 return await fn();
             } catch (error) {
                 if (i === delays.length) throw error;
-                console.warn(`⏳ RFC 3161 Retry ${i + 1}/${delays.length} in ${delays[i]}ms...`);
+                logger.warn('BatchAuditSystem', 'rfc3161_retry', 'RFC 3161 Retry in progress');
                 await new Promise(resolve => setTimeout(resolve, delays[i]));
             }
         }
         throw new Error('Unreachable');
     }
 
-    // Calcular hash criptográfico (SHA-256)
+    // Calcular hash criptogrÃ¡fico (SHA-256)
     private async calculateHash(event: StoredAuditEvent): Promise<string> {
         // Canonical JSON structure
         const payload = {
@@ -239,7 +240,7 @@ export class BatchAuditSystem {
         return Math.abs(hash).toString(16).padStart(8, '0');
     }
 
-    // Obtener último hash de la cadena
+    // Obtener Ãºltimo hash de la cadena
     private async getLastHash(): Promise<string | null> {
         try {
             const simpleDb = await import('../../database/simple-db');
@@ -317,3 +318,4 @@ export class BatchAuditSystem {
 }
 
 export const batchAuditSystem = new BatchAuditSystem();
+

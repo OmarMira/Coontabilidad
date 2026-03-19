@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SyncWorker (Iron Clad Upgrade)
  * Handles background synchronization tasks from sync_outbox.
  * Prevents UI freezes during network operations and heavy retries.
@@ -6,6 +6,7 @@
 
 // We need a minimal SQLite connection in the worker to read the outbox
 import { SQLiteEngine } from '../core/database/SQLiteEngine';
+import { logger } from '../core/logging/SystemLogger';
 import { S3Provider } from '../services/cloud/S3Provider';
 
 const ctx: Worker = self as any;
@@ -49,7 +50,7 @@ async function processOutbox() {
             return;
         }
 
-        console.log(`[SyncWorker] Processing ${items.length} operations...`);
+        logger.info('SyncWorker', 'processing', `[SyncWorker] Processing `$`{items.length} operations`);
 
         for (const item of items) {
             try {
@@ -76,7 +77,7 @@ async function processOutbox() {
                 switch (item.module) {
                     case 'backups':
                         // Objective 3.4: Hook into the Outbox
-                        console.log(`[SyncWorker] Starting Cloud Vault Upload: ${payload.fileName || payload.filename}`);
+                        logger.info('SyncWorker', 'cloud_upload_start', '[SyncWorker] Starting Cloud Vault Upload');
 
                         // Parse cloud config (should be encrypted in localStorage)
                         let cloudConfig;
@@ -90,7 +91,7 @@ async function processOutbox() {
                             // For now, assume config is passed in payload or use a simpler approach
                             cloudConfig = payload.cloudConfig || JSON.parse(encryptedConfig);
                         } catch (configError: any) {
-                            console.error('[SyncWorker] Cloud config error:', configError);
+                            logger.error('SyncWorker', 'cloud_config', '[SyncWorker] Cloud config error', configError);
                             throw new Error(`Cloud configuration error: ${configError.message}`);
                         }
 
@@ -122,7 +123,7 @@ async function processOutbox() {
                                 compress: false, // Already compressed by DatabaseService
                                 contentType: 'application/octet-stream',
                                 onProgress: (progress) => {
-                                    console.log(`[SyncWorker] Upload progress: ${progress}%`);
+                                    logger.info('SyncWorker', 'upload_progress', '[SyncWorker] Upload progress');
                                     ctx.postMessage({
                                         type: 'UPLOAD_PROGRESS',
                                         opId: item.id,
@@ -135,7 +136,7 @@ async function processOutbox() {
                         success = true;
                         break;
                     default:
-                        console.warn(`[SyncWorker] No handler for module: ${item.module}`);
+                        logger.warn('SyncWorker', 'no_handler', '[SyncWorker] No handler for module');
                         success = true;
                 }
 
@@ -164,7 +165,7 @@ async function processOutbox() {
         }
 
     } catch (e) {
-        console.error('[SyncWorker] Global processing error:', e);
+        logger.error('SyncWorker', 'global_processing', '[SyncWorker] Global processing error', e);
     } finally {
         isProcessing = false;
     }
@@ -197,4 +198,5 @@ function startPolling() {
     }, 30000);
 }
 
-console.log('[SyncWorker] Background sync initialized.');
+logger.info('SyncWorker', 'init', '[SyncWorker] Background sync initialized');
+

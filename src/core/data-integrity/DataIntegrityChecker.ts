@@ -1,10 +1,11 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * DataIntegrityChecker - Verificador de Integridad en Tiempo Real
  * 
  * Detecta:
  * - Referencias rotas (foreign keys)
  * - Duplicados
- * - Inconsistencias numéricas
+ * - Inconsistencias numÃ©ricas
  * - Datos corruptos
  * - Violaciones de constraints
  */
@@ -58,7 +59,7 @@ export class DataIntegrityChecker {
   };
 
   /**
-   * Ejecuta verificación completa de integridad
+   * Ejecuta verificaciÃ³n completa de integridad
    */
   static async runFullCheck(config: CheckConfig = {}): Promise<IntegrityCheckResult> {
     if (!db) {
@@ -105,14 +106,14 @@ export class DataIntegrityChecker {
       const formatErrors = this.checkDataFormats();
       errors.push(...formatErrors);
 
-      // 5. Reparar si está habilitado
+      // 5. Reparar si estÃ¡ habilitado
       if (config.autoRepair && errors.length > 0) {
         const repairs = await this.attemptRepairs(errors);
         repaired.push(...repairs);
       }
 
       if (config.verbose) {
-        console.log(`✅ Integridad: ${errors.filter(e => e.severity === 'critical').length} críticos`);
+        logger.info('DataIntegrityChecker', 'integrity_check', 'Integridad verificada');
       }
 
       return {
@@ -126,7 +127,7 @@ export class DataIntegrityChecker {
       errors.push({
         severity: 'critical',
         table: 'system',
-        message: `Error en verificación: ${error}`,
+        message: `Error en verificaciÃ³n: ${error}`,
         repairable: false
       });
 
@@ -162,7 +163,7 @@ export class DataIntegrityChecker {
             recordId: row[0],
             field: 'customer_id',
             message: `Factura #${row[0]} referencia cliente inexistente (${row[1]})`,
-            suggestion: 'Eliminar factura huérfana o asignar cliente válido',
+            suggestion: 'Eliminar factura huÃ©rfana o asignar cliente vÃ¡lido',
             repairable: true
           });
         });
@@ -183,7 +184,7 @@ export class DataIntegrityChecker {
             recordId: row[0],
             field: 'supplier_id',
             message: `Factura de compra #${row[0]} referencia proveedor inexistente (${row[1]})`,
-            suggestion: 'Eliminar factura huérfana o asignar proveedor válido',
+            suggestion: 'Eliminar factura huÃ©rfana o asignar proveedor vÃ¡lido',
             repairable: true
           });
         });
@@ -203,8 +204,8 @@ export class DataIntegrityChecker {
             table: 'invoice_lines',
             recordId: row[0],
             field: 'invoice_id',
-            message: `Línea de factura huérfana: referencia factura inexistente`,
-            suggestion: 'Eliminar línea huérfana',
+            message: `LÃ­nea de factura huÃ©rfana: referencia factura inexistente`,
+            suggestion: 'Eliminar lÃ­nea huÃ©rfana',
             repairable: true
           });
         });
@@ -225,8 +226,8 @@ export class DataIntegrityChecker {
               table: 'bill_lines',
               recordId: row[0],
               field: 'bill_id',
-              message: `Línea de compra huérfana: referencia factura inexistente`,
-              suggestion: 'Eliminar línea huérfana',
+              message: `LÃ­nea de compra huÃ©rfana: referencia factura inexistente`,
+              suggestion: 'Eliminar lÃ­nea huÃ©rfana',
               repairable: true
             });
           });
@@ -249,14 +250,14 @@ export class DataIntegrityChecker {
             table: 'journal_details',
             recordId: row[0],
             field: 'entry_id',
-            message: `Detalle de asiento huérfano`,
-            suggestion: 'Eliminar detalle huérfano',
+            message: `Detalle de asiento huÃ©rfano`,
+            suggestion: 'Eliminar detalle huÃ©rfano',
             repairable: true
           });
         });
       }
     } catch (error) {
-      console.error('Error checking foreign keys:', error);
+      logger.error('DataIntegrityChecker', 'check_foreign_keys', 'Error checking foreign keys', error);
     }
 
     return errors;
@@ -282,7 +283,7 @@ export class DataIntegrityChecker {
             severity: 'critical',
             table: 'invoices',
             field: 'invoice_number',
-            message: `Número de factura duplicado: ${row[0]} (${row[1]} veces)`,
+            message: `NÃºmero de factura duplicado: ${row[0]} (${row[1]} veces)`,
             suggestion: 'Renumerar facturas duplicadas',
             repairable: true
           });
@@ -302,7 +303,7 @@ export class DataIntegrityChecker {
             severity: 'critical',
             table: 'bills',
             field: 'bill_number',
-            message: `Número de factura duplicado: ${row[0]} (${row[1]} veces)`,
+            message: `NÃºmero de factura duplicado: ${row[0]} (${row[1]} veces)`,
             suggestion: 'Renumerar facturas duplicadas',
             repairable: true
           });
@@ -322,13 +323,13 @@ export class DataIntegrityChecker {
           severity: 'high',
           table: 'suppliers',
           field: 'document_number',
-          message: `Números de documento duplicados en proveedores`,
+          message: `NÃºmeros de documento duplicados en proveedores`,
           suggestion: 'Revisar y consolidar proveedores duplicados',
           repairable: true
         });
       }
     } catch (error) {
-      console.error('Error checking duplicates:', error);
+      logger.error('DataIntegrityChecker', 'check_duplicates', 'Error checking duplicates', error);
     }
 
     return errors;
@@ -341,7 +342,7 @@ export class DataIntegrityChecker {
     const errors: IntegrityError[] = [];
 
     try {
-      // Verificar que invoice total_amount = suma de líneas + impuestos
+      // Verificar que invoice total_amount = suma de lÃ­neas + impuestos
       const inconsistentInvoices = db?.exec(`
         SELECT i.id, i.total_amount,
                COALESCE(SUM(il.line_total), 0) as lines_sum,
@@ -358,14 +359,14 @@ export class DataIntegrityChecker {
             severity: 'high',
             table: 'invoices',
             recordId: row[0],
-            message: `Total inconsistente: ${row[1]} vs (líneas:${row[2]} + impuestos:${row[3]})`,
+            message: `Total inconsistente: ${row[1]} vs (lÃ­neas:${row[2]} + impuestos:${row[3]})`,
             suggestion: 'Recalcular totales',
             repairable: true
           });
         });
       }
 
-      // Verificar que bill total_amount = suma de líneas + impuestos
+      // Verificar que bill total_amount = suma de lÃ­neas + impuestos
       try {
         const inconsistentBills = db?.exec(`
           SELECT b.id, b.total_amount,
@@ -383,7 +384,7 @@ export class DataIntegrityChecker {
               severity: 'high',
               table: 'bills',
               recordId: row[0],
-              message: `Total inconsistente: ${row[1]} vs (líneas:${row[2]} + impuestos:${row[3]})`,
+              message: `Total inconsistente: ${row[1]} vs (lÃ­neas:${row[2]} + impuestos:${row[3]})`,
               suggestion: 'Recalcular totales',
               repairable: true
             });
@@ -393,7 +394,7 @@ export class DataIntegrityChecker {
         // bill_lines no existe en instancia legacy, ignorar
       }
 
-      // Verificar que journal_entries esté balanceado (débitos = créditos)
+      // Verificar que journal_entries estÃ© balanceado (dÃ©bitos = crÃ©ditos)
       const unbalancedJournals = db?.exec(`
         SELECT je.id, 
                SUM(CASE WHEN jd.debit_amount > 0 THEN jd.debit_amount ELSE 0 END) as total_debit,
@@ -410,14 +411,14 @@ export class DataIntegrityChecker {
             severity: 'critical',
             table: 'journal_entries',
             recordId: row[0],
-            message: `Asiento desbalanceado: débitos ${row[1]} vs créditos ${row[2]}`,
+            message: `Asiento desbalanceado: dÃ©bitos ${row[1]} vs crÃ©ditos ${row[2]}`,
             suggestion: 'Revisar y rebalancear asiento',
-            repairable: false // Requiere revisión manual
+            repairable: false // Requiere revisiÃ³n manual
           });
         });
       }
     } catch (error) {
-      console.error('Error checking consistency:', error);
+      logger.error('DataIntegrityChecker', 'check_consistency', 'Error checking consistency', error);
     }
 
     return errors;
@@ -430,7 +431,7 @@ export class DataIntegrityChecker {
     const errors: IntegrityError[] = [];
 
     try {
-      // Verificar fechas inválidas
+      // Verificar fechas invÃ¡lidas
       const invalidDates = db?.exec(`
         SELECT 'invoices' as table_name, id, issue_date FROM invoices
         WHERE issue_date IS NOT NULL AND issue_date = ''
@@ -446,14 +447,14 @@ export class DataIntegrityChecker {
             table: row[0],
             recordId: row[1],
             field: 'issue_date',
-            message: `Fecha vacía detectada`,
-            suggestion: 'Asignar fecha válida',
+            message: `Fecha vacÃ­a detectada`,
+            suggestion: 'Asignar fecha vÃ¡lida',
             repairable: true
           });
         });
       }
 
-      // Verificar montos negativos (excepto en casos específicos)
+      // Verificar montos negativos (excepto en casos especÃ­ficos)
       const negativeAmounts = db?.exec(`
         SELECT 'invoices' as table_name, id, total_amount FROM invoices WHERE total_amount < 0
         UNION ALL
@@ -468,20 +469,20 @@ export class DataIntegrityChecker {
             recordId: row[1],
             field: 'total_amount',
             message: `Monto negativo detectado: ${row[2]}`,
-            suggestion: 'Usar notas de crédito en lugar de montos negativos',
+            suggestion: 'Usar notas de crÃ©dito en lugar de montos negativos',
             repairable: true
           });
         });
       }
     } catch (error) {
-      console.error('Error checking formats:', error);
+      logger.error('DataIntegrityChecker', 'check_formats', 'Error checking formats', error);
     }
 
     return errors;
   }
 
   /**
-   * Intenta reparar automáticamente errores
+   * Intenta reparar automÃ¡ticamente errores
    */
   private static async attemptRepairs(errors: IntegrityError[]): Promise<RepairOperation[]> {
     const repairs: RepairOperation[] = [];
@@ -493,9 +494,9 @@ export class DataIntegrityChecker {
         const recordId = error.recordId ?? 0;
         const field = error.field ?? 'N/A';
 
-        // Reparaciones específicas por tipo de error
-        if (error.message.includes('huérfan')) {
-          // Eliminar registros huérfanos
+        // Reparaciones especÃ­ficas por tipo de error
+        if (error.message.includes('huÃ©rfan')) {
+          // Eliminar registros huÃ©rfanos
           if (recordId > 0) {
             this.deleteOrphanRecord(error.table, recordId);
             repaired = true;
@@ -551,18 +552,18 @@ export class DataIntegrityChecker {
   private static deleteOrphanRecord(table: string, id: number) {
     if (!db || !id) return;
     // db.run(`DELETE FROM ${table} WHERE id = ?`, [id]);
-    console.log(`🗑️  Deleted orphan record: ${table}#${id}`);
+    logger.info('DataIntegrityChecker', 'delete_orphan', 'Deleted orphan record');
   }
 
   private static consolidateDuplicates(table: string, field: string) {
     if (!db) return;
-    console.log(`🔗 Consolidating duplicates in ${table}.${field}`);
-    // Lógica específica de consolidación
+    logger.info('DataIntegrityChecker', 'consolidate_duplicates', 'Consolidating duplicates');
+    // LÃ³gica especÃ­fica de consolidaciÃ³n
   }
 
   private static recalculateTotals(table: string, recordId: number) {
     if (!db || !recordId) return;
-    console.log(`🧮 Recalculating totals for ${table}#${recordId}`);
-    // Lógica para recalcular sumas
+    logger.info('DataIntegrityChecker', 'recalculate_totals', 'Recalculating totals');
+    // LÃ³gica para recalcular sumas
   }
 }
