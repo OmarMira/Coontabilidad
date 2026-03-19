@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,7 +106,14 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
             items: items.map(i => ({
                 product_id: i.product_id,
                 quantity: i.quantity,
-                unit_price: i.unit_price
+                unit_price: i.unit_price,
+                id: 0,
+                po_id: 0,
+                line_total: i.quantity * i.unit_price
+
+
+
+
             }))
         });
 
@@ -168,7 +175,7 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
                                 </select>
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">▼</div>
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
                             </div>
                         </div>
 
@@ -203,7 +210,7 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                     <div className="space-y-6">
                         <h3 className="text-[11px] font-black text-white uppercase tracking-[0.3em] flex items-center gap-4">
                             <div className="w-8 h-[1px] bg-blue-500/50"></div>
-                            {t('poForm.items') || 'ARTÍCULOS DEL PEDIDO'}
+                            {t('poForm.items') || 'ARTÃCULOS DEL PEDIDO'}
                             <div className="w-8 h-[1px] bg-blue-500/50"></div>
                         </h3>
 
@@ -255,7 +262,7 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
                                                     <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>
                                                 ))}
                                             </select>
-                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">▼</div>
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
                                         </div>
                                     </div>
 

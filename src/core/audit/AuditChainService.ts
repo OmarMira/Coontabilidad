@@ -81,13 +81,13 @@ export class AuditChainService {
         const lastRecord = await this.engine.select("SELECT chain_hash FROM audit_chain ORDER BY id DESC LIMIT 1");
         const previousHash = lastRecord[0]?.chain_hash || 'GENESIS_HASH';
 
-        // 2. Delegate Hashing to Worker
-        let newHash: string;
+        let newHash: string = '';
+
         try {
             newHash = await this.calculateHashInWorker(previousHash, event.content);
         } catch (workerError) {
             logger.error('AuditChainService', 'worker_hashing_failed', '[Audit] Worker Hashing Failed', workerError);
-            logger.error('AuditChainService', 'worker_hashing_failed', '[Audit] Worker Hashing Failed', workerError);
+            throw new Error('AUDIT_INTEGRITY_FAILURE: Worker hashing failed.');
         }
 
         if (!newHash || newHash.length < 32) {
