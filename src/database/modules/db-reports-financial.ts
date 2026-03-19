@@ -3,7 +3,7 @@
  * ExtraÃ­do de simple-db.ts lÃ­neas 7831â€“8116
  */
 
-import { db } from '../simple-db';
+import { db } from './db-core';
 import { rowToEntity } from './db-core';
 import { createJournalEntry } from './db-journal';
 import type { ChartOfAccount, JournalDetail, AccountingPeriod } from './db-types';
@@ -286,4 +286,5 @@ export async function closePeriod(periodId: number, userId: number): Promise<{ s
     return { success: false, message: error.message };
   }
 }
+
 

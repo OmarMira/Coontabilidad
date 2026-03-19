@@ -138,7 +138,8 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
       };
 
       // Actualizar el estado de la factura
-      const { updateBill, forceSaveDB } = await import('../database/simple-db');
+      const { updateBill } = await import('../database/modules/db-bills');
+      const { forceSaveDB } = await import('../database/modules/db-persistence');
       await updateBill(selectedBill.id, { status: 'paid' } as any);
       await forceSaveDB();
 
@@ -461,3 +462,4 @@ export const SupplierPayments: React.FC<SupplierPaymentsProps> = ({
     </div>
   );
 };
+

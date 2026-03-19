@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
   useEffect(() => {
     const loadQuarantineCount = async () => {
       try {
-        const { db } = await import('../database/simple-db');
+        const { db } = await import('../database/modules/db-core');
         if (!db) return;
         const result = db.exec(
           "SELECT COUNT(*) as count FROM transaction_states WHERE current_state IN ('HIGH_RISK_PERSONAL', 'PENDING_SUPERVISOR') AND is_verified = 0"
@@ -296,3 +296,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     </div>
   );
 };
+

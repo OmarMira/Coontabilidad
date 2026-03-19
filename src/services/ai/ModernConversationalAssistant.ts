@@ -207,7 +207,7 @@ export class ModernConversationalAssistant {
     }
 
     private async executeRawQuery(query: string): Promise<any[]> {
-        const { db } = await import('../../database/simple-db');
+        const { db } = await import('../../database/modules/db-core');
         if (!db) return [];
         try {
             const result = db.exec(query);
@@ -330,3 +330,4 @@ export class ModernConversationalAssistant {
         };
     }
 }
+

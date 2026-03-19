@@ -80,7 +80,7 @@ export class BatchAuditSystem {
      */
     private async ensureSchema() {
         try {
-            const simpleDb = await import('../../database/simple-db');
+            const simpleDb = await import('../../database/modules/db-core');
             const db = simpleDb.db;
             if (!db) return;
 
@@ -243,7 +243,7 @@ export class BatchAuditSystem {
     // Obtener Ãºltimo hash de la cadena
     private async getLastHash(): Promise<string | null> {
         try {
-            const simpleDb = await import('../../database/simple-db');
+            const simpleDb = await import('../../database/modules/db-core');
             const db = simpleDb.db;
             if (!db) return null;
 
@@ -262,7 +262,7 @@ export class BatchAuditSystem {
 
     // Guardar lote en base de datos
     private async saveBatch(batch: StoredAuditEvent[]) {
-        const simpleDb = await import('../../database/simple-db');
+        const simpleDb = await import('../../database/modules/db-core');
         const db = simpleDb.db;
         if (!db) throw new Error('Database not available');
 
@@ -318,4 +318,5 @@ export class BatchAuditSystem {
 }
 
 export const batchAuditSystem = new BatchAuditSystem();
+
 

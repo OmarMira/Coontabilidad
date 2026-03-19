@@ -4,7 +4,7 @@
 // Correcciones: columnas company_data y chart_of_accounts alineadas con esquema persistente
 // ==========================================
 
-import { getDB, getDBEngine } from '../simple-db';
+import { getDB, getDBEngine } from './db-core';
 import { logger } from '../../core/logging/SystemLogger';
 
 // Helper para vinculaciÃ³n de parÃ¡metros en sql.js
@@ -414,5 +414,6 @@ export const deleteUserRole = (id: number): { success: boolean; message: string 
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 };
+
 
 

@@ -41,7 +41,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                 canAutoRepair: true,
                 repairAction: async () => {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
-                    const { getDBEngine } = await import('../../../database/simple-db');
+                    const { getDBEngine } = await import('../../../database/modules/db-core');
 
                     try {
                         // Usar la instancia Ãºnica del motor que gestiona la persistencia real
@@ -56,7 +56,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                     } catch (e) {
                         // Fallback si el motor no estÃ¡ inicializado (raro en arranque, pero posible)
                         logger.warn('SchemaIntegrityCheck', 'warn', 'DB Engine not ready, trying init...', e);
-                        const { initDB } = await import('../../../database/simple-db');
+                        const { initDB } = await import('../../../database/modules/db-init');
                         const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
 
                         await initDB();
@@ -103,7 +103,8 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                 canAutoRepair: true,
                 repairAction: async () => {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
-                    const { getDBEngine, initDB } = await import('../../../database/simple-db');
+                    const { getDBEngine } = await import('../../../database/modules/db-core');
+                    const { initDB } = await import('../../../database/modules/db-init');
 
                     try {
                         let engine;
@@ -124,7 +125,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
 
                         // Forzar exportaciÃ³n explicita a IndexedDB
                         try {
-                            const { forceSaveDB } = await import('../../../database/simple-db');
+                            const { forceSaveDB } = await import('../../../database/modules/db-persistence');
                             if (forceSaveDB) await forceSaveDB();
                         } catch (e) {
                             logger.warn('SchemaIntegrityCheck', 'warn', 'Force save failed', e);
@@ -146,3 +147,5 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
         }
     }
 }
+
+
