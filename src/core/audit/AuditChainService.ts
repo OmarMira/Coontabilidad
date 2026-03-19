@@ -1,5 +1,4 @@
-﻿import { logger } from '../../core/logging/SystemLogger';
-import { SQLiteEngine } from '../database/SQLiteEngine';
+﻿import { SQLiteEngine } from '../database/SQLiteEngine';
 import { db as globalDb } from '@/database/modules/db-core';
 import { logger } from '../../utils/logger';
 

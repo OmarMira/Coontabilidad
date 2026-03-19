@@ -33,7 +33,7 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
             const prods = getProducts();
             setProducts(prods);
         } catch (err) {
-            logger.error('InventoryKardexViewer', 'error', err);
+            logger.error('InventoryKardexViewer', 'error', 'operation_failed', err);
         }
     };
 
@@ -43,7 +43,7 @@ export const InventoryKardexViewer: React.FC<KardexViewerProps> = ({ initialFilt
             const data = getKardexMovements({});
             setMovements(data);
         } catch (err) {
-            logger.error('InventoryKardexViewer', 'error', t('inv.kardex.errorLoading'), err);
+            logger.error('InventoryKardexViewer', 'error', 'operation_failed', t('inv.kardex.errorLoading'), err);
         } finally {
             setLoading(false);
         }

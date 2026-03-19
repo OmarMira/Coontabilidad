@@ -37,7 +37,7 @@ export const TransactionAudit: React.FC = () => {
             const data = await auditService.getAuditLog(50);
             setLogs(data);
         } catch (error) {
-            logger.error('TransactionAudit', 'error', "Error loading audit log", error);
+            logger.error('TransactionAudit', 'error', 'operation_failed', "Error loading audit log", error);
         } finally {
             setLoading(false);
         }

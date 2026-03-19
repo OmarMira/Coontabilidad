@@ -36,7 +36,7 @@ export const BankingModule: React.FC = () => {
                 }
             }
         } catch (e: any) {
-            logger.error('BankingModule', 'error', "Error loading accounts", e);
+            logger.error('BankingModule', 'error', 'operation_failed', "Error loading accounts", e);
         }
     }, []);
 
@@ -86,7 +86,7 @@ export const BankingModule: React.FC = () => {
             alert("Datos Demo generados: Cuenta creada, Asientos creados, Transacciones importadas.");
             window.location.reload(); // Recarga brutal para asegurar todo
         } catch (e: any) {
-            logger.error('BankingModule', 'error', e);
+            logger.error('BankingModule', 'error', 'operation_failed', e);
             alert("Error generando demo data");
         }
     };

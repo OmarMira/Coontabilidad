@@ -57,7 +57,7 @@ export const InventoryDashboard: React.FC<{
             setRecentMovements(movements.slice(0, 5)); // Top 5 recent
 
         } catch (error) {
-            logger.error('InventoryDashboard', 'error', "Error loading inventory dashboard", error);
+            logger.error('InventoryDashboard', 'error', 'operation_failed', "Error loading inventory dashboard", error);
         }
     };
 

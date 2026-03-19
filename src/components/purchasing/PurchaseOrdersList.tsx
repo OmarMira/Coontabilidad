@@ -20,7 +20,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
             const data = getPurchaseOrders();
             setOrders(data);
         } catch (error) {
-            logger.error('PurchaseOrdersList', 'error', error);
+            logger.error('PurchaseOrdersList', 'error', 'operation_failed', error);
         }
     };
 

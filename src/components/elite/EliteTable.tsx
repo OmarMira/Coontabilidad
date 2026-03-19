@@ -48,7 +48,7 @@ interface EliteTableProps {
  *     { key: 'amount', header: 'Monto', align: 'right', render: (val) => `$${val}` }
  *   ]}
  *   data={items}
- *   onRowClick={(row) => logger.info('EliteTable', 'info', row)}
+ *   onRowClick={(row) => logger.info('EliteTable', 'info', 'operation_failed', row)}
  *   emptyMessage="No hay registros"
  * />
  * ```

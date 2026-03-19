@@ -111,7 +111,7 @@ export const RoleManager: React.FC = () => {
             setRoles(allRoles as UserRole[]);
         } catch (err) {
             setError(t('roleManager.error.load'));
-            logger.error('RoleManager', 'error', err);
+            logger.error('RoleManager', 'error', 'operation_failed', err);
         }
     };
 

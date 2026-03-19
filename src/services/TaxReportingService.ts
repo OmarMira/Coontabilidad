@@ -141,7 +141,7 @@ export class TaxReportingService {
                 outdatedRates: hasBadRates
             };
         } catch (e) {
-            logger.error('TaxReportingService', 'error', "Error in hasValidConfiguration:", e);
+            logger.error('TaxReportingService', 'error', 'operation_failed', "Error in hasValidConfiguration:", e);
             return {
                 valid: false,
                 counties: 0,

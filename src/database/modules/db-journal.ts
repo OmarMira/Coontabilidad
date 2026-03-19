@@ -23,7 +23,6 @@ export function isDateLocked(dateStr: string): boolean {
     return false;
   }
 }
-import { logger } from '../../core/logging/SystemLogger';
 import type { ChartOfAccount, JournalEntry, JournalDetail } from './db-types';
 
 // Obtener todas las cuentas del plan de cuentas

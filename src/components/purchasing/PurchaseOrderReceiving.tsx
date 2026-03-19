@@ -36,7 +36,7 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
             }
         } catch (error) {
             toast.error(t('poReceiving.error unexpected'));
-            logger.error('PurchaseOrderReceiving', 'error', error);
+            logger.error('PurchaseOrderReceiving', 'error', 'operation_failed', error);
         } finally {
             setIsSubmitting(false);
         }

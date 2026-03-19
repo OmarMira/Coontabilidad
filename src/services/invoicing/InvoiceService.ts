@@ -69,9 +69,9 @@ export class InvoiceService {
                 }))
             });
             logger.info('InvoiceService', 'created', '[InvoiceService] Invoice created successfully');
-            logger.info('InvoiceService', 'created', '[InvoiceService] Invoice created successfully');
+        } catch (error) {
             logger.error('InvoiceService', 'transaction_failed', '[InvoiceService] Transaction Failed', error);
-            logger.error('InvoiceService', 'transaction_failed', '[InvoiceService] Transaction Failed', error);
+            throw error;
         }
     }
 }

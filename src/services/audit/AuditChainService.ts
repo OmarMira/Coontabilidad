@@ -1,4 +1,3 @@
-﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 
 /**
@@ -52,7 +51,7 @@ export class AuditChainService {
             let finalPayload = event.payload;
             let isDelta = false;
 
-            // Intento de optimizaciÃ³n Delta solo para UPDATES
+            // Intento de optimización Delta solo para UPDATES
             if (event.eventType.toUpperCase().includes('UPDATE') || event.eventType.toUpperCase().includes('EDIT')) {
                 const previousRecord = await this.db.select(
                     `SELECT content_payload FROM audit_chain 
@@ -65,22 +64,22 @@ export class AuditChainService {
                     try {
                         const oldData = JSON.parse((previousRecord[0] as any).content_payload);
                         
-                        // Crear delta mÃ¡s eficiente
+                        // Crear delta más eficiente
                         const delta = this.createDelta(oldData, event.payload);
                         
-                        // Solo usar delta si es significativamente mÃ¡s pequeÃ±o
+                        // Solo usar delta si es significativamente más pequeño
                         const deltaSize = JSON.stringify(delta).length;
                         const fullSize = JSON.stringify(event.payload).length;
                         
-                        if (deltaSize < fullSize * 0.7) { // Solo si el delta es 30% mÃ¡s pequeÃ±o
+                        if (deltaSize < fullSize * 0.7) { // Solo si el delta es 30% más pequeño
                             finalPayload = { _is_delta: true, _delta_version: 1, ...delta };
                             isDelta = true;
                         }
 
                     } catch (e) {
                         // Si falla el parseo o diff, guardamos payload original
-                        logger.warn('AuditChainService', 'delta_error', 'Error creating delta, using full payload');
-                        logger.warn('AuditChainService', 'delta_error', 'Error creating delta, using full payload');
+                        console.warn('Error creating delta, using full payload:', e);
+                    }
                 }
             }
 
@@ -426,7 +425,7 @@ export class AuditChainService {
     }
 
     /**
-     * Obtener estadÃ­sticas de compresiÃ³n delta
+     * Obtener estadísticas de compresión delta
      */
     public async getDeltaCompressionStats(): Promise<{
         totalRecords: number;
@@ -449,7 +448,7 @@ export class AuditChainService {
             totalRecords: result.total_records,
             deltaRecords: result.delta_records,
             compressionRatio: compressionRatio,
-            spaceSaved: Math.round(compressionRatio * 30) // EstimaciÃ³n de 30% de ahorro promedio
+            spaceSaved: Math.round(compressionRatio * 30) // Estimación de 30% de ahorro promedio
         };
     }
 }

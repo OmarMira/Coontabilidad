@@ -119,7 +119,7 @@ export const ReportExporter: React.FC<ReportExporterProps> = ({ data, header, va
             showStatus('success', t('reportsDashboard.common.pdfSuccess') || 'PDF generated successfully');
             logger.info('ReportExporter', 'pdf_success', `Exportado PDF: ${data.fileName}`);
         } catch (error) {
-            logger.error('ReportExporter', 'error', error);
+            logger.error('ReportExporter', 'error', 'operation_failed', error);
             showStatus('error', t('reportsDashboard.common.pdfError') || 'Error generating PDF');
             logger.error('ReportExporter', 'pdf_error', 'Fallo exportaciÃ³n PDF', null, error as Error);
         } finally {

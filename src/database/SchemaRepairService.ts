@@ -27,7 +27,7 @@ export class SchemaRepairService {
             combined.set(hashArray, salt.length);
             return btoa(String.fromCharCode(...combined));
         } catch (e) {
-            logger.error('SchemaRepairService', 'error', "Hashing failed", e);
+            logger.error('SchemaRepairService', 'error', 'operation_failed', "Hashing failed", e);
             return "";
         }
     }
@@ -183,7 +183,7 @@ export class SchemaRepairService {
                 INSERT OR REPLACE INTO users (id, username, email, password_hash, full_name, display_name, role_id, is_active)
                 VALUES (1, 'admin', 'admin@accountexpress.com', 'MTIzNDU2Nzg5MDEyMzQ1NnFUwWSIGxPafapyeY9dnaHK5wmryavbK+SD8mnFAeOW', 'Administrator', 'AdminUser', 1, 1)
             `);
-            logger.info('SchemaRepairService', 'info', "Usuario admin forzado con contraseÃ±a admin123!");
+            logger.info('SchemaRepairService', 'info', 'operation_failed', "Usuario admin forzado con contraseÃ±a admin123!");
             // No recreamos usuarios aquÃ­ para permitir que el sistema inicie en estado "vacio".
 
 

@@ -1,5 +1,4 @@
-﻿import { logger } from '../../core/logging/SystemLogger';
-/**
+﻿/**
  * VALIDADOR DE PARTIDA DOBLE
  *
  * ValidaciÃ³n automÃ¡tica de integridad contable + validaciones preventivas de clasificaciÃ³n (Fase 4).

@@ -166,7 +166,7 @@ export const InventoryReports: React.FC = () => {
                 }
             }
         } catch (e) {
-            logger.error('InventoryReports', 'error', e);
+            logger.error('InventoryReports', 'error', 'operation_failed', e);
         } finally {
             setLoading(false);
         }

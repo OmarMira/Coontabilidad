@@ -49,7 +49,7 @@ export const LocationsManager: React.FC = () => {
             setForm({ name: '', code: '' });
             loadLocations();
         } catch (err) {
-            logger.error('LocationsManager', 'error', err);
+            logger.error('LocationsManager', 'error', 'operation_failed', err);
         }
     };
 

@@ -50,7 +50,7 @@ async function processOutbox() {
             return;
         }
 
-        logger.info('SyncWorker', 'processing', `[SyncWorker] Processing `$`{items.length} operations`);
+        logger.info('SyncWorker', 'processing', '[SyncWorker] Processing operations');
 
         for (const item of items) {
             try {

@@ -1,5 +1,4 @@
-﻿import { logger } from './core/logging/SystemLogger';
-import React from 'react';
+﻿import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { DynamicErrorBoundary } from '@/components/error/DynamicErrorBoundary';
 import { DatabaseHealthChecker } from '@/core/DatabaseHealthChecker';

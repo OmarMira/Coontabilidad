@@ -1,16 +1,15 @@
-﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * WorkerPoolManager (Iron Clad Upgrade - Phase 2, Day 7)
  * 
  * Gestiona un pool de Web Workers reutilizables para mejorar performance.
  * 
- * CaracterÃ­sticas:
+ * Características:
  * - Pool de workers por tipo (PDF, CSV, etc.)
- * - LÃ­mite de workers concurrentes
- * - ReutilizaciÃ³n de workers idle
- * - Cleanup automÃ¡tico de workers inactivos
- * - MÃ©tricas de uso
- * - Cola de tareas cuando pool estÃ¡ lleno
+ * - Límite de workers concurrentes
+ * - Reutilización de workers idle
+ * - Cleanup automático de workers inactivos
+ * - Métricas de uso
+ * - Cola de tareas cuando pool está lleno
  */
 
 export type WorkerType = 'PDF' | 'CSV' | 'ENCRYPTION' | 'DATABASE';
@@ -91,7 +90,7 @@ export class WorkerPoolManager {
                     onProgress
                 });
 
-                logger.info('WorkerPoolManager', 'task_queued', 'Task queued');
+                console.log(`📋 Task queued (${type}). Queue size: ${this.taskQueue.length}`);
             }
         });
     }
@@ -183,8 +182,8 @@ export class WorkerPoolManager {
         const pool = this.pools.get(type)!;
         pool.push(workerInstance);
 
-        logger.info('WorkerPoolManager', 'worker_created', 'Worker created');
-        logger.info('WorkerPoolManager', 'worker_created', 'Worker created');
+        console.log(`✅ Created ${type} worker: ${workerId}. Pool size: ${pool.length}`);
+
         return workerInstance;
     }
 
@@ -283,8 +282,8 @@ export class WorkerPoolManager {
         }
 
         if (tasksToProcess.length > 0) {
-            logger.info('WorkerPoolManager', 'queued_tasks_processed', 'Processed queued tasks');
-            logger.info('WorkerPoolManager', 'queued_tasks_processed', 'Processed queued tasks');
+            console.log(`✅ Processed ${tasksToProcess.length} queued tasks. Remaining: ${this.taskQueue.length}`);
+        }
     }
 
     /**
@@ -324,14 +323,14 @@ export class WorkerPoolManager {
                     pool.splice(index, 1);
                     workerInstance.worker.terminate();
                     cleanedCount++;
-                    logger.info('WorkerPoolManager', 'worker_cleanup', 'Cleaned up idle worker');
-                    logger.info('WorkerPoolManager', 'worker_cleanup', 'Cleaned up idle worker');
+                    console.log(`🧹 Cleaned up idle ${type} worker: ${workerInstance.id}`);
+                }
             }
         }
 
         if (cleanedCount > 0) {
-            logger.info('WorkerPoolManager', 'total_workers_cleaned', 'Total workers cleaned');
-            logger.info('WorkerPoolManager', 'total_workers_cleaned', 'Total workers cleaned');
+            console.log(`🧹 Total workers cleaned: ${cleanedCount}`);
+        }
     }
 
     /**
@@ -400,8 +399,8 @@ export class WorkerPoolManager {
         // Clear queue
         this.taskQueue.length = 0;
 
-        logger.info('WorkerPoolManager', 'destroyed', 'WorkerPoolManager destroyed');
-        logger.info('WorkerPoolManager', 'destroyed', 'WorkerPoolManager destroyed');
+        console.log('🛑 WorkerPoolManager destroyed');
+    }
 }
 
 /**

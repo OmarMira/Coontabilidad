@@ -45,9 +45,9 @@ export class ModernConversationalAssistant {
             this.analyzer = await SemanticQueryAnalyzer.getInstance();
             this.sqlGenerator = new IntelligentSQLGenerator(EngineBridge.getEngine());
             this.isInitialized = true;
-            logger.info('ModernConversationalAssistant', 'info', "âœ… ModernConversationalAssistant Initialized.");
+            logger.info('ModernConversationalAssistant', 'info', 'operation_failed', "âœ… ModernConversationalAssistant Initialized.");
         } catch (error) {
-            logger.error('ModernConversationalAssistant', 'error', "âš ï¸ Error initializing ModernConversationalAssistant:", error);
+            logger.error('ModernConversationalAssistant', 'error', 'operation_failed', "âš ï¸ Error initializing ModernConversationalAssistant:", error);
         }
     }
 

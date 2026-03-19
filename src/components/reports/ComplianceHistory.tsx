@@ -101,7 +101,7 @@ export const ComplianceHistory: React.FC = () => {
                     }
                 }
             } catch (e) {
-                logger.error('ComplianceHistory', 'error', "Compliance History Critical Load Error:", e);
+                logger.error('ComplianceHistory', 'error', 'operation_failed', "Compliance History Critical Load Error:", e);
                 if (isMounted) {
                     setConfigAlert(`${t('reportsdashboard.compliance.error')}: ${e instanceof Error ? e.message : 'Unknown error'}`);
                 }

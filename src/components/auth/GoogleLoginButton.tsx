@@ -90,10 +90,10 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess,
 
     React.useEffect(() => {
         logger.info('GoogleLoginButton', 'auth_init', 'Google Auth Init');
-            mode: isGoogleConfigured ? 'PRODUCTION' : 'SIMULATION_READY',
-            recoveredKeyUsed: FINAL_CLIENT_ID === RECOVERED_ID,
-            keyPreview: FINAL_CLIENT_ID ? `${FINAL_CLIENT_ID.substring(0, 10)}...` : 'NONE'
-        });
+
+
+
+
     }, [isGoogleConfigured]);
 
     /* 

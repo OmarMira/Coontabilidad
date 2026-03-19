@@ -130,7 +130,7 @@ export class SchemaIntegrityCheck implements IntegrityCheck {
                             logger.warn('SchemaIntegrityCheck', 'warn', 'Force save failed', e);
                         }
                     } catch (e) {
-                        logger.error('SchemaIntegrityCheck', 'error', "Critical Repair Fail", e);
+                        logger.error('SchemaIntegrityCheck', 'error', 'operation_failed', "Critical Repair Fail", e);
                     }
 
                     // Esperar un momento para asegurar que IndexedDB termine

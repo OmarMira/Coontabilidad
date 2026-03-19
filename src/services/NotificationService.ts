@@ -48,10 +48,10 @@ export class NotificationService {
                 tag: 'tax-alert',
                 requireInteraction: true
             });
-            logger.info('NotificationService', 'info', "Notification sent:", title);
+            logger.info('NotificationService', 'info', 'operation_failed', "Notification sent:", title);
             localStorage.setItem('last_tax_notification', today);
         } catch (e) {
-            logger.error('NotificationService', 'error', "Notification failed", e);
+            logger.error('NotificationService', 'error', 'operation_failed', "Notification failed", e);
         }
     }
 

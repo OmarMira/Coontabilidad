@@ -23,7 +23,7 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
 
                 try {
                     const { data: { text } } = await Tesseract.recognize(file, 'spa', {
-                        logger: (info) => logger.info('ARDScanner', 'info', info),
+                        logger: (info) => logger.info('ARDScanner', 'info', 'operation_failed', info),
                     });
 
                     const parsedResult = parseOCRText(text);

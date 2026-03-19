@@ -1,5 +1,4 @@
-﻿import { logger } from '../core/logging/SystemLogger';
-import { logger } from '../utils/logger';
+﻿import { logger } from '../utils/logger';
 import { DatabaseHealthChecker } from './DatabaseHealthChecker';
 
 export class UISyncManager {

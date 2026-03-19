@@ -38,7 +38,7 @@ export const OFXImporter: React.FC = () => {
                 if (loadedAccounts.length > 0) setSelectedAccountId(loadedAccounts[0].id);
             }
         } catch (e) {
-            logger.error('OFXImporter', 'error', "Error loading accounts", e);
+            logger.error('OFXImporter', 'error', 'operation_failed', "Error loading accounts", e);
         }
     };
 
@@ -104,8 +104,8 @@ export const OFXImporter: React.FC = () => {
                     });
                 } else {
                     invalidCount++;
-                    logger.warn('OFXImporter', 'warn', "OFX Transaction failed normalization", t, normalized.error);
-                }
+
+                    logger.warn('OFXImporter', 'warn', 'OFX Transaction failed normalization', t);
             });
 
             if (transactions.length > 0) {
@@ -125,7 +125,7 @@ export const OFXImporter: React.FC = () => {
 
         } catch (err) {
             setErrorMsg("Error crÃ­tico al importar datos.");
-            logger.error('OFXImporter', 'error', err);
+            logger.error('OFXImporter', 'error', 'operation_failed', err);
         } finally {
             setLoading(false);
         }

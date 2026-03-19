@@ -90,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         const summary = await TaxService.getTaxLiabilitySummary();
         setRealTaxLiability(summary.totalAccrued);
         setPendingTaxCount(summary.pendingCount);
-      } catch (e) { logger.error('Dashboard', 'error', e); }
+      } catch (e) { logger.error('Dashboard', 'error', 'operation_failed', e); }
     };
     fetchTax();
 

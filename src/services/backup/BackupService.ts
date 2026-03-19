@@ -1089,7 +1089,7 @@ export class BackupService {
 
             return true;
         } catch (e) {
-            ProductionLogger.error('BackupService', 'Legacy backup failed', e);
+            ProductionLogger.error('BackupService', 'Legacy backup failed', e as Error);
             return false;
         }
     }
@@ -1112,8 +1112,8 @@ export class BackupService {
             await service.restoreBackup(content, 'LEGACY_MODE_ENCRYPTION_REQD');
             return true;
         } catch (e) {
-            ProductionLogger.error('BackupService', '[RESTORE] Error completo', e);
-            ProductionLogger.error('BackupService', 'Legacy restore failed', e);
+            ProductionLogger.error('BackupService', '[RESTORE] Error completo', e as Error);
+            ProductionLogger.error('BackupService', 'Legacy restore failed', e as Error);
             return false;
         }
     }
