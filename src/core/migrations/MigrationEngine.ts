@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../database/SQLiteEngine';
 import { InitialSchemaMigration } from './list/001_initial_schema';
 import { AIViewsMigration } from './list/002_ai_views';
@@ -45,8 +46,8 @@ export class MigrationEngine {
     private static instance: MigrationEngine;
 
     // Lista de todas las migraciones registradas en el sistema.
-    // El motor las aplica en el orden en que aparecen en el array, filtrando por versión.
-    // MANTENER ORDEN CRONOLÓGICO POR VERSIÓN PARA EVITAR FALLOS DE DEPENDENCIA.
+    // El motor las aplica en el orden en que aparecen en el array, filtrando por versiÃ³n.
+    // MANTENER ORDEN CRONOLÃ“GICO POR VERSIÃ“N PARA EVITAR FALLOS DE DEPENDENCIA.
     private migrations: Migration[] = [
         InitialSchemaMigration,              // v1
         AIViewsMigration,                   // v2
@@ -61,7 +62,7 @@ export class MigrationEngine {
         FixedAssetsSchema,                  // v11
         BudgetsSchema,                      // v12
         TaxTransactionsMigration,          // v13
-        // v14: Intencionalmente saltada - no hay migración con este ID
+        // v14: Intencionalmente saltada - no hay migraciÃ³n con este ID
         AddAccountAliasMigration,          // v15
         RemediationSchemaMigration,        // v16
         BankImportHashMigration,           // v17
@@ -69,7 +70,8 @@ export class MigrationEngine {
         ClassificationRulesAccountTypeMigration, // v19
         BankImportSchemaMigration,          // v20
         FixAnomalyDetectorSchemaMigration,   // v21
-        FixAuditChainSchemaMigration as any, // v23
+        // v22: Intencionalmente saltada - no hay migracion con este ID
+        FixAuditChainSchemaMigration, // v23
         new HistoricalDataFixMigration(),    // v24
         AddStatusToJournalEntriesMigration,  // v25
         DropCompanyInfoMigration,             // v26
@@ -99,23 +101,23 @@ export class MigrationEngine {
             await this.ensureMigrationTable(engine);
 
             const currentVersion = await this.getCurrentVersion(engine);
-            console.log(`[MigrationEngine] Current DB Version: ${currentVersion}`);
+            logger.info('MigrationEngine', 'migrate', "[MigrationEngine] Current DB Version: ${currentVersion}");
 
-            // Filtrar y ordenar explícitamente por versión para robustez
+            // Filtrar y ordenar explÃ­citamente por versiÃ³n para robustez
             const pending = this.migrations
                 .filter(m => m.version > currentVersion)
                 .sort((a, b) => a.version - b.version);
 
             if (pending.length === 0) {
-                console.log('[MigrationEngine] System is up to date.');
+                logger.info('MigrationEngine', 'migrate', '[MigrationEngine] System is up to date.');
                 return;
             }
 
-            console.log(`[MigrationEngine] Found ${pending.length} pending migrations.`);
+            logger.info('MigrationEngine', 'migrate', "[MigrationEngine] Found ${pending.length} pending migrations.");
 
             for (const migration of pending) {
                 await engine.executeTransaction(async () => {
-                    console.log(`[MigrationEngine] Applying v${migration.version}: ${migration.name}...`);
+                    logger.info('MigrationEngine', 'migrate', "[MigrationEngine] Applying v${migration.version}: ${migration.name}...");
                     await migration.up(engine);
 
                     // Record success
@@ -124,12 +126,12 @@ export class MigrationEngine {
                         [migration.version, migration.name]
                     );
                 });
-                console.log(`[MigrationEngine] Success v${migration.version}`);
+                logger.info('MigrationEngine', 'migrate', "[MigrationEngine] Success v${migration.version}");
             }
 
-            console.log("[MigrationEngine] All migrations completed successfully.");
+            logger.info('MigrationEngine', 'migrate', '[MigrationEngine] All migrations completed successfully.');
         } catch (error) {
-            console.error("[MigrationEngine] CRITICAL ERROR: Migration failed.", error);
+            logger.error('MigrationEngine', 'migrate', '[MigrationEngine] CRITICAL ERROR: Migration failed.', error);
             throw new Error("Database migration failed. System startup aborted to prevent data corruption.");
         }
     }
@@ -149,9 +151,9 @@ export class MigrationEngine {
         const hasName = tableInfo.some((col: any) => col.name === 'name');
         const hasLegacyName = tableInfo.some((col: any) => col.name === 'migration_name');
 
-        // Normalización profunda si detectamos columnas obsoletas
+        // NormalizaciÃ³n profunda si detectamos columnas obsoletas
         if (hasLegacyName) {
-            console.log("[MigrationEngine] Legacy schema detected in sys_migrations. Normalizing...");
+            logger.info('MigrationEngine', 'migrate', '[MigrationEngine] Legacy schema detected in sys_migrations. Normalizing...');
             try {
                 await engine.executeTransaction(async () => {
                     await engine.exec("ALTER TABLE sys_migrations RENAME TO sys_migrations_old");
@@ -179,9 +181,9 @@ export class MigrationEngine {
                     }
                     await engine.exec("DROP TABLE sys_migrations_old");
                 });
-                console.log("[MigrationEngine] Schema normalization successful.");
+                logger.info('MigrationEngine', 'migrate', '[MigrationEngine] Schema normalization successful.');
             } catch (error) {
-                console.error("[MigrationEngine] Schema normalization failed. Attempting fallback...", error);
+                logger.error('MigrationEngine', 'migrate', '[MigrationEngine] Schema normalization failed. Attempting fallback...', error);
                 if (!hasName) {
                     try { await engine.exec(`ALTER TABLE sys_migrations ADD COLUMN name TEXT`); } catch (_) { }
                 }
@@ -197,3 +199,4 @@ export class MigrationEngine {
         return 0;
     }
 }
+

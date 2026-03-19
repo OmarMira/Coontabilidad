@@ -1,7 +1,10 @@
+﻿import type { Migration } from '../MigrationEngine';
+import { SQLiteEngine } from '../../database/SQLiteEngine';
+
 export const FixAuditChainSchemaMigration = {
     version: 23,
     name: 'fix_audit_chain_event_type_column',
-    up: async (db: any) => {
+    up: async (db: SQLiteEngine) => {
         const columns = await db.select("PRAGMA table_info(audit_chain)");
         const columnNames = columns.map((c: any) => c.name);
 
@@ -28,5 +31,10 @@ export const FixAuditChainSchemaMigration = {
                 }
             }
         }
+    },
+    down: async (_db: SQLiteEngine): Promise<void> => {
+        // No revertible: columnas adicionales no se eliminan
     }
 };
+
+
