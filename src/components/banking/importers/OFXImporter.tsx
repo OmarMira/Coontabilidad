@@ -104,8 +104,8 @@ export const OFXImporter: React.FC = () => {
                     });
                 } else {
                     invalidCount++;
-
                     logger.warn('OFXImporter', 'warn', 'OFX Transaction failed normalization', t);
+                }
             });
 
             if (transactions.length > 0) {
