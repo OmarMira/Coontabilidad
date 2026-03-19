@@ -1,9 +1,9 @@
-/**
+﻿/**
  * PANEL DE DASHBOARD FINANCIERO - SISTEMA DUAL
  * 
  * Panel de resumen financiero en tiempo real que mantiene:
  * - Todos los datos financieros importantes
- * - Actualización automática cada 2 minutos
+ * - ActualizaciÃ³n automÃ¡tica cada 2 minutos
  * - Resumen ejecutivo del estado del sistema
  * - Visibilidad permanente en dashboard
  */
@@ -79,7 +79,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     try {
       logger.info('FinancialDashboard', 'load_data', 'Cargando datos del dashboard financiero');
 
-      // Obtener análisis completo del sistema restaurado
+      // Obtener anÃ¡lisis completo del sistema restaurado
       const analysis = await iaService.analyzeFinancialHealth();
 
       // Convertir a formato de dashboard
@@ -110,7 +110,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     }
   };
 
-  // Funciones auxiliares para calcular métricas
+  // Funciones auxiliares para calcular mÃ©tricas
   const calculateTotalBalance = (data: any): number => {
     if (!data.financial) return 0;
     return data.financial.reduce((sum: number, item: any) => sum + (item.cantidad_cuentas || 0), 0) * 1000;
@@ -124,7 +124,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
 
   const calculateCriticalStock = (_data: any): number => {
     try {
-      const { dbExec } = require('../database/simple-db');
+      const { dbExec } = require('../database/modules/db-core');
       const res = dbExec(
         `SELECT COUNT(*) as cnt FROM products
          WHERE active = 1
@@ -151,9 +151,9 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
   const convertAlertsToFormat = (alerts: string[]): DashboardData['alerts'] => {
     return alerts.map((alert, index) => ({
       id: `alert-${index}`,
-      type: alert.includes('CRÍTICO') ? 'error' : alert.includes('ALERTA') ? 'warning' : 'info',
+      type: alert.includes('CRÃTICO') ? 'error' : alert.includes('ALERTA') ? 'warning' : 'info',
       message: alert,
-      priority: alert.includes('CRÍTICO') ? 'high' : alert.includes('ALERTA') ? 'medium' : 'low'
+      priority: alert.includes('CRÃTICO') ? 'high' : alert.includes('ALERTA') ? 'medium' : 'low'
     }));
   };
 
@@ -278,7 +278,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
       {/* CONTENIDO DEL DASHBOARD */}
       {dashboardData && !isLoading && (
         <div className="space-y-6">
-          {/* RESUMEN RÁPIDO EN GRID */}
+          {/* RESUMEN RÃPIDO EN GRID */}
           <div className="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <DashboardCard
               title={t('financialDashboard.totalBalances')}
@@ -313,7 +313,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           {/* SECCIONES DETALLADAS */}
           <div className="dashboard-sections space-y-4">
             {/* ALERTAS */}
-            <DashboardSection title={`⚠️ ${t('financialDashboard.activeAlerts')}`} icon={AlertTriangle} type="alert">
+            <DashboardSection title={`âš ï¸ ${t('financialDashboard.activeAlerts')}`} icon={AlertTriangle} type="alert">
               <div className="space-y-2">
                 {dashboardData.alerts.map(alert => (
                   <div key={alert.id} className="flex items-center space-x-2 text-sm">
@@ -327,7 +327,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* DATOS FINANCIEROS */}
-            <DashboardSection title={`📊 ${t('financialDashboard.accountingStructure')}`} icon={PieChart} type="data">
+            <DashboardSection title={`ðŸ“Š ${t('financialDashboard.accountingStructure')}`} icon={PieChart} type="data">
               <div className="grid grid-cols-2 gap-2">
                 {dashboardData.accountingStructure.map((item: any, index: number) => (
                   <div key={index} className="bg-slate-800 p-3 rounded">
@@ -339,7 +339,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* ACCIONES RECOMENDADAS */}
-            <DashboardSection title={`👉 ${t('financialDashboard.priorityActions')}`} icon={Target} type="action">
+            <DashboardSection title={`ðŸ‘‰ ${t('financialDashboard.priorityActions')}`} icon={Target} type="action">
               <div className="space-y-1">
                 {dashboardData.recommendedActions.map((action, index) => (
                   <p key={index} className="text-sm text-green-200">{action}</p>
@@ -347,8 +347,8 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
               </div>
             </DashboardSection>
 
-            {/* ANÁLISIS DEL PERÍODO */}
-            <DashboardSection title={`🔍 ${t('financialDashboard.periodAnalysis')}`} icon={TrendingUp} type="analysis">
+            {/* ANÃLISIS DEL PERÃODO */}
+            <DashboardSection title={`ðŸ” ${t('financialDashboard.periodAnalysis')}`} icon={TrendingUp} type="analysis">
               <div className="text-sm text-purple-200 whitespace-pre-line">
                 {dashboardData.periodAnalysis}
               </div>

@@ -114,7 +114,7 @@ export const PayrollDashboard: React.FC = () => {
     ];
 
     try {
-      const { dbExec } = require('../../database/simple-db');
+      const { dbExec } = require('../../database/modules/db-core');
       const res = dbExec(`
         SELECT
           strftime('%Y', pay_date) as yr,
@@ -323,3 +323,4 @@ const AnalysisBox = ({ title, subtitle, children }: any) => (
     </div>
   </div>
 );
+
