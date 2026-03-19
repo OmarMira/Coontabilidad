@@ -13,7 +13,8 @@ import {
     ArrowRight,
     Zap
 } from 'lucide-react';
-import type { AccountingPeriod, TrialBalanceRow } from '@/database/modules/db-types';
+import type { AccountingPeriod } from '@/database/modules/db-types';
+import type { TrialBalanceRow } from '@/modules/accounting/Accounting.types';
 import { getTrialBalanceReport } from '@/database/modules/db-reports-trial';
 import { closePeriod, generateClosingEntry } from '@/database/modules/db-reports-financial';
 import { Button } from '../ui/button';
@@ -342,3 +343,4 @@ export const PeriodClosingWizard: React.FC<PeriodClosingWizardProps> = ({ period
         </div>
     );
 };
+

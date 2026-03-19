@@ -1,6 +1,6 @@
-// ==========================================
-// MÓDULO 01 — Tipos e Interfaces
-// Extraído de simple-db.ts líneas 88-292 y 1327-1846
+﻿// ==========================================
+// MÃ“DULO 01 â€” Tipos e Interfaces
+// ExtraÃ­do de simple-db.ts lÃ­neas 88-292 y 1327-1846
 // ==========================================
 
 
@@ -647,98 +647,98 @@ export interface UserSession {
   created_at?: string;
 }
 
-export interface Budget {
-  id: number;
-  budget_name: string;
-  fiscal_year: number;
-  start_date: string;
-  end_date: string;
-  status: 'DRAFT' | 'APPROVED' | 'ACTIVE' | 'CLOSED';
-  total_budget_amount: number;
-  department?: string;
-  notes?: string;
-  alert_threshold_percentage?: number;
-  created_at: string;
-  updated_at: string;
-  created_by?: number;
-  updated_by?: number;
-  approved_by?: number;
-  approved_at?: string;
-}
 
-export interface BudgetLine {
-  id: number;
-  budget_id: number;
-  account_number: number;
-  annual_amount: number;
-  monthly_amount: number;
-  created_at: string;
-  updated_at: string;
-}
 
-export interface BudgetPeriod {
-  id: number;
-  budget_line_id: number;
-  period_number: number;
-  budgeted_amount: number;
-  actual_amount: number;
-  variance: number;
-  notes?: string;
-  updated_at: string;
-}
 
-export interface BudgetVarianceAnalysis {
-  account_number: number;
-  account_name: string;
-  annual_budget: number;
-  annual_actual: number;
-  annual_variance: number;
-  annual_variance_percent: number;
-  ytd_budget: number;
-  ytd_actual: number;
-  ytd_variance: number;
-  ytd_variance_percent: number;
-  periods: {
-    period_number: number;
-    period_name: string;
-    budgeted: number;
-    actual: number;
-    variance: number;
-    variance_percent: number;
-    is_favorable: boolean;
-  }[];
-}
 
-export interface PayrollFilter {
-  employeeId?: number;
-  status?: string;
-  year?: number;
-  month?: number;
-}
 
-export interface TrialBalanceRow {
-  account_code: string;
-  number?: string;
-  account_name: string;
-  account_type: string;
-  normal_balance?: 'debit' | 'credit';
-  debit_balance?: number;
-  credit_balance?: number;
-  previous_debit?: number;
-  previous_credit?: number;
-  period_debit?: number;
-  period_credit?: number;
-  total_debit?: number;
-  total_credit?: number;
-  initial_balance?: number;
-}
 
-export interface IncomeStatementItem {
-  account_code: string;
-  account_name: string;
-  amount: number;
-  type: 'revenue' | 'expense';
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export interface PurchaseOrder {
   id: number;
@@ -840,11 +840,11 @@ export interface MonthlySummary {
   expenses: number;
 }
 
-export interface MatchCandidate {
-  journalEntry: JournalEntry;
-  score: number;
-  matchReason: string;
-}
+
+
+
+
+
 
 export interface PayrollRecord {
   id?: number;
