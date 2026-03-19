@@ -1,28 +1,29 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 // ProactiveMonitoringService.ts
-// Servicio para monitoreo continuo y detección de anomalías
+// Servicio para monitoreo continuo y detecciÃ³n de anomalÃ­as
 
 export class ProactiveMonitoringService {
   constructor() {
-    // Inicialización del servicio
+    // InicializaciÃ³n del servicio
   }
 
   monitorTransactions() {
-    console.log('Monitoreando transacciones en tiempo real...');
-    // Lógica para monitorear transacciones
+    logger.info('ProactiveMonitoringService', 'monitor_transactions', 'Monitoreando transacciones en tiempo real');
+    // LÃ³gica para monitorear transacciones
   }
 
   detectAnomalies() {
-    console.log('Detectando anomalías en transacciones...');
-    // Lógica para detectar montos inusuales y patrones extraños
+    logger.info('ProactiveMonitoringService', 'detect_anomalies', 'Detectando anomalias en transacciones');
+    // LÃ³gica para detectar montos inusuales y patrones extraÃ±os
   }
 
   verifyIntegrity() {
-    console.log('Verificando integridad contable...');
-    // Lógica para verificar integridad contable continua
+    logger.info('ProactiveMonitoringService', 'verify_integrity', 'Verificando integridad contable');
+    // LÃ³gica para verificar integridad contable continua
   }
 
   alertDiscrepancies() {
-    console.log('Alertando sobre descuadres en partida doble...');
-    // Lógica para alertar sobre descuadres
+    logger.info('ProactiveMonitoringService', 'alert_discrepancies', 'Alertando sobre descuadres en partida doble');
+    // LÃ³gica para alertar sobre descuadres
   }
 }

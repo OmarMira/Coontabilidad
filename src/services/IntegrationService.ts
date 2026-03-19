@@ -1,4 +1,5 @@
-// IntegrationService.ts - Servicio de integración entre módulos
+﻿import { logger } from '../core/logging/SystemLogger';
+// IntegrationService.ts - Servicio de integraciÃ³n entre mÃ³dulos
 import { db } from '@/database/modules/db-core';
 import { intelligentCache } from '../core/cache/IntelligentCache';
 
@@ -64,7 +65,7 @@ export class IntegrationService {
   }
 
   /**
-   * Obtiene vista unificada de todos los módulos
+   * Obtiene vista unificada de todos los mÃ³dulos
    */
   async getUnifiedView(options: {
     period?: string;
@@ -100,7 +101,7 @@ export class IntegrationService {
   }
 
   /**
-   * Estadísticas de inventario
+   * EstadÃ­sticas de inventario
    */
   private async getInventoryStats(): Promise<InventoryStats> {
     if (!db) {
@@ -141,14 +142,14 @@ export class IntegrationService {
       `);
       const totalValue = valueRes[0]?.values[0]?.[0] || 0;
 
-      // Movimientos recientes (últimos 7 días)
+      // Movimientos recientes (Ãºltimos 7 dÃ­as)
       const recentRes = db.exec(`
         SELECT COUNT(*) FROM inventory_movements
         WHERE JULIANDAY('now') - JULIANDAY(movement_date) <= 7
       `);
       const recentMovements = recentRes[0]?.values[0]?.[0] || 0;
 
-      // Top productos con más movimiento
+      // Top productos con mÃ¡s movimiento
       const topRes = db.exec(`
         SELECT p.name, SUM(ABS(im.quantity)) as total_quantity
         FROM inventory_movements im
@@ -171,7 +172,7 @@ export class IntegrationService {
         topMovingProducts
       };
     } catch (error) {
-      console.error('Error getting inventory stats:', error);
+      logger.error('IntegrationService', 'get_inventory_stats', 'Error getting inventory stats', error);
       return {
         totalProducts: 0,
         lowStockItems: 0,
@@ -183,7 +184,7 @@ export class IntegrationService {
   }
 
   /**
-   * Estadísticas de nómina
+   * EstadÃ­sticas de nÃ³mina
    */
   private async getPayrollStats(): Promise<PayrollStats> {
     if (!db) {
@@ -204,7 +205,7 @@ export class IntegrationService {
       const activeRes = db.exec(`SELECT COUNT(*) FROM employees WHERE status = 'active'`);
       const activeEmployees = activeRes[0]?.values[0]?.[0] || 0;
 
-      // Períodos pendientes
+      // PerÃ­odos pendientes
       const pendingRes = db.exec(`SELECT COUNT(*) FROM payroll_periods WHERE status IN ('pending', 'open')`);
       const pendingPeriods = pendingRes[0]?.values[0]?.[0] || 0;
 
@@ -217,7 +218,7 @@ export class IntegrationService {
       `);
       const monthlyPayrollCost = costRes[0]?.values[0]?.[0] || 0;
 
-      // Última fecha de procesamiento
+      // Ãšltima fecha de procesamiento
       const lastRes = db.exec(`
         SELECT MAX(pay_date) FROM payroll_periods WHERE status = 'closed'
       `);
@@ -231,7 +232,7 @@ export class IntegrationService {
         lastProcessedDate
       };
     } catch (error) {
-      console.error('Error getting payroll stats:', error);
+      logger.error('IntegrationService', 'get_payroll_stats', 'Error getting payroll stats', error);
       return {
         totalEmployees: 0,
         activeEmployees: 0,
@@ -242,7 +243,7 @@ export class IntegrationService {
   }
 
   /**
-   * Estadísticas bancarias
+   * EstadÃ­sticas bancarias
    */
   private async getBankingStats(): Promise<BankingStats> {
     if (!db) {
@@ -271,7 +272,7 @@ export class IntegrationService {
       const pendingRes = db.exec(`SELECT COUNT(*) FROM reconciliation_statements WHERE status IN ('pending', 'in_progress')`);
       const pendingReconciliations = pendingRes[0]?.values[0]?.[0] || 0;
 
-      // Última fecha de conciliación
+      // Ãšltima fecha de conciliaciÃ³n
       const lastRes = db.exec(`
         SELECT MAX(statement_date) FROM reconciliation_statements WHERE status = 'reconciled'
       `);
@@ -285,7 +286,7 @@ export class IntegrationService {
         lastReconciliationDate
       };
     } catch (error) {
-      console.error('Error getting banking stats:', error);
+      logger.error('IntegrationService', 'get_banking_stats', 'Error getting banking stats', error);
       return {
         totalAccounts: 0,
         totalBalance: 0,
@@ -296,7 +297,7 @@ export class IntegrationService {
   }
 
   /**
-   * Estadísticas financieras
+   * EstadÃ­sticas financieras
    */
   private async getFinancialStats(period?: string): Promise<FinancialStats> {
     if (!db) {
@@ -343,7 +344,7 @@ export class IntegrationService {
         profitMargin
       };
     } catch (error) {
-      console.error('Error getting financial stats:', error);
+      logger.error('IntegrationService', 'get_financial_stats', 'Error getting financial stats', error);
       return {
         totalRevenue: 0,
         totalExpenses: 0,
@@ -372,25 +373,25 @@ export class IntegrationService {
       });
     }
 
-    // Insight: Nómina pendiente
+    // Insight: NÃ³mina pendiente
     if (view.payroll.pendingPeriods > 0) {
       insights.push({
         type: 'alert',
         module: 'payroll',
-        title: 'Nómina Pendiente',
-        description: `${view.payroll.pendingPeriods} período${view.payroll.pendingPeriods !== 1 ? 's' : ''} de nómina pendiente${view.payroll.pendingPeriods !== 1 ? 's' : ''} de procesamiento.`,
+        title: 'NÃ³mina Pendiente',
+        description: `${view.payroll.pendingPeriods} perÃ­odo${view.payroll.pendingPeriods !== 1 ? 's' : ''} de nÃ³mina pendiente${view.payroll.pendingPeriods !== 1 ? 's' : ''} de procesamiento.`,
         confidence: 1.0,
         action: '/payroll-process'
       });
     }
 
-    // Insight: Conciliación atrasada
+    // Insight: ConciliaciÃ³n atrasada
     if (view.banking.unreconciledTransactions > 10) {
       insights.push({
         type: 'recommendation',
         module: 'banking',
-        title: 'Conciliación Recomendada',
-        description: `${view.banking.unreconciledTransactions} transacciones sin conciliar. Recomendamos realizar conciliación bancaria.`,
+        title: 'ConciliaciÃ³n Recomendada',
+        description: `${view.banking.unreconciledTransactions} transacciones sin conciliar. Recomendamos realizar conciliaciÃ³n bancaria.`,
         confidence: 0.85,
         action: '/bank-reconciliation'
       });
@@ -410,7 +411,7 @@ export class IntegrationService {
         type: 'trend',
         module: 'financial',
         title: 'Excelente Rentabilidad',
-        description: `Margen de ganancia saludable: ${view.financial.profitMargin.toFixed(1)}%. ¡Buen trabajo!`,
+        description: `Margen de ganancia saludable: ${view.financial.profitMargin.toFixed(1)}%. Â¡Buen trabajo!`,
         confidence: 0.9
       });
     }
@@ -430,7 +431,7 @@ export class IntegrationService {
   }
 
   /**
-   * Invalida caché de vista unificada
+   * Invalida cachÃ© de vista unificada
    */
   invalidateUnifiedView(): void {
     intelligentCache.invalidateByTag('unified-view');
@@ -439,3 +440,4 @@ export class IntegrationService {
 
 // Export singleton instance
 export const integrationService = IntegrationService.getInstance();
+
