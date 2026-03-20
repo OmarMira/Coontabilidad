@@ -8,6 +8,8 @@ import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { MigrationEngine } from '../core/migrations/MigrationEngine';
 import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
+import { createPayment as _createPayment, generatePaymentNumber as _generatePaymentNumber } from './modules/db-payments';
+import { generatePaymentReceivedJournalEntry as _generatePaymentReceivedJournalEntry } from './modules/db-journal-auto';
 import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
 import { addCustomer as _addCustomer, getCustomers as _getCustomers, getCustomerById as _getCustomerById, updateCustomer as _updateCustomer, canDeleteCustomer as _canDeleteCustomer, deleteCustomer as _deleteCustomer } from './modules/db-customers';
 import { isDateLocked as _isDateLocked } from './modules/db-journal';
@@ -6816,44 +6818,20 @@ export const generatePurchaseJournalEntry = async (bill: Bill, userId?: number):
 };
 
 // Generar asiento automático para pago recibido
-export const generatePaymentReceivedJournalEntry = async (payment: Payment, customer: Customer, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
-  const details: Partial<JournalDetail>[] = [
-    // Débito: Efectivo/Banco
-    {
-      account_code: payment.payment_method === 'cash' ? '1111' : '1112',
-      debit_amount: payment.amount,
-      credit_amount: 0,
-      description: `Pago recibido ${payment.payment_number} - ${customer.name} `
-    },
-    // Crédito: Cuentas por Cobrar
-    {
-      account_code: '1121',
-      debit_amount: 0,
-      credit_amount: payment.amount,
-      description: `Pago ${payment.payment_number} - ${customer.name} `
-    }
-  ];
-
-  return createJournalEntry({
-    entry_date: payment.payment_date,
-    reference_number: `PAY - ${payment.payment_number} `,
-    description: `Pago recibido de ${customer.name} - ${payment.payment_number} `
-  }, details, userId);
+export const generatePaymentReceivedJournalEntry = async (
+  payment: Parameters<typeof _generatePaymentReceivedJournalEntry>[0],
+  customer: Parameters<typeof _generatePaymentReceivedJournalEntry>[1],
+  userId?: number
+): ReturnType<typeof _generatePaymentReceivedJournalEntry> => {
+  return _generatePaymentReceivedJournalEntry(payment, customer, userId);
 };
 
 // ==========================================
 // FUNCIONES PARA GESTIí“N DE PAGOS (CLIENTES Y PROVEEDORES)
 // ==========================================
 
-export const generatePaymentNumber = (): string => {
-  if (!db) return '';
-  try {
-    const result = db.exec("SELECT COUNT(*) as count FROM payments");
-    const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
-    return `PAY - C - ${new Date().getFullYear()} -${count.toString().padStart(4, '0')} `;
-  } catch (error) {
-    return `PAY - C - ${Date.now()} `;
-  }
+export const generatePaymentNumber = (): ReturnType<typeof _generatePaymentNumber> => {
+  return _generatePaymentNumber();
 };
 
 export const generateSupplierPaymentNumber = (): string => {
@@ -6870,114 +6848,11 @@ export const generateSupplierPaymentNumber = (): string => {
 /**
  * Crear un pago de cliente (Customer Payment)
  */
-export const createPayment = (paymentData: Partial<Payment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  let transactionStarted = false;
-  try {
-    db.run('BEGIN TRANSACTION');
-    transactionStarted = true;
-
-    // 1. Validaciones básicas
-    if (!paymentData.customer_id || !paymentData.amount) {
-      throw new Error('Faltan datos requeridos (Cliente o Monto)');
-    }
-
-    // 2. Validar bloqueo de periodos
-    const paymentDateStr = paymentData.payment_date || new Date().toISOString().split('T')[0];
-    if (isDateLocked(paymentDateStr)) {
-      throw new Error('ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.');
-    }
-
-    // 2. Generar número si no existe
-    const paymentNumber = paymentData.payment_number || generatePaymentNumber();
-
-    // 3. Insertar pago
-    db.run(`
-      INSERT INTO payments(
-    customer_id, invoice_id, payment_number, payment_date, amount,
-    payment_method, reference_number, notes, created_by
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      paymentData.customer_id,
-      paymentData.invoice_id || null,
-      paymentNumber,
-      paymentData.payment_date || new Date().toISOString().split('T')[0],
-      paymentData.amount,
-      paymentData.payment_method || 'cash',
-      paymentData.reference_number || null,
-      paymentData.notes || null,
-      userId || 1
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const paymentId = result[0]?.values[0]?.[0] as number;
-
-    // 4. Actualizar estado de factura (si aplica)
-    if (paymentData.invoice_id) {
-      // Obtener total de la factura
-      const invoiceResult = db.exec(`SELECT total_amount FROM invoices WHERE id = ${paymentData.invoice_id} `);
-      if (invoiceResult.length > 0 && invoiceResult[0].values.length > 0) {
-        const totalAmount = invoiceResult[0].values[0][0] as number;
-
-        // Obtener pagos previos de esta factura (incluyendo este)
-        const paymentsResult = db.exec(`SELECT SUM(amount) FROM payments WHERE invoice_id = ${paymentData.invoice_id} `);
-        const totalPaid = paymentsResult[0]?.values[0]?.[0] as number || 0;
-
-        let newStatus = 'partial';
-        // Tolerancia pequeña para errores de punto flotante
-        if (Math.abs(totalPaid - totalAmount) < 0.01 || totalPaid > totalAmount) {
-          newStatus = 'paid';
-        }
-
-        db.run(`UPDATE invoices SET status = ? WHERE id = ? `, [newStatus, paymentData.invoice_id]);
-      }
-    }
-
-    db.run('COMMIT');
-    transactionStarted = false;
-
-    // 5. Auditoría (después del COMMIT para evitar problemas de transacción)
-    const auditData = { ...paymentData, id: paymentId, payment_number: paymentNumber };
-    logAuditEvent('payments', paymentId, 'INSERT', null, auditData, userId);
-
-    // 6. Generar Asiento Contable (después del COMMIT para evitar transacciones anidadas)
-    const fullPayment: Payment = {
-      id: paymentId,
-      customer_id: paymentData.customer_id,
-      invoice_id: paymentData.invoice_id,
-      payment_number: paymentNumber,
-      payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
-      amount: paymentData.amount,
-      payment_method: paymentData.payment_method || 'cash',
-      reference_number: paymentData.reference_number,
-      notes: paymentData.notes,
-      created_at: new Date().toISOString()
-    };
-
-    const customer = getCustomerById(paymentData.customer_id);
-    if (customer) {
-      try {
-        generatePaymentReceivedJournalEntry(fullPayment, customer, userId);
-      } catch (journalError) {
-        logger.warn('Payments', 'journal_entry_failed', 'Error al generar asiento contable, pero pago creado', { journalError }, journalError as Error);
-      }
-    }
-
-    logger.info('Payments', 'create_success', 'Pago de cliente creado correctamente', { paymentId, userId });
-    return { success: true, message: 'Pago registrado correctamente', paymentId };
-
-  } catch (error) {
-    if (transactionStarted) {
-      try {
-        db.run('ROLLBACK');
-      } catch (rollbackError) {
-        logger.error('Payments', 'rollback_failed', 'Error al hacer rollback', { rollbackError }, rollbackError as Error);
-      }
-    }
-    logger.error('Payments', 'create_failed', 'Error al crear pago', { error }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
+export const createPayment = (
+  paymentData: Parameters<typeof _createPayment>[0],
+  userId?: number
+): ReturnType<typeof _createPayment> => {
+  return _createPayment(paymentData, userId);
 };
 
 /**
