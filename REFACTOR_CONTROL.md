@@ -42,10 +42,10 @@
 - [ ] ORDEN 9 - Verificacion final + commit + tag v66-invoices-wrapped
 
 ### FASE 2 - Dominio: customers
-- [ ] ORDEN 10 - Mapa de dependencias dominio customers
-- [ ] ORDEN 11 - Validacion del mapa
-- [ ] ORDEN 12 - Wrappers dominio customers
-- [ ] ORDEN 13 - Verificacion final + commit + tag v67-customers-wrapped
+- [x] ORDEN 10 - Mapa de dependencias dominio customers
+- [x] ORDEN 11 - Validacion del mapa
+- [x] ORDEN 12 - Wrappers dominio customers
+- [x] ORDEN 13 - Verificacion final + commit + tag v67-customers-wrapped
 
 ### FASE 3 - Dominio: payments
 - [ ] ORDEN 14 - Mapa de dependencias dominio payments
@@ -145,7 +145,7 @@
 | Original | ~14,000 | - |
 | v65 ronda 1 | 10,730 | -3,270 |
 | v66 invoices | - | - |
-| v67 customers | - | - |
+| v67 customers | 10,149 | -581 acum |
 | v68 payments | - | - |
 | v69 tax | - | - |
 | v70 inventory | - | - |

@@ -9,7 +9,7 @@ import { MigrationEngine } from '../core/migrations/MigrationEngine';
 import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
 import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
-import { getCustomerById as _getCustomerById } from './modules/db-customers';
+import { addCustomer as _addCustomer, getCustomers as _getCustomers, getCustomerById as _getCustomerById, updateCustomer as _updateCustomer, canDeleteCustomer as _canDeleteCustomer, deleteCustomer as _deleteCustomer } from './modules/db-customers';
 import { isDateLocked as _isDateLocked } from './modules/db-journal';
 import { generateSalesJournalEntry as _generateSalesJournalEntry } from './modules/db-journal-auto';
 import { AuditChainService as AuditTrailService } from '../core/audit/AuditChainService';
@@ -1328,46 +1328,9 @@ export async function unlockFiscalYear(yearId: number): Promise<{ success: boole
 }
 
 // Agregar paymentCount a la interfaz Customer
-export interface Customer {
-  id: number;
-  // Información personal
-  name: string;
-  business_name?: string;
-  document_type: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
-  document_number: string;
-  business_type?: string;
-
-  // Datos de contacto
-  email: string;
-  email_secondary?: string;
-  phone: string;
-  phone_secondary?: string;
-
-  // Dirección
-  address_line1: string;
-  address_line2?: string;
-  city: string;
-  state: string;
-  zip_code: string;
-
-  // Nueva propiedad
-  payment_terms: number; // días
-  paymentCount?: number; // Agregado para resolver errores
-
-  florida_county: string;
-
-  // Datos comerciales
-  credit_limit: number;
-  tax_exempt: boolean;
-  tax_id?: string;
-  assigned_salesperson?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  created_by?: number;
-  updated_by?: number;
-}
+// Customer type — importado desde db-types (fuente de verdad)
+import type { Customer } from './modules/db-types';
+export type { Customer };
 
 // Agregar paymentCount a la interfaz Supplier
 export interface Supplier {
@@ -3903,148 +3866,18 @@ export const isDatabaseReady = (): boolean => {
   return ready;
 };
 
-export const addCustomer = async (customerData: Partial<Customer>, userId?: number): Promise<number> => {
-  logger.debug('CustomerModule', 'add_customer_start', 'Iniciando proceso de agregar cliente', { customerName: customerData.name });
-
-  if (!db) {
-    logger.error('CustomerModule', 'add_customer_failed', 'Base de datos no inicializada al intentar agregar cliente');
-    throw new Error('Database not initialized. Please wait for the system to load completely.');
-  }
-
-
-
-  try {
-    logger.debug('CustomerModule', 'add_customer_transaction', 'Iniciando transacción para agregar cliente');
-    // Iniciar transacción
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO customers(
-      name, business_name, document_type, document_number, business_type,
-      email, email_secondary, phone, phone_secondary,
-      address_line1, address_line2, city, state, zip_code, florida_county,
-      credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-      status, notes, updated_at, created_by, updated_by
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
-    `);
-
-    const values = [
-      customerData.name || '',
-      customerData.business_name || null,
-      customerData.document_type || 'SSN',
-      customerData.document_number || null,
-      customerData.business_type || null,
-      customerData.email || null,
-      customerData.email_secondary || null,
-      customerData.phone || null,
-      customerData.phone_secondary || null,
-      customerData.address_line1 || null,
-      customerData.address_line2 || null,
-      customerData.city || 'Miami',
-      customerData.state || 'FL',
-      customerData.zip_code || null,
-      customerData.florida_county || 'Miami-Dade',
-      customerData.credit_limit || 0,
-      customerData.payment_terms || 30,
-      customerData.tax_exempt ? 1 : 0, // Convert boolean to number
-      customerData.tax_id || null,
-      customerData.assigned_salesperson || null,
-      customerData.status || 'active',
-      customerData.notes || null,
-      userId || 1,
-      userId || 1
-    ];
-
-    stmt.run(values);
-
-    const insertResult = db.exec("SELECT last_insert_rowid() as id");
-    const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
-
-    stmt.free();
-
-    // Registrar en auditoría
-    await logAuditEvent('customers', insertId, 'INSERT', null, customerData, userId);
-
-    // Confirmar transacción
-    db.run('COMMIT');
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    logger.info('CustomerModule', 'add_customer_success', `Cliente agregado exitosamente con ID: ${insertId} `, {
-      customerId: insertId,
-      customerName: customerData.name,
-      customerEmail: customerData.email
-    });
-
-    return insertId;
-
-  } catch (error) {
-    logger.error('CustomerModule', 'add_customer_failed', `Error al agregar cliente: ${error instanceof Error ? error.message : 'Unknown error'} `, {
-      customerData: { name: customerData.name, email: customerData.email }
-    }, error as Error);
-    db?.run('ROLLBACK');
-    throw error;
-  }
+export const addCustomer = async (
+  customerData: Parameters<typeof _addCustomer>[0],
+  userId?: number
+): ReturnType<typeof _addCustomer> => {
+  return _addCustomer(customerData, userId);
 };
 
 // Obtener todos los clientes (con filtro opcional por usuario/rol para aislamiento)
-export const getCustomers = (filters?: { userId?: number, role?: string }): Customer[] => {
-
-  if (!db) {
-    return [];
-  }
-
-  try {
-    let query = `
-SELECT
-id, name, business_name, document_type, document_number, business_type,
-  email, email_secondary, phone, phone_secondary,
-  address_line1, address_line2, city, state, zip_code, florida_county,
-  credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-  status, notes, created_at, updated_at
-      FROM customers 
-    `;
-
-    const params: any[] = [];
-
-    // Isolation Logic: Non-admin/audit/accountant users only see their own records
-    // Assuming 'sales' role should is restricted. 
-    // If role is NOT in system/privileged list, we filter.
-    const privilegedRoles = ['admin', 'accountant', 'auditor', 'viewer']; // Viewer sees all? Adjust per requirement. 
-    // User req: "Vendedor1 solo ve SUS registros". Viewer usually implies GLOBAL Áread only. 
-    // If requirement says "usuarios no-admin no ven datos de otros", we can be strict.
-    // Let's assume 'viewer' sees all for now, but 'sales'/'purchasing' are restricted.
-
-    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE created_by = ? `;
-      params.push(filters.userId);
-    }
-
-    query += ` ORDER BY created_at DESC`;
-
-    const result = db.exec(query, params);
-
-
-    // Convertir el resultado a array de objetos
-    const customers: Customer[] = [];
-
-    if (result && result.length > 0 && result[0].values) {
-      const columns = (result[0].columns || (result[0] as any).lc);
-      const values = result[0].values;
-
-      values.forEach((row: initSqlJs.SqlValue[]) => {
-        const customerObj = rowToEntity<Record<string, unknown>>(columns, row);
-        customers.push(processCustomerRow(customerObj));
-      });
-    }
-
-    return customers;
-
-  } catch (error) {
-    console.error('Error getting customers:', error);
-    return [];
-  }
+export const getCustomers = (
+  filters?: Parameters<typeof _getCustomers>[0]
+): ReturnType<typeof _getCustomers> => {
+  return _getCustomers(filters);
 };
 
 // Función auxiliar para procesar una fila de cliente
@@ -4079,199 +3912,32 @@ const processCustomerRow = (row: Record<string, unknown>): Customer => {
   };
 };
 
-export const getCustomerById = (id: number): Customer | null => {
-  if (!db) return null;
-
-  try {
-    const result = db.exec(`
-SELECT
-id, name, business_name, document_type, document_number, business_type,
-  email, email_secondary, phone, phone_secondary,
-  address_line1, address_line2, city, state, zip_code, florida_county,
-  credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-  status, notes, created_at, updated_at
-      FROM customers 
-      WHERE id = ${id}
-`);
-
-    if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
-      const columns = (result[0].columns || (result[0] as any).lc);
-      const row = result[0].values[0];
-
-      const customerObj: any = {};
-      columns.forEach((col: string, index: number) => {
-        customerObj[col] = row[index];
-      });
-
-      return processCustomerRow(customerObj);
-    }
-
-    return null;
-
-  } catch (error) {
-    console.error('Error getting customer by ID:', error);
-    return null;
-  }
+export const getCustomerById = (
+  id: Parameters<typeof _getCustomerById>[0]
+): ReturnType<typeof _getCustomerById> => {
+  return _getCustomerById(id);
 };
 
-export const updateCustomer = (id: number, customerData: Partial<Customer>, userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Obtener valores anteriores para auditoría
-    const oldCustomer = getCustomerById(id);
-    if (!oldCustomer) {
-      return { success: false, message: 'Cliente no encontrado' };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      UPDATE customers 
-      SET name = ?, business_name = ?, document_type = ?, document_number = ?, business_type = ?,
-  email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
-  address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
-  credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_salesperson = ?,
-  status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-    WHERE id = ?
-      `);
-
-    const values = [
-      customerData.name || oldCustomer.name,
-      customerData.business_name || oldCustomer.business_name || null,
-      customerData.document_type || oldCustomer.document_type,
-      customerData.document_number || oldCustomer.document_number,
-      customerData.business_type || oldCustomer.business_type || null,
-      customerData.email || oldCustomer.email,
-      customerData.email_secondary || oldCustomer.email_secondary || null,
-      customerData.phone || oldCustomer.phone,
-      customerData.phone_secondary || oldCustomer.phone_secondary || null,
-      customerData.address_line1 || oldCustomer.address_line1,
-      customerData.address_line2 || oldCustomer.address_line2 || null,
-      customerData.city || oldCustomer.city,
-      customerData.state || oldCustomer.state,
-      customerData.zip_code || oldCustomer.zip_code,
-      customerData.florida_county || oldCustomer.florida_county,
-      customerData.credit_limit !== undefined ? customerData.credit_limit : oldCustomer.credit_limit,
-      customerData.payment_terms !== undefined ? customerData.payment_terms : oldCustomer.payment_terms,
-      customerData.tax_exempt !== undefined ? (customerData.tax_exempt ? 1 : 0) : (oldCustomer.tax_exempt ? 1 : 0), // Convert boolean to number
-      customerData.tax_id || oldCustomer.tax_id || null,
-      customerData.assigned_salesperson || oldCustomer.assigned_salesperson || null,
-      customerData.status || oldCustomer.status,
-      customerData.notes || oldCustomer.notes || null,
-      userId || 1,
-      id
-    ];
-
-    stmt.run(values);
-    const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
-    stmt.free();
-
-    if (changes === 0) {
-      db.run('ROLLBACK');
-      return { success: false, message: 'No se realizaron cambios' };
-    }
-
-    // Registrar en auditoría
-    logAuditEvent('customers', id, 'UPDATE', oldCustomer, customerData, userId);
-
-    db.run('COMMIT');
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return { success: true, message: `Cliente "${customerData.name || oldCustomer.name}" actualizado correctamente` };
-
-  } catch (error) {
-    db?.run('ROLLBACK');
-    console.error('Error updating customer:', error);
-    return { success: false, message: `Error al actualizar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
-  }
+export const updateCustomer = (
+  id: Parameters<typeof _updateCustomer>[0],
+  customerData: Parameters<typeof _updateCustomer>[1],
+  userId?: number
+): ReturnType<typeof _updateCustomer> => {
+  return _updateCustomer(id, customerData, userId);
 };
 
 // Verificar si un cliente puede ser eliminado
-export const canDeleteCustomer = (customerId: number): { canDelete: boolean; reason?: string } => {
-  if (!db) return { canDelete: false, reason: 'Database not initialized' };
-
-  try {
-    // Verificar si tiene facturas
-    const invoiceCheck = db.exec(`
-      SELECT COUNT(*) as count FROM invoices WHERE customer_id = ${customerId}
-`);
-    const invoiceCount = invoiceCheck[0]?.values[0]?.[0] as number || 0;
-
-    if (invoiceCount > 0) {
-      return {
-        canDelete: false,
-        reason: `El cliente tiene ${invoiceCount} factura(s) asociada(s).No se puede eliminar.`
-      };
-    }
-
-    // Verificar si tiene pagos
-    const paymentCheck = db.exec(`
-      SELECT COUNT(*) as count FROM payments WHERE customer_id = ${customerId}
-`);
-    const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
-
-    if (paymentCount > 0) {
-      return {
-        canDelete: false,
-        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
-      };
-    }
-
-    return { canDelete: true };
-
-  } catch (error) {
-    console.error('Error checking if customer can be deleted:', error);
-    return { canDelete: false, reason: 'Error al verificar las dependencias del cliente' };
-  }
+export const canDeleteCustomer = (
+  customerId: Parameters<typeof _canDeleteCustomer>[0]
+): ReturnType<typeof _canDeleteCustomer> => {
+  return _canDeleteCustomer(customerId);
 };
 
-export const deleteCustomer = (id: number, userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar si se puede eliminar
-    const deleteCheck = canDeleteCustomer(id);
-    if (!deleteCheck.canDelete) {
-      return { success: false, message: deleteCheck.reason || 'No se puede eliminar el cliente' };
-    }
-
-    // Obtener datos del cliente para auditoría antes de eliminar
-    const customer = getCustomerById(id);
-    if (!customer) {
-      return { success: false, message: 'Cliente no encontrado' };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    // Eliminar cliente
-    const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
-    stmt.run([id]);
-    const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
-    stmt.free();
-
-    if (changes === 0) {
-      db.run('ROLLBACK');
-      return { success: false, message: 'No se pudo eliminar el cliente' };
-    }
-
-    // Registrar en auditoría
-    logAuditEvent('customers', id, 'DELETE', customer, null, userId);
-
-    db.run('COMMIT');
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return { success: true, message: `Cliente "${customer.name}" eliminado correctamente` };
-
-  } catch (error) {
-    db?.run('ROLLBACK');
-    console.error('Error deleting customer:', error);
-    return { success: false, message: `Error al eliminar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
-  }
+export const deleteCustomer = (
+  id: Parameters<typeof _deleteCustomer>[0],
+  userId?: number
+): ReturnType<typeof _deleteCustomer> => {
+  return _deleteCustomer(id, userId);
 };
 
 // Función de auditoría mejorada
