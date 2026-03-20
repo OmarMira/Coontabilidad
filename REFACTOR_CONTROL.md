@@ -34,11 +34,11 @@
 - [x] ORDEN 3 - Crear REFACTOR_CONTROL.md en repositorio
 
 ### FASE 1 - Dominio: invoices (piloto)
-- [ ] ORDEN 4 - Mapa completo de dependencias de createInvoice
-- [ ] ORDEN 5 - Validacion y clasificacion del mapa (sin tocar codigo)
-- [ ] ORDEN 6 - Wrapper createInvoice -> delega a db-invoices.ts
-- [ ] ORDEN 7 - Resolver dependencias si hay errores (iterativo)
-- [ ] ORDEN 8 - Wrappers restantes del dominio invoices
+- [x] ORDEN 4 - Mapa completo de dependencias de createInvoice
+- [x] ORDEN 5 - Validacion y clasificacion del mapa (sin tocar codigo)
+- [x] ORDEN 6 - Wrapper createInvoice -> delega a db-invoices.ts
+- [x] ORDEN 7 - Resolver dependencias si hay errores (iterativo)
+- [x] ORDEN 8 - Wrappers restantes del dominio invoices
 - [ ] ORDEN 9 - Verificacion final + commit + tag v66-invoices-wrapped
 
 ### FASE 2 - Dominio: customers
@@ -95,33 +95,42 @@
 **Resultado:** pendiente verificacion
 
 ### ORDEN 4 - Mapa dependencias createInvoice
-**Estado:** PENDIENTE
-**Output recibido:** -
-**Resultado:** -
+**Estado:** COMPLETADA
+**Bloque:** lineas 4702-4827 (126 lineas)
+**Resultado:** exito
 
 ### ORDEN 5 - Validacion del mapa
-**Estado:** PENDIENTE
+**Estado:** COMPLETADA
+**Resultado:** exito — 6/8 dependencias en modulos, 2 son infraestructura (no bloquean)
 **Tabla de clasificacion:**
 | Funcion | Existe en modulo | Modulo | Accion |
 |---|---|---|---|
-| - | - | - | - |
+| isDateLocked | SI | db-journal.ts | usar modulo |
+| generateInvoiceNumber | SI | db-invoices.ts | usar modulo |
+| getCustomerById | SI | db-customers.ts | usar modulo |
+| getFloridaTaxRate | SI | db-invoices.ts | usar modulo |
+| getInvoiceById | SI | db-invoices.ts | usar modulo |
+| generateSalesJournalEntry | SI | db-journal-auto.ts | usar modulo |
+| logAuditAction | NO | simple-db linea 6912 | dejar — infraestructura |
+| saveDatabase | NO | simple-db linea 3747 | dejar — infraestructura core |
 
 ### ORDEN 6 - Wrapper createInvoice
-**Estado:** PENDIENTE
-**Tests post-wrapper:** -
-**Errores TS:** -
+**Estado:** COMPLETADA
+**Tests post-wrapper:** 363/363
+**Errores TS:** 0
 
 ### ORDEN 7 - Resolver dependencias invoices
-**Estado:** PENDIENTE
+**Estado:** COMPLETADA
+**Nota:** import consolidado corregido para incluir _createInvoice
 
 ### ORDEN 8 - Wrappers restantes invoices
-**Estado:** PENDIENTE
-**Funciones pendientes:**
-- [ ] updateInvoice
-- [ ] deleteInvoice
-- [ ] getInvoices
-- [ ] getInvoiceById
-- [ ] generateInvoiceNumber
+**Estado:** COMPLETADA
+**Funciones completadas:**
+- [x] updateInvoice
+- [x] deleteInvoice
+- [x] getInvoices
+- [x] getInvoiceById
+- [x] generateInvoiceNumber
 
 ### ORDEN 9 - Commit dominio invoices
 **Estado:** PENDIENTE
@@ -142,3 +151,5 @@
 | v70 inventory | - | - |
 | v71 payroll | - | - |
 | v72 final | - | - |
+
+

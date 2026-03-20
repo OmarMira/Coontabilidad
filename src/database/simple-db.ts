@@ -8,6 +8,10 @@ import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { MigrationEngine } from '../core/migrations/MigrationEngine';
 import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
+import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
+import { getCustomerById as _getCustomerById } from './modules/db-customers';
+import { isDateLocked as _isDateLocked } from './modules/db-journal';
+import { generateSalesJournalEntry as _generateSalesJournalEntry } from './modules/db-journal-auto';
 import { AuditChainService as AuditTrailService } from '../core/audit/AuditChainService';
 import { EngineBridge } from '../core/database/EngineBridge';
 
@@ -4549,435 +4553,50 @@ export const FLORIDA_COUNTIES = [
 // ==========================================
 
 // Generar número de factura automático
-export const generateInvoiceNumber = (): string => {
-  if (!db) throw new Error('Database not initialized');
-
-  try {
-    const result = db.exec("SELECT COUNT(*) as count FROM invoices");
-    const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
-    const year = new Date().getFullYear();
-    return `INV - ${year} -${count.toString().padStart(4, '0')} `;
-  } catch (error) {
-    console.error('Error generating invoice number:', error);
-    const timestamp = Date.now().toString().slice(-6);
-    return `INV - ${new Date().getFullYear()} -${timestamp} `;
-  }
+export const generateInvoiceNumber = (): ReturnType<typeof _generateInvoiceNumber> => {
+  return _generateInvoiceNumber();
 };
 
 // Obtener todas las facturas con información del cliente
 // Obtener todas las facturas con información del cliente y aislamiento
-export const getInvoices = (filters?: { userId?: number, role?: string }): Invoice[] => {
-  if (!db) return [];
-
-  try {
-    let query = `
-SELECT
-i.*,
-  c.name as customer_name,
-  c.business_name as customer_business_name,
-  c.email as customer_email
-      FROM invoices i
-      LEFT JOIN customers c ON i.customer_id = c.id
-  `;
-
-    const params: any[] = [];
-    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE i.created_by = ? `;
-      params.push(filters.userId);
-    }
-
-    query += ` ORDER BY i.created_at DESC`;
-
-    const result = db.exec(query, params);
-
-    if (!result[0]) return [];
-
-    const invoices: Invoice[] = [];
-    const columns = (result[0].columns || (result[0] as any).lc);
-
-    result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
-      const invoice = rowToEntity<Invoice & { customer_name: string; customer_business_name: string; customer_email: string }>(columns, row);
-
-      // Agregar información del cliente
-      invoice.customer = {
-        name: invoice.customer_name,
-        business_name: invoice.customer_business_name,
-        email: invoice.customer_email
-      } as Customer;
-
-      invoices.push(invoice);
-    });
-
-    return invoices;
-  } catch (error) {
-    console.error('Error getting invoices:', error);
-    return [];
-  }
+export const getInvoices = (
+  filters?: Parameters<typeof _getInvoices>[0]
+): ReturnType<typeof _getInvoices> => {
+  return _getInvoices(filters);
 };
 
 // Obtener factura por ID con líneas de factura
-export const getInvoiceById = (id: number): Invoice | null => {
-  if (!db) return null;
-
-  try {
-    // Obtener factura principal
-    const invoiceResult = db.exec(`
-SELECT
-i.*,
-  c.name as customer_name,
-  c.business_name as customer_business_name,
-  c.email as customer_email,
-  c.phone as customer_phone,
-  c.address_line1 as customer_address,
-  c.city as customer_city,
-  c.state as customer_state,
-  c.zip_code as customer_zip
-      FROM invoices i
-      LEFT JOIN customers c ON i.customer_id = c.id
-      WHERE i.id = ?
-  `, [id]);
-
-    if (!invoiceResult[0] || invoiceResult[0].values.length === 0) return null;
-
-    const invoiceRow = invoiceResult[0].values[0];
-    const columns = (invoiceResult[0].columns || (invoiceResult[0] as any).lc);
-
-    const invoice: any = {};
-    columns.forEach((col: any, index: any) => {
-      invoice[col] = invoiceRow[index];
-    });
-
-    // Agregar información del cliente
-    invoice.customer = {
-      name: invoice.customer_name,
-      business_name: invoice.customer_business_name,
-      email: invoice.customer_email,
-      phone: invoice.customer_phone,
-      address_line1: invoice.customer_address,
-      city: invoice.customer_city,
-      state: invoice.customer_state,
-      zip_code: invoice.customer_zip
-    };
-
-    // Obtener líneas de factura
-    const itemsResult = db.exec(`
-      SELECT
-il.*,
-  p.name as product_name,
-  p.sku as product_sku
-      FROM invoice_lines il
-      LEFT JOIN products p ON il.product_id = p.id
-      WHERE il.invoice_id = ?
-  ORDER BY il.id
-    `, [id]);
-
-    invoice.items = [];
-    if (itemsResult[0]) {
-      const itemColumns = (itemsResult[0].columns || (itemsResult[0] as any).lc);
-      itemsResult[0].values.forEach((itemRow: any) => {
-        const item: any = {};
-        itemColumns.forEach((col: any, index: any) => {
-          item[col] = itemRow[index];
-        });
-
-        if (item.product_id) {
-          item.product = {
-            name: item.product_name,
-            sku: item.product_sku
-          };
-        }
-
-        invoice.items.push(item);
-      });
-    }
-
-    return invoice as Invoice;
-  } catch (error) {
-    console.error('Error getting invoice by ID:', error);
-    return null;
-  }
+export const getInvoiceById = (
+  id: Parameters<typeof _getInvoiceById>[0]
+): ReturnType<typeof _getInvoiceById> => {
+  return _getInvoiceById(id);
 };
 
 // Crear nueva factura
-export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[], userId?: number): { success: boolean; message: string; invoiceId?: number } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Validaciones básicas
-    if (!invoiceData.customer_id) {
-      return { success: false, message: 'Customer ID is required' };
-    }
-
-    if (!items || items.length === 0) {
-      return { success: false, message: 'At least one item is required' };
-    }
-
-    // Validar bloqueo de periodos
-    const issueDateStr = invoiceData.issue_date || new Date().toISOString().split('T')[0];
-    if (isDateLocked(issueDateStr)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
-    }
-
-    // Generar número de factura si no se proporciona
-    const invoiceNumber = invoiceData.invoice_number || generateInvoiceNumber();
-
-    // Obtener condado del cliente para cálculo de impuestos
-    const customer = getCustomerById(invoiceData.customer_id);
-    const county = customer?.florida_county || 'Miami-Dade';
-
-    // Calcular totales usando tasa dinámica
-    let subtotal = 0;
-    let taxAmount = 0;
-
-    items.forEach(item => {
-      const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
-      subtotal += lineTotal;
-      if (item.taxable) {
-        taxAmount += lineTotal * getFloridaTaxRate(county); // Usar tasa dinámica por condado
-      }
-    });
-
-    const total = subtotal + taxAmount;
-
-    // Insertar factura principal
-    const stmt = db.prepare(`
-      INSERT INTO invoices(
-      invoice_number, customer_id, issue_date, due_date,
-      subtotal, tax_amount, total_amount, status, notes,
-      created_by, updated_by
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-    const issueDate = invoiceData.issue_date || new Date().toISOString().split('T')[0];
-    const dueDate = invoiceData.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    stmt.run([
-      invoiceNumber,
-      invoiceData.customer_id,
-      issueDate,
-      dueDate,
-      subtotal,
-      taxAmount,
-      total,
-      invoiceData.status || 'draft',
-      invoiceData.notes || '',
-      userId || 1,
-      userId || 1
-    ]);
-
-    const invoiceId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-
-    // Insertar líneas de factura
-    const itemStmt = db.prepare(`
-      INSERT INTO invoice_lines(
-        invoice_id, product_id, description, quantity, unit_price, line_total, taxable
-      ) VALUES(?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    items.forEach(item => {
-      const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
-      itemStmt.run([
-        invoiceId,
-        item.product_id || null,
-        item.description || '',
-        item.quantity || 1,
-        item.unit_price || 0,
-        lineTotal,
-        item.taxable ? 1 : 0
-      ]);
-    });
-
-    // Registrar en auditoría
-    logAuditAction('invoices', invoiceId, 'INSERT', null, {
-      invoice_number: invoiceNumber,
-      customer_id: invoiceData.customer_id,
-      total_amount: total,
-      status: invoiceData.status || 'draft'
-    }, userId);
-
-    // GENERAR ASIENTO CONTABLE AUTOMíTICO (DOBLE ENTRADA)
-    if (invoiceData.status === 'sent' || invoiceData.status === 'paid') {
-      const fullInvoice = getInvoiceById(invoiceId);
-      if (fullInvoice) {
-        generateSalesJournalEntry(fullInvoice, userId).then(journalResult => {
-          if (!journalResult.success) {
-            console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
-          } else {
-          }
-        });
-      }
-    }
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return {
-      success: true,
-      message: `Invoice ${invoiceNumber} created successfully`,
-      invoiceId
-    };
-
-  } catch (error) {
-    console.error('Error creating invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error creating invoice'
-    };
-  }
+export const createInvoice = (
+  invoiceData: Parameters<typeof _createInvoice>[0],
+  items: Parameters<typeof _createInvoice>[1],
+  userId?: number
+): ReturnType<typeof _createInvoice> => {
+  return _createInvoice(invoiceData, items, userId);
 };
 
 // Actualizar factura
-export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?: Partial<InvoiceItem>[], userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Obtener factura actual para auditoría
-    const currentInvoice = getInvoiceById(id);
-    if (!currentInvoice) {
-      return { success: false, message: 'Invoice not found' };
-    }
-
-    // Validar bloqueo de periodos - usar fecha de la factura actual o la nueva si se está actualizando
-    const dateToCheck = invoiceData.issue_date || currentInvoice.issue_date;
-    if (isDateLocked(dateToCheck)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
-    }
-
-    // Actualizar factura principal
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
-
-    if (invoiceData.issue_date !== undefined) {
-      updateFields.push('issue_date = ?');
-      updateValues.push(invoiceData.issue_date);
-    }
-
-    if (invoiceData.due_date !== undefined) {
-      updateFields.push('due_date = ?');
-      updateValues.push(invoiceData.due_date);
-    }
-
-    if (invoiceData.status !== undefined) {
-      updateFields.push('status = ?');
-      updateValues.push(invoiceData.status);
-    }
-
-    if (invoiceData.notes !== undefined) {
-      updateFields.push('notes = ?');
-      updateValues.push(invoiceData.notes);
-    }
-
-    if (updateFields.length > 0) {
-      updateFields.push('updated_at = CURRENT_TIMESTAMP');
-      updateFields.push('updated_by = ?');
-      updateValues.push(userId || 1);
-      updateValues.push(id);
-
-      const updateQuery = `UPDATE invoices SET ${updateFields.join(', ')} WHERE id = ? `;
-      db.exec(updateQuery, updateValues);
-    }
-
-    // Si se proporcionan items, actualizar líneas de factura
-    if (items) {
-      // Eliminar líneas existentes
-      db.exec('DELETE FROM invoice_lines WHERE invoice_id = ?', [id]);
-
-      // Insertar nuevas líneas
-      let subtotal = 0;
-      let taxAmount = 0;
-
-      const itemStmt = db.prepare(`
-        INSERT INTO invoice_lines(
-        invoice_id, product_id, description, quantity, unit_price, line_total, taxable
-      ) VALUES(?, ?, ?, ?, ?, ?, ?)
-        `);
-
-      // Obtener condado para recálculo de impuestos
-      const invoice = getInvoiceById(id);
-      const county = invoice?.customer?.florida_county || 'Miami-Dade';
-      const taxRate = getFloridaTaxRate(county);
-
-      items.forEach(item => {
-        const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
-        subtotal += lineTotal;
-        if (item.taxable) {
-          taxAmount += lineTotal * taxRate;
-        }
-
-        itemStmt.run([
-          id,
-          item.product_id || null,
-          item.description || '',
-          item.quantity || 1,
-          item.unit_price || 0,
-          lineTotal,
-          item.taxable ? 1 : 0
-        ]);
-      });
-
-      // Actualizar totales
-      const total = subtotal + taxAmount;
-      db.exec(`
-        UPDATE invoices 
-        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-  WHERE id = ?
-    `, [subtotal, taxAmount, total, userId || 1, id]);
-    }
-
-    // Registrar en auditoría
-    logAuditAction('invoices', id, 'UPDATE', currentInvoice, invoiceData, userId);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return { success: true, message: 'Invoice updated successfully' };
-
-  } catch (error) {
-    console.error('Error updating invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error updating invoice'
-    };
-  }
+export const updateInvoice = (
+  id: Parameters<typeof _updateInvoice>[0],
+  invoiceData: Parameters<typeof _updateInvoice>[1],
+  items?: Parameters<typeof _updateInvoice>[2],
+  userId?: number
+): ReturnType<typeof _updateInvoice> => {
+  return _updateInvoice(id, invoiceData, items, userId);
 };
 
 // Eliminar factura
-export const deleteInvoice = (id: number, userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar si la factura existe
-    const invoice = getInvoiceById(id);
-    if (!invoice) {
-      return { success: false, message: 'Invoice not found' };
-    }
-
-    // Verificar si la factura está pagada (no se puede eliminar)
-    if (invoice.status === 'paid') {
-      return { success: false, message: 'Cannot delete paid invoices' };
-    }
-
-    // Eliminar líneas de factura primero (por foreign key)
-    db.exec('DELETE FROM invoice_lines WHERE invoice_id = ?', [id]);
-
-    // Eliminar factura
-    db.exec('DELETE FROM invoices WHERE id = ?', [id]);
-
-    // Registrar en auditoría
-    logAuditAction('invoices', id, 'DELETE', invoice, null, userId);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return { success: true, message: 'Invoice deleted successfully' };
-
-  } catch (error) {
-    console.error('Error deleting invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error deleting invoice'
-    };
-  }
+export const deleteInvoice = (
+  id: Parameters<typeof _deleteInvoice>[0],
+  userId?: number
+): ReturnType<typeof _deleteInvoice> => {
+  return _deleteInvoice(id, userId);
 };
 
 // Obtener productos activos para el formulario de factura
