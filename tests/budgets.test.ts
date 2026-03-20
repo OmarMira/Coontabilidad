@@ -4,9 +4,8 @@
  * Tests core CRUD functions, validation, and business logic
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
-  initDB,
   createBudget,
   getBudgets,
   getBudgetById,
@@ -22,18 +21,161 @@ import {
   getBudgetExecutionStatus,
   type Budget,
   type BudgetLine
-} from '../src/database/simple-db';
+} from '../src/database/modules/db-budgets';
+
+const { mockPrepare, mockExec, mockDbState } = vi.hoisted(() => {
+  const dbState = {
+    budgets: [] as any[],
+    lines: [] as any[],
+    periods: [] as any[],
+    lastId: 0
+  };
+
+  const mockPrepare = vi.fn().mockReturnValue({ run: vi.fn(), free: vi.fn(), step: vi.fn().mockReturnValue(false), getAsObject: vi.fn().mockReturnValue({}) });
+  const mockExec = vi.fn().mockImplementation((sql: string, params: any[] = []) => {
+    const s = sql.toUpperCase();
+    
+    if (s.includes('LAST_INSERT_ROWID')) return [{ columns: ['id'], values: [[dbState.lastId]] }];
+    
+    if (s.includes('INSERT INTO BUDGETS')) {
+      if (!params[0] || !params[1] || !params[2] || !params[3] || params[5] === undefined) throw new Error('NOT NULL constraint failed');
+      dbState.lastId++;
+      dbState.budgets.push({
+        id: dbState.lastId,
+        budget_name: params[0], fiscal_year: params[1], start_date: params[2],
+        end_date: params[3], status: params[4], total_budget_amount: params[5],
+        department: params[6], notes: params[7], created_by: params[8]
+      });
+      return [];
+    }
+    
+    if (s.includes('INSERT INTO BUDGET_LINES')) {
+      dbState.lastId++;
+      dbState.lines.push({
+        id: dbState.lastId, budget_id: params[0], account_number: params[1], annual_amount: params[2],
+        distribution_type: params[3], notes: params[4]
+      });
+      return [];
+    }
+    
+    if (s.includes('INSERT INTO BUDGET_PERIODS')) {
+      dbState.lastId++;
+      dbState.periods.push({
+        id: dbState.lastId, budget_line_id: params[0], period_type: 'MONTHLY', period_number: params[1],
+        period_start_date: params[2], period_end_date: params[3], budgeted_amount: params[4],
+        actual_amount: params[5] || 0, variance_amount: params[6] || 0, variance_percent: params[7] || 0
+      });
+      return [];
+    }
+
+    if (s.includes('UPDATE BUDGETS SET')) {
+        const id = params[params.length - 1];
+        const b = dbState.budgets.find(x => x.id === id);
+        if (b) {
+           if (s.includes("STATUS = 'APPROVED'")) {
+             b.status = 'APPROVED'; b.approved_by = params[0]; b.approved_at = new Date().toISOString();
+           } else {
+             if (s.includes('BUDGET_NAME = ?')) b.budget_name = params[0];
+             if (s.includes('NOTES = ?')) b.notes = s.includes('BUDGET_NAME') ? params[1] : params[0];
+             if (s.includes('UPDATED_BY = ?')) b.updated_by = params[params.length - 2];
+             if (s.includes('STATUS = ?')) b.status = params[0];
+           }
+        }
+        return [];
+    }
+    if (false) {
+        const id = params[params.length - 1];
+        const b = dbState.budgets.find(x => x.id === id);
+        if (b) {
+           if (s.includes("STATUS = 'APPROVED'") || s.includes('STATUS=')) {
+             b.status = 'APPROVED'; b.approved_by = params[0]; b.approved_at = new Date().toISOString();
+             b.status = params[0]; b.approved_by = params[1]; b.approved_at = params[2];
+           } else {
+             b.budget_name = params[0]; b.notes = params[1]; b.updated_by = params[2];
+           }
+        }
+        return [];
+    }
+
+    if (s.includes('UPDATE BUDGET_PERIODS SET')) {
+        const id = params[3];
+        const p = dbState.periods.find(x => x.id === id);
+        if (p) {
+           p.actual_amount = params[0]; p.variance_amount = params[1]; p.variance_percent = params[2];
+        }
+        return [];
+    }
+    
+    if (s.includes('DELETE FROM BUDGETS')) {
+      dbState.budgets = dbState.budgets.filter(x => x.id !== params[0]);
+      return [];
+    }
+    
+    if (s.includes('SELECT * FROM BUDGETS')) {
+      let filtered = [...dbState.budgets];
+      if (s.includes('FISCAL_YEAR = ?')) filtered = filtered.filter(b => b.fiscal_year === params[0]);
+      if (s.includes('STATUS = ?')) filtered = filtered.filter(b => b.status === params[s.includes('FISCAL_YEAR = ?') ? 1 : 0]);
+      if (s.includes('ID = ?')) filtered = filtered.filter(b => b.id === params[0]);
+
+      if (filtered.length === 0) return [];
+      const cols = Object.keys(filtered[0]);
+      const vals = filtered.map(row => cols.map(c => row[c] === undefined ? null : row[c]));
+      return [{ columns: cols, values: vals }];
+    }
+    
+    if (s.includes('SELECT * FROM BUDGET_LINES')) {
+      const filtered = dbState.lines.filter(l => l.budget_id === params[0]);
+      if (filtered.length === 0) return [];
+      const cols = Object.keys(filtered[0]);
+      const vals = filtered.map(row => cols.map(c => row[c] === undefined ? null : row[c]));
+      return [{ columns: cols, values: vals }];
+    }
+    
+    if (s.includes('SELECT * FROM BUDGET_PERIODS')) {
+      const filtered = dbState.periods.filter(p => p.budget_line_id === params[0]);
+      if (filtered.length === 0) return [];
+      const cols = Object.keys(filtered[0]);
+      const vals = filtered.map(row => cols.map(c => row[c] === undefined ? null : row[c]));
+      return [{ columns: cols, values: vals }];
+    }
+
+    if (s.includes('SELECT NAME FROM CHART_OF_ACCOUNTS')) {
+       return [{ columns: ['name'], values: [['Mocked Account']] }];
+    }
+
+    if (s.includes('SUM(CASE WHEN DEBIT')) {
+       return [{ columns: ['total_debit', 'total_credit'], values: [[0, 0]] }];
+    }
+
+    return [];
+  });
+
+  return { mockPrepare, mockExec, mockDbState: dbState };
+});
+
+vi.mock('../src/database/modules/db-core', () => ({
+  db: { prepare: mockPrepare, exec: mockExec, run: mockExec },
+  rowToEntity: (_cols: string[], _row: any[]) => Object.fromEntries(_cols.map((c: string, i: number) => [c, _row[i]])),
+  PRIVILEGED_ROLES: ['admin', 'contador']
+}));
+vi.mock('../src/database/modules/db-persistence', () => ({ forceSaveDB: vi.fn() }));
+vi.mock('../src/core/audit/AuditChainService', () => ({
+  AuditChainService: { logAction: vi.fn().mockResolvedValue(undefined) }
+}));
 
 describe('Budget Management - Unit Tests', () => {
 
-  beforeEach(async () => {
-    // Initialize database before each test
-    await initDB();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDbState.budgets = [];
+    mockDbState.lines = [];
+    mockDbState.periods = [];
+    mockDbState.lastId = 0;
   });
 
   describe('createBudget', () => {
 
-    it('should create a budget with valid data', () => {
+    it('should create a budget with valid data', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Test Budget 2024',
         fiscal_year: 2024,
@@ -61,14 +203,14 @@ describe('Budget Management - Unit Tests', () => {
         }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
 
       expect(result.success).toBe(true);
       expect(result.id).toBeDefined();
       expect(result.message).toContain('exitosamente');
     });
 
-    it('should reject budget with invalid balance (CP-1 violation)', () => {
+    it('should reject budget with invalid balance (CP-1 violation)', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Invalid Budget',
         fiscal_year: 2024,
@@ -87,13 +229,13 @@ describe('Budget Management - Unit Tests', () => {
         }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('no coincide');
     });
 
-    it('should create budget with multiple lines and generate periods', () => {
+    it('should create budget with multiple lines and generate periods', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Multi-line Budget',
         fiscal_year: 2024,
@@ -110,7 +252,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5300, annual_amount: 30000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
 
       expect(result.success).toBe(true);
 
@@ -125,7 +267,7 @@ describe('Budget Management - Unit Tests', () => {
       });
     });
 
-    it('should reject budget with missing required fields', () => {
+    it('should reject budget with missing required fields', async () => {
       const budgetData: any = {
         budget_name: 'Incomplete Budget',
         // Missing fiscal_year, dates, etc.
@@ -138,14 +280,14 @@ describe('Budget Management - Unit Tests', () => {
       ];
 
       // This should fail gracefully with success: false
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       expect(result.success).toBe(false);
     });
   });
 
   describe('updateBudget', () => {
 
-    it('should update budget header fields', () => {
+    it('should update budget header fields', async () => {
       // Create a budget first
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Original Budget',
@@ -161,7 +303,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(budgetData, budgetLines);
+      const createResult = await createBudget(budgetData, budgetLines);
       expect(createResult.success).toBe(true);
 
       // Update the budget
@@ -179,7 +321,7 @@ describe('Budget Management - Unit Tests', () => {
       expect(updated?.notes).toBe('Updated notes');
     });
 
-    it('should prevent editing non-DRAFT budgets (CP-3)', () => {
+    it('should prevent editing non-DRAFT budgets (CP-3)', async () => {
       // Create and approve a budget
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Approved Budget',
@@ -195,7 +337,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(budgetData, budgetLines);
+      const createResult = await createBudget(budgetData, budgetLines);
       approveBudget(createResult.id!, 1);
 
       // Try to update lines (should fail)
@@ -212,7 +354,7 @@ describe('Budget Management - Unit Tests', () => {
 
   describe('deleteBudget', () => {
 
-    it('should delete DRAFT budgets', () => {
+    it('should delete DRAFT budgets', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Budget to Delete',
         fiscal_year: 2024,
@@ -227,7 +369,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(budgetData, budgetLines);
+      const createResult = await createBudget(budgetData, budgetLines);
       const deleteResult = deleteBudget(createResult.id!);
 
       expect(deleteResult.success).toBe(true);
@@ -237,7 +379,7 @@ describe('Budget Management - Unit Tests', () => {
       expect(deleted).toBeNull();
     });
 
-    it('should prevent deleting non-DRAFT budgets (CP-3)', () => {
+    it('should prevent deleting non-DRAFT budgets (CP-3)', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Approved Budget',
         fiscal_year: 2024,
@@ -252,7 +394,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(budgetData, budgetLines);
+      const createResult = await createBudget(budgetData, budgetLines);
       approveBudget(createResult.id!, 1);
 
       const deleteResult = deleteBudget(createResult.id!);
@@ -264,7 +406,7 @@ describe('Budget Management - Unit Tests', () => {
 
   describe('approveBudget', () => {
 
-    it('should approve DRAFT budgets (CP-3)', () => {
+    it('should approve DRAFT budgets (CP-3)', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Budget to Approve',
         fiscal_year: 2024,
@@ -279,7 +421,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(budgetData, budgetLines);
+      const createResult = await createBudget(budgetData, budgetLines);
       const approveResult = approveBudget(createResult.id!, 1);
 
       expect(approveResult.success).toBe(true);
@@ -290,7 +432,7 @@ describe('Budget Management - Unit Tests', () => {
       expect(approved?.approved_by).toBe(1);
     });
 
-    it('should prevent approving non-DRAFT budgets (CP-3)', () => {
+    it('should prevent approving non-DRAFT budgets (CP-3)', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Already Approved',
         fiscal_year: 2024,
@@ -305,7 +447,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(budgetData, budgetLines);
+      const createResult = await createBudget(budgetData, budgetLines);
       approveBudget(createResult.id!, 1);
 
       // Try to approve again
@@ -318,7 +460,7 @@ describe('Budget Management - Unit Tests', () => {
 
   describe('getBudgets with filters', () => {
 
-    it('should filter budgets by fiscal year', () => {
+    it('should filter budgets by fiscal year', async () => {
       // Create budgets for different years
       const budget2024: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Budget 2024',
@@ -344,8 +486,8 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      createBudget(budget2024, lines);
-      createBudget(budget2025, lines);
+      await createBudget(budget2024, lines);
+      await createBudget(budget2025, lines);
 
       const budgets2024 = getBudgets({ fiscal_year: 2024 });
       const budgets2025 = getBudgets({ fiscal_year: 2025 });
@@ -356,7 +498,7 @@ describe('Budget Management - Unit Tests', () => {
       expect(budgets2025.every(b => b.fiscal_year === 2025)).toBe(true);
     });
 
-    it('should filter budgets by status', () => {
+    it('should filter budgets by status', async () => {
       const draftBudget: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Draft Budget',
         fiscal_year: 2024,
@@ -371,7 +513,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const createResult = createBudget(draftBudget, lines);
+      const createResult = await createBudget(draftBudget, lines);
       approveBudget(createResult.id!, 1);
 
       const draftBudgets = getBudgets({ status: 'DRAFT' });
@@ -384,7 +526,7 @@ describe('Budget Management - Unit Tests', () => {
 
   describe('Period generation', () => {
 
-    it('should generate 12 monthly periods for annual budget', () => {
+    it('should generate 12 monthly periods for annual budget', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Annual Budget',
         fiscal_year: 2024,
@@ -399,7 +541,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 120000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       const lines = getBudgetLines(result.id!);
       const periods = getBudgetPeriods(lines[0].id);
 
@@ -412,7 +554,7 @@ describe('Budget Management - Unit Tests', () => {
       });
     });
 
-    it('should generate periods with correct sequence', () => {
+    it('should generate periods with correct sequence', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Sequential Budget',
         fiscal_year: 2024,
@@ -427,7 +569,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       const lines = getBudgetLines(result.id!);
       const periods = getBudgetPeriods(lines[0].id);
 
@@ -440,7 +582,7 @@ describe('Budget Management - Unit Tests', () => {
 
   describe('Variance calculations', () => {
 
-    it('should calculate variance correctly', () => {
+    it('should calculate variance correctly', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Variance Test Budget',
         fiscal_year: 2024,
@@ -455,7 +597,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
 
       // Get variance analysis (will be 0 without actual transactions)
       const variance = getBudgetVarianceAnalysis(result.id!);
@@ -465,7 +607,7 @@ describe('Budget Management - Unit Tests', () => {
       expect(variance[0].account_number).toBe(5100);
     });
 
-    it('should update period actuals', () => {
+    it('should update period actuals', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Period Update Test',
         fiscal_year: 2024,
@@ -480,7 +622,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       const updateResult = updatePeriodActuals(result.id!);
 
       expect(updateResult.success).toBe(true);
@@ -490,7 +632,7 @@ describe('Budget Management - Unit Tests', () => {
 
   describe('Budget summary and alerts', () => {
 
-    it('should generate budget summary', () => {
+    it('should generate budget summary', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Summary Test Budget',
         fiscal_year: 2024,
@@ -506,7 +648,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5200, annual_amount: 50000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       const summary = getBudgetSummary(result.id!);
 
       expect(summary).toBeDefined();
@@ -514,7 +656,7 @@ describe('Budget Management - Unit Tests', () => {
       expect(summary?.lines_count).toBe(2);
     });
 
-    it('should generate alerts for threshold violations', () => {
+    it('should generate alerts for threshold violations', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Alert Test Budget',
         fiscal_year: 2024,
@@ -530,14 +672,14 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       const alerts = generateBudgetAlerts(result.id!);
 
       expect(alerts).toBeDefined();
       expect(Array.isArray(alerts)).toBe(true);
     });
 
-    it('should calculate execution status', () => {
+    it('should calculate execution status', async () => {
       const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
         budget_name: 'Execution Test Budget',
         fiscal_year: 2024,
@@ -552,7 +694,7 @@ describe('Budget Management - Unit Tests', () => {
         { account_number: 5100, annual_amount: 100000, distribution_type: 'EQUAL' }
       ];
 
-      const result = createBudget(budgetData, budgetLines);
+      const result = await createBudget(budgetData, budgetLines);
       const status = getBudgetExecutionStatus(result.id!);
 
       expect(status).toBeDefined();

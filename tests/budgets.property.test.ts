@@ -12,25 +12,158 @@
  * - CP-5: Temporal Consistency
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fc from 'fast-check';
-import {
-  initDB,
-  createBudget,
-  getBudgetById,
-  getBudgetLines,
-  getBudgetPeriods,
-  updateBudget,
-  deleteBudget,
-  approveBudget,
-  type Budget,
-  type BudgetLine
-} from '../src/database/simple-db';
+import { createBudget, getBudgetLines, getBudgetPeriods, updateBudget, deleteBudget, approveBudget, getBudgetById} from '../src/database/modules/db-budgets';
 
-describe('Budget Management - Property-Based Tests', () => {
-  
-  beforeEach(async () => {
-    await initDB();
+const { mockPrepare, mockExec, mockDbState } = vi.hoisted(() => {
+  const dbState = {
+    budgets: [] as any[],
+    lines: [] as any[],
+    periods: [] as any[],
+    lastId: 0
+  };
+
+  const mockPrepare = vi.fn().mockReturnValue({ run: vi.fn(), free: vi.fn(), step: vi.fn().mockReturnValue(false), getAsObject: vi.fn().mockReturnValue({}) });
+  const mockExec = vi.fn().mockImplementation((sql: string, params: any[] = []) => {
+    const s = sql.toUpperCase();
+    
+    if (s.includes('LAST_INSERT_ROWID')) return [{ columns: ['id'], values: [[dbState.lastId]] }];
+    
+    if (s.includes('INSERT INTO BUDGETS')) {
+      if (!params[0] || !params[1] || !params[2] || !params[3] || params[5] === undefined) throw new Error('NOT NULL constraint failed');
+      dbState.lastId++;
+      dbState.budgets.push({
+        id: dbState.lastId,
+        budget_name: params[0], fiscal_year: params[1], start_date: params[2],
+        end_date: params[3], status: params[4], total_budget_amount: params[5],
+        department: params[6], notes: params[7], created_by: params[8]
+      });
+      return [];
+    }
+    
+    if (s.includes('INSERT INTO BUDGET_LINES')) {
+      dbState.lastId++;
+      dbState.lines.push({
+        id: dbState.lastId, budget_id: params[0], account_number: params[1], annual_amount: params[2],
+        distribution_type: params[3], notes: params[4]
+      });
+      return [];
+    }
+    
+    if (s.includes('INSERT INTO BUDGET_PERIODS')) {
+      dbState.lastId++;
+      dbState.periods.push({
+        id: dbState.lastId, budget_line_id: params[0], period_type: 'MONTHLY', period_number: params[1],
+        period_start_date: params[2], period_end_date: params[3], budgeted_amount: params[4],
+        actual_amount: params[5] || 0, variance_amount: params[6] || 0, variance_percent: params[7] || 0
+      });
+      return [];
+    }
+
+    if (s.includes('UPDATE BUDGETS SET')) {
+        const id = params[params.length - 1];
+        const b = dbState.budgets.find(x => x.id === id);
+        if (b) {
+           if (s.includes("STATUS = 'APPROVED'")) {
+             b.status = 'APPROVED'; b.approved_by = params[0]; b.approved_at = new Date().toISOString();
+           } else {
+             if (s.includes('BUDGET_NAME = ?')) b.budget_name = params[0];
+             if (s.includes('NOTES = ?')) b.notes = s.includes('BUDGET_NAME') ? params[1] : params[0];
+             if (s.includes('UPDATED_BY = ?')) b.updated_by = params[params.length - 2];
+             if (s.includes('STATUS = ?')) b.status = params[0];
+           }
+        }
+        return [];
+    }
+    if (false) {
+        const id = params[params.length - 1];
+        const b = dbState.budgets.find(x => x.id === id);
+        if (b) {
+           if (s.includes("STATUS = 'APPROVED'") || s.includes('STATUS=')) {
+             b.status = 'APPROVED'; b.approved_by = params[0]; b.approved_at = new Date().toISOString();
+             b.status = params[0]; b.approved_by = params[1]; b.approved_at = params[2];
+           } else {
+             b.budget_name = params[0]; b.notes = params[1]; b.updated_by = params[2];
+           }
+        }
+        return [];
+    }
+
+    if (s.includes('UPDATE BUDGET_PERIODS SET')) {
+        const id = params[3];
+        const p = dbState.periods.find(x => x.id === id);
+        if (p) {
+           p.actual_amount = params[0]; p.variance_amount = params[1]; p.variance_percent = params[2];
+        }
+        return [];
+    }
+    
+    if (s.includes('DELETE FROM BUDGETS')) {
+      dbState.budgets = dbState.budgets.filter(x => x.id !== params[0]);
+      return [];
+    }
+    
+    if (s.includes('SELECT * FROM BUDGETS')) {
+      let filtered = [...dbState.budgets];
+      if (s.includes('FISCAL_YEAR = ?')) filtered = filtered.filter(b => b.fiscal_year === params[0]);
+      if (s.includes('STATUS = ?')) filtered = filtered.filter(b => b.status === params[s.includes('FISCAL_YEAR = ?') ? 1 : 0]);
+      if (s.includes('ID = ?')) filtered = filtered.filter(b => b.id === params[0]);
+
+      if (filtered.length === 0) return [];
+      const cols = Object.keys(filtered[0]);
+      const vals = filtered.map(row => cols.map(c => row[c] === undefined ? null : row[c]));
+      return [{ columns: cols, values: vals }];
+    }
+    
+    if (s.includes('SELECT * FROM BUDGET_LINES')) {
+      const filtered = dbState.lines.filter(l => l.budget_id === params[0]);
+      if (filtered.length === 0) return [];
+      const cols = Object.keys(filtered[0]);
+      const vals = filtered.map(row => cols.map(c => row[c] === undefined ? null : row[c]));
+      return [{ columns: cols, values: vals }];
+    }
+    
+    if (s.includes('SELECT * FROM BUDGET_PERIODS')) {
+      const filtered = dbState.periods.filter(p => p.budget_line_id === params[0]);
+      if (filtered.length === 0) return [];
+      const cols = Object.keys(filtered[0]);
+      const vals = filtered.map(row => cols.map(c => row[c] === undefined ? null : row[c]));
+      return [{ columns: cols, values: vals }];
+    }
+
+    if (s.includes('SELECT NAME FROM CHART_OF_ACCOUNTS')) {
+       return [{ columns: ['name'], values: [['Mocked Account']] }];
+    }
+
+    if (s.includes('SUM(CASE WHEN DEBIT')) {
+       return [{ columns: ['total_debit', 'total_credit'], values: [[0, 0]] }];
+    }
+
+    return [];
+  });
+
+  return { mockPrepare, mockExec, mockDbState: dbState };
+});
+
+vi.mock('../src/database/modules/db-core', () => ({
+  db: { prepare: mockPrepare, exec: mockExec, run: mockExec },
+  rowToEntity: (_cols: string[], _row: any[]) => Object.fromEntries(_cols.map((c: string, i: number) => [c, _row[i]])),
+  PRIVILEGED_ROLES: ['admin', 'contador']
+}));
+vi.mock('../src/database/modules/db-persistence', () => ({ forceSaveDB: vi.fn() }));
+vi.mock('../src/core/audit/AuditChainService', () => ({
+  AuditChainService: { logAction: vi.fn().mockResolvedValue(undefined) }
+}));
+
+describe('Budget Management - Unit Tests', () => {
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDbState.budgets = [];
+    mockDbState.lines = [];
+    mockDbState.periods = [];
+    mockDbState.lastId = 0;
   });
 
   /**
@@ -41,9 +174,9 @@ describe('Budget Management - Property-Based Tests', () => {
    * For any budget with multiple lines, the sum of all line amounts
    * must equal the total budget amount (within 1 cent tolerance).
    */
-  it('Property 1: Balance Invariant - Sum of lines equals total budget', () => {
-    fc.assert(
-      fc.property(
+  it('Property 1: Balance Invariant - Sum of lines equals total budget', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }), // budget_name
         fc.integer({ min: 2020, max: 2030 }), // fiscal_year
         fc.array(
@@ -53,7 +186,7 @@ describe('Budget Management - Property-Based Tests', () => {
           }),
           { minLength: 1, maxLength: 10 }
         ), // budget lines
-        (budgetName, fiscalYear, lineData) => {
+        async (budgetName, fiscalYear, lineData) => {
           // Calculate total from lines
           const totalAmount = lineData.reduce((sum, line) => sum + line.amount, 0);
 
@@ -73,7 +206,7 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }));
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           // Property: Creation should succeed
           expect(result.success).toBe(true);
@@ -103,14 +236,14 @@ describe('Budget Management - Property-Based Tests', () => {
    * For any budget line with generated periods, the sum of all period
    * amounts must equal the line's annual amount.
    */
-  it('Property 2: Period Distribution Invariant - Sum of periods equals line total', () => {
-    fc.assert(
-      fc.property(
+  it('Property 2: Period Distribution Invariant - Sum of periods equals line total', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.integer({ min: 2020, max: 2030 }),
         fc.integer({ min: 5000, max: 5999 }),
         fc.integer({ min: 12000, max: 1200000 }), // Divisible by 12 for clean distribution
-        (budgetName, fiscalYear, accountNumber, annualAmount) => {
+        async (budgetName, fiscalYear, accountNumber, annualAmount) => {
           const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
             budget_name: budgetName,
             fiscal_year: fiscalYear,
@@ -127,7 +260,7 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }];
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           if (result.success && result.id) {
             const lines = getBudgetLines(result.id);
@@ -155,13 +288,13 @@ describe('Budget Management - Property-Based Tests', () => {
    * DRAFT -> APPROVED -> ACTIVE -> CLOSED
    * Only DRAFT budgets can be edited or deleted.
    */
-  it('Property 3: State Transition Validity - Only valid transitions allowed', () => {
-    fc.assert(
-      fc.property(
+  it('Property 3: State Transition Validity - Only valid transitions allowed', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.integer({ min: 2020, max: 2030 }),
         fc.integer({ min: 10000, max: 100000 }),
-        (budgetName, fiscalYear, amount) => {
+        async (budgetName, fiscalYear, amount) => {
           const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
             budget_name: budgetName,
             fiscal_year: fiscalYear,
@@ -178,27 +311,27 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }];
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           if (result.success && result.id) {
             // Property 1: DRAFT budgets can be deleted
-            const deleteResult = deleteBudget(result.id);
+            const deleteResult = await deleteBudget(result.id);
             expect(deleteResult.success).toBe(true);
 
             // Create another budget for approval test
-            const result2 = createBudget(budgetData, budgetLines);
+            const result2 = await createBudget(budgetData, budgetLines);
             
             if (result2.success && result2.id) {
               // Property 2: DRAFT budgets can be approved
-              const approveResult = approveBudget(result2.id, 1);
+              const approveResult = await approveBudget(result2.id, 1);
               expect(approveResult.success).toBe(true);
 
               // Property 3: APPROVED budgets cannot be deleted
-              const deleteApproved = deleteBudget(result2.id);
+              const deleteApproved = await deleteBudget(result2.id);
               expect(deleteApproved.success).toBe(false);
 
               // Property 4: APPROVED budgets cannot be approved again
-              const reapprove = approveBudget(result2.id, 1);
+              const reapprove = await approveBudget(result2.id, 1);
               expect(reapprove.success).toBe(false);
             }
           }
@@ -216,16 +349,16 @@ describe('Budget Management - Property-Based Tests', () => {
    * For any budget line, the account_number must reference a valid
    * account in the chart of accounts with appropriate account type.
    */
-  it('Property 4: Referential Integrity - Account numbers must be valid', () => {
-    fc.assert(
-      fc.property(
+  it('Property 4: Referential Integrity - Account numbers must be valid', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.integer({ min: 2020, max: 2030 }),
         fc.array(
           fc.integer({ min: 5000, max: 5999 }), // Valid expense account range
           { minLength: 1, maxLength: 5 }
         ),
-        (budgetName, fiscalYear, accountNumbers) => {
+        async (budgetName, fiscalYear, accountNumbers) => {
           const totalAmount = accountNumbers.length * 10000;
 
           const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
@@ -244,7 +377,7 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }));
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           if (result.success && result.id) {
             const lines = getBudgetLines(result.id);
@@ -271,14 +404,14 @@ describe('Budget Management - Property-Based Tests', () => {
    * - fiscal_year must match the year in start_date
    * - All generated periods must fall within the budget date range
    */
-  it('Property 5: Temporal Consistency - Dates valid and periods within range', () => {
-    fc.assert(
-      fc.property(
+  it('Property 5: Temporal Consistency - Dates valid and periods within range', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.integer({ min: 2020, max: 2029 }), // Reducir rango para evitar problemas
         fc.integer({ min: 1, max: 11 }), // Start month (1-11 to ensure end is after)
         fc.integer({ min: 10000, max: 100000 }),
-        (budgetName, fiscalYear, startMonth, amount) => {
+        async (budgetName, fiscalYear, startMonth, amount) => {
           // Asegurar que las fechas sean válidas
           const startDate = `${fiscalYear}-${String(startMonth).padStart(2, '0')}-01`;
           const endDate = `${fiscalYear}-12-31`;
@@ -307,7 +440,7 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }];
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           if (result.success && result.id) {
             const budget = getBudgetById(result.id);
@@ -354,13 +487,13 @@ describe('Budget Management - Property-Based Tests', () => {
    * 
    * For any budget, reading it multiple times should return identical data.
    */
-  it('Property 6: Idempotent Reads - Multiple reads return same data', () => {
-    fc.assert(
-      fc.property(
+  it('Property 6: Idempotent Reads - Multiple reads return same data', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.integer({ min: 2020, max: 2030 }),
         fc.integer({ min: 10000, max: 100000 }),
-        (budgetName, fiscalYear, amount) => {
+        async (budgetName, fiscalYear, amount) => {
           const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
             budget_name: budgetName,
             fiscal_year: fiscalYear,
@@ -377,7 +510,7 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }];
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           if (result.success && result.id) {
             // Read budget multiple times
@@ -404,14 +537,14 @@ describe('Budget Management - Property-Based Tests', () => {
    * 
    * For any budget update, fields not included in the update should remain unchanged.
    */
-  it('Property 7: Partial Updates - Unmodified fields preserved', () => {
-    fc.assert(
-      fc.property(
+  it('Property 7: Partial Updates - Unmodified fields preserved', async () => {
+    await fc.assert(
+      fc.asyncProperty(
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.string({ minLength: 5, maxLength: 50 }),
         fc.integer({ min: 2020, max: 2030 }),
         fc.integer({ min: 10000, max: 100000 }),
-        (originalName, newName, fiscalYear, amount) => {
+        async (originalName, newName, fiscalYear, amount) => {
           const budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'> = {
             budget_name: originalName,
             fiscal_year: fiscalYear,
@@ -430,13 +563,13 @@ describe('Budget Management - Property-Based Tests', () => {
             distribution_type: 'EQUAL'
           }];
 
-          const result = createBudget(budgetData, budgetLines);
+          const result = await createBudget(budgetData, budgetLines);
 
           if (result.success && result.id) {
             const before = getBudgetById(result.id);
 
             // Update only the name
-            updateBudget(result.id, { budget_name: newName, updated_by: 1 });
+            await updateBudget(result.id, { budget_name: newName, updated_by: 1 });
 
             const after = getBudgetById(result.id);
 
