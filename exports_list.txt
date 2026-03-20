@@ -1,0 +1,200 @@
+﻿
+LineNumber Line                                                                                                        
+---------- ----                                                                                                        
+        30 export const getDB = () => db;                                                                              
+        32 export const dbExec = (sql: string, params?: any[]) => {                                                    
+        54 export const dbRun = (sql: string, params?: any[]) => {                                                     
+        74 export const getDBEngine = (): SQLiteEngine => {                                                            
+       289 export function getMonthlyFinancialSummary(): MonthlySummary[] {                                            
+       345 export function getEmployees(): Employee[] {                                                                
+       357 export function getEmployeeById(id: number): Employee | null {                                              
+       369 export function createEmployee(empData: Partial<Employee>): { success: boolean; message: string; id?: num...
+       404 export function updateEmployee(id: number, empData: Partial<Employee>): { success: boolean; message: stri...
+       432 export function getPayrollPeriods(): PayrollPeriod[] {                                                      
+       444 export function getPayrollSettings(): PayrollSetting[] {                                                    
+       456 export function updatePayrollSetting(key: string, value: string): { success: boolean; message: string } {   
+       466 export function getTaxBrackets(): TaxBracket[] {                                                            
+       481 export function createTaxBracket(bracket: Partial<TaxBracket>): { success: boolean; message: string; id?:...
+       545 export function updateTaxBracket(id: number, bracket: Partial<TaxBracket>): { success: boolean; message: ...
+       570 export function deleteTaxBracket(id: number): { success: boolean; message: string } {                       
+       588 export function getAssetCategories(): AssetCategory[] {                                                     
+       603 export function createAssetCategory(category: Partial<AssetCategory>): { success: boolean; message: strin...
+       641 export function getFixedAssets(status?: string): FixedAsset[] {                                             
+       662 export function getFixedAssetById(id: number): FixedAsset | null {                                          
+       677 export function createFixedAsset(asset: Partial<FixedAsset>, userId: number): { success: boolean; message...
+       751 export function updateFixedAsset(id: number, asset: Partial<FixedAsset>): { success: boolean; message: st...
+       791 export function disposeAsset(                                                                               
+       841 export function getAssetDepreciations(assetId: number): AssetDepreciation[] {                               
+       856 export function recordDepreciation(depreciation: Partial<AssetDepreciation>): { success: boolean; message...
+       915 export function calculateMonthlyDepreciation(periodDate: string, userId: number): { success: boolean; mes...
+       983 export function createPayrollPeriod(period: Partial<PayrollPeriod>): { success: boolean; message: string;...
+      1007 export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_name: string })[] {         
+      1024 export function createPayrollEntry(entry: Partial<PayrollEntry>, items: Partial<PayrollLineItem>[]): { su...
+      1068 export function getPayrollLineItems(entryId: number): PayrollLineItem[] {                                   
+      1086 export function getPayrolls(filters: PayrollFilter = {}): Payroll[] {                                       
+      1168 export const DB_NAME = 'accountexpress.db';                                                                 
+      1172 export const PRIVILEGED_ROLES = ['admin', 'contador', 'auditor', 'viewer', 'accountant'];                   
+      1177 export function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {                           
+      1213 export function getFiscalYears(): FiscalYear[] {                                                            
+      1224 export function getAccountingPeriods(fiscalYearId: number): AccountingPeriod[] {                            
+      1238 export function isDateLocked(dateStr: string): boolean {                                                    
+      1258 export async function closePeriod(periodId: number, userId: number): Promise<{ success: boolean; message:...
+      1299 export async function reopenPeriod(periodId: number, userId: number): Promise<{ success: boolean; message...
+      1316 export async function unlockFiscalYear(yearId: number): Promise<{ success: boolean; message: string }> {    
+      1849 export const resetDB = async () => {                                                                        
+      1881 export const initDB = async (password?: string): Promise<any> => {                                          
+      3747 export const saveDatabase = async (): Promise<void> => {                                                    
+      3792 export const forceSaveDB = async (): Promise<void> => {                                                     
+      3827 export const isEncryptionEnabled = (): boolean => {                                                         
+      3832 export const changeEncryptionPassword = async (oldPassword: string, newPassword: string): Promise<boolean...
+      3855 export const enableEncryption = async (password: string): Promise<boolean> => {                             
+      3877 export const disableEncryption = async (password: string): Promise<boolean> => {                            
+      3897 export const isDatabaseReady = (): boolean => {                                                             
+      3902 export const addCustomer = async (customerData: Partial<Customer>, userId?: number): Promise<number> => {   
+      3988 export const getCustomers = (filters?: { userId?: number, role?: string }): Customer[] => {                 
+      4078 export const getCustomerById = (id: number): Customer | null => {                                           
+      4113 export const updateCustomer = (id: number, customerData: Partial<Customer>, userId?: number): { success: ...
+      4189 export const canDeleteCustomer = (customerId: number): { canDelete: boolean; reason?: string } => {         
+      4227 export const deleteCustomer = (id: number, userId?: number): { success: boolean; message: string } => {     
+      4342 export const generateSimpleHash = (data: any): string => {                                                  
+      4386 export const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, ...
+      4447 export const getAuditLog = (limit: number = 100): Array<Record<string, any>> => {                           
+      4468 export const getDatabaseInfo = () => {                                                                      
+      4500 export const createBackup = async (): Promise<string> => {                                                  
+      4515 export const getStats = () => {                                                                             
+      4534 export const FLORIDA_COUNTIES = [                                                                           
+      4552 export const generateInvoiceNumber = (): string => {                                                        
+      4569 export const getInvoices = (filters?: { userId?: number, role?: string }): Invoice[] => {                   
+      4619 export const getInvoiceById = (id: number): Invoice | null => {                                             
+      4702 export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[], userId?: numb...
+      4830 export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?: Partial<InvoiceItem>[], ...
+      4945 export const deleteInvoice = (id: number, userId?: number): { success: boolean; message: string } => {      
+      4984 export const getActiveProducts = (): Product[] => {                                                         
+      5015 export const getFloridaTaxRate = (county: string): number => {                                              
+      5052 export const calculateTaxAmount = (subtotal: number, county: string = 'Miami-Dade', taxableItems: boolean...
+      5067 export const validateFinancialCalculation = (subtotal: number, taxAmount: number, total: number, county: ...
+      5079 export const getStatsWithInvoices = () => {                                                                 
+      5114 export const getQuotes = (filters?: { userId?: number; role?: string; status?: string }): Quote[] => {      
+      5154 export const getQuoteById = (id: number): Quote | null => {                                                 
+      5193 export const createQuote = (                                                                                
+      5321 export const updateQuote = (                                                                                
+      5455 export const deleteQuote = (id: number, userId?: number): { success: boolean; message: string } => {        
+      5497 export const convertQuoteToInvoice = (                                                                      
+      5583 export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): number => {                  
+      5658 export const getSuppliers = (filters?: { userId?: number, role?: string }): Supplier[] => {                 
+      5740 export const getSupplierById = (id: number): Supplier | null => {                                           
+      5776 export const updateSupplier = (id: number, supplierData: Partial<Supplier>, userId?: number): { success: ...
+      5852 export const canDeleteSupplier = (supplierId: number): { canDelete: boolean; reason?: string } => {         
+      5891 export const deleteSupplier = (id: number, userId?: number): { success: boolean; message: string } => {     
+      5942 export const generateBillNumber = (): string => {                                                           
+      5959 export const getBills = (filters?: { userId?: number, role?: string }): Bill[] => {                         
+      6011 export const getBillById = (id: number): Bill | null => {                                                   
+      6094 export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], userId?: number): { succe...
+      6223 export const getStatsWithSuppliers = (filters?: { userId?: number, role?: string }) => {                    
+      6269 export const updateBill = async (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[], userId...
+      6390 export const deleteBill = (id: number, userId?: number): { success: boolean; message: string } => {         
+      6459 export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { success: boolean; message: ...
+      6543 export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | null => {                    
+      6573 export const updateChartOfAccount = (accountCode: string, accountData: Partial<ChartOfAccount>, userId?: ...
+      6641 export const deleteChartOfAccount = (accountCode: string, userId?: number): { success: boolean; message: ...
+      6709 export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean; message: string }> => {   
+      6912 export const logAuditAction = logAuditEvent;                                                                
+      6915 export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors: string[]; totalRecords:...
+      6990 export const getAuditStats = (): { totalRecords: number; byTable: Record<string, number>; byAction: Recor...
+      7056 export const getChartOfAccounts = (): ChartOfAccount[] => {                                                 
+      7101 export const getAccountBalance = (accountCode: string): number => {                                         
+      7137 export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; message: string; details: a...
+      7239 export const createJournalEntry = async (                                                                   
+      7357 export const getJournalEntries = (limit: number = 50, filters?: { userId?: number, role?: string }): Jour...
+      7405 export const getJournalEntryDetails = (entryId: number): JournalDetail[] => {                               
+      7454 export const generateSalesJournalEntry = async (invoice: Invoice, userId?: number): Promise<{ success: bo...
+      7494 export const generatePurchaseJournalEntry = async (bill: Bill, userId?: number): Promise<{ success: boole...
+      7534 export const generatePaymentReceivedJournalEntry = async (payment: Payment, customer: Customer, userId?: ...
+      7563 export const generatePaymentNumber = (): string => {                                                        
+      7574 export const generateSupplierPaymentNumber = (): string => {                                                
+      7588 export const createPayment = (paymentData: Partial<Payment>, userId?: number): { success: boolean; messag...
+      7701 export const generatePaymentSentJournalEntry = async (payment: SupplierPayment, supplier: Supplier, userI...
+      7729 export const addPayment = async (paymentData: Partial<SupplierPayment>, userId?: number): Promise<{ succe...
+      7826 export const createSupplierPayment = addPayment; // Alias for consistency                                   
+      7833 export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccount[], liabilities: ChartOf...
+      7911 export const generateIncomeStatement = (fromDate: string, toDate: string): { revenue: ChartOfAccount[], e...
+      7985 export const generateClosingEntry = async (fromDate: string, toDate: string, userId?: number): Promise<{ ...
+      8043 export const getCashFlowStatement = (fromDate: string, toDate: string): {                                   
+      8241 export const getAgingReport = (type: 'receivable' | 'payable'): {                                           
+      8311 export const getAccountLedger = (accountCode: string, fromDate: string, toDate: string): {                  
+      8398 export function getCompanyData(): CompanyData | null {                                                      
+      8464 export async function updateCompanyData(companyData: Partial<CompanyData>): Promise<{ success: boolean; m...
+      8650 export function getARDDocuments(): any[] {                                                                  
+      8668 export function saveARDDocument(doc: any): { success: boolean; id: string } {                               
+      8687 export function updateARDDocumentStatus(id: string, status: string, results?: any): void {                  
+      8708 export function deleteARDDocument(id: string): void {                                                       
+      8713 export function assignCustomerToARDDocument(documentId: string, customerId: number): void {                 
+      8718 export function getARDCustomerSummary(): any[] {                                                            
+      8749 export function checkAccountingDataAssociation(): { hasData: boolean; customers: number; suppliers: numbe...
+      8776 export function initializeCompanyData(): void {                                                             
+      8876 export function getProductCategories(): ProductCategory[] {                                                 
+      8921 export function createProductCategory(categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_...
+      8988 export function updateProductCategory(id: number, categoryData: Partial<ProductCategory>, userId?: number...
+      9044 export function deleteProductCategory(id: number, userId?: number): { success: boolean; message: string } { 
+      9104 export function getProducts(): Product[] {                                                                  
+      9157 export function createProduct(productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>, userId?: nu...
+      9257 export function updateProduct(id: number, productData: Partial<Product>, userId?: number): { success: boo...
+      9364 export function deleteProduct(id: number, userId?: number): { success: boolean; message: string } {         
+      9423 export function getProductById(id: number): Product | null {                                                
+      9463 export function updateProductStock(productId: number, quantity: number, operation: 'add' | 'subtract'): {...
+      9520 export function getProductsLowStock(): Product[] {                                                          
+      9582 export function calculateFloridaDR15Report(period: string): FloridaDR15Report | null {                      
+      9683 export function saveDR15Report(report: FloridaDR15Report): { success: boolean; message: string; id?: numb...
+      9782 export function getDR15Reports(): FloridaDR15Report[] {                                                     
+      9868 export function getAllFloridaTaxRates(): { id: number; county: string; stateRate: number; discretionaryRa...
+      9885 export function updateFloridaTaxRate(id: number, discretionaryRate: number): { success: boolean; message:...
+      9905 export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { success: boolean; message: ...
+     10011 export function getAvailableDR15Periods(): string[] {                                                       
+     10039 export function getPaymentMethods(): PaymentMethod[] {                                                      
+     10083 export function getAllPaymentMethods(): PaymentMethod[] {                                                   
+     10126 export async function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'created_at'>): Promise<...
+     10203 export function updatePaymentMethod(id: number, methodData: Partial<PaymentMethod>): { success: boolean; ...
+     10306 export function deletePaymentMethod(id: number): { success: boolean; message: string } {                    
+     10389 export function getPaymentMethodById(id: number): PaymentMethod | null {                                    
+     10429 export function canDeletePaymentMethod(id: number): { canDelete: boolean; reason?: string } {               
+     10478 export function getBankAccounts(): BankAccount[] {                                                          
+     10508 export function getBankAccountById(id: number): BankAccount | null {                                        
+     10537 export function getBankAccountTransactionCount(accountId: number): number {                                 
+     10557 export function findBankAccountsByNumber(accountNumber: string): BankAccount[] {                            
+     10587 export function findBankAccountByNumber(accountNumber: string): BankAccount | null {                        
+     10595 export async function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>): Promise<{ success:...
+     10652 export async function updateBankAccount(id: number, data: Partial<BankAccount>): Promise<{ success: boole...
+     10711 export function deleteBankAccount(id: number): { success: boolean; message: string } {                      
+     10773 export function getReconciliationStatements(accountId?: number): ReconciliationStatement[] {                
+     10798 export function getLastReconciliationStatement(accountId: number): ReconciliationStatement | null {         
+     10806 export function createReconciliationStatement(data: Omit<ReconciliationStatement, 'id' | 'created_at' | '...
+     10839 export function getUnreconciledTransactions(accountId: number): BankTransaction[] {                         
+     10860 export function findSimilarJournalEntries(transaction: BankTransaction): JournalEntry[] {                   
+     10886 export function createReconciliationMatch(data: Omit<ReconciliationMatch, 'id' | 'matched_at'>): { succes...
+     11003 export const insertBankTransactions = (                                                                     
+     11047 export const getBankTransactions = (                                                                        
+     11077 export const findPotentialMatches = (transaction: BankTransaction): MatchCandidate[] => {                   
+     11157 export const confirmMatch = (bankTransactionId: number, journalEntryId: number): { success: boolean; mess...
+     11204 export const unmatchTransaction = (bankTransactionId: number): { success: boolean; message: string } => {   
+     11243 export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void> => {                       
+     11276 export const seedUsersAndRoles = async (): Promise<void> => {                                               
+     11573 export async function seedSystemDefaults(): Promise<void> {                                                 
+     11589 export const hashPassword = async (password: string): Promise<string> => {                                  
+     11629 export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {                 
+     11782 export function createInventoryMovement(movementData: {                                                     
+     11842 export function getInventoryMovementsWithFilters(filters: {                                                 
+     11906 export function createLocation(locationData: {                                                              
+     11959 export function getLocations(activeOnly: boolean = true): any[] {                                           
+     11985 export function updateLocation(id: number, locationData: {                                                  
+     12057 export function deleteLocation(id: number, userId: number = 1): { success: boolean; message: string } {     
+     12084 export function createInitialLocations(): { success: boolean; message: string } {                           
+     12178 export async function createBudget(                                                                         
+     12269 export function getPayroll(payrollId: number): Payroll | null {                                             
+     12286 export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[] {                         
+     12313 export function getAllPayrolls(filters?: {                                                                  
+     12360 export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {                            
+     12397 export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {                            
+     12422 export function getFiscalSettings(): FiscalSettings {                                                       
+     12474 export function updateFiscalSettings(settings: Partial<FiscalSettings>): { success: boolean; message: str...
+
+
