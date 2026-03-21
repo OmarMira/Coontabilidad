@@ -10,6 +10,8 @@ import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
 import { createPayment as _createPayment, generatePaymentNumber as _generatePaymentNumber } from './modules/db-payments';
 import { generatePaymentReceivedJournalEntry as _generatePaymentReceivedJournalEntry } from './modules/db-journal-auto';
+import { getFloridaTaxRate as _getFloridaTaxRate, calculateTaxAmount as _calculateTaxAmount, validateFinancialCalculation as _validateFinancialCalculation, FLORIDA_COUNTIES as _FLORIDA_COUNTIES, getActiveProducts as _getActiveProducts, getStatsWithInvoices as _getStatsWithInvoices } from './modules/db-invoices';
+import { calculateFloridaDR15Report as _calculateFloridaDR15Report, saveDR15Report as _saveDR15Report, getDR15Reports as _getDR15Reports, getAllFloridaTaxRates as _getAllFloridaTaxRates, updateFloridaTaxRate as _updateFloridaTaxRate, markDR15ReportAsFiled as _markDR15ReportAsFiled, getAvailableDR15Periods as _getAvailableDR15Periods } from './modules/db-florida-tax';
 import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
 import { addCustomer as _addCustomer, getCustomers as _getCustomers, getCustomerById as _getCustomerById, updateCustomer as _updateCustomer, canDeleteCustomer as _canDeleteCustomer, deleteCustomer as _deleteCustomer } from './modules/db-customers';
 import { isDateLocked as _isDateLocked } from './modules/db-journal';
@@ -4203,27 +4205,7 @@ export const getStats = () => {
 };
 
 // Condados de Florida para el dropdown
-export const FLORIDA_COUNTIES = [
-  'Alachua', 'Baker', 'Bay', 'Bradford', 'Brevard', 'Broward', 'Calhoun',
-  'Charlotte', 'Citrus', 'Clay', 'Collier', 'Columbia', 'DeSoto', 'Dixie',
-  'Duval', 'Escambia', 'Flagler', 'Franklin', 'Gadsden', 'Gilchrist',
-  'Glades', 'Gulf', 'Hamilton', 'Hardee', 'Hendry', 'Hernando', 'Highlands',
-  'Hillsborough', 'Holmes', 'Indian River', 'Jackson', 'Jefferson', 'Lafayette',
-  'Lake', 'Lee', 'Leon', 'Levy', 'Liberty', 'Madison', 'Manatee', 'Marion',
-  'Martin', 'Miami-Dade', 'Monroe', 'Nassau', 'Okaloosa', 'Okeechobee',
-  'Orange', 'Osceola', 'Palm Beach', 'Pasco', 'Pinellas', 'Polk', 'Putnam',
-  'Santa Rosa', 'Sarasota', 'Seminole', 'St. Johns', 'St. Lucie', 'Sumter',
-  'Suwannee', 'Taylor', 'Union', 'Volusia', 'Wakulla', 'Walton', 'Washington'
-];
-
-// ==========================================
-// FUNCIONES CRUD PARA FACTURAS
-// ==========================================
-
-// Generar número de factura automático
-export const generateInvoiceNumber = (): ReturnType<typeof _generateInvoiceNumber> => {
-  return _generateInvoiceNumber();
-};
+export const FLORIDA_COUNTIES = _FLORIDA_COUNTIES;
 
 // Obtener todas las facturas con información del cliente
 // Obtener todas las facturas con información del cliente y aislamiento
@@ -4268,123 +4250,39 @@ export const deleteInvoice = (
 };
 
 // Obtener productos activos para el formulario de factura
-export const getActiveProducts = (): Product[] => {
-  if (!db) return [];
-
-  try {
-    const result = db.exec(`
-      SELECT * FROM products 
-      WHERE active = 1 
-      ORDER BY name
-  `);
-
-    if (!result[0]) return [];
-
-    const products: Product[] = [];
-    const columns = (result[0].columns || (result[0] as any).lc);
-
-    result[0].values.forEach((row: any) => {
-      const product: any = {};
-      columns.forEach((col: any, index: any) => {
-        product[col] = row[index];
-      });
-      products.push(product as Product);
-    });
-
-    return products;
-  } catch (error) {
-    console.error('Error getting active products:', error);
-    return [];
-  }
+export const getActiveProducts = (): ReturnType<typeof _getActiveProducts> => {
+  return _getActiveProducts();
 };
 
 // Calcular tasa de impuesto por condado de Florida dinámicamente
-export const getFloridaTaxRate = (county: string): number => {
-  if (!db) return 0.06; // Tasa base por defecto
-
-  try {
-    const result = db.exec(`
-      SELECT total_rate FROM florida_tax_rates 
-      WHERE county_name = ?
-  ORDER BY effective_date DESC 
-      LIMIT 1
-  `, [county]);
-
-    if (result && result.length > 0 && result[0].values.length > 0) {
-      return Number(result[0].values[0][0]) || 0.06;
-    }
-  } catch (error) {
-    console.error('Error getting tax rate for county:', county, error);
-  }
-
-  // Tasas de respaldo por condado de Florida (Seguir datos de insertInitialTaxRates)
-  const fallbackRates: Record<string, number> = {
-    'Miami-Dade': 0.07,
-    'Broward': 0.07,
-    'Orange': 0.065,
-    'Hillsborough': 0.075,
-    'Palm Beach': 0.07,
-    'Pinellas': 0.07,
-    'Duval': 0.075,
-    'Lee': 0.065,
-    'Polk': 0.07,
-    'Brevard': 0.07,
-    'Monroe': 0.075
-  };
-
-  return fallbackRates[county] || 0.06; // 6% tasa base de Florida
+export const getFloridaTaxRate = (
+  county: Parameters<typeof _getFloridaTaxRate>[0]
+): ReturnType<typeof _getFloridaTaxRate> => {
+  return _getFloridaTaxRate(county);
 };
 
 // Función mejorada para calcular impuestos con condado específico
-export const calculateTaxAmount = (subtotal: number, county: string = 'Miami-Dade', taxableItems: boolean = true): { taxAmount: number; taxRate: number } => {
-  if (!taxableItems || subtotal <= 0) {
-    return { taxAmount: 0, taxRate: 0 };
-  }
-
-  const taxRate = getFloridaTaxRate(county);
-  const taxAmount = subtotal * taxRate;
-
-  return {
-    taxAmount: Math.round(taxAmount * 100) / 100, // Redondear a 2 decimales
-    taxRate
-  };
+export const calculateTaxAmount = (
+  subtotal: Parameters<typeof _calculateTaxAmount>[0],
+  county?: Parameters<typeof _calculateTaxAmount>[1],
+  taxableItems?: Parameters<typeof _calculateTaxAmount>[2]
+): ReturnType<typeof _calculateTaxAmount> => {
+  return _calculateTaxAmount(subtotal, county, taxableItems);
 };
 
 // Función para validar integridad de cálculos financieros
-export const validateFinancialCalculation = (subtotal: number, taxAmount: number, total: number, county: string): boolean => {
-  const calculated = calculateTaxAmount(subtotal, county);
-  const expectedTotal = subtotal + calculated.taxAmount;
-
-  // Tolerancia de 1 centavo para errores de redondeo
-  const tolerance = 0.01;
-
-  return Math.abs(total - expectedTotal) <= tolerance &&
-    Math.abs(taxAmount - calculated.taxAmount) <= tolerance;
+export const validateFinancialCalculation = (
+  subtotal: Parameters<typeof _validateFinancialCalculation>[0],
+  taxAmount: Parameters<typeof _validateFinancialCalculation>[1],
+  total: Parameters<typeof _validateFinancialCalculation>[2],
+  county: Parameters<typeof _validateFinancialCalculation>[3]
+): ReturnType<typeof _validateFinancialCalculation> => {
+  return _validateFinancialCalculation(subtotal, taxAmount, total, county);
 };
 
 // Actualizar estadísticas para incluir facturas
-export const getStatsWithInvoices = () => {
-  if (!db) return { customers: 0, invoices: 0, revenue: 0 };
-
-  try {
-    const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
-    const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
-    const revenueResult = db.exec("SELECT SUM(total_amount) as total FROM invoices WHERE status = 'paid'");
-
-    const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-    const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
-    const revenue = revenueResult[0]?.values[0]?.[0] as number || 0;
-
-    return {
-      customers: customerCount,
-      invoices: invoiceCount,
-      revenue: revenue
-    };
-
-  } catch (error) {
-    console.error('Error getting stats with invoices:', error);
-    return { customers: 0, invoices: 0, revenue: 0 };
-  }
+export const getStatsWithInvoices = (): ReturnType<typeof _getStatsWithInvoices> => {
+  return _getStatsWithInvoices();
 };
 
 // ==========================================
@@ -8739,360 +8637,44 @@ p.*,
  * Calcula el reporte DR-15 para un período específico
  * Cumple con requisitos legales de Florida
  */
-export function calculateFloridaDR15Report(period: string): FloridaDR15Report | null {
-  if (!db) {
-    logger.error('DR15', 'calculate_no_db', 'Base de datos no disponible');
-    return null;
-  }
-
-  try {
-    logger.info('DR15', 'calculate_start', 'Calculando reporte DR-15', { period });
-
-    // Determinar rango de fechas según el período
-    const { startDate, endDate } = parsePeriod(period);
-
-    // Obtener todas las facturas del período
-    const invoicesResult = db.exec(`
-SELECT
-i.id,
-  i.subtotal,
-  i.tax_amount,
-  i.total_amount,
-  c.florida_county,
-  c.tax_exempt
-      FROM invoices i
-      JOIN customers c ON i.customer_id = c.id
-      WHERE i.issue_date >= ? AND i.issue_date <= ?
-  AND i.status IN('sent', 'paid')
-    `, [startDate, endDate]);
-
-    if (invoicesResult.length === 0 || invoicesResult[0].values.length === 0) {
-      logger.warn('DR15', 'calculate_no_data', 'No hay facturas para el período', { period });
-      return createEmptyDR15Report(period);
-    }
-
-    let totalTaxableSales = 0;
-    let totalTaxCollected = 0;
-    let exemptSales = 0;
-    const countyBreakdown: { [county: string]: { rate: number; taxableAmount: number; taxAmount: number } } = {};
-
-    // Procesar cada factura
-    invoicesResult[0].values.forEach((row: any) => {
-      const subtotal = Number(row[1]) || 0;
-      const taxAmount = Number(row[2]) || 0;
-      const county = row[4] as string || 'Miami-Dade';
-      const isExempt = Boolean(row[5]);
-
-      if (isExempt) {
-        exemptSales += subtotal;
-      } else {
-        totalTaxableSales += subtotal;
-        totalTaxCollected += taxAmount;
-
-        // Agrupar por condado
-        if (!countyBreakdown[county]) {
-          const taxRate = getFloridaTaxRate(county);
-          countyBreakdown[county] = {
-            rate: taxRate,
-            taxableAmount: 0,
-            taxAmount: 0
-          };
-        }
-
-        countyBreakdown[county].taxableAmount += subtotal;
-        countyBreakdown[county].taxAmount += taxAmount;
-      }
-    });
-
-    // Crear el reporte
-    const report: FloridaDR15Report = {
-      period,
-      totalTaxableSales,
-      totalTaxCollected,
-      countyBreakdown: Object.entries(countyBreakdown).map(([county, data]) => ({
-        county,
-        rate: data.rate,
-        taxableAmount: data.taxableAmount,
-        taxAmount: data.taxAmount
-      })),
-      exemptSales,
-      adjustments: [], // Se pueden agregar manualmente después
-      netTaxDue: totalTaxCollected,
-      dueDate: calculateDueDate(period),
-      status: 'pending'
-    };
-
-    logger.info('DR15', 'calculate_success', 'Reporte DR-15 calculado', {
-      period,
-      totalTaxableSales,
-      totalTaxCollected,
-      counties: Object.keys(countyBreakdown).length
-    });
-
-    return report;
-
-  } catch (error) {
-    logger.error('DR15', 'calculate_failed', 'Error al calcular reporte DR-15', { period }, error as Error);
-    return null;
-  }
+export function calculateFloridaDR15Report(period: Parameters<typeof _calculateFloridaDR15Report>[0]): ReturnType<typeof _calculateFloridaDR15Report> {
+  return _calculateFloridaDR15Report(period);
 }
 
 /**
  * Guarda un reporte DR-15 en la base de datos
  */
-export function saveDR15Report(report: FloridaDR15Report): { success: boolean; message: string; id?: number } {
-  if (!db) {
-    return { success: false, message: 'Base de datos no disponible' };
-  }
-
-  try {
-    logger.info('DR15', 'save_start', 'Guardando reporte DR-15', { period: report.period });
-
-    // Verificar si ya existe un reporte para este período
-    const existingResult = db.exec(`
-      SELECT id FROM florida_tax_reports WHERE period = ?
-  `, [report.period]);
-
-    if (existingResult.length > 0 && existingResult[0].values.length > 0) {
-      return { success: false, message: `Ya existe un reporte para el período ${report.period} ` };
-    }
-
-    // Insertar reporte principal
-    const insertResult = db.exec(`
-      INSERT INTO florida_tax_reports(
-    period, total_taxable_sales, total_tax_collected, exempt_sales,
-    net_tax_due, due_date, status
-  ) VALUES(?, ?, ?, ?, ?, ?, ?)
-    `, [
-      report.period,
-      report.totalTaxableSales,
-      report.totalTaxCollected,
-      report.exemptSales,
-      report.netTaxDue,
-      report.dueDate.toISOString().split('T')[0],
-      report.status
-    ]);
-
-    // Obtener el ID del reporte insertado
-    const reportId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-
-    // Insertar desglose por condado
-    report.countyBreakdown.forEach(county => {
-      db!.exec(`
-        INSERT INTO florida_tax_report_counties(
-      report_id, county_name, tax_rate, taxable_amount, tax_amount
-    ) VALUES(?, ?, ?, ?, ?)
-      `, [reportId, county.county, county.rate, county.taxableAmount, county.taxAmount]);
-    });
-
-    // Insertar ajustes si existen
-    report.adjustments.forEach(adjustment => {
-      db!.exec(`
-        INSERT INTO florida_tax_report_adjustments(
-        report_id, description, amount, type
-      ) VALUES(?, ?, ?, ?)
-        `, [reportId, adjustment.description, adjustment.amount, adjustment.type]);
-    });
-
-    // Registrar en auditoría
-    const auditData = {
-      period: report.period,
-      total_tax: report.totalTaxCollected,
-      counties: report.countyBreakdown.length
-    };
-
-    db.exec(`
-      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-    `, [
-      'florida_tax_reports',
-      reportId,
-      'INSERT',
-      JSON.stringify(auditData),
-      1,
-      generateSimpleHash(auditData)
-    ]);
-
-    logger.info('DR15', 'save_success', 'Reporte DR-15 guardado correctamente', {
-      period: report.period,
-      reportId
-    });
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return {
-      success: true,
-      message: `Reporte DR - 15 para ${report.period} guardado correctamente`,
-      id: reportId
-    };
-
-  } catch (error) {
-    logger.error('DR15', 'save_failed', 'Error al guardar reporte DR-15', { period: report.period }, error as Error);
-    return {
-      success: false,
-      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'} `
-    };
-  }
+export function saveDR15Report(report: Parameters<typeof _saveDR15Report>[0]): ReturnType<typeof _saveDR15Report> {
+  return _saveDR15Report(report);
 }
 
 /**
  * Obtiene todos los reportes DR-15 guardados
  */
-export function getDR15Reports(): FloridaDR15Report[] {
-  if (!db) {
-    logger.error('DR15', 'get_reports_no_db', 'Base de datos no disponible');
-    return [];
-  }
-
-  try {
-    logger.info('DR15', 'get_reports_start', 'Obteniendo reportes DR-15');
-
-    const reportsResult = db.exec(`
-SELECT
-id, period, total_taxable_sales, total_tax_collected, exempt_sales,
-  net_tax_due, due_date, status, filed_by, filed_at
-      FROM florida_tax_reports
-      ORDER BY period DESC
-  `);
-
-    if (reportsResult.length === 0 || reportsResult[0].values.length === 0) {
-      logger.info('DR15', 'get_reports_empty', 'No hay reportes DR-15 guardados');
-      return [];
-    }
-
-    const reports: FloridaDR15Report[] = [];
-
-    for (const row of reportsResult[0].values) {
-      const reportId = row[0] as number;
-      const period = row[1] as string;
-
-      // Obtener desglose por condado
-      const countiesResult = db.exec(`
-        SELECT county_name, tax_rate, taxable_amount, tax_amount
-        FROM florida_tax_report_counties
-        WHERE report_id = ?
-  `, [reportId]);
-
-      const countyBreakdown = countiesResult.length > 0 ?
-        countiesResult[0].values.map((countyRow: any) => ({
-          county: countyRow[0] as string,
-          rate: Number(countyRow[1]),
-          taxableAmount: Number(countyRow[2]),
-          taxAmount: Number(countyRow[3])
-        })) : [];
-
-      // Obtener ajustes
-      const adjustmentsResult = db.exec(`
-        SELECT description, amount, type
-        FROM florida_tax_report_adjustments
-        WHERE report_id = ?
-  `, [reportId]);
-
-      const adjustments = adjustmentsResult.length > 0 ?
-        adjustmentsResult[0].values.map((adjRow: any) => ({
-          description: adjRow[0] as string,
-          amount: Number(adjRow[1]),
-          type: adjRow[2] as 'credit' | 'debit'
-        })) : [];
-
-      const report: FloridaDR15Report = {
-        period,
-        totalTaxableSales: Number(row[2]) || 0,
-        totalTaxCollected: Number(row[3]) || 0,
-        countyBreakdown,
-        exemptSales: Number(row[4]) || 0,
-        adjustments,
-        netTaxDue: Number(row[5]) || 0,
-        dueDate: new Date(row[6] as string),
-        filedBy: row[7] as number || undefined,
-        filedAt: row[8] ? new Date(row[8] as string) : undefined,
-        status: row[9] as 'pending' | 'filed' | 'paid' | 'late'
-      };
-
-      reports.push(report);
-    }
-
-    logger.info('DR15', 'get_reports_success', 'Reportes DR-15 obtenidos', { count: reports.length });
-    return reports;
-
-  } catch (error) {
-    logger.error('DR15', 'get_reports_failed', 'Error al obtener reportes DR-15', null, error as Error);
-    return [];
-  }
+export function getDR15Reports(): ReturnType<typeof _getDR15Reports> {
+  return _getDR15Reports();
 }
 
 /**
  * Obtiene todas las tasas de impuesto de Florida de la DB
  */
-export function getAllFloridaTaxRates(): { id: number; county: string; stateRate: number; discretionaryRate: number; totalRate: number }[] {
-  if (!db) return [];
-  try {
-    const result = db.exec("SELECT id, county_name as county, state_rate as stateRate, county_rate as discretionaryRate, total_rate as totalRate FROM florida_tax_rates");
-    if (result.length === 0 || result[0].values.length === 0) return [];
-
-    const columns = (result[0].columns || (result[0] as any).lc);
-    return result[0].values.map((row: any) => rowToEntity<any>(columns, row as initSqlJs.SqlValue[]));
-  } catch (error) {
-    console.error('Error getting all tax rates:', error);
-    return [];
-  }
+export function getAllFloridaTaxRates(): ReturnType<typeof _getAllFloridaTaxRates> {
+  return _getAllFloridaTaxRates();
 }
 
 /**
  * Actualiza una tasa de impuesto de Florida
  */
-export function updateFloridaTaxRate(id: number, discretionaryRate: number): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Base de datos no disponible' };
-  try {
-    const totalRate = 0.06 + discretionaryRate;
-    db.run(`UPDATE florida_tax_rates SET county_rate = ?, total_rate = ? WHERE id = ?`, [discretionaryRate, totalRate, id]);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
-
-    return { success: true, message: 'Tasa actualizada correctamente' };
-  } catch (error) {
-    console.error('Error updating tax rate:', error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
+export function updateFloridaTaxRate(id: Parameters<typeof _updateFloridaTaxRate>[0], discretionaryRate: Parameters<typeof _updateFloridaTaxRate>[1]): ReturnType<typeof _updateFloridaTaxRate> {
+  return _updateFloridaTaxRate(id, discretionaryRate);
 }
 
 
 /**
  * Marca un reporte DR-15 como presentado
  */
-export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { success: boolean; message: string } {
-  if (!db) {
-    return { success: false, message: 'Base de datos no disponible' };
-  }
-
-  try {
-    logger.info('DR15', 'mark_filed_start', 'Marcando reporte como presentado', { period, filedBy });
-
-    const result = db.exec(`
-      UPDATE florida_tax_reports 
-      SET status = 'filed', filed_by = ?, filed_at = CURRENT_TIMESTAMP
-      WHERE period = ?
-  `, [filedBy, period]);
-
-    logger.info('DR15', 'mark_filed_success', 'Reporte marcado como presentado', { period });
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return {
-      success: true,
-      message: `Reporte DR - 15 para ${period} marcado como presentado`
-    };
-
-  } catch (error) {
-    logger.error('DR15', 'mark_filed_failed', 'Error al marcar reporte como presentado', { period }, error as Error);
-    return {
-      success: false,
-      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'} `
-    };
-  }
+export function markDR15ReportAsFiled(period: Parameters<typeof _markDR15ReportAsFiled>[0], filedBy?: Parameters<typeof _markDR15ReportAsFiled>[1]): ReturnType<typeof _markDR15ReportAsFiled> {
+  return _markDR15ReportAsFiled(period, filedBy);
 }
 
 // ==========================================
@@ -9168,25 +8750,8 @@ function createEmptyDR15Report(period: string): FloridaDR15Report {
 /**
  * Genera períodos disponibles para reportes
  */
-export function getAvailableDR15Periods(): string[] {
-  const periods: string[] = [];
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-
-  // Generar últimos 8 trimestres
-  for (let year = currentYear - 1; year <= currentYear; year++) {
-    for (let quarter = 1; quarter <= 4; quarter++) {
-      const period = `${year} -Q${quarter} `;
-      const { endDate } = parsePeriod(period);
-
-      // Solo incluir períodos que ya han terminado
-      if (new Date(endDate) < currentDate) {
-        periods.push(period);
-      }
-    }
-  }
-
-  return periods.reverse(); // Más recientes primero
+export function getAvailableDR15Periods(): ReturnType<typeof _getAvailableDR15Periods> {
+  return _getAvailableDR15Periods();
 }
 
 // ==========================================
