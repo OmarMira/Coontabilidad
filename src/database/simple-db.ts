@@ -12,6 +12,7 @@ import { createPayment as _createPayment, generatePaymentNumber as _generatePaym
 import { generatePaymentReceivedJournalEntry as _generatePaymentReceivedJournalEntry } from './modules/db-journal-auto';
 import { getFloridaTaxRate as _getFloridaTaxRate, calculateTaxAmount as _calculateTaxAmount, validateFinancialCalculation as _validateFinancialCalculation, FLORIDA_COUNTIES as _FLORIDA_COUNTIES, getActiveProducts as _getActiveProducts, getStatsWithInvoices as _getStatsWithInvoices } from './modules/db-invoices';
 import { calculateFloridaDR15Report as _calculateFloridaDR15Report, saveDR15Report as _saveDR15Report, getDR15Reports as _getDR15Reports, getAllFloridaTaxRates as _getAllFloridaTaxRates, updateFloridaTaxRate as _updateFloridaTaxRate, markDR15ReportAsFiled as _markDR15ReportAsFiled, getAvailableDR15Periods as _getAvailableDR15Periods } from './modules/db-florida-tax';
+import { createInventoryMovement as _createInventoryMovement, getInventoryMovementsWithFilters as _getInventoryMovementsWithFilters, createLocation as _createLocation, getLocations as _getLocations, updateLocation as _updateLocation, deleteLocation as _deleteLocation, createInitialLocations as _createInitialLocations } from './modules/db-inventory';
 import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
 import { addCustomer as _addCustomer, getCustomers as _getCustomers, getCustomerById as _getCustomerById, updateCustomer as _updateCustomer, canDeleteCustomer as _canDeleteCustomer, deleteCustomer as _deleteCustomer } from './modules/db-customers';
 import { isDateLocked as _isDateLocked } from './modules/db-journal';
@@ -10504,348 +10505,50 @@ export interface KardexEntry extends StockMovement {
 /**
  * Crear un nuevo movimiento de inventario
  */
-export function createInventoryMovement(movementData: {
-  product_id: number;
-  quantity: number;
-  movement_type: 'purchase' | 'sale' | 'adjustment' | 'return' | 'initial';
-  reference_id?: number;
-  reference_type?: 'invoice' | 'purchase_order' | 'adjustment' | 'migration';
-  notes?: string;
-  created_by?: number;
-}): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO stock_movements(
-        product_id, quantity, movement_type, reference_id, reference_type, notes, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run([
-      movementData.product_id,
-      movementData.quantity,
-      movementData.movement_type,
-      movementData.reference_id || null,
-      movementData.reference_type || null,
-      movementData.notes || null,
-      movementData.created_by || 1
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const movementId = result[0]?.values[0]?.[0] as number;
-
-    // Actualizar stock del producto
-    if (movementData.movement_type === 'purchase' || movementData.movement_type === 'return') {
-      // Entrada de inventario
-      db.run('UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-        [movementData.quantity, movementData.product_id]);
-    } else if (movementData.movement_type === 'sale' || movementData.movement_type === 'adjustment') {
-      // Salida de inventario
-      db.run('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-        [Math.abs(movementData.quantity), movementData.product_id]);
-    }
-
-    stmt.free();
-    db.run('COMMIT');
-
-    logger.info('Inventory', 'movement_created', `Movimiento de inventario creado: ${movementId}`, { movementData });
-    return { success: true, message: 'Movimiento de inventario creado exitosamente', id: movementId };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Inventory', 'movement_create_failed', 'Error al crear movimiento de inventario', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function createInventoryMovement(movementData: Parameters<typeof _createInventoryMovement>[0]): ReturnType<typeof _createInventoryMovement> {
+  return _createInventoryMovement(movementData);
 }
 
 /**
  * Obtener movimientos de inventario con filtros
  */
-export function getInventoryMovementsWithFilters(filters: {
-  productId?: number;
-  movementType?: string;
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-} = {}): any[] {
-  if (!db) return [];
-
-  try {
-    let query = `
-      SELECT 
-        sm.*,
-        p.name as product_name,
-        p.sku as product_sku,
-        u.display_name as created_by_name
-      FROM stock_movements sm
-      JOIN products p ON sm.product_id = p.id
-      LEFT JOIN users u ON sm.created_by = u.id
-      WHERE 1=1
-    `;
-
-    const params: any[] = [];
-
-    if (filters.productId) {
-      query += ' AND sm.product_id = ?';
-      params.push(filters.productId);
-    }
-
-    if (filters.movementType) {
-      query += ' AND sm.movement_type = ?';
-      params.push(filters.movementType);
-    }
-
-    if (filters.startDate) {
-      query += ' AND date(sm.created_at) >= date(?)';
-      params.push(filters.startDate);
-    }
-
-    if (filters.endDate) {
-      query += ' AND date(sm.created_at) <= date(?)';
-      params.push(filters.endDate);
-    }
-
-    query += ' ORDER BY sm.created_at DESC';
-
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
-
-    const res = db.exec(query, params);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<any>((res[0].columns || (res[0] as any).lc), row));
-  } catch (error) {
-    logger.error('Inventory', 'get_movements_failed', 'Error al obtener movimientos de inventario', { error });
-    return [];
-  }
+export function getInventoryMovementsWithFilters(filters: Parameters<typeof _getInventoryMovementsWithFilters>[0]): ReturnType<typeof _getInventoryMovementsWithFilters> {
+  return _getInventoryMovementsWithFilters(filters);
 }
 
 /**
  * Crear una nueva ubicación/almacén
  */
-export function createLocation(locationData: {
-  name: string;
-  code: string;
-  address?: string;
-  description?: string;
-  is_active?: boolean;
-  created_by?: number;
-}): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que el cï¿½digo no exista
-    const existingLocation = db.exec('SELECT id FROM locations WHERE code = ?', [locationData.code]);
-    if (existingLocation[0] && existingLocation[0].values.length > 0) {
-      return { success: false, message: `El cï¿½digo de ubicaciï¿½n ${locationData.code} ya existe` };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO locations(name, code, address, description, is_active, created_by, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run([
-      locationData.name,
-      locationData.code,
-      locationData.address || null,
-      locationData.description || null,
-      locationData.is_active !== false ? 1 : 0,
-      locationData.created_by || 1,
-      locationData.created_by || 1
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const locationId = result[0]?.values[0]?.[0] as number;
-
-    stmt.free();
-    db.run('COMMIT');
-
-    logger.info('Inventory', 'location_created', `Ubicación creada: ${locationId}`, { locationData });
-    return { success: true, message: 'Ubicación creada exitosamente', id: locationId };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Inventory', 'location_create_failed', 'Error al crear ubicación', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function createLocation(locationData: Parameters<typeof _createLocation>[0]): ReturnType<typeof _createLocation> {
+  return _createLocation(locationData);
 }
 
 /**
  * Obtener todas las ubicaciones
  */
-export function getLocations(activeOnly: boolean = true): any[] {
-  if (!db) return [];
-
-  try {
-    let query = 'SELECT * FROM locations';
-    const params: any[] = [];
-
-    if (activeOnly) {
-      query += ' WHERE is_active = 1';
-    }
-
-    query += ' ORDER BY name ASC';
-
-    const res = db.exec(query, params);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<any>((res[0].columns || (res[0] as any).lc), row));
-  } catch (error) {
-    logger.error('Inventory', 'get_locations_failed', 'Error al obtener ubicaciones', { error });
-    return [];
-  }
+export function getLocations(activeOnly?: Parameters<typeof _getLocations>[0]): ReturnType<typeof _getLocations> {
+  return _getLocations(activeOnly);
 }
 
 /**
  * Actualizar una ubicaciï¿½n
  */
-export function updateLocation(id: number, locationData: {
-  name?: string;
-  code?: string;
-  address?: string;
-  description?: string;
-  is_active?: boolean;
-  updated_by?: number;
-}): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que la ubicaciï¿½n existe
-    const existingLocation = db.exec('SELECT id FROM locations WHERE id = ?', [id]);
-    if (!existingLocation[0] || existingLocation[0].values.length === 0) {
-      return { success: false, message: 'Ubicaciï¿½n no encontrada' };
-    }
-
-    // Si se estï¿½ cambiando el cï¿½digo, verificar que no exista
-    if (locationData.code) {
-      const codeExists = db.exec('SELECT id FROM locations WHERE code = ? AND id != ?', [locationData.code, id]);
-      if (codeExists[0] && codeExists[0].values.length > 0) {
-        return { success: false, message: `El cï¿½digo ${locationData.code} ya estï¿½ en uso` };
-      }
-    }
-
-    const updates: string[] = [];
-    const params: any[] = [];
-
-    if (locationData.name !== undefined) {
-      updates.push('name = ?');
-      params.push(locationData.name);
-    }
-
-    if (locationData.code !== undefined) {
-      updates.push('code = ?');
-      params.push(locationData.code);
-    }
-
-    if (locationData.address !== undefined) {
-      updates.push('address = ?');
-      params.push(locationData.address);
-    }
-
-    if (locationData.description !== undefined) {
-      updates.push('description = ?');
-      params.push(locationData.description);
-    }
-
-    if (locationData.is_active !== undefined) {
-      updates.push('is_active = ?');
-      params.push(locationData.is_active ? 1 : 0);
-    }
-
-    updates.push('updated_by = ?', 'updated_at = CURRENT_TIMESTAMP');
-    params.push(locationData.updated_by || 1);
-
-    params.push(id);
-
-    db.run(`UPDATE locations SET ${updates.join(', ')} WHERE id = ?`, params);
-
-    logger.info('Inventory', 'location_updated', `Ubicaciï¿½n actualizada: ${id}`, { locationData });
-    return { success: true, message: 'Ubicaciï¿½n actualizada exitosamente' };
-
-  } catch (error: any) {
-    logger.error('Inventory', 'location_update_failed', 'Error al actualizar ubicaciï¿½n', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function updateLocation(id: Parameters<typeof _updateLocation>[0], locationData: Parameters<typeof _updateLocation>[1]): ReturnType<typeof _updateLocation> {
+  return _updateLocation(id, locationData);
 }
 
 /**
  * Eliminar una ubicaciï¿½n
  */
-export function deleteLocation(id: number, userId: number = 1): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que la ubicaciï¿½n existe
-    const existingLocation = db.exec('SELECT id, name FROM locations WHERE id = ?', [id]);
-    if (!existingLocation[0] || existingLocation[0].values.length === 0) {
-      return { success: false, message: 'Ubicaciï¿½n no encontrada' };
-    }
-
-    const locationName = existingLocation[0].values[0][1] as string;
-
-    // En lugar de eliminar fï¿½sicamente, marcar como inactiva
-    db.run('UPDATE locations SET is_active = 0, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [userId, id]);
-
-    logger.info('Inventory', 'location_deleted', `Ubicaciï¿½n desactivada: ${id} - ${locationName}`, { userId });
-    return { success: true, message: `Ubicaciï¿½n "${locationName}" desactivada exitosamente` };
-
-  } catch (error: any) {
-    logger.error('Inventory', 'location_delete_failed', 'Error al eliminar ubicaciï¿½n', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function deleteLocation(id: Parameters<typeof _deleteLocation>[0], userId?: Parameters<typeof _deleteLocation>[1]): ReturnType<typeof _deleteLocation> {
+  return _deleteLocation(id, userId);
 }
 
 /**
  * Crear datos iniciales de ubicaciones
  */
-export function createInitialLocations(): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar si ya existen ubicaciones
-    const existingLocations = db.exec('SELECT COUNT(*) as count FROM locations');
-    const locationCount = existingLocations[0]?.values[0]?.[0] as number || 0;
-
-    if (locationCount > 0) {
-      return { success: true, message: 'Las ubicaciones ya existen' };
-    }
-
-    const initialLocations = [
-      { name: 'Almacén Principal', code: 'ALM-001', address: 'Bodega Central', description: 'Almacén principal de la empresa' },
-      { name: 'Tienda', code: 'TDA-001', address: 'Local comercial', description: 'Área de ventas al público' },
-      { name: 'Oficina', code: 'OFC-001', address: 'Área administrativa', description: 'Suministros de oficina' }
-    ];
-
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO locations(name, code, address, description, is_active, created_by, updated_by)
-      VALUES (?, ?, ?, ?, 1, 1, 1)
-    `);
-
-    initialLocations.forEach(location => {
-      stmt.run([location.name, location.code, location.address, location.description]);
-    });
-
-    stmt.free();
-    db.run('COMMIT');
-
-    logger.info('Inventory', 'initial_locations_created', `Ubicaciones iniciales creadas: ${initialLocations.length}`);
-    return { success: true, message: `${initialLocations.length} ubicaciones iniciales creadas exitosamente` };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Inventory', 'initial_locations_failed', 'Error al crear ubicaciones iniciales', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function createInitialLocations(): ReturnType<typeof _createInitialLocations> {
+  return _createInitialLocations();
 }
 
 

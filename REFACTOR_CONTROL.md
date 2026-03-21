@@ -60,10 +60,10 @@
 - [x] ORDEN 21 - Verificacion final + commit + tag v69-tax-wrapped
 
 ### FASE 5 - Dominio: inventory
-- [ ] ORDEN 22 - Mapa de dependencias dominio inventory
-- [ ] ORDEN 23 - Validacion del mapa
-- [ ] ORDEN 24 - Wrappers dominio inventory
-- [ ] ORDEN 25 - Verificacion final + commit + tag v70-inventory-wrapped
+- [x] ORDEN 22 - Mapa de dependencias dominio inventory
+- [x] ORDEN 23 - Validacion del mapa
+- [x] ORDEN 24 - Wrappers dominio inventory
+- [x] ORDEN 25 - Verificacion final + commit + tag v70-inventory-wrapped
 
 ### FASE 6 - Dominio: payroll
 - [ ] ORDEN 26 - Mapa de dependencias dominio payroll
@@ -148,7 +148,7 @@
 | v67 customers | 10,149 | -581 acum |
 | v68 payments | 10,041 | -959 acum |
 | v69 tax | 9,676 | -1,324 acum |
-| v70 inventory | - | - |
+| v70 inventory | 9,437 | -1,563 acum |
 | v71 payroll | - | - |
 | v72 final | - | - |
 
