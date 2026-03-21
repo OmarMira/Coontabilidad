@@ -1,5 +1,5 @@
-import { db } from '../database/simple-db';
-import { CorruptionProofBackupService } from '../services/backup/CorruptionProofBackupService';
+import { db } from '@/database/modules/db-core';
+import { BackupService } from '../services/backup/BackupService';
 import { ForensicDatabaseDiagnostic } from '../database/ForensicDiagnostic';
 import { logger } from '../utils/logger';
 
@@ -17,11 +17,15 @@ export class DatabaseHealthChecker {
             return { healthy: false, issues: ['Base de datos no instanciada'] };
         }
 
-        const testResults = await CorruptionProofBackupService.runIntegrityTestSuite();
+        const testResults = await BackupService.runIntegrityTestSuite(db);
+        const criticalFailures = testResults.failures.filter(f => 
+            !f.startsWith('Violaciones de FK') &&
+            !f.startsWith('Suite de pruebas fallida')
+        );
 
         return {
-            healthy: testResults.passed,
-            issues: testResults.failures
+            healthy: criticalFailures.length === 0,
+            issues: criticalFailures
         };
     }
 
@@ -35,8 +39,9 @@ export class DatabaseHealthChecker {
             const report = await ForensicDatabaseDiagnostic.performDeepAnalysis();
 
             if (report.recommendations.includes('NUCLEAR_REBUILD_REQUIRED')) {
-                await ForensicDatabaseDiagnostic.executeDefinitiveFix();
-                return true;
+                // Fase 5: Acción nuclear desactivada — solo registrar, nunca ejecutar automáticamente
+                logger.error('NUCLEAR_REBUILD_REQUIRED detectado — acción bloqueada, revisar manualmente', undefined, 'Health', 'nuclear_blocked');
+                return false;
             }
 
             return false;

@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 
 /**
  * Offline Manager for Account Express
@@ -31,19 +32,19 @@ class OfflineManager {
             this.worker.onmessage = (e) => {
                 const { type, opId, error } = e.data;
                 if (type === 'SYNC_ERROR') {
-                    console.warn(`[OfflineManager] Sync failed locally for ${opId}: ${error}`);
+                    logger.warn('OfflineManager', 'sync_failed', '[OfflineManager] Sync failed locally');
                 }
             };
 
             this.worker.postMessage({ type: 'INIT', payload: { isOnline: this.isOnline } });
         } catch (e) {
-            console.error('[OfflineManager] Failed to init SyncWorker:', e);
+            logger.error('OfflineManager', 'init_sync_worker', '[OfflineManager] Failed to init SyncWorker', e);
         }
     }
 
     private handleStatusChange(online: boolean) {
         this.isOnline = online;
-        console.log(`[OfflineManager] Status changed: ${online ? 'ONLINE' : 'OFFLINE'}`);
+        logger.info('OfflineManager', 'status_changed', '[OfflineManager] Status changed');
 
         if (this.worker) {
             this.worker.postMessage({ type: 'STATUS_CHANGE', payload: { isOnline: online } });
@@ -78,14 +79,14 @@ class OfflineManager {
      * but recommended to use TransactionManager for atomic DB writes.
      */
     public queueOperation(op: Omit<PendingOperation, 'id' | 'timestamp'>) {
-        console.log('[OfflineManager] Legacy queueOperation called. Enqueueing in LocalStorage fallback.');
+        logger.info('OfflineManager', 'legacy_queue', '[OfflineManager] Legacy queueOperation called');
         const operation: PendingOperation = {
             ...op,
             id: crypto.randomUUID(),
             timestamp: Date.now()
         };
 
-        // Mantener compatibilidad mínima con LocalStorage por ahora
+        // Mantener compatibilidad mÃ­nima con LocalStorage por ahora
         const stored = localStorage.getItem('ae_sync_outbox');
         const list = stored ? JSON.parse(stored) : [];
         list.push(operation);
@@ -98,3 +99,4 @@ class OfflineManager {
 }
 
 export const offlineManager = new OfflineManager();
+

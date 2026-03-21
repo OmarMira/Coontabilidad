@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Edit, 
-  Trash2, 
-  Tag, 
-  Search, 
+import {
+  Edit,
+  Trash2,
+  Tag,
+  Search,
   Plus,
   ChevronRight,
   ChevronDown,
@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   Package
 } from 'lucide-react';
-import { ProductCategory } from '../database/simple-db';
+import type { ProductCategory } from '@/database/modules/db-types';
 
 interface ProductCategoryListProps {
   categories: ProductCategory[];
@@ -76,14 +76,14 @@ export const ProductCategoryList: React.FC<ProductCategoryListProps> = ({
     if (!term) return nodes;
 
     const filtered: CategoryNode[] = [];
-    
+
     nodes.forEach(node => {
-      const matchesSearch = 
+      const matchesSearch =
         node.name.toLowerCase().includes(term.toLowerCase()) ||
         (node.description && node.description.toLowerCase().includes(term.toLowerCase()));
 
       const filteredChildren = filterCategories(node.children, term);
-      
+
       if (matchesSearch || filteredChildren.length > 0) {
         filtered.push({
           ...node,
@@ -125,10 +125,9 @@ export const ProductCategoryList: React.FC<ProductCategoryListProps> = ({
 
     return (
       <div key={node.id} className="border-l-2 border-white/10">
-        <div 
-          className={`flex items-center justify-between p-4 hover:bg-white/5/50 transition-colors ${
-            node.level > 0 ? 'ml-6' : ''
-          }`}
+        <div
+          className={`flex items-center justify-between p-4 hover:bg-white/5/50 transition-colors ${node.level > 0 ? 'ml-6' : ''
+            }`}
         >
           <div className="flex items-center space-x-3 flex-1">
             {/* Botón expandir/contraer */}
@@ -156,7 +155,7 @@ export const ProductCategoryList: React.FC<ProductCategoryListProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2">
                 <h3 className="text-white font-medium truncate">{node.name}</h3>
-                
+
                 {/* Estado */}
                 {node.active ? (
                   <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
@@ -238,7 +237,7 @@ export const ProductCategoryList: React.FC<ProductCategoryListProps> = ({
 
         <button
           onClick={onAdd}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95 whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           <span>Nueva Categoría</span>
@@ -299,25 +298,17 @@ export const ProductCategoryList: React.FC<ProductCategoryListProps> = ({
         <div className="bg-white/10 rounded-lg p-8 text-center">
           <Tag className="w-12 h-12 text-slate-700 mx-auto mb-4" />
           <h3 className="text-lg font-black tracking-tight text-slate-500 mb-2">
-            {searchTerm 
-              ? 'No se encontraron categorías' 
+            {searchTerm
+              ? 'No se encontraron categorías'
               : 'No hay categorías registradas'
             }
           </h3>
-          <p className="text-slate-600 mb-4">
+          <p className="text-slate-600">
             {searchTerm
               ? 'Intenta ajustar los términos de búsqueda'
               : 'Comienza creando tu primera categoría de productos'
             }
           </p>
-          {!searchTerm && (
-            <button
-              onClick={onAdd}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Crear Primera Categoría
-            </button>
-          )}
         </div>
       ) : (
         <div className="bg-white/10 rounded-lg overflow-hidden">

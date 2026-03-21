@@ -1,0 +1,12 @@
+﻿src/components/banking/BankReconciliationImporter.tsx(257,25): error TS1109: Expression expected.
+src/components/banking/BankReconciliationImporter.tsx(276,9): error TS1128: Declaration or statement expected.
+src/components/banking/BankReconciliationImporter.tsx(276,10): error TS1128: Declaration or statement expected.
+src/components/banking/BankReconciliationImporter.tsx(277,5): error TS1128: Declaration or statement expected.
+src/components/banking/BankReconciliationImporter.tsx(568,1): error TS1128: Declaration or statement expected.
+src/database/simple-db.ts(4803,5): error TS1005: ',' expected.
+src/database/simple-db.ts(4814,5): error TS1005: 'try' expected.
+src/database/simple-db.ts(4821,2): error TS1472: 'catch' or 'finally' expected.
+src/database/simple-db.ts(6212,5): error TS1005: ',' expected.
+src/database/simple-db.ts(6223,5): error TS1005: 'try' expected.
+src/database/simple-db.ts(6230,2): error TS1472: 'catch' or 'finally' expected.
+src/database/simple-db.ts(13784,1): error TS1005: '}' expected.

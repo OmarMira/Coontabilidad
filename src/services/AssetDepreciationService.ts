@@ -1,4 +1,6 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { DatabaseService } from '../database/DatabaseService';
+import { WorkerOrchestrator } from '../core/workers/WorkerOrchestrator';
 
 export class AssetDepreciationService {
 
@@ -12,8 +14,29 @@ export class AssetDepreciationService {
         15: [0.0500, 0.0950, 0.0855, 0.0770, 0.0693, 0.0623, 0.0590, 0.0590, 0.0591, 0.0590, 0.0591, 0.0590, 0.0591, 0.0590, 0.0591, 0.0295]
     };
 
+    private static orchestrator: WorkerOrchestrator | null = null;
+
+    private static getOrchestrator(): WorkerOrchestrator {
+        if (!this.orchestrator) {
+            this.orchestrator = new WorkerOrchestrator();
+        }
+        return this.orchestrator;
+    }
+
     /**
-     * Calculates Federal MACRS Depreciation for a specific year of the asset's life.
+     * Calculates Federal MACRS Depreciation asynchronously via Web Worker.
+     */
+    static async calculateMACRSAsync(costInCents: number, lifeYears: number, yearOfLife: number): Promise<number> {
+        return this.getOrchestrator().executeTask('ACCOUNTING', {
+            operation: 'MACRS_CALCULATION',
+            costInCents,
+            lifeYears,
+            yearOfLife
+        });
+    }
+
+    /**
+     * Calculates Federal MACRS Depreciation (Synchronous Fallback).
      * @param costInCents Basis (Acquisition cost)
      * @param lifeYears Recovery Period (3, 5, 7, 10, 15)
      * @param yearOfLife 1-based year index (1 = first year)
@@ -21,7 +44,7 @@ export class AssetDepreciationService {
     static calculateMACRSDepreciation(costInCents: number, lifeYears: number, yearOfLife: number): number {
         const rates = this.MACRS_RATES[lifeYears];
         if (!rates) {
-            console.warn(`MACRS Tables for ${lifeYears} years not implemented. Returning 0.`);
+            logger.warn('AssetDepreciationService', 'warn', `MACRS Tables for ${lifeYears} years not implemented. Returning 0.`);
             return 0;
         }
 
@@ -56,8 +79,8 @@ export class AssetDepreciationService {
         // Year 1 is the acquisition year.
         if (yearOfLife < 1) throw new Error(`Fiscal year ${fiscalYear} is before acquisition ${acqYear}`);
 
-        // 3. Calculate
-        const fedDep = this.calculateMACRSDepreciation(asset.acquisition_cost, asset.useful_life_years, yearOfLife);
+        // 3. Calculate (Using Worker)
+        const fedDep = await this.calculateMACRSAsync(asset.acquisition_cost, asset.useful_life_years, yearOfLife);
 
         // If fully depreciated or 0
         if (fedDep <= 0) {

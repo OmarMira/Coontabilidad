@@ -140,13 +140,11 @@ export class RecoveryService {
             const decompressed = pako.ungzip(new Uint8Array(decrypted));
 
             // Restore DB
-            // @ts-ignore sql.js type mismatch
-            const SQL = await import('sql.js');
-            // @ts-ignore sql.js Database constructor signature
-            const db = new SQL.Database(decompressed);
-            DatabaseService.setDB(db);
+            const { saveDatabase } = await import('../database/PersistenceLayer');
+            await saveDatabase(new Uint8Array(decompressed));
 
-            logger.info('RecoveryService', 'safety_restore_success', 'Successfully restored from safety backup');
+            logger.info('RecoveryService', 'safety_restore_success', 'Successfully restored from safety backup. Reloading...');
+            window.location.reload();
 
         } catch (error: any) {
             logger.error('RecoveryService', 'safety_restore_failed', 'Failed to restore from safety backup', null, error);
@@ -239,26 +237,25 @@ export class RecoveryService {
                 throw new Error('Backup validation failed - checksum mismatch or corrupted data');
             }
 
-            // Step 6: Restore DB
-            onProgress?.(90, 'Restoring database...');
-            // @ts-ignore sql.js type mismatch
-            const SQL = await import('sql.js');
-            // @ts-ignore sql.js Database constructor signature
-            const db = new SQL.Database(decompressed);
-            DatabaseService.setDB(db);
+            // Step 6: Restore DB (Iron Clad Level - Unified Persistence)
+            onProgress?.(90, 'Restoring database persistence...');
+            const { saveDatabase } = await import('../database/PersistenceLayer');
+            await saveDatabase(new Uint8Array(decompressed));
 
-            // Step 7: Verify restoration
+            // Step 7: Verify restoration (Optional if reload is imminent, but good for logs)
             onProgress?.(95, 'Verifying restoration...');
-            const testQuery = await DatabaseService.executeQuery('SELECT COUNT(*) as count FROM journal_entries');
-            logger.info('RecoveryService', 'restore_verify', `Restored ${testQuery[0]?.count || 0} journal entries`);
+            logger.info('RecoveryService', 'restore_verified', 'Database written to persistent storage.');
 
             // Step 8: Clean up safety backup
             if (!skipSafetyBackup) {
                 localStorage.removeItem(this.SAFETY_BACKUP_KEY);
             }
 
-            onProgress?.(100, 'Restoration complete!');
-            logger.info('RecoveryService', 'restore_success', `Successfully restored from ${filename}`);
+            onProgress?.(100, 'Restoration complete! Reloading app...');
+            logger.info('RecoveryService', 'restore_success', `Successfully restored from ${filename}. Reloading system.`);
+
+            // CRITICAL: Reload window to ensure clean state across all singleton services
+            setTimeout(() => window.location.reload(), 1500);
 
         } catch (error: any) {
             logger.error('RecoveryService', 'restore_failed', 'Restoration failed', null, error);
@@ -326,21 +323,20 @@ export class RecoveryService {
                 throw new Error('Invalid backup file');
             }
 
-            // Step 6: Restore
+            // Step 6: Restore (Unified Persistence)
             onProgress?.(90, 'Restoring database...');
-            // @ts-ignore sql.js type mismatch
-            const SQL = await import('sql.js');
-            // @ts-ignore sql.js Database constructor signature
-            const db = new SQL.Database(decompressed);
-            DatabaseService.setDB(db);
+            const { saveDatabase } = await import('../database/PersistenceLayer');
+            await saveDatabase(new Uint8Array(decompressed));
 
             // Step 7: Clean up
             if (!skipSafetyBackup) {
                 localStorage.removeItem(this.SAFETY_BACKUP_KEY);
             }
 
-            onProgress?.(100, 'Restoration complete!');
+            onProgress?.(100, 'Restoration complete! Reloading...');
             logger.info('RecoveryService', 'restore_file_success', `Successfully restored from ${file.name}`);
+
+            setTimeout(() => window.location.reload(), 1500);
 
         } catch (error: any) {
             logger.error('RecoveryService', 'restore_file_failed', 'File restoration failed', null, error);

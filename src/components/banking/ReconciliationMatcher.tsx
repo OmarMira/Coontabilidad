@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Check, X, AlertCircle, CheckCircle, Download, RefreshCw } from 'lucide-react';
 import {
@@ -25,7 +26,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
   const [manualMatches, setManualMatches] = useState<Match[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Ejecutar reconciliación automática al montar
+  // Ejecutar reconciliaciÃ³n automÃ¡tica al montar
   useEffect(() => {
     handleAutoReconcile();
   }, [bankTransactions, accountingTransactions]);
@@ -39,7 +40,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
       );
       setResult(reconciliationResult);
     } catch (error) {
-      console.error('Error en reconciliación automática:', error);
+      logger.error('ReconciliationMatcher', 'error', 'Error en reconciliaciÃ³n automÃ¡tica:', error);
     } finally {
       setIsProcessing(false);
     }
@@ -150,7 +151,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
     return (
       <div className="flex items-center justify-center p-8">
         <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="ml-3 text-lg">Procesando reconciliación...</span>
+        <span className="ml-3 text-lg">Procesando reconciliaciÃ³n...</span>
       </div>
     );
   }
@@ -168,7 +169,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
     <div className="space-y-6">
       {/* Resumen */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Resumen de Reconciliación</h2>
+        <h2 className="text-xl font-semibold mb-4">Resumen de ReconciliaciÃ³n</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center">
             <div className="text-2xl font-black tracking-tight text-blue-600">
@@ -228,7 +229,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
                   Confianza
                 </th>
                 <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 uppercase">
-                  Razón
+                  RazÃ³n
                 </th>
                 <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 uppercase">
                   Banco ID
@@ -383,7 +384,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
           </div>
         </div>
 
-        {/* Botón de Match Manual */}
+        {/* BotÃ³n de Match Manual */}
         <div className="mt-4 text-center">
           <button
             onClick={handleManualMatch}
@@ -399,7 +400,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
           </button>
           {selectedBankTx && selectedAccountingTx && (
             <div className="mt-2 text-sm text-slate-700">
-              Coincidiendo transacción bancaria #{selectedBankTx} con registro contable #
+              Coincidiendo transacciÃ³n bancaria #{selectedBankTx} con registro contable #
               {selectedAccountingTx}
             </div>
           )}
@@ -461,7 +462,7 @@ export const ReconciliationMatcher: React.FC<ReconciliationMatcherProps> = ({
             className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 inline-flex items-center"
           >
             <CheckCircle className="w-4 h-4 mr-2" />
-            Completar Reconciliación
+            Completar ReconciliaciÃ³n
           </button>
         </div>
       </div>

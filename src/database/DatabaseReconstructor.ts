@@ -32,6 +32,55 @@ export class DatabaseReconstructor {
             // 2. CREACIÓN EN ORDEN CORRECTO (PADRES PRIMERO)
 
             // Independientes / Maestros
+            db.run(`CREATE TABLE IF NOT EXISTS company_data(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_name TEXT NOT NULL,
+                legal_name TEXT NOT NULL,
+                tax_id TEXT NOT NULL,
+                address TEXT NOT NULL,
+                city TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'FL',
+                zip_code TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                email TEXT NOT NULL,
+                website TEXT,
+                logo_path TEXT,
+                fiscal_year_start TEXT DEFAULT '01-01',
+                currency TEXT DEFAULT 'USD',
+                language TEXT DEFAULT 'es',
+                timezone TEXT DEFAULT 'America/New_York',
+                sales_commission_rate DECIMAL(10, 2) DEFAULT 0.00,
+                sales_commission_percentage DECIMAL(5, 2) DEFAULT 0.00,
+                discount_amount DECIMAL(10, 2) DEFAULT 0.00,
+                discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
+                shipping_rate DECIMAL(10, 2) DEFAULT 0.00,
+                shipping_percentage DECIMAL(5, 2) DEFAULT 0.00,
+                reposition_policy_days INTEGER DEFAULT 32,
+                late_fee_amount DECIMAL(10, 2) DEFAULT 0.00,
+                late_fee_percentage DECIMAL(5, 2) DEFAULT 0.00,
+                annual_interest_rate DECIMAL(5, 2) DEFAULT 0.00,
+                grace_period_days INTEGER DEFAULT 0,
+                documentation_cost DECIMAL(10, 2) DEFAULT 0.00,
+                other_costs DECIMAL(10, 2) DEFAULT 0.00,
+                chart_of_accounts_name TEXT DEFAULT 'Plan de Cuenta Ejemplo',
+                date_format TEXT DEFAULT 'MM/DD/AAAA',
+                fiscal_year_end TEXT DEFAULT '12-31',
+                netIncreaseInCash DECIMAL(15, 2) DEFAULT 0.00,
+                tax_frequency TEXT DEFAULT 'monthly',
+                sales_tax_method TEXT DEFAULT 'accrual',
+                dr15_filing_day INTEGER DEFAULT 20,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_active BOOLEAN DEFAULT 1
+            );`);
+
+            // Insertar registro por defecto si no existe
+            db.run(`INSERT OR IGNORE INTO company_data (
+                id, company_name, legal_name, tax_id, address, city, state, zip_code, phone, email, is_active
+            ) VALUES (
+                1, 'Mi Empresa', 'Mi Empresa S.R.L.', '00-0000000-0', 'Calle Principal 123', 'Miami', 'FL', '33101', '555-0100', 'contacto@empresa.com', 1
+            );`);
+
             db.run(`CREATE TABLE customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -158,20 +207,7 @@ export class DatabaseReconstructor {
 
             logger.info('Database', 'tables_created', 'Esquema reconstruido correctamente');
 
-            // 3. SEEDING MÍNIMO CRÍTICO PARA EL DASHBOARD
-            db.run(`INSERT INTO customers (name, city, florida_county, status) VALUES ('Cliente General', 'Miami', 'Miami-Dade', 'active');`);
-            db.run(`INSERT INTO suppliers (name, city, florida_county, status) VALUES ('Proveedor Principal', 'Miami', 'Miami-Dade', 'active');`);
-
-            db.run(`INSERT INTO invoices (invoice_number, customer_id, total_amount, status) VALUES ('INV-001', 1, 1500.00, 'paid');`);
-            db.run(`INSERT INTO invoices (invoice_number, customer_id, total_amount, status) VALUES ('INV-002', 1, 2500.00, 'paid');`);
-
-            db.run(`INSERT INTO chart_of_accounts (account_code, account_name, account_type, normal_balance) VALUES ('1112', 'Banco Principal', 'asset', 'debit');`);
-            db.run(`INSERT INTO chart_of_accounts (account_code, account_name, account_type, normal_balance) VALUES ('4110', 'Ingresos por Ventas', 'revenue', 'credit');`);
-
-            db.run(`INSERT INTO journal_entries (entry_date, reference, total_debit, total_credit) VALUES ('2024-01-01', 'OB-01', 4000.00, 4000.00);`);
-            db.run(`INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount) VALUES (1, '1112', 4000.00, 0), (1, '4110', 0, 4000.00);`);
-
-            logger.info('Database', 'seeding_complete', 'Datos de emergencia inyectados');
+            logger.info('Database', 'reconstruction_complete', 'Esquema reconstruido correctamente (Base de datos limpia)');
 
             // 4. REACTIVAR Y VERIFICAR
             db.run('PRAGMA foreign_keys = ON;');

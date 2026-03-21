@@ -8,7 +8,18 @@ import { SQLiteEngine } from '../core/database/SQLiteEngine';
 import { MigrationEngine } from '../core/migrations/MigrationEngine';
 import { verifyRoles } from '../utils/verifyRoles';
 import { MassiveSeeder } from './seeding/MassiveSeeder';
-import AuditTrailService from '../services/AuditTrailService';
+import { createPayment as _createPayment, generatePaymentNumber as _generatePaymentNumber } from './modules/db-payments';
+import { generatePaymentReceivedJournalEntry as _generatePaymentReceivedJournalEntry } from './modules/db-journal-auto';
+import { getFloridaTaxRate as _getFloridaTaxRate, calculateTaxAmount as _calculateTaxAmount, validateFinancialCalculation as _validateFinancialCalculation, FLORIDA_COUNTIES as _FLORIDA_COUNTIES, getActiveProducts as _getActiveProducts, getStatsWithInvoices as _getStatsWithInvoices } from './modules/db-invoices';
+import { calculateFloridaDR15Report as _calculateFloridaDR15Report, saveDR15Report as _saveDR15Report, getDR15Reports as _getDR15Reports, getAllFloridaTaxRates as _getAllFloridaTaxRates, updateFloridaTaxRate as _updateFloridaTaxRate, markDR15ReportAsFiled as _markDR15ReportAsFiled, getAvailableDR15Periods as _getAvailableDR15Periods } from './modules/db-florida-tax';
+import { createInventoryMovement as _createInventoryMovement, getInventoryMovementsWithFilters as _getInventoryMovementsWithFilters, createLocation as _createLocation, getLocations as _getLocations, updateLocation as _updateLocation, deleteLocation as _deleteLocation, createInitialLocations as _createInitialLocations } from './modules/db-inventory';
+import { getPayroll as _getPayroll, getAllPayrolls as _getAllPayrolls, getQuarterlyPayrolls as _getQuarterlyPayrolls, getAnnualPayrolls as _getAnnualPayrolls, getPayrollSettings as _getPayrollSettings, updatePayrollSetting as _updatePayrollSetting, getPayrolls as _getPayrolls, createPayrollPeriod as _createPayrollPeriod, getPayrollEntries as _getPayrollEntries, createPayrollEntry as _createPayrollEntry, getPayrollLineItems as _getPayrollLineItems, getPayrollPeriods as _getPayrollPeriods, getEmployees as _getEmployees, createEmployee as _createEmployee, updateEmployee as _updateEmployee } from './modules/db-payroll';
+import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
+import { addCustomer as _addCustomer, getCustomers as _getCustomers, getCustomerById as _getCustomerById, updateCustomer as _updateCustomer, canDeleteCustomer as _canDeleteCustomer, deleteCustomer as _deleteCustomer } from './modules/db-customers';
+import { isDateLocked as _isDateLocked } from './modules/db-journal';
+import { generateSalesJournalEntry as _generateSalesJournalEntry } from './modules/db-journal-auto';
+import { AuditChainService as AuditTrailService } from '../core/audit/AuditChainService';
+import { EngineBridge } from '../core/database/EngineBridge';
 
 // Tipo ligero para la API que usamos de sql.js (exec/run/prepare)
 type SQLJSDB = {
@@ -28,15 +39,39 @@ let dbEngine: SQLiteEngine | null = null;
 export { db };
 export const getDB = () => db;
 
-// Helpers que normalizan llamadas a la instancia `db` y evitan inferencias problemáticas
 export const dbExec = (sql: string, params?: any[]) => {
   if (!db) return null;
-  return (db as any).exec(sql, params);
+  if (!params || params.length === 0) {
+    return db.exec(sql);
+  }
+  const stmt = db.prepare(sql);
+  try {
+    stmt.bind(params);
+
+
+    const columns = stmt.getColumnNames();
+    const values: any[][] = [];
+
+    while (stmt.step()) {
+      values.push(stmt.get());
+    }
+    return [{ columns, values }];
+  } finally {
+    stmt.free();
+  }
 };
 
 export const dbRun = (sql: string, params?: any[]) => {
   if (!db) throw new Error('Database not initialized');
-  return (db as any).run(sql, params);
+  if (!params || params.length === 0) {
+    return db.run(sql);
+  }
+  const stmt = db.prepare(sql);
+  try {
+    return stmt.run(params);
+  } finally {
+    stmt.free();
+  }
 };
 
 // Exportar la instancia de dbEngine para servicios tipados
@@ -48,47 +83,13 @@ export { dbEngine };
  */
 export const getDBEngine = (): SQLiteEngine => {
   if (!dbEngine) {
+    if (EngineBridge.hasEngine()) {
+      return EngineBridge.getEngine();
+    }
     throw new Error('Database engine not initialized. Call initDB() first.');
   }
   return dbEngine;
 };
-
-// --- SANDBOX SECURITY INTERCEPTOR ---
-const GUEST_LIMIT_PER_TABLE = 20;
-
-export async function checkGuestRestriction(userId: number | undefined, table: string, action: 'create' | 'update' | 'delete'): Promise<void> {
-  if (!db || !userId) return;
-
-  // Check user role
-  try {
-    const userRes = db.exec("SELECT r.name FROM users u JOIN user_roles r ON u.role_id = r.id WHERE u.id = ?", [userId]);
-    if (!userRes.length || !userRes[0].values.length) return;
-
-    const roleName = (userRes[0].values[0][0] as string).toLowerCase();
-
-    // Only restrict 'guest' or 'demo' roles
-    if (!['guest', 'demo', 'viewer'].includes(roleName)) return;
-
-    // Rule 1: No modifications to 'users' table
-    if (table === 'users') {
-      throw new Error('SANDBOX SECURITY: Las cuentas demo no pueden modificar usuarios del sistema.');
-    }
-
-    // Rule 2: Limit records on ANY table creation
-    if (action === 'create') {
-      // Safe-guard against SQL injection in table name implies internal usage only
-      const countRes = db.exec(`SELECT COUNT(*) FROM ${table}`);
-      const count = countRes[0].values[0][0] as number;
-      if (count >= GUEST_LIMIT_PER_TABLE) {
-        throw new Error(`SANDBOX DEMO LIMIT: No puedes crear más de ${GUEST_LIMIT_PER_TABLE} registros en ${table} durante la demostración.`);
-      }
-    }
-  } catch (e) {
-    if (e instanceof Error && e.message.startsWith('SANDBOX')) throw e;
-    // Ignore other errors to not block logic if check fails (fail-open vs fail-close trade-off)
-    // For security, usually fail-close, but here we assume DB errors shouldn't block admins if check fails.
-  }
-}
 
 // ==========================================
 // DASHBOARD & ANALYTICS
@@ -253,12 +254,10 @@ export interface FixedAsset {
   // Backwards-compatible aliases used across the codebase
   asset_name?: string; // alias of 'name'
   asset_tag?: string;  // additional tag
-  purchase_date?: string; // alias of 'acquisition_date'
-  purchase_cost?: number; // alias of 'acquisition_cost'
   description?: string;
   category_id: number;
-  acquisition_date: string;
-  acquisition_cost: number;
+  purchase_date: string;
+  purchase_cost: number;
   useful_life_years: number;
   useful_life_months: number;
   depreciation_method: 'straight_line' | 'declining_balance' | 'units_of_production';
@@ -276,7 +275,7 @@ export interface FixedAsset {
   notes?: string;
   disposal_date?: string;
   disposal_value?: number;
-  disposal_reason?: string;
+  disposal_Áreason?: string;
   created_at?: string;
   created_by?: number;
   updated_at?: string;
@@ -353,16 +352,8 @@ export function getMonthlyFinancialSummary(): MonthlySummary[] {
 // EMPLOYEES & PAYROLL
 // ==========================================
 
-export function getEmployees(): Employee[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM employees ORDER BY last_name, first_name");
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<Employee>(res[0].columns, row));
-  } catch (e) {
-    console.error('Error fetching employees:', e);
-    return [];
-  }
+export function getEmployees(): ReturnType<typeof _getEmployees> {
+  return _getEmployees();
 }
 
 export function getEmployeeById(id: number): Employee | null {
@@ -370,108 +361,31 @@ export function getEmployeeById(id: number): Employee | null {
   try {
     const res = db.exec("SELECT * FROM employees WHERE id = ?", [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
-    return rowToEntity<Employee>(res[0].columns, res[0].values[0]);
+    return rowToEntity<Employee>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
   } catch (e) {
     console.error('Error fetching employee:', e);
     return null;
   }
 }
 
-export function createEmployee(empData: Partial<Employee>): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO employees (
-        employee_number, first_name, last_name, email, phone, 
-        hire_date, department, position, salary_type, salary_rate, status, florida_county
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run([
-      (empData.employee_number || `EMP-${Date.now()}`) as string,
-      (empData.first_name || '') as string,
-      (empData.last_name || '') as string,
-      (empData.email || null) as string | null,
-      (empData.phone || null) as string | null,
-      (empData.hire_date || new Date().toISOString().split('T')[0]) as string,
-      (empData.department || null) as string | null,
-      (empData.position || null) as string | null,
-      (empData.salary_type || 'monthly') as string,
-      (empData.salary_rate || 0) as number,
-      (empData.status || 'active') as string,
-      (empData.florida_county || 'Miami-Dade') as string
-    ]);
-
-    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    stmt.free();
-
-    return { success: true, message: 'Empleado registrado con éxito', id };
-  } catch (e: any) {
-    console.error('Error creating employee:', e);
-    return { success: false, message: e.message };
-  }
+export function createEmployee(empData: Parameters<typeof _createEmployee>[0]): ReturnType<typeof _createEmployee> {
+  return _createEmployee(empData);
 }
 
-export function updateEmployee(id: number, empData: Partial<Employee>): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    db.run(`
-      UPDATE employees SET 
-        first_name = ?, last_name = ?, email = ?, phone = ?, 
-        department = ?, position = ?, salary_type = ?, salary_rate = ?, 
-        status = ?, florida_county = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `, [
-      (empData.first_name || '') as string,
-      (empData.last_name || '') as string,
-      (empData.email || null) as string | null,
-      (empData.phone || null) as string | null,
-      (empData.department || null) as string | null,
-      (empData.position || null) as string | null,
-      (empData.salary_type || 'monthly') as string,
-      (empData.salary_rate || 0) as number,
-      (empData.status || 'active') as string,
-      (empData.florida_county || 'Miami-Dade') as string,
-      id
-    ]);
-    return { success: true, message: 'Empleado actualizado con éxito' };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
+export function updateEmployee(id: Parameters<typeof _updateEmployee>[0], empData: Parameters<typeof _updateEmployee>[1]): ReturnType<typeof _updateEmployee> {
+  return _updateEmployee(id, empData);
 }
 
-export function getPayrollPeriods(): PayrollPeriod[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM payroll_periods ORDER BY start_date DESC");
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollPeriod>(res[0].columns, row));
-  } catch (e) {
-    console.error('Error fetching payroll periods:', e);
-    return [];
-  }
+export function getPayrollPeriods(): ReturnType<typeof _getPayrollPeriods> {
+  return _getPayrollPeriods();
 }
 
-export function getPayrollSettings(): PayrollSetting[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM payroll_settings");
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollSetting>(res[0].columns, row));
-  } catch (e) {
-    console.error('Error fetching payroll settings:', e);
-    return [];
-  }
+export function getPayrollSettings(): ReturnType<typeof _getPayrollSettings> {
+  return _getPayrollSettings();
 }
 
-export function updatePayrollSetting(key: string, value: string): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    db.run("UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?", [value, key]);
-    return { success: true, message: 'Configuración actualizada' };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
+export function updatePayrollSetting(key: Parameters<typeof _updatePayrollSetting>[0], value: Parameters<typeof _updatePayrollSetting>[1]): ReturnType<typeof _updatePayrollSetting> {
+  return _updatePayrollSetting(key, value);
 }
 
 export function getTaxBrackets(): TaxBracket[] {
@@ -479,7 +393,7 @@ export function getTaxBrackets(): TaxBracket[] {
   try {
     const res = db.exec("SELECT * FROM tax_brackets ORDER BY min_income ASC");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<TaxBracket>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<TaxBracket>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching tax brackets:', e);
     return [];
@@ -601,7 +515,7 @@ export function getAssetCategories(): AssetCategory[] {
   try {
     const res = db.exec("SELECT * FROM asset_categories WHERE is_active = 1 ORDER BY name");
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<AssetCategory>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<AssetCategory>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching asset categories:', e);
     return [];
@@ -660,7 +574,7 @@ export function getFixedAssets(status?: string): FixedAsset[] {
 
     const res = db.exec(query);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<FixedAsset>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<FixedAsset>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching fixed assets:', e);
     return [];
@@ -675,7 +589,7 @@ export function getFixedAssetById(id: number): FixedAsset | null {
   try {
     const res = db.exec("SELECT * FROM fixed_assets WHERE id = ?", [id]);
     if (res.length === 0 || res[0].values.length === 0) return null;
-    return rowToEntity<FixedAsset>(res[0].columns, res[0].values[0]);
+    return rowToEntity<FixedAsset>((res[0].columns || (res[0] as any).lc), res[0].values[0]);
   } catch (e) {
     console.error('Error fetching fixed asset:', e);
     return null;
@@ -692,8 +606,8 @@ export function createFixedAsset(asset: Partial<FixedAsset>, userId: number): { 
     // Val idaciones
     if (!asset.name) return { success: false, message: 'El nombre es requerido' };
     if (!asset.category_id) return { success: false, message: 'La categoría es requerida' };
-    if (!asset.acquisition_cost || asset.acquisition_cost <= 0) return { success: false, message: 'El costo de adquisición debe ser mayor a 0' };
-    if (!asset.acquisition_date) return { success: false, message: 'La fecha de adquisición es requerida' };
+    if (!asset.purchase_cost || asset.purchase_cost <= 0) return { success: false, message: 'El costo de adquisición debe ser mayor a 0' };
+    if (!asset.purchase_date) return { success: false, message: 'La fecha de adquisición es requerida' };
 
     db.run('BEGIN TRANSACTION');
 
@@ -710,7 +624,7 @@ export function createFixedAsset(asset: Partial<FixedAsset>, userId: number): { 
 
     const stmt = db.prepare(`
       INSERT INTO fixed_assets (
-        asset_code, name, description, category_id, acquisition_date, acquisition_cost,
+        asset_code, name, description, category_id, purchase_date, purchase_cost,
         useful_life_years, useful_life_months, depreciation_method, salvage_value,
         current_value, accumulated_depreciation, status, location, serial_number,
         manufacturer, model, purchase_order, supplier_id, warranty_expiration, notes,
@@ -724,13 +638,13 @@ export function createFixedAsset(asset: Partial<FixedAsset>, userId: number): { 
       asset.name as string,
       asset.description ?? null,
       asset.category_id as number,
-      asset.acquisition_date as string,
-      asset.acquisition_cost as number,
+      asset.purchase_date as string,
+      asset.purchase_cost as number,
       asset.useful_life_years ?? 0,
       usefulLifeMonths,
       asset.depreciation_method ?? 'straight_line',
       asset.salvage_value ?? 0,
-      asset.acquisition_cost as number, // current_value inicialmente igual al costo
+      asset.purchase_cost as number, // current_value inicialmente igual al costo
       0, // accumulated_depreciation
       asset.status ?? 'active',
       asset.location ?? null,
@@ -803,7 +717,7 @@ export function disposeAsset(
   id: number,
   disposalDate: string,
   disposalValue: number,
-  disposalReason: string,
+  disposalÁreason: string,
   userId: number
 ): { success: boolean; message: string } {
   if (!db) return { success: false, message: 'Database not initialized' };
@@ -820,20 +734,20 @@ export function disposeAsset(
         status = 'disposed',
         disposal_date = ?,
         disposal_value = ?,
-        disposal_reason = ?,
+        disposal_Áreason = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [disposalDate, disposalValue, disposalReason, id]);
+    `, [disposalDate, disposalValue, disposalÁreason, id]);
 
     // Calcular ganancia/pérdida
-    const netBookValue = (asset.current_value || asset.acquisition_cost) - (asset.accumulated_depreciation || 0);
+    const netBookValue = (asset.current_value || asset.purchase_cost) - (asset.accumulated_depreciation || 0);
     const gainLoss = disposalValue - netBookValue;
 
     // TODO: Crear asiento contable de disposición
     // Débito: Efectivo (disposalValue)
     // Débito: Depreciación Acumulada (accumulated_depreciation)
     // Débito/Crédito: Ganancia/Pérdida en venta
-    // Crédito: Activo Fijo (acquisition_cost)
+    // Crédito: Activo Fijo (purchase_cost)
 
     db.run('COMMIT');
     return {
@@ -854,7 +768,7 @@ export function getAssetDepreciations(assetId: number): AssetDepreciation[] {
   try {
     const res = db.exec("SELECT * FROM asset_depreciations WHERE asset_id = ? ORDER BY period_date DESC", [assetId]);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<AssetDepreciation>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<AssetDepreciation>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching asset depreciations:', e);
     return [];
@@ -945,11 +859,11 @@ export function calculateMonthlyDepreciation(periodDate: string, userId: number)
 
       // Calcular depreciación mensual (método lineal)
       if (asset.depreciation_method === 'straight_line' && asset.useful_life_months > 0) {
-        const depreciableAmount = asset.acquisition_cost - (asset.salvage_value || 0);
+        const depreciableAmount = asset.purchase_cost - (asset.salvage_value || 0);
         const monthlyDepreciation = depreciableAmount / asset.useful_life_months;
         const currentAccumulated = asset.accumulated_depreciation || 0;
         const newAccumulated = currentAccumulated + monthlyDepreciation;
-        const netBookValue = asset.acquisition_cost - newAccumulated;
+        const netBookValue = asset.purchase_cost - newAccumulated;
 
         // No depreciar más allá del valor de salvamento
         if (netBookValue >= (asset.salvage_value || 0)) {
@@ -991,101 +905,30 @@ function getAssetCategoryById(id: number): AssetCategory | null {
   }
 }
 
-export function createPayrollPeriod(period: Partial<PayrollPeriod>): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO payroll_periods (name, start_date, end_date, pay_date, status, total_gross, total_net)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run([
-      (period.name || '') as string,
-      (period.start_date || '') as string,
-      (period.end_date || '') as string,
-      (period.pay_date || '') as string,
-      (period.status || 'open') as string,
-      (period.total_gross || 0) as number,
-      (period.total_net || 0) as number
-    ]);
-    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    stmt.free();
-    return { success: true, message: 'Periodo creado con éxito', id };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
+export function createPayrollPeriod(period: Parameters<typeof _createPayrollPeriod>[0]): ReturnType<typeof _createPayrollPeriod> {
+  return _createPayrollPeriod(period);
 }
 
-export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_name: string })[] {
-  if (!db) return [];
-  try {
-    const res = db.exec(`
-      SELECT pe.*, (e.first_name || ' ' || e.last_name) as employee_name 
-      FROM payroll_entries pe
-      JOIN employees e ON pe.employee_id = e.id
-      WHERE pe.period_id = ?
-    `, [periodId]);
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollEntry & { employee_name: string }>(res[0].columns, row));
-  } catch (e) {
-    console.error('Error fetching payroll entries:', e);
-    return [];
-  }
+export function getPayrollEntries(periodId: Parameters<typeof _getPayrollEntries>[0]): ReturnType<typeof _getPayrollEntries> {
+  return _getPayrollEntries(periodId);
 }
 
-export function createPayrollEntry(entry: Partial<PayrollEntry>, items: Partial<PayrollLineItem>[]): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    db.run("BEGIN TRANSACTION");
-
-    const stmt = db.prepare(`
-      INSERT INTO payroll_entries (employee_id, period_id, gross_amount, deductions_amount, net_amount, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run([
-      (entry.employee_id) as number,
-      (entry.period_id) as number,
-      (entry.gross_amount) as number,
-      (entry.deductions_amount || 0) as number,
-      (entry.net_amount) as number,
-      (entry.status || 'draft') as string,
-      (entry.notes || null) as string | null
-    ]);
-    const entryId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    stmt.free();
-
-    const itemStmt = db.prepare(`
-      INSERT INTO payroll_line_items (payroll_entry_id, type, category, description, amount)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    for (const item of items) {
-      itemStmt.run([
-        entryId,
-        (item.type || 'earning') as string,
-        (item.category || '') as string,
-        (item.description || '') as string,
-        (item.amount || 0) as number
-      ]);
-    }
-    itemStmt.free();
-
-    db.run("COMMIT");
-    return { success: true, message: 'Nómina procesada para empleado', id: entryId };
-  } catch (e: any) {
-    db.run("ROLLBACK");
-    return { success: false, message: e.message };
-  }
+export function createPayrollEntry(entry: Parameters<typeof _createPayrollEntry>[0], items: Parameters<typeof _createPayrollEntry>[1]): ReturnType<typeof _createPayrollEntry> {
+  return _createPayrollEntry(entry, items);
 }
 
-export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM payroll_line_items WHERE payroll_entry_id = ?", [entryId]);
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollLineItem>(res[0].columns, row));
-  } catch (e) {
-    console.error('Error fetching payroll line items:', e);
-    return [];
-  }
+export function getPayrollLineItems(entryId: Parameters<typeof _getPayrollLineItems>[0]): ReturnType<typeof _getPayrollLineItems> {
+  return _getPayrollLineItems(entryId);
+}
+
+export interface PayrollFilter {
+  employee_id?: number;
+  status?: string;
+  year?: number;
+}
+
+export function getPayrolls(filters?: Parameters<typeof _getPayrolls>[0]): ReturnType<typeof _getPayrolls> {
+  return _getPayrolls(filters);
 }
 
 let isInitialized = false;
@@ -1125,7 +968,6 @@ const loadFromLocalStorage = async (): Promise<Uint8Array | null> => {
         const tempArray = new Uint8Array(decryptedData.length);
         tempArray.set(decryptedData);
         data = tempArray;
-        console.log('Database decrypted from localStorage');
       } catch (error) {
         console.error('Failed to decrypt from localStorage:', error);
         return null;
@@ -1148,7 +990,7 @@ export const PRIVILEGED_ROLES = ['admin', 'contador', 'auditor', 'viewer', 'acco
 /**
  * Mapea una fila de base de datos a una entidad tipada
  */
-function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
+export function rowToEntity<T>(columns: string[], row: initSqlJs.SqlValue[]): T {
   const entity = {} as Record<string, unknown>;
   columns.forEach((col, index) => {
     entity[col] = row[index];
@@ -1189,7 +1031,7 @@ export function getFiscalYears(): FiscalYear[] {
   try {
     const res = db.exec("SELECT * FROM fiscal_years ORDER BY year DESC");
     if (res.length > 0) {
-      return res[0].values.map((row: any) => rowToEntity<FiscalYear>(res[0].columns, row));
+      return res[0].values.map((row: any) => rowToEntity<FiscalYear>((res[0].columns || (res[0] as any).lc), row));
     }
   } catch (e) { console.error(e); }
   return [];
@@ -1200,7 +1042,7 @@ export function getAccountingPeriods(fiscalYearId: number): AccountingPeriod[] {
   try {
     const res = db.exec("SELECT * FROM accounting_periods WHERE fiscal_year_id = ? ORDER BY month ASC", [fiscalYearId]);
     if (res.length > 0) {
-      return res[0].values.map((row: any) => rowToEntity<AccountingPeriod>(res[0].columns, row));
+      return res[0].values.map((row: any) => rowToEntity<AccountingPeriod>((res[0].columns || (res[0] as any).lc), row));
     }
   } catch (e) { console.error(e); }
   return [];
@@ -1235,7 +1077,7 @@ export async function closePeriod(periodId: number, userId: number): Promise<{ s
   try {
     const periodRes = db.exec("SELECT * FROM accounting_periods WHERE id = ?", [periodId]);
     if (periodRes.length === 0) return { success: false, message: 'Periodo no encontrado' };
-    const period = rowToEntity<AccountingPeriod>(periodRes[0].columns, periodRes[0].values[0]);
+    const period = rowToEntity<AccountingPeriod>((periodRes[0].columns || (periodRes[0] as any).lc), periodRes[0].values[0]);
 
     if (period.status === 'closed' || period.status === 'locked') {
       return { success: false, message: 'El periodo ya está cerrado' };
@@ -1275,7 +1117,7 @@ export async function reopenPeriod(periodId: number, userId: number): Promise<{ 
   try {
     db.run(`
       UPDATE accounting_periods 
-      SET status = 'open', closed_at = NULL, closed_by = NULL
+      set status = 'open', closed_at = NULL, closed_by = NULL
       WHERE id = ?
     `, [periodId]);
     return { success: true, message: 'Periodo reabierto exitosamente' };
@@ -1297,43 +1139,12 @@ export async function unlockFiscalYear(yearId: number): Promise<{ success: boole
   }
 }
 
-export interface Customer {
-  id: number;
-  // Información personal
-  name: string;
-  business_name?: string;
-  document_type: 'SSN' | 'EIN' | 'ITIN' | 'PASSPORT';
-  document_number: string;
-  business_type?: string;
+// Agregar paymentCount a la interfaz Customer
+// Customer type — importado desde db-types (fuente de verdad)
+import type { Customer } from './modules/db-types';
+export type { Customer };
 
-  // Datos de contacto
-  email: string;
-  email_secondary?: string;
-  phone: string;
-  phone_secondary?: string;
-
-  // Dirección
-  address_line1: string;
-  address_line2?: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  florida_county: string;
-
-  // Datos comerciales
-  credit_limit: number;
-  payment_terms: number; // días
-  tax_exempt: boolean;
-  tax_id?: string;
-  assigned_salesperson?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  created_by?: number;
-  updated_by?: number;
-}
-
+// Agregar paymentCount a la interfaz Supplier
 export interface Supplier {
   id: number;
   // Información del proveedor
@@ -1355,6 +1166,10 @@ export interface Supplier {
   city: string;
   state: string;
   zip_code: string;
+
+  // Nueva propiedad
+  paymentCount?: number; // Agregado para resolver errores
+
   florida_county: string;
 
   // Datos comerciales
@@ -1564,11 +1379,13 @@ export interface SupplierPayment {
 export interface ChartOfAccount {
   id?: number;
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
   normal_balance: 'debit' | 'credit';
   parent_account?: string;
   is_active: boolean;
+  detail_type?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: number;
@@ -1585,6 +1402,9 @@ export interface JournalEntry {
   total_debit: number;
   total_credit: number;
   is_balanced: boolean;
+  status: 'DRAFT' | 'POSTED' | 'VOIDED';
+  posted_at?: string;
+  posted_by?: number;
   created_at?: string;
   created_by?: number;
   verified_by?: number;
@@ -1803,8 +1623,7 @@ export interface BudgetVarianceAnalysis {
   }[];
 }
 
-// Flag global de modo demo
-export let isDemoActive = false;
+
 
 export const resetDB = async () => {
   if (dbEngine) {
@@ -1813,19 +1632,38 @@ export const resetDB = async () => {
   db = null;
   dbEngine = null;
   isInitialized = false;
-  isDemoActive = false;
-  logger.info('Database', 'reset', 'Base de datos reiniciada para cambio de modo');
+  logger.info('Database', 'reset', 'Base de datos reiniciada');
 };
 
-export const initDB = async (password?: string, demoMode: boolean = false): Promise<any> => {
+/**
+ * Configura el auto-guardado periódico de la base de datos.
+ * También guarda al cerrar la ventana.
+ */
+function setupAutoSave(): void {
+  setInterval(async () => {
+    if (!db) return;
+    try {
+      await forceSaveDB();
+    } catch (e) {
+      // Silencioso para evitar spam en consola en producción
+    }
+  }, 30000);
+
+  // Guardar al cerrar la ventana
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+      forceSaveDB().catch(() => { });
+    });
+  }
+}
+
+export const initDB = async (password?: string): Promise<any> => {
   if (isInitialized && db) {
     return db;
   }
 
-  isDemoActive = demoMode;
-
   try {
-    logger.info('Database', 'init_start', `Iniciando inicialización de base de datos SQLite (Demo: ${demoMode})`);
+    logger.info('Database', 'init_start', 'Iniciando inicialización de base de datos SQLite');
 
     // Configurar cifrado si se proporciona contraseña
     if (password && BasicEncryption.isSupported()) {
@@ -1841,8 +1679,9 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
         if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
           return `./node_modules/sql.js/dist/${file}`;
         }
-        // En navegador, usar ruta pública
-        return `/${file}`;
+        // En navegador, normalizar nombres y usar ruta absoluta
+        const normalizedFile = file.replace('-browser', '');
+        return `/${normalizedFile}`;
       }
     });
 
@@ -1850,20 +1689,16 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
 
     let dbData: Uint8Array | null = null;
 
-    // Solo cargar persistencia si NO estamos en modo demo
-    if (!demoMode) {
-      // Cargar datos existentes
-      const { loadDatabase } = await import('./PersistenceLayer');
-      dbData = await loadDatabase();
-
-      // Fallback a localStorage si no hay en IndexedDB
-      if (!dbData) {
-        try {
-          dbData = await loadFromLocalStorage();
-        } catch (e) { console.warn('LocalStorage load failed', e); }
+    // Cargar datos existentes
+    const { loadDatabase } = await import('./PersistenceLayer');
+    dbData = await loadDatabase();
+    // Fallback a localStorage si no hay en IndexedDB
+    if (!dbData) {
+      try {
+        dbData = await loadFromLocalStorage();
+      } catch (e) {
+        console.warn('LocalStorage load failed', e);
       }
-    } else {
-      logger.warn('Database', 'demo_warning', '⚠️ MODO DEMO: Base de datos en RAM. Los datos se perderán al recargar.');
     }
 
     if (!db) {
@@ -1874,37 +1709,91 @@ export const initDB = async (password?: string, demoMode: boolean = false): Prom
     dbEngine = new SQLiteEngine();
     dbEngine.setDB(db);
 
-    // Configurar modo demo en el motor
-    if (demoMode) {
-      dbEngine.setDemoMode(true);
-    }
+    // Garantizar tablas críticas en motor RAM (IF NOT EXISTS — seguro siempre)
+    db.run(`CREATE TABLE IF NOT EXISTS payment_methods (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      method_name TEXT NOT NULL,
+      method_type TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      requires_reference INTEGER DEFAULT 0
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS bills (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bill_number TEXT UNIQUE NOT NULL,
+      supplier_id INTEGER NOT NULL,
+      issue_date DATE DEFAULT CURRENT_DATE,
+      due_date DATE,
+      subtotal DECIMAL(12,2) DEFAULT 0.00,
+      tax_amount DECIMAL(12,2) DEFAULT 0.00,
+      total_amount DECIMAL(12,2) DEFAULT 0.00,
+      status TEXT DEFAULT 'draft' CHECK(status IN('draft','received','approved','paid','overdue','cancelled')),
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_by INTEGER DEFAULT 1,
+      updated_by INTEGER DEFAULT 1
+    )`);
+
+    // Registrar en el puente para evitar dependencias circulares
+    EngineBridge.setEngine(dbEngine);
 
     logger.info('Database', 'engine_initialized', 'SQLiteEngine wrapper creado exitosamente');
 
-    // Ejecutar inicialización de esquema
-    await initializeSchema(db);
+    // Configurar servicios adicionales
+    setupAutoSave();
 
-    // NUEVO: Ejecutar reparación profunda y seed de emergencia (Iron Core Protection)
-    await DatabaseInitializer.initializeWithFix(db);
+    // DEV: Exponer engine en window para verificación en consola del browser
+    if (typeof window !== 'undefined') {
+      // Bloqueo de resets automáticos restantes (Hardening Final)
+      (window as any).NO_RESET = true;
+      logger.info('System', 'hardening_complete', 'Sistema saneado: Persistencia ON, Cifrado ON, Backups ON');
 
-    // Configurar servicios adicionales solo si no es demo (para evitar sobrescribir datos reales)
-    if (!demoMode) {
-      setupAutoSave();
+      (window as any).__dbEngine = dbEngine;
+      (window as any).__db = db;
+      (window as any).__runSQL = (sql: string, params?: any[]) => {
+        try {
+          const result = db.exec(sql, params);
+          return result;
+        } catch (e) {
+          return { error: String(e) };
+        }
+      };
     }
 
-    return db;
   } catch (error) {
     logger.error('Database', 'init_failed', 'Error fatal en inicialización', { error });
-    throw error;
   } finally {
     isInitialized = true;
   }
+
+  return db;
 };
 
 const initializeSchema = async (db: any) => {
+  console.log("--> RUNNING initializeSchema for Migración 029");
+  // --- MIGRATION: Drop old audit_chain if it lacks logic_clock or event_type ---
+  try {
+    // Usamos exec() porque en este punto db es la instancia cruda de sql.js (sin el wrapper .select)
+    const tableInfoRaw = db.exec("PRAGMA table_info(audit_chain)");
+    const tableInfo = tableInfoRaw.length > 0
+      ? tableInfoRaw[0].values.map((row: any) => ({ name: row[1] }))
+      : [];
+
+    if (Array.isArray(tableInfo) && tableInfo.length > 0) {
+      const cols = tableInfo.map((c: any) => (c as any).name);
+      if (!cols.includes("event_type") || !cols.includes("logic_clock")) {
+        console.warn("⚠️ Legacy audit_chain table detected. Dropping it to adapt to new schema.");
+        db.run("DROP TABLE audit_chain");
+      }
+    }
+  } catch (e) {
+    console.warn("Could not check if old audit_chain exists", e);
+  }
+
   // Tabla de clientes
   db.run(`
-    CREATE TABLE IF NOT EXISTS customers(
+    create TABLE IF NOT EXISTS customers(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     business_name TEXT,
@@ -1940,7 +1829,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de proveedores
   db.run(`
-    CREATE TABLE IF NOT EXISTS suppliers(
+    create TABLE IF NOT EXISTS suppliers(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
   business_name TEXT,
@@ -1973,7 +1862,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de categorías de productos
   db.run(`
-    CREATE TABLE IF NOT EXISTS product_categories(
+    create TABLE IF NOT EXISTS product_categories(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
@@ -1990,7 +1879,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de productos expandida
   db.run(`
-    CREATE TABLE IF NOT EXISTS products(
+    create TABLE IF NOT EXISTS products(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sku TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
@@ -2026,7 +1915,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de facturas
   db.run(`
-    CREATE TABLE IF NOT EXISTS invoices(
+    create TABLE IF NOT EXISTS invoices(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     invoice_number TEXT UNIQUE NOT NULL,
     customer_id INTEGER NOT NULL,
@@ -2047,7 +1936,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de líneas de factura
   db.run(`
-    CREATE TABLE IF NOT EXISTS invoice_lines(
+    create TABLE IF NOT EXISTS invoice_lines(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     invoice_id INTEGER NOT NULL,
     product_id INTEGER,
@@ -2064,14 +1953,14 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de pagos
   db.run(`
-    CREATE TABLE IF NOT EXISTS payments(
+    create TABLE IF NOT EXISTS payments(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER NOT NULL,
     invoice_id INTEGER,
     payment_number TEXT UNIQUE NOT NULL,
     payment_date DATE DEFAULT CURRENT_DATE,
     amount DECIMAL(12, 2) NOT NULL,
-    payment_method TEXT DEFAULT 'cash' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    payment_method TEXT DEFAULT 'cash' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'digital', 'other')),
     reference_number TEXT,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -2083,21 +1972,51 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de configuración de impuestos Florida
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_rates(
+    create TABLE IF NOT EXISTS florida_tax_rates(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     county_name TEXT UNIQUE NOT NULL,
-    state_rate DECIMAL(5, 4) DEFAULT 0.06,
-    county_rate DECIMAL(5, 4) DEFAULT 0.0,
-    total_rate DECIMAL(5, 4) DEFAULT 0.06,
+    county_code TEXT UNIQUE NOT NULL,
+    base_rate REAL DEFAULT 600,
+    surtax_rate REAL DEFAULT 0,
+    total_rate REAL DEFAULT 600,
     effective_date DATE DEFAULT CURRENT_DATE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // Tabla de transacciones fiscales (Florida)
+  db.run(`
+    create TABLE IF NOT EXISTS tax_transactions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id INTEGER NOT NULL REFERENCES invoices(id),
+    transaction_date TEXT NOT NULL,
+    county_code TEXT NOT NULL,
+    taxable_amount REAL NOT NULL,
+    effective_rate REAL NOT NULL,
+    tax_amount REAL NOT NULL,
+    is_exempt BOOLEAN DEFAULT 0,
+    exemption_type TEXT,
+    verification_hash TEXT,
+    status TEXT DEFAULT 'pending',
+    dr15_report_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+  `);
+
+  // Tabla de migraciones del sistema
+  db.run(`
+    create TABLE IF NOT EXISTS sys_migrations(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version INTEGER NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
   `);
 
 
   // Tabla de transacciones borrador (AI Proposals) - Phase 3 Iron Clad
   db.run(`
-    CREATE TABLE IF NOT EXISTS draft_transactions (
+    create TABLE IF NOT EXISTS draft_transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         module TEXT NOT NULL,
         operation TEXT,
@@ -2109,9 +2028,20 @@ const initializeSchema = async (db: any) => {
     );
   `);
 
+  // System Configuration (Core Table required by v8+)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS system_config (
+        key TEXT PRIMARY KEY,
+        value TEXT,
+        category TEXT DEFAULT 'general',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+
   // Tabla de facturas de compra (bills)
   db.run(`
-    CREATE TABLE IF NOT EXISTS bills(
+    create TABLE IF NOT EXISTS bills(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bill_number TEXT UNIQUE NOT NULL,
     supplier_id INTEGER NOT NULL,
@@ -2132,7 +2062,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de líneas de factura de compra (bill_lines)
   db.run(`
-    CREATE TABLE IF NOT EXISTS bill_lines(
+    create TABLE IF NOT EXISTS bill_lines(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bill_id INTEGER NOT NULL,
     product_id INTEGER,
@@ -2149,14 +2079,14 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de pagos a proveedores (supplier_payments)
   db.run(`
-    CREATE TABLE IF NOT EXISTS supplier_payments(
+    create TABLE IF NOT EXISTS supplier_payments(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     supplier_id INTEGER NOT NULL,
     bill_id INTEGER,
     payment_number TEXT UNIQUE NOT NULL,
     payment_date DATE DEFAULT CURRENT_DATE,
     amount DECIMAL(12, 2) NOT NULL,
-    payment_method TEXT DEFAULT 'check' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    payment_method TEXT DEFAULT 'check' CHECK(payment_method IN('cash', 'check', 'credit_card', 'bank_transfer', 'digital', 'other')),
     reference_number TEXT,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -2171,7 +2101,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de cotizaciones (quotes)
   db.run(`
-    CREATE TABLE IF NOT EXISTS quotes(
+    create TABLE IF NOT EXISTS quotes(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quote_number TEXT UNIQUE NOT NULL,
     customer_id INTEGER NOT NULL,
@@ -2193,9 +2123,9 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Tabla de l�neas de cotizaci�n (quote_lines)
+  // Tabla de lï¿½neas de cotizaciï¿½n (quote_lines)
   db.run(`
-    CREATE TABLE IF NOT EXISTS quote_lines(
+    create TABLE IF NOT EXISTS quote_lines(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quote_id INTEGER NOT NULL,
     product_id INTEGER,
@@ -2213,7 +2143,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de auditoría con hash de integridad
   db.run(`
-    CREATE TABLE IF NOT EXISTS audit_log(
+    create TABLE IF NOT EXISTS audit_log(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     table_name TEXT NOT NULL,
     record_id INTEGER NOT NULL,
@@ -2229,7 +2159,7 @@ const initializeSchema = async (db: any) => {
 
   // Nueva tabla de trazabilidad general
   db.run(`
-    CREATE TABLE IF NOT EXISTS audit_trail(
+    create TABLE IF NOT EXISTS audit_trail(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER REFERENCES users(id),
     action TEXT NOT NULL,
@@ -2244,25 +2174,24 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de datos de la empresa
   db.run(`
-    CREATE TABLE IF NOT EXISTS company_data(
+    create TABLE IF NOT EXISTS company_data(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    company_name TEXT NOT NULL,
-    legal_name TEXT NOT NULL,
+    name TEXT NOT NULL,
     tax_id TEXT NOT NULL, --EIN o Tax ID
-      address TEXT NOT NULL,
+    address TEXT NOT NULL,
     city TEXT NOT NULL,
     state TEXT NOT NULL DEFAULT 'FL',
-    zip_code TEXT NOT NULL,
+    zip TEXT NOT NULL,
     phone TEXT NOT NULL,
     email TEXT NOT NULL,
     website TEXT,
     logo_path TEXT,
     fiscal_year_start TEXT DEFAULT '01-01', --MM - DD format
-      currency TEXT DEFAULT 'USD',
+    currency_code TEXT DEFAULT 'USD',
     language TEXT DEFAULT 'es',
     timezone TEXT DEFAULT 'America/New_York',
     --Configuraciones financieras
-      sales_commission_rate DECIMAL(10, 2) DEFAULT 0.00,
+    sales_commission_rate DECIMAL(10, 2) DEFAULT 0.00,
     sales_commission_percentage DECIMAL(5, 2) DEFAULT 0.00,
     discount_amount DECIMAL(10, 2) DEFAULT 50.00,
     discount_percentage DECIMAL(5, 2) DEFAULT 0.00,
@@ -2277,11 +2206,12 @@ const initializeSchema = async (db: any) => {
     other_costs DECIMAL(10, 2) DEFAULT 0.00,
     chart_of_accounts_name TEXT DEFAULT 'Plan de Cuenta Ejemplo',
     date_format TEXT DEFAULT 'MM/DD/AAAA',
+    fiscal_year_end TEXT DEFAULT '12-31',
+    netIncreaseInCash DECIMAL(15, 2) DEFAULT 0.00,
     tax_frequency TEXT DEFAULT 'monthly', --monthly, quarterly
     sales_tax_method TEXT DEFAULT 'accrual', --accrual, cash
     dr15_filing_day INTEGER DEFAULT 20,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT 1
   )
@@ -2289,7 +2219,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de cuentas bancarias
   db.run(`
-    CREATE TABLE IF NOT EXISTS bank_accounts(
+    create TABLE IF NOT EXISTS bank_accounts(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_name TEXT NOT NULL,
     bank_name TEXT NOT NULL,
@@ -2306,7 +2236,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de transacciones bancarias importadas (Conciliación)
   db.run(`
-    CREATE TABLE IF NOT EXISTS bank_transactions(
+    create TABLE IF NOT EXISTS bank_transactions(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bank_account_id INTEGER NOT NULL REFERENCES bank_accounts(id),
     transaction_date DATE NOT NULL,
@@ -2323,10 +2253,10 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de métodos de pago
   db.run(`
-    CREATE TABLE IF NOT EXISTS payment_methods(
+    create TABLE IF NOT EXISTS payment_methods(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     method_name TEXT UNIQUE NOT NULL,
-    method_type TEXT CHECK(method_type IN('cash', 'check', 'credit_card', 'bank_transfer', 'other')),
+    method_type TEXT CHECK(method_type IN('cash', 'check', 'credit_card', 'bank_transfer', 'digital', 'other')),
     is_active BOOLEAN DEFAULT 1,
     requires_reference BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -2334,12 +2264,12 @@ const initializeSchema = async (db: any) => {
   `);
 
   // ==========================================
-  // TABLAS DE CONCILIACI�N BANCARIA
+  // TABLAS DE CONCILIACIï¿½N BANCARIA
   // ==========================================
 
-  // Tabla de estados de conciliaci�n
+  // Tabla de estados de conciliaciï¿½n
   db.run(`
-    CREATE TABLE IF NOT EXISTS reconciliation_statements(
+    create TABLE IF NOT EXISTS reconciliation_statements(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     bank_account_id INTEGER NOT NULL REFERENCES bank_accounts(id),
     statement_date DATE NOT NULL,
@@ -2355,9 +2285,9 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Tabla de matches de conciliaci�n
+  // Tabla de matches de conciliaciï¿½n
   db.run(`
-    CREATE TABLE IF NOT EXISTS reconciliation_matches(
+    create TABLE IF NOT EXISTS reconciliation_matches(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     statement_id INTEGER NOT NULL REFERENCES reconciliation_statements(id),
     bank_transaction_id INTEGER NOT NULL REFERENCES bank_transactions(id),
@@ -2372,12 +2302,12 @@ const initializeSchema = async (db: any) => {
   `);
 
   // ==========================================
-  // TABLAS DE N�MINA (PAYROLL)
+  // TABLAS DE Nï¿½MINA (PAYROLL)
   // ==========================================
 
   // Tabla de empleados
   db.run(`
-    CREATE TABLE IF NOT EXISTS employees(
+    create TABLE IF NOT EXISTS employees(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     employee_number TEXT UNIQUE NOT NULL,
     first_name TEXT NOT NULL,
@@ -2412,9 +2342,9 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Tabla de per�odos de n�mina
+  // Tabla de perï¿½odos de nï¿½mina
   db.run(`
-    CREATE TABLE IF NOT EXISTS payroll_periods(
+    create TABLE IF NOT EXISTS payroll_periods(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     start_date DATE NOT NULL,
@@ -2430,9 +2360,9 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Tabla de entradas de n�mina
+  // Tabla de entradas de nï¿½mina
   db.run(`
-    CREATE TABLE IF NOT EXISTS payroll_entries(
+    create TABLE IF NOT EXISTS payroll_entries(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     employee_id INTEGER NOT NULL REFERENCES employees(id),
     period_id INTEGER NOT NULL REFERENCES payroll_periods(id),
@@ -2448,9 +2378,9 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Tabla de l�neas de n�mina (conceptos)
+  // Tabla de lï¿½neas de nï¿½mina (conceptos)
   db.run(`
-    CREATE TABLE IF NOT EXISTS payroll_line_items(
+    create TABLE IF NOT EXISTS payroll_line_items(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payroll_entry_id INTEGER NOT NULL REFERENCES payroll_entries(id) ON DELETE CASCADE,
     type TEXT NOT NULL CHECK(type IN('earning', 'deduction')),
@@ -2461,9 +2391,9 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Tabla de configuraciones de n�mina
+  // Tabla de configuraciones de nï¿½mina
   db.run(`
-    CREATE TABLE IF NOT EXISTS payroll_settings(
+    create TABLE IF NOT EXISTS payroll_settings(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     setting_key TEXT UNIQUE NOT NULL,
     setting_value TEXT NOT NULL,
@@ -2476,7 +2406,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de nómina procesada (Payroll Engine)
   db.run(`
-    CREATE TABLE IF NOT EXISTS payroll(
+    create TABLE IF NOT EXISTS payroll(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     employee_id INTEGER NOT NULL REFERENCES employees(id),
     pay_period_start DATE NOT NULL,
@@ -2523,15 +2453,15 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Índices para optimizar consultas de nómina
-  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_employee ON payroll(employee_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_dates ON payroll(pay_period_start, pay_period_end)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_status ON payroll(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_payroll_pay_date ON payroll(pay_date)`);
+  // índices para optimizar consultas de nómina
+  db.run(`create INDEX IF NOT EXISTS idx_payroll_employee ON payroll(employee_id)`);
+  db.run(`create INDEX IF NOT EXISTS idx_payroll_dates ON payroll(pay_period_start, pay_period_end)`);
+  db.run(`create INDEX IF NOT EXISTS idx_payroll_status ON payroll(status)`);
+  db.run(`create INDEX IF NOT EXISTS idx_payroll_pay_date ON payroll(pay_date)`);
 
   // Tabla de logs del sistema
   db.run(`
-    CREATE TABLE IF NOT EXISTS system_logs(
+    create TABLE IF NOT EXISTS system_logs(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     level TEXT CHECK(level IN('DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL')) NOT NULL,
@@ -2558,9 +2488,10 @@ const initializeSchema = async (db: any) => {
 
   // Tabla del plan de cuentas (chart of accounts) - DEBE IR PRIMERO
   db.run(`
-    CREATE TABLE IF NOT EXISTS chart_of_accounts(
+    create TABLE IF NOT EXISTS chart_of_accounts(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     account_code TEXT UNIQUE NOT NULL,
+    number TEXT,
     account_name TEXT NOT NULL,
     account_type TEXT NOT NULL CHECK(account_type IN('asset', 'liability', 'equity', 'revenue', 'expense')),
     normal_balance TEXT NOT NULL CHECK(normal_balance IN('debit', 'credit')),
@@ -2576,7 +2507,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de asientos contables (journal entries)
   db.run(`
-    CREATE TABLE IF NOT EXISTS journal_entries(
+    create TABLE IF NOT EXISTS journal_entries(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     entry_date DATE NOT NULL,
     reference TEXT,
@@ -2596,7 +2527,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de detalles de asientos contables
   db.run(`
-    CREATE TABLE IF NOT EXISTS journal_details(
+    create TABLE IF NOT EXISTS journal_details(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     journal_entry_id INTEGER NOT NULL REFERENCES journal_entries(id),
     account_code TEXT NOT NULL REFERENCES chart_of_accounts(account_code),
@@ -2608,12 +2539,12 @@ const initializeSchema = async (db: any) => {
 `);
 
   // ==========================================
-  // PERÍODOS CONTABLES Y CIERRES
+  // PERíODOS CONTABLES Y CIERRES
   // ==========================================
 
   // Tabla de períodos contables
   db.run(`
-    CREATE TABLE IF NOT EXISTS accounting_periods(
+    create TABLE IF NOT EXISTS accounting_periods(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     period_type TEXT NOT NULL CHECK(period_type IN('monthly', 'quarterly', 'annual')),
@@ -2635,14 +2566,14 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Índices para períodos contables
-  db.run(`CREATE INDEX IF NOT EXISTS idx_periods_dates ON accounting_periods(start_date, end_date)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_periods_status ON accounting_periods(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_periods_fiscal_year ON accounting_periods(fiscal_year)`);
+  // índices para períodos contables
+  db.run(`create INDEX IF NOT EXISTS idx_periods_dates ON accounting_periods(start_date, end_date)`);
+  db.run(`create INDEX IF NOT EXISTS idx_periods_status ON accounting_periods(status)`);
+  db.run(`create INDEX IF NOT EXISTS idx_periods_fiscal_year ON accounting_periods(fiscal_year)`);
 
   // Tabla de auditoría de cierres de períodos
   db.run(`
-    CREATE TABLE IF NOT EXISTS period_closure_log(
+    create TABLE IF NOT EXISTS period_closure_log(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     period_id INTEGER NOT NULL REFERENCES accounting_periods(id),
     action TEXT NOT NULL CHECK(action IN('closed', 'reopened', 'locked', 'unlocked')),
@@ -2656,16 +2587,16 @@ const initializeSchema = async (db: any) => {
   )
   `);
 
-  // Índice para log de cierres
-  db.run(`CREATE INDEX IF NOT EXISTS idx_closure_log_period ON period_closure_log(period_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_closure_log_date ON period_closure_log(performed_at)`);
+  // índice para log de cierres
+  db.run(`create INDEX IF NOT EXISTS idx_closure_log_period ON period_closure_log(period_id)`);
+  db.run(`create INDEX IF NOT EXISTS idx_closure_log_date ON period_closure_log(performed_at)`);
 
   // ==========================================
   // REPORTES FISCALES FLORIDA
   // ==========================================
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_reports(
+    create TABLE IF NOT EXISTS florida_tax_reports(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   period TEXT NOT NULL UNIQUE, -- "2024-Q1"
       total_taxable_sales DECIMAL(15, 2) DEFAULT 0,
@@ -2682,7 +2613,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de desglose por condado para DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_report_counties(
+    create TABLE IF NOT EXISTS florida_tax_report_counties(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     report_id INTEGER NOT NULL REFERENCES florida_tax_reports(id),
     county_name TEXT NOT NULL,
@@ -2695,7 +2626,7 @@ const initializeSchema = async (db: any) => {
 
   // Tabla de ajustes para DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS florida_tax_report_adjustments(
+    create TABLE IF NOT EXISTS florida_tax_report_adjustments(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     report_id INTEGER NOT NULL REFERENCES florida_tax_reports(id),
     description TEXT NOT NULL,
@@ -2706,12 +2637,12 @@ const initializeSchema = async (db: any) => {
   `);
 
   // ==========================================
-  // VISTAS PARA IA (SOLO LECTURA) - ESPECIFICACIÓN COMPLETA
+  // VISTAS PARA IA (SOLO LECTURA) - ESPECIFICACIí“N COMPLETA
   // ==========================================
 
-  // Vista de resumen financiero para IA - ORDEN N°1 CORREGIDA
+  // Vista de resumen financiero para IA - ORDEN NÂ°1 CORREGIDA
   db.run(`
-    CREATE VIEW IF NOT EXISTS financial_summary AS
+    create VIEW IF NOT EXISTS financial_summary AS
 SELECT
 'balance_general' as reporte,
   COUNT(CASE WHEN account_type = 'asset' THEN 1 END) as total_activos,
@@ -2722,7 +2653,7 @@ SELECT
 
   // Vista de resumen de inventario para IA
   db.run(`
-    CREATE VIEW IF NOT EXISTS inventory_summary AS
+    create VIEW IF NOT EXISTS inventory_summary AS
 SELECT
 'productos' as tipo,
   COUNT(*) as total_productos,
@@ -2732,9 +2663,9 @@ SELECT
     WHERE active = 1
   `);
 
-  // Vista de resumen de impuestos Florida para IA - ORDEN N°1
+  // Vista de resumen de impuestos Florida para IA - ORDEN NÂ°1
   db.run(`
-    CREATE VIEW IF NOT EXISTS tax_summary_florida AS
+    create VIEW IF NOT EXISTS tax_summary_florida AS
 SELECT
 t.county_name as county,
   COUNT(i.id) as facturas,
@@ -2749,7 +2680,7 @@ t.county_name as county,
 
   // Vista de resumen de auditoría para IA
   db.run(`
-    CREATE VIEW IF NOT EXISTS audit_summary AS
+    create VIEW IF NOT EXISTS audit_summary AS
 SELECT
 table_name,
   COUNT(*) as total_operaciones,
@@ -2771,7 +2702,7 @@ table_name,
 
   // VISTA "TODO EN UNO" SOLICITADA
   db.run(`
-    CREATE VIEW IF NOT EXISTS datos_sistema AS
+    create VIEW IF NOT EXISTS datos_sistema AS
 SELECT
   (SELECT COUNT(*) FROM customers) as total_clientes,
   (SELECT GROUP_CONCAT(name, ', ') FROM(SELECT name FROM customers LIMIT 5)) as lista_clientes,
@@ -2785,7 +2716,7 @@ SELECT
 
   // Vista de alertas para IA
   db.run(`
-    CREATE VIEW IF NOT EXISTS alerts_summary AS
+    create VIEW IF NOT EXISTS alerts_summary AS
 SELECT
 'facturas_vencidas' as tipo_alerta,
   COUNT(*) as cantidad,
@@ -2808,15 +2739,13 @@ SELECT
     WHERE status = 'inactive'
   `);
 
-  console.log('Database schema created successfully');
-  console.log('Vistas _summary para IA creadas: financial_summary, tax_summary_florida - ORDEN N°1 IMPLEMENTADA');
 
   // ==========================================
   // TABLAS DE PRESUPUESTOS (BUDGETS) - FASE 2
   // ==========================================
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS budgets(
+    create TABLE IF NOT EXISTS budgets(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       budget_name TEXT NOT NULL,
       fiscal_year INTEGER NOT NULL,
@@ -2837,7 +2766,7 @@ SELECT
   `);
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS budget_lines(
+    create TABLE IF NOT EXISTS budget_lines(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       budget_id INTEGER NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
       account_number INTEGER NOT NULL,
@@ -2849,7 +2778,7 @@ SELECT
   `);
 
   db.run(`
-    CREATE TABLE IF NOT EXISTS budget_periods(
+    create TABLE IF NOT EXISTS budget_periods(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       budget_line_id INTEGER NOT NULL REFERENCES budget_lines(id) ON DELETE CASCADE,
       period_type TEXT DEFAULT 'MONTHLY' CHECK(period_type IN('MONTHLY', 'QUARTERLY')),
@@ -2867,7 +2796,7 @@ SELECT
 
   // Tabla de historial de conversaciones IA
   db.run(`
-    CREATE TABLE IF NOT EXISTS ai_conversations(
+    create TABLE IF NOT EXISTS ai_conversations(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     query TEXT NOT NULL,
@@ -2888,7 +2817,7 @@ SELECT
 
   // Tabla de ajustes manuales de inventario
   db.run(`
-    CREATE TABLE IF NOT EXISTS inventory_adjustments(
+    create TABLE IF NOT EXISTS inventory_adjustments(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id INTEGER NOT NULL,
     quantity_delta INTEGER NOT NULL,
@@ -2902,7 +2831,7 @@ SELECT
 
   // Tabla de envíos fiscales DR-15
   db.run(`
-    CREATE TABLE IF NOT EXISTS dr15_submissions(
+    create TABLE IF NOT EXISTS dr15_submissions(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     period_year INTEGER NOT NULL,
     period_month INTEGER NOT NULL,
@@ -2918,10 +2847,10 @@ SELECT
   `);
 
   // ==========================================
-  // TABLAS MÓDULO ARD (Análisis de Recibos)
+  // TABLAS Mí“DULO ARD (Análisis de Recibos)
   // ==========================================
   db.run(`
-    CREATE TABLE IF NOT EXISTS ard_documents(
+    create TABLE IF NOT EXISTS ard_documents(
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     type TEXT CHECK(type IN('invoice_in', 'receipt', 'check', 'other')),
@@ -2939,14 +2868,14 @@ SELECT
   `);
 
   // ==========================================
-  // TRIGGERS CRÍTICOS FASE 2
+  // TRIGGERS CRíTICOS FASE 2
   // ==========================================
 
   // 1. TRIGGER calculate_florida_tax (Aproximación en SQLite ya que no soporta lógica compleja en triggers)
   // Nota: SQLite triggers son limitados. La lógica compleja se mantiene en la capa de aplicación (FloridaTaxCalculator),
   // pero agregamos un trigger básico para mantener consistencia.
   db.run(`
-    CREATE TRIGGER IF NOT EXISTS update_invoice_totals_after_insert
+    create TRIGGER IF NOT EXISTS update_invoice_totals_after_insert
     AFTER INSERT ON invoice_lines
 BEGIN
       UPDATE invoices
@@ -2960,7 +2889,7 @@ END;
 
   // 2. TRIGGER update_inventory_on_sale (Simplificado para SQLite)
   db.run(`
-    CREATE TRIGGER IF NOT EXISTS decrease_stock_on_invoice
+    create TRIGGER IF NOT EXISTS decrease_stock_on_invoice
     AFTER INSERT ON invoice_lines
 BEGIN
       UPDATE products
@@ -2975,9 +2904,9 @@ END;
   // TABLAS SISTEMA DE COMPRAS (PRIORIDAD 1.1)
   // ==========================================
 
-  // Tabla de Órdenes de Compra
+  // Tabla de í“rdenes de Compra
   db.run(`
-    CREATE TABLE IF NOT EXISTS purchase_orders(
+    create TABLE IF NOT EXISTS purchase_orders(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
   order_number TEXT UNIQUE NOT NULL,
@@ -2994,7 +2923,7 @@ END;
 
   // Tabla de Líneas de Orden de Compra
   db.run(`
-    CREATE TABLE IF NOT EXISTS purchase_order_lines(
+    create TABLE IF NOT EXISTS purchase_order_lines(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     purchase_order_id INTEGER NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
     product_id INTEGER NOT NULL REFERENCES products(id),
@@ -3007,7 +2936,7 @@ END;
 
   // Tabla de Movimientos de Inventario (Kardex)
   db.run(`
-    CREATE TABLE IF NOT EXISTS stock_movements(
+    create TABLE IF NOT EXISTS stock_movements(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id INTEGER NOT NULL REFERENCES products(id),
     quantity INTEGER NOT NULL, --Positivo(Entrada) o Negativo(Salida)
@@ -3022,7 +2951,7 @@ END;
 
   // Tabla de Ubicaciones/Almacenes (Locations)
   db.run(`
-    CREATE TABLE IF NOT EXISTS locations(
+    create TABLE IF NOT EXISTS locations(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     code TEXT UNIQUE NOT NULL,
@@ -3036,11 +2965,11 @@ END;
   )
   `);
 
-  // Índices para optimización
-  db.run(`CREATE INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplier_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_po_status ON purchase_orders(status)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_stock_product ON stock_movements(product_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_stock_date ON stock_movements(created_at)`);
+  // índices para optimización
+  db.run(`create INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplier_id)`);
+  db.run(`create INDEX IF NOT EXISTS idx_po_status ON purchase_orders(status)`);
+  db.run(`create INDEX IF NOT EXISTS idx_stock_product ON stock_movements(product_id)`);
+  db.run(`create INDEX IF NOT EXISTS idx_stock_date ON stock_movements(created_at)`);
 
 
   // ==========================================
@@ -3048,7 +2977,7 @@ END;
   // ==========================================
 
   db.run(`
-    CREATE VIEW IF NOT EXISTS v_ai_context_invoices AS
+    create VIEW IF NOT EXISTS v_ai_context_invoices AS
 SELECT
 'INVOICE_DATA' as data_type,
   i.id,
@@ -3066,7 +2995,7 @@ SELECT
   `);
 
   db.run(`
-    CREATE VIEW IF NOT EXISTS v_ai_context_financial AS
+    create VIEW IF NOT EXISTS v_ai_context_financial AS
 SELECT
 'FINANCIAL_SNAPSHOT' as data_type,
   date('now') as snapshot_date,
@@ -3077,9 +3006,9 @@ SELECT
           (SELECT SUM(balance) FROM bank_accounts) as cash_balance
             `);
 
-  // Vista de resumen de n�mina para IA
+  // Vista de resumen de nï¿½mina para IA
   db.run(`
-    CREATE VIEW IF NOT EXISTS v_payroll_summary AS
+    create VIEW IF NOT EXISTS v_payroll_summary AS
 SELECT 
   strftime('%Y-%m', pe.created_at) as period,
   COUNT(DISTINCT pe.employee_id) as employees_count,
@@ -3093,9 +3022,9 @@ GROUP BY period
 ORDER BY period DESC
   `);
 
-  // Vista de estado de conciliaci�n bancaria para IA
+  // Vista de estado de conciliaciï¿½n bancaria para IA
   db.run(`
-    CREATE VIEW IF NOT EXISTS v_bank_reconciliation_status AS
+    create VIEW IF NOT EXISTS v_bank_reconciliation_status AS
 SELECT 
   ba.account_name,
   ba.bank_name,
@@ -3111,7 +3040,7 @@ GROUP BY ba.id
 
   // Tabla de auditoría específica para IA
   db.run(`
-    CREATE TABLE IF NOT EXISTS ai_audit_log(
+    create TABLE IF NOT EXISTS ai_audit_log(
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               user_id INTEGER NOT NULL,
               action TEXT NOT NULL,
@@ -3123,27 +3052,28 @@ GROUP BY ba.id
 
   // Tabla de Cadena de Auditoría Inmutable (Forensic Grade)
   db.run(`
-    CREATE TABLE IF NOT EXISTS audit_chain(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    table_name TEXT NOT NULL,
-    record_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    old_value TEXT,
-    new_value TEXT,
-    user_id INTEGER,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    previous_hash TEXT,
-    current_hash TEXT
-  )
+    CREATE TABLE IF NOT EXISTS audit_chain (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        event_type TEXT NOT NULL,
+        entity_table TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        user_id TEXT,
+        content_payload TEXT,
+        content_hash TEXT NOT NULL,
+        previous_hash TEXT NOT NULL,
+        chain_hash TEXT NOT NULL,
+        logic_clock INTEGER NOT NULL
+    )
   `);
 
   // ==========================================
-  // TABLAS DE GESTIÓN DE USUARIOS Y ROLES
+  // TABLAS DE GESTIí“N DE USUARIOS Y ROLES
   // ==========================================
 
   // Tabla de roles de usuario
   db.run(`
-    CREATE TABLE IF NOT EXISTS user_roles(
+    create TABLE IF NOT EXISTS user_roles(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
     description TEXT,
@@ -3156,7 +3086,7 @@ GROUP BY ba.id
 
   // Tabla de usuarios del sistema
   db.run(`
-    CREATE TABLE IF NOT EXISTS users(
+    create TABLE IF NOT EXISTS users(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
@@ -3165,6 +3095,7 @@ GROUP BY ba.id
     password_hash TEXT NOT NULL,
     role_id INTEGER NOT NULL,
     is_active BOOLEAN DEFAULT 1,
+    picture TEXT,
     last_login DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -3204,93 +3135,21 @@ GROUP BY ba.id
   try { db.run(`ALTER TABLE payments ADD COLUMN created_by INTEGER DEFAULT 1`); } catch (e) { /* ignore */ }
   try { db.run(`ALTER TABLE supplier_payments ADD COLUMN created_by INTEGER DEFAULT 1`); } catch (e) { /* ignore */ }
 
-  // 5. Índices de Performance Multi-Usuario
+  // 5. índices de Performance Multi-Usuario
   try {
-    db.run(`CREATE INDEX IF NOT EXISTS idx_customers_created_by ON customers(created_by)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_invoices_created_by ON invoices(created_by)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_suppliers_created_by ON suppliers(created_by)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_bills_created_by ON bills(created_by)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_payments_created_by ON payments(created_by)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id)`);
-    db.run(`CREATE INDEX IF NOT EXISTS idx_audit_trail_user_id ON audit_trail(user_id)`);
+    db.run(`create INDEX IF NOT EXISTS idx_customers_created_by ON customers(created_by)`);
+    db.run(`create INDEX IF NOT EXISTS idx_invoices_created_by ON invoices(created_by)`);
+    db.run(`create INDEX IF NOT EXISTS idx_suppliers_created_by ON suppliers(created_by)`);
+    db.run(`create INDEX IF NOT EXISTS idx_bills_created_by ON bills(created_by)`);
+    db.run(`create INDEX IF NOT EXISTS idx_payments_created_by ON payments(created_by)`);
+    db.run(`create INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id)`);
+    db.run(`create INDEX IF NOT EXISTS idx_audit_trail_user_id ON audit_trail(user_id)`);
   } catch (e) { /* ignore */ }
 
   logger.info('Database', 'schema_updated', 'Tablas de Gestión de Usuarios verificadas y actualizadas');
 
-  // Insertar roles y usuarios iniciales (Idempotente)
-  const seedUsersAndRoles = async (): Promise<void> => {
-    if (!db) return;
+  // Roles y usuarios iniciales manejados por seedUsersAndRoles fuera de esta función (ver sección de usuarios)
 
-    try {
-      // 1. Roles
-      const roleCountResult = db.exec("SELECT COUNT(*) as count FROM user_roles");
-      const roleCount = roleCountResult[0]?.values[0]?.[0] as number || 0;
-
-      if (roleCount === 0) {
-        db.run(`
-        INSERT INTO user_roles(name, description, level) VALUES
-  ('admin', 'Administrador del sistema con acceso completo', 100),
-  ('contador', 'Contador con acceso a módulos contables y reportes', 80),
-  ('vendedor', 'Vendedor con acceso a clientes y facturación', 40),
-  ('comprador', 'Comprador con acceso a proveedores y compras', 40),
-  ('auditor', 'Auditor con acceso de solo lectura a todo el sistema', 20),
-  ('viewer', 'Usuario de consulta básica', 10)
-    `);
-        logger.info('Database', 'roles_seeded', 'Roles de sistema creados: admin, contador, vendedor, comprador, auditor, viewer');
-      }
-
-      // 2. Usuarios
-      const usersToVerify = [
-        { username: 'admin', email: 'admin@empresa.com', display_name: 'Main Administrator', password: 'admin123', role: 'admin' },
-        { username: 'demo', email: 'demo@empresa.com', display_name: 'Demo User', password: 'demo123', role: 'admin' },
-        { username: 'vendedor1', email: 'vendedor1@empresa.com', display_name: 'Sales Rep Test', password: 'vendedor123', role: 'vendedor' },
-        { username: 'contador1', email: 'contador1@empresa.com', display_name: 'Accountant Test', password: 'contador123', role: 'contador' },
-        { username: 'auditor1', email: 'auditor1@empresa.com', display_name: 'Auditor Test', password: 'auditor123', role: 'auditor' }
-      ];
-
-      const rolesResult = db.exec("SELECT id, name FROM user_roles");
-      const roleMap: Record<string, number> = {};
-      rolesResult[0]?.values.forEach((row: any) => {
-        roleMap[row[1] as string] = row[0] as number;
-      });
-
-      for (const sysUser of usersToVerify) {
-        try {
-          const existing = db.exec(`SELECT id FROM users WHERE username = ? `, [sysUser.username]);
-          if (!existing[0] || existing[0].values.length === 0) {
-            const hash = await hashPassword(sysUser.password);
-            const roleId = roleMap[sysUser.role] || 1;
-
-            db.run(`
-            INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active)
-VALUES(?, ?, ?, ?, ?, ?, 1)
-          `, [sysUser.username, sysUser.email, sysUser.display_name, sysUser.display_name, hash, roleId]);
-
-            logger.info('Database', 'user_seeded', `Usuario ${sysUser.username} (${sysUser.email}) creado correctamente`);
-          } else {
-            // Asegurarse de que esté activo y resetear password a default en este ambiente demo
-            const hash = await hashPassword(sysUser.password);
-            db.run(`UPDATE users SET is_active = 1, password_hash = ? WHERE username = ? `, [hash, sysUser.username]);
-          }
-        } catch (userErr) {
-          logger.error('Database', 'seed_user_failed', `Error al procesar usuario ${sysUser.username} `, { error: userErr });
-        }
-      }
-
-      // 3. ACTUALIZACIÓN FORZADA DE NIVELES (Fuera del loop)
-      // 3. ACTUALIZACIÓN FORZADA DE NIVELES
-      db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
-      db.run(`UPDATE user_roles SET level = 80 WHERE name = 'contador'`);
-      db.run(`UPDATE user_roles SET level = 40 WHERE name = 'vendedor' OR name = 'sales'`);
-      db.run(`UPDATE user_roles SET level = 40 WHERE name = 'comprador' OR name = 'purchasing'`);
-      db.run(`UPDATE user_roles SET level = 20 WHERE name = 'auditor'`);
-      db.run(`UPDATE user_roles SET level = 10 WHERE name = 'viewer'`);
-      logger.info('Database', 'roles_updated', 'Niveles de roles de sistema verificados y actualizados');
-
-    } catch (error) {
-      logger.error('Database', 'seed_auth_failed', 'Error al realizar el seed de autenticación', { error });
-    }
-  };
 
   /**
    * Migra la propiedad de datos existentes al usuario Admin (ID 1)
@@ -3319,9 +3178,9 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
 
           // Verificar si tiene columna created_by
           const colInfo = db.exec(`PRAGMA table_info(${table})`);
-          const hasCreatedBy = colInfo[0]?.values.some((col: any) => col[1] === 'created_by');
+          const hascreatedBy = colInfo[0]?.values.some((col: any) => col[1] === 'created_by');
 
-          if (hasCreatedBy) {
+          if (hascreatedBy) {
             db.run(`UPDATE ${table} SET created_by = ? WHERE created_by IS NULL OR created_by = 0`, [adminId]);
             db.run(`UPDATE ${table} SET updated_by = ? WHERE updated_by IS NULL OR updated_by = 0`, [adminId]);
 
@@ -3359,7 +3218,7 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
 
       // 1.1 Métodos de Pago (Sin FK)
       db.run(`
-      INSERT INTO payment_methods(name, type, is_active, requires_reference) VALUES
+      INSERT OR IGNORE INTO payment_methods(method_name, method_type, is_active, requires_reference) VALUES
   ('Efectivo', 'cash', 1, 0),
   ('Transferencia Bancaria', 'bank_transfer', 1, 1),
   ('Cheque', 'check', 1, 1),
@@ -3369,13 +3228,13 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
 
       // 1.2 Datos de la Empresa (Sin FK)
       db.run(`
-      INSERT INTO company_data(
-      company_name, legal_name, address, city, state, zip_code, phone, email, tax_id,
-      fiscal_year_start, currency, timezone, date_format, is_active
+      INSERT OR IGNORE INTO company_data(
+      name, address, city, state, zip, phone, email, tax_id,
+      fiscal_year_start, currency_code, is_active
     ) VALUES(
-      'Account Express Demo Inc.', 'Account Express Demo Inc.', '100 Biscayne Blvd', 'Miami', 'FL', '33132', '(305) 555-0000',
-      'admin@accountexpress.com', 'US-DEMO-123',
-      '01-01', 'USD', 'America/New_York', 'MM/DD/YYYY', 1
+      'Mi Empresa LLC', '123 Main Street', 'Orlando', 'FL', '32801', '(407) 000-0000',
+      'admin@miempresa.com', '00-0000000',
+      '01-01', 'USD', 1
     )
       `);
 
@@ -3431,22 +3290,22 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
   (2, NULL, 'PAY-2024-002', '2024-01-25', 500.00, 'check', 'CHK-001234')
     `);
 
-      // Tasas de impuestos para condados principales (REPARACIÓN: Dedup)
+      // Tasas de impuestos para condados principales (REPARACIí“N: Dedup)
 
       // 1. Limpieza de duplicados existentes
       db.run(`DELETE FROM florida_tax_rates WHERE id NOT IN(SELECT MIN(id) FROM florida_tax_rates GROUP BY county_name)`);
 
       // 2. Asegurar unicidad futura
-      db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_florida_county ON florida_tax_rates(county_name)`);
+      db.run(`create UNIQUE INDEX IF NOT EXISTS idx_florida_county ON florida_tax_rates(county_name)`);
 
       // 3. Insertar solo si no existen
       db.run(`
-    INSERT OR IGNORE INTO florida_tax_rates(county_name, county_rate, total_rate) VALUES
-  ('Miami-Dade', 0.01, 0.07),
-  ('Orange', 0.005, 0.065),
-  ('Hillsborough', 0.0075, 0.0675),
-  ('Broward', 0.01, 0.07),
-  ('Palm Beach', 0.01, 0.07)
+    INSERT OR IGNORE INTO florida_tax_rates(county_name, county_code, surtax_rate, total_rate) VALUES
+  ('Miami-Dade', 'MIAMI-DADE', 100, 700),
+  ('Orange', 'ORANGE', 50, 650),
+  ('Hillsborough', 'HILLSBOROUGH', 75, 675),
+  ('Broward', 'BROWARD', 100, 700),
+  ('Palm Beach', 'PALM-BEACH', 100, 700)
     `);
 
       // Proveedores de ejemplo
@@ -3525,7 +3384,6 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
   (3, '1112', 0, 1605.00, 'Pago en efectivo/banco')
     `);
 
-      console.log('Sample data and Journal Entries inserted successfully');
     } catch (error) {
       console.error('Error inserting sample data:', error);
       throw error;
@@ -3533,7 +3391,6 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
       // PASO 3: Reactivar Foreign Keys
       // -------------------------------
       db.run(`PRAGMA foreign_keys = ON`);
-      console.log('✅ Foreign Keys reactivadas - Base de datos segura');
     }
   };
 
@@ -3550,7 +3407,6 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
   ('Servicios de Mantenimiento', 'Servicios de mantenimiento y soporte técnico', 0.00, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `);
 
-    console.log('Initial product categories inserted successfully');
   };
 
   // Insertar productos iniciales
@@ -3573,29 +3429,27 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
       ('SERV-004', 'Soporte Técnico', 'Servicios de soporte técnico y mantenimiento de sistemas', 120.00, 60.00, 5, 'hora', 1, 0, 0, 0, 0, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `);
 
-    console.log('Initial products inserted successfully');
   };
 
   const insertInitialTaxRates = async (): Promise<void> => {
     if (!db) return;
 
     db.run(`
-    INSERT INTO florida_tax_rates(county_name, state_rate, county_rate, total_rate) VALUES
-  ('Miami-Dade', 0.06, 0.005, 0.065),
-  ('Broward', 0.06, 0.00, 0.06),
-  ('Palm Beach', 0.06, 0.00, 0.06),
-  ('Orange', 0.06, 0.005, 0.065),
-  ('Hillsborough', 0.06, 0.005, 0.065),
-  ('Monroe', 0.06, 0.015, 0.075),
-  ('Duval', 0.06, 0.0075, 0.0675),
-  ('Pinellas', 0.06, 0.01, 0.07),
-  ('Lee', 0.06, 0.01, 0.07)
+    INSERT INTO florida_tax_rates(county_name, county_code, base_rate, surtax_rate, total_rate) VALUES
+  ('Miami-Dade', 'MIAMI-DADE', 600, 100, 700),
+  ('Broward', 'BROWARD', 600, 100, 700),
+  ('Palm Beach', 'PALM-BEACH', 600, 100, 700),
+  ('Orange', 'ORANGE', 600, 50, 650),
+  ('Hillsborough', 'HILLSBOROUGH', 600, 75, 675),
+  ('Monroe', 'MONROE', 600, 150, 750),
+  ('Duval', 'DUVAL', 600, 75, 675),
+  ('Pinellas', 'PINELLAS', 600, 100, 700),
+  ('Lee', 'LEE', 600, 100, 700)
     `);
 
-    console.log('Initial tax rates inserted successfully (2026 rates)');
   };
 
-  // Insertar configuraciones iniciales de n�mina
+  // Insertar configuraciones iniciales de nï¿½mina
   const insertInitialPayrollSettings = async (): Promise<void> => {
     if (!db) return;
 
@@ -3608,17 +3462,15 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
         ('medicare_tax_rate', '0.0145', 'taxes', 'Tasa Medicare'),
         ('pay_frequency', 'monthly', 'general', 'Frecuencia de pago por defecto'),
         ('overtime_rate', '1.5', 'general', 'Multiplicador para horas extras'),
-        ('company_name', 'Account Express Demo Inc.', 'general', 'Nombre de la empresa para reportes'),
-        ('ein_number', 'XX-XXXXXXX', 'general', 'N�mero de identificaci�n del empleador')
+        ('company_name', 'Mi Empresa LLC', 'general', 'Nombre de la empresa para reportes'),
+        ('ein_number', '00-0000000', 'general', 'Número de identificación del empleador')
       `);
-      console.log('Initial payroll settings inserted successfully');
     } catch (e) {
       console.error('Error inserting payroll settings:', e);
     }
   };
 
-  // Ejecutar procesos de inicialización/seeding
-  await seedUsersAndRoles();
+  // Ejecutar procesos de inicialización
   await migrateDataOwnership();
 
   // Verificar si ya existen categorías antes de insertar
@@ -3648,7 +3500,7 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
     }
   }
 
-  // Verificar si ya existen configuraciones de n�mina antes de insertar
+  // Verificar si ya existen configuraciones de nï¿½mina antes de insertar
   const payrollSettingsCount = db.exec("SELECT COUNT(*) FROM payroll_settings")[0]?.values[0]?.[0] || 0;
   if (payrollSettingsCount === 0) {
     await insertInitialPayrollSettings();
@@ -3668,26 +3520,7 @@ VALUES(?, ?, ?, ?, ?, ?, 1)
   logger.info('Database', 'initialization_complete', 'Esquema y datos iniciales verificados');
 };
 
-const setupAutoSave = (): void => {
-  if (!db) return;
-
-  setInterval(async () => {
-    try {
-      await saveDatabase();
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    }
-  }, BACKUP_INTERVAL);
-
-  // Guardar al cerrar la ventana
-  if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', () => {
-      saveDatabase().catch(console.error);
-    });
-  }
-
-  console.log('Auto-save configured');
-};
+// setupAutoSave is defined at line ~1836 (consolidated)
 
 // Guardar base de datos
 export const saveDatabase = async (): Promise<void> => {
@@ -3701,7 +3534,6 @@ export const saveDatabase = async (): Promise<void> => {
       try {
         const encrypted = await BasicEncryption.encrypt(data, currentPassword);
         data = BasicEncryption.combineEncryptedData(encrypted.encrypted, encrypted.salt, encrypted.iv);
-        console.log('Database encrypted before saving');
       } catch (error) {
         console.error('Encryption failed, saving unencrypted:', error);
       }
@@ -3722,17 +3554,50 @@ export const saveDatabase = async (): Promise<void> => {
       }
       await writable.write(dataBuffer);
       await writable.close();
-      console.log('Database saved to OPFS');
     } else {
       // Fallback a localStorage (comprimido)
       const compressed = await compressData(data);
       localStorage.setItem('accountexpress-db', compressed);
       localStorage.setItem('accountexpress-encrypted', encryptionEnabled.toString());
-      console.log('Database saved to localStorage (compressed)');
     }
   } catch (error) {
     console.error('Error saving database:', error);
   }
+};
+
+let saveTimeout: any = null;
+let saveResolvers: (() => void)[] = [];
+
+export const forceSaveDB = async (): Promise<void> => {
+  if (!db || typeof db.export !== 'function') return;
+
+  return new Promise<void>((resolve) => {
+    saveResolvers.push(resolve);
+
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+
+    saveTimeout = setTimeout(async () => {
+      try {
+        const currentResolvers = [...saveResolvers];
+        saveResolvers = [];
+
+        const data = db.export();
+        // Save to PersistenceLayer (IndexedDB)
+        const { saveDatabase: persistSave } = await import('./PersistenceLayer');
+        await persistSave(data);
+        logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente en IndexedDB (500ms debounce)');
+
+        currentResolvers.forEach(res => res());
+      } catch (e) {
+        logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
+        const currentResolvers = [...saveResolvers];
+        saveResolvers = [];
+        currentResolvers.forEach(res => res());
+      }
+    }, 500);
+  });
 };
 
 
@@ -3758,7 +3623,6 @@ export const changeEncryptionPassword = async (oldPassword: string, newPassword:
     // Guardar con nueva contraseña
     await saveDatabase();
 
-    console.log('Encryption password changed successfully');
     return true;
   } catch (error) {
     console.error('Error changing encryption password:', error);
@@ -3779,7 +3643,6 @@ export const enableEncryption = async (password: string): Promise<boolean> => {
     // Guardar base de datos cifrada
     await saveDatabase();
 
-    console.log('Encryption enabled successfully');
     return true;
   } catch (error) {
     console.error('Error enabling encryption:', error);
@@ -3802,7 +3665,6 @@ export const disableEncryption = async (password: string): Promise<boolean> => {
     // Guardar base de datos sin cifrar
     await saveDatabase();
 
-    console.log('Encryption disabled successfully');
     return true;
   } catch (error) {
     console.error('Error disabling encryption:', error);
@@ -3813,159 +3675,21 @@ export const disableEncryption = async (password: string): Promise<boolean> => {
 // Verificar si la base de datos está lista
 export const isDatabaseReady = (): boolean => {
   const ready = isInitialized && db !== null;
-  console.log('Database ready check:', { isInitialized, dbExists: !!db, ready });
   return ready;
 };
 
-export const addCustomer = async (customerData: Partial<Customer>, userId?: number): Promise<number> => {
-  logger.debug('CustomerModule', 'add_customer_start', 'Iniciando proceso de agregar cliente', { customerName: customerData.name });
-
-  if (!db) {
-    logger.error('CustomerModule', 'add_customer_failed', 'Base de datos no inicializada al intentar agregar cliente');
-    throw new Error('Database not initialized. Please wait for the system to load completely.');
-  }
-
-  // SANDBOX CHECK
-  await checkGuestRestriction(userId, 'customers', 'create');
-
-  try {
-    logger.debug('CustomerModule', 'add_customer_transaction', 'Iniciando transacción para agregar cliente');
-    // Iniciar transacción
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO customers(
-      name, business_name, document_type, document_number, business_type,
-      email, email_secondary, phone, phone_secondary,
-      address_line1, address_line2, city, state, zip_code, florida_county,
-      credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-      status, notes, updated_at, created_by, updated_by
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
-    `);
-
-    const values = [
-      customerData.name || '',
-      customerData.business_name || null,
-      customerData.document_type || 'SSN',
-      customerData.document_number || null,
-      customerData.business_type || null,
-      customerData.email || null,
-      customerData.email_secondary || null,
-      customerData.phone || null,
-      customerData.phone_secondary || null,
-      customerData.address_line1 || null,
-      customerData.address_line2 || null,
-      customerData.city || 'Miami',
-      customerData.state || 'FL',
-      customerData.zip_code || null,
-      customerData.florida_county || 'Miami-Dade',
-      customerData.credit_limit || 0,
-      customerData.payment_terms || 30,
-      customerData.tax_exempt ? 1 : 0, // Convert boolean to number
-      customerData.tax_id || null,
-      customerData.assigned_salesperson || null,
-      customerData.status || 'active',
-      customerData.notes || null,
-      userId || 1,
-      userId || 1
-    ];
-
-    stmt.run(values);
-
-    const insertResult = db.exec("SELECT last_insert_rowid() as id");
-    const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
-
-    stmt.free();
-
-    // Registrar en auditoría
-    await logAuditEvent('customers', insertId, 'INSERT', null, customerData, userId);
-
-    // Confirmar transacción
-    db.run('COMMIT');
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    logger.info('CustomerModule', 'add_customer_success', `Cliente agregado exitosamente con ID: ${insertId} `, {
-      customerId: insertId,
-      customerName: customerData.name,
-      customerEmail: customerData.email
-    });
-
-    return insertId;
-
-  } catch (error) {
-    logger.error('CustomerModule', 'add_customer_failed', `Error al agregar cliente: ${error instanceof Error ? error.message : 'Unknown error'} `, {
-      customerData: { name: customerData.name, email: customerData.email }
-    }, error as Error);
-    db?.run('ROLLBACK');
-    throw error;
-  }
+export const addCustomer = async (
+  customerData: Parameters<typeof _addCustomer>[0],
+  userId?: number
+): ReturnType<typeof _addCustomer> => {
+  return _addCustomer(customerData, userId);
 };
 
 // Obtener todos los clientes (con filtro opcional por usuario/rol para aislamiento)
-export const getCustomers = (filters?: { userId?: number, role?: string }): Customer[] => {
-  console.log('=== GETTING CUSTOMERS ===', filters);
-  console.log('Database initialized:', !!db);
-
-  if (!db) {
-    console.log('Database not initialized, returning empty array');
-    return [];
-  }
-
-  try {
-    let query = `
-SELECT
-id, name, business_name, document_type, document_number, business_type,
-  email, email_secondary, phone, phone_secondary,
-  address_line1, address_line2, city, state, zip_code, florida_county,
-  credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-  status, notes, created_at, updated_at
-      FROM customers 
-    `;
-
-    const params: any[] = [];
-
-    // Isolation Logic: Non-admin/audit/accountant users only see their own records
-    // Assuming 'sales' role should is restricted. 
-    // If role is NOT in system/privileged list, we filter.
-    const privilegedRoles = ['admin', 'accountant', 'auditor', 'viewer']; // Viewer sees all? Adjust per requirement. 
-    // User req: "Vendedor1 solo ve SUS registros". Viewer usually implies GLOBAL read only. 
-    // If requirement says "usuarios no-admin no ven datos de otros", we can be strict.
-    // Let's assume 'viewer' sees all for now, but 'sales'/'purchasing' are restricted.
-
-    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE created_by = ? `;
-      params.push(filters.userId);
-    }
-
-    query += ` ORDER BY created_at DESC`;
-
-    const result = db.exec(query, params);
-
-    console.log('Raw query result:', result);
-
-    // Convertir el resultado a array de objetos
-    const customers: Customer[] = [];
-
-    if (result && result.length > 0 && result[0].values) {
-      const columns = result[0].columns;
-      const values = result[0].values;
-
-      values.forEach((row: initSqlJs.SqlValue[]) => {
-        const customerObj = rowToEntity<Record<string, unknown>>(columns, row);
-        customers.push(processCustomerRow(customerObj));
-      });
-    }
-
-    console.log('Processed customers:', customers);
-    console.log('Customer count:', customers.length);
-    return customers;
-
-  } catch (error) {
-    console.error('Error getting customers:', error);
-    return [];
-  }
+export const getCustomers = (
+  filters?: Parameters<typeof _getCustomers>[0]
+): ReturnType<typeof _getCustomers> => {
+  return _getCustomers(filters);
 };
 
 // Función auxiliar para procesar una fila de cliente
@@ -3989,6 +3713,7 @@ const processCustomerRow = (row: Record<string, unknown>): Customer => {
     florida_county: String(row.florida_county || 'Miami-Dade'),
     credit_limit: Number(row.credit_limit || 0),
     payment_terms: Number(row.payment_terms || 30),
+    paymentCount: Number(row.payment_terms || 30),
     tax_exempt: Boolean(Number(row.tax_exempt)), // Convert from SQLite integer to boolean
     tax_id: row.tax_id ? String(row.tax_id) : undefined,
     assigned_salesperson: row.assigned_salesperson ? String(row.assigned_salesperson) : undefined,
@@ -3999,201 +3724,32 @@ const processCustomerRow = (row: Record<string, unknown>): Customer => {
   };
 };
 
-export const getCustomerById = (id: number): Customer | null => {
-  if (!db) return null;
-
-  try {
-    const result = db.exec(`
-SELECT
-id, name, business_name, document_type, document_number, business_type,
-  email, email_secondary, phone, phone_secondary,
-  address_line1, address_line2, city, state, zip_code, florida_county,
-  credit_limit, payment_terms, tax_exempt, tax_id, assigned_salesperson,
-  status, notes, created_at, updated_at
-      FROM customers 
-      WHERE id = ${id}
-`);
-
-    if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
-      const columns = result[0].columns;
-      const row = result[0].values[0];
-
-      const customerObj: any = {};
-      columns.forEach((col: string, index: number) => {
-        customerObj[col] = row[index];
-      });
-
-      return processCustomerRow(customerObj);
-    }
-
-    return null;
-
-  } catch (error) {
-    console.error('Error getting customer by ID:', error);
-    return null;
-  }
+export const getCustomerById = (
+  id: Parameters<typeof _getCustomerById>[0]
+): ReturnType<typeof _getCustomerById> => {
+  return _getCustomerById(id);
 };
 
-export const updateCustomer = (id: number, customerData: Partial<Customer>, userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Obtener valores anteriores para auditoría
-    const oldCustomer = getCustomerById(id);
-    if (!oldCustomer) {
-      return { success: false, message: 'Cliente no encontrado' };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      UPDATE customers 
-      SET name = ?, business_name = ?, document_type = ?, document_number = ?, business_type = ?,
-  email = ?, email_secondary = ?, phone = ?, phone_secondary = ?,
-  address_line1 = ?, address_line2 = ?, city = ?, state = ?, zip_code = ?, florida_county = ?,
-  credit_limit = ?, payment_terms = ?, tax_exempt = ?, tax_id = ?, assigned_salesperson = ?,
-  status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-    WHERE id = ?
-      `);
-
-    const values = [
-      customerData.name || oldCustomer.name,
-      customerData.business_name || oldCustomer.business_name || null,
-      customerData.document_type || oldCustomer.document_type,
-      customerData.document_number || oldCustomer.document_number,
-      customerData.business_type || oldCustomer.business_type || null,
-      customerData.email || oldCustomer.email,
-      customerData.email_secondary || oldCustomer.email_secondary || null,
-      customerData.phone || oldCustomer.phone,
-      customerData.phone_secondary || oldCustomer.phone_secondary || null,
-      customerData.address_line1 || oldCustomer.address_line1,
-      customerData.address_line2 || oldCustomer.address_line2 || null,
-      customerData.city || oldCustomer.city,
-      customerData.state || oldCustomer.state,
-      customerData.zip_code || oldCustomer.zip_code,
-      customerData.florida_county || oldCustomer.florida_county,
-      customerData.credit_limit !== undefined ? customerData.credit_limit : oldCustomer.credit_limit,
-      customerData.payment_terms !== undefined ? customerData.payment_terms : oldCustomer.payment_terms,
-      customerData.tax_exempt !== undefined ? (customerData.tax_exempt ? 1 : 0) : (oldCustomer.tax_exempt ? 1 : 0), // Convert boolean to number
-      customerData.tax_id || oldCustomer.tax_id || null,
-      customerData.assigned_salesperson || oldCustomer.assigned_salesperson || null,
-      customerData.status || oldCustomer.status,
-      customerData.notes || oldCustomer.notes || null,
-      userId || 1,
-      id
-    ];
-
-    stmt.run(values);
-    const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
-    stmt.free();
-
-    if (changes === 0) {
-      db.run('ROLLBACK');
-      return { success: false, message: 'No se realizaron cambios' };
-    }
-
-    // Registrar en auditoría
-    logAuditEvent('customers', id, 'UPDATE', oldCustomer, customerData, userId);
-
-    db.run('COMMIT');
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    console.log(`Customer ${id} updated successfully`);
-    return { success: true, message: `Cliente "${customerData.name || oldCustomer.name}" actualizado correctamente` };
-
-  } catch (error) {
-    db?.run('ROLLBACK');
-    console.error('Error updating customer:', error);
-    return { success: false, message: `Error al actualizar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
-  }
+export const updateCustomer = (
+  id: Parameters<typeof _updateCustomer>[0],
+  customerData: Parameters<typeof _updateCustomer>[1],
+  userId?: number
+): ReturnType<typeof _updateCustomer> => {
+  return _updateCustomer(id, customerData, userId);
 };
 
 // Verificar si un cliente puede ser eliminado
-export const canDeleteCustomer = (customerId: number): { canDelete: boolean; reason?: string } => {
-  if (!db) return { canDelete: false, reason: 'Database not initialized' };
-
-  try {
-    // Verificar si tiene facturas
-    const invoiceCheck = db.exec(`
-      SELECT COUNT(*) as count FROM invoices WHERE customer_id = ${customerId}
-`);
-    const invoiceCount = invoiceCheck[0]?.values[0]?.[0] as number || 0;
-
-    if (invoiceCount > 0) {
-      return {
-        canDelete: false,
-        reason: `El cliente tiene ${invoiceCount} factura(s) asociada(s).No se puede eliminar.`
-      };
-    }
-
-    // Verificar si tiene pagos
-    const paymentCheck = db.exec(`
-      SELECT COUNT(*) as count FROM payments WHERE customer_id = ${customerId}
-`);
-    const paymentCount = paymentCheck[0]?.values[0]?.[0] as number || 0;
-
-    if (paymentCount > 0) {
-      return {
-        canDelete: false,
-        reason: `El cliente tiene ${paymentCount} pago(s) registrado(s).No se puede eliminar.`
-      };
-    }
-
-    return { canDelete: true };
-
-  } catch (error) {
-    console.error('Error checking if customer can be deleted:', error);
-    return { canDelete: false, reason: 'Error al verificar las dependencias del cliente' };
-  }
+export const canDeleteCustomer = (
+  customerId: Parameters<typeof _canDeleteCustomer>[0]
+): ReturnType<typeof _canDeleteCustomer> => {
+  return _canDeleteCustomer(customerId);
 };
 
-export const deleteCustomer = (id: number, userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar si se puede eliminar
-    const deleteCheck = canDeleteCustomer(id);
-    if (!deleteCheck.canDelete) {
-      return { success: false, message: deleteCheck.reason || 'No se puede eliminar el cliente' };
-    }
-
-    // Obtener datos del cliente para auditoría antes de eliminar
-    const customer = getCustomerById(id);
-    if (!customer) {
-      return { success: false, message: 'Cliente no encontrado' };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    // Eliminar cliente
-    const stmt = db.prepare('DELETE FROM customers WHERE id = ?');
-    stmt.run([id]);
-    const changes = db.exec('SELECT changes() as changes')[0]?.values[0]?.[0] as number || 0;
-    stmt.free();
-
-    if (changes === 0) {
-      db.run('ROLLBACK');
-      return { success: false, message: 'No se pudo eliminar el cliente' };
-    }
-
-    // Registrar en auditoría
-    logAuditEvent('customers', id, 'DELETE', customer, null, userId);
-
-    db.run('COMMIT');
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    console.log(`Customer ${id} deleted successfully`);
-    return { success: true, message: `Cliente "${customer.name}" eliminado correctamente` };
-
-  } catch (error) {
-    db?.run('ROLLBACK');
-    console.error('Error deleting customer:', error);
-    return { success: false, message: `Error al eliminar el cliente: ${error instanceof Error ? error.message : 'Error desconocido'} ` };
-  }
+export const deleteCustomer = (
+  id: Parameters<typeof _deleteCustomer>[0],
+  userId?: number
+): ReturnType<typeof _deleteCustomer> => {
+  return _deleteCustomer(id, userId);
 };
 
 // Función de auditoría mejorada
@@ -4309,7 +3865,7 @@ const generateAuditHash = async (auditData: any): Promise<string> => {
 // Función auxiliar para hash síncrono (para funciones no async)
 
 
-const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any, userId?: number): Promise<void> => {
+export const logAuditEvent = async (tableName: string, recordId: number, action: string, oldValues: any, newValues: any, userId?: number): Promise<void> => {
   if (!db) return;
 
   try {
@@ -4324,7 +3880,7 @@ const logAuditEvent = async (tableName: string, recordId: number, action: string
       userId: userId || 1
     };
 
-    // 🚀 Objective 1: NASA Level Total Hash Coverage
+    // ðŸš€ Objective 1: NASA Level Total Hash Coverage
     // Automatizamos el sellado de CUALQUIER cambio en el sistema
     await DatabaseService.sealGenericRecord({
       tableName,
@@ -4431,7 +3987,6 @@ export const createBackup = async (): Promise<string> => {
     const timestamp = new Date().toISOString();
     localStorage.setItem('accountexpress-last-backup', timestamp);
 
-    console.log('Manual backup created at:', timestamp);
     return timestamp;
   } catch (error) {
     console.error('Error creating backup:', error);
@@ -4458,573 +4013,84 @@ export const getStats = () => {
 };
 
 // Condados de Florida para el dropdown
-export const FLORIDA_COUNTIES = [
-  'Alachua', 'Baker', 'Bay', 'Bradford', 'Brevard', 'Broward', 'Calhoun',
-  'Charlotte', 'Citrus', 'Clay', 'Collier', 'Columbia', 'DeSoto', 'Dixie',
-  'Duval', 'Escambia', 'Flagler', 'Franklin', 'Gadsden', 'Gilchrist',
-  'Glades', 'Gulf', 'Hamilton', 'Hardee', 'Hendry', 'Hernando', 'Highlands',
-  'Hillsborough', 'Holmes', 'Indian River', 'Jackson', 'Jefferson', 'Lafayette',
-  'Lake', 'Lee', 'Leon', 'Levy', 'Liberty', 'Madison', 'Manatee', 'Marion',
-  'Martin', 'Miami-Dade', 'Monroe', 'Nassau', 'Okaloosa', 'Okeechobee',
-  'Orange', 'Osceola', 'Palm Beach', 'Pasco', 'Pinellas', 'Polk', 'Putnam',
-  'Santa Rosa', 'Sarasota', 'Seminole', 'St. Johns', 'St. Lucie', 'Sumter',
-  'Suwannee', 'Taylor', 'Union', 'Volusia', 'Wakulla', 'Walton', 'Washington'
-];
-
-// ==========================================
-// FUNCIONES CRUD PARA FACTURAS
-// ==========================================
-
-// Generar número de factura automático
-export const generateInvoiceNumber = (): string => {
-  if (!db) throw new Error('Database not initialized');
-
-  try {
-    const result = db.exec("SELECT COUNT(*) as count FROM invoices");
-    const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
-    const year = new Date().getFullYear();
-    return `INV - ${year} -${count.toString().padStart(4, '0')} `;
-  } catch (error) {
-    console.error('Error generating invoice number:', error);
-    const timestamp = Date.now().toString().slice(-6);
-    return `INV - ${new Date().getFullYear()} -${timestamp} `;
-  }
-};
+export const FLORIDA_COUNTIES = _FLORIDA_COUNTIES;
 
 // Obtener todas las facturas con información del cliente
 // Obtener todas las facturas con información del cliente y aislamiento
-export const getInvoices = (filters?: { userId?: number, role?: string }): Invoice[] => {
-  if (!db) return [];
-
-  try {
-    let query = `
-SELECT
-i.*,
-  c.name as customer_name,
-  c.business_name as customer_business_name,
-  c.email as customer_email
-      FROM invoices i
-      LEFT JOIN customers c ON i.customer_id = c.id
-  `;
-
-    const params: any[] = [];
-    if (filters?.userId && filters?.role && !PRIVILEGED_ROLES.includes(filters.role)) {
-      query += ` WHERE i.created_by = ? `;
-      params.push(filters.userId);
-    }
-
-    query += ` ORDER BY i.created_at DESC`;
-
-    const result = db.exec(query, params);
-
-    if (!result[0]) return [];
-
-    const invoices: Invoice[] = [];
-    const columns = result[0].columns;
-
-    result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
-      const invoice = rowToEntity<Invoice & { customer_name: string; customer_business_name: string; customer_email: string }>(columns, row);
-
-      // Agregar información del cliente
-      invoice.customer = {
-        name: invoice.customer_name,
-        business_name: invoice.customer_business_name,
-        email: invoice.customer_email
-      } as Customer;
-
-      invoices.push(invoice);
-    });
-
-    return invoices;
-  } catch (error) {
-    console.error('Error getting invoices:', error);
-    return [];
-  }
+export const getInvoices = (
+  filters?: Parameters<typeof _getInvoices>[0]
+): ReturnType<typeof _getInvoices> => {
+  return _getInvoices(filters);
 };
 
 // Obtener factura por ID con líneas de factura
-export const getInvoiceById = (id: number): Invoice | null => {
-  if (!db) return null;
-
-  try {
-    // Obtener factura principal
-    const invoiceResult = db.exec(`
-SELECT
-i.*,
-  c.name as customer_name,
-  c.business_name as customer_business_name,
-  c.email as customer_email,
-  c.phone as customer_phone,
-  c.address_line1 as customer_address,
-  c.city as customer_city,
-  c.state as customer_state,
-  c.zip_code as customer_zip
-      FROM invoices i
-      LEFT JOIN customers c ON i.customer_id = c.id
-      WHERE i.id = ?
-  `, [id]);
-
-    if (!invoiceResult[0] || invoiceResult[0].values.length === 0) return null;
-
-    const invoiceRow = invoiceResult[0].values[0];
-    const columns = invoiceResult[0].columns;
-
-    const invoice: any = {};
-    columns.forEach((col: any, index: any) => {
-      invoice[col] = invoiceRow[index];
-    });
-
-    // Agregar información del cliente
-    invoice.customer = {
-      name: invoice.customer_name,
-      business_name: invoice.customer_business_name,
-      email: invoice.customer_email,
-      phone: invoice.customer_phone,
-      address_line1: invoice.customer_address,
-      city: invoice.customer_city,
-      state: invoice.customer_state,
-      zip_code: invoice.customer_zip
-    };
-
-    // Obtener líneas de factura
-    const itemsResult = db.exec(`
-      SELECT
-il.*,
-  p.name as product_name,
-  p.sku as product_sku
-      FROM invoice_lines il
-      LEFT JOIN products p ON il.product_id = p.id
-      WHERE il.invoice_id = ?
-  ORDER BY il.id
-    `, [id]);
-
-    invoice.items = [];
-    if (itemsResult[0]) {
-      const itemColumns = itemsResult[0].columns;
-      itemsResult[0].values.forEach((itemRow: any) => {
-        const item: any = {};
-        itemColumns.forEach((col: any, index: any) => {
-          item[col] = itemRow[index];
-        });
-
-        if (item.product_id) {
-          item.product = {
-            name: item.product_name,
-            sku: item.product_sku
-          };
-        }
-
-        invoice.items.push(item);
-      });
-    }
-
-    return invoice as Invoice;
-  } catch (error) {
-    console.error('Error getting invoice by ID:', error);
-    return null;
-  }
+export const getInvoiceById = (
+  id: Parameters<typeof _getInvoiceById>[0]
+): ReturnType<typeof _getInvoiceById> => {
+  return _getInvoiceById(id);
 };
 
 // Crear nueva factura
-export const createInvoice = (invoiceData: Partial<Invoice>, items: Partial<InvoiceItem>[], userId?: number): { success: boolean; message: string; invoiceId?: number } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Validaciones básicas
-    if (!invoiceData.customer_id) {
-      return { success: false, message: 'Customer ID is required' };
-    }
-
-    if (!items || items.length === 0) {
-      return { success: false, message: 'At least one item is required' };
-    }
-
-    // Validar bloqueo de periodos
-    const issueDateStr = invoiceData.issue_date || new Date().toISOString().split('T')[0];
-    if (isDateLocked(issueDateStr)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
-    }
-
-    // Generar número de factura si no se proporciona
-    const invoiceNumber = invoiceData.invoice_number || generateInvoiceNumber();
-
-    // Obtener condado del cliente para cálculo de impuestos
-    const customer = getCustomerById(invoiceData.customer_id);
-    const county = customer?.florida_county || 'Miami-Dade';
-
-    // Calcular totales usando tasa dinámica
-    let subtotal = 0;
-    let taxAmount = 0;
-
-    items.forEach(item => {
-      const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
-      subtotal += lineTotal;
-      if (item.taxable) {
-        taxAmount += lineTotal * getFloridaTaxRate(county); // Usar tasa dinámica por condado
-      }
-    });
-
-    const total = subtotal + taxAmount;
-
-    // Insertar factura principal
-    const stmt = db.prepare(`
-      INSERT INTO invoices(
-      invoice_number, customer_id, issue_date, due_date,
-      subtotal, tax_amount, total_amount, status, notes,
-      created_by, updated_by
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-
-    const issueDate = invoiceData.issue_date || new Date().toISOString().split('T')[0];
-    const dueDate = invoiceData.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    stmt.run([
-      invoiceNumber,
-      invoiceData.customer_id,
-      issueDate,
-      dueDate,
-      subtotal,
-      taxAmount,
-      total,
-      invoiceData.status || 'draft',
-      invoiceData.notes || '',
-      userId || 1,
-      userId || 1
-    ]);
-
-    const invoiceId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-
-    // Insertar líneas de factura
-    const itemStmt = db.prepare(`
-      INSERT INTO invoice_lines(
-        invoice_id, product_id, description, quantity, unit_price, line_total, taxable
-      ) VALUES(?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    items.forEach(item => {
-      const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
-      itemStmt.run([
-        invoiceId,
-        item.product_id || null,
-        item.description || '',
-        item.quantity || 1,
-        item.unit_price || 0,
-        lineTotal,
-        item.taxable ? 1 : 0
-      ]);
-    });
-
-    // Registrar en auditoría
-    logAuditAction('invoices', invoiceId, 'INSERT', null, {
-      invoice_number: invoiceNumber,
-      customer_id: invoiceData.customer_id,
-      total_amount: total,
-      status: invoiceData.status || 'draft'
-    }, userId);
-
-    // GENERAR ASIENTO CONTABLE AUTOMÁTICO (DOBLE ENTRADA)
-    if (invoiceData.status === 'sent' || invoiceData.status === 'paid') {
-      const fullInvoice = getInvoiceById(invoiceId);
-      if (fullInvoice) {
-        const journalResult = generateSalesJournalEntry(fullInvoice, userId);
-        if (!journalResult.success) {
-          console.warn('Warning: Could not generate journal entry for invoice:', journalResult.message);
-        } else {
-          console.log('Journal entry created for invoice:', journalResult.entryId);
-        }
-      }
-    }
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return {
-      success: true,
-      message: `Invoice ${invoiceNumber} created successfully`,
-      invoiceId
-    };
-
-  } catch (error) {
-    console.error('Error creating invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error creating invoice'
-    };
-  }
+export const createInvoice = (
+  invoiceData: Parameters<typeof _createInvoice>[0],
+  items: Parameters<typeof _createInvoice>[1],
+  userId?: number
+): ReturnType<typeof _createInvoice> => {
+  return _createInvoice(invoiceData, items, userId);
 };
 
 // Actualizar factura
-export const updateInvoice = (id: number, invoiceData: Partial<Invoice>, items?: Partial<InvoiceItem>[], userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Obtener factura actual para auditoría
-    const currentInvoice = getInvoiceById(id);
-    if (!currentInvoice) {
-      return { success: false, message: 'Invoice not found' };
-    }
-
-    // Validar bloqueo de periodos - usar fecha de la factura actual o la nueva si se está actualizando
-    const dateToCheck = invoiceData.issue_date || currentInvoice.issue_date;
-    if (isDateLocked(dateToCheck)) {
-      return { success: false, message: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.' };
-    }
-
-    // Actualizar factura principal
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
-
-    if (invoiceData.issue_date !== undefined) {
-      updateFields.push('issue_date = ?');
-      updateValues.push(invoiceData.issue_date);
-    }
-
-    if (invoiceData.due_date !== undefined) {
-      updateFields.push('due_date = ?');
-      updateValues.push(invoiceData.due_date);
-    }
-
-    if (invoiceData.status !== undefined) {
-      updateFields.push('status = ?');
-      updateValues.push(invoiceData.status);
-    }
-
-    if (invoiceData.notes !== undefined) {
-      updateFields.push('notes = ?');
-      updateValues.push(invoiceData.notes);
-    }
-
-    if (updateFields.length > 0) {
-      updateFields.push('updated_at = CURRENT_TIMESTAMP');
-      updateFields.push('updated_by = ?');
-      updateValues.push(userId || 1);
-      updateValues.push(id);
-
-      const updateQuery = `UPDATE invoices SET ${updateFields.join(', ')} WHERE id = ? `;
-      db.exec(updateQuery, updateValues);
-    }
-
-    // Si se proporcionan items, actualizar líneas de factura
-    if (items) {
-      // Eliminar líneas existentes
-      db.exec('DELETE FROM invoice_lines WHERE invoice_id = ?', [id]);
-
-      // Insertar nuevas líneas
-      let subtotal = 0;
-      let taxAmount = 0;
-
-      const itemStmt = db.prepare(`
-        INSERT INTO invoice_lines(
-        invoice_id, product_id, description, quantity, unit_price, line_total, taxable
-      ) VALUES(?, ?, ?, ?, ?, ?, ?)
-        `);
-
-      // Obtener condado para recálculo de impuestos
-      const invoice = getInvoiceById(id);
-      const county = invoice?.customer?.florida_county || 'Miami-Dade';
-      const taxRate = getFloridaTaxRate(county);
-
-      items.forEach(item => {
-        const lineTotal = (item.quantity || 1) * (item.unit_price || 0);
-        subtotal += lineTotal;
-        if (item.taxable) {
-          taxAmount += lineTotal * taxRate;
-        }
-
-        itemStmt.run([
-          id,
-          item.product_id || null,
-          item.description || '',
-          item.quantity || 1,
-          item.unit_price || 0,
-          lineTotal,
-          item.taxable ? 1 : 0
-        ]);
-      });
-
-      // Actualizar totales
-      const total = subtotal + taxAmount;
-      db.exec(`
-        UPDATE invoices 
-        SET subtotal = ?, tax_amount = ?, total_amount = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ?
-  WHERE id = ?
-    `, [subtotal, taxAmount, total, userId || 1, id]);
-    }
-
-    // Registrar en auditoría
-    logAuditAction('invoices', id, 'UPDATE', currentInvoice, invoiceData, userId);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return { success: true, message: 'Invoice updated successfully' };
-
-  } catch (error) {
-    console.error('Error updating invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error updating invoice'
-    };
-  }
+export const updateInvoice = (
+  id: Parameters<typeof _updateInvoice>[0],
+  invoiceData: Parameters<typeof _updateInvoice>[1],
+  items?: Parameters<typeof _updateInvoice>[2],
+  userId?: number
+): ReturnType<typeof _updateInvoice> => {
+  return _updateInvoice(id, invoiceData, items, userId);
 };
 
 // Eliminar factura
-export const deleteInvoice = (id: number, userId?: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar si la factura existe
-    const invoice = getInvoiceById(id);
-    if (!invoice) {
-      return { success: false, message: 'Invoice not found' };
-    }
-
-    // Verificar si la factura está pagada (no se puede eliminar)
-    if (invoice.status === 'paid') {
-      return { success: false, message: 'Cannot delete paid invoices' };
-    }
-
-    // Eliminar líneas de factura primero (por foreign key)
-    db.exec('DELETE FROM invoice_lines WHERE invoice_id = ?', [id]);
-
-    // Eliminar factura
-    db.exec('DELETE FROM invoices WHERE id = ?', [id]);
-
-    // Registrar en auditoría
-    logAuditAction('invoices', id, 'DELETE', invoice, null, userId);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return { success: true, message: 'Invoice deleted successfully' };
-
-  } catch (error) {
-    console.error('Error deleting invoice:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Error deleting invoice'
-    };
-  }
+export const deleteInvoice = (
+  id: Parameters<typeof _deleteInvoice>[0],
+  userId?: number
+): ReturnType<typeof _deleteInvoice> => {
+  return _deleteInvoice(id, userId);
 };
 
 // Obtener productos activos para el formulario de factura
-export const getActiveProducts = (): Product[] => {
-  if (!db) return [];
-
-  try {
-    const result = db.exec(`
-      SELECT * FROM products 
-      WHERE active = 1 
-      ORDER BY name
-  `);
-
-    if (!result[0]) return [];
-
-    const products: Product[] = [];
-    const columns = result[0].columns;
-
-    result[0].values.forEach((row: any) => {
-      const product: any = {};
-      columns.forEach((col: any, index: any) => {
-        product[col] = row[index];
-      });
-      products.push(product as Product);
-    });
-
-    return products;
-  } catch (error) {
-    console.error('Error getting active products:', error);
-    return [];
-  }
+export const getActiveProducts = (): ReturnType<typeof _getActiveProducts> => {
+  return _getActiveProducts();
 };
 
 // Calcular tasa de impuesto por condado de Florida dinámicamente
-export const getFloridaTaxRate = (county: string): number => {
-  if (!db) return 0.06; // Tasa base por defecto
-
-  try {
-    const result = db.exec(`
-      SELECT total_rate FROM florida_tax_rates 
-      WHERE county_name = ?
-  ORDER BY effective_date DESC 
-      LIMIT 1
-  `, [county]);
-
-    if (result && result.length > 0 && result[0].values.length > 0) {
-      return Number(result[0].values[0][0]) || 0.06;
-    }
-  } catch (error) {
-    console.error('Error getting tax rate for county:', county, error);
-  }
-
-  // Tasas de respaldo por condado de Florida (Seguir datos de insertInitialTaxRates)
-  const fallbackRates: Record<string, number> = {
-    'Miami-Dade': 0.07,
-    'Broward': 0.07,
-    'Orange': 0.065,
-    'Hillsborough': 0.075,
-    'Palm Beach': 0.07,
-    'Pinellas': 0.07,
-    'Duval': 0.075,
-    'Lee': 0.065,
-    'Polk': 0.07,
-    'Brevard': 0.07,
-    'Monroe': 0.075
-  };
-
-  return fallbackRates[county] || 0.06; // 6% tasa base de Florida
+export const getFloridaTaxRate = (
+  county: Parameters<typeof _getFloridaTaxRate>[0]
+): ReturnType<typeof _getFloridaTaxRate> => {
+  return _getFloridaTaxRate(county);
 };
 
 // Función mejorada para calcular impuestos con condado específico
-export const calculateTaxAmount = (subtotal: number, county: string = 'Miami-Dade', taxableItems: boolean = true): { taxAmount: number; taxRate: number } => {
-  if (!taxableItems || subtotal <= 0) {
-    return { taxAmount: 0, taxRate: 0 };
-  }
-
-  const taxRate = getFloridaTaxRate(county);
-  const taxAmount = subtotal * taxRate;
-
-  return {
-    taxAmount: Math.round(taxAmount * 100) / 100, // Redondear a 2 decimales
-    taxRate
-  };
+export const calculateTaxAmount = (
+  subtotal: Parameters<typeof _calculateTaxAmount>[0],
+  county?: Parameters<typeof _calculateTaxAmount>[1],
+  taxableItems?: Parameters<typeof _calculateTaxAmount>[2]
+): ReturnType<typeof _calculateTaxAmount> => {
+  return _calculateTaxAmount(subtotal, county, taxableItems);
 };
 
 // Función para validar integridad de cálculos financieros
-export const validateFinancialCalculation = (subtotal: number, taxAmount: number, total: number, county: string): boolean => {
-  const calculated = calculateTaxAmount(subtotal, county);
-  const expectedTotal = subtotal + calculated.taxAmount;
-
-  // Tolerancia de 1 centavo para errores de redondeo
-  const tolerance = 0.01;
-
-  return Math.abs(total - expectedTotal) <= tolerance &&
-    Math.abs(taxAmount - calculated.taxAmount) <= tolerance;
+export const validateFinancialCalculation = (
+  subtotal: Parameters<typeof _validateFinancialCalculation>[0],
+  taxAmount: Parameters<typeof _validateFinancialCalculation>[1],
+  total: Parameters<typeof _validateFinancialCalculation>[2],
+  county: Parameters<typeof _validateFinancialCalculation>[3]
+): ReturnType<typeof _validateFinancialCalculation> => {
+  return _validateFinancialCalculation(subtotal, taxAmount, total, county);
 };
 
 // Actualizar estadísticas para incluir facturas
-export const getStatsWithInvoices = () => {
-  if (!db) return { customers: 0, invoices: 0, revenue: 0 };
-
-  try {
-    const customerResult = db.exec("SELECT COUNT(*) as count FROM customers");
-    const invoiceResult = db.exec("SELECT COUNT(*) as count FROM invoices");
-    const revenueResult = db.exec("SELECT SUM(total_amount) as total FROM invoices WHERE status = 'paid'");
-
-    const customerCount = customerResult[0]?.values[0]?.[0] as number || 0;
-    const invoiceCount = invoiceResult[0]?.values[0]?.[0] as number || 0;
-    const revenue = revenueResult[0]?.values[0]?.[0] as number || 0;
-
-    return {
-      customers: customerCount,
-      invoices: invoiceCount,
-      revenue: revenue
-    };
-
-  } catch (error) {
-    console.error('Error getting stats with invoices:', error);
-    return { customers: 0, invoices: 0, revenue: 0 };
-  }
+export const getStatsWithInvoices = (): ReturnType<typeof _getStatsWithInvoices> => {
+  return _getStatsWithInvoices();
 };
 
 // ==========================================
@@ -5068,7 +4134,7 @@ export const getQuotes = (filters?: { userId?: number; role?: string; status?: s
     const result = db.exec(query, params);
     if (!result[0]) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Quote>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Quote>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting quotes:', error);
     return [];
@@ -5076,7 +4142,7 @@ export const getQuotes = (filters?: { userId?: number; role?: string; status?: s
 };
 
 /**
- * Obtiene una cotizaci�n por ID con sus l�neas
+ * Obtiene una cotizaciï¿½n por ID con sus lï¿½neas
  */
 export const getQuoteById = (id: number): Quote | null => {
   if (!db) return null;
@@ -5091,9 +4157,9 @@ export const getQuoteById = (id: number): Quote | null => {
 
     if (!quoteResult[0] || quoteResult[0].values.length === 0) return null;
 
-    const quote = rowToEntity<Quote>(quoteResult[0].columns, quoteResult[0].values[0]);
+    const quote = rowToEntity<Quote>((quoteResult[0].columns || (quoteResult[0] as any).lc), quoteResult[0].values[0]);
 
-    // Obtener l�neas de cotizaci�n
+    // Obtener lï¿½neas de cotizaciï¿½n
     const linesResult = db.exec(`
       SELECT ql.*, p.name as product_name, p.sku
       FROM quote_lines ql
@@ -5103,7 +4169,7 @@ export const getQuoteById = (id: number): Quote | null => {
 
     if (linesResult[0]) {
       quote.items = linesResult[0].values.map((row: any) =>
-        rowToEntity<QuoteLine>(linesResult[0].columns, row)
+        rowToEntity<QuoteLine>((linesResult[0].columns || (linesResult[0] as any).lc), row)
       );
     }
 
@@ -5115,7 +4181,7 @@ export const getQuoteById = (id: number): Quote | null => {
 };
 
 /**
- * Crea una nueva cotizaci�n
+ * Crear una nueva cotización
  */
 export const createQuote = (
   quoteData: Partial<Quote>,
@@ -5134,10 +4200,10 @@ export const createQuote = (
       return { success: false, message: 'At least one item is required' };
     }
 
-    // Generar n�mero de cotizaci�n
+    // Generar nï¿½mero de cotizaciï¿½n
     const quoteNumber = quoteData.quote_number || generateQuoteNumber();
 
-    // Obtener condado del cliente para c�lculo de impuestos
+    // Obtener condado del cliente para cï¿½lculo de impuestos
     const customer = getCustomerById(quoteData.customer_id);
     const county = customer?.florida_county || 'Miami-Dade';
 
@@ -5156,7 +4222,7 @@ export const createQuote = (
 
     const total = subtotal + taxAmount;
 
-    // Insertar cotizaci�n
+    // Insertar cotizaciï¿½n
     db.run('BEGIN TRANSACTION');
 
     const stmt = db.prepare(`
@@ -5189,7 +4255,7 @@ export const createQuote = (
     const quoteId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
     stmt.free();
 
-    // Insertar l�neas de cotizaci�n
+    // Insertar lï¿½neas de cotizaciï¿½n
     const itemStmt = db.prepare(`
       INSERT INTO quote_lines(
         quote_id, product_id, description, quantity, unit_price, 
@@ -5215,7 +4281,7 @@ export const createQuote = (
 
     db.run('COMMIT');
 
-    // Registrar en auditor�a
+    // Registrar en auditorï¿½a
     logAuditAction('quotes', quoteId, 'INSERT', null, {
       quote_number: quoteNumber,
       customer_id: quoteData.customer_id,
@@ -5228,7 +4294,7 @@ export const createQuote = (
 
     return {
       success: true,
-      message: `Cotizaci�n ${quoteNumber} creada exitosamente`,
+      message: `Cotización ${quoteNumber} creada exitosamente`,
       quoteId
     };
 
@@ -5243,7 +4309,7 @@ export const createQuote = (
 };
 
 /**
- * Actualiza una cotizaci�n existente
+ * Actualiza una cotizaciï¿½n existente
  */
 export const updateQuote = (
   id: number,
@@ -5266,7 +4332,7 @@ export const updateQuote = (
 
     db.run('BEGIN TRANSACTION');
 
-    // Actualizar cotizaci�n principal
+    // Actualizar cotizaciï¿½n principal
     const updateFields: string[] = [];
     const updateValues: any[] = [];
 
@@ -5305,9 +4371,9 @@ export const updateQuote = (
       db.run(updateQuery, updateValues);
     }
 
-    // Si se proporcionan items, actualizar l�neas
+    // Si se proporcionan items, actualizar lï¿½neas
     if (items) {
-      // Eliminar l�neas existentes
+      // Eliminar lï¿½neas existentes
       db.run('DELETE FROM quote_lines WHERE quote_id = ?', [id]);
 
       // Recalcular totales
@@ -5358,13 +4424,13 @@ export const updateQuote = (
 
     db.run('COMMIT');
 
-    // Registrar en auditor�a
+    // Registrar en auditorï¿½a
     logAuditAction('quotes', id, 'UPDATE', currentQuote, quoteData, userId);
 
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Cotizaci�n actualizada exitosamente' };
+    return { success: true, message: 'Cotizaciï¿½n actualizada exitosamente' };
 
   } catch (error) {
     db?.run('ROLLBACK');
@@ -5377,7 +4443,7 @@ export const updateQuote = (
 };
 
 /**
- * Elimina una cotizaci�n
+ * Elimina una cotizaciï¿½n
  */
 export const deleteQuote = (id: number, userId?: number): { success: boolean; message: string } => {
   if (!db) return { success: false, message: 'Database not initialized' };
@@ -5395,18 +4461,18 @@ export const deleteQuote = (id: number, userId?: number): { success: boolean; me
 
     db.run('BEGIN TRANSACTION');
 
-    // Eliminar l�neas primero
+    // Eliminar lï¿½neas primero
     db.run('DELETE FROM quote_lines WHERE quote_id = ?', [id]);
 
-    // Eliminar cotizaci�n
+    // Eliminar cotizaciï¿½n
     db.run('DELETE FROM quotes WHERE id = ?', [id]);
 
     db.run('COMMIT');
 
-    // Registrar en auditor�a
+    // Registrar en auditorï¿½a
     logAuditAction('quotes', id, 'DELETE', quote, null, userId);
 
-    return { success: true, message: 'Cotizaci�n eliminada exitosamente' };
+    return { success: true, message: 'Cotizaciï¿½n eliminada exitosamente' };
 
   } catch (error) {
     db?.run('ROLLBACK');
@@ -5419,7 +4485,7 @@ export const deleteQuote = (id: number, userId?: number): { success: boolean; me
 };
 
 /**
- * Convierte una cotizaci�n en factura
+ * Convierte una cotizaciï¿½n en factura
  */
 export const convertQuoteToInvoice = (
   quoteId: number,
@@ -5441,13 +4507,13 @@ export const convertQuoteToInvoice = (
       return { success: false, message: 'Only accepted quotes can be converted' };
     }
 
-    // Crear factura desde cotizaci�n
+    // CÁrear factura desde cotizaciï¿½n
     const invoiceData: Partial<Invoice> = {
       customer_id: quote.customer_id,
       issue_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'draft',
-      notes: `Convertida desde cotizaci�n ${quote.quote_number}`
+      notes: `Convertida desde cotizaciï¿½n ${quote.quote_number}`
     };
 
     const invoiceItems: Partial<InvoiceItem>[] = (quote.items || []).map(item => ({
@@ -5461,7 +4527,7 @@ export const convertQuoteToInvoice = (
     const result = createInvoice(invoiceData, invoiceItems, userId);
 
     if (result.success && result.invoiceId) {
-      // Actualizar cotizaci�n como convertida
+      // Actualizar cotizaciï¿½n como convertida
       db.run(`
         UPDATE quotes 
         SET status = 'converted', converted_to_invoice_id = ?, updated_at = CURRENT_TIMESTAMP
@@ -5470,7 +4536,7 @@ export const convertQuoteToInvoice = (
 
       return {
         success: true,
-        message: `Cotizaci�n convertida a factura exitosamente`,
+        message: `Cotizaciï¿½n convertida a factura exitosamente`,
         invoiceId: result.invoiceId
       };
     }
@@ -5487,7 +4553,7 @@ export const convertQuoteToInvoice = (
 };
 
 /**
- * Genera n�mero de cotizaci�n autom�tico
+ * Genera nï¿½mero de cotizaciï¿½n automï¿½tico
  */
 function generateQuoteNumber(): string {
   if (!db) return `QT-${Date.now()}`;
@@ -5508,10 +4574,6 @@ function generateQuoteNumber(): string {
 
 // Agregar proveedor
 export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): number => {
-  console.log('=== ADD SUPPLIER FUNCTION ===');
-  console.log('Database object:', db);
-  console.log('Is initialized:', isInitialized);
-  console.log('Supplier data:', supplierData);
 
   if (!db) {
     console.error('Database not initialized when trying to add supplier');
@@ -5519,7 +4581,6 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
   }
 
   try {
-    console.log('Starting transaction...');
     // Iniciar transacción
     db.run('BEGIN TRANSACTION');
 
@@ -5560,12 +4621,10 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
       userId || 1
     ];
 
-    console.log('Executing insert with values:', values);
     stmt.run(values);
 
     const insertResult = db.exec("SELECT last_insert_rowid() as id");
     const insertId = insertResult[0]?.values[0]?.[0] as number || 0;
-    console.log('Insert ID:', insertId);
 
     stmt.free();
 
@@ -5574,12 +4633,10 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
 
     // Confirmar transacción
     db.run('COMMIT');
-    console.log('Transaction committed');
 
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier added with ID: ${insertId} `);
     return insertId;
 
   } catch (error) {
@@ -5592,11 +4649,8 @@ export const addSupplier = (supplierData: Partial<Supplier>, userId?: number): n
 // Obtener todos los proveedores
 // Obtener todos los proveedores con aislamiento
 export const getSuppliers = (filters?: { userId?: number, role?: string }): Supplier[] => {
-  console.log('=== GETTING SUPPLIERS ===', filters);
-  console.log('Database initialized:', !!db);
 
   if (!db) {
-    console.log('Database not initialized, returning empty array');
     return [];
   }
 
@@ -5621,13 +4675,12 @@ id, name, business_name, document_type, document_number, business_type,
 
     const result = db.exec(query, params);
 
-    console.log('Raw query result:', result);
 
     // Convertir el resultado a array de objetos
     const suppliers: Supplier[] = [];
 
     if (result && result.length > 0 && result[0].values) {
-      const columns = result[0].columns;
+      const columns = (result[0].columns || (result[0] as any).lc);
       const values = result[0].values;
 
       values.forEach((row: initSqlJs.SqlValue[]) => {
@@ -5636,8 +4689,6 @@ id, name, business_name, document_type, document_number, business_type,
       });
     }
 
-    console.log('Processed suppliers:', suppliers);
-    console.log('Supplier count:', suppliers.length);
     return suppliers;
 
   } catch (error) {
@@ -5667,6 +4718,7 @@ const processSupplierRow = (row: any): Supplier => {
     florida_county: String(row.florida_county || 'Miami-Dade'),
     credit_limit: Number(row.credit_limit || 0),
     payment_terms: Number(row.payment_terms || 30),
+    paymentCount: Number(row.payment_terms || 30), // Asegurar que paymentCount esté presente en Supplier
     tax_exempt: Boolean(Number(row.tax_exempt)),
     tax_id: row.tax_id ? String(row.tax_id) : undefined,
     assigned_buyer: row.assigned_buyer ? String(row.assigned_buyer) : undefined,
@@ -5694,7 +4746,7 @@ id, name, business_name, document_type, document_number, business_type,
 `);
 
     if (result && result.length > 0 && result[0].values && result[0].values.length > 0) {
-      const columns = result[0].columns;
+      const columns = (result[0].columns || (result[0] as any).lc);
       const row = result[0].values[0];
 
       const supplierObj: any = {};
@@ -5780,7 +4832,6 @@ export const updateSupplier = (id: number, supplierData: Partial<Supplier>, user
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier ${id} updated successfully`);
     return { success: true, message: `Proveedor "${supplierData.name || oldSupplier.name}" actualizado correctamente` };
 
   } catch (error) {
@@ -5867,7 +4918,6 @@ export const deleteSupplier = (id: number, userId?: number): { success: boolean;
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    console.log(`Supplier ${id} deleted successfully`);
     return { success: true, message: `Proveedor "${supplier.name}" eliminado correctamente` };
 
   } catch (error) {
@@ -5926,7 +4976,7 @@ b.*,
     if (!result[0]) return [];
 
     const bills: Bill[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: initSqlJs.SqlValue[]) => {
       const bill = rowToEntity<Bill & { supplier_name: string; supplier_business_name: string; supplier_email: string }>(columns, row);
@@ -5975,7 +5025,7 @@ b.*,
     if (!billResult[0] || billResult[0].values.length === 0) return null;
 
     const billRow = billResult[0].values[0];
-    const columns = billResult[0].columns;
+    const columns = (billResult[0].columns || (billResult[0] as any).lc);
 
     const bill: any = {};
     columns.forEach((col: any, index: any) => {
@@ -6008,7 +5058,7 @@ bl.*,
 
     bill.items = [];
     if (itemsResult[0]) {
-      const itemColumns = itemsResult[0].columns;
+      const itemColumns = (itemsResult[0].columns || (itemsResult[0] as any).lc);
       itemsResult[0].values.forEach((itemRow: any) => {
         const item: any = {};
         itemColumns.forEach((col: any, index: any) => {
@@ -6130,16 +5180,16 @@ export const createBill = (billData: Partial<Bill>, items: Partial<BillItem>[], 
       status: billData.status || 'draft'
     }, userId);
 
-    // GENERAR ASIENTO CONTABLE AUTOMÁTICO (DOBLE ENTRADA)
+    // GENERAR ASIENTO CONTABLE AUTOMíTICO (DOBLE ENTRADA)
     if (billData.status === 'approved' || billData.status === 'paid') {
       const fullBill = getBillById(billId);
       if (fullBill) {
-        const journalResult = generatePurchaseJournalEntry(fullBill, userId);
-        if (!journalResult.success) {
-          console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
-        } else {
-          console.log('Journal entry created for bill:', journalResult.entryId);
-        }
+        generatePurchaseJournalEntry(fullBill, userId).then(journalResult => {
+          if (!journalResult.success) {
+            console.warn('Warning: Could not generate journal entry for bill:', journalResult.message);
+          } else {
+          }
+        });
       }
     }
 
@@ -6209,7 +5259,7 @@ export const getStatsWithSuppliers = (filters?: { userId?: number, role?: string
 };
 
 // Actualizar factura de compra
-export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[], userId?: number): { success: boolean; message: string } => {
+export const updateBill = async (id: number, billData: Partial<Bill>, items?: Partial<BillItem>[], userId?: number): Promise<{ success: boolean; message: string }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -6314,8 +5364,8 @@ export const updateBill = (id: number, billData: Partial<Bill>, items?: Partial<
 
     db.run('COMMIT');
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return { success: true, message: 'Factura de compra actualizada correctamente' };
 
@@ -6428,18 +5478,20 @@ export const createChartOfAccount = (accountData: Partial<ChartOfAccount>): { su
 
     const stmt = db.prepare(`
       INSERT INTO chart_of_accounts(
-  account_code, account_name, account_type, normal_balance, parent_account,
-  is_active, created_by, updated_by
-) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+  account_code, number, account_name, account_type, normal_balance, parent_account,
+  is_active, detail_type, created_by, updated_by
+) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
       accountData.account_code || '',
+      accountData.number || '',
       accountData.account_name || '',
       accountData.account_type || 'asset',
       accountData.normal_balance || 'debit',
       accountData.parent_account || null,
       accountData.is_active !== undefined ? (accountData.is_active ? 1 : 0) : 1,
+      accountData.detail_type || null,
       1, // TODO: Implementar sistema de usuarios
       1
     ]);
@@ -6485,27 +5537,24 @@ export const getChartOfAccountByCode = (accountCode: string): ChartOfAccount | n
   if (!db) return null;
 
   try {
-    const result = db.exec(`
+    const stmt = db.prepare(`
 SELECT
-id, account_code, account_name, account_type, normal_balance,
+id, account_code, number, account_name, account_type, normal_balance,
   parent_account, is_active, created_at, updated_at, created_by, updated_by
       FROM chart_of_accounts 
       WHERE account_code = ?
-  `, [accountCode]);
+  `);
+    stmt.bind([accountCode]);
 
-    if (!result[0] || result[0].values.length === 0) return null;
+    if (stmt.step()) {
+      const account = stmt.getAsObject() as any;
+      stmt.free();
+      account.is_active = Boolean(account.is_active);
+      return account as ChartOfAccount;
+    }
 
-    const columns = result[0].columns;
-    const row = result[0].values[0];
-
-    const account: any = {};
-    columns.forEach((col: any, index: any) => {
-      account[col] = row[index];
-    });
-
-    account.is_active = Boolean(account.is_active);
-
-    return account as ChartOfAccount;
+    stmt.free();
+    return null;
 
   } catch (error) {
     logger.error('ChartOfAccounts', 'get_by_code_failed', `Error al obtener cuenta ${accountCode} `, { accountCode }, error as Error);
@@ -6519,9 +5568,14 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 
   try {
     // Obtener cuenta actual para auditoría
-    const currentAccount = getChartOfAccountByCode(accountCode);
+    let currentAccount = getChartOfAccountByCode(accountCode);
     if (!currentAccount) {
-      return { success: false, message: 'Cuenta no encontrada' };
+      // Intento de recuperación (Race Condition mitigation)
+      logger.warn('ChartOfAccounts', 'update_retry', `Cuenta ${accountCode} no encontrada inicialmente, reintentando...`);
+      currentAccount = getChartOfAccountByCode(accountCode);
+      if (!currentAccount) {
+        return { success: false, message: 'Cuenta no encontrada' };
+      }
     }
 
     logger.info('ChartOfAccounts', 'update_start', `Actualizando cuenta: ${accountCode} `);
@@ -6530,17 +5584,19 @@ export const updateChartOfAccount = (accountCode: string, accountData: Partial<C
 
     const stmt = db.prepare(`
       UPDATE chart_of_accounts 
-      SET account_name = ?, account_type = ?, normal_balance = ?,
-  parent_account = ?, is_active = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
+      SET number = ?, account_name = ?, account_type = ?, normal_balance = ?,
+  parent_account = ?, is_active = ?, detail_type = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
       WHERE account_code = ?
   `);
 
     stmt.run([
+      accountData.number || '',
       accountData.account_name || currentAccount.account_name,
       accountData.account_type || currentAccount.account_type,
       accountData.normal_balance || currentAccount.normal_balance,
       accountData.parent_account || currentAccount.parent_account || null,
       accountData.is_active !== undefined ? (accountData.is_active ? 1 : 0) : (currentAccount.is_active ? 1 : 0),
+      accountData.detail_type !== undefined ? (accountData.detail_type || null) : (currentAccount.detail_type || null),
       userId || 1,
       accountCode
     ]);
@@ -6662,162 +5718,163 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
 
     const stmt = db.prepare(`
       INSERT INTO chart_of_accounts(
-    account_code, account_name, account_type, normal_balance, parent_account,
+    account_code, number, account_name, account_type, normal_balance, parent_account,
     is_active, created_by, updated_by
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     // Plan de Cuentas Completo - US GAAP para Florida
     const initialAccounts = [
       // ========== 1000 - ACTIVOS ==========
-      { account_code: '1000', account_name: 'ACTIVOS', account_type: 'asset', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '1000', number: '10000', account_name: 'ACTIVOS', account_type: 'asset', normal_balance: 'debit', parent_account: null, is_active: true },
 
       // 1100 - Activos Corrientes
-      { account_code: '1100', account_name: 'Activos Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
-      { account_code: '1110', account_name: 'Efectivo y Equivalentes', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1111', account_name: 'Caja Chica', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      { account_code: '1112', account_name: 'Cuenta Corriente - Bank of America', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      { account_code: '1113', account_name: 'Cuenta de Ahorros', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
-      { account_code: '1114', account_name: 'Cuenta Payroll', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1100', number: '11000', account_name: 'Activos Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
+      { account_code: '1110', number: '11100', account_name: 'Efectivo y Equivalentes', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1111', number: '11110', account_name: 'Caja Chica', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1112', number: '11120', account_name: 'Cuenta Corriente - Bank of America', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1113', number: '11130', account_name: 'Cuenta de Ahorros', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
+      { account_code: '1114', number: '11140', account_name: 'Cuenta Payroll', account_type: 'asset', normal_balance: 'debit', parent_account: '1110', is_active: true },
 
-      { account_code: '1120', account_name: 'Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1121', account_name: 'Cuentas por Cobrar - Clientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
-      { account_code: '1122', account_name: 'Provisi�n para Cuentas Incobrables', account_type: 'asset', normal_balance: 'credit', parent_account: '1120', is_active: true },
-      { account_code: '1123', account_name: 'Otras Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
+      { account_code: '1120', number: '11200', account_name: 'Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1121', number: '11210', account_name: 'Cuentas por Cobrar - Clientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
+      { account_code: '1122', number: '11220', account_name: 'Provisiï¿½n para Cuentas Incobrables', account_type: 'asset', normal_balance: 'credit', parent_account: '1120', is_active: true },
+      { account_code: '1123', number: '11230', account_name: 'Otras Cuentas por Cobrar', account_type: 'asset', normal_balance: 'debit', parent_account: '1120', is_active: true },
 
-      { account_code: '1130', account_name: 'Inventario', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1131', account_name: 'Inventario - Productos Terminados', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
-      { account_code: '1132', account_name: 'Inventario - Materias Primas', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
-      { account_code: '1133', account_name: 'Inventario - Productos en Proceso', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1130', number: '11300', account_name: 'Inventario', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1131', number: '11310', account_name: 'Inventario - Productos Terminados', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1132', number: '11320', account_name: 'Inventario - Materias Primas', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
+      { account_code: '1133', number: '11330', account_name: 'Inventario - Productos en Proceso', account_type: 'asset', normal_balance: 'debit', parent_account: '1130', is_active: true },
 
-      { account_code: '1140', account_name: 'Gastos Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
-      { account_code: '1141', account_name: 'Seguros Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
-      { account_code: '1142', account_name: 'Alquileres Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
+      { account_code: '1140', number: '11400', account_name: 'Gastos Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1100', is_active: true },
+      { account_code: '1141', number: '11410', account_name: 'Seguros Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
+      { account_code: '1142', number: '11420', account_name: 'Alquileres Pagados por Anticipado', account_type: 'asset', normal_balance: 'debit', parent_account: '1140', is_active: true },
 
       // 1200 - Activos No Corrientes
-      { account_code: '1200', account_name: 'Activos No Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
-      { account_code: '1210', account_name: 'Propiedad, Planta y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
-      { account_code: '1211', account_name: 'Terrenos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1212', account_name: 'Edificios', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1213', account_name: 'Depreciaci�n Acumulada - Edificios', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
-      { account_code: '1214', account_name: 'Maquinaria y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1215', account_name: 'Depreciaci�n Acumulada - Maquinaria', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
-      { account_code: '1216', account_name: 'Veh�culos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1217', account_name: 'Depreciaci�n Acumulada - Veh�culos', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
-      { account_code: '1218', account_name: 'Mobiliario y Equipo de Oficina', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
-      { account_code: '1219', account_name: 'Depreciaci�n Acumulada - Mobiliario', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1200', number: '12000', account_name: 'Activos No Corrientes', account_type: 'asset', normal_balance: 'debit', parent_account: '1000', is_active: true },
+      { account_code: '1210', number: '12100', account_name: 'Propiedad, Planta y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
+      { account_code: '1211', number: '12110', account_name: 'Terrenos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1212', number: '12120', account_name: 'Edificios', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1213', number: '12130', account_name: 'Depreciaciï¿½n Acumulada - Edificios', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1214', number: '12140', account_name: 'Maquinaria y Equipo', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1215', number: '12150', account_name: 'Depreciaciï¿½n Acumulada - Maquinaria', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1216', number: '12160', account_name: 'Vehï¿½culos', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1217', number: '12170', account_name: 'Depreciaciï¿½n Acumulada - Vehï¿½culos', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
+      { account_code: '1218', number: '12180', account_name: 'Mobiliario y Equipo de Oficina', account_type: 'asset', normal_balance: 'debit', parent_account: '1210', is_active: true },
+      { account_code: '1219', number: '12190', account_name: 'Depreciaciï¿½n Acumulada - Mobiliario', account_type: 'asset', normal_balance: 'credit', parent_account: '1210', is_active: true },
 
-      { account_code: '1220', account_name: 'Activos Intangibles', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
-      { account_code: '1221', account_name: 'Goodwill', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
-      { account_code: '1222', account_name: 'Patentes y Marcas', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
-      { account_code: '1223', account_name: 'Software', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
-      { account_code: '1224', account_name: 'Amortizaci�n Acumulada - Intangibles', account_type: 'asset', normal_balance: 'credit', parent_account: '1220', is_active: true },
+      { account_code: '1220', number: '12200', account_name: 'Activos Intangibles', account_type: 'asset', normal_balance: 'debit', parent_account: '1200', is_active: true },
+      { account_code: '1221', number: '12210', account_name: 'Goodwill', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1222', number: '12220', account_name: 'Patentes y Marcas', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1223', number: '12230', account_name: 'Software', account_type: 'asset', normal_balance: 'debit', parent_account: '1220', is_active: true },
+      { account_code: '1224', number: '12240', account_name: 'Amortizaciï¿½n Acumulada - Intangibles', account_type: 'asset', normal_balance: 'credit', parent_account: '1220', is_active: true },
 
       // ========== 2000 - PASIVOS ==========
-      { account_code: '2000', account_name: 'PASIVOS', account_type: 'liability', normal_balance: 'credit', parent_account: null, is_active: true },
+      { account_code: '2000', number: '20000', account_name: 'PASIVOS', account_type: 'liability', normal_balance: 'credit', parent_account: null, is_active: true },
 
       // 2100 - Pasivos Corrientes
-      { account_code: '2100', account_name: 'Pasivos Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
-      { account_code: '2110', account_name: 'Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2111', account_name: 'Cuentas por Pagar - Proveedores', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
-      { account_code: '2112', account_name: 'Otras Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
+      { account_code: '2100', number: '21000', account_name: 'Pasivos Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
+      { account_code: '2110', number: '21100', account_name: 'Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2111', number: '21110', account_name: 'Cuentas por Pagar - Proveedores', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
+      { account_code: '2112', number: '21120', account_name: 'Otras Cuentas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2110', is_active: true },
 
-      { account_code: '2120', account_name: 'Impuestos por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2121', account_name: 'Impuesto sobre Ventas por Pagar (Sales Tax)', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
-      { account_code: '2122', account_name: 'Impuesto Federal por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
-      { account_code: '2123', account_name: 'Impuesto Estatal FL por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
-      { account_code: '2124', account_name: 'Payroll Taxes por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2120', number: '21200', account_name: 'Impuestos por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2121', number: '21210', account_name: 'Impuesto sobre Ventas por Pagar (Sales Tax)', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2122', number: '21220', account_name: 'Impuesto Federal por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2123', number: '21230', account_name: 'Impuesto Estatal FL por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
+      { account_code: '2124', number: '21240', account_name: 'Payroll Taxes por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2120', is_active: true },
 
-      { account_code: '2130', account_name: 'N�mina por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2131', account_name: 'Sueldos y Salarios por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
-      { account_code: '2132', account_name: 'Retenciones por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
+      { account_code: '2130', number: '21300', account_name: 'Nï¿½mina por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2131', number: '21310', account_name: 'Sueldos y Salarios por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
+      { account_code: '2132', number: '21320', account_name: 'Retenciones por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2130', is_active: true },
 
-      { account_code: '2140', account_name: 'Pr�stamos a Corto Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
-      { account_code: '2141', account_name: 'L�nea de Cr�dito', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
-      { account_code: '2142', account_name: 'Porci�n Corriente de Deuda a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
+      { account_code: '2140', number: '21400', account_name: 'Prï¿½stamos a Corto Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2100', is_active: true },
+      { account_code: '2141', number: '21410', account_name: 'Lï¿½nea de Crï¿½dito', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
+      { account_code: '2142', number: '21420', account_name: 'Porciï¿½n Corriente de Deuda a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2140', is_active: true },
 
       // 2200 - Pasivos No Corrientes
-      { account_code: '2200', account_name: 'Pasivos No Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
-      { account_code: '2210', account_name: 'Pr�stamos a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2200', is_active: true },
-      { account_code: '2211', account_name: 'Hipotecas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
-      { account_code: '2212', account_name: 'Pr�stamos Bancarios a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
+      { account_code: '2200', number: '22000', account_name: 'Pasivos No Corrientes', account_type: 'liability', normal_balance: 'credit', parent_account: '2000', is_active: true },
+      { account_code: '2210', number: '22110', account_name: 'Prï¿½stamos a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2200', is_active: true },
+      { account_code: '2211', number: '22111', account_name: 'Hipotecas por Pagar', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
+      { account_code: '2212', number: '22120', account_name: 'Prï¿½stamos Bancarios a Largo Plazo', account_type: 'liability', normal_balance: 'credit', parent_account: '2210', is_active: true },
 
       // ========== 3000 - PATRIMONIO ==========
-      { account_code: '3000', account_name: 'PATRIMONIO', account_type: 'equity', normal_balance: 'credit', parent_account: null, is_active: true },
-      { account_code: '3100', account_name: 'Capital Social', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
-      { account_code: '3110', account_name: 'Common Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
-      { account_code: '3120', account_name: 'Preferred Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
-      { account_code: '3200', account_name: 'Utilidades Retenidas', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
-      { account_code: '3210', account_name: 'Utilidades del Ejercicio Actual', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
-      { account_code: '3220', account_name: 'Utilidades de Ejercicios Anteriores', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
-      { account_code: '3300', account_name: 'Dividendos', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
-      { account_code: '3400', account_name: 'Owner\'s Draw', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
+      { account_code: '3000', number: '30000', account_name: 'PATRIMONIO', account_type: 'equity', normal_balance: 'credit', parent_account: null, is_active: true },
+      { account_code: '3100', number: '31000', account_name: 'Capital Social', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
+      { account_code: '3110', number: '31100', account_name: 'Common Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
+      { account_code: '3120', number: '31200', account_name: 'Preferred Stock', account_type: 'equity', normal_balance: 'credit', parent_account: '3100', is_active: true },
+      { account_code: '3200', number: '32000', account_name: 'Utilidades Retenidas', account_type: 'equity', normal_balance: 'credit', parent_account: '3000', is_active: true },
+      { account_code: '3210', number: '32100', account_name: 'Utilidades del Ejercicio Actual', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
+      { account_code: '3220', number: '32200', account_name: 'Utilidades de Ejercicios Anteriores', account_type: 'equity', normal_balance: 'credit', parent_account: '3200', is_active: true },
+      { account_code: '3300', number: '33000', account_name: 'Dividendos', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
+      { account_code: '3400', number: '34000', account_name: 'Owner\'s Draw', account_type: 'equity', normal_balance: 'debit', parent_account: '3000', is_active: true },
 
       // ========== 4000 - INGRESOS ==========
-      { account_code: '4000', account_name: 'INGRESOS', account_type: 'revenue', normal_balance: 'credit', parent_account: null, is_active: true },
-      { account_code: '4100', account_name: 'Ingresos Operacionales', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
-      { account_code: '4110', account_name: 'Ventas de Productos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
-      { account_code: '4120', account_name: 'Ventas de Servicios', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
-      { account_code: '4130', account_name: 'Devoluciones y Descuentos sobre Ventas', account_type: 'revenue', normal_balance: 'debit', parent_account: '4100', is_active: true },
-      { account_code: '4200', account_name: 'Otros Ingresos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
-      { account_code: '4210', account_name: 'Ingresos por Intereses', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
-      { account_code: '4220', account_name: 'Ganancia en Venta de Activos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
-      { account_code: '4230', account_name: 'Ingresos Diversos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4000', number: '40000', account_name: 'INGRESOS', account_type: 'revenue', normal_balance: 'credit', parent_account: null, is_active: true },
+      { account_code: '4100', number: '41000', account_name: 'Ingresos Operacionales', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
+      { account_code: '4110', number: '41100', account_name: 'Ventas de Productos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4120', number: '41200', account_name: 'Ventas de Servicios', account_type: 'revenue', normal_balance: 'credit', parent_account: '4100', is_active: true },
+      { account_code: '4130', number: '41300', account_name: 'Devoluciones y Descuentos sobre Ventas', account_type: 'revenue', normal_balance: 'debit', parent_account: '4100', is_active: true },
+      { account_code: '4200', number: '42000', account_name: 'Otros Ingresos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4000', is_active: true },
+      { account_code: '4210', number: '42100', account_name: 'Ingresos por Intereses', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4220', number: '42200', account_name: 'Ganancia en Venta de Activos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
+      { account_code: '4230', number: '42300', account_name: 'Ingresos Diversos', account_type: 'revenue', normal_balance: 'credit', parent_account: '4200', is_active: true },
 
       // ========== 5000 - COSTO DE VENTAS ==========
-      { account_code: '5000', account_name: 'COSTO DE VENTAS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
-      { account_code: '5100', account_name: 'Costo de Productos Vendidos', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
-      { account_code: '5110', account_name: 'Compras de Mercanc�a', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
-      { account_code: '5120', account_name: 'Fletes y Acarreos', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
-      { account_code: '5200', account_name: 'Costo de Servicios', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
-      { account_code: '5210', account_name: 'Mano de Obra Directa', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
-      { account_code: '5220', account_name: 'Materiales Directos', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
+      { account_code: '5000', number: '50000', account_name: 'COSTO DE VENTAS', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '5100', number: '51000', account_name: 'Costo de Productos Vendidos', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
+      { account_code: '5110', number: '51100', account_name: 'Compras de Mercancï¿½a', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
+      { account_code: '5120', number: '51200', account_name: 'Fletes y Acarreos', account_type: 'expense', normal_balance: 'debit', parent_account: '5100', is_active: true },
+      { account_code: '5200', number: '52000', account_name: 'Costo de Servicios', account_type: 'expense', normal_balance: 'debit', parent_account: '5000', is_active: true },
+      { account_code: '5210', number: '52100', account_name: 'Mano de Obra Directa', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
+      { account_code: '5220', number: '52200', account_name: 'Materiales Directos', account_type: 'expense', normal_balance: 'debit', parent_account: '5200', is_active: true },
 
       // ========== 6000 - GASTOS OPERACIONALES ==========
-      { account_code: '6000', account_name: 'GASTOS OPERACIONALES', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
+      { account_code: '6000', number: '60000', account_name: 'GASTOS OPERACIONALES', account_type: 'expense', normal_balance: 'debit', parent_account: null, is_active: true },
 
       // 6100 - Gastos de Ventas
-      { account_code: '6100', account_name: 'Gastos de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6110', account_name: 'Sueldos - Personal de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
-      { account_code: '6120', account_name: 'Comisiones de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
-      { account_code: '6130', account_name: 'Publicidad y Marketing', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
-      { account_code: '6140', account_name: 'Gastos de Viaje - Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6100', number: '61000', account_name: 'Gastos de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6110', number: '61100', account_name: 'Sueldos - Personal de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6120', number: '61200', account_name: 'Comisiones de Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6130', number: '61300', account_name: 'Publicidad y Marketing', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
+      { account_code: '6140', number: '61400', account_name: 'Gastos de Viaje - Ventas', account_type: 'expense', normal_balance: 'debit', parent_account: '6100', is_active: true },
 
       // 6200 - Gastos Administrativos
-      { account_code: '6200', account_name: 'Gastos Administrativos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6210', account_name: 'Sueldos - Personal Administrativo', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6220', account_name: 'Alquiler de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6230', account_name: 'Servicios P�blicos', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6240', account_name: 'Tel�fono e Internet', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6250', account_name: 'Suministros de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6260', account_name: 'Seguros', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6270', account_name: 'Honorarios Profesionales', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6280', account_name: 'Depreciaci�n y Amortizaci�n', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
-      { account_code: '6290', account_name: 'Gastos de Mantenimiento', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6200', number: '62000', account_name: 'Gastos Administrativos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6210', number: '62100', account_name: 'Sueldos - Personal Administrativo', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6220', number: '62200', account_name: 'Alquiler de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6230', number: '62300', account_name: 'Servicios Pï¿½blicos', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6240', number: '62400', account_name: 'Telï¿½fono e Internet', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6250', number: '62500', account_name: 'Suministros de Oficina', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6260', number: '62600', account_name: 'Seguros', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6270', number: '62700', account_name: 'Honorarios Profesionales', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6280', number: '62800', account_name: 'Depreciaciï¿½n y Amortizaciï¿½n', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
+      { account_code: '6290', number: '62900', account_name: 'Gastos de Mantenimiento', account_type: 'expense', normal_balance: 'debit', parent_account: '6200', is_active: true },
 
       // 6300 - Gastos Financieros
-      { account_code: '6300', account_name: 'Gastos Financieros', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6310', account_name: 'Intereses sobre Pr�stamos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
-      { account_code: '6320', account_name: 'Comisiones Bancarias', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
-      { account_code: '6330', account_name: 'P�rdida en Venta de Activos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6300', number: '63000', account_name: 'Gastos Financieros', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6310', number: '63100', account_name: 'Intereses sobre Prï¿½stamos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6320', number: '63200', account_name: 'Comisiones Bancarias', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
+      { account_code: '6330', number: '63300', account_name: 'Pï¿½rdida en Venta de Activos', account_type: 'expense', normal_balance: 'debit', parent_account: '6300', is_active: true },
 
       // 6400 - Impuestos
-      { account_code: '6400', account_name: 'Impuestos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
-      { account_code: '6410', account_name: 'Impuesto sobre la Renta', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
-      { account_code: '6420', account_name: 'Impuestos Locales y Estatales', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
-      { account_code: '6430', account_name: 'Property Tax', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true }
+      { account_code: '6400', number: '64000', account_name: 'Impuestos', account_type: 'expense', normal_balance: 'debit', parent_account: '6000', is_active: true },
+      { account_code: '6410', number: '64100', account_name: 'Impuesto sobre la Renta', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
+      { account_code: '6420', number: '64200', account_name: 'Impuestos Locales y Estatales', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true },
+      { account_code: '6430', number: '64300', account_name: 'Property Tax', account_type: 'expense', normal_balance: 'debit', parent_account: '6400', is_active: true }
     ];
 
-    initialAccounts.forEach(account => {
+    initialAccounts.forEach((acc: any) => {
       stmt.run([
-        account.account_code,
-        account.account_name,
-        account.account_type,
-        account.normal_balance,
-        account.parent_account,
-        account.is_active ? 1 : 0,
-        1, // created_by
-        1  // updated_by
+        acc.account_code,
+        acc.number || acc.account_code, // Use account_code as fallback number
+        acc.account_name,
+        acc.account_type,
+        acc.normal_balance,
+        acc.parent_account,
+        acc.is_active ? 1 : 0,
+        1, // admin
+        1  // admin
       ]);
     });
 
@@ -6845,7 +5902,7 @@ export const insertInitialChartOfAccounts = async (): Promise<{ success: boolean
 };
 
 // Función auxiliar para auditoría (alias para compatibilidad)
-const logAuditAction = logAuditEvent;
+export const logAuditAction = logAuditEvent;
 
 // Función para verificar integridad de la cadena de auditoría
 export const verifyAuditIntegrity = async (): Promise<{ isValid: boolean; errors: string[]; totalRecords: number }> => {
@@ -6963,7 +6020,7 @@ export const getAuditStats = (): { totalRecords: number; byTable: Record<string,
       });
     }
 
-    // Último registro
+    // íšltimo registro
     const lastResult = db.exec(`
       SELECT timestamp FROM audit_log 
       ORDER BY id DESC 
@@ -6994,9 +6051,16 @@ export const getChartOfAccounts = (): ChartOfAccount[] => {
 
   try {
     const result = db.exec(`
-SELECT
-account_code, account_name, account_type, normal_balance, parent_account,
-  is_active, created_at, updated_at, created_by, updated_by
+      SELECT 
+        id,
+        account_code,
+        account_name,
+        account_type,
+        is_active,
+        number,
+        parent_account,
+        normal_balance,
+        detail_type
       FROM chart_of_accounts 
       WHERE is_active = 1
       ORDER BY account_code
@@ -7005,7 +6069,7 @@ account_code, account_name, account_type, normal_balance, parent_account,
     if (!result[0]) return [];
 
     const accounts: ChartOfAccount[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const account: any = {};
@@ -7014,7 +6078,7 @@ account_code, account_name, account_type, normal_balance, parent_account,
       });
 
       // Calcular balance actual
-      account.balance = getAccountBalance(account.account_code);
+      account.balance = getAccountBalance(account.code);
 
       accounts.push(account as ChartOfAccount);
     });
@@ -7165,11 +6229,11 @@ export const diagnoseAccountingSystem = async (): Promise<{ success: boolean; me
 
 
 // Crear asiento contable automático
-export const createJournalEntry = (
+export const createJournalEntry = async (
   entryData: Partial<JournalEntry>,
   details: Partial<JournalDetail>[],
   userId?: number
-): { success: boolean; message: string; entryId?: number } => {
+): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -7193,12 +6257,12 @@ export const createJournalEntry = (
       totalCredits += Number(detail.credit_amount) || 0;
     });
 
-    // VALIDACIÓN CRÍTICA: El asiento debe estar balanceado
-    // VALIDACIÓN CRÍTICA: El asiento debe estar balanceado (Forensic Level)
+    // VALIDACIí“N CRíTICA: El asiento debe estar balanceado
+    // VALIDACIí“N CRíTICA: El asiento debe estar balanceado (Forensic Level)
     const diff = Math.abs(totalDebits - totalCredits);
     if (diff > 0.01) {
       // Lanzar error duro para prevenir persistencia
-      const msg = `VIOLACIÓN DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}.Débitos: $${totalDebits.toFixed(2)}, Créditos: $${totalCredits.toFixed(2)} `;
+      const msg = `VIOLACIí“N DE PARTIDA DOBLE: Asiento desbalanceado por $${diff.toFixed(2)}.Débitos: $${totalDebits.toFixed(2)}, Créditos: $${totalCredits.toFixed(2)} `;
       console.error(msg);
       throw new Error(msg); // Stop execution immediately
     }
@@ -7263,12 +6327,12 @@ export const createJournalEntry = (
 
     db.run('COMMIT');
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return {
       success: true,
-      message: `Asiento contable creado correctamente(ID: ${entryId})`,
+      message: `Asiento contable creado correctamente (ID: ${entryId})`,
       entryId
     };
 
@@ -7309,7 +6373,7 @@ id, entry_date, reference, description, total_debit, total_credit,
     if (!result[0]) return [];
 
     const entries: JournalEntry[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const entry: any = {};
@@ -7349,7 +6413,7 @@ jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount,
     if (!result[0]) return [];
 
     const details: JournalDetail[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const detail: any = {};
@@ -7376,11 +6440,11 @@ jd.id, jd.journal_entry_id, jd.account_code, jd.debit_amount,
 };
 
 // ==========================================
-// FUNCIONES PARA GENERAR ASIENTOS AUTOMÁTICOS
+// FUNCIONES PARA GENERAR ASIENTOS AUTOMíTICOS
 // ==========================================
 
 // Generar asiento automático para factura de venta
-export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generateSalesJournalEntry = async (invoice: Invoice, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!invoice.customer) {
     return { success: false, message: 'Información del cliente requerida' };
   }
@@ -7420,7 +6484,7 @@ export const generateSalesJournalEntry = (invoice: Invoice, userId?: number): { 
 };
 
 // Generar asiento automático para factura de compra
-export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generatePurchaseJournalEntry = async (bill: Bill, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!bill.supplier) {
     return { success: false, message: 'Información del proveedor requerida' };
   }
@@ -7460,44 +6524,20 @@ export const generatePurchaseJournalEntry = (bill: Bill, userId?: number): { suc
 };
 
 // Generar asiento automático para pago recibido
-export const generatePaymentReceivedJournalEntry = (payment: Payment, customer: Customer, userId?: number): { success: boolean; message: string; entryId?: number } => {
-  const details: Partial<JournalDetail>[] = [
-    // Débito: Efectivo/Banco
-    {
-      account_code: payment.payment_method === 'cash' ? '1111' : '1112',
-      debit_amount: payment.amount,
-      credit_amount: 0,
-      description: `Pago recibido ${payment.payment_number} - ${customer.name} `
-    },
-    // Crédito: Cuentas por Cobrar
-    {
-      account_code: '1121',
-      debit_amount: 0,
-      credit_amount: payment.amount,
-      description: `Pago ${payment.payment_number} - ${customer.name} `
-    }
-  ];
-
-  return createJournalEntry({
-    entry_date: payment.payment_date,
-    reference_number: `PAY - ${payment.payment_number} `,
-    description: `Pago recibido de ${customer.name} - ${payment.payment_number} `
-  }, details, userId);
+export const generatePaymentReceivedJournalEntry = async (
+  payment: Parameters<typeof _generatePaymentReceivedJournalEntry>[0],
+  customer: Parameters<typeof _generatePaymentReceivedJournalEntry>[1],
+  userId?: number
+): ReturnType<typeof _generatePaymentReceivedJournalEntry> => {
+  return _generatePaymentReceivedJournalEntry(payment, customer, userId);
 };
 
 // ==========================================
-// FUNCIONES PARA GESTIÓN DE PAGOS (CLIENTES Y PROVEEDORES)
+// FUNCIONES PARA GESTIí“N DE PAGOS (CLIENTES Y PROVEEDORES)
 // ==========================================
 
-export const generatePaymentNumber = (): string => {
-  if (!db) return '';
-  try {
-    const result = db.exec("SELECT COUNT(*) as count FROM payments");
-    const count = (result[0]?.values[0]?.[0] as number || 0) + 1;
-    return `PAY - C - ${new Date().getFullYear()} -${count.toString().padStart(4, '0')} `;
-  } catch (error) {
-    return `PAY - C - ${Date.now()} `;
-  }
+export const generatePaymentNumber = (): ReturnType<typeof _generatePaymentNumber> => {
+  return _generatePaymentNumber();
 };
 
 export const generateSupplierPaymentNumber = (): string => {
@@ -7512,122 +6552,19 @@ export const generateSupplierPaymentNumber = (): string => {
 };
 
 /**
- * Crea un pago de cliente (Customer Payment)
+ * Crear un pago de cliente (Customer Payment)
  */
-export const createPayment = (paymentData: Partial<Payment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  let transactionStarted = false;
-  try {
-    db.run('BEGIN TRANSACTION');
-    transactionStarted = true;
-
-    // 1. Validaciones básicas
-    if (!paymentData.customer_id || !paymentData.amount) {
-      throw new Error('Faltan datos requeridos (Cliente o Monto)');
-    }
-
-    // 2. Validar bloqueo de periodos
-    const paymentDateStr = paymentData.payment_date || new Date().toISOString().split('T')[0];
-    if (isDateLocked(paymentDateStr)) {
-      throw new Error('ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.');
-    }
-
-    // 2. Generar número si no existe
-    const paymentNumber = paymentData.payment_number || generatePaymentNumber();
-
-    // 3. Insertar pago
-    db.run(`
-      INSERT INTO payments(
-    customer_id, invoice_id, payment_number, payment_date, amount,
-    payment_method, reference_number, notes, created_by
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      paymentData.customer_id,
-      paymentData.invoice_id || null,
-      paymentNumber,
-      paymentData.payment_date || new Date().toISOString().split('T')[0],
-      paymentData.amount,
-      paymentData.payment_method || 'cash',
-      paymentData.reference_number || null,
-      paymentData.notes || null,
-      userId || 1
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const paymentId = result[0]?.values[0]?.[0] as number;
-
-    // 4. Actualizar estado de factura (si aplica)
-    if (paymentData.invoice_id) {
-      // Obtener total de la factura
-      const invoiceResult = db.exec(`SELECT total_amount FROM invoices WHERE id = ${paymentData.invoice_id} `);
-      if (invoiceResult.length > 0 && invoiceResult[0].values.length > 0) {
-        const totalAmount = invoiceResult[0].values[0][0] as number;
-
-        // Obtener pagos previos de esta factura (incluyendo este)
-        const paymentsResult = db.exec(`SELECT SUM(amount) FROM payments WHERE invoice_id = ${paymentData.invoice_id} `);
-        const totalPaid = paymentsResult[0]?.values[0]?.[0] as number || 0;
-
-        let newStatus = 'partial';
-        // Tolerancia pequeña para errores de punto flotante
-        if (Math.abs(totalPaid - totalAmount) < 0.01 || totalPaid > totalAmount) {
-          newStatus = 'paid';
-        }
-
-        db.run(`UPDATE invoices SET status = ? WHERE id = ? `, [newStatus, paymentData.invoice_id]);
-      }
-    }
-
-    db.run('COMMIT');
-    transactionStarted = false;
-
-    // 5. Auditoría (después del COMMIT para evitar problemas de transacción)
-    const auditData = { ...paymentData, id: paymentId, payment_number: paymentNumber };
-    logAuditEvent('payments', paymentId, 'INSERT', null, auditData, userId);
-
-    // 6. Generar Asiento Contable (después del COMMIT para evitar transacciones anidadas)
-    const fullPayment: Payment = {
-      id: paymentId,
-      customer_id: paymentData.customer_id,
-      invoice_id: paymentData.invoice_id,
-      payment_number: paymentNumber,
-      payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
-      amount: paymentData.amount,
-      payment_method: paymentData.payment_method || 'cash',
-      reference_number: paymentData.reference_number,
-      notes: paymentData.notes,
-      created_at: new Date().toISOString()
-    };
-
-    const customer = getCustomerById(paymentData.customer_id);
-    if (customer) {
-      try {
-        generatePaymentReceivedJournalEntry(fullPayment, customer, userId);
-      } catch (journalError) {
-        logger.warn('Payments', 'journal_entry_failed', 'Error al generar asiento contable, pero pago creado', { journalError }, journalError as Error);
-      }
-    }
-
-    logger.info('Payments', 'create_success', 'Pago de cliente creado correctamente', { paymentId, userId });
-    return { success: true, message: 'Pago registrado correctamente', paymentId };
-
-  } catch (error) {
-    if (transactionStarted) {
-      try {
-        db.run('ROLLBACK');
-      } catch (rollbackError) {
-        logger.error('Payments', 'rollback_failed', 'Error al hacer rollback', { rollbackError }, rollbackError as Error);
-      }
-    }
-    logger.error('Payments', 'create_failed', 'Error al crear pago', { error }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
+export const createPayment = (
+  paymentData: Parameters<typeof _createPayment>[0],
+  userId?: number
+): ReturnType<typeof _createPayment> => {
+  return _createPayment(paymentData, userId);
 };
 
 /**
  * Generar asiento automático para pago realizado (a proveedor)
  */
-export const generatePaymentSentJournalEntry = (payment: SupplierPayment, supplier: Supplier, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generatePaymentSentJournalEntry = async (payment: SupplierPayment, supplier: Supplier, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   const details: Partial<JournalDetail>[] = [
     // Débito: Cuentas por Pagar (Disminuye pasivo)
     {
@@ -7653,9 +6590,9 @@ export const generatePaymentSentJournalEntry = (payment: SupplierPayment, suppli
 };
 
 /**
- * Crea un pago a proveedor (Supplier Payment) - Alias: addPayment
+ * Crear un pago a proveedor (Supplier Payment) - Alias: addPayment
  */
-export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: number): { success: boolean; message: string; paymentId?: number } => {
+export const addPayment = async (paymentData: Partial<SupplierPayment>, userId?: number): Promise<{ success: boolean; message: string; paymentId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -7737,8 +6674,8 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
     db.run('COMMIT');
     logger.info('Payments', 'add_payment_success', 'Pago a proveedor registrado', { paymentId, userId });
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return { success: true, message: 'Pago registrado correctamente', paymentId };
 
@@ -7750,7 +6687,7 @@ export const addPayment = (paymentData: Partial<SupplierPayment>, userId?: numbe
 };
 
 /**
- * Create alias for consistency if needed, but keeping addPayment as primary for supplier payments per request
+ * create alias for consistency if needed, but keeping addPayment as primary for supplier payments per request
  */
 export const createSupplierPayment = addPayment; // Alias for consistency
 
@@ -7767,7 +6704,7 @@ export const generateBalanceSheet = (asOfDate?: string): { assets: ChartOfAccoun
 
     const result = db.exec(`
 SELECT
-coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
+coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance,
   COALESCE(SUM(jd.debit_amount), 0) as total_debits,
   COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
@@ -7776,7 +6713,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
       WHERE coa.account_type IN('asset', 'liability', 'equity') 
         AND coa.is_active = 1 
         ${dateFilter}
-      GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
+      GROUP BY coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
   `);
 
@@ -7788,7 +6725,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
     let totalAssets = 0;
     let totalLiabilitiesEquity = 0;
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const account: any = {};
@@ -7843,7 +6780,7 @@ export const generateIncomeStatement = (fromDate: string, toDate: string): { rev
   try {
     const result = db.exec(`
 SELECT
-coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
+coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance,
   COALESCE(SUM(jd.debit_amount), 0) as total_debits,
   COALESCE(SUM(jd.credit_amount), 0) as total_credits
       FROM chart_of_accounts coa
@@ -7852,7 +6789,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
       WHERE coa.account_type IN('revenue', 'expense') 
         AND coa.is_active = 1 
         AND je.entry_date BETWEEN ? AND ?
-  GROUP BY coa.account_code, coa.account_name, coa.account_type, coa.normal_balance
+  GROUP BY coa.account_code, coa.number, coa.account_name, coa.account_type, coa.normal_balance
       ORDER BY coa.account_code
     `, [fromDate, toDate]);
 
@@ -7863,7 +6800,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
     let totalRevenue = 0;
     let totalExpenses = 0;
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const account: any = {};
@@ -7911,7 +6848,7 @@ coa.account_code, coa.account_name, coa.account_type, coa.normal_balance,
  * Genera el asiento de cierre de resultados (Ingresos y Gastos).
  * Transfiere los saldos a la cuenta de Utilidades Retenidas (3130).
  */
-export const generateClosingEntry = (fromDate: string, toDate: string, userId?: number): { success: boolean; message: string; entryId?: number } => {
+export const generateClosingEntry = async (fromDate: string, toDate: string, userId?: number): Promise<{ success: boolean; message: string; entryId?: number }> => {
   if (!db) return { success: false, message: 'Database not initialized' };
 
   try {
@@ -8045,12 +6982,13 @@ export const getCashFlowStatement = (fromDate: string, toDate: string): {
 };
 
 // ==========================================
-// GESTIÓN DE DATOS DE LA EMPRESA
+// GESTIí“N DE DATOS DE LA EMPRESA
 // ==========================================
 
 export interface CompanyData {
   id: number;
   company_name: string;
+  netIncreaseInCash: number; // Agregado para corregir el error
   legal_name: string;
   tax_id: string; // EIN o Tax ID
   address: string;
@@ -8062,6 +7000,7 @@ export interface CompanyData {
   website?: string;
   logo_path?: string;
   fiscal_year_start: string; // MM-DD format
+  fiscal_year_end: string;
   currency: string;
   language: string;
   timezone: string;
@@ -8085,6 +7024,84 @@ export interface CompanyData {
   updated_at: string;
   is_active: boolean;
 }
+
+// Ejemplo de objeto CompanyData con netIncreaseInCash
+const company: CompanyData = {
+  id: 1,
+  company_name: 'Default Company',
+  legal_name: 'Default Legal Name',
+  tax_id: '000000000',
+  address: 'Default Address',
+  city: 'Default City',
+  state: 'Default State',
+  zip_code: '00000',
+  phone: '000-000-0000',
+  email: 'default@company.com',
+  website: 'www.default.com',
+  logo_path: '/path/to/logo.png',
+  fiscal_year_start: '2026-01-01',
+  currency: 'USD',
+  language: 'es',
+  timezone: 'America/New_York',
+  sales_commission_rate: 0,
+  sales_commission_percentage: 0,
+  discount_amount: 0,
+  discount_percentage: 0,
+  shipping_rate: 0,
+  shipping_percentage: 0,
+  reposition_policy_days: 0,
+  late_fee_amount: 0,
+  late_fee_percentage: 0,
+  annual_interest_rate: 0,
+  grace_period_days: 0,
+  documentation_cost: 0,
+  other_costs: 0,
+  chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
+  date_format: 'MM/DD/AAAA',
+  fiscal_year_end: '12-31',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  is_active: true,
+  netIncreaseInCash: 0 // Agregado para cumplir con la interfaz
+};
+
+const defaultCompany: Omit<CompanyData, 'id'> = {
+  company_name: 'Mi Empresa',
+  legal_name: 'Mi Empresa LLC',
+  tax_id: '00-0000000',
+  address: '123 Main Street',
+  city: 'Miami',
+  state: 'FL',
+  zip_code: '33101',
+  phone: '305-555-1234',
+  email: 'info@miempresa.com',
+  website: 'www.miempresa.com',
+  logo_path: '/path/to/logo.png',
+  fiscal_year_start: '2026-01-01',
+  fiscal_year_end: '2026-12-31',
+  currency: 'USD',
+  language: 'es',
+  timezone: 'America/New_York',
+  sales_commission_rate: 0,
+  sales_commission_percentage: 0,
+  discount_amount: 50,
+  discount_percentage: 0,
+  shipping_rate: 0,
+  shipping_percentage: 0,
+  reposition_policy_days: 32,
+  late_fee_amount: 0,
+  late_fee_percentage: 0,
+  annual_interest_rate: 0,
+  grace_period_days: 0,
+  documentation_cost: 0,
+  other_costs: 0,
+  chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
+  date_format: 'MM/DD/AAAA',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  netIncreaseInCash: 0,
+  is_active: true
+};
 
 // Generar Aging Report (Antigüedad de Cuentas)
 export const getAgingReport = (type: 'receivable' | 'payable'): {
@@ -8123,7 +7140,7 @@ e.name,
     let total = 0;
     const details: any[] = [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     result[0].values.forEach((row: any) => {
       const name = row[0] as string;
       const amount = Number(row[1]) || 0;
@@ -8173,7 +7190,7 @@ export const getAccountLedger = (accountCode: string, fromDate: string, toDate: 
     if (!accResult[0]) return { account: null, startingBalance: 0, transactions: [], endingBalance: 0, totalDebit: 0, totalCredit: 0 };
 
     const account: any = {};
-    accResult[0].columns.forEach((col: any, i: any) => account[col] = accResult[0].values[0][i]);
+    (accResult[0].columns || (accResult[0] as any).lc).forEach((col: any, i: any) => account[col] = accResult[0].values[0][i]);
 
     // 2. Calcular saldo inicial (antes de fromDate)
     const startBalResult = db.exec(`
@@ -8210,7 +7227,7 @@ je.entry_date,
     let totalCredit = 0;
 
     if (txResult[0]) {
-      const cols = txResult[0].columns;
+      const cols = (txResult[0].columns || (txResult[0] as any).lc);
       txResult[0].values.forEach((row: any) => {
         const tx: any = {};
         cols.forEach((col: any, i: any) => tx[col] = row[i]);
@@ -8253,7 +7270,26 @@ export function getCompanyData(): CompanyData | null {
     }
 
     const result = db.exec(`
-SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
+      SELECT 
+        id,
+        name as company_name,
+        name as legal_name,
+        tax_id,
+        address,
+        city,
+        state,
+        zip as zip_code,
+        phone,
+        email,
+        website,
+        currency_code as currency,
+        is_active,
+        fiscal_year_start,
+        fiscal_year_end,
+        netIncreaseInCash
+      FROM company_data 
+      WHERE is_active = 1 
+      LIMIT 1
     `);
 
     if (result.length === 0 || result[0].values.length === 0) {
@@ -8262,42 +7298,25 @@ SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
     }
 
     const row = result[0].values[0];
-    const company: CompanyData = {
-      id: row[0] as number,
-      company_name: row[1] as string,
-      legal_name: row[2] as string,
-      tax_id: row[3] as string,
-      address: row[4] as string,
-      city: row[5] as string,
-      state: row[6] as string,
-      zip_code: row[7] as string,
-      phone: row[8] as string,
-      email: row[9] as string,
-      website: row[10] as string || '',
-      logo_path: row[11] as string || '',
-      fiscal_year_start: row[12] as string,
-      currency: row[13] as string,
-      language: row[14] as string,
-      timezone: row[15] as string,
-      sales_commission_rate: Number(row[16]) || 0,
-      sales_commission_percentage: Number(row[17]) || 0,
-      discount_amount: Number(row[18]) || 50,
-      discount_percentage: Number(row[19]) || 0,
-      shipping_rate: Number(row[20]) || 0,
-      shipping_percentage: Number(row[21]) || 0,
-      reposition_policy_days: Number(row[22]) || 32,
-      late_fee_amount: Number(row[23]) || 0,
-      late_fee_percentage: Number(row[24]) || 0,
-      annual_interest_rate: Number(row[25]) || 0,
-      grace_period_days: Number(row[26]) || 0,
-      documentation_cost: Number(row[27]) || 0,
-      other_costs: Number(row[28]) || 0,
-      chart_of_accounts_name: row[29] as string || 'Plan de Cuenta Ejemplo',
-      date_format: row[30] as string || 'MM/DD/AAAA',
-      created_at: row[31] as string,
-      updated_at: row[32] as string,
-      is_active: Boolean(row[33])
-    };
+    const columns = (result[0].columns || (result[0] as any).lc);
+    // Guard: columns puede ser undefined con algunas versiones de sql.js
+    if (!columns || !Array.isArray(columns)) {
+      logger.warn('CompanyData', 'columns_missing', '(result[0].columns || (result[0] as any).lc) es undefined — retornando null');
+      return null;
+    }
+    const company = rowToEntity<CompanyData>(columns, row);
+
+    // Asegurar que los campos nuevos tengan valores válidos si no vienen de DB
+    if (!company.fiscal_year_end) company.fiscal_year_end = '12-31';
+    if (company.netIncreaseInCash === undefined) company.netIncreaseInCash = 0;
+
+    // Normalización de tipos numéricos (sql.js a veces devuelve strings o nulls que deben ser 0)
+    company.sales_commission_rate = Number(company.sales_commission_rate) || 0;
+    company.sales_commission_percentage = Number(company.sales_commission_percentage) || 0;
+    company.discount_amount = Number(company.discount_amount) || 0;
+    company.discount_percentage = Number(company.discount_percentage) || 0;
+    company.shipping_rate = Number(company.shipping_rate) || 0;
+    company.shipping_percentage = Number(company.shipping_percentage) || 0;
 
     logger.info('CompanyData', 'get_success', 'Datos de empresa obtenidos', { company_name: company.company_name });
     return company;
@@ -8308,7 +7327,7 @@ SELECT * FROM company_data WHERE is_active = 1 LIMIT 1
   }
 }
 
-export function updateCompanyData(companyData: Partial<CompanyData>): { success: boolean; message: string; warnings?: string[] } {
+export async function updateCompanyData(companyData: Partial<CompanyData>): Promise<{ success: boolean; message: string; warnings?: string[] }> {
   try {
     logger.info('CompanyData', 'update_start', 'Actualizando datos de empresa', companyData);
 
@@ -8321,8 +7340,8 @@ export function updateCompanyData(companyData: Partial<CompanyData>): { success:
     const accountingDataCheck = checkAccountingDataAssociation();
 
     if (accountingDataCheck.hasData) {
-      warnings.push('⚠️ ADVERTENCIA: Esta empresa tiene datos contables asociados');
-      warnings.push(`📊 ${accountingDataCheck.invoices} facturas, ${accountingDataCheck.customers} clientes, ${accountingDataCheck.suppliers} proveedores`);
+      warnings.push('âš ï¸ ADVERTENCIA: Esta empresa tiene datos contables asociados');
+      warnings.push(`ðŸ“Š ${accountingDataCheck.invoices} facturas, ${accountingDataCheck.customers} clientes, ${accountingDataCheck.suppliers} proveedores`);
 
       // Si se está cambiando el nombre de la empresa y hay datos contables
       if (companyData.company_name || companyData.legal_name) {
@@ -8331,59 +7350,109 @@ export function updateCompanyData(companyData: Partial<CompanyData>): { success:
       }
     }
 
-    // Obtener datos actuales
+    // ── UPSERT LOGIC ──────────────────────────────────────────────────────
+    // Verificar existencia de fila usando COUNT directo (sin rowToEntity)
+    const rowCount = db.exec("SELECT COUNT(*) FROM company_data")[0]?.values[0]?.[0] as number ?? 0;
+
+    // Helper: patrón correcto sql.js para DML con params posicionales
+    // db.run(sql, params) NO vincula parámetros en esta versión — requiere Statement API
+    const sqlRun = (sql: string, params: any[]): void => {
+      const stmt = db.prepare(sql);
+      try { stmt.run(params); } finally { stmt.free(); }
+    };
+
+    if (rowCount === 0) {
+      // CASO 1: No existe fila — INSERT directo con datos del usuario
+      logger.warn('CompanyData', 'upsert_insert', 'No existe fila — creando con datos del usuario');
+      sqlRun(`
+        INSERT INTO company_data (
+          name, tax_id,
+          address, city, state, zip,
+          phone, email, website,
+          fiscal_year_start, currency_code,
+          is_active, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+      `, [
+        companyData.company_name || 'Mi Empresa LLC',
+        companyData.tax_id || '00-0000000',
+        companyData.address || '',
+        companyData.city || '',
+        companyData.state || 'FL',
+        companyData.zip_code || '',
+        companyData.phone || '',
+        companyData.email || '',
+        companyData.website || null,
+        companyData.fiscal_year_start || '01-01',
+        companyData.currency || 'USD',
+        new Date().toISOString()
+      ]);
+      logger.info('CompanyData', 'upsert_insert_ok', 'Empresa creada correctamente');
+      try { await forceSaveDB(); } catch (_) { }
+      return { success: true, message: 'Datos de empresa creados correctamente' };
+    }
+
+    // CASO 2: Existe fila — obtenerla y hacer UPDATE
     const currentData = getCompanyData();
     if (!currentData) {
-      throw new Error('No se encontraron datos de empresa para actualizar');
+      // Fallback: getCompanyData() falló a pesar de que rowCount > 0
+      logger.warn('CompanyData', 'update_fallback', 'getCompanyData() null con row presente — UPDATE simple WHERE is_active=1');
+      sqlRun(`
+        UPDATE company_data SET
+          name = ?, tax_id = ?,
+          address = ?, city = ?, state = ?, zip = ?,
+          phone = ?, email = ?, updated_at = ?
+        WHERE is_active = 1
+      `, [
+        companyData.company_name || '',
+        companyData.tax_id || '',
+        companyData.address || '',
+        companyData.city || '',
+        companyData.state || 'FL',
+        companyData.zip_code || '',
+        companyData.phone || '',
+        companyData.email || '',
+        new Date().toISOString()
+      ]);
+      try { await forceSaveDB(); } catch (_) { }
+      return { success: true, message: 'Datos de empresa actualizados correctamente' };
     }
 
     // Preparar datos para actualización
+    // Filtrar undefined/null/'' para que currentData sirva como fallback
+    const cleanInput = Object.fromEntries(
+      Object.entries(companyData).filter(([, v]) => v !== undefined && v !== null && v !== '')
+    );
     const updateData = {
       ...currentData,
-      ...companyData,
+      ...cleanInput,
       updated_at: new Date().toISOString()
     };
 
-    // Ejecutar actualización
-    const stmt = db.prepare(`
+    // UPDATE completo con Statement API (patrón correcto sql.js)
+    sqlRun(`
       UPDATE company_data SET
-company_name = ?,
-  legal_name = ?,
-  tax_id = ?,
-  address = ?,
-  city = ?,
-  state = ?,
-  zip_code = ?,
-  phone = ?,
-  email = ?,
-  website = ?,
-  logo_path = ?,
-  fiscal_year_start = ?,
-  currency = ?,
-  language = ?,
-  timezone = ?,
-  sales_commission_rate = ?,
-  sales_commission_percentage = ?,
-  discount_amount = ?,
-  discount_percentage = ?,
-  shipping_rate = ?,
-  shipping_percentage = ?,
-  reposition_policy_days = ?,
-  late_fee_amount = ?,
-  late_fee_percentage = ?,
-  annual_interest_rate = ?,
-  grace_period_days = ?,
-  documentation_cost = ?,
-  other_costs = ?,
-  chart_of_accounts_name = ?,
-  date_format = ?,
-  updated_at = ?
-    WHERE id = ? AND is_active = 1
-      `);
-
-    stmt.run([
+        name = ?,
+        tax_id = ?,
+        address = ?,
+        city = ?,
+        state = ?,
+        zip = ?,
+        phone = ?,
+        email = ?,
+        website = ?,
+        logo_path = ?,
+        fiscal_year_start = ?,
+        currency_code = ?,
+        sales_commission_percentage = ?,
+        shipping_rate = ?,
+        late_fee_percentage = ?,
+        grace_period_days = ?,
+        fiscal_year_end = ?,
+        netIncreaseInCash = ?,
+        updated_at = ?
+      WHERE id = ? AND is_active = 1
+    `, [
       updateData.company_name,
-      updateData.legal_name,
       updateData.tax_id,
       updateData.address,
       updateData.city,
@@ -8393,25 +7462,14 @@ company_name = ?,
       updateData.email,
       updateData.website || null,
       updateData.logo_path || null,
-      updateData.fiscal_year_start,
-      updateData.currency,
-      updateData.language,
-      updateData.timezone,
-      updateData.sales_commission_rate || 0,
+      updateData.fiscal_year_start || '01-01',
+      updateData.currency || 'USD',
       updateData.sales_commission_percentage || 0,
-      updateData.discount_amount || 50,
-      updateData.discount_percentage || 0,
       updateData.shipping_rate || 0,
-      updateData.shipping_percentage || 0,
-      updateData.reposition_policy_days || 32,
-      updateData.late_fee_amount || 0,
       updateData.late_fee_percentage || 0,
-      updateData.annual_interest_rate || 0,
       updateData.grace_period_days || 0,
-      updateData.documentation_cost || 0,
-      updateData.other_costs || 0,
-      updateData.chart_of_accounts_name || 'Plan de Cuenta Ejemplo',
-      updateData.date_format || 'MM/DD/AAAA',
+      updateData.fiscal_year_end || '12-31',
+      updateData.netIncreaseInCash || 0,
       updateData.updated_at,
       currentData.id
     ]);
@@ -8432,8 +7490,8 @@ company_name = ?,
       warnings_count: warnings.length
     });
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return {
       success: true,
@@ -8452,7 +7510,7 @@ company_name = ?,
 }
 
 // ==========================================
-// MÓDULO ARD (Gestión de Archivos y Recibos)
+// Mí“DULO ARD (Gestión de Archivos y Recibos)
 // ==========================================
 
 export function getARDDocuments(): any[] {
@@ -8461,7 +7519,7 @@ export function getARDDocuments(): any[] {
     const result = db.exec('SELECT * FROM ard_documents ORDER BY created_at DESC');
     if (!result[0]) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const doc: any = {};
       columns.forEach((col: any, i: any) => doc[col] = row[i]);
@@ -8542,7 +7600,7 @@ c.id,
     const result = db.exec(query);
     if (!result[0]) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const obj: any = {};
       columns.forEach((col: any, i: any) => obj[col] = row[i]);
@@ -8610,9 +7668,16 @@ export function initializeCompanyData(): void {
       website: 'www.miempresa.com',
       logo_path: '',
       fiscal_year_start: '01-01', // Enero 1
+      fiscal_year_end: '12-31',
+      netIncreaseInCash: 0,
       currency: 'USD',
       language: 'es',
       timezone: 'America/New_York',
+      chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
+      date_format: 'MM/DD/AAAA',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_active: true,
       // Configuraciones financieras por defecto
       sales_commission_rate: 0,
       sales_commission_percentage: 0,
@@ -8626,30 +7691,21 @@ export function initializeCompanyData(): void {
       annual_interest_rate: 0,
       grace_period_days: 0,
       documentation_cost: 0,
-      other_costs: 0,
-      chart_of_accounts_name: 'Plan de Cuenta Ejemplo',
-      date_format: 'MM/DD/AAAA',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      is_active: true
+      other_costs: 0
     };
 
     const stmt = db.prepare(`
       INSERT INTO company_data(
-    company_name, legal_name, tax_id, address, city, state, zip_code,
-    phone, email, website, logo_path, fiscal_year_start, currency,
-    language, timezone, sales_commission_rate, sales_commission_percentage,
-    discount_amount, discount_percentage, shipping_rate, shipping_percentage,
-    reposition_policy_days, late_fee_amount, late_fee_percentage,
-    annual_interest_rate, grace_period_days, documentation_cost,
-    other_costs, chart_of_accounts_name, date_format,
-    created_at, updated_at, is_active
-  ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        name, tax_id, address, city, state, zip,
+        phone, email, website, logo_path, fiscal_year_start, currency_code,
+        sales_commission_percentage, shipping_rate, late_fee_percentage,
+        grace_period_days, fiscal_year_end, netIncreaseInCash,
+        created_at, updated_at, is_active
+      ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run([
       defaultCompany.company_name,
-      defaultCompany.legal_name,
       defaultCompany.tax_id,
       defaultCompany.address,
       defaultCompany.city,
@@ -8661,23 +7717,12 @@ export function initializeCompanyData(): void {
       defaultCompany.logo_path || null,
       defaultCompany.fiscal_year_start,
       defaultCompany.currency,
-      defaultCompany.language,
-      defaultCompany.timezone,
-      defaultCompany.sales_commission_rate,
-      defaultCompany.sales_commission_percentage,
-      defaultCompany.discount_amount,
-      defaultCompany.discount_percentage,
-      defaultCompany.shipping_rate,
-      defaultCompany.shipping_percentage,
-      defaultCompany.reposition_policy_days,
-      defaultCompany.late_fee_amount,
-      defaultCompany.late_fee_percentage,
-      defaultCompany.annual_interest_rate,
-      defaultCompany.grace_period_days,
-      defaultCompany.documentation_cost,
-      defaultCompany.other_costs,
-      defaultCompany.chart_of_accounts_name,
-      defaultCompany.date_format,
+      defaultCompany.sales_commission_percentage || 0,
+      defaultCompany.shipping_rate || 0,
+      defaultCompany.late_fee_percentage || 0,
+      defaultCompany.grace_period_days || 0,
+      defaultCompany.fiscal_year_end || '12-31',
+      defaultCompany.netIncreaseInCash || 0,
       defaultCompany.created_at,
       defaultCompany.updated_at,
       defaultCompany.is_active ? 1 : 0
@@ -8691,7 +7736,7 @@ export function initializeCompanyData(): void {
   }
 }
 // ==========================================
-// GESTIÓN DE CATEGORÍAS DE PRODUCTOS
+// GESTIí“N DE CATEGORíAS DE PRODUCTOS
 // ==========================================
 
 export function getProductCategories(): ProductCategory[] {
@@ -8718,7 +7763,7 @@ c.*,
     }
 
     const categories: ProductCategory[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const category: any = {};
@@ -8919,7 +7964,7 @@ export function deleteProductCategory(id: number, userId?: number): { success: b
 }
 
 // ==========================================
-// GESTIÓN DE PRODUCTOS EXPANDIDA
+// GESTIí“N DE PRODUCTOS EXPANDIDA
 // ==========================================
 
 export function getProducts(): Product[] {
@@ -8948,7 +7993,7 @@ p.*,
     }
 
     const products: Product[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const product: any = {};
@@ -9261,7 +8306,7 @@ p.*,
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const product: any = {};
 
     columns.forEach((col: any, index: any) => {
@@ -9365,7 +8410,7 @@ p.*,
     }
 
     const products: Product[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const product: any = {};
@@ -9400,360 +8445,44 @@ p.*,
  * Calcula el reporte DR-15 para un período específico
  * Cumple con requisitos legales de Florida
  */
-export function calculateFloridaDR15Report(period: string): FloridaDR15Report | null {
-  if (!db) {
-    logger.error('DR15', 'calculate_no_db', 'Base de datos no disponible');
-    return null;
-  }
-
-  try {
-    logger.info('DR15', 'calculate_start', 'Calculando reporte DR-15', { period });
-
-    // Determinar rango de fechas según el período
-    const { startDate, endDate } = parsePeriod(period);
-
-    // Obtener todas las facturas del período
-    const invoicesResult = db.exec(`
-SELECT
-i.id,
-  i.subtotal,
-  i.tax_amount,
-  i.total_amount,
-  c.florida_county,
-  c.tax_exempt
-      FROM invoices i
-      JOIN customers c ON i.customer_id = c.id
-      WHERE i.issue_date >= ? AND i.issue_date <= ?
-  AND i.status IN('sent', 'paid')
-    `, [startDate, endDate]);
-
-    if (invoicesResult.length === 0 || invoicesResult[0].values.length === 0) {
-      logger.warn('DR15', 'calculate_no_data', 'No hay facturas para el período', { period });
-      return createEmptyDR15Report(period);
-    }
-
-    let totalTaxableSales = 0;
-    let totalTaxCollected = 0;
-    let exemptSales = 0;
-    const countyBreakdown: { [county: string]: { rate: number; taxableAmount: number; taxAmount: number } } = {};
-
-    // Procesar cada factura
-    invoicesResult[0].values.forEach((row: any) => {
-      const subtotal = Number(row[1]) || 0;
-      const taxAmount = Number(row[2]) || 0;
-      const county = row[4] as string || 'Miami-Dade';
-      const isExempt = Boolean(row[5]);
-
-      if (isExempt) {
-        exemptSales += subtotal;
-      } else {
-        totalTaxableSales += subtotal;
-        totalTaxCollected += taxAmount;
-
-        // Agrupar por condado
-        if (!countyBreakdown[county]) {
-          const taxRate = getFloridaTaxRate(county);
-          countyBreakdown[county] = {
-            rate: taxRate,
-            taxableAmount: 0,
-            taxAmount: 0
-          };
-        }
-
-        countyBreakdown[county].taxableAmount += subtotal;
-        countyBreakdown[county].taxAmount += taxAmount;
-      }
-    });
-
-    // Crear el reporte
-    const report: FloridaDR15Report = {
-      period,
-      totalTaxableSales,
-      totalTaxCollected,
-      countyBreakdown: Object.entries(countyBreakdown).map(([county, data]) => ({
-        county,
-        rate: data.rate,
-        taxableAmount: data.taxableAmount,
-        taxAmount: data.taxAmount
-      })),
-      exemptSales,
-      adjustments: [], // Se pueden agregar manualmente después
-      netTaxDue: totalTaxCollected,
-      dueDate: calculateDueDate(period),
-      status: 'pending'
-    };
-
-    logger.info('DR15', 'calculate_success', 'Reporte DR-15 calculado', {
-      period,
-      totalTaxableSales,
-      totalTaxCollected,
-      counties: Object.keys(countyBreakdown).length
-    });
-
-    return report;
-
-  } catch (error) {
-    logger.error('DR15', 'calculate_failed', 'Error al calcular reporte DR-15', { period }, error as Error);
-    return null;
-  }
+export function calculateFloridaDR15Report(period: Parameters<typeof _calculateFloridaDR15Report>[0]): ReturnType<typeof _calculateFloridaDR15Report> {
+  return _calculateFloridaDR15Report(period);
 }
 
 /**
  * Guarda un reporte DR-15 en la base de datos
  */
-export function saveDR15Report(report: FloridaDR15Report): { success: boolean; message: string; id?: number } {
-  if (!db) {
-    return { success: false, message: 'Base de datos no disponible' };
-  }
-
-  try {
-    logger.info('DR15', 'save_start', 'Guardando reporte DR-15', { period: report.period });
-
-    // Verificar si ya existe un reporte para este período
-    const existingResult = db.exec(`
-      SELECT id FROM florida_tax_reports WHERE period = ?
-  `, [report.period]);
-
-    if (existingResult.length > 0 && existingResult[0].values.length > 0) {
-      return { success: false, message: `Ya existe un reporte para el período ${report.period} ` };
-    }
-
-    // Insertar reporte principal
-    const insertResult = db.exec(`
-      INSERT INTO florida_tax_reports(
-    period, total_taxable_sales, total_tax_collected, exempt_sales,
-    net_tax_due, due_date, status
-  ) VALUES(?, ?, ?, ?, ?, ?, ?)
-    `, [
-      report.period,
-      report.totalTaxableSales,
-      report.totalTaxCollected,
-      report.exemptSales,
-      report.netTaxDue,
-      report.dueDate.toISOString().split('T')[0],
-      report.status
-    ]);
-
-    // Obtener el ID del reporte insertado
-    const reportId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-
-    // Insertar desglose por condado
-    report.countyBreakdown.forEach(county => {
-      db!.exec(`
-        INSERT INTO florida_tax_report_counties(
-      report_id, county_name, tax_rate, taxable_amount, tax_amount
-    ) VALUES(?, ?, ?, ?, ?)
-      `, [reportId, county.county, county.rate, county.taxableAmount, county.taxAmount]);
-    });
-
-    // Insertar ajustes si existen
-    report.adjustments.forEach(adjustment => {
-      db!.exec(`
-        INSERT INTO florida_tax_report_adjustments(
-        report_id, description, amount, type
-      ) VALUES(?, ?, ?, ?)
-        `, [reportId, adjustment.description, adjustment.amount, adjustment.type]);
-    });
-
-    // Registrar en auditoría
-    const auditData = {
-      period: report.period,
-      total_tax: report.totalTaxCollected,
-      counties: report.countyBreakdown.length
-    };
-
-    db.exec(`
-      INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-    `, [
-      'florida_tax_reports',
-      reportId,
-      'INSERT',
-      JSON.stringify(auditData),
-      1,
-      generateSimpleHash(auditData)
-    ]);
-
-    logger.info('DR15', 'save_success', 'Reporte DR-15 guardado correctamente', {
-      period: report.period,
-      reportId
-    });
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return {
-      success: true,
-      message: `Reporte DR - 15 para ${report.period} guardado correctamente`,
-      id: reportId
-    };
-
-  } catch (error) {
-    logger.error('DR15', 'save_failed', 'Error al guardar reporte DR-15', { period: report.period }, error as Error);
-    return {
-      success: false,
-      message: `Error al guardar reporte: ${error instanceof Error ? error.message : 'Error desconocido'} `
-    };
-  }
+export function saveDR15Report(report: Parameters<typeof _saveDR15Report>[0]): ReturnType<typeof _saveDR15Report> {
+  return _saveDR15Report(report);
 }
 
 /**
  * Obtiene todos los reportes DR-15 guardados
  */
-export function getDR15Reports(): FloridaDR15Report[] {
-  if (!db) {
-    logger.error('DR15', 'get_reports_no_db', 'Base de datos no disponible');
-    return [];
-  }
-
-  try {
-    logger.info('DR15', 'get_reports_start', 'Obteniendo reportes DR-15');
-
-    const reportsResult = db.exec(`
-SELECT
-id, period, total_taxable_sales, total_tax_collected, exempt_sales,
-  net_tax_due, due_date, status, filed_by, filed_at
-      FROM florida_tax_reports
-      ORDER BY period DESC
-  `);
-
-    if (reportsResult.length === 0 || reportsResult[0].values.length === 0) {
-      logger.info('DR15', 'get_reports_empty', 'No hay reportes DR-15 guardados');
-      return [];
-    }
-
-    const reports: FloridaDR15Report[] = [];
-
-    for (const row of reportsResult[0].values) {
-      const reportId = row[0] as number;
-      const period = row[1] as string;
-
-      // Obtener desglose por condado
-      const countiesResult = db.exec(`
-        SELECT county_name, tax_rate, taxable_amount, tax_amount
-        FROM florida_tax_report_counties
-        WHERE report_id = ?
-  `, [reportId]);
-
-      const countyBreakdown = countiesResult.length > 0 ?
-        countiesResult[0].values.map((countyRow: any) => ({
-          county: countyRow[0] as string,
-          rate: Number(countyRow[1]),
-          taxableAmount: Number(countyRow[2]),
-          taxAmount: Number(countyRow[3])
-        })) : [];
-
-      // Obtener ajustes
-      const adjustmentsResult = db.exec(`
-        SELECT description, amount, type
-        FROM florida_tax_report_adjustments
-        WHERE report_id = ?
-  `, [reportId]);
-
-      const adjustments = adjustmentsResult.length > 0 ?
-        adjustmentsResult[0].values.map((adjRow: any) => ({
-          description: adjRow[0] as string,
-          amount: Number(adjRow[1]),
-          type: adjRow[2] as 'credit' | 'debit'
-        })) : [];
-
-      const report: FloridaDR15Report = {
-        period,
-        totalTaxableSales: Number(row[2]) || 0,
-        totalTaxCollected: Number(row[3]) || 0,
-        countyBreakdown,
-        exemptSales: Number(row[4]) || 0,
-        adjustments,
-        netTaxDue: Number(row[5]) || 0,
-        dueDate: new Date(row[6] as string),
-        filedBy: row[7] as number || undefined,
-        filedAt: row[8] ? new Date(row[8] as string) : undefined,
-        status: row[9] as 'pending' | 'filed' | 'paid' | 'late'
-      };
-
-      reports.push(report);
-    }
-
-    logger.info('DR15', 'get_reports_success', 'Reportes DR-15 obtenidos', { count: reports.length });
-    return reports;
-
-  } catch (error) {
-    logger.error('DR15', 'get_reports_failed', 'Error al obtener reportes DR-15', null, error as Error);
-    return [];
-  }
+export function getDR15Reports(): ReturnType<typeof _getDR15Reports> {
+  return _getDR15Reports();
 }
 
 /**
  * Obtiene todas las tasas de impuesto de Florida de la DB
  */
-export function getAllFloridaTaxRates(): { id: number; county: string; stateRate: number; discretionaryRate: number; totalRate: number }[] {
-  if (!db) return [];
-  try {
-    const result = db.exec("SELECT id, county_name as county, state_rate as stateRate, county_rate as discretionaryRate, total_rate as totalRate FROM florida_tax_rates");
-    if (result.length === 0 || result[0].values.length === 0) return [];
-
-    const columns = result[0].columns;
-    return result[0].values.map((row: any) => rowToEntity<any>(columns, row as initSqlJs.SqlValue[]));
-  } catch (error) {
-    console.error('Error getting all tax rates:', error);
-    return [];
-  }
+export function getAllFloridaTaxRates(): ReturnType<typeof _getAllFloridaTaxRates> {
+  return _getAllFloridaTaxRates();
 }
 
 /**
  * Actualiza una tasa de impuesto de Florida
  */
-export function updateFloridaTaxRate(id: number, discretionaryRate: number): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Base de datos no disponible' };
-  try {
-    const totalRate = 0.06 + discretionaryRate;
-    db.run(`UPDATE florida_tax_rates SET county_rate = ?, total_rate = ? WHERE id = ?`, [discretionaryRate, totalRate, id]);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
-
-    return { success: true, message: 'Tasa actualizada correctamente' };
-  } catch (error) {
-    console.error('Error updating tax rate:', error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
+export function updateFloridaTaxRate(id: Parameters<typeof _updateFloridaTaxRate>[0], discretionaryRate: Parameters<typeof _updateFloridaTaxRate>[1]): ReturnType<typeof _updateFloridaTaxRate> {
+  return _updateFloridaTaxRate(id, discretionaryRate);
 }
 
 
 /**
  * Marca un reporte DR-15 como presentado
  */
-export function markDR15ReportAsFiled(period: string, filedBy: number = 1): { success: boolean; message: string } {
-  if (!db) {
-    return { success: false, message: 'Base de datos no disponible' };
-  }
-
-  try {
-    logger.info('DR15', 'mark_filed_start', 'Marcando reporte como presentado', { period, filedBy });
-
-    const result = db.exec(`
-      UPDATE florida_tax_reports 
-      SET status = 'filed', filed_by = ?, filed_at = CURRENT_TIMESTAMP
-      WHERE period = ?
-  `, [filedBy, period]);
-
-    logger.info('DR15', 'mark_filed_success', 'Reporte marcado como presentado', { period });
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
-
-    return {
-      success: true,
-      message: `Reporte DR - 15 para ${period} marcado como presentado`
-    };
-
-  } catch (error) {
-    logger.error('DR15', 'mark_filed_failed', 'Error al marcar reporte como presentado', { period }, error as Error);
-    return {
-      success: false,
-      message: `Error al actualizar reporte: ${error instanceof Error ? error.message : 'Error desconocido'} `
-    };
-  }
+export function markDR15ReportAsFiled(period: Parameters<typeof _markDR15ReportAsFiled>[0], filedBy?: Parameters<typeof _markDR15ReportAsFiled>[1]): ReturnType<typeof _markDR15ReportAsFiled> {
+  return _markDR15ReportAsFiled(period, filedBy);
 }
 
 // ==========================================
@@ -9810,7 +8539,7 @@ function calculateDueDate(period: string): Date {
 }
 
 /**
- * Crea un reporte DR-15 vacío para períodos sin datos
+ * CÁrea un reporte DR-15 vacío para períodos sin datos
  */
 function createEmptyDR15Report(period: string): FloridaDR15Report {
   return {
@@ -9829,25 +8558,8 @@ function createEmptyDR15Report(period: string): FloridaDR15Report {
 /**
  * Genera períodos disponibles para reportes
  */
-export function getAvailableDR15Periods(): string[] {
-  const periods: string[] = [];
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-
-  // Generar últimos 8 trimestres
-  for (let year = currentYear - 1; year <= currentYear; year++) {
-    for (let quarter = 1; quarter <= 4; quarter++) {
-      const period = `${year} -Q${quarter} `;
-      const { endDate } = parsePeriod(period);
-
-      // Solo incluir períodos que ya han terminado
-      if (new Date(endDate) < currentDate) {
-        periods.push(period);
-      }
-    }
-  }
-
-  return periods.reverse(); // Más recientes primero
+export function getAvailableDR15Periods(): ReturnType<typeof _getAvailableDR15Periods> {
+  return _getAvailableDR15Periods();
 }
 
 // ==========================================
@@ -9879,7 +8591,7 @@ export function getPaymentMethods(): PaymentMethod[] {
     }
 
     const paymentMethods: PaymentMethod[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const paymentMethod: any = {};
@@ -9922,7 +8634,7 @@ export function getAllPaymentMethods(): PaymentMethod[] {
     }
 
     const paymentMethods: PaymentMethod[] = [];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     result[0].values.forEach((row: any) => {
       const paymentMethod: any = {};
@@ -9942,9 +8654,9 @@ export function getAllPaymentMethods(): PaymentMethod[] {
 }
 
 /**
- * Crea un nuevo método de pago
+ * Crear un nuevo método de pago
  */
-export function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'created_at'>): { success: boolean; message: string; id?: number } {
+export async function createPaymentMethod(methodData: Omit<PaymentMethod, 'id' | 'created_at'>): Promise<{ success: boolean; message: string; id?: number }> {
   if (!db) {
     return { success: false, message: 'Base de datos no disponible' };
   }
@@ -9999,8 +8711,8 @@ VALUES(?, ?, ?, ?, ?, ?)
       method_name: methodData.method_name
     });
 
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return {
 
@@ -10228,7 +8940,7 @@ export function getPaymentMethodById(id: number): PaymentMethod | null {
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
 
     const paymentMethod: any = {};
     columns.forEach((col: any, index: any) => {
@@ -10278,7 +8990,7 @@ export function canDeletePaymentMethod(id: number): { canDelete: boolean; reason
     if (usageCount > 0) {
       return {
         canDelete: false,
-        reason: `El método de pago está siendo usado en ${usageCount} transacciones.Solo se puede desactivar.`
+        reason: `El método de pago está siendo usado en ${usageCount} transacciones. Solo se puede desactivar.`
       };
     }
 
@@ -10303,13 +9015,13 @@ export function getBankAccounts(): BankAccount[] {
   }
 
   try {
-    const result = db.exec("SELECT * FROM bank_accounts ORDER BY account_name");
+    const result = db.exec("SELECT * FROM bank_accounts WHERE is_active = 1 ORDER BY account_name");
 
     if (result.length === 0 || result[0].values.length === 0) {
       return [];
     }
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => {
       const account: any = {};
       columns.forEach((col: any, index: any) => {
@@ -10337,7 +9049,7 @@ export function getBankAccountById(id: number): BankAccount | null {
     }
 
     const row = result[0].values[0];
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const account: any = {};
 
     columns.forEach((col: any, index: any) => {
@@ -10352,9 +9064,68 @@ export function getBankAccountById(id: number): BankAccount | null {
 }
 
 /**
- * Crea una nueva cuenta bancaria
+ * Cuenta cuántas transacciones importadas tiene una cuenta bancaria.
+ * Usado para bloquear eliminaciones que dejarían registros huérfanos.
  */
-export function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>): { success: boolean; message: string; id?: number } {
+export function getBankAccountTransactionCount(accountId: number): number {
+  if (!db) return 0;
+  try {
+    const stmt = db.prepare(`SELECT COUNT(*) as cnt FROM bank_transactions WHERE bank_account_id = ?`);
+    stmt.bind([accountId]);
+    let count = 0;
+    if (stmt.step()) {
+      count = Number(stmt.getAsObject().cnt) || 0;
+    }
+    stmt.free();
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Busca todas las cuentas bancarias que coincidan con un número (coincidencia parcial o exacta)
+ * Útil para desambiguación.
+ */
+export function findBankAccountsByNumber(accountNumber: string): BankAccount[] {
+  if (!db || !accountNumber) return [];
+
+  try {
+    const result = db.exec(
+      "SELECT * FROM bank_accounts WHERE (account_number = ? OR account_number LIKE ?) AND is_active = 1",
+      [accountNumber, `%${accountNumber}`]
+    );
+
+    if (result.length === 0 || result[0].values.length === 0) {
+      return [];
+    }
+
+    const columns = (result[0].columns || (result[0] as any).lc);
+    return result[0].values.map((row: any) => {
+      const account: any = {};
+      columns.forEach((col: any, index: any) => {
+        account[col] = row[index];
+      });
+      return account as BankAccount;
+    });
+  } catch (error) {
+    logger.error('BankAccounts', 'find_all_failed', 'Error al buscar cuentas por número', { accountNumber }, error as Error);
+    return [];
+  }
+}
+
+/**
+ * Busca una cuenta bancaria por su número de cuenta (coincidencia parcial o exacta)
+ */
+export function findBankAccountByNumber(accountNumber: string): BankAccount | null {
+  const accounts = findBankAccountsByNumber(accountNumber);
+  return accounts.length > 0 ? accounts[0] : null;
+}
+
+/**
+ * Crear una nueva cuenta bancaria
+ */
+export async function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>): Promise<{ success: boolean; message: string; id?: number }> {
   if (!db) return { success: false, message: 'Base de datos no disponible' };
 
   try {
@@ -10381,10 +9152,11 @@ export function createBankAccount(data: Omit<BankAccount, 'id' | 'created_at'>):
     const id = idResult[0].values[0][0] as number;
 
     // Auditoría
-    db.exec(`
+    const auditStmt = db.prepare(`
       INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-    `, [
+      VALUES(?, ?, ?, ?, ?, ?)
+    `);
+    auditStmt.run([
       'bank_accounts',
       id,
       'INSERT',
@@ -10392,10 +9164,13 @@ VALUES(?, ?, ?, ?, ?, ?)
       1,
       generateSimpleHash(data)
     ]);
+    auditStmt.free();
 
     logger.info('BankAccounts', 'create_success', 'Cuenta bancaria creada', { id });
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+
+    // Limpieza y Persistencia
+    stmt.free();
+    await forceSaveDB();
 
     return { success: true, message: 'Cuenta bancaria creada correctamente', id };
   } catch (error) {
@@ -10407,7 +9182,7 @@ VALUES(?, ?, ?, ?, ?, ?)
 /**
  * Actualiza una cuenta bancaria existente
  */
-export function updateBankAccount(id: number, data: Partial<BankAccount>): { success: boolean; message: string } {
+export async function updateBankAccount(id: number, data: Partial<BankAccount>): Promise<{ success: boolean; message: string }> {
   if (!db) return { success: false, message: 'Base de datos no disponible' };
 
   try {
@@ -10436,10 +9211,11 @@ export function updateBankAccount(id: number, data: Partial<BankAccount>): { suc
     stmt.run(updateValues);
 
     // Auditoría
-    db.exec(`
+    const updateAuditStmt = db.prepare(`
       INSERT INTO audit_log(table_name, record_id, action, new_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-  `, [
+      VALUES(?, ?, ?, ?, ?, ?)
+    `);
+    updateAuditStmt.run([
       'bank_accounts',
       id,
       'UPDATE',
@@ -10447,10 +9223,13 @@ VALUES(?, ?, ?, ?, ?, ?)
       1,
       generateSimpleHash(data)
     ]);
+    updateAuditStmt.free();
+    stmt.free();
 
     logger.info('BankAccounts', 'update_success', 'Cuenta bancaria actualizada', { id });
-    // Auto-save
-    setTimeout(() => saveDatabase(), 1000);
+
+    // Persistencia Inmediata
+    await forceSaveDB();
 
     return { success: true, message: 'Cuenta bancaria actualizada correctamente' };
   } catch (error) {
@@ -10470,31 +9249,47 @@ export function deleteBankAccount(id: number): { success: boolean; message: stri
     const account = getBankAccountById(id);
     if (!account) return { success: false, message: 'Cuenta no encontrada' };
 
-    if (account.balance !== 0) {
-      return { success: false, message: 'No se puede eliminar una cuenta con saldo diferente a 0. Ajuste el saldo o desactívela.' };
+    const hasBalance = account.balance !== 0;
+    const txCount = getBankAccountTransactionCount(id);
+
+    // Lógica de discriminación:
+    if (txCount === 0 && !hasBalance) {
+      // Hard Delete: La cuenta nunca se usó y no tiene saldo. Limpieza física.
+      const hardDeleteStmt = db.prepare("DELETE FROM bank_accounts WHERE id = ?");
+      hardDeleteStmt.run([id]);
+      hardDeleteStmt.free();
+    } else {
+      // Soft Delete: La cuenta tiene historia o saldo. Preservamos para auditoría.
+      const softDeleteStmt = db.prepare("UPDATE bank_accounts SET is_active = 0 WHERE id = ?");
+      softDeleteStmt.run([id]);
+      softDeleteStmt.free();
     }
 
-    // Por seguridad, preferimos Soft Delete para bancos
-    db.exec("UPDATE bank_accounts SET is_active = 0 WHERE id = ?", [id]);
-
     // Auditoría
-    db.exec(`
+    const deleteAuditStmt = db.prepare(`
       INSERT INTO audit_log(table_name, record_id, action, old_values, user_id, audit_hash)
-VALUES(?, ?, ?, ?, ?, ?)
-  `, [
+      VALUES(?, ?, ?, ?, ?, ?)
+    `);
+    deleteAuditStmt.run([
       'bank_accounts',
       id,
-      'DELETE', // Marcamos como DELETE en auditoría aunque sea soft delete para indicar la intención
+      'DELETE',
       JSON.stringify(account),
       1,
       generateSimpleHash(account)
     ]);
+    deleteAuditStmt.free();
 
     logger.info('BankAccounts', 'delete_success', 'Cuenta bancaria desactivada/eliminada', { id });
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Cuenta bancaria eliminada correctamente' };
+    return {
+      success: true,
+      message: hasBalance
+        ? 'Cuenta desactivada (tenía saldo activo — no se puede eliminar definitivamente)'
+        : 'Cuenta bancaria eliminada correctamente'
+    };
   } catch (error) {
     logger.error('BankAccounts', 'delete_failed', 'Error al eliminar cuenta bancaria', { id }, error as Error);
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
@@ -10502,11 +9297,11 @@ VALUES(?, ?, ?, ?, ?, ?)
 }
 
 // ==========================================
-// FUNCIONES DE CONCILIACI�N BANCARIA
+// FUNCIONES DE CONCILIACIï¿½N BANCARIA
 // ==========================================
 
 /**
- * Obtiene todos los estados de conciliaci�n
+ * Obtiene todos los estados de conciliaciï¿½n
  */
 export function getReconciliationStatements(accountId?: number): ReconciliationStatement[] {
   if (!db) return [];
@@ -10523,7 +9318,7 @@ export function getReconciliationStatements(accountId?: number): ReconciliationS
 
     const res = db.exec(query, params);
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<ReconciliationStatement>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<ReconciliationStatement>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching reconciliation statements:', e);
     return [];
@@ -10531,7 +9326,15 @@ export function getReconciliationStatements(accountId?: number): ReconciliationS
 }
 
 /**
- * Crea un nuevo estado de conciliaci�n
+ * Obtiene el último estado de conciliación de una cuenta
+ */
+export function getLastReconciliationStatement(accountId: number): ReconciliationStatement | null {
+  const statements = getReconciliationStatements(accountId);
+  return statements.length > 0 ? statements[0] : null;
+}
+
+/**
+ * Crear un nuevo estado de conciliación
  */
 export function createReconciliationStatement(data: Omit<ReconciliationStatement, 'id' | 'created_at' | 'difference'>): { success: boolean; message: string; id?: number } {
   if (!db) return { success: false, message: 'Database not initialized' };
@@ -10557,7 +9360,7 @@ export function createReconciliationStatement(data: Omit<ReconciliationStatement
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
 
-    return { success: true, message: 'Estado de conciliaci�n creado', id };
+    return { success: true, message: 'Estado de conciliación creado', id };
   } catch (e: any) {
     return { success: false, message: e.message };
   }
@@ -10577,7 +9380,7 @@ export function getUnreconciledTransactions(accountId: number): BankTransaction[
     `, [accountId]);
 
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<BankTransaction>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<BankTransaction>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error fetching unreconciled transactions:', e);
     return [];
@@ -10590,7 +9393,7 @@ export function getUnreconciledTransactions(accountId: number): BankTransaction[
 export function findSimilarJournalEntries(transaction: BankTransaction): JournalEntry[] {
   if (!db) return [];
   try {
-    // Buscar por monto exacto y fecha cercana (�3 d�as)
+    // Buscar por monto exacto y fecha cercana (ï¿½3 dï¿½as)
     const res = db.exec(`
       SELECT je.* FROM journal_entries je
       WHERE ABS(je.total_debit - ?) < 0.01 
@@ -10603,7 +9406,7 @@ export function findSimilarJournalEntries(transaction: BankTransaction): Journal
     `, [Math.abs(transaction.amount), transaction.transaction_date, transaction.transaction_date]);
 
     if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<JournalEntry>(res[0].columns, row));
+    return res[0].values.map((row: any) => rowToEntity<JournalEntry>((res[0].columns || (res[0] as any).lc), row));
   } catch (e) {
     console.error('Error finding similar journal entries:', e);
     return [];
@@ -10611,7 +9414,7 @@ export function findSimilarJournalEntries(transaction: BankTransaction): Journal
 }
 
 /**
- * Crea un match de conciliaci�n
+ * Crear un match de conciliación
  */
 export function createReconciliationMatch(data: Omit<ReconciliationMatch, 'id' | 'matched_at'>): { success: boolean; message: string; id?: number } {
   if (!db) return { success: false, message: 'Database not initialized' };
@@ -10637,68 +9440,18 @@ export function createReconciliationMatch(data: Omit<ReconciliationMatch, 'id' |
     const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
     stmt.free();
 
-    // Actualizar estado de la transacci�n bancaria
+    // Actualizar estado de la transacciï¿½n bancaria
     db.run("UPDATE bank_transactions SET status = 'matched' WHERE id = ?", [data.bank_transaction_id]);
 
     db.run("COMMIT");
     // Auto-save
     setTimeout(() => saveDatabase(), 1000);
-    return { success: true, message: 'Match de conciliaci�n creado', id };
+    return { success: true, message: 'Match de conciliación creado', id };
   } catch (e: any) {
     db.run("ROLLBACK");
     return { success: false, message: e.message };
   }
 }
-
-/**
- * Auto-matching inteligente de transacciones
- */
-export function autoMatchTransactions(statementId: number): { success: boolean; message: string; matchesFound: number } {
-  if (!db) return { success: false, message: 'Database not initialized', matchesFound: 0 };
-
-  try {
-    // Obtener el statement
-    const statementRes = db.exec("SELECT * FROM reconciliation_statements WHERE id = ?", [statementId]);
-    if (statementRes.length === 0) {
-      return { success: false, message: 'Statement no encontrado', matchesFound: 0 };
-    }
-
-    const statement = rowToEntity<ReconciliationStatement>(statementRes[0].columns, statementRes[0].values[0]);
-
-    // Obtener transacciones no conciliadas
-    const transactions = getUnreconciledTransactions(statement.bank_account_id);
-    let matchesFound = 0;
-
-    for (const transaction of transactions) {
-      const similarEntries = findSimilarJournalEntries(transaction);
-
-      if (similarEntries.length > 0) {
-        const bestMatch = similarEntries[0];
-        const confidence = calculateMatchConfidence(transaction, bestMatch);
-
-        if (confidence >= 0.8) { // Solo auto-match con alta confianza
-          const result = createReconciliationMatch({
-            statement_id: statementId,
-            bank_transaction_id: transaction.id,
-            journal_entry_id: bestMatch.id,
-            match_confidence: confidence,
-            match_type: 'automatic',
-            matched_by: undefined
-          });
-
-          if (result.success) {
-            matchesFound++;
-          }
-        }
-      }
-    }
-
-    return { success: true, message: `${matchesFound} matches autom�ticos creados`, matchesFound };
-  } catch (e: any) {
-    return { success: false, message: e.message, matchesFound: 0 };
-  }
-}
-
 /**
  * Calcula la confianza de un match
  */
@@ -10710,13 +9463,13 @@ function calculateMatchConfidence(transaction: BankTransaction, entry: JournalEn
     confidence += 0.4;
   }
 
-  // Fecha cercana: +30% (m�ximo si es el mismo d�a)
+  // Fecha cercana: +30% (mï¿½ximo si es el mismo dï¿½a)
   const daysDiff = Math.abs(new Date(transaction.transaction_date).getTime() - new Date(entry.entry_date).getTime()) / (1000 * 60 * 60 * 24);
   if (daysDiff <= 3) {
     confidence += 0.3 * (1 - daysDiff / 3);
   }
 
-  // Descripci�n similar: +20%
+  // Descripciï¿½n similar: +20%
   if (transaction.description && entry.description) {
     const similarity = calculateStringSimilarity(transaction.description.toLowerCase(), entry.description.toLowerCase());
     confidence += 0.2 * similarity;
@@ -10746,44 +9499,13 @@ function calculateStringSimilarity(str1: string, str2: string): number {
 
   return matches / Math.max(words1.length, words2.length);
 }
-
-/**
- * Obtiene todos los movimientos de inventario
- */
-export function getInventoryMovements(): any[] {
-  if (!db) return [];
-  try {
-    const result = db.exec(`
-      SELECT m.*, p.name as product_name, p.sku as product_sku 
-      FROM inventory_movements m
-      JOIN products p ON m.product_id = p.id
-      ORDER BY m.date DESC
-    `);
-
-    if (result.length === 0 || result[0].values.length === 0) {
-      return [];
-    }
-
-    const columns = result[0].columns;
-    return result[0].values.map((row: any) => {
-      const obj: any = {};
-      columns.forEach((col: any, index: any) => {
-        obj[col] = row[index];
-      });
-      return obj;
-    });
-  } catch (error) {
-    console.error('Error fetching inventory movements:', error);
-    return [];
-  }
-}
-
 // ==========================================
-// REPORTES CONTABLES: BALANCE DE COMPROBACIÓN
+// REPORTES CONTABLES: BALANCE DE COMPROBACIí“N
 // ==========================================
 
 export interface TrialBalanceRow {
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: string;
   normal_balance: 'debit' | 'credit';
@@ -10796,204 +9518,19 @@ export interface TrialBalanceRow {
   initial_balance: number;
   final_balance: number;
 }
-
-export function getTrialBalanceReport(year: number, month: number): TrialBalanceRow[] {
-  if (!db) return [];
-
-  try {
-    const startDate = `${year} -${String(month).padStart(2, '0')}-01`;
-    const nextMonth = new Date(year, month, 0);
-    const endDate = nextMonth.toISOString().split('T')[0];
-
-    const query = `
-SELECT
-ca.account_code,
-  ca.account_name,
-  ca.account_type,
-  ca.normal_balance,
-  COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as prev_debit,
-  COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as prev_credit,
-  COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
-  COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
-      FROM chart_of_accounts ca
-      LEFT JOIN journal_details jd ON ca.account_code = jd.account_code
-      LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
-      WHERE ca.is_active = 1
-      GROUP BY ca.account_code, ca.account_name, ca.account_type, ca.normal_balance
-      HAVING prev_debit != 0 OR prev_credit != 0 OR period_debit != 0 OR period_credit != 0
-      ORDER BY ca.account_code ASC
-  `;
-
-    const result = db.exec(query, [startDate, startDate, startDate, endDate, startDate, endDate]);
-
-    if (!result.length || !result[0].values.length) return [];
-
-    return result[0].values.map((row: any) => {
-      const account_code = String(row[0]);
-      const account_name = String(row[1]);
-      const account_type = String(row[2]);
-      const normal_balance = row[3] as 'debit' | 'credit';
-      const previous_debit = Number(row[4]);
-      const previous_credit = Number(row[5]);
-      const debit = Number(row[6]);
-      const credit = Number(row[7]);
-
-      let initial_balance = 0;
-      if (normal_balance === 'debit') {
-        initial_balance = previous_debit - previous_credit;
-      } else {
-        initial_balance = previous_credit - previous_debit;
-      }
-
-      const total_debit = previous_debit + debit;
-      const total_credit = previous_credit + credit;
-
-      let final_balance = 0;
-      if (normal_balance === 'debit') {
-        final_balance = total_debit - total_credit;
-      } else {
-        final_balance = total_credit - total_debit;
-      }
-
-      return {
-        account_code,
-        account_name,
-        account_type,
-        normal_balance,
-        initial_balance,
-        period_debit: debit,
-        period_credit: credit,
-        total_debit,
-        total_credit,
-        final_balance,
-        previous_debit,
-        previous_credit
-      };
-    });
-
-  } catch (error) {
-    logger.error('Accounting', 'trial_balance_failed', 'Error generando balance de comprobación', { year, month }, error as Error);
-    return [];
-  }
-}
-
-export function getAccountMovementsDetails(accountCode: string, startDate: string, endDate: string) {
-  if (!db) return [];
-  const query = `
-SELECT
-je.entry_date as date,
-  je.reference,
-  je.description as entry_desc,
-  jd.description as line_desc,
-  jd.debit_amount as debit,
-  jd.credit_amount as credit
-      FROM journal_details jd
-      JOIN journal_entries je ON jd.journal_entry_id = je.id
-      WHERE jd.account_code = ? AND je.entry_date BETWEEN ? AND ?
-  ORDER BY je.entry_date ASC, je.id ASC
-  `;
-  try {
-    const res = db.exec(query, [accountCode, startDate, endDate]);
-    if (!res.length) return [];
-    return res[0].values.map((row: any) => ({
-      date: row[0],
-      reference: row[1],
-      description: row[3] || row[2],
-      debit: Number(row[4]),
-      credit: Number(row[5])
-    }));
-  } catch (e) {
-    return [];
-  }
-}
-
-export function validateAccountingIntegrity(): { isValid: boolean; errors: string[] } {
-  if (!db) return { isValid: false, errors: ['Database not initialized'] };
-  const errors: string[] = [];
-
-  const res = db.exec("SELECT id, entry_date, description, total_debit, total_credit FROM journal_entries WHERE ABS(total_debit - total_credit) > 0.001");
-  if (res.length && res[0].values.length > 0) {
-    res[0].values.forEach((row: any) => {
-      errors.push(`Asiento #${row[0]} (${row[1]}) descuadrado por $${Math.abs(Number(row[3]) - Number(row[4])).toFixed(2)} `);
-    });
-  }
-
-  return { isValid: errors.length === 0, errors };
-}
-
-
 // ==========================================
 // REPORTES CONTABLES: ESTADO DE RESULTADOS (P&L)
 // ==========================================
 
 export interface IncomeStatementItem {
   account_code: string;
+  number?: string;
   account_name: string;
   account_type: string;
   balance: number;
 }
-
-export function getIncomeStatementReport(startDate: string, endDate: string): IncomeStatementItem[] {
-  if (!db) return [];
-
-  try {
-    const query = `
-SELECT
-ca.account_code,
-  ca.account_name,
-  ca.account_type,
-  SUM(jd.debit_amount) as total_debit,
-  SUM(jd.credit_amount) as total_credit
-      FROM chart_of_accounts ca
-      JOIN journal_details jd ON ca.account_code = jd.account_code
-      JOIN journal_entries je ON jd.journal_entry_id = je.id
-WHERE
-je.entry_date BETWEEN '${startDate}' AND '${endDate}' AND
-  (LOWER(ca.account_type) = 'revenue' OR LOWER(ca.account_type) = 'expense')
-      GROUP BY ca.account_code, ca.account_name, ca.account_type
-      ORDER BY ca.account_code ASC
-    `;
-
-    const result = db.exec(query);
-    if (!result.length || !result[0].values.length) return [];
-
-    const columns = result[0].columns;
-    return result[0].values.map((row: any) => {
-      const r: any = {};
-      columns.forEach((col: any, i: any) => r[col] = row[i]);
-
-      const type = String(r.account_type).toLowerCase();
-      const debit = Number(r.total_debit);
-      const credit = Number(r.total_credit);
-
-      let netBalance = 0;
-
-      // Calcular saldo neto según naturaleza
-      // Revenue (Ventas): Acreedor (Crédito aumenta) -> Saldo = Crédito - Débito
-      // Expense (Gastos): Deudor (Débito aumenta) -> Saldo = Débito - Crédito
-      if (type === 'revenue') {
-        netBalance = credit - debit;
-      } else {
-        // expense
-        netBalance = debit - credit;
-      }
-
-      return {
-        account_code: String(r.account_code),
-        account_name: String(r.account_name),
-        account_type: type,
-        balance: netBalance
-      };
-    });
-
-  } catch (error) {
-    logger.error('Accounting', 'income_statement_failed', 'Error P&L', { startDate, endDate }, error as Error);
-    return [];
-  }
-}
-
 // ==========================================
-// MÓDULO 20: CONCILIACIÓN BANCARIA - FUNCIONES
+// Mí“DULO 20: CONCILIACIí“N BANCARIA - FUNCIONES
 // ==========================================
 
 export const insertBankTransactions = (
@@ -11055,7 +9592,7 @@ export const getBankTransactions = (
     const result = db.exec(query);
     if (!result.length || !result[0].values.length) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     return result[0].values.map((row: any) => rowToEntity<BankTransaction>(columns, row));
   } catch (error) {
     logger.error('Database', 'get_bank_txn_failed', 'Error getting bank entries', { accountId }, error as Error);
@@ -11078,7 +9615,7 @@ export const findPotentialMatches = (transaction: BankTransaction): MatchCandida
     const targetAmount = Math.abs(transaction.amount);
     const tolerance = 0.01;
 
-    // 2. Definir ventana de búsqueda optimizada (±7 días)
+    // 2. Definir ventana de búsqueda optimizada (Â±7 días)
     const txnDate = new Date(transaction.transaction_date);
     const minDate = new Date(txnDate); minDate.setDate(minDate.getDate() - 7);
     const maxDate = new Date(txnDate); maxDate.setDate(maxDate.getDate() + 7);
@@ -11098,7 +9635,7 @@ SELECT * FROM journal_entries
     const result = db.exec(query);
     if (!result.length || !result[0].values.length) return [];
 
-    const columns = result[0].columns;
+    const columns = (result[0].columns || (result[0] as any).lc);
     const entries = result[0].values.map((row: any) => rowToEntity<JournalEntry>(columns, row));
 
     const candidates: MatchCandidate[] = [];
@@ -11256,10 +9793,328 @@ export const restoreDatabaseFromBackup = async (data: Uint8Array): Promise<void>
     throw e;
   }
 };
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER GLOBAL: sql.js 1.14 no vincula parámetros con db.run(sql, array).
+// Usar SIEMPRE este helper para INSERT/UPDATE con valores parametrizados.
+// ─────────────────────────────────────────────────────────────────────────────
+const sqlRunWithParams = (database: any, sql: string, params: any[]): void => {
+  const stmt = database.prepare(sql);
+  try { stmt.run(params); } finally { stmt.free(); }
+};
 
-// ==========================================
-// GESTIÓN DE USUARIOS Y ROLES
-// ==========================================
+/**
+ * Seed idempotente de roles base + usuario admin inicial.
+ * Se ejecuta en initDB(). No requiere interacción del usuario.
+ */
+export const seedUsersAndRoles = async (): Promise<void> => {
+  if (!db) return;
+
+  try {
+    // ── ROLES ──────────────────────────────────────────────────────────────
+    db.run(`DELETE FROM user_roles WHERE name IS NULL`);
+
+    const validRoles = db.exec(
+      "SELECT COUNT(*) FROM user_roles WHERE name IS NOT NULL"
+    )[0]?.values[0]?.[0] as number ?? 0;
+
+    if (validRoles < 6) {
+      db.run(`DELETE FROM user_roles`);
+
+      const roles = [
+        { name: 'admin', display: 'Administrador', level: 100, perms: '{"all":["read","write","delete","approve"]}' },
+        { name: 'contador', display: 'Contador', level: 80, perms: '{"accounting":["read","write","approve"],"reports":["read"]}' },
+        { name: 'vendedor', display: 'Vendedor', level: 40, perms: '{"invoices":["read","write"],"customers":["read","write"]}' },
+        { name: 'comprador', display: 'Comprador', level: 40, perms: '{"purchases":["read","write"],"vendors":["read","write"]}' },
+        { name: 'auditor', display: 'Auditor', level: 20, perms: '{"all":["read"]}' },
+        { name: 'viewer', display: 'Consulta', level: 10, perms: '{}' },
+      ];
+
+      for (const r of roles) {
+        sqlRunWithParams(db,
+          `INSERT OR IGNORE INTO user_roles (name, description, level, is_active, created_at)
+           VALUES (?, ?, ?, 1, ?)`,
+          [r.name, r.display, r.level, new Date().toISOString()]
+        );
+      }
+    }
+
+    // Forzar niveles correctos siempre
+    db.run(`UPDATE user_roles SET level = 100 WHERE name = 'admin'`);
+    db.run(`UPDATE user_roles SET level = 80  WHERE name = 'contador'`);
+    db.run(`UPDATE user_roles SET level = 40  WHERE name IN ('vendedor','sales')`);
+    db.run(`UPDATE user_roles SET level = 40  WHERE name IN ('comprador','purchasing')`);
+    db.run(`UPDATE user_roles SET level = 20  WHERE name = 'auditor'`);
+    db.run(`UPDATE user_roles SET level = 10  WHERE name = 'viewer'`);
+
+    // ── USUARIO ADMIN INICIAL ──────────────────────────────────────────────
+    const userCount = db.exec(
+      "SELECT COUNT(*) FROM users WHERE username != 'guest'"
+    )[0]?.values[0]?.[0] as number ?? 0;
+
+    if (userCount === 0) {
+      const adminRoleId = db.exec(
+        "SELECT id FROM user_roles WHERE name = 'admin' LIMIT 1"
+      )[0]?.values[0]?.[0] as number;
+
+      if (!adminRoleId) {
+        console.error('[seedUsersAndRoles] ❌ Rol admin no encontrado — no se puede crear usuario inicial');
+        return;
+      }
+
+      const passwordHash = await hashPassword('admin123');
+
+      sqlRunWithParams(db,
+        `INSERT OR IGNORE INTO users
+         (username, email, full_name, display_name, password_hash, role_id, is_active, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+        [
+          'admin',
+          'admin@miempresa.com',
+          'Administrador del Sistema',
+          'Admin',
+          passwordHash,
+          adminRoleId,
+          new Date().toISOString()
+        ]
+      );
+    }
+
+    const totalRoles = db.exec("SELECT COUNT(*) FROM user_roles")[0]?.values[0]?.[0] as number ?? 0;
+
+  } catch (error) {
+    logger.error('Database', 'seed_auth_failed', 'Error en seed de autenticación', { error });
+  }
+};
+
+// ============================================================
+// SEED DE DATOS OPERATIVOS DEL SISTEMA
+// ============================================================
+
+function seedCompanyData(): void {
+  if (!db) return;
+  const count = db.exec("SELECT COUNT(*) FROM company_data")[0]?.values[0]?.[0] as number ?? 0;
+  if (count > 0) return;
+
+  try {
+    db.run(`
+          INSERT INTO company_data (
+              name, tax_id,
+              address, city, state, zip,
+              phone, email, website,
+              currency_code, is_active
+          ) VALUES (
+              'Mi Empresa LLC', '00-0000000',
+              '123 Main Street', 'Orlando', 'FL', '32801',
+              '(407) 000-0000', 'admin@miempresa.com', '',
+              'USD', 1
+          )
+      `);
+  } catch (e) {
+    console.warn('[seedCompanyData] Skipped: schema mismatch in legacy instance', e);
+  }
+}
+
+function seedChartOfAccounts(): void {
+  if (!db) return;
+  const count = db.exec(
+    "SELECT COUNT(*) FROM chart_of_accounts WHERE account_code IS NOT NULL"
+  )[0]?.values[0]?.[0] as number ?? 0;
+  if (count > 0) return;
+
+  const accounts: Array<{ code: string; name: string; type: string; nb: string; parent: string | null }> = [
+    // ── ACTIVOS ──────────────────────────────────────────────────────────
+    { code: '1000', name: 'ACTIVOS', type: 'asset', nb: 'debit', parent: null },
+    { code: '1100', name: 'Activos Corrientes', type: 'asset', nb: 'debit', parent: '1000' },
+    { code: '1110', name: 'Efectivo y Equivalentes', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1111', name: 'Caja Chica', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1112', name: 'Cuenta Corriente - Bank of America', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1113', name: 'Cuenta de Ahorros', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1114', name: 'Cuenta Payroll', type: 'asset', nb: 'debit', parent: '1110' },
+    { code: '1120', name: 'Cuentas por Cobrar', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1121', name: 'Cuentas por Cobrar - Clientes', type: 'asset', nb: 'debit', parent: '1120' },
+    { code: '1122', name: 'Provisión Cuentas Incobrables', type: 'asset', nb: 'credit', parent: '1120' },
+    { code: '1123', name: 'Otras Cuentas por Cobrar', type: 'asset', nb: 'debit', parent: '1120' },
+    { code: '1130', name: 'Inventario', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1131', name: 'Inventario - Productos Terminados', type: 'asset', nb: 'debit', parent: '1130' },
+    { code: '1132', name: 'Inventario - Materias Primas', type: 'asset', nb: 'debit', parent: '1130' },
+    { code: '1133', name: 'Inventario - Productos en Proceso', type: 'asset', nb: 'debit', parent: '1130' },
+    { code: '1140', name: 'Gastos Pagados por Anticipado', type: 'asset', nb: 'debit', parent: '1100' },
+    { code: '1141', name: 'Seguros Pagados por Anticipado', type: 'asset', nb: 'debit', parent: '1140' },
+    { code: '1142', name: 'Alquileres Pagados por Anticipado', type: 'asset', nb: 'debit', parent: '1140' },
+    { code: '1200', name: 'Activos No Corrientes', type: 'asset', nb: 'debit', parent: '1000' },
+    { code: '1210', name: 'Propiedad, Planta y Equipo', type: 'asset', nb: 'debit', parent: '1200' },
+    { code: '1211', name: 'Terrenos', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1212', name: 'Edificios', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1213', name: 'Deprec. Acumulada - Edificios', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1214', name: 'Maquinaria y Equipo', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1215', name: 'Deprec. Acumulada - Maquinaria', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1216', name: 'Vehículos', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1217', name: 'Deprec. Acumulada - Vehículos', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1218', name: 'Mobiliario y Equipo de Oficina', type: 'asset', nb: 'debit', parent: '1210' },
+    { code: '1219', name: 'Deprec. Acumulada - Mobiliario', type: 'asset', nb: 'credit', parent: '1210' },
+    { code: '1220', name: 'Activos Intangibles', type: 'asset', nb: 'debit', parent: '1200' },
+    { code: '1221', name: 'Goodwill', type: 'asset', nb: 'debit', parent: '1220' },
+    { code: '1222', name: 'Patentes y Marcas', type: 'asset', nb: 'debit', parent: '1220' },
+    { code: '1223', name: 'Software', type: 'asset', nb: 'debit', parent: '1220' },
+    { code: '1224', name: 'Amortiz. Acumulada - Intangibles', type: 'asset', nb: 'credit', parent: '1220' },
+    // ── PASIVOS ──────────────────────────────────────────────────────────
+    { code: '2000', name: 'PASIVOS', type: 'liability', nb: 'credit', parent: null },
+    { code: '2100', name: 'Pasivos Corrientes', type: 'liability', nb: 'credit', parent: '2000' },
+    { code: '2110', name: 'Cuentas por Pagar', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2111', name: 'Cuentas por Pagar - Proveedores', type: 'liability', nb: 'credit', parent: '2110' },
+    { code: '2112', name: 'Otras Cuentas por Pagar', type: 'liability', nb: 'credit', parent: '2110' },
+    { code: '2120', name: 'Impuestos por Pagar', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2121', name: 'Sales Tax por Pagar (Florida)', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2122', name: 'Impuesto Federal por Pagar', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2123', name: 'Impuesto Estatal FL por Pagar', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2124', name: 'Payroll Taxes por Pagar', type: 'liability', nb: 'credit', parent: '2120' },
+    { code: '2130', name: 'Nómina por Pagar', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2131', name: 'Sueldos y Salarios por Pagar', type: 'liability', nb: 'credit', parent: '2130' },
+    { code: '2132', name: 'Retenciones por Pagar', type: 'liability', nb: 'credit', parent: '2130' },
+    { code: '2140', name: 'Préstamos a Corto Plazo', type: 'liability', nb: 'credit', parent: '2100' },
+    { code: '2141', name: 'Línea de Crédito', type: 'liability', nb: 'credit', parent: '2140' },
+    { code: '2142', name: 'Porción Corriente Deuda LP', type: 'liability', nb: 'credit', parent: '2140' },
+    { code: '2200', name: 'Pasivos No Corrientes', type: 'liability', nb: 'credit', parent: '2000' },
+    { code: '2210', name: 'Préstamos a Largo Plazo', type: 'liability', nb: 'credit', parent: '2200' },
+    { code: '2211', name: 'Hipotecas por Pagar', type: 'liability', nb: 'credit', parent: '2210' },
+    { code: '2212', name: 'Préstamos Bancarios a Largo Plazo', type: 'liability', nb: 'credit', parent: '2210' },
+    // ── PATRIMONIO ───────────────────────────────────────────────────────
+    { code: '3000', name: 'PATRIMONIO', type: 'equity', nb: 'credit', parent: null },
+    { code: '3100', name: 'Capital Social', type: 'equity', nb: 'credit', parent: '3000' },
+    { code: '3110', name: 'Common Stock', type: 'equity', nb: 'credit', parent: '3100' },
+    { code: '3120', name: 'Preferred Stock', type: 'equity', nb: 'credit', parent: '3100' },
+    { code: '3200', name: 'Utilidades Retenidas', type: 'equity', nb: 'credit', parent: '3000' },
+    { code: '3210', name: 'Utilidades del Ejercicio Actual', type: 'equity', nb: 'credit', parent: '3200' },
+    { code: '3220', name: 'Utilidades de Ejercicios Anteriores', type: 'equity', nb: 'credit', parent: '3200' },
+    { code: '3300', name: 'Dividendos', type: 'equity', nb: 'debit', parent: '3000' },
+    { code: '3400', name: "Owner's Draw", type: 'equity', nb: 'debit', parent: '3000' },
+    // ── INGRESOS ─────────────────────────────────────────────────────────
+    { code: '4000', name: 'INGRESOS', type: 'revenue', nb: 'credit', parent: null },
+    { code: '4100', name: 'Ingresos Operacionales', type: 'revenue', nb: 'credit', parent: '4000' },
+    { code: '4110', name: 'Ventas de Productos', type: 'revenue', nb: 'credit', parent: '4100' },
+    { code: '4120', name: 'Ventas de Servicios', type: 'revenue', nb: 'credit', parent: '4100' },
+    { code: '4130', name: 'Devoluciones y Descuentos s/Ventas', type: 'revenue', nb: 'debit', parent: '4100' },
+    { code: '4200', name: 'Otros Ingresos', type: 'revenue', nb: 'credit', parent: '4000' },
+    { code: '4210', name: 'Ingresos por Intereses', type: 'revenue', nb: 'credit', parent: '4200' },
+    { code: '4220', name: 'Ganancia en Venta de Activos', type: 'revenue', nb: 'credit', parent: '4200' },
+    { code: '4230', name: 'Ingresos Diversos', type: 'revenue', nb: 'credit', parent: '4200' },
+    // ── COSTO DE VENTAS ──────────────────────────────────────────────────
+    { code: '5000', name: 'COSTO DE VENTAS', type: 'expense', nb: 'debit', parent: null },
+    { code: '5100', name: 'Costo de Productos Vendidos', type: 'expense', nb: 'debit', parent: '5000' },
+    { code: '5110', name: 'Compras de Mercancía', type: 'expense', nb: 'debit', parent: '5100' },
+    { code: '5120', name: 'Fletes y Acarreos', type: 'expense', nb: 'debit', parent: '5100' },
+    { code: '5200', name: 'Costo de Servicios', type: 'expense', nb: 'debit', parent: '5000' },
+    { code: '5210', name: 'Mano de Obra Directa', type: 'expense', nb: 'debit', parent: '5200' },
+    { code: '5220', name: 'Materiales Directos', type: 'expense', nb: 'debit', parent: '5200' },
+    // ── GASTOS OPERACIONALES ─────────────────────────────────────────────
+    { code: '6000', name: 'GASTOS OPERACIONALES', type: 'expense', nb: 'debit', parent: null },
+    { code: '6100', name: 'Gastos de Ventas', type: 'expense', nb: 'debit', parent: '6000' },
+    { code: '6110', name: 'Sueldos - Personal de Ventas', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6120', name: 'Comisiones de Ventas', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6130', name: 'Publicidad y Marketing', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6140', name: 'Gastos de Viaje - Ventas', type: 'expense', nb: 'debit', parent: '6100' },
+    { code: '6200', name: 'Gastos Administrativos', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6210', name: 'Sueldos - Personal Administrativo', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6220', name: 'Alquiler de Oficina', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6230', name: 'Servicios Públicos', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6240', name: 'Teléfono e Internet', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6250', name: 'Suministros de Oficina', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6260', name: 'Seguros', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6270', name: 'Honorarios Profesionales', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6280', name: 'Depreciación y Amortización', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6290', name: 'Gastos de Mantenimiento', type: 'expense', nb: 'debit', parent: '6200' },
+    { code: '6300', name: 'Gastos Financieros', type: 'expense', nb: 'debit', parent: '6000' },
+    { code: '6310', name: 'Intereses sobre Préstamos', type: 'expense', nb: 'debit', parent: '6300' },
+    { code: '6320', name: 'Comisiones Bancarias', type: 'expense', nb: 'debit', parent: '6300' },
+    { code: '6330', name: 'Pérdida en Venta de Activos', type: 'expense', nb: 'debit', parent: '6300' },
+    { code: '6400', name: 'Impuestos', type: 'expense', nb: 'debit', parent: '6000' },
+    { code: '6410', name: 'Impuesto sobre la Renta', type: 'expense', nb: 'debit', parent: '6400' },
+    { code: '6420', name: 'Impuestos Locales y Estatales', type: 'expense', nb: 'debit', parent: '6400' },
+    { code: '6430', name: 'Property Tax', type: 'expense', nb: 'debit', parent: '6400' },
+  ];
+
+  for (const a of accounts) {
+    sqlRunWithParams(db,
+      `INSERT OR IGNORE INTO chart_of_accounts
+       (account_code, account_name, account_type, normal_balance, parent_code, is_active)
+       VALUES (?, ?, ?, ?, ?, 1)`,
+      [a.code, a.name, a.type, a.nb, a.parent]
+    );
+  }
+}
+
+function seedPaymentMethods(): void {
+  if (!db) return;
+  const count = db.exec("SELECT COUNT(*) FROM payment_methods")[0]?.values[0]?.[0] as number ?? 0;
+  if (count > 0) return;
+
+  db.run(`
+        INSERT INTO payment_methods (method_name, method_type, is_active, requires_reference) VALUES
+        ('Efectivo',               'cash',         1, 0),
+        ('Transferencia Bancaria', 'bank_transfer', 1, 1),
+        ('Cheque',                 'check',         1, 1),
+        ('Tarjeta de Crédito',     'credit_card',   1, 1),
+        ('Tarjeta de Débito',      'other',         1, 1),
+        ('Zelle',                  'digital',       1, 1),
+        ('ACH',                    'bank_transfer',  1, 1)
+    `);
+}
+
+function seedSystemConfig(): void {
+  if (!db) return;
+  const defaults: [string, string][] = [
+    ['fiscal_year_start', '01-01'],
+    ['default_currency', 'USD'],
+    ['default_language', 'es'],
+    ['default_state', 'FL'],
+    ['tax_method', 'accrual'],
+    ['dr15_filing_day', '20'],
+    ['ai_enabled', 'true'],
+    ['setup_completed', 'false'],
+  ];
+  for (const [key, value] of defaults) {
+    sqlRunWithParams(db,
+      `INSERT OR IGNORE INTO system_config (key, value) VALUES (?, ?)`,
+      [key, value]
+    );
+  }
+}
+
+async function seedTaxRates(): Promise<void> {
+  try {
+    const engine = dbEngine || EngineBridge.getEngine();
+    const rates = [
+      [2026, 'SOCIAL_SECURITY_RATE', 0.062, 'Social Security employee rate 6.2%'],
+      [2026, 'SOCIAL_SECURITY_WAGE_BASE', 168600, 'Social Security wage base limit 2026'],
+      [2026, 'MEDICARE_RATE', 0.0145, 'Medicare employee rate 1.45%'],
+      [2026, 'ADDITIONAL_MEDICARE_RATE', 0.009, 'Additional Medicare rate 0.9% over threshold'],
+      [2026, 'ADDITIONAL_MEDICARE_THRESHOLD_SINGLE', 200000, 'Additional Medicare threshold single filer'],
+      [2026, 'ADDITIONAL_MEDICARE_THRESHOLD_MARRIED', 250000, 'Additional Medicare threshold married filing jointly'],
+    ];
+    for (const [year, key, value, desc] of rates) {
+      await engine.run(
+        'INSERT INTO tax_rates_config (tax_year, rate_key, rate_value, description) VALUES (?, ?, ?, ?) ON CONFLICT(tax_year, rate_key) DO NOTHING',
+        [year, key, value, desc]
+      );
+    }
+    console.log('[seedTaxRates] Tasas fiscales 2026 cargadas.');
+  } catch (e) {
+    console.warn('[seedTaxRates] Error cargando tasas:', e);
+  }
+}
+
+export async function seedSystemDefaults(): Promise<void> {
+  try {
+    seedCompanyData();
+    seedChartOfAccounts();
+    seedPaymentMethods();
+    seedSystemConfig();
+    await seedTaxRates();
+  } catch (e) {
+    // Nunca lanzar: el seed no debe impedir el arranque
+    console.warn('[seedSystemDefaults] ⚠️ Error parcial en inicialización:', e);
+  }
+}
 
 /**
  * Hash de contraseña usando PBKDF2 (compatible con Web Crypto API)
@@ -11346,412 +10201,8 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
     return false;
   }
 };
-
-
-
-/**
- * Crear un nuevo usuario
- */
-export const createUser = async (userData: {
-  username: string;
-  email?: string;
-  full_name?: string;
-  display_name: string;
-  password: string;
-  role_id: number;
-  picture?: string;
-}): Promise<{ success: boolean; message: string; userId?: number }> => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Validar que el username o email no exista
-    const emailToCheck = userData.email || userData.username;
-    const existing = db.exec(`SELECT id FROM users WHERE username = ? OR email = ? `, [userData.username, emailToCheck]);
-    if (existing[0]?.values.length > 0) {
-      return { success: false, message: 'El nombre de usuario o email ya existe' };
-    }
-
-    // Hash de la contraseña
-    const passwordHash = await hashPassword(userData.password);
-
-    // Insertar usuario
-    db.run(`
-      INSERT INTO users(username, email, full_name, display_name, password_hash, role_id, is_active, picture)
-      VALUES(?, ?, ?, ?, ?, ?, 1, ?)
-    `, [
-      userData.username,
-      userData.email || userData.username,
-      userData.full_name || userData.display_name,
-      userData.display_name,
-      passwordHash,
-      userData.role_id,
-      userData.picture || null
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const userId = result[0]?.values[0]?.[0] as number;
-
-    logger.info('Users', 'user_created', `Usuario creado: ${userData.username} `, { userId });
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
-
-    return { success: true, message: 'Usuario creado correctamente', userId };
-
-  } catch (error) {
-    logger.error('Users', 'create_user_failed', 'Error creating user', { username: userData.username }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-
-/**
- * Obtener todos los usuarios
- */
-export const getUsers = (filters?: { activeOnly?: boolean }): any[] => {
-  if (!db) return [];
-
-  try {
-    let query = `
-      SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.role_id, u.is_active,
-  u.last_login, u.created_at, u.updated_at,
-  r.name as role_name, r.description as role_description, r.level as role_level,
-  r.permissions_json
-      FROM users u
-      LEFT JOIN user_roles r ON u.role_id = r.id
-  `;
-
-    if (filters?.activeOnly) {
-      query += ' WHERE u.is_active = 1';
-    }
-
-    query += ' ORDER BY u.created_at DESC';
-
-    const result = db.exec(query);
-    if (!result[0]) return [];
-
-    const columns = result[0].columns;
-    return result[0].values.map((row: any) => {
-      const user: any = {};
-      columns.forEach((col: any, index: any) => {
-        user[col] = row[index];
-      });
-      return user;
-    });
-  } catch (error) {
-    logger.error('Users', 'get_users_failed', 'Error getting users', {}, error as Error);
-    return [];
-  }
-};
-
-/**
- * Obtener usuario por username
- */
-export const getUserByUsername = (username: string): any | null => {
-  if (!db) return null;
-
-  try {
-    const result = db.exec(`
-      SELECT u.id, u.username, u.email, u.full_name, u.display_name, u.password_hash, u.role_id, u.is_active,
-  u.last_login, u.created_at, u.updated_at,
-  r.name as role_name, r.description as role_description, r.level as role_level,
-  r.permissions_json
-      FROM users u
-      LEFT JOIN user_roles r ON u.role_id = r.id
-      WHERE u.username = ? OR u.email = ?
-  `, [username, username]);
-
-    if (!result[0] || result[0].values.length === 0) return null;
-
-    const columns = result[0].columns;
-    const row = result[0].values[0];
-    const user: any = {};
-    columns.forEach((col: any, index: any) => {
-      user[col] = row[index];
-    });
-
-    return user;
-  } catch (error) {
-    logger.error('Users', 'get_user_failed', 'Error getting user by username', { username }, error as Error);
-    return null;
-  }
-};
-
-/**
- * Actualizar usuario
- */
-export const updateUser = (id: number, updates: {
-  email?: string;
-  full_name?: string;
-  display_name?: string;
-  role_id?: number;
-  is_active?: boolean;
-  last_login?: string;
-  picture?: string;
-}): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    const setParts: string[] = [];
-    const values: any[] = [];
-
-    if (updates.email !== undefined) {
-      setParts.push('email = ?');
-      values.push(updates.email);
-    }
-    if (updates.full_name !== undefined) {
-      setParts.push('full_name = ?');
-      values.push(updates.full_name);
-    }
-    if (updates.display_name !== undefined) {
-      setParts.push('display_name = ?');
-      values.push(updates.display_name);
-    }
-    if (updates.role_id !== undefined) {
-      setParts.push('role_id = ?');
-      values.push(updates.role_id);
-    }
-    if (updates.is_active !== undefined) {
-      setParts.push('is_active = ?');
-      values.push(updates.is_active ? 1 : 0);
-    }
-    if (updates.last_login !== undefined) {
-      setParts.push('last_login = ?');
-      values.push(updates.last_login);
-    }
-    if (updates.picture !== undefined) {
-      setParts.push('picture = ?');
-      values.push(updates.picture);
-    }
-
-    setParts.push('updated_at = CURRENT_TIMESTAMP');
-
-    if (setParts.length === 1) {
-      return { success: false, message: 'No hay cambios para actualizar' };
-    }
-
-    values.push(id);
-
-    db.run(`UPDATE users SET ${setParts.join(', ')} WHERE id = ? `, values);
-
-    logger.info('Users', 'user_updated', `Usuario actualizado: ${id} `, { updates });
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
-
-    return { success: true, message: 'Usuario actualizado correctamente' };
-
-  } catch (error) {
-    logger.error('Users', 'update_user_failed', 'Error updating user', { id, updates }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-
-/**
- * Desactivar usuario (soft delete)
- */
-export const deactivateUser = (id: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    db.run('UPDATE users SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
-
-    logger.info('Users', 'user_deactivated', `Usuario desactivado: ${id} `);
-
-    // Auto-save
-    setTimeout(() => saveDatabase(), 500);
-
-    return { success: true, message: 'Usuario desactivado correctamente' };
-
-  } catch (error) {
-    logger.error('Users', 'deactivate_user_failed', 'Error deactivating user', { id }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-
-/**
- * Obtener todos los roles
- */
-export const getUserRoles = (): any[] => {
-  if (!db) return [];
-
-  try {
-    const result = db.exec('SELECT * FROM user_roles ORDER BY level DESC');
-    if (!result[0]) return [];
-
-    const columns = result[0].columns;
-    return result[0].values.map((row: any) => {
-      const role: any = {};
-      columns.forEach((col: any, index: any) => {
-        role[col] = row[index];
-      });
-      return role;
-    });
-  } catch (error) {
-    logger.error('Users', 'get_roles_failed', 'Error getting user roles', {}, error as Error);
-    return [];
-  }
-};
-
-/**
- * Actualizar contraseña de usuario
- */
-export const updateUserPassword = async (id: number, newPassword: string): Promise<{ success: boolean; message: string }> => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    const passwordHash = await hashPassword(newPassword);
-
-    db.run('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, id]);
-
-    logger.info('Users', 'password_updated', `Contraseña actualizada para usuario: ${id} `);
-
-    return { success: true, message: 'Contraseña actualizada correctamente' };
-  } catch (error) {
-    logger.error('Users', 'update_password_failed', 'Error updating password', { id }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-
-// Añadir al final de simple-db.ts
-
 // ==========================================
-// GESTIÓN DE ROLES (CRUD COMPLETO)
-// ==========================================
-
-/**
- * Crear un nuevo rol
- */
-export const createUserRole = (roleData: {
-  name: string;
-  description: string;
-  level: number;
-}): { success: boolean; message: string; roleId?: number } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Validar que el nombre no exista
-    const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${roleData.name}'`);
-    if (existing[0]?.values.length > 0) {
-      return { success: false, message: 'Ya existe un rol con ese nombre' };
-    }
-
-    // Insertar rol
-    db.run(`
-      INSERT INTO user_roles(name, description, level)
-VALUES(?, ?, ?)
-    `, [roleData.name, roleData.description, roleData.level]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const roleId = result[0]?.values[0]?.[0] as number;
-
-    logger.info('Roles', 'role_created', `Rol creado: ${roleData.name} `, { roleId });
-
-    return { success: true, message: 'Rol creado correctamente', roleId };
-  } catch (error) {
-    logger.error('Roles', 'create_role_failed', 'Error creating role', { name: roleData.name }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-
-/**
- * Actualizar un rol existente
- */
-export const updateUserRole = (id: number, updates: {
-  name?: string;
-  description?: string;
-  level?: number;
-}): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que el rol existe
-    const roleCheck = db.exec(`SELECT id FROM user_roles WHERE id = ${id} `);
-    if (!roleCheck[0] || roleCheck[0].values.length === 0) {
-      return { success: false, message: 'Rol no encontrado' };
-    }
-
-    // Si se está cambiando el nombre, verificar que no exista otro con ese nombre
-    if (updates.name) {
-      const existing = db.exec(`SELECT id FROM user_roles WHERE name = '${updates.name}' AND id != ${id} `);
-      if (existing[0]?.values.length > 0) {
-        return { success: false, message: 'Ya existe otro rol con ese nombre' };
-      }
-    }
-
-    const setParts: string[] = [];
-    const values: any[] = [];
-
-    if (updates.name !== undefined) {
-      setParts.push('name = ?');
-      values.push(updates.name);
-    }
-    if (updates.description !== undefined) {
-      setParts.push('description = ?');
-      values.push(updates.description);
-    }
-    if (updates.level !== undefined) {
-      setParts.push('level = ?');
-      values.push(updates.level);
-    }
-
-    if (setParts.length === 0) {
-      return { success: false, message: 'No hay cambios para actualizar' };
-    }
-
-    values.push(id);
-
-    db.run(`UPDATE user_roles SET ${setParts.join(', ')} WHERE id = ? `, values);
-
-    logger.info('Roles', 'role_updated', `Rol actualizado: ${id} `, { updates });
-
-    return { success: true, message: 'Rol actualizado correctamente' };
-  } catch (error) {
-    logger.error('Roles', 'update_role_failed', 'Error updating role', { id, updates }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-
-/**
- * Eliminar un rol (solo si no tiene usuarios asignados)
- */
-export const deleteUserRole = (id: number): { success: boolean; message: string } => {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que el rol existe
-    const roleCheck = db.exec(`SELECT name FROM user_roles WHERE id = ${id} `);
-    if (!roleCheck[0] || roleCheck[0].values.length === 0) {
-      return { success: false, message: 'Rol no encontrado' };
-    }
-
-    const roleName = roleCheck[0].values[0][0] as string;
-
-    // No permitir eliminar roles del sistema (admin, accountant, viewer)
-    if (['admin', 'accountant', 'viewer'].includes(roleName)) {
-      return { success: false, message: 'No se pueden eliminar los roles del sistema' };
-    }
-
-    // Verificar que no haya usuarios con este rol
-    const usersWithRole = db.exec(`SELECT COUNT(*) as count FROM users WHERE role_id = ${id} `);
-    const userCount = usersWithRole[0]?.values[0]?.[0] as number || 0;
-
-    if (userCount > 0) {
-      return { success: false, message: `No se puede eliminar el rol porque tiene ${userCount} usuario(s) asignado(s)` };
-    }
-
-    // Eliminar rol
-    db.run('DELETE FROM user_roles WHERE id = ?', [id]);
-
-    logger.info('Roles', 'role_deleted', `Rol eliminado: ${roleName} `, { id });
-
-    return { success: true, message: 'Rol eliminado correctamente' };
-  } catch (error) {
-    logger.error('Roles', 'delete_role_failed', 'Error deleting role', { id }, error as Error);
-    return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
-  }
-};
-// ==========================================
-// MÓDULO DE COMPRAS Y STOCK (CRUD)
+// Mí“DULO DE COMPRAS Y STOCK (CRUD)
 // ==========================================
 
 export interface PurchaseOrder {
@@ -11790,171 +10241,13 @@ export interface StockMovement {
   created_at: string;
   created_by: number;
 }
-
-export const getPurchaseOrders = (filters: { status?: string, supplier_id?: number } = {}): PurchaseOrder[] => {
-  if (!db) return [];
-  try {
-    let query = `
-      SELECT po.*, s.name as supplier_name 
-      FROM purchase_orders po
-      LEFT JOIN suppliers s ON po.supplier_id = s.id
-      WHERE 1 = 1
-  `;
-    const params: any[] = [];
-
-    if (filters.status) {
-      query += ` AND po.status = ? `;
-      params.push(filters.status);
-    }
-    if (filters.supplier_id) {
-      query += ` AND po.supplier_id = ? `;
-      params.push(filters.supplier_id);
-    }
-
-    query += ` ORDER BY po.created_at DESC`;
-
-    const res = db.exec(query, params);
-    if (res.length > 0 && res[0].values.length > 0) {
-      const cols = res[0].columns;
-      return res[0].values.map((row: any) => {
-        const po: any = {};
-        cols.forEach((col: any, i: any) => po[col] = row[i]);
-        return po as PurchaseOrder;
-      });
-    }
-    return [];
-  } catch (e) {
-    logger.error('PurchaseOrders', 'get', 'Error fetching POs', e);
-    return [];
-  }
-};
-
-export const createPurchaseOrder = (order: Omit<PurchaseOrder, 'id'>): { success: boolean, id?: number, message?: string } => {
-  if (!db) return { success: false, message: 'DB not initialized' };
-  try {
-    db.run('BEGIN TRANSACTION');
-
-    // 1. Insert header
-    db.run(`
-      INSERT INTO purchase_orders(supplier_id, order_number, order_date, expected_date, status, total_amount, notes, created_by)
-VALUES(?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
-      order.supplier_id,
-      order.order_number,
-      order.order_date,
-      order.expected_date || null,
-      order.status || 'draft',
-      order.total_amount,
-      order.notes || null,
-      order.created_by || 1
-    ]);
-
-    const res = db.exec('SELECT last_insert_rowid() as id');
-    const poId = res[0].values[0][0];
-
-    // 2. Insert items
-    if (order.items && order.items.length > 0) {
-      const stmt = db.prepare(`
-        INSERT INTO purchase_order_lines(purchase_order_id, product_id, quantity, unit_price)
-VALUES(?, ?, ?, ?)
-      `);
-      for (const item of order.items) {
-        stmt.run([poId, item.product_id, item.quantity, item.unit_price]);
-      }
-      stmt.free();
-    }
-
-    logAuditEvent('purchase_orders', poId as number, 'create', null, { order_number: order.order_number }, order.created_by || 1);
-
-    db.run('COMMIT');
-    return { success: true, id: poId as number };
-  } catch (e) {
-    db.run('ROLLBACK');
-    logger.error('PurchaseOrders', 'create', 'Failed to create PO', e);
-    return { success: false, message: (e as Error).message };
-  }
-};
-
-export const receivePurchaseOrder = (poId: number, userId: number = 1): { success: boolean, message?: string } => {
-  if (!db) return { success: false, message: 'DB not initialized' };
-  try {
-    // 1. Obtener items de la orden
-    const res = db.exec(`SELECT * FROM purchase_order_lines WHERE purchase_order_id = ? `, [poId]);
-    if (res.length === 0 || res[0].values.length === 0) {
-      return { success: false, message: 'Order has no items' };
-    }
-
-    const cols = res[0].columns;
-    const items = res[0].values.map((row: any) => {
-      const item: any = {};
-      cols.forEach((col: any, i: any) => item[col] = row[i]);
-      return item as PurchaseOrderItem;
-    });
-
-    db.run('BEGIN TRANSACTION');
-
-    // 2. Actualizar estado de la orden
-    db.run(`UPDATE purchase_orders SET status = 'received', updated_at = CURRENT_TIMESTAMP WHERE id = ? `, [poId]);
-
-    // 3. Procesar cada item: aumentar stock y registrar movimiento
-    for (const item of items) {
-      // A. Actualizar cantidad recibida en la línea (asumimos recepción total por simplicidad en v1)
-      db.run(`UPDATE purchase_order_lines SET received_quantity = ? WHERE id = ? `, [item.quantity, item.id as number]);
-
-      // B. Actualizar Maestro de Productos
-      db.run(`UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ? `, [item.quantity, item.product_id]);
-
-      // C. Registrar Movimiento en Kardex
-      db.run(`
-            INSERT INTO stock_movements(product_id, quantity, movement_type, reference_id, reference_type, created_by)
-VALUES(?, ?, 'purchase', ?, 'purchase_order', ?)
-  `, [item.product_id, item.quantity, poId, userId]);
-    }
-
-    logAuditEvent('purchase_orders', poId, 'receive', null, { status: 'received' }, userId);
-
-    db.run('COMMIT');
-    return { success: true };
-  } catch (e) {
-    db.run('ROLLBACK');
-    logger.error('PurchaseOrders', 'receive', 'Failed to receive PO', e);
-    return { success: false, message: (e as Error).message };
-  }
-};
-
-export const getStockMovements = (productId?: number): StockMovement[] => {
-  if (!db) return [];
-  try {
-    let query = "SELECT * FROM stock_movements";
-    const params: any[] = [];
-    if (productId) {
-      query += " WHERE product_id = ?";
-      params.push(productId);
-    }
-    query += " ORDER BY created_at DESC LIMIT 100";
-
-    const res = db.exec(query, params);
-    if (res.length > 0 && res[0].values.length > 0) {
-      const cols = res[0].columns;
-      return res[0].values.map((row: any) => {
-        const sm: any = {};
-        cols.forEach((col: any, i: any) => sm[col] = row[i]);
-        return sm as StockMovement;
-      });
-    }
-    return [];
-  } catch (e) {
-    return [];
-  }
-};
-
 // Validar y asegurar esquema de inventario avanzado
 const ensureInventorySchema = async (): Promise<void> => {
   if (!db) return;
 
   // 1. Tabla de Ajustes de Inventario (Header)
   db.run(`
-    CREATE TABLE IF NOT EXISTS inventory_adjustments(
+    create TABLE IF NOT EXISTS inventory_adjustments(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     adjustment_number TEXT UNIQUE NOT NULL,
     adjustment_date DATE DEFAULT CURRENT_DATE,
@@ -11969,7 +10262,7 @@ const ensureInventorySchema = async (): Promise<void> => {
 
   // 2. Tabla de Items de Ajuste
   db.run(`
-    CREATE TABLE IF NOT EXISTS inventory_adjustment_items(
+    create TABLE IF NOT EXISTS inventory_adjustment_items(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     adjustment_id INTEGER NOT NULL REFERENCES inventory_adjustments(id) ON DELETE CASCADE,
     product_id INTEGER NOT NULL REFERENCES products(id),
@@ -11983,7 +10276,7 @@ const ensureInventorySchema = async (): Promise<void> => {
   // Sincroniza la venta (Invoice) con el inventario
   try {
     db.run(`
-      CREATE TRIGGER IF NOT EXISTS decrease_stock_on_invoice
+      create TRIGGER IF NOT EXISTS decrease_stock_on_invoice
       AFTER INSERT ON invoice_lines
 BEGIN
 --1. Reducir stock físico
@@ -12012,78 +10305,6 @@ export interface KardexEntry extends StockMovement {
   user_name?: string;
   formatted_date?: string;
 }
-
-export const getKardexMovements = (filters: KardexFilters = {}): KardexEntry[] => {
-  if (!db) return [];
-  try {
-    let query = `
-SELECT
-sm.*,
-  p.name as product_name,
-  p.sku as product_sku,
-  u.display_name as user_name
-      FROM stock_movements sm
-      JOIN products p ON sm.product_id = p.id
-      LEFT JOIN users u ON sm.created_by = u.id
-      WHERE 1 = 1
-  `;
-
-    const params: any[] = [];
-
-    if (filters.productId) {
-      query += ` AND sm.product_id = ? `;
-      params.push(filters.productId);
-    }
-
-    if (filters.type) {
-      query += ` AND sm.movement_type = ? `;
-      params.push(filters.type);
-    }
-
-    if (filters.startDate) {
-      query += ` AND date(sm.created_at) >= date(?)`;
-      params.push(filters.startDate);
-    }
-
-    if (filters.endDate) {
-      query += ` AND date(sm.created_at) <= date(?)`;
-      params.push(filters.endDate);
-    }
-
-    if (filters.referenceId) {
-      query += ` AND sm.reference_id = ? `;
-      params.push(filters.referenceId);
-    }
-
-    // Ordenamiento: Si filtramos por producto, ASC para calcular running totals en UI.
-    // Si es vista general, DESC para ver lo último.
-    if (filters.productId) {
-      query += ` ORDER BY sm.created_at ASC`;
-    } else {
-      query += ` ORDER BY sm.created_at DESC`;
-    }
-
-    const res = db.exec(query, params);
-    if (res.length > 0 && res[0].values.length > 0) {
-      const cols = res[0].columns;
-      return res[0].values.map((row: any) => {
-        const item: any = {};
-        cols.forEach((col: any, i: any) => item[col] = row[i]);
-        // Format date friendly
-        try {
-          item.formatted_date = new Date(item.created_at).toLocaleString();
-        } catch (e) { item.formatted_date = item.created_at; }
-        return item as KardexEntry;
-      });
-    }
-    return [];
-  } catch (e) {
-    logger.error('Kardex', 'get_movements', 'Error fetching Kardex', e);
-    return [];
-  }
-};
-
-
 // ==========================================
 // FUNCIONES CRUD PARA SISTEMA DE INVENTARIO
 // ==========================================
@@ -12091,348 +10312,50 @@ sm.*,
 /**
  * Crear un nuevo movimiento de inventario
  */
-export function createInventoryMovement(movementData: {
-  product_id: number;
-  quantity: number;
-  movement_type: 'purchase' | 'sale' | 'adjustment' | 'return' | 'initial';
-  reference_id?: number;
-  reference_type?: 'invoice' | 'purchase_order' | 'adjustment' | 'migration';
-  notes?: string;
-  created_by?: number;
-}): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO stock_movements(
-        product_id, quantity, movement_type, reference_id, reference_type, notes, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run([
-      movementData.product_id,
-      movementData.quantity,
-      movementData.movement_type,
-      movementData.reference_id || null,
-      movementData.reference_type || null,
-      movementData.notes || null,
-      movementData.created_by || 1
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const movementId = result[0]?.values[0]?.[0] as number;
-
-    // Actualizar stock del producto
-    if (movementData.movement_type === 'purchase' || movementData.movement_type === 'return') {
-      // Entrada de inventario
-      db.run('UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
-        [movementData.quantity, movementData.product_id]);
-    } else if (movementData.movement_type === 'sale' || movementData.movement_type === 'adjustment') {
-      // Salida de inventario
-      db.run('UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
-        [Math.abs(movementData.quantity), movementData.product_id]);
-    }
-
-    stmt.free();
-    db.run('COMMIT');
-
-    logger.info('Inventory', 'movement_created', `Movimiento de inventario creado: ${movementId}`, { movementData });
-    return { success: true, message: 'Movimiento de inventario creado exitosamente', id: movementId };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Inventory', 'movement_create_failed', 'Error al crear movimiento de inventario', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function createInventoryMovement(movementData: Parameters<typeof _createInventoryMovement>[0]): ReturnType<typeof _createInventoryMovement> {
+  return _createInventoryMovement(movementData);
 }
 
 /**
  * Obtener movimientos de inventario con filtros
  */
-export function getInventoryMovementsWithFilters(filters: {
-  productId?: number;
-  movementType?: string;
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-} = {}): any[] {
-  if (!db) return [];
-
-  try {
-    let query = `
-      SELECT 
-        sm.*,
-        p.name as product_name,
-        p.sku as product_sku,
-        u.display_name as created_by_name
-      FROM stock_movements sm
-      JOIN products p ON sm.product_id = p.id
-      LEFT JOIN users u ON sm.created_by = u.id
-      WHERE 1=1
-    `;
-
-    const params: any[] = [];
-
-    if (filters.productId) {
-      query += ' AND sm.product_id = ?';
-      params.push(filters.productId);
-    }
-
-    if (filters.movementType) {
-      query += ' AND sm.movement_type = ?';
-      params.push(filters.movementType);
-    }
-
-    if (filters.startDate) {
-      query += ' AND date(sm.created_at) >= date(?)';
-      params.push(filters.startDate);
-    }
-
-    if (filters.endDate) {
-      query += ' AND date(sm.created_at) <= date(?)';
-      params.push(filters.endDate);
-    }
-
-    query += ' ORDER BY sm.created_at DESC';
-
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
-
-    const res = db.exec(query, params);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<any>(res[0].columns, row));
-  } catch (error) {
-    logger.error('Inventory', 'get_movements_failed', 'Error al obtener movimientos de inventario', { error });
-    return [];
-  }
+export function getInventoryMovementsWithFilters(filters: Parameters<typeof _getInventoryMovementsWithFilters>[0]): ReturnType<typeof _getInventoryMovementsWithFilters> {
+  return _getInventoryMovementsWithFilters(filters);
 }
 
 /**
- * Crear una nueva ubicaci�n/almac�n
+ * Crear una nueva ubicación/almacén
  */
-export function createLocation(locationData: {
-  name: string;
-  code: string;
-  address?: string;
-  description?: string;
-  is_active?: boolean;
-  created_by?: number;
-}): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que el c�digo no exista
-    const existingLocation = db.exec('SELECT id FROM locations WHERE code = ?', [locationData.code]);
-    if (existingLocation[0] && existingLocation[0].values.length > 0) {
-      return { success: false, message: `El c�digo de ubicaci�n ${locationData.code} ya existe` };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO locations(name, code, address, description, is_active, created_by, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run([
-      locationData.name,
-      locationData.code,
-      locationData.address || null,
-      locationData.description || null,
-      locationData.is_active !== false ? 1 : 0,
-      locationData.created_by || 1,
-      locationData.created_by || 1
-    ]);
-
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    const locationId = result[0]?.values[0]?.[0] as number;
-
-    stmt.free();
-    db.run('COMMIT');
-
-    logger.info('Inventory', 'location_created', `Ubicaci�n creada: ${locationId}`, { locationData });
-    return { success: true, message: 'Ubicaci�n creada exitosamente', id: locationId };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Inventory', 'location_create_failed', 'Error al crear ubicaci�n', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function createLocation(locationData: Parameters<typeof _createLocation>[0]): ReturnType<typeof _createLocation> {
+  return _createLocation(locationData);
 }
 
 /**
  * Obtener todas las ubicaciones
  */
-export function getLocations(activeOnly: boolean = true): any[] {
-  if (!db) return [];
-
-  try {
-    let query = 'SELECT * FROM locations';
-    const params: any[] = [];
-
-    if (activeOnly) {
-      query += ' WHERE is_active = 1';
-    }
-
-    query += ' ORDER BY name ASC';
-
-    const res = db.exec(query, params);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<any>(res[0].columns, row));
-  } catch (error) {
-    logger.error('Inventory', 'get_locations_failed', 'Error al obtener ubicaciones', { error });
-    return [];
-  }
+export function getLocations(activeOnly?: Parameters<typeof _getLocations>[0]): ReturnType<typeof _getLocations> {
+  return _getLocations(activeOnly);
 }
 
 /**
- * Actualizar una ubicaci�n
+ * Actualizar una ubicaciï¿½n
  */
-export function updateLocation(id: number, locationData: {
-  name?: string;
-  code?: string;
-  address?: string;
-  description?: string;
-  is_active?: boolean;
-  updated_by?: number;
-}): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que la ubicaci�n existe
-    const existingLocation = db.exec('SELECT id FROM locations WHERE id = ?', [id]);
-    if (!existingLocation[0] || existingLocation[0].values.length === 0) {
-      return { success: false, message: 'Ubicaci�n no encontrada' };
-    }
-
-    // Si se est� cambiando el c�digo, verificar que no exista
-    if (locationData.code) {
-      const codeExists = db.exec('SELECT id FROM locations WHERE code = ? AND id != ?', [locationData.code, id]);
-      if (codeExists[0] && codeExists[0].values.length > 0) {
-        return { success: false, message: `El c�digo ${locationData.code} ya est� en uso` };
-      }
-    }
-
-    const updates: string[] = [];
-    const params: any[] = [];
-
-    if (locationData.name !== undefined) {
-      updates.push('name = ?');
-      params.push(locationData.name);
-    }
-
-    if (locationData.code !== undefined) {
-      updates.push('code = ?');
-      params.push(locationData.code);
-    }
-
-    if (locationData.address !== undefined) {
-      updates.push('address = ?');
-      params.push(locationData.address);
-    }
-
-    if (locationData.description !== undefined) {
-      updates.push('description = ?');
-      params.push(locationData.description);
-    }
-
-    if (locationData.is_active !== undefined) {
-      updates.push('is_active = ?');
-      params.push(locationData.is_active ? 1 : 0);
-    }
-
-    updates.push('updated_by = ?', 'updated_at = CURRENT_TIMESTAMP');
-    params.push(locationData.updated_by || 1);
-
-    params.push(id);
-
-    db.run(`UPDATE locations SET ${updates.join(', ')} WHERE id = ?`, params);
-
-    logger.info('Inventory', 'location_updated', `Ubicaci�n actualizada: ${id}`, { locationData });
-    return { success: true, message: 'Ubicaci�n actualizada exitosamente' };
-
-  } catch (error: any) {
-    logger.error('Inventory', 'location_update_failed', 'Error al actualizar ubicaci�n', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function updateLocation(id: Parameters<typeof _updateLocation>[0], locationData: Parameters<typeof _updateLocation>[1]): ReturnType<typeof _updateLocation> {
+  return _updateLocation(id, locationData);
 }
 
 /**
- * Eliminar una ubicaci�n
+ * Eliminar una ubicaciï¿½n
  */
-export function deleteLocation(id: number, userId: number = 1): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar que la ubicaci�n existe
-    const existingLocation = db.exec('SELECT id, name FROM locations WHERE id = ?', [id]);
-    if (!existingLocation[0] || existingLocation[0].values.length === 0) {
-      return { success: false, message: 'Ubicaci�n no encontrada' };
-    }
-
-    const locationName = existingLocation[0].values[0][1] as string;
-
-    // En lugar de eliminar f�sicamente, marcar como inactiva
-    db.run('UPDATE locations SET is_active = 0, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [userId, id]);
-
-    logger.info('Inventory', 'location_deleted', `Ubicaci�n desactivada: ${id} - ${locationName}`, { userId });
-    return { success: true, message: `Ubicaci�n "${locationName}" desactivada exitosamente` };
-
-  } catch (error: any) {
-    logger.error('Inventory', 'location_delete_failed', 'Error al eliminar ubicaci�n', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function deleteLocation(id: Parameters<typeof _deleteLocation>[0], userId?: Parameters<typeof _deleteLocation>[1]): ReturnType<typeof _deleteLocation> {
+  return _deleteLocation(id, userId);
 }
 
 /**
  * Crear datos iniciales de ubicaciones
  */
-export function createInitialLocations(): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-
-  try {
-    // Verificar si ya existen ubicaciones
-    const existingLocations = db.exec('SELECT COUNT(*) as count FROM locations');
-    const locationCount = existingLocations[0]?.values[0]?.[0] as number || 0;
-
-    if (locationCount > 0) {
-      return { success: true, message: 'Las ubicaciones ya existen' };
-    }
-
-    const initialLocations = [
-      { name: 'Almac�n Principal', code: 'ALM-001', address: 'Bodega Central', description: 'Almac�n principal de la empresa' },
-      { name: 'Tienda', code: 'TDA-001', address: 'Local comercial', description: '�rea de ventas al p�blico' },
-      { name: 'Oficina', code: 'OFC-001', address: '�rea administrativa', description: 'Suministros de oficina' }
-    ];
-
-    db.run('BEGIN TRANSACTION');
-
-    const stmt = db.prepare(`
-      INSERT INTO locations(name, code, address, description, is_active, created_by, updated_by)
-      VALUES (?, ?, ?, ?, 1, 1, 1)
-    `);
-
-    initialLocations.forEach(location => {
-      stmt.run([location.name, location.code, location.address, location.description]);
-    });
-
-    stmt.free();
-    db.run('COMMIT');
-
-    logger.info('Inventory', 'initial_locations_created', `Ubicaciones iniciales creadas: ${initialLocations.length}`);
-    return { success: true, message: `${initialLocations.length} ubicaciones iniciales creadas exitosamente` };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Inventory', 'initial_locations_failed', 'Error al crear ubicaciones iniciales', { error: error.message });
-    return { success: false, message: error.message };
-  }
+export function createInitialLocations(): ReturnType<typeof _createInitialLocations> {
+  return _createInitialLocations();
 }
 
 
@@ -12482,15 +10405,15 @@ function generateBudgetPeriods(
 }
 
 /**
- * Create a new budget with lines and periods.
+ * Crear un nuevo presupuesto con líneas y períodos.
  *
- * Validates CP-1 (Balance Invariant): Sum of lines = total budget (±1 cent tolerance)
+ * Valida CP-1 (Balance Invariant): Sum of lines = total budget (Â±1 cent tolerance)
  * Uses transactions for atomicity.
  */
-export function createBudget(
+export async function createBudget(
   budgetData: Omit<Budget, 'id' | 'created_at' | 'updated_at'>,
   budgetLines: Omit<BudgetLine, 'id' | 'budget_id' | 'created_at'>[]
-): { success: boolean; message: string; id?: number } {
+): Promise<{ success: boolean; message: string; id?: number }> {
   if (!db) {
     return { success: false, message: 'Database not initialized' };
   }
@@ -12552,13 +10475,17 @@ export function createBudget(
     // Audit logging
     AuditTrailService.logAction({
       user_id: budgetData.created_by || 1,
-      action: 'CREATE',
+      action: 'CREATE', // Cambiado de 'create' a 'CREATE'
       entity_type: 'budget',
       entity_id: budgetId.toString(),
       new_value: JSON.stringify({ budget_name: budgetData.budget_name, fiscal_year: budgetData.fiscal_year, total: budgetData.total_budget_amount })
     });
 
     logger.info('Budgets', 'budget_created', `Presupuesto creado: ${budgetData.budget_name}`, { budgetId, linesCount: budgetLines.length });
+
+    // Persistencia Inmediata
+    await forceSaveDB();
+
     return { success: true, message: 'Presupuesto creado exitosamente', id: budgetId };
 
   } catch (error: any) {
@@ -12567,753 +10494,6 @@ export function createBudget(
     return { success: false, message: error.message };
   }
 }
-
-/**
- * Get all budgets with optional filters.
- * Implements role-based access control.
- */
-export function getBudgets(filters?: {
-  fiscal_year?: number;
-  status?: string;
-  userId?: number;
-  role?: string;
-}): Budget[] {
-  if (!db) return [];
-
-  try {
-    let query = 'SELECT * FROM budgets WHERE 1=1';
-    const params: any[] = [];
-
-    if (filters?.fiscal_year) {
-      query += ' AND fiscal_year = ?';
-      params.push(filters.fiscal_year);
-    }
-
-    if (filters?.status) {
-      query += ' AND status = ?';
-      params.push(filters.status);
-    }
-
-    // Role-based access
-    const privilegedRoles = ['admin', 'contador', 'auditor'];
-    if (filters?.userId && filters?.role && !privilegedRoles.includes(filters.role)) {
-      query += ' AND created_by = ?';
-      params.push(filters.userId);
-    }
-
-    query += ' ORDER BY fiscal_year DESC, budget_name ASC';
-
-    const res = db.exec(query, params);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<Budget>(res[0].columns, row));
-  } catch (error) {
-    console.error('Error fetching budgets:', error);
-    return [];
-  }
-}
-
-/**
- * Get budget by ID.
- */
-export function getBudgetById(id: number): Budget | null {
-  if (!db) return null;
-
-  try {
-    const res = db.exec('SELECT * FROM budgets WHERE id = ?', [id]);
-    if (res.length === 0 || res[0].values.length === 0) return null;
-
-    return rowToEntity<Budget>(res[0].columns, res[0].values[0]);
-  } catch (error) {
-    console.error('Error fetching budget:', error);
-    return null;
-  }
-}
-
-/**
- * Get budget lines for a budget.
- */
-export function getBudgetLines(budgetId: number): BudgetLine[] {
-  if (!db) return [];
-
-  try {
-    const res = db.exec('SELECT * FROM budget_lines WHERE budget_id = ? ORDER BY account_number ASC', [budgetId]);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<BudgetLine>(res[0].columns, row));
-  } catch (error) {
-    console.error('Error fetching budget lines:', error);
-    return [];
-  }
-}
-
-/**
- * Get budget periods for a budget line.
- */
-export function getBudgetPeriods(budgetLineId: number): BudgetPeriod[] {
-  if (!db) return [];
-
-  try {
-    const res = db.exec('SELECT * FROM budget_periods WHERE budget_line_id = ? ORDER BY period_number ASC', [budgetLineId]);
-    if (res.length === 0) return [];
-
-    return res[0].values.map((row: any) => rowToEntity<BudgetPeriod>(res[0].columns, row));
-  } catch (error) {
-    console.error('Error fetching budget periods:', error);
-    return [];
-  }
-}
-
-/**
- * Update a budget.
- * Validates CP-3: Only DRAFT budgets can have lines edited.
- */
-export function updateBudget(
-  id: number,
-  budgetData: Partial<Budget>,
-  budgetLines?: Partial<BudgetLine>[]
-): { success: boolean; message: string } {
-  if (!db) {
-    return { success: false, message: 'Database not initialized' };
-  }
-
-  try {
-    const existing = getBudgetById(id);
-    if (!existing) {
-      return { success: false, message: 'Presupuesto no encontrado' };
-    }
-
-    // Prevent editing if status is not DRAFT
-    if (existing.status !== 'DRAFT' && budgetLines) {
-      return { success: false, message: 'No se puede editar un presupuesto que no está en borrador' };
-    }
-
-    db.run('BEGIN TRANSACTION');
-
-    // Update budget master
-    const updates: string[] = [];
-    const params: any[] = [];
-
-    if (budgetData.budget_name !== undefined) {
-      updates.push('budget_name = ?');
-      params.push(budgetData.budget_name);
-    }
-    if (budgetData.status !== undefined) {
-      updates.push('status = ?');
-      params.push(budgetData.status);
-    }
-    if (budgetData.department !== undefined) {
-      updates.push('department = ?');
-      params.push(budgetData.department);
-    }
-    if (budgetData.notes !== undefined) {
-      updates.push('notes = ?');
-      params.push(budgetData.notes);
-    }
-    if (budgetData.updated_by !== undefined) {
-      updates.push('updated_by = ?');
-      params.push(budgetData.updated_by);
-    }
-
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    params.push(id);
-
-    if (updates.length > 1) {
-      db.run(`UPDATE budgets SET ${updates.join(', ')} WHERE id = ?`, params);
-    }
-
-    // Update budget lines if provided
-    if (budgetLines) {
-      // Delete existing lines and periods (CASCADE will delete periods)
-      db.run('DELETE FROM budget_lines WHERE budget_id = ?', [id]);
-
-      // Recalculate total
-      const newTotal = budgetLines.reduce((sum, line) => sum + (line.annual_amount || 0), 0);
-
-      // Insert new lines
-      for (const line of budgetLines) {
-        db.exec(`
-          INSERT INTO budget_lines (
-            budget_id, account_number, annual_amount, distribution_type, notes
-          ) VALUES (?, ?, ?, ?, ?)
-        `, [
-          id,
-          line.account_number,
-          line.annual_amount,
-          line.distribution_type || 'EQUAL',
-          line.notes || null
-        ]);
-
-        const lineId = db.exec('SELECT last_insert_rowid() as id')[0].values[0][0] as number;
-
-        // Generate periods
-        generateBudgetPeriods(lineId, existing.fiscal_year, line.annual_amount || 0, line.distribution_type || 'EQUAL');
-      }
-
-      // Update total
-      db.run('UPDATE budgets SET total_budget_amount = ? WHERE id = ?', [newTotal, id]);
-    }
-
-    db.run('COMMIT');
-
-    // Audit logging
-    AuditTrailService.logAction({
-      user_id: budgetData.updated_by || 1,
-      action: 'UPDATE',
-      entity_type: 'budget',
-      entity_id: id.toString(),
-      old_value: JSON.stringify({ budget_name: existing.budget_name, status: existing.status }),
-      new_value: JSON.stringify({ budget_name: budgetData.budget_name || existing.budget_name, status: budgetData.status || existing.status })
-    });
-
-    logger.info('Budgets', 'budget_updated', `Presupuesto actualizado: ${id}`);
-    return { success: true, message: 'Presupuesto actualizado exitosamente' };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Budgets', 'budget_update_failed', 'Error al actualizar presupuesto', { error: error.message });
-    return { success: false, message: error.message };
-  }
-}
-
-/**
- * Delete a budget.
- * Validates CP-3: Only DRAFT budgets can be deleted.
- */
-export function deleteBudget(id: number): { success: boolean; message: string } {
-  if (!db) {
-    return { success: false, message: 'Database not initialized' };
-  }
-
-  try {
-    const existing = getBudgetById(id);
-    if (!existing) {
-      return { success: false, message: 'Presupuesto no encontrado' };
-    }
-
-    // Only allow deleting DRAFT budgets
-    if (existing.status !== 'DRAFT') {
-      return { success: false, message: 'Solo se pueden eliminar presupuestos en borrador' };
-    }
-
-    db.run('DELETE FROM budgets WHERE id = ?', [id]);
-
-    // Audit logging
-    AuditTrailService.logAction({
-      user_id: 1, // System user for deletions
-      action: 'DELETE',
-      entity_type: 'budget',
-      entity_id: id.toString(),
-      old_value: JSON.stringify({ budget_name: existing.budget_name, fiscal_year: existing.fiscal_year })
-    });
-
-    logger.info('Budgets', 'budget_deleted', `Presupuesto eliminado: ${id}`);
-    return { success: true, message: 'Presupuesto eliminado exitosamente' };
-
-  } catch (error: any) {
-    logger.error('Budgets', 'budget_deletion_failed', 'Error al eliminar presupuesto', { error: error.message });
-    return { success: false, message: error.message };
-  }
-}
-
-/**
- * Approve a budget.
- * Validates CP-3: State Transition Validity - only DRAFT can be approved.
- */
-export function approveBudget(id: number, userId: number): { success: boolean; message: string } {
-  if (!db) {
-    return { success: false, message: 'Database not initialized' };
-  }
-
-  try {
-    const existing = getBudgetById(id);
-    if (!existing) {
-      return { success: false, message: 'Presupuesto no encontrado' };
-    }
-
-    // CP-3: State Transition Validity - only DRAFT can be approved
-    if (existing.status !== 'DRAFT') {
-      return { success: false, message: 'Solo se pueden aprobar presupuestos en borrador' };
-    }
-
-    db.run(`
-      UPDATE budgets 
-      SET status = 'APPROVED', approved_by = ?, approved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `, [userId, id]);
-
-    // Audit logging
-    AuditTrailService.logAction({
-      user_id: userId,
-      action: 'UPDATE', // Changed from 'APPROVE' to 'UPDATE'
-      entity_type: 'budget',
-      entity_id: id.toString(),
-      old_value: JSON.stringify({ status: 'DRAFT' }),
-      new_value: JSON.stringify({ status: 'APPROVED', approved_by: userId })
-    });
-
-    logger.info('Budgets', 'budget_approved', `Presupuesto aprobado: ${id} por usuario ${userId}`);
-    return { success: true, message: 'Presupuesto aprobado exitosamente' };
-
-  } catch (error: any) {
-    logger.error('Budgets', 'budget_approval_failed', 'Error al aprobar presupuesto', { error: error.message });
-    return { success: false, message: error.message };
-  }
-}
-
-/**
- * Calculate actuals by account from journal entries.
- * Used for variance analysis.
- */
-export function calculateActualsByAccount(
-  accountNumber: number,
-  startDate: string,
-  endDate: string
-): number {
-  if (!db) return 0;
-
-  try {
-    const res = db.exec(`
-      SELECT 
-        SUM(CASE WHEN debit > 0 THEN debit ELSE 0 END) as total_debit,
-        SUM(CASE WHEN credit > 0 THEN credit ELSE 0 END) as total_credit
-      FROM journal_entry_lines
-      INNER JOIN journal_entries ON journal_entries.id = journal_entry_lines.entry_id
-      WHERE 
-        account_number = ? AND
-        entry_date >= ? AND
-        entry_date <= ? AND
-        journal_entries.status = 'posted'
-    `, [accountNumber, startDate, endDate]);
-
-    if (res.length === 0 || res[0].values.length === 0) return 0;
-
-    const totalDebit = res[0].values[0][0] || 0;
-    const totalCredit = res[0].values[0][1] || 0;
-
-    // For expense accounts (5xxx): net = debits - credits
-    // For revenue accounts (4xxx): net = credits - debits
-    return accountNumber >= 5000
-      ? totalDebit - totalCredit
-      : totalCredit - totalDebit;
-  } catch (error) {
-    console.error('Error calculating actuals:', error);
-    return 0;
-  }
-}
-
-/**
- * Get budget variance analysis for all lines in a budget.
- * Calculates YTD budget, actual, and variance for each account.
- */
-export function getBudgetVarianceAnalysis(
-  budgetId: number,
-  asOfDate?: string
-): BudgetVarianceAnalysis[] {
-  if (!db) return [];
-
-  const currentDate = asOfDate || new Date().toISOString().split('T')[0];
-  const budget = getBudgetById(budgetId);
-  if (!budget) return [];
-
-  const lines = getBudgetLines(budgetId);
-
-  return lines.map(line => {
-    const periods = getBudgetPeriods(line.id);
-    const accountNumber = line.account_number;
-
-    // Calculate YTD budget (sum of periods up to currentDate)
-    const ytdBudget = periods
-      .filter(p => p.period_end_date <= currentDate)
-      .reduce((sum, p) => sum + p.budgeted_amount, 0);
-
-    // Calculate YTD actual
-    const ytdActual = calculateActualsByAccount(accountNumber, budget.start_date, currentDate);
-
-    // Calculate variance
-    const ytdVariance = ytdActual - ytdBudget;
-    const ytdVariancePercent = ytdBudget !== 0 ? (ytdVariance / ytdBudget) * 100 : 0;
-
-    // Get account name (fallback if not found)
-    const accountName = getAccountNameByNumber(accountNumber) || `Account ${accountNumber}`;
-
-    return {
-      budget_id: budgetId,
-      budget_name: budget.budget_name,
-      account_number: accountNumber,
-      account_name: accountName,
-      annual_budget: line.annual_amount,
-      ytd_budget: ytdBudget,
-      ytd_actual: ytdActual,
-      ytd_variance: ytdVariance,
-      ytd_variance_percent: ytdVariancePercent,
-      periods: periods.map(p => {
-        const periodActual = calculateActualsByAccount(accountNumber, p.period_start_date, p.period_end_date);
-        const periodVariance = periodActual - p.budgeted_amount;
-        const periodVariancePercent = p.budgeted_amount !== 0 ? (periodVariance / p.budgeted_amount) * 100 : 0;
-
-        // Determine if favorable (depends on account type)
-        // Expense (5xxx): favorable if under budget (negative variance)
-        // Revenue (4xxx): favorable if over budget (positive variance)
-        const periodIsFavorable = accountNumber >= 5000 ? periodVariance < 0 : periodVariance > 0;
-
-        return {
-          period_number: p.period_number,
-          period_name: new Date(p.period_start_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-          budgeted: p.budgeted_amount,
-          actual: periodActual,
-          variance: periodVariance,
-          variance_percent: periodVariancePercent,
-          is_favorable: periodIsFavorable
-        };
-      })
-    };
-  });
-}
-
-
-// ==========================================
-// BUDGETS - VARIANCE & ANALYSIS FUNCTIONS
-// ==========================================
-
-/**
- * Update period actuals for all periods in a budget.
- * Calculates actual amounts from journal entries and updates budget_periods table.
- */
-export function updatePeriodActuals(budgetId: number): { success: boolean; message: string; periodsUpdated: number } {
-  if (!db) {
-    return { success: false, message: 'Database not initialized', periodsUpdated: 0 };
-  }
-
-  try {
-    const budget = getBudgetById(budgetId);
-    if (!budget) {
-      return { success: false, message: 'Presupuesto no encontrado', periodsUpdated: 0 };
-    }
-
-    const lines = getBudgetLines(budgetId);
-    let periodsUpdated = 0;
-
-    db.run('BEGIN TRANSACTION');
-
-    for (const line of lines) {
-      const periods = getBudgetPeriods(line.id);
-
-      for (const period of periods) {
-        // Calculate actual for this period
-        const actualAmount = calculateActualsByAccount(
-          line.account_number,
-          period.period_start_date,
-          period.period_end_date
-        );
-
-        // Calculate variance
-        const variance = actualAmount - period.budgeted_amount;
-        const variancePercent = period.budgeted_amount !== 0
-          ? (variance / period.budgeted_amount) * 100
-          : 0;
-
-        // Update period
-        db.run(`
-          UPDATE budget_periods 
-          SET actual_amount = ?, variance_amount = ?, variance_percent = ?
-          WHERE id = ?
-        `, [actualAmount, variance, variancePercent, period.id]);
-
-        periodsUpdated++;
-      }
-    }
-
-    db.run('COMMIT');
-
-    logger.info('Budgets', 'periods_updated', `Períodos actualizados: ${periodsUpdated} para presupuesto ${budgetId}`);
-    return { success: true, message: `${periodsUpdated} períodos actualizados`, periodsUpdated };
-
-  } catch (error: any) {
-    db?.run('ROLLBACK');
-    logger.error('Budgets', 'period_update_failed', 'Error al actualizar períodos', { error: error.message });
-    return { success: false, message: error.message, periodsUpdated: 0 };
-  }
-}
-
-/**
- * Get budget summary with aggregated metrics.
- * Returns totals, variance, and status indicators.
- */
-export function getBudgetSummary(budgetId: number): {
-  budget_id: number;
-  budget_name: string;
-  fiscal_year: number;
-  status: string;
-  total_budgeted: number;
-  total_actual: number;
-  total_variance: number;
-  total_variance_percent: number;
-  lines_count: number;
-  lines_over_budget: number;
-  lines_under_budget: number;
-  lines_on_budget: number;
-  alert_count: number;
-} | null {
-  if (!db) return null;
-
-  try {
-    const budget = getBudgetById(budgetId);
-    if (!budget) return null;
-
-    const lines = getBudgetLines(budgetId);
-    const varianceAnalysis = getBudgetVarianceAnalysis(budgetId);
-
-    // Calculate totals
-    const totalBudgeted = lines.reduce((sum, line) => sum + line.annual_amount, 0);
-    const totalActual = varianceAnalysis.reduce((sum, va) => sum + va.ytd_actual, 0);
-    const totalVariance = totalActual - totalBudgeted;
-    const totalVariancePercent = totalBudgeted !== 0 ? (totalVariance / totalBudgeted) * 100 : 0;
-
-    // Count lines by status
-    let linesOverBudget = 0;
-    let linesUnderBudget = 0;
-    let linesOnBudget = 0;
-    let alertCount = 0;
-
-    const alertThreshold = budget.alert_threshold_percentage || 10;
-
-    for (const va of varianceAnalysis) {
-      const variancePercent = Math.abs(va.ytd_variance_percent);
-
-      if (variancePercent > alertThreshold) {
-        alertCount++;
-      }
-
-      if (va.ytd_variance > 0) {
-        linesOverBudget++;
-      } else if (va.ytd_variance < 0) {
-        linesUnderBudget++;
-      } else {
-        linesOnBudget++;
-      }
-    }
-
-    return {
-      budget_id: budgetId,
-      budget_name: budget.budget_name,
-      fiscal_year: budget.fiscal_year,
-      status: budget.status,
-      total_budgeted: totalBudgeted,
-      total_actual: totalActual,
-      total_variance: totalVariance,
-      total_variance_percent: totalVariancePercent,
-      lines_count: lines.length,
-      lines_over_budget: linesOverBudget,
-      lines_under_budget: linesUnderBudget,
-      lines_on_budget: linesOnBudget,
-      alert_count: alertCount
-    };
-
-  } catch (error) {
-    console.error('Error getting budget summary:', error);
-    return null;
-  }
-}
-
-/**
- * Generate budget alerts for lines exceeding threshold.
- * Returns array of alerts for lines that exceed the configured threshold.
- */
-export function generateBudgetAlerts(budgetId: number): Array<{
-  budget_id: number;
-  budget_line_id: number;
-  account_number: number;
-  account_name: string;
-  alert_type: 'over_budget' | 'under_budget';
-  severity: 'warning' | 'critical';
-  variance_amount: number;
-  variance_percent: number;
-  threshold_percent: number;
-  message: string;
-}> {
-  if (!db) return [];
-
-  try {
-    const budget = getBudgetById(budgetId);
-    if (!budget) return [];
-
-    const alertThreshold = budget.alert_threshold_percentage || 10;
-    const varianceAnalysis = getBudgetVarianceAnalysis(budgetId);
-    const alerts: Array<any> = [];
-
-    for (const va of varianceAnalysis) {
-      const variancePercent = Math.abs(va.ytd_variance_percent);
-
-      // Check if variance exceeds threshold
-      if (variancePercent > alertThreshold) {
-        const isOverBudget = va.ytd_variance > 0;
-        const severity = variancePercent > (alertThreshold * 2) ? 'critical' : 'warning';
-
-        // Get budget line ID
-        const lines = getBudgetLines(budgetId);
-        const line = lines.find(l => l.account_number === va.account_number);
-
-        if (line) {
-          alerts.push({
-            budget_id: budgetId,
-            budget_line_id: line.id,
-            account_number: va.account_number,
-            account_name: va.account_name,
-            alert_type: isOverBudget ? 'over_budget' : 'under_budget',
-            severity: severity,
-            variance_amount: va.ytd_variance,
-            variance_percent: va.ytd_variance_percent,
-            threshold_percent: alertThreshold,
-            message: `${va.account_name}: ${isOverBudget ? 'Sobre' : 'Bajo'} presupuesto por ${Math.abs(variancePercent).toFixed(1)}% (${(Math.abs(va.ytd_variance) / 100).toFixed(2)})`
-          });
-        }
-      }
-    }
-
-    // Log alerts if any
-    if (alerts.length > 0) {
-      logger.warn('Budgets', 'alerts_generated', `${alerts.length} alertas generadas para presupuesto ${budgetId}`, {
-        budgetId,
-        alertCount: alerts.length
-      });
-    }
-
-    return alerts;
-
-  } catch (error) {
-    console.error('Error generating budget alerts:', error);
-    return [];
-  }
-}
-
-/**
- * Get budget execution status.
- * Returns overall execution metrics and status.
- */
-export function getBudgetExecutionStatus(budgetId: number): {
-  budget_id: number;
-  execution_percent: number;
-  status: 'on_track' | 'at_risk' | 'over_budget';
-  days_elapsed: number;
-  days_remaining: number;
-  period_progress_percent: number;
-  budget_consumed_percent: number;
-  pace_indicator: 'ahead' | 'on_pace' | 'behind';
-} | null {
-  if (!db) return null;
-
-  try {
-    const budget = getBudgetById(budgetId);
-    if (!budget) return null;
-
-    const summary = getBudgetSummary(budgetId);
-    if (!summary) return null;
-
-    // Calculate time progress
-    const startDate = new Date(budget.start_date);
-    const endDate = new Date(budget.end_date);
-    const currentDate = new Date();
-
-    const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysElapsed = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysRemaining = totalDays - daysElapsed;
-    const periodProgressPercent = (daysElapsed / totalDays) * 100;
-
-    // Calculate budget consumption
-    const budgetConsumedPercent = summary.total_budgeted !== 0
-      ? (summary.total_actual / summary.total_budgeted) * 100
-      : 0;
-
-    // Calculate execution percent (actual vs budgeted for elapsed time)
-    const expectedSpending = (summary.total_budgeted * periodProgressPercent) / 100;
-    const executionPercent = expectedSpending !== 0
-      ? (summary.total_actual / expectedSpending) * 100
-      : 0;
-
-    // Determine pace
-    let paceIndicator: 'ahead' | 'on_pace' | 'behind';
-    if (budgetConsumedPercent > periodProgressPercent + 5) {
-      paceIndicator = 'ahead'; // Spending faster than time
-    } else if (budgetConsumedPercent < periodProgressPercent - 5) {
-      paceIndicator = 'behind'; // Spending slower than time
-    } else {
-      paceIndicator = 'on_pace';
-    }
-
-    // Determine status
-    let status: 'on_track' | 'at_risk' | 'over_budget';
-    if (summary.alert_count === 0 && paceIndicator === 'on_pace') {
-      status = 'on_track';
-    } else if (summary.alert_count > 0 || paceIndicator === 'ahead') {
-      status = 'at_risk';
-    } else {
-      status = budgetConsumedPercent > 100 ? 'over_budget' : 'on_track';
-    }
-
-    return {
-      budget_id: budgetId,
-      execution_percent: executionPercent,
-      status: status,
-      days_elapsed: daysElapsed,
-      days_remaining: daysRemaining,
-      period_progress_percent: periodProgressPercent,
-      budget_consumed_percent: budgetConsumedPercent,
-      pace_indicator: paceIndicator
-    };
-
-  } catch (error) {
-    console.error('Error getting budget execution status:', error);
-    return null;
-  }
-}
-
-/**
- * Persist DB explicitly to IndexedDB (and LocalStorage as fallback if configured)
- * This bypasses the SQLiteEngine's sync if running in sql.js compatibility mode.
- */
-export const forceSaveDB = async () => {
-  if (!db || typeof db.export !== 'function') return;
-
-  try {
-    const data = db.export();
-    // Save to PersistenceLayer (IndexedDB)
-    const { saveDatabase } = await import('./PersistenceLayer');
-    await saveDatabase(data);
-    logger.info('Database', 'forced_save', 'Base de datos guardada forzadamente');
-  } catch (e) {
-    logger.error('Database', 'save_fail', 'Fallo al forzar guardado', e);
-  }
-};
-
-
-/**
- * Verifica si existen usuarios REALES en el sistema (excluye usuarios demo/guest)
- * Usado para determinar si mostrar el Initial Setup Wizard
- * 
- * IMPORTANTE: Ignora usuarios con username 'demo.admin' o 'guest' para que
- * el wizard se muestre correctamente incluso si existe una sesión demo activa.
- */
-export function hasUsers(): boolean {
-  if (!db) return false;
-  try {
-    // Excluir usuarios demo/guest del conteo
-    const result = db.exec(`
-      SELECT COUNT(*) as count 
-      FROM users 
-      WHERE username NOT IN ('demo.admin', 'guest', 'demo@volatile.local')
-    `);
-    if (result.length > 0 && result[0].values.length > 0) {
-      const count = result[0].values[0][0] as number;
-      return count > 0;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error checking if users exist:', error);
-    return false;
-  }
-}
-
 // ==========================================
 // PAYROLL ENGINE FUNCTIONS (Phase 4)
 // ==========================================
@@ -13321,18 +10501,8 @@ export function hasUsers(): boolean {
 /**
  * Get payroll by ID
  */
-export function getPayroll(payrollId: number): Payroll | null {
-  if (!db) return null;
-
-  try {
-    const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
-    if (result.length === 0 || result[0].values.length === 0) return null;
-
-    return rowToEntity<Payroll>(result[0].columns, result[0].values[0]);
-  } catch (error) {
-    console.error('Error getting payroll:', error);
-    return null;
-  }
+export function getPayroll(payrollId: Parameters<typeof _getPayroll>[0]): ReturnType<typeof _getPayroll> {
+  return _getPayroll(payrollId);
 }
 
 /**
@@ -13355,7 +10525,7 @@ export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[
     const result = db.exec(query, params);
     if (result.length === 0) return [];
 
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
+    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
   } catch (error) {
     console.error('Error getting employee payrolls:', error);
     return [];
@@ -13365,110 +10535,22 @@ export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[
 /**
  * Get all payrolls with filters
  */
-export function getAllPayrolls(filters?: {
-  employeeId?: number;
-  startDate?: string;
-  endDate?: string;
-  status?: 'draft' | 'approved' | 'voided';
-}): Payroll[] {
-  if (!db) return [];
-
-  try {
-    let query = 'SELECT * FROM payroll WHERE 1=1';
-    const params: any[] = [];
-
-    if (filters?.employeeId) {
-      query += ' AND employee_id = ?';
-      params.push(filters.employeeId);
-    }
-
-    if (filters?.startDate) {
-      query += ' AND pay_date >= ?';
-      params.push(filters.startDate);
-    }
-
-    if (filters?.endDate) {
-      query += ' AND pay_date <= ?';
-      params.push(filters.endDate);
-    }
-
-    if (filters?.status) {
-      query += ' AND status = ?';
-      params.push(filters.status);
-    }
-
-    query += ' ORDER BY pay_date DESC, created_at DESC';
-
-    const result = db.exec(query, params);
-    if (result.length === 0) return [];
-
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
-  } catch (error) {
-    console.error('Error getting all payrolls:', error);
-    return [];
-  }
+export function getAllPayrolls(filters?: Parameters<typeof _getAllPayrolls>[0]): ReturnType<typeof _getAllPayrolls> {
+  return _getAllPayrolls(filters);
 }
 
 /**
  * Get payrolls for a specific quarter (for Form 941)
  */
-export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
-  if (!db) return [];
-
-  try {
-    const quarterMonths = {
-      1: ['01', '02', '03'],
-      2: ['04', '05', '06'],
-      3: ['07', '08', '09'],
-      4: ['10', '11', '12']
-    };
-
-    const months = quarterMonths[quarter as keyof typeof quarterMonths];
-    if (!months) return [];
-
-    const startDate = `${year}-${months[0]}-01`;
-    const endDate = `${year}-${months[2]}-31`;
-
-    const query = `
-      SELECT * FROM payroll 
-      WHERE pay_date >= ? AND pay_date <= ?
-      AND status = 'approved'
-      ORDER BY pay_date
-    `;
-
-    const result = db.exec(query, [startDate, endDate]);
-    if (result.length === 0) return [];
-
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
-  } catch (error) {
-    console.error('Error getting quarterly payrolls:', error);
-    return [];
-  }
+export function getQuarterlyPayrolls(year: Parameters<typeof _getQuarterlyPayrolls>[0], quarter: Parameters<typeof _getQuarterlyPayrolls>[1]): ReturnType<typeof _getQuarterlyPayrolls> {
+  return _getQuarterlyPayrolls(year, quarter);
 }
 
 /**
  * Get annual payrolls for W-2 generation
  */
-export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
-  if (!db) return [];
-
-  try {
-    const query = `
-      SELECT * FROM payroll 
-      WHERE employee_id = ?
-      AND strftime('%Y', pay_date) = ?
-      AND status = 'approved'
-      ORDER BY pay_date
-    `;
-
-    const result = db.exec(query, [employeeId, year.toString()]);
-    if (result.length === 0) return [];
-
-    return result[0].values.map((row: any) => rowToEntity<Payroll>(result[0].columns, row));
-  } catch (error) {
-    console.error('Error getting annual payrolls:', error);
-    return [];
-  }
+export function getAnnualPayrolls(employeeId: Parameters<typeof _getAnnualPayrolls>[0], year: Parameters<typeof _getAnnualPayrolls>[1]): ReturnType<typeof _getAnnualPayrolls> {
+  return _getAnnualPayrolls(employeeId, year);
 }
 
 /**
@@ -13562,3 +10644,6 @@ export function updateFiscalSettings(settings: Partial<FiscalSettings>): { succe
     return { success: false, message: error instanceof Error ? error.message : 'Error desconocido' };
   }
 }
+
+
+

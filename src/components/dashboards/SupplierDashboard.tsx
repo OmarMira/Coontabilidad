@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
     BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -16,7 +17,8 @@ import {
     ShieldAlert,
     Maximize2
 } from 'lucide-react';
-import { getSuppliers, getBills } from '../../database/simple-db';
+import { getSuppliers } from '@/database/modules/db-suppliers';
+import { getBills } from '@/database/modules/db-bills';
 import { useLocale } from '../../i18n/useLocale';
 
 interface SupplierStats {
@@ -69,7 +71,7 @@ export const SupplierDashboard: React.FC = () => {
             const now = new Date();
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-            const newSuppliers = suppliers.filter(s => new Date(s.created_at) >= firstDayOfMonth);
+            const newSuppliers = suppliers.filter(s => new Date(s.created_at ?? Date.now()) >= firstDayOfMonth);
             let totalExpenses = 0;
             let overdueAP = 0;
 
@@ -131,7 +133,7 @@ export const SupplierDashboard: React.FC = () => {
             });
             setApAging(aging);
         } catch (error) {
-            console.error('Error loading supplier data:', error);
+            logger.error('SupplierDashboard', 'error', 'Error loading supplier data:', error);
         } finally {
             setLoading(false);
         }
@@ -155,8 +157,8 @@ export const SupplierDashboard: React.FC = () => {
                         <Building2 className="w-10 h-10 text-rose-500 group-hover:-rotate-6 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('supplierDashboard.title')}</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none uppercase">{t('supplierDashboard.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
                             <Zap className="w-3.5 h-3.5 text-rose-500 animate-pulse" /> {t('supplierDashboard.subtitle')}
                         </p>
                     </div>
@@ -330,8 +332,8 @@ const AnalysisBox = ({ title, subtitle, children }: any) => (
     <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 shadow-2xl relative group overflow-hidden">
         <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 blur-[100px] pointer-events-none"></div>
         <header className="mb-10 relative z-10">
-            <h3 className="text-xl font-black text-white tracking-tighter uppercase">{title}</h3>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{subtitle}</p>
+            <h3 className="text-lg font-black text-white tracking-tight">{title}</h3>
+            <p className="text-xs text-slate-500 font-medium mt-1">{subtitle}</p>
         </header>
         <div className="relative z-10 min-h-[300px] flex items-center justify-center">
             {children}

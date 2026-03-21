@@ -1,8 +1,10 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Truck, CheckCircle, Package } from 'lucide-react';
-import { PurchaseOrder, receivePurchaseOrder } from '@/database/simple-db';
+import type { PurchaseOrder } from '@/database/modules/db-types';
+import { receivePurchaseOrder } from '@/database/modules/db-purchase-orders';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -17,13 +19,13 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleReceive = async () => {
-        if (!confirm(t('poReceiving.confirmDialog').replace('{number}', order.order_number))) {
+        if (!confirm(t('poReceiving.confirmDialog').replace('{number}', order.order_number ?? order.po_number ?? ''))) {
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // Asumimos userId 1 por ahora, en un sistema real vendría del AuthContext
+            // Asumimos userId 1 por ahora, en un sistema real vendrÃ­a del AuthContext
             const result = receivePurchaseOrder(order.id, 1);
 
             if (result.success) {
@@ -34,7 +36,7 @@ export const PurchaseOrderReceiving: React.FC<Props> = ({ order, onClose, onSucc
             }
         } catch (error) {
             toast.error(t('poReceiving.error unexpected'));
-            console.error(error);
+            logger.error('PurchaseOrderReceiving', 'error', 'operation_failed', error);
         } finally {
             setIsSubmitting(false);
         }

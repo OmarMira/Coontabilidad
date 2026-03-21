@@ -16,18 +16,25 @@ export const AddAccountAliasMigration: Migration = {
     name: 'Add account_alias for bilingual support',
     up: async (db: SQLiteEngine) => {
         // Add account_alias column (optional Spanish translation)
-        await db.exec(`
-            ALTER TABLE chart_of_accounts 
-            ADD COLUMN account_alias TEXT DEFAULT NULL
-        `);
+        // Wrapped in try-catch in case the column already exists
+        try {
+            await db.exec(`
+                ALTER TABLE chart_of_accounts 
+                ADD COLUMN account_alias TEXT DEFAULT NULL
+            `);
+        } catch (e) {
+            console.warn('Migration 015: account_alias column may already exist, skipping ALTER.');
+        }
 
         // Create index for faster lookups
-        await db.exec(`
-            CREATE INDEX IF NOT EXISTS idx_chart_of_accounts_alias 
-            ON chart_of_accounts(account_alias)
-        `);
+        try {
+            await db.exec(`
+                CREATE INDEX IF NOT EXISTS idx_chart_of_accounts_alias 
+                ON chart_of_accounts(account_alias)
+            `);
+        } catch (e) { console.warn('Migration 015: index skipped -', e); }
 
-        // Update common accounts with Spanish aliases
+        // Update common accounts with Spanish aliases (use account_code column)
         const commonAliases = [
             { code: '1010', alias: 'Efectivo en Caja' },
             { code: '1020', alias: 'Banco - Cuenta Corriente' },
@@ -52,10 +59,12 @@ export const AddAccountAliasMigration: Migration = {
         ];
 
         for (const { code, alias } of commonAliases) {
-            await db.run(
-                `UPDATE chart_of_accounts SET account_alias = ? WHERE code = ?`,
-                [alias, code]
-            );
+            try {
+                await db.run(
+                    `UPDATE chart_of_accounts SET account_alias = ? WHERE account_code = ?`,
+                    [alias, code]
+                );
+            } catch (e) { /* ignore missing rows */ }
         }
 
         console.log('✅ Migration 015: account_alias column added successfully');

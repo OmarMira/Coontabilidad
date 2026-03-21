@@ -1,6 +1,7 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { History, Search, Filter, User, Activity, Clock, Database } from 'lucide-react';
-import AuditTrailService from '../../services/AuditTrailService';
+import { AuditChainService as AuditTrailService } from '../../core/audit/AuditChainService';
 import { AuditEntry } from '../../types/user.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '../../i18n/useLocale';
@@ -20,10 +21,10 @@ export const AuditTrailTable: React.FC = () => {
         loadAuditTrail();
     }, [filter]);
 
-    const loadAuditTrail = () => {
+    const loadAuditTrail = async () => {
         setLoading(true);
         try {
-            const data = AuditTrailService.getAuditTrail({
+            const data = await AuditTrailService.getAuditTrail({
                 userId: filter.userId || undefined,
                 entityType: filter.entityType || undefined,
                 action: filter.action || undefined,
@@ -31,7 +32,7 @@ export const AuditTrailTable: React.FC = () => {
             });
             setEntries(data);
         } catch (error) {
-            console.error('Error loading audit trail:', error);
+            logger.error('AuditTrailTable', 'error', 'Error loading audit trail:', error);
         } finally {
             setLoading(false);
         }
@@ -57,8 +58,8 @@ export const AuditTrailTable: React.FC = () => {
                         <History className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white">{t('auditTrailTable.title')}</h1>
-                        <p className="text-slate-400 text-sm">{t('auditTrailTable.subtitle')}</p>
+                        <h1 className="text-2xl font-black text-white tracking-tight">{t('auditTrailTable.title')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-1">{t('auditTrailTable.subtitle')}</p>
                     </div>
                 </div>
             </div>
@@ -66,7 +67,7 @@ export const AuditTrailTable: React.FC = () => {
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-4">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">{t('auditTrailTable.filter.entity')}</label>
+                    <label className="text-xs font-medium text-slate-500 ml-1">{t('auditTrailTable.filter.entity')}</label>
                     <select
                         value={filter.entityType}
                         onChange={(e) => setFilter({ ...filter, entityType: e.target.value })}
@@ -83,7 +84,7 @@ export const AuditTrailTable: React.FC = () => {
                     </select>
                 </div>
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">{t('auditTrailTable.filter.action')}</label>
+                    <label className="text-xs font-medium text-slate-500 ml-1">{t('auditTrailTable.filter.action')}</label>
                     <select
                         value={filter.action}
                         onChange={(e) => setFilter({ ...filter, action: e.target.value })}
@@ -114,11 +115,11 @@ export const AuditTrailTable: React.FC = () => {
                     <table className="w-full">
                         <thead className="bg-slate-800/50 border-b border-slate-700">
                             <tr>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.datetime')}</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.user')}</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.action')}</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.entity')}</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('auditTrailTable.table.details')}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{t('auditTrailTable.table.datetime')}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{t('auditTrailTable.table.user')}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{t('auditTrailTable.table.action')}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{t('auditTrailTable.table.entity')}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">{t('auditTrailTable.table.details')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800">
@@ -161,8 +162,8 @@ export const AuditTrailTable: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2 text-xs">
                                                 <Database className="w-3.5 h-3.5 text-slate-500" />
-                                                <span className="text-slate-300 uppercase font-black">{entry.entity_type}</span>
-                                                <span className="text-indigo-400 font-mono">#{entry.entity_id}</span>
+                                                <span className="text-slate-300 font-bold">{entry.entity_type}</span>
+                                                <span className="text-blue-400 font-mono">#{entry.entity_id}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

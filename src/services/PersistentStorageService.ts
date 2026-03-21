@@ -39,10 +39,10 @@ export class PersistentStorageService {
             const granted = await navigator.storage.persist();
 
             if (granted) {
-                console.log('✅ Persistent storage granted - data is now protected');
+                console.log('✅ Persistencia solicitada → concedida');
                 return true;
             } else {
-                console.warn('⚠️ Persistent storage denied - data may be cleared by browser');
+                console.warn('⚠️ Persistencia solicitada → denegada');
                 return false;
             }
 

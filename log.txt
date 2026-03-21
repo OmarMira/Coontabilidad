@@ -1,0 +1,15 @@
+9904a81 feat: calibrate transaction parser fuzzy threshold to 0.85
+2f77371 chore: end of session checkpoint
+8e9ec92 chore: save progress after codebase cleanup
+015f7dd chore: remove inactive duplicate migrations 007, 009, 010
+c810531 chore: codebase cleanup - remove duplicates and dead code
+8252419 chore: remove redundant ResilientMigrationEngine
+574c879 chore: remove unused AI services
+7840e8d chore: remove auto-generated backup folders from repo
+2b5c76b chore: pre-cleanup checkpoint
+63f6dae feat(banking): enhance Quarantine Panel, Bank Reconciliation and Discrepancy Analysis UX
+2f2fb32 Sprint 1A & 2: Database stabilization, Migration Engine fix, and TransactionParser implementation. Includes tsc_baseline.txt and security triggers.
+39c3e7d feat: implement smart bank account deletion logic, fix Neural Importer consolidation, and ensure UI data consistency
+2b4a0eb chore: save all pending changes including UI refactor and database services
+ca9ab31 feat: migrate locales to src/locales & remove critical mocks in DataIntegrity and DR-15 Wizard
+00feef4 feat: implement high-reliability PDF/OFX bank importer with direct extraction and UX improvements

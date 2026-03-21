@@ -17,15 +17,11 @@ import {
   ShieldAlert,
   Loader2
 } from 'lucide-react';
-import {
-  createJournalEntry,
-  getJournalEntries,
-  generateSalesJournalEntry,
-  generatePurchaseJournalEntry,
-  JournalEntry,
-  getInvoiceById,
-  getBillById
-} from '../database/simple-db';
+import type { JournalEntry } from '@/database/modules/db-types';
+import { createJournalEntry, getJournalEntries } from '@/database/modules/db-journal';
+import { generateSalesJournalEntry, generatePurchaseJournalEntry } from '@/database/modules/db-journal-auto';
+import { getInvoiceById } from '@/database/modules/db-invoices';
+import { getBillById } from '@/database/modules/db-bills';
 import { logger } from '../core/logging/SystemLogger';
 import { useLocale } from '../i18n/useLocale';
 
@@ -81,7 +77,7 @@ export function JournalEntryTest() {
     try {
       const invoice = getInvoiceById(1);
       if (!invoice) return;
-      const result = generateSalesJournalEntry(invoice);
+      const result = await generateSalesJournalEntry(invoice);
       setTestResults(prev => [{
         test: 'Sales Auto-Ledger',
         success: result.success,
@@ -97,7 +93,7 @@ export function JournalEntryTest() {
     try {
       const bill = getBillById(1);
       if (!bill) return;
-      const result = generatePurchaseJournalEntry(bill);
+      const result = await generatePurchaseJournalEntry(bill);
       setTestResults(prev => [{
         test: 'Purchase Auto-Ledger',
         success: result.success,

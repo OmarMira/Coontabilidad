@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 
 /**
@@ -165,7 +166,7 @@ export class InventoryService {
             ]);
         } catch (e: any) {
             // Table might not exist yet - log warning but don't fail
-            console.warn('stock_movements table not found or insert failed - movement not recorded', e);
+            logger.warn('InventoryService', 'warn', 'stock_movements table not found or insert failed - movement not recorded', e);
         }
     }
 

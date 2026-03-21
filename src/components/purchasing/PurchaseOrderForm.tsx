@@ -1,9 +1,12 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Plus, Save, Trash2, X } from 'lucide-react';
-import { getSuppliers, getActiveProducts, createPurchaseOrder, Supplier, Product } from '@/database/simple-db';
+import { ShoppingCart, Plus, Save, Trash2, XCircle, ShieldCheck } from 'lucide-react';
+import type { Supplier, Product } from '@/database/modules/db-types';
+import { getSuppliers } from '@/database/modules/db-suppliers';
+import { getActiveProducts } from '@/database/modules/db-invoices';
+import { createPurchaseOrder } from '@/database/modules/db-purchase-orders';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -103,7 +106,14 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
             items: items.map(i => ({
                 product_id: i.product_id,
                 quantity: i.quantity,
-                unit_price: i.unit_price
+                unit_price: i.unit_price,
+                id: 0,
+                po_id: 0,
+                line_total: i.quantity * i.unit_price
+
+
+
+
             }))
         });
 
@@ -118,158 +128,234 @@ export const PurchaseOrderForm: React.FC<{ onCancel?: () => void, onSuccess?: ()
     const { total } = calculateTotals();
 
     return (
-        <Card className="bg-slate-900 border-white/5 text-white w-full max-w-4xl mx-auto">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 pb-4">
-                <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5 text-blue-400" />
-                    {t('poForm.title')}
-                </CardTitle>
-                <div className="flex gap-2">
-                    <Button variant="ghost" onClick={onCancel} className="text-slate-500 hover:text-white">
-                        <X className="w-4 h-4 mr-2" /> {t('poForm.cancel')}
-                    </Button>
-                    <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-900/20">
-                        <Save className="w-4 h-4 mr-2" />
-                        {t('poForm.saveDraft')}
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-                {/* Header Inputs */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('poForm.supplier')}</label>
-                        <select
-                            className="w-full bg-white/10 border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            value={formData.supplier_id}
-                            onChange={e => setFormData({ ...formData, supplier_id: Number(e.target.value) })}
-                        >
-                            <option value={0}>{t('poForm.selectSupplier')}</option>
-                            {suppliers.length === 0 && <option disabled>{t('poForm.noSuppliers')}</option>}
-                            {suppliers.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                        </select>
-                        {suppliers.length === 0 && (
-                            <p className="text-xs text-red-400 mt-1">{t('poForm.warning.createSuppliers')}</p>
-                        )}
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('poForm.issueDate')}</label>
-                        <input
-                            type="date"
-                            className="w-full bg-white/10 border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={formData.order_date}
-                            onChange={e => setFormData({ ...formData, order_date: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{t('poForm.expectedDate')}</label>
-                        <input
-                            type="date"
-                            className="w-full bg-white/10 border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={formData.expected_date}
-                            onChange={e => setFormData({ ...formData, expected_date: e.target.value })}
-                        />
-                    </div>
-                </div>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6 overflow-hidden">
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] pointer-events-none"></div>
 
-                {/* Items Section */}
-                <div className="border border-white/5 rounded-xl overflow-hidden bg-white/10/20">
-                    <div className="p-3 bg-white/10/50 border-b border-white/5 flex gap-4 items-center font-medium text-sm text-slate-500">
-                        <div className="flex-1">{t('poForm.col.product')}</div>
-                        <div className="w-24 text-right">{t('poForm.col.quantity')}</div>
-                        <div className="w-32 text-right">{t('poForm.col.unitCost')}</div>
-                        <div className="w-32 text-right">{t('poForm.col.total')}</div>
-                        <div className="w-10"></div>
+                {/* Header Hub */}
+                <header className="flex items-center justify-between p-10 border-b border-slate-800/50 flex-shrink-0 relative z-10">
+                    <div className="flex items-center gap-6">
+                        <div className="text-blue-500">
+                            <ShoppingCart className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
+                                {t('poForm.title')}
+                            </h2>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2 flex items-center gap-2">
+                                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Procurement Protocol v4.0
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95"
+                    >
+                        <XCircle className="w-6 h-6" />
+                    </button>
+                </header>
+
+                <div className="flex-1 overflow-y-auto p-10 space-y-12 relative z-10 custom-scrollbar">
+                    {/* Header Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Supplier */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 ml-1 block">
+                                {t('poForm.supplier')}
+                            </label>
+                            <div className="relative group">
+                                <select
+                                    className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2xl px-6 py-4 text-white focus:border-blue-500/50 outline-none transition-all font-bold uppercase tracking-widest text-[10px] appearance-none"
+                                    value={formData.supplier_id}
+                                    onChange={e => setFormData({ ...formData, supplier_id: Number(e.target.value) })}
+                                >
+                                    <option value={0}>{t('poForm.selectSupplier')}</option>
+                                    {suppliers.map(s => (
+                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
+                            </div>
+                        </div>
+
+                        {/* Issue Date */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 ml-1 block">
+                                {t('poForm.issueDate')}
+                            </label>
+                            <input
+                                type="date"
+                                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2xl px-6 py-4 text-white focus:border-blue-500/50 outline-none transition-all font-black uppercase tracking-widest text-[10px]"
+                                value={formData.order_date}
+                                onChange={e => setFormData({ ...formData, order_date: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Expected Date */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 ml-1 block">
+                                {t('poForm.expectedDate')}
+                            </label>
+                            <input
+                                type="date"
+                                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-2xl px-6 py-4 text-white focus:border-blue-500/50 outline-none transition-all font-black uppercase tracking-widest text-[10px]"
+                                value={formData.expected_date}
+                                onChange={e => setFormData({ ...formData, expected_date: e.target.value })}
+                            />
+                        </div>
                     </div>
 
-                    <div className="divide-y divide-gray-800/50">
-                        {items.map((item, idx) => (
-                            <div key={idx} className="p-3 flex gap-4 items-center text-sm hover:bg-white/10/30">
-                                <div className="flex-1 font-medium">{item.product_name}</div>
-                                <div className="w-24 text-right">{item.quantity}</div>
-                                <div className="w-32 text-right">${item.unit_price.toFixed(2)}</div>
-                                <div className="w-32 text-right text-slate-400 font-mono">${(item.quantity * item.unit_price).toFixed(2)}</div>
-                                <div className="w-10 text-right">
-                                    <button onClick={() => handleRemoveItem(idx)} className="text-red-400 hover:text-red-300 p-1">
-                                        <Trash2 className="w-4 h-4" />
+                    {/* Items Section */}
+                    <div className="space-y-6">
+                        <h3 className="text-[11px] font-black text-white uppercase tracking-[0.3em] flex items-center gap-4">
+                            <div className="w-8 h-[1px] bg-blue-500/50"></div>
+                            {t('poForm.items') || 'ARTÃCULOS DEL PEDIDO'}
+                            <div className="w-8 h-[1px] bg-blue-500/50"></div>
+                        </h3>
+
+                        <div className="bg-slate-950/30 border border-slate-800/50 rounded-[2rem] overflow-hidden">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-[1fr,150px,150px,200px,80px] gap-4 p-8 bg-slate-900/50 border-b border-slate-800/50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                <div>{t('poForm.col.product')}</div>
+                                <div className="text-right">{t('poForm.col.quantity')}</div>
+                                <div className="text-right">{t('poForm.col.unitCost')}</div>
+                                <div className="text-right">{t('poForm.col.total')}</div>
+                                <div></div>
+                            </div>
+
+                            {/* Table Body */}
+                            <div className="divide-y divide-slate-800/30">
+                                {items.map((item, idx) => (
+                                    <div key={idx} className="grid grid-cols-[1fr,150px,150px,200px,80px] gap-4 p-8 items-center group hover:bg-white/5 transition-colors">
+                                        <div className="text-[11px] font-black text-white uppercase tracking-wider">{item.product_name}</div>
+                                        <div className="text-sm font-black text-white text-right font-mono tracking-tighter">{item.quantity}</div>
+                                        <div className="text-sm font-black text-white text-right font-mono tracking-tighter group-hover:text-blue-400 transition-colors">
+                                            ${item.unit_price.toFixed(2)}
+                                        </div>
+                                        <div className="text-base font-black text-blue-400 text-right font-mono tracking-tighter">
+                                            ${(item.quantity * item.unit_price).toFixed(2)}
+                                        </div>
+                                        <div className="flex justify-center">
+                                            <button
+                                                onClick={() => handleRemoveItem(idx)}
+                                                className="p-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl transition-all active:scale-90 opacity-0 group-hover:opacity-100"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Add New Item Interaction */}
+                                <div className="p-10 bg-blue-500/5 border-t border-blue-500/10 grid grid-cols-[1fr,120px,180px,120px] gap-6 items-end">
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black text-blue-400/70 uppercase tracking-widest ml-1">{t('poForm.col.product')}</label>
+                                        <div className="relative group">
+                                            <select
+                                                className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 text-white focus:border-blue-500 outline-none transition-all font-bold uppercase tracking-widest text-[10px] appearance-none"
+                                                value={newItem.product_id}
+                                                onChange={e => setNewItem({ ...newItem, product_id: Number(e.target.value) })}
+                                            >
+                                                <option value={0}>{t('poForm.addProductPlaceholder')}</option>
+                                                {products.map(p => (
+                                                    <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600 font-black">â–¼</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black text-blue-400/70 uppercase tracking-widest ml-1 text-right block">{t('poForm.col.quantity')}</label>
+                                        <input
+                                            type="number"
+                                            className="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 text-white focus:border-blue-500 outline-none transition-all font-mono font-black text-sm text-right"
+                                            placeholder="1"
+                                            min="1"
+                                            value={newItem.quantity}
+                                            onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black text-blue-400/70 uppercase tracking-widest ml-1 text-right block">{t('poForm.col.unitCost')}</label>
+                                        <div className="relative group">
+                                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 font-bold">$</span>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-12 pr-6 py-4 text-white focus:border-blue-500 outline-none transition-all font-mono font-black text-sm text-right"
+                                                placeholder="0.00"
+                                                min="0"
+                                                step="0.01"
+                                                value={newItem.unit_price}
+                                                onChange={e => setNewItem({ ...newItem, unit_price: Number(e.target.value) })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleAddItem}
+                                        disabled={!newItem.product_id}
+                                        className="h-[58px] bg-blue-600 hover:bg-blue-500 disabled:opacity-20 text-white rounded-2xl transition-all shadow-xl shadow-blue-900/40 flex items-center justify-center group/btn"
+                                    >
+                                        <Plus className="w-6 h-6 group-hover/btn:scale-125 transition-transform" />
                                     </button>
                                 </div>
                             </div>
-                        ))}
+                        </div>
                     </div>
 
-                    {/* Add Item Row */}
-                    <div className="p-3 bg-white/10/30 flex gap-4 items-center border-t border-white/5">
-                        <div className="flex-1">
-                            <select
-                                className="w-full bg-slate-900 border-white/10 rounded p-2 text-sm text-white"
-                                value={newItem.product_id}
-                                onChange={e => setNewItem({ ...newItem, product_id: Number(e.target.value) })}
-                            >
-                                <option value={0}>{t('poForm.addProductPlaceholder')}</option>
-                                {products.length === 0 && <option disabled>{t('poForm.noProducts')}</option>}
-                                {products.map(p => (
-                                    <option key={p.id} value={p.id}>{p.sku} - {p.name}</option>
-                                ))}
-                            </select>
-                            {products.length === 0 && (
-                                <p className="text-xs text-red-400 mt-1">{t('poForm.warning.createProducts')}</p>
-                            )}
-                        </div>
-                        <div className="w-24">
-                            <input
-                                type="number"
-                                className="w-full bg-slate-900 border-white/10 rounded p-2 text-sm text-right text-white"
-                                placeholder={t('poForm.qtyPlaceholder')}
-                                min="1"
-                                value={newItem.quantity}
-                                onChange={e => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
+                    {/* Summary & Notes */}
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr,350px] gap-12 pt-8">
+                        {/* Notes */}
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('poForm.notesLabel')}</label>
+                            <textarea
+                                className="w-full bg-slate-950/50 border border-slate-800/50 rounded-[2.5rem] px-8 py-8 text-white focus:border-blue-500 outline-none transition-all font-medium text-sm placeholder:text-slate-800 resize-none"
+                                placeholder={t('poForm.notesPlaceholder')}
+                                value={formData.notes}
+                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                rows={4}
                             />
                         </div>
-                        <div className="w-32">
-                            <input
-                                type="number"
-                                className="w-full bg-slate-900 border-white/10 rounded p-2 text-sm text-right text-white"
-                                placeholder={t('poForm.costPlaceholder')}
-                                min="0"
-                                step="0.01"
-                                value={newItem.unit_price}
-                                onChange={e => setNewItem({ ...newItem, unit_price: Number(e.target.value) })}
-                            />
+
+                        {/* Grand Total */}
+                        <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 flex flex-col justify-center items-center relative overflow-hidden group">
+                            <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <ShoppingCart className="w-48 h-48 text-white" />
+                            </div>
+
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4 relative z-10">{t('poForm.totalOrder') || 'TOTAL DEL PEDIDO'}</p>
+                            <div className="text-5xl font-black text-white tracking-tighter font-mono relative z-10">
+                                <span className="text-2xl text-blue-500 mr-2">$</span>
+                                {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+
+                            <div className="w-20 h-1 bg-blue-500 rounded-full mt-8 relative z-10 opacity-50"></div>
                         </div>
-                        <div className="w-32 text-right">
-                            <Button size="sm" onClick={handleAddItem} disabled={!newItem.product_id} className="bg-blue-600 hover:bg-blue-500">
-                                <Plus className="w-4 h-4" />
-                            </Button>
-                        </div>
-                        <div className="w-10"></div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 pt-4">
-                    <div>
-                        <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2 block">{t('poForm.notesLabel')}</label>
-                        <textarea
-                            className="w-full bg-white/10 border-white/10 rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
-                            placeholder={t('poForm.notesPlaceholder')}
-                            value={formData.notes}
-                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-500">{t('poForm.subtotal')}</span>
-                            <span className="text-white font-mono">${total.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between items-center border-t border-white/5 pt-3">
-                            <span className="text-blue-400 font-bold text-lg">{t('poForm.totalOrder')}</span>
-                            <span className="text-2xl font-black tracking-tight text-white font-mono">${total.toFixed(2)}</span>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+                {/* Footer Hub */}
+                <footer className="p-10 border-t border-slate-800/50 bg-slate-950/30 flex justify-end gap-6 flex-shrink-0 relative z-10">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-10 py-5 text-slate-500 hover:text-white transition-all font-black uppercase tracking-widest text-[10px] hover:bg-slate-900 rounded-2xl border border-transparent hover:border-slate-800"
+                    >
+                        {t('common.cancel')}
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-12 py-5 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
+                    >
+                        <Save className="w-5 h-5" />
+                        <span>{t('poForm.saveDraft')}</span>
+                    </button>
+                </footer>
+            </div>
+        </div>
     );
 };
+

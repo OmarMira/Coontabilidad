@@ -1,8 +1,11 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { AuditChainService } from '../audit/AuditChainService';
 import { FinancialReportingService } from '../accounting/FinancialReportingService';
 import { AccountingService } from '../accounting/AccountingService';
 import { SmartAIProvider } from './SmartAIProvider';
+import { SchemaContext } from '../../types/ai-context';
+import { SemanticQueryResolver } from './SemanticQueryResolver';
 
 /**
  * AIAssistantService - Read-Only AI Analysis Engine
@@ -30,6 +33,7 @@ export class AIAssistantService {
     private reportingService: FinancialReportingService;
     private accountingService: AccountingService;
     private smartAI: SmartAIProvider;
+    private resolver: SemanticQueryResolver;
     private apiKey: string;
     private readonly DAILY_LIMIT = 100;
     private readonly SYSTEM_PROMPT = `You are a Forensic Auditor and Florida Tax Consultant for AccountExpress Next-Gen.
@@ -59,11 +63,12 @@ Response format:
         this.auditChainService = new AuditChainService(db);
         this.accountingService = new AccountingService(db);
         this.reportingService = new FinancialReportingService(db);
-        this.smartAI = new SmartAIProvider(db); // ✅ Pass DB for full data access
+        this.smartAI = new SmartAIProvider(db); // âœ… Pass DB for full data access
+        this.resolver = new SemanticQueryResolver(db);
 
         // Initialize AI in background
         this.smartAI.initialize().catch((err: unknown) => {
-            console.error('Failed to initialize Smart AI:', err);
+            logger.error('AIAssistantService', 'error', 'Failed to initialize Smart AI:', err);
         });
     }
 
@@ -163,6 +168,11 @@ Focus on:
     public async analyzeTaxCompliance(): Promise<AIAnalysisResult> {
         await this.checkRateLimit();
 
+        // DAC Phase 2: Dynamic Semantic Resolution
+        await this.resolver.loadContext();
+        const invoiceTable = this.resolver.resolveTable('INVOICE')?.name || 'invoices';
+        const customerTable = this.resolver.resolveTable('CUSTOMER')?.name || 'customers';
+
         // Get sales tax data
         const taxData = await this.db.select(`
             SELECT 
@@ -172,8 +182,8 @@ Focus on:
                 i.tax,
                 i.total,
                 c.county
-            FROM invoices i
-            JOIN customers c ON i.customer_id = c.id
+            FROM ${invoiceTable} i
+            JOIN ${customerTable} c ON i.customer_id = c.id
             WHERE i.status = 'posted'
             ORDER BY i.created_at DESC
             LIMIT 100
@@ -413,6 +423,23 @@ To enable AI analysis, configure the API key in environment variables.`;
 
         const count = usage.length > 0 ? parseInt((usage[0] as any).value) : 0;
         return Math.max(0, this.DAILY_LIMIT - count);
+    }
+
+    /**
+     * Obtener el contexto dinÃ¡mico del esquema generado por el crawler
+     */
+    public async getSchemaContext(): Promise<SchemaContext | null> {
+        const result = await this.db.select(`
+            SELECT value FROM system_config WHERE key = 'ai_schema_context'
+        `);
+        if (result.length > 0 && result[0].value) {
+            try {
+                return JSON.parse(result[0].value as string);
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
     }
 }
 

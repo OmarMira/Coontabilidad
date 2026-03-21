@@ -22,14 +22,14 @@ export class TrialBalanceService {
                 a.account_type,
                 a.normal_balance,
                 -- Saldo anterior (suma de todo lo previo al inicio del período)
-                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit ELSE 0 END), 0) as previous_debit,
-                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit ELSE 0 END), 0) as previous_credit,
+                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.debit_amount ELSE 0 END), 0) as previous_debit,
+                COALESCE(SUM(CASE WHEN je.entry_date < ? THEN jd.credit_amount ELSE 0 END), 0) as previous_credit,
                 -- Movimientos del período
-                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit ELSE 0 END), 0) as period_debit,
-                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit ELSE 0 END), 0) as period_credit
+                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.debit_amount ELSE 0 END), 0) as period_debit,
+                COALESCE(SUM(CASE WHEN je.entry_date BETWEEN ? AND ? THEN jd.credit_amount ELSE 0 END), 0) as period_credit
             FROM chart_of_accounts a
             LEFT JOIN journal_details jd ON a.account_code = jd.account_code
-            LEFT JOIN journal_entries je ON jd.journal_id = je.id
+            LEFT JOIN journal_entries je ON jd.journal_entry_id = je.id
             WHERE a.is_active = 1
             GROUP BY a.account_code, a.account_name, a.account_type, a.normal_balance
             ORDER BY a.account_code;

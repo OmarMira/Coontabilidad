@@ -1,5 +1,6 @@
-// reconciliation.worker.ts - Worker para matching masivo de conciliación bancaria
-import { BankTransaction, JournalEntry, ReconciliationMatch } from '../database/simple-db';
+﻿import { logger } from '../core/logging/SystemLogger';
+// reconciliation.worker.ts - Worker para matching masivo de conciliaciÃ³n bancaria
+import type { BankTransaction, JournalEntry, ReconciliationMatch } from '@/database/modules/db-types';
 
 export interface ReconciliationTask {
   type: 'AUTO_MATCH' | 'BULK_ANALYSIS' | 'DISCREPANCY_DETECTION';
@@ -11,9 +12,9 @@ export interface ReconciliationTask {
 
 export interface MatchingCriteria {
   amountTolerance: number; // Tolerancia en monto (ej: 0.01 para 1 centavo)
-  dateTolerance: number; // Tolerancia en días
-  minConfidence: number; // Confianza mínima para auto-match
-  enableFuzzyMatching: boolean; // Matching por descripción similar
+  dateTolerance: number; // Tolerancia en dÃ­as
+  minConfidence: number; // Confianza mÃ­nima para auto-match
+  enableFuzzyMatching: boolean; // Matching por descripciÃ³n similar
 }
 
 export interface ReconciliationResult {
@@ -98,13 +99,13 @@ self.onmessage = async (event: MessageEvent) => {
     });
 
   } catch (error) {
-    console.error('Error in reconciliation worker:', error);
+    logger.error('reconciliation.worker', 'error', 'Error in reconciliation worker:', error);
     
     // Send error response
     self.postMessage({
       taskId,
       type: 'TASK_ERROR',
-      error: error instanceof Error ? error.message : 'Error desconocido en worker de conciliación'
+      error: error instanceof Error ? error.message : 'Error desconocido en worker de conciliaciÃ³n'
     });
   }
 };
@@ -166,18 +167,18 @@ async function performAutoMatching(task: ReconciliationTask): Promise<Reconcilia
 }
 
 async function performBulkAnalysis(task: ReconciliationTask): Promise<ReconciliationResult> {
-  // Análisis completo incluyendo detección de patrones
+  // AnÃ¡lisis completo incluyendo detecciÃ³n de patrones
   const autoMatchResult = await performAutoMatching(task);
   
-  // Análisis adicional de patrones
+  // AnÃ¡lisis adicional de patrones
   const patterns = analyzeTransactionPatterns(task.transactions);
   
-  // Agregar información de patrones a los matches
+  // Agregar informaciÃ³n de patrones a los matches
   autoMatchResult.matches.forEach(match => {
     const transaction = task.transactions.find(t => t.id === match.transactionId);
     if (transaction && patterns.has(transaction.description)) {
       const pattern = patterns.get(transaction.description)!;
-      if (pattern.frequency > 3) { // Transacción recurrente
+      if (pattern.frequency > 3) { // TransacciÃ³n recurrente
         match.confidence = Math.min(match.confidence + 0.1, 1.0);
       }
     }
@@ -202,7 +203,7 @@ async function detectDiscrepancies(task: ReconciliationTask): Promise<Reconcilia
 
   amountGroups.forEach((transactions, amount) => {
     if (transactions.length > 1) {
-      // Verificar si son realmente duplicados (misma fecha y descripción similar)
+      // Verificar si son realmente duplicados (misma fecha y descripciÃ³n similar)
       for (let i = 0; i < transactions.length - 1; i++) {
         for (let j = i + 1; j < transactions.length; j++) {
           const t1 = transactions[i];
@@ -215,7 +216,7 @@ async function detectDiscrepancies(task: ReconciliationTask): Promise<Reconcilia
             discrepancies.push({
               type: 'duplicate_entry',
               severity: 'medium',
-              description: `Posible transacción duplicada: $${amount} en ${t1.transaction_date}`,
+              description: `Posible transacciÃ³n duplicada: $${amount} en ${t1.transaction_date}`,
               transactionId: t1.id,
               suggestedAction: 'Revisar y eliminar duplicado si es necesario'
             });
@@ -232,7 +233,7 @@ async function detectDiscrepancies(task: ReconciliationTask): Promise<Reconcilia
   
   task.transactions.forEach(t => {
     const amount = Math.abs(t.amount);
-    if (amount > avgAmount + (3 * stdDev)) { // 3 desviaciones estándar
+    if (amount > avgAmount + (3 * stdDev)) { // 3 desviaciones estÃ¡ndar
       discrepancies.push({
         type: 'amount_mismatch',
         severity: 'low',
@@ -288,10 +289,10 @@ function calculateMatchConfidence(transaction: BankTransaction, entry: JournalEn
     confidence += 0.3 * (1 - daysDiff / criteria.dateTolerance); // Hasta 30% por fecha
   }
   
-  // Matching por descripción (si está habilitado)
+  // Matching por descripciÃ³n (si estÃ¡ habilitado)
   if (criteria.enableFuzzyMatching && transaction.description && entry.description) {
     const similarity = calculateStringSimilarity(transaction.description.toLowerCase(), entry.description.toLowerCase());
-    confidence += 0.2 * similarity; // Hasta 20% por descripción
+    confidence += 0.2 * similarity; // Hasta 20% por descripciÃ³n
   }
   
   // Matching por referencia
@@ -317,14 +318,14 @@ function getMatchReasons(transaction: BankTransaction, entry: JournalEntry, crit
     if (daysDiff === 0) {
       reasons.push('Misma fecha');
     } else {
-      reasons.push(`Fecha cercana (${Math.round(daysDiff)} días)`);
+      reasons.push(`Fecha cercana (${Math.round(daysDiff)} dÃ­as)`);
     }
   }
   
   if (transaction.description && entry.description) {
     const similarity = calculateStringSimilarity(transaction.description.toLowerCase(), entry.description.toLowerCase());
     if (similarity > 0.7) {
-      reasons.push('Descripción similar');
+      reasons.push('DescripciÃ³n similar');
     }
   }
   
@@ -381,8 +382,8 @@ function analyzeTransactionPatterns(transactions: BankTransaction[]): Map<string
 function getDefaultCriteria(): MatchingCriteria {
   return {
     amountTolerance: 0.01, // 1 centavo
-    dateTolerance: 3, // 3 días
-    minConfidence: 0.8, // 80% confianza mínima para auto-match
+    dateTolerance: 3, // 3 dÃ­as
+    minConfidence: 0.8, // 80% confianza mÃ­nima para auto-match
     enableFuzzyMatching: true
   };
 }

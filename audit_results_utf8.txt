@@ -1,0 +1,33 @@
+
+📊 RESUMEN DE AUDITORÍA:
+✅ Claves detectadas en código: 3601
+❌ Claves faltantes en es.json: 26
+
+⚠️  CLAVES FALTANTES:
+
+   - accounting.closure.steps.confirmation.lockMsg
+   - accounting.closure.steps.payroll.messages.detected
+   - accounting.closure.steps.payroll.messages.pendingCount
+   - accounting.closure.steps.payroll.messages.taxAmount
+   - accounting.periods.closureConfirm
+   - accounting.periods.closureSuccess
+   - accounting.periods.creationSuccess
+   - accounting.periods.lockConfirm
+   - accounting.periods.lockSuccess
+   - accounting.periods.reopenSuccess
+   - aiAssistant.proposals.approveError
+   - aiAssistant.proposals.rejectError
+   - common.periodMonths
+   - dr15.compliance.checksCompleted
+   - dr15.county.countiesWithActivity
+   - dr15.stepOf
+   - inv.reports.actionRequiredMsg
+   - maintenance.lastRepair
+   - maintenance.runningAction
+   - security.actions.repairAll
+   - security.messages.bannerWarning
+   - security.messages.lastCheck
+   - security.messages.problemsCount
+   - security.messages.warningsCount
+   - settings.manualBackupSuccess
+   - termsDefault

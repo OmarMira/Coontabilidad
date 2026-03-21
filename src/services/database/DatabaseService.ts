@@ -1,4 +1,4 @@
-import { db } from '../../database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { logger } from '../../core/logging/SystemLogger';
 import { AI_SECURITY_CONFIG } from '../../config/ai-security';
 

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line, BarChart, Bar,
@@ -17,7 +18,7 @@ import {
   Download,
   Maximize2
 } from 'lucide-react';
-import { getMonthlyFinancialSummary } from '../../database/simple-db';
+import { getMonthlyFinancialSummary } from '@/database/modules/db-payroll';
 import { Button } from '../ui/button';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -49,7 +50,7 @@ export const FinancialDashboard: React.FC = () => {
 
       setMonthlyData(filteredData);
     } catch (error) {
-      console.error('Error loading financial data:', error);
+      logger.error('FinancialDashboard', 'error', 'Error loading financial data:', error);
     } finally {
       setLoading(false);
     }
@@ -102,40 +103,38 @@ export const FinancialDashboard: React.FC = () => {
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       {/* Header Hub */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-indigo-600/10 rounded-2.5xl border border-indigo-500/20 shadow-indigo-900/10 shadow-lg group hover:rotate-6 transition-transform">
-            <Activity className="w-10 h-10 text-indigo-500" />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('financialDashboard.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t('financialDashboard.subtitle')}
-            </p>
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight leading-none uppercase">
+            <Activity className="w-8 h-8 text-indigo-500" />
+            {t('financialDashboard.title')}
+          </h1>
+          <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
+            <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t('financialDashboard.subtitle')}
+          </p>
         </div>
 
         {/* Control Hub */}
         <div className="flex items-center gap-4">
-          <div className="flex gap-2 p-1.5 bg-slate-950 border border-slate-800 rounded-2xl shadow-inner">
+          <div className="flex gap-2 p-1.5 bg-slate-950/40 border border-slate-800/50 rounded-2xl">
             {(['6m', 'ytd', '12m'] as const).map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedPeriod(period)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedPeriod === period
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 ring-1 ring-indigo-500/50'
-                  : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'
+                className={`px-6 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest transition-all ${selectedPeriod === period
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40'
+                  : 'text-slate-500 hover:text-slate-300'
                   }`}
               >
                 {t(`financialDashboard.periods.${period}`)}
               </button>
             ))}
           </div>
-          <Button variant="outline" className="h-12 w-12 rounded-2xl border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-400">
-            <Filter className="w-4 h-4" />
+          <Button variant="outline" className="h-10 w-10 rounded-xl border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-400">
+            <Filter className="w-3.5 h-3.5" />
           </Button>
-          <Button className="h-12 px-6 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-[10px] gap-3">
-            <Download className="w-4 h-4" /> {t('financialDashboard.export')}
+          <Button className="h-10 px-6 rounded-xl bg-slate-900/50 border border-slate-800 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[9px] gap-2">
+            <Download className="w-3.5 h-3.5" /> {t('financialDashboard.export')}
           </Button>
         </div>
       </div>
@@ -276,10 +275,10 @@ const PremiumKPICard = ({ title, value, change, icon: Icon, color, inverse }: an
         </div>
 
         <div>
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2 block">{title}</span>
-          <div className="text-4xl font-black text-white tracking-tighter font-mono tabular-nums leading-none mb-4">{value}</div>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">{title}</span>
+          <div className="text-3xl font-bold text-white tracking-tight font-mono tabular-nums leading-none mb-4">{value}</div>
           <div className="w-full h-1 bg-slate-950 rounded-full border border-slate-800">
-            <div className={`h-full rounded-full ${isGood ? 'bg-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)]'}`} style={{ width: '65%' }}></div>
+            <div className={`h-full rounded-full ${isGood ? 'bg-emerald-500/50' : 'bg-rose-500/50'}`} style={{ width: '65%' }}></div>
           </div>
         </div>
       </div>
@@ -291,8 +290,8 @@ const AnalysisBox = ({ title, subtitle, children }: any) => (
   <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 shadow-2xl relative group overflow-hidden">
     <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 blur-[100px] pointer-events-none"></div>
     <header className="mb-10 relative z-10">
-      <h3 className="text-xl font-black text-white tracking-tighter uppercase">{title}</h3>
-      <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{subtitle}</p>
+      <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
+      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{subtitle}</p>
     </header>
     <div className="relative z-10">
       {children}

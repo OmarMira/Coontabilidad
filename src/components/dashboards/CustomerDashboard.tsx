@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -15,7 +16,8 @@ import {
   Target,
   Users2
 } from 'lucide-react';
-import { getCustomers, getInvoices } from '../../database/simple-db';
+import { getCustomers } from '@/database/modules/db-customers';
+import { getInvoices } from '@/database/modules/db-invoices';
 import { useLocale } from '../../i18n/useLocale';
 
 interface CustomerStats {
@@ -68,7 +70,7 @@ export const CustomerDashboard: React.FC = () => {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const newCustomers = customers.filter(c => new Date(c.created_at) >= firstDayOfMonth);
+      const newCustomers = customers.filter(c => new Date(c.created_at ?? Date.now()) >= firstDayOfMonth);
       let totalRevenue = 0;
       let overdueAR = 0;
 
@@ -130,7 +132,7 @@ export const CustomerDashboard: React.FC = () => {
       });
       setArAging(aging);
     } catch (error) {
-      console.error('Error loading customer data:', error);
+      logger.error('CustomerDashboard', 'error', 'Error loading customer data:', error);
     } finally {
       setLoading(false);
     }
@@ -146,7 +148,7 @@ export const CustomerDashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+    <div className="elite-page-container pb-20">
       {/* Header Hub */}
       <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
         <div className="flex items-center gap-6">
@@ -154,8 +156,8 @@ export const CustomerDashboard: React.FC = () => {
             <Users2 className="w-10 h-10 text-emerald-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('customerDashboard.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none uppercase">{t('customerDashboard.title')}</h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2 uppercase">
               <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('customerDashboard.subtitle')}
             </p>
           </div>
@@ -249,8 +251,8 @@ export const CustomerDashboard: React.FC = () => {
               <Target className="w-5 h-5 text-blue-500" />
             </div>
             <div>
-              <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none">{t('customerDashboard.eliteMapping')}</h3>
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{t('customerDashboard.performanceDetail')}</p>
+              <h3 className="text-lg font-black text-white tracking-tight leading-none">{t('customerDashboard.eliteMapping')}</h3>
+              <p className="text-xs text-slate-500 font-medium mt-1">{t('customerDashboard.performanceDetail')}</p>
             </div>
           </div>
         </header>
@@ -314,7 +316,7 @@ const EliteStatCard = ({ title, value, icon: Icon, color, label }: any) => {
           </div>
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{title}</span>
         </div>
-        <div className="text-4xl font-black text-white tracking-tighter mb-2 font-mono tabular-nums leading-none">{value}</div>
+        <div className="text-2xl font-black text-white tracking-tight mb-2 font-mono tabular-nums leading-none">{value}</div>
         <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">{label}</p>
       </div>
       <div className={`absolute -right-4 -bottom-4 w-24 h-24 blur-3xl opacity-0 group-hover:opacity-10 transition-all ${themes[color]}`}></div>
@@ -326,8 +328,8 @@ const AnalysisBox = ({ title, subtitle, children }: any) => (
   <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-10 shadow-2xl relative group overflow-hidden">
     <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 blur-[100px] pointer-events-none"></div>
     <header className="mb-10 relative z-10">
-      <h3 className="text-xl font-black text-white tracking-tighter uppercase">{title}</h3>
-      <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mt-2">{subtitle}</p>
+      <h3 className="text-lg font-black text-white tracking-tight">{title}</h3>
+      <p className="text-xs text-slate-500 font-medium mt-1">{subtitle}</p>
     </header>
     <div className="relative z-10 h-[300px] flex items-center justify-center">
       {children}

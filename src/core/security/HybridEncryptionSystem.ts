@@ -1,9 +1,10 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import sjcl from 'sjcl';
 
 /**
- * SISTEMA DE CIFRADO HÍBRIDO
+ * SISTEMA DE CIFRADO HÃBRIDO
  * 
- * Triple fallback: WebCrypto API → SJCL → Embedded
+ * Triple fallback: WebCrypto API â†’ SJCL â†’ Embedded
  */
 
 export interface EncryptedPackage {
@@ -26,7 +27,7 @@ export class HybridEncryptionSystem {
         this.webCryptoAvailable = typeof window !== 'undefined' && !!window.crypto && !!window.crypto.subtle;
         this.sjclAvailable = typeof sjcl !== 'undefined';
 
-        console.log('🔐 Encryption capabilities initialized:', {
+        logger.info('HybridEncryptionSystem', 'info', 'ðŸ” Encryption capabilities initialized:', {
             webCrypto: this.webCryptoAvailable,
             sjcl: this.sjclAvailable,
             embedded: true
@@ -39,7 +40,7 @@ export class HybridEncryptionSystem {
             try {
                 return await this.encryptWithWebCrypto(data, password);
             } catch (error) {
-                console.warn('WebCrypto failed, falling back to SJCL:', error);
+                logger.warn('HybridEncryptionSystem', 'warn', 'WebCrypto failed, falling back to SJCL:', error);
             }
         }
 
@@ -48,7 +49,7 @@ export class HybridEncryptionSystem {
             try {
                 return this.encryptWithSJCL(data, password);
             } catch (error) {
-                console.warn('SJCL failed, falling back to embedded:', error);
+                logger.warn('HybridEncryptionSystem', 'warn', 'SJCL failed, falling back to embedded:', error);
             }
         }
 
@@ -157,7 +158,7 @@ export class HybridEncryptionSystem {
     }
 
     private encryptWithSJCL(data: any, password: string): EncryptedPackage {
-        // Implementación SJCL - convert result to JSON string for type compatibility
+        // ImplementaciÃ³n SJCL - convert result to JSON string for type compatibility
         const encrypted = sjcl.encrypt(password, JSON.stringify(data));
         return {
             method: 'sjcl',

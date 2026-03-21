@@ -1,0 +1,5 @@
+﻿src/App.tsx(740,31): error TS2551: Property 'reason' does not exist on type '{ canDelete: boolean; ├üreason?: string | undefined; }'. Did you mean '├üreason'?
+src/components/payroll/PayrollSlip.tsx(75,34): error TS2304: Cannot find name 'Activity'.
+src/database/simple-db.ts(4178,37): error TS2304: Cannot find name 'payment_terms'.
+src/database/simple-db.ts(8081,103): error TS2561: Object literal may only specify known properties, but 'netInc├üreaseInCash' does not exist in type '{ netIncome: number; operatingActivities: { title: string; amount: number; }[]; investingActivities: { title: string; amount: number; }[]; financingActivities: { title: string; amount: number; }[]; netIncreaseInCash: number; startingCash: number; endingCash: number; }'. Did you mean to write 'netIncreaseInCash'?
+src/database/simple-db.ts(12593,7): error TS2820: Type '"create"' is not assignable to type '"UPDATE" | "DELETE" | "CREATE" | "LOGIN" | "LOGOUT" | "OTHER"'. Did you mean '"CREATE"'?

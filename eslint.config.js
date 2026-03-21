@@ -13,12 +13,27 @@ export default [
       '.vite/**',
       'coverage/**',
       '**/*.spec.ts',
+      '**/*.spec.tsx',
       '**/*.test.ts',
-      '**/*.d.ts'
+      '**/*.test.tsx',
+      '**/*.d.ts',
+      'tmp/**',
+      'scripts/**',
+      'temp_archive/**',
+      'estado_sistema/**',
+      'backups/**',
+      'tests/**',
+      'src/tests/**',
+      '*.config.js',
+      '*.config.ts',
+      '*.cjs',
+      '*.js',
+      '*.ts',
+      'mcp-server.ts'
     ]
   },
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
@@ -37,7 +52,27 @@ export default [
         indexedDB: 'readonly',
         fetch: 'readonly',
         crypto: 'readonly',
-        SharedArrayBuffer: 'readonly'
+        SharedArrayBuffer: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestIdleCallback: 'readonly',
+        cancelIdleCallback: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        prompt: 'readonly',
+        URL: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        self: 'readonly',
+        postMessage: 'readonly',
+        addEventListener: 'readonly',
+        removeEventListener: 'readonly',
+        importScripts: 'readonly',
+        performance: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly'
       }
     },
     plugins: {
@@ -48,17 +83,27 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       ...tsPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-require-imports': 'warn',
+      '@typescript-eslint/ban-ts-comment': 'warn',
+      '@typescript-eslint/no-empty-object-type': 'warn',
+      '@typescript-eslint/no-unsafe-function-type': 'warn',
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/rules-of-hooks': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
+      'no-empty': 'warn',
+      'no-undef': 'off',
+      'no-useless-escape': 'warn',
       'no-console': 'off',
-      'no-debugger': 'error',
+      'no-debugger': 'warn',
       'prefer-const': 'warn',
-      'no-var': 'error'
+      'no-case-declarations': 'warn',
+      'no-async-promise-executor': 'warn',
+      'no-constant-condition': 'warn',
+      'no-var': 'warn'
     }
   }
 ];

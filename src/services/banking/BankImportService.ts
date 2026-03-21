@@ -1,23 +1,17 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
- * BankImportService - Orquestador principal de importación bancaria
- * 
- * Coordina el proceso completo de importación:
- * 1. Upload y validación
- * 2. Parsing
- * 3. Detección de duplicados
- * 4. Categorización con IA
- * 5. Matching con facturas/gastos
- * 6. Preview
- * 7. Importación final
- * 8. Rollback si es necesario
+ * BankImportService - Orquestador principal de importaciÃ³n bancaria
  */
 
-import { db } from '../../database/simple-db';
+import { dbRun, dbExec } from '@/database/modules/db-core';
 import { FileParserService, ParsedTransaction } from './FileParserService';
 import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
 import { AICategorizerService, TrainingExample } from './AICategorizerService';
 import { TransactionMatcher, Invoice, Bill } from './TransactionMatcher';
 import { DatabaseService } from '../../database/DatabaseService';
+import { generateTransactionHash } from './BankingUtils';
+import { ClassificationRulesService } from './ClassificationRulesService';
+import { TRANSACTION_STATES } from '../../constants/bankingStates';
 
 export interface ImportBatch {
   id: number;
@@ -52,105 +46,83 @@ export interface ImportTransaction {
 
 export class BankImportService {
   private categorizer: AICategorizerService;
-  
+
   constructor() {
     this.categorizer = new AICategorizerService();
     this.loadTrainingData();
   }
-  
-  /**
-   * Carga datos de entrenamiento desde la base de datos
-   */
+
   private async loadTrainingData(): Promise<void> {
     try {
-      const trainingData = db.exec(`
+      const trainingData = dbExec(`
         SELECT description, category, amount, transaction_type
         FROM ml_training_data
         ORDER BY created_at DESC
         LIMIT 1000
       `);
-      
-      if (trainingData.length > 0 && trainingData[0].values.length > 0) {
+
+      if (trainingData && trainingData.length > 0 && trainingData[0].values.length > 0) {
         const examples: TrainingExample[] = trainingData[0].values.map((row: any) => ({
           description: row[0],
           category: row[1],
           amount: row[2],
           transactionType: row[3]
         }));
-        
+
         this.categorizer.train(examples);
       }
     } catch (error) {
-      console.error('Error loading training data:', error);
+      logger.error('BankImportService', 'error', 'Error loading training data:', error);
     }
   }
-  
-  /**
-   * Crea un nuevo batch de importación y genera preview
-   */
+
   async createImportBatch(
     file: File,
     bankAccountId: number,
     userId: number
-  ): Promise<{ batchId: number; transactions: ImportTransaction[] }> {
-    
-    // 1. Parse file
+  ): Promise<{ batchId: number; transactions: ImportTransaction[]; detectedAccountNumber?: string }> {
+
     const parseResult = await FileParserService.parseFile(file);
-    
+
     if (parseResult.errors.length > 0) {
       throw new Error(`Errores al parsear archivo: ${parseResult.errors.join(', ')}`);
     }
-    
+
     if (parseResult.transactions.length === 0) {
       throw new Error('No se encontraron transacciones en el archivo');
     }
-    
-    // 2. Create batch
-    const batchNumber = `IMP-${Date.now()}`;
-    
-    db.run(`
+
+    const batch_number = `BATCH-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    dbRun(`
       INSERT INTO import_batches (
         batch_number, file_name, file_format, bank_account_id,
         total_transactions, status, created_by
       ) VALUES (?, ?, ?, ?, ?, 'pending', ?)
     `, [
-      batchNumber,
+      batch_number,
       file.name,
       parseResult.format,
       bankAccountId,
       parseResult.transactions.length,
       userId
     ]);
-    
-    const batchIdResult = db.exec('SELECT last_insert_rowid() as id');
-    const batchId = batchIdResult[0].values[0][0] as number;
-    
-    // 3. Get existing transactions for duplicate detection
+
+    const batchIdResult = dbExec('SELECT last_insert_rowid() as id');
+    const batchId = batchIdResult && batchIdResult.length > 0 ? (batchIdResult[0].values[0][0] as number) : 0;
+
     const existingTxns = await this.getExistingTransactions();
-    
-    // 4. Get unpaid invoices and bills for matching
     const unpaidInvoices = await this.getUnpaidInvoices();
     const unpaidBills = await this.getUnpaidBills();
-    
-    // 5. Process each transaction
+
     const importTransactions: ImportTransaction[] = [];
-    
+
     for (const txn of parseResult.transactions) {
-      // Detect duplicates
       const duplicateResult = await DuplicateDetector.detectDuplicate(txn, existingTxns);
-      
-      // Categorize with AI
       const categorizationResult = this.categorizer.categorize(txn);
-      
-      // Match with invoices/bills
-      const matchResult = await TransactionMatcher.matchTransaction(
-        txn,
-        unpaidInvoices,
-        unpaidBills
-      );
-      
-      // Insert into temp table
-      db.run(`
+      const matchResult = await TransactionMatcher.matchTransaction(txn, unpaidInvoices, unpaidBills);
+
+      dbRun(`
         INSERT INTO import_transactions_temp (
           batch_id, transaction_date, description, amount, balance,
           suggested_category, confidence_score,
@@ -171,10 +143,10 @@ export class BankImportService {
         matchResult.matchType === 'bill' ? matchResult.matchedId : null,
         matchResult.confidence || null
       ]);
-      
-      const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
-      const txnId = txnIdResult[0].values[0][0] as number;
-      
+
+      const txnIdResult = dbExec('SELECT last_insert_rowid() as id');
+      const txnId = txnIdResult && txnIdResult.length > 0 ? (txnIdResult[0].values[0][0] as number) : 0;
+
       importTransactions.push({
         id: txnId,
         batchId,
@@ -192,13 +164,10 @@ export class BankImportService {
         excluded: false
       });
     }
-    
-    return { batchId, transactions: importTransactions };
+
+    return { batchId, transactions: importTransactions, detectedAccountNumber: parseResult.accountNumber };
   }
-  
-  /**
-   * Actualiza una transacción en el preview
-   */
+
   async updateImportTransaction(
     transactionId: number,
     updates: {
@@ -209,228 +178,176 @@ export class BankImportService {
   ): Promise<void> {
     const setClauses: string[] = [];
     const values: any[] = [];
-    
+
     if (updates.userCategory !== undefined) {
       setClauses.push('user_category = ?');
       values.push(updates.userCategory);
     }
-    
+
     if (updates.userDescription !== undefined) {
       setClauses.push('user_description = ?');
       values.push(updates.userDescription);
     }
-    
+
     if (updates.excluded !== undefined) {
       setClauses.push('excluded = ?');
       values.push(updates.excluded ? 1 : 0);
     }
-    
+
     if (setClauses.length === 0) return;
-    
     values.push(transactionId);
-    
-    db.run(`
+
+    dbRun(`
       UPDATE import_transactions_temp
       SET ${setClauses.join(', ')}
       WHERE id = ?
     `, values);
   }
-  
-  /**
-   * Importa las transacciones finales
-   */
-  async finalizeImport(batchId: number, userId: number): Promise<void> {
+
+  async finalizeImport(batchId: number, userId: number, bankAccountId: number): Promise<{ imported: number, skipped: number }> {
+    if (!bankAccountId || bankAccountId <= 0) {
+      throw new Error('SeleccionÃ¡ una cuenta bancaria antes de importar');
+    }
+
     try {
-      db.run('BEGIN TRANSACTION');
-      
-      // Get transactions to import (not excluded, not duplicates)
-      const txnsResult = db.exec(`
+      dbRun('BEGIN TRANSACTION');
+
+      const txnsResult = dbExec(`
         SELECT * FROM import_transactions_temp
-        WHERE batch_id = ? AND excluded = 0 AND is_duplicate = 0
+        WHERE batch_id = ? AND excluded = 0
       `, [batchId]);
-      
-      if (txnsResult.length === 0 || txnsResult[0].values.length === 0) {
+
+      if (!txnsResult || txnsResult.length === 0 || txnsResult[0].values.length === 0) {
+        dbRun('ROLLBACK');
         throw new Error('No hay transacciones para importar');
       }
-      
+
       const columns = txnsResult[0].columns;
       const transactions = txnsResult[0].values.map((row: any) => {
         const obj: any = {};
-        columns.forEach((col, idx) => {
-          obj[col] = row[idx];
-        });
+        columns.forEach((col: any, idx: any) => { obj[col] = row[idx]; });
         return obj;
       });
-      
+
       let importedCount = 0;
-      
+      let skippedCount = 0;
+
       for (const txn of transactions) {
-        // Determine final category (user override or suggested)
-        const finalCategory = txn.user_category || txn.suggested_category;
-        const finalDescription = txn.user_description || txn.description;
-        
-        // Create bank transaction (assuming there's a bank_transactions table)
-        // Note: This would need to be adapted to your actual schema
-        
-        // Generate journal entry
-        const debitAccount = txn.amount < 0 ? finalCategory : 'Bank Account';
-        const creditAccount = txn.amount < 0 ? 'Bank Account' : finalCategory;
-        const absAmount = Math.abs(txn.amount);
-        
-        await DatabaseService.insertJournalEntry({
-          description: `Bank Import: ${finalDescription}`,
-          date: txn.transaction_date,
-          items: [
-            {
-              account_code: debitAccount,
-              debit: txn.amount < 0 ? absAmount : 0,
-              credit: 0,
-              description: finalDescription
-            },
-            {
-              account_code: creditAccount,
-              debit: 0,
-              credit: txn.amount < 0 ? 0 : absAmount,
-              description: finalDescription
-            }
-          ],
-          userId
-        });
-        
-        // Save as training data if user corrected the category
-        if (txn.user_category && txn.user_category !== txn.suggested_category) {
-          db.run(`
-            INSERT INTO ml_training_data (description, category, amount, transaction_type, source)
-            VALUES (?, ?, ?, ?, 'user_correction')
-          `, [
-            txn.description,
-            txn.user_category,
-            txn.amount,
-            txn.amount < 0 ? 'debit' : 'credit'
-          ]);
-          
-          // Add to categorizer for immediate learning
-          this.categorizer.addTrainingExample({
-            description: txn.description,
-            category: txn.user_category,
-            amount: txn.amount,
-            transactionType: txn.amount < 0 ? 'debit' : 'credit'
-          });
+        const hash = await generateTransactionHash(txn.transaction_date, txn.amount, txn.description, bankAccountId);
+
+        dbRun(`
+          INSERT INTO bank_transactions (
+            bank_account_id, transaction_date, description, amount, status, import_hash, import_batch_id
+          ) VALUES (?, ?, ?, ?, 'pending', ?, ?)
+          ON CONFLICT(import_hash) WHERE import_hash IS NOT NULL DO UPDATE SET
+            import_batch_id = excluded.import_batch_id
+        `, [
+          bankAccountId, txn.transaction_date, txn.description, txn.amount, hash, batchId.toString()
+        ]);
+
+        const rowsAffected = dbExec('SELECT changes() as changes')[0].values[0][0] as number;
+        if (rowsAffected === 0) {
+          skippedCount++;
+          continue;
         }
-        
+
+        const idResult = dbExec('SELECT id FROM bank_transactions WHERE import_hash = ?', [hash]);
+        const bankTxnId = idResult[0].values[0][0] as number;
+
+        const autoAccount = await ClassificationRulesService.evaluateTransaction(txn.description);
+        const isAutoClassified = !!autoAccount;
+
+        // UPSERT manual for transaction_states
+        dbRun(`
+          UPDATE transaction_states SET
+            current_state = ?,
+            is_verified = ?,
+            auto_classified = ?,
+            assigned_account_code = ?,
+            assigned_account_name = ?,
+            verified_at = ?,
+            verified_by = ?
+          WHERE transaction_id = ?
+        `, [
+          isAutoClassified ? TRANSACTION_STATES.VERIFIED : TRANSACTION_STATES.IMPORTED,
+          isAutoClassified ? 1 : 0,
+          isAutoClassified ? 1 : 0,
+          autoAccount ? autoAccount.account_code : null,
+          autoAccount ? autoAccount.account_name : null,
+          isAutoClassified ? new Date().toISOString() : null,
+          isAutoClassified ? userId : null,
+          bankTxnId
+        ]);
+
+        const tsAffected = dbExec('SELECT changes() as changes')[0].values[0][0] as number;
+        if (tsAffected === 0) {
+          dbRun(`
+            INSERT INTO transaction_states (
+              transaction_id, current_state, is_verified, 
+              auto_classified, assigned_account_code, assigned_account_name,
+              verified_at, verified_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            bankTxnId,
+            isAutoClassified ? TRANSACTION_STATES.VERIFIED : TRANSACTION_STATES.IMPORTED,
+            isAutoClassified ? 1 : 0,
+            isAutoClassified ? 1 : 0,
+            autoAccount ? autoAccount.account_code : null,
+            autoAccount ? autoAccount.account_name : null,
+            isAutoClassified ? new Date().toISOString() : null,
+            isAutoClassified ? userId : null
+          ]);
+        }
+
         importedCount++;
       }
-      
-      // Update batch status
-      db.run(`
+
+      dbRun(`
         UPDATE import_batches
-        SET status = 'completed', imported_count = ?, imported_at = datetime('now')
+        SET status = 'pending', imported_count = ?, imported_at = datetime('now')
         WHERE id = ?
       `, [importedCount, batchId]);
-      
-      // Clean up temp transactions
-      db.run('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
-      
-      db.run('COMMIT');
-      
+
+      dbRun('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
+
+      dbRun('COMMIT');
+      return { imported: importedCount, skipped: skippedCount };
+
     } catch (error) {
-      db.run('ROLLBACK');
+      dbRun('ROLLBACK');
       throw error;
     }
   }
-  
-  /**
-   * Rollback de una importación
-   */
-  async rollbackImport(batchId: number): Promise<void> {
-    try {
-      db.run('BEGIN TRANSACTION');
-      
-      // Check if period is open
-      // (This would need to check against accounting_periods table)
-      
-      // Delete journal entries created by this batch
-      // Note: This would need to track which journal entries belong to which batch
-      // For now, we'll just mark the batch as rolled back
-      
-      db.run(`
-        UPDATE import_batches
-        SET status = 'rolled_back', rolled_back_at = datetime('now')
-        WHERE id = ?
-      `, [batchId]);
-      
-      db.run('COMMIT');
-      
-    } catch (error) {
-      db.run('ROLLBACK');
-      throw error;
-    }
-  }
-  
-  /**
-   * Obtiene transacciones existentes para detección de duplicados
-   */
+
   private async getExistingTransactions(): Promise<ExistingTransaction[]> {
-    try {
-      // This would query your actual bank_transactions table
-      // For now, return empty array
-      return [];
-    } catch (error) {
-      console.error('Error getting existing transactions:', error);
-      return [];
-    }
+    return [];
   }
-  
-  /**
-   * Obtiene facturas no pagadas
-   */
+
   private async getUnpaidInvoices(): Promise<Invoice[]> {
     try {
-      const result = db.exec(`
+      const result = dbExec(`
         SELECT id, invoice_number, total, date, customer_name
         FROM invoices
         WHERE status = 'unpaid'
         ORDER BY date DESC
         LIMIT 100
       `);
-      
-      if (result.length === 0 || result[0].values.length === 0) {
-        return [];
-      }
-      
+      if (!result || result.length === 0 || result[0].values.length === 0) return [];
       return result[0].values.map((row: any) => ({
-        id: row[0],
-        invoice_number: row[1],
-        total: row[2],
-        date: row[3],
-        customer_name: row[4]
+        id: row[0], invoice_number: row[1], total: row[2], date: row[3], customer_name: row[4]
       }));
     } catch (error) {
-      console.error('Error getting unpaid invoices:', error);
       return [];
     }
   }
-  
-  /**
-   * Obtiene gastos no pagados
-   */
+
   private async getUnpaidBills(): Promise<Bill[]> {
-    try {
-      // This would query your bills/expenses table
-      // For now, return empty array
-      return [];
-    } catch (error) {
-      console.error('Error getting unpaid bills:', error);
-      return [];
-    }
+    return [];
   }
-  
-  /**
-   * Obtiene el historial de importaciones
-   */
+
   async getImportHistory(): Promise<ImportBatch[]> {
     try {
-      const result = db.exec(`
+      const result = dbExec(`
         SELECT id, batch_number, file_name, file_format,
                total_transactions, imported_count, duplicate_count,
                status, created_at
@@ -438,25 +355,166 @@ export class BankImportService {
         ORDER BY created_at DESC
         LIMIT 50
       `);
-      
-      if (result.length === 0 || result[0].values.length === 0) {
-        return [];
-      }
-      
+      if (!result || result.length === 0 || result[0].values.length === 0) return [];
       return result[0].values.map((row: any) => ({
-        id: row[0],
-        batchNumber: row[1],
-        fileName: row[2],
-        fileFormat: row[3],
-        totalTransactions: row[4],
-        importedCount: row[5],
-        duplicateCount: row[6],
-        status: row[7],
-        createdAt: row[8]
+        id: row[0], batchNumber: row[1], fileName: row[2], fileFormat: row[3],
+        totalTransactions: row[4], importedCount: row[5], duplicateCount: row[6],
+        status: row[7], createdAt: row[8]
       }));
     } catch (error) {
-      console.error('Error getting import history:', error);
       return [];
     }
+  }
+
+  async getBatchTransactions(batchId: number): Promise<any[]> {
+    try {
+      const result = dbExec(`
+        SELECT bt.*, ts.assigned_account_code, ts.assigned_account_name
+        FROM bank_transactions bt
+        LEFT JOIN transaction_states ts ON bt.id = ts.transaction_id
+        WHERE bt.import_batch_id = ?
+        ORDER BY bt.transaction_date ASC
+      `, [batchId.toString()]);
+
+      if (!result || result.length === 0 || result[0].values.length === 0) return [];
+
+      const columns = result[0].columns;
+      return result[0].values.map((row: any) => {
+        const obj: any = {};
+        columns.forEach((col: any, idx: any) => { obj[col] = row[idx]; });
+        return obj;
+      });
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async classifyAndFinalizeBatch(batchId: number, userId: number, classifications: any[]): Promise<void> {
+    try {
+      const batchInfo = dbExec('SELECT bank_account_id FROM import_batches WHERE id = ?', [batchId]);
+      if (!batchInfo || batchInfo.length === 0 || batchInfo[0].values.length === 0) throw new Error('Batch no encontrado');
+      const bankAccountId = batchInfo[0].values[0][0] as number;
+
+      const bankResult = dbExec('SELECT gl_account_code FROM bank_accounts WHERE id = ?', [bankAccountId]);
+      const bankAccountCode = (bankResult && bankResult.length > 0 && bankResult[0].values.length > 0)
+        ? bankResult[0].values[0][0] as string || '1112'
+        : '1112';
+
+      for (const cls of classifications) {
+        if (cls.createRule && cls.accountCode) {
+          await ClassificationRulesService.saveRule({
+            pattern: cls.description,
+            match_type: 'CONTAINS',
+            account_code: cls.accountCode,
+            account_name: cls.accountName,
+            account_type: 'Expense',
+            priority: 0,
+            is_active: true
+          }, userId);
+        }
+
+        const isExpense = cls.amount < 0;
+        const absAmount = Math.abs(cls.amount);
+
+        const entryNumber = await DatabaseService.insertJournalEntry({
+          description: `BOS: ${cls.description} (BATCH ${batchId})`,
+          date: cls.date,
+          items: [
+            {
+              account_code: cls.accountCode,
+              debit: isExpense ? absAmount : 0,
+              credit: isExpense ? 0 : absAmount,
+              description: cls.description
+            },
+            {
+              account_code: bankAccountCode,
+              debit: isExpense ? 0 : absAmount,
+              credit: isExpense ? absAmount : 0,
+              description: `Partida Balance (${cls.description})`
+            }
+          ],
+          userId
+        });
+
+        const jeResult = dbExec('SELECT id FROM journal_entries WHERE entry_number = ?', [entryNumber]);
+        if (jeResult && jeResult.length > 0 && jeResult[0].values.length > 0) {
+          const jeId = jeResult[0].values[0][0];
+          dbRun(`
+            UPDATE bank_transactions 
+            SET status = 'matched', matched_journal_entry_id = ? 
+            WHERE id = ?
+          `, [jeId, cls.id]);
+        }
+      }
+
+      dbRun(`UPDATE import_batches SET status = 'completed', updated_at = datetime('now') WHERE id = ?`, [batchId]);
+
+    } catch (error) {
+      logger.error('BankImportService', 'error', 'Finalization failure:', error);
+      throw error;
+    }
+  }
+
+  async rollbackImport(batchId: number): Promise<void> {
+    try {
+      dbRun('BEGIN TRANSACTION');
+      const txnsResult = dbExec(`
+        SELECT matched_journal_entry_id 
+        FROM bank_transactions 
+        WHERE import_batch_id = ? AND matched_journal_entry_id IS NOT NULL
+      `, [batchId.toString()]);
+
+      if (txnsResult && txnsResult.length > 0 && txnsResult[0].values.length > 0) {
+        const jeIds = txnsResult[0].values.map((v: any) => v[0]);
+        for (const jeId of jeIds) {
+          dbRun('DELETE FROM journal_details WHERE journal_entry_id = ?', [jeId]);
+          dbRun('DELETE FROM journal_entries WHERE id = ?', [jeId]);
+        }
+      }
+
+      dbRun('DELETE FROM bank_transactions WHERE import_batch_id = ?', [batchId.toString()]);
+      dbRun(`UPDATE import_batches SET status = 'rolled_back', rolled_back_at = datetime('now') WHERE id = ?`, [batchId]);
+      dbRun('COMMIT');
+    } catch (error) {
+      dbRun('ROLLBACK');
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene estadÃ­sticas del historial de importaciÃ³n (Total de todas las tablas y Duplicados)
+   */
+  async getHistoryStats(): Promise<{ total: number; duplicates: number }> {
+    // Sumamos transacciones de lotes pendientes + transacciones ya procesadas
+    const totalResult = dbExec(`
+      SELECT 
+        (SELECT COALESCE(SUM(total_transactions), 0) FROM import_batches) + 
+        (SELECT COUNT(*) FROM bank_transactions WHERE import_batch_id NOT IN (SELECT CAST(id AS TEXT) FROM import_batches))
+    `);
+
+    const total = (totalResult && totalResult.length > 0) ? (totalResult[0].values[0][0] as number) : 0;
+
+    const dupResult = dbExec(`
+      SELECT COUNT(*) FROM (
+        SELECT import_hash FROM bank_transactions 
+        WHERE import_hash IS NOT NULL 
+        GROUP BY import_hash 
+        HAVING COUNT(*) > 1
+      )
+    `);
+    const duplicates = (dupResult && dupResult.length > 0) ? (dupResult[0].values[0][0] as number) : 0;
+
+    return { total, duplicates };
+  }
+
+  /**
+   * Limpia el historial completo de importaciones de forma definitiva
+   */
+  async clearImportHistory(): Promise<void> {
+    dbRun('DELETE FROM transaction_states');
+    dbRun('DELETE FROM bank_transactions');
+    dbRun('DELETE FROM import_transactions_temp');
+    dbRun('DELETE FROM import_batches');
+    dbRun("UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('bank_transactions', 'import_batches', 'import_transactions_temp', 'transaction_states')");
   }
 }

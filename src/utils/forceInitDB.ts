@@ -1,15 +1,9 @@
 /**
  * Diagnóstico y Restauración Exhaustiva de Autenticación
  */
-import {
-    initDB,
-    db,
-    getUserRoles,
-    createUserRole,
-    createUser,
-    updateUserPassword,
-    getUserByUsername
-} from '../database/simple-db';
+import { initDB } from '@/database/modules/db-init';
+import { db } from '@/database/modules/db-core';
+import { getUserRoles, createUserRole, createUser, updateUserPassword, getUserByUsername, hasUsers } from '@/database/modules/db-users';
 import { logger } from '../core/logging/SystemLogger';
 
 export const exhaustiveAuthDiagnostic = async () => {
@@ -58,7 +52,6 @@ export const exhaustiveAuthDiagnostic = async () => {
         // 3. Verificar Usuarios y Restaurar Contraseñas
         const systemUsers = [
             { username: 'admin', display_name: 'Administrador', password: 'admin123', role: 'admin' },
-            { username: 'demo', display_name: 'Usuario Demo', password: 'demo123', role: 'accountant' },
             { username: 'viewer', display_name: 'Usuario Viewer', password: 'viewer123', role: 'viewer' }
         ];
 
@@ -88,7 +81,7 @@ export const exhaustiveAuthDiagnostic = async () => {
                 console.log(`   Password reset result:`, result);
 
                 // Asegurarse de que esté activo
-                db.run('UPDATE users SET is_active = 1 WHERE id = ?', [existingUser.id]);
+                (db as any).run('UPDATE users SET is_active = 1 WHERE id = ?', [existingUser.id]);
                 console.log(`   User activated.`);
             }
         }
@@ -96,7 +89,6 @@ export const exhaustiveAuthDiagnostic = async () => {
         console.log('--- DIAGNOSTIC COMPLETED ---');
         console.log('✅ You can now try logging in with:');
         console.log('   - admin / admin123');
-        console.log('   - demo / demo123');
         console.log('   - viewer / viewer123');
 
     } catch (error) {

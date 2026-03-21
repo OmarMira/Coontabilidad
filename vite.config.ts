@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Note: .wasm files are NOT included in assetsInclude intentionally.
+  // wa-sqlite resolves its .wasm at runtime via new URL(..., import.meta.url).
+  // Vite's assetsInclude would rename them with a hash, breaking that URL.
+  // The .wasm files are served verbatim from /public instead.
   plugins: [react()],
   test: {
     globals: true,
@@ -18,6 +22,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    strictPort: true,
     host: true,
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
@@ -25,12 +30,13 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['sql.js'],
-    exclude: ['@xenova/transformers'] // Lazy load AI models
+    include: ['react', 'react-dom', 'sql.js'],
+    exclude: ['@xenova/transformers', 'wa-sqlite', 'crypto'] // Lazy load AI models and preserve wasm paths
   },
   resolve: {
     alias: {
-      '@': '/src'
+      '@': '/src',
+      'crypto': '/src/core/security/crypto-polyfill.ts'
     }
   },
   build: {
@@ -64,8 +70,7 @@ export default defineConfig({
             return 'vendor-pdf';
           }
           // Database engines (very heavy)
-          if (id.includes('node_modules/sql.js') ||
-            id.includes('node_modules/wa-sqlite')) {
+          if (id.includes('node_modules/sql.js')) {
             return 'vendor-database';
           }
           // AI/ML (extremely heavy - lazy load recommended)
@@ -122,5 +127,4 @@ export default defineConfig({
   },
   // Servir archivos sql.js desde node_modules
   publicDir: 'public',
-  assetsInclude: ['**/*.wasm']
 })

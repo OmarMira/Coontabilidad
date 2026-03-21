@@ -40,7 +40,7 @@ describe('CompanyService', () => {
         });
 
         expect(mockRun).toHaveBeenCalledWith(
-            expect.stringContaining('INSERT INTO company_info'),
+            expect.stringContaining('INSERT INTO company_data'),
             expect.arrayContaining(['New Corp', '999', 'EUR'])
         );
     });
@@ -55,7 +55,7 @@ describe('CompanyService', () => {
         });
 
         expect(mockRun).toHaveBeenCalledWith(
-            expect.stringContaining('UPDATE company_info'),
+            expect.stringContaining('UPDATE company_data'),
             expect.arrayContaining(['Updated Corp', '888', 1]) // 1 is ID
         );
     });

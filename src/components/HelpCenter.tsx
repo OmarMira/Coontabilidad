@@ -17,12 +17,14 @@ import {
     ArrowLeft
 } from 'lucide-react';
 import { SYSTEM_GUIDES, QUICK_OPERATIONS, FAQ } from '../knowledge/SystemKnowledge';
+import { useLocale } from '../i18n/useLocale';
 
 interface HelpCenterProps {
     // Props opcionales si se necesitan
 }
 
 export const HelpCenter: React.FC<HelpCenterProps> = () => {
+    const { t } = useLocale();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [expandedGuide, setExpandedGuide] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                     <div className="bg-slate-950/50 p-6 rounded-xl border border-slate-800">
                         <h4 className="text-sm font-semibold text-blue-400 mb-4 uppercase tracking-wider flex items-center gap-2">
                             <FileText className="w-4 h-4" />
-                            Pasos a seguir
+                            {t('helpCenter.stepsToFollow')}
                         </h4>
                         <ol className="relative space-y-6 pl-2">
                             {guide.steps.map((step, idx) => (
@@ -70,7 +72,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                     <div className="bg-emerald-900/10 p-6 rounded-2xl border border-emerald-500/20 shadow-lg">
                         <h4 className="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
                             <Lightbulb className="w-5 h-5" />
-                            Tips Profesionales
+                            {t('helpCenter.proTips')}
                         </h4>
                         <ul className="space-y-3">
                             {guide.tips.map((tip, idx) => (
@@ -84,7 +86,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                 )}
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 mt-4 justify-end">
-                    <span className="font-semibold">Ruta del sistema:</span>
+                    <span className="font-semibold">{t('helpCenter.systemPath')}</span>
                     <code className="bg-slate-800 px-3 py-1 rounded-md text-blue-300 font-mono border border-slate-700">{guide.relatedMenu}</code>
                 </div>
             </div>
@@ -105,8 +107,8 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                         <ArrowLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
                     </button>
                     <div>
-                        <h1 className="text-xl font-black tracking-tight text-white">Guía del Sistema</h1>
-                        <p className="text-slate-400 text-xs">Volver al centro de ayuda</p>
+                        <h1 className="text-xl font-black tracking-tight text-white">{t('helpCenter.guideTitle')}</h1>
+                        <p className="text-slate-400 text-xs">{t('helpCenter.backToHelp')}</p>
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
@@ -127,8 +129,8 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                         <BookOpen className="w-8 h-8 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-white tracking-tight">Centro de Ayuda</h1>
-                        <p className="text-slate-400 text-sm mt-1">Documentación oficial y guías paso a paso del sistema</p>
+                        <h1 className="text-2xl font-black tracking-tight text-white tracking-tight">{t('helpCenter.title')}</h1>
+                        <p className="text-slate-400 text-sm mt-1">{t('helpCenter.subtitle')}</p>
                     </div>
                 </div>
 
@@ -138,7 +140,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                             type="text"
-                            placeholder="Buscar guías (ej: factura, reporte, cliente)..."
+                            placeholder={t('helpCenter.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-slate-900 border border-slate-800 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all placeholder:text-slate-600"
@@ -155,7 +157,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                                 : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                                 }`}
                         >
-                            Inicio
+                            {t('helpCenter.categories.home')}
                         </button>
                         {['ventas', 'compras', 'inventario', 'contabilidad', 'impuestos', 'sistema'].map(cat => (
                             <button
@@ -166,7 +168,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                                     : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                                     }`}
                             >
-                                {cat}
+                                {t(`helpCenter.categories.${cat === 'ventas' ? 'sales' : cat === 'compras' ? 'purchases' : cat === 'inventario' ? 'inventory' : cat === 'contabilidad' ? 'accounting' : cat === 'impuestos' ? 'taxes' : 'system'}`)}
                             </button>
                         ))}
                     </div>
@@ -181,7 +183,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                     <div className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <Lightbulb className="w-5 h-5 text-yellow-400" />
-                            Accesos Directos
+                            {t('helpCenter.quickAccess')}
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {QUICK_OPERATIONS.map((op, i) => (
@@ -198,7 +200,9 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                                     <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                                         <BookOpen className="w-5 h-5 text-blue-400" />
                                     </div>
-                                    <span className="text-sm font-medium text-slate-300 group-hover:text-white">{op.label}</span>
+                                    <span className="text-sm font-medium text-slate-300 group-hover:text-white">
+                                        {(op as any).labelKey ? t((op as any).labelKey) : op.label}
+                                    </span>
                                 </button>
                             ))}
                         </div>
@@ -208,7 +212,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                 {/* Guides List */}
                 <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-blue-400" />
-                    Guías Disponibles
+                    {t('helpCenter.availableGuides')}
                 </h2>
 
                 <div className="space-y-4">
@@ -242,13 +246,13 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                     ) : (
                         <div className="text-center py-12 bg-slate-900/30 rounded-2xl border border-slate-800 border-dashed">
                             <Search className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-                            <p className="text-slate-400 font-medium">No se encontraron guías</p>
-                            <p className="text-slate-600 text-sm mt-1">Intenta con otros términos de búsqueda</p>
+                            <p className="text-slate-400 font-medium">{t('helpCenter.noGuidesFound')}</p>
+                            <p className="text-slate-600 text-sm mt-1">{t('helpCenter.tryOtherTerms')}</p>
                             <button
                                 onClick={() => { setSearchTerm(''); setSelectedCategory(null); }}
                                 className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm rounded-lg transition-colors"
                             >
-                                Limpiar filtros
+                                {t('helpCenter.clearFilters')}
                             </button>
                         </div>
                     )}
@@ -258,7 +262,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = () => {
                 <div className="mt-12 mb-8">
                     <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <HelpCircle className="w-5 h-5 text-purple-400" />
-                        Preguntas Frecuentes
+                        {t('helpCenter.faq')}
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {FAQ.map((item, idx) => (

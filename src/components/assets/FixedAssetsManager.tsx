@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,8 @@ import { AssetRegisterReport } from './reports/AssetRegisterReport';
 import { DepreciationScheduleReport } from './reports/DepreciationScheduleReport';
 import { DisposalSummaryReport } from './reports/DisposalSummaryReport';
 import { useLocale } from '@/i18n/useLocale';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface FixedAssetsManagerProps {
   db: any; // Database instance passed from App
@@ -37,6 +40,7 @@ interface FixedAssetsManagerProps {
  * - Category management
  */
 export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) => {
+  const { user } = useAuth();
   const { t } = useLocale();
   const [assets, setAssets] = useState<FixedAsset[]>([]);
   const [categories, setCategories] = useState<AssetCategory[]>([]);
@@ -82,7 +86,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setSummary(summaryData);
 
     } catch (err) {
-      console.error('Error loading fixed assets:', err);
+      logger.error('FixedAssetsManager', 'error', 'Error loading fixed assets:', err);
       setError(err instanceof Error ? err.message : t('fixedAssets.loading'));
     } finally {
       setLoading(false);
@@ -94,12 +98,17 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setLoading(true);
       setError(null);
 
+      if (!user?.id) {
+        logger.error('FixedAssetsManager', 'error', '[FixedAssetsManager] userId no disponible. OperaciÃ³n abortada.');
+        return;
+      }
+
       const controller = getFixedAssetsController(db);
       const now = new Date();
 
-      const result = await controller.runDepreciationBatch(now);
+      const result = await controller.runDepreciationBatch(now, user.id);
 
-      setSuccess(`Depreciación procesada: ${result.total_assets_processed} activos, Total: ${(result.total_depreciation_amount / 100).toFixed(2)}`);
+      setSuccess(`DepreciaciÃ³n procesada: ${result.total_assets_processed} activos, Total: ${(result.total_depreciation_amount / 100).toFixed(2)}`);
 
       // Reload data
       await loadData();
@@ -107,7 +116,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
       setTimeout(() => setSuccess(null), 5000);
 
     } catch (err) {
-      console.error('Error running depreciation:', err);
+      logger.error('FixedAssetsManager', 'error', 'Error running depreciation:', err);
       setError(err instanceof Error ? err.message : t('fixedAssets.messages.depreciationError'));
     } finally {
       setLoading(false);
@@ -156,24 +165,24 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
           <p className="text-slate-400 mt-1">{t('fixedAssets.subtitle')}</p>
         </div>
         <div className="flex gap-3">
-          <Button
+          <button
             onClick={handleRunDepreciation}
             disabled={loading || assets.length === 0}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-emerald-900/40 active:scale-95"
           >
-            <Play className="w-4 h-4 mr-2" />
+            <Play className="w-4 h-4" />
             {t('fixedAssets.runDepreciation')}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={() => {
               setEditingAsset(null);
               setShowAssetForm(true);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4" />
             {t('fixedAssets.newAsset')}
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -301,17 +310,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
               {assets.length === 0 ? (
                 <div className="text-center py-12">
                   <Package className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                  <p className="text-slate-400 mb-4">{t('fixedAssets.noAssets')}</p>
-                  <Button
-                    onClick={() => {
-                      setEditingAsset(null);
-                      setShowAssetForm(true);
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('fixedAssets.addAsset')}
-                  </Button>
+                  <p className="text-slate-400">{t('fixedAssets.noAssets')}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -340,7 +339,7 @@ export const FixedAssetsManager: React.FC<FixedAssetsManagerProps> = ({ db }) =>
                             {categories.find(c => c.id === asset.category_id)?.name || 'N/A'}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono">
-                            ${((asset.acquisition_cost || 0) / 100).toFixed(2)}
+                            ${((asset.purchase_cost || 0) / 100).toFixed(2)}
                           </td>
                           <td className="py-3 px-4 text-sm text-right font-mono text-amber-400">
                             ${((asset.total_accumulated_depreciation || 0) / 100).toFixed(2)}

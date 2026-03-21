@@ -1,7 +1,8 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * PayrollReports.tsx
  * 
- * UI para generar reportes de nómina requeridos por el IRS:
+ * UI for generating IRS payroll reports:
  * - Form 941 (Quarterly Federal Tax Return)
  * - Form W-2 (Wage and Tax Statement)
  * - Form W-3 (Transmittal of Wage and Tax Statements)
@@ -24,9 +25,12 @@ import {
   History
 } from 'lucide-react';
 import { payrollReportGenerator, Form941Data, W2Data, W3Data } from '../../services/payroll/PayrollReportGenerator';
-import { getEmployees, Employee } from '../../database/simple-db';
+import type { Employee } from '@/database/modules/db-types';
+import { getEmployees } from '@/database/modules/db-payroll';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { toast } from 'react-hot-toast';
+import { useLocale } from '@/i18n/useLocale';
 
 interface CompanyData {
   name: string;
@@ -35,6 +39,7 @@ interface CompanyData {
 }
 
 export const PayrollReports: React.FC = () => {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState<'form941' | 'w2' | 'w3'>('form941');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,8 +76,8 @@ export const PayrollReports: React.FC = () => {
       const allEmployees = getEmployees();
       setEmployees(allEmployees);
     } catch (err) {
-      console.error('Error loading employees:', err);
-      showError('Error al cargar protocolos de empleados');
+      logger.error('PayrollReports', 'error', 'Error loading employees:', err);
+      showError(t('payroll.reports.errorLoadingEmployees'));
     }
   };
 
@@ -96,9 +101,9 @@ export const PayrollReports: React.FC = () => {
       setError(null);
       const data = payrollReportGenerator.generateForm941(quarter, year941, companyData);
       setForm941Data(data);
-      showSuccess('Protocolo Form 941 generado');
+      showSuccess(t('payroll.reports.form941Generated'));
     } catch (err) {
-      showError('Error al generar Form 941');
+      showError(t('payroll.reports.errorGenerating941'));
     } finally {
       setLoading(false);
     }
@@ -109,45 +114,45 @@ export const PayrollReports: React.FC = () => {
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Formulario 941', 105, 20, { align: 'center' });
+      doc.text(t('payroll.reports.pdfForm941Title'), 105, 20, { align: 'center' });
       doc.setFontSize(12);
-      doc.text('Declaración Trimestral Federal de Impuestos del Empleador', 105, 28, { align: 'center' });
+      doc.text(t('payroll.reports.pdfForm941Subtitle'), 105, 28, { align: 'center' });
       doc.setFontSize(10);
-      doc.text(`Empleador: ${form941Data.employerName}`, 20, 45);
-      doc.text(`NIF (EIN): ${form941Data.ein}`, 20, 52);
-      doc.text(`Dirección: ${form941Data.address}`, 20, 59);
-      doc.text(`Trimestre: Q${form941Data.quarter} ${form941Data.year}`, 20, 66);
+      doc.text(`${t('payroll.reports.pdfEmployer')}: ${form941Data.employerName}`, 20, 45);
+      doc.text(`${t('payroll.reports.pdfEIN')}: ${form941Data.ein}`, 20, 52);
+      doc.text(`${t('payroll.reports.pdfAddress')}: ${form941Data.address}`, 20, 59);
+      doc.text(`${t('payroll.reports.pdfQuarter')}: Q${form941Data.quarter} ${form941Data.year}`, 20, 66);
 
       const tableData = [
-        ['Número de Empleados', form941Data.numberOfEmployees.toString()],
-        ['Salarios Totales', payrollReportGenerator.formatCurrency(form941Data.totalWages)],
-        ['Impuesto Federal a la Renta', payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)],
-        ['Salarios del Seguro Social', payrollReportGenerator.formatCurrency(form941Data.socialSecurityWages)],
-        ['Impuesto del Seguro Social', payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)],
-        ['Salarios de Medicare', payrollReportGenerator.formatCurrency(form941Data.medicareWages)],
-        ['Impuesto de Medicare', payrollReportGenerator.formatCurrency(form941Data.medicareTax)],
-        ['Impuesto Adicional de Medicare', payrollReportGenerator.formatCurrency(form941Data.additionalMedicareTax)],
-        ['Impuestos Totales', payrollReportGenerator.formatCurrency(form941Data.totalTaxes)],
-        ['Saldo Adeudado', payrollReportGenerator.formatCurrency(form941Data.balanceDue)]
+        [t('payroll.reports.pdfNumberOfEmployees'), form941Data.numberOfEmployees.toString()],
+        [t('payroll.reports.pdfTotalWages'), payrollReportGenerator.formatCurrency(form941Data.totalWages)],
+        [t('payroll.reports.pdfFederalIncomeTax'), payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)],
+        [t('payroll.reports.pdfSocialSecurityWages'), payrollReportGenerator.formatCurrency(form941Data.socialSecurityWages)],
+        [t('payroll.reports.pdfSocialSecurityTax'), payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)],
+        [t('payroll.reports.pdfMedicareWages'), payrollReportGenerator.formatCurrency(form941Data.medicareWages)],
+        [t('payroll.reports.pdfMedicareTax'), payrollReportGenerator.formatCurrency(form941Data.medicareTax)],
+        [t('payroll.reports.pdfAdditionalMedicareTax'), payrollReportGenerator.formatCurrency(form941Data.additionalMedicareTax)],
+        [t('payroll.reports.pdfTotalTaxes'), payrollReportGenerator.formatCurrency(form941Data.totalTaxes)],
+        [t('payroll.reports.pdfBalanceDue'), payrollReportGenerator.formatCurrency(form941Data.balanceDue)]
       ];
 
       (doc as any).autoTable({
         startY: 75,
-        head: [['Descripción', 'Monto']],
+        head: [[t('payroll.reports.pdfDescriptionCol'), t('payroll.reports.pdfAmountCol')]],
         body: tableData,
         theme: 'grid',
         headStyles: { fillColor: [16, 185, 129] }
       });
       doc.save(`Form_941_Q${form941Data.quarter}_${form941Data.year}.pdf`);
-      showSuccess('PDF exportado con éxito');
+      showSuccess(t('payroll.reports.pdfExported'));
     } catch (err) {
-      showError('Error al generar exportación PDF');
+      showError(t('payroll.reports.errorExportingPDF'));
     }
   };
 
   const handleGenerateW2 = () => {
     if (!selectedEmployeeId) {
-      showError('Seleccione un colaborador para el protocolo');
+      showError(t('payroll.reports.selectEmployeeForProtocol'));
       return;
     }
     try {
@@ -155,13 +160,13 @@ export const PayrollReports: React.FC = () => {
       setError(null);
       const data = payrollReportGenerator.generateW2(selectedEmployeeId, yearW2, companyData);
       if (!data) {
-        showError('No hay datos históricos para el periodo seleccionado');
+        showError(t('payroll.reports.noDataForPeriod'));
         return;
       }
       setW2Data(data);
-      showSuccess('W-2 consolidado exitosamente');
+      showSuccess(t('payroll.reports.w2Consolidated'));
     } catch (err) {
-      showError('Error al generar consolidación W-2');
+      showError(t('payroll.reports.errorGeneratingW2'));
     } finally {
       setLoading(false);
     }
@@ -172,40 +177,40 @@ export const PayrollReports: React.FC = () => {
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Formulario W-2', 105, 20, { align: 'center' });
+      doc.text(t('payroll.reports.pdfW2Title'), 105, 20, { align: 'center' });
       doc.setFontSize(12);
-      doc.text('Estado de Salarios e Impuestos', 105, 28, { align: 'center' });
-      doc.text(`Año Fiscal ${w2Data.year}`, 105, 35, { align: 'center' });
+      doc.text(t('payroll.reports.pdfW2Subtitle'), 105, 28, { align: 'center' });
+      doc.text(`${t('payroll.reports.pdfFiscalYear')} ${w2Data.year}`, 105, 35, { align: 'center' });
       doc.setFontSize(10);
-      doc.text('Información del Empleador:', 20, 50);
-      doc.text(`Nombre: ${w2Data.employerName}`, 25, 57);
-      doc.text(`NIF (EIN): ${w2Data.employerEIN}`, 25, 64);
-      doc.text(`Dirección: ${w2Data.employerAddress}`, 25, 71);
-      doc.text('Información del Empleado:', 20, 85);
-      doc.text(`Nombre: ${w2Data.employeeName}`, 25, 92);
-      doc.text(`NSS (SSN): ${w2Data.employeeSSN}`, 25, 99);
-      doc.text(`Dirección: ${w2Data.employeeAddress}`, 25, 106);
+      doc.text(t('payroll.reports.pdfEmployerInfo'), 20, 50);
+      doc.text(`${t('payroll.reports.pdfName')}: ${w2Data.employerName}`, 25, 57);
+      doc.text(`${t('payroll.reports.pdfEIN')}: ${w2Data.employerEIN}`, 25, 64);
+      doc.text(`${t('payroll.reports.pdfAddress')}: ${w2Data.employerAddress}`, 25, 71);
+      doc.text(t('payroll.reports.pdfEmployeeInfo'), 20, 85);
+      doc.text(`${t('payroll.reports.pdfName')}: ${w2Data.employeeName}`, 25, 92);
+      doc.text(`${t('payroll.reports.pdfSSN')}: ${w2Data.employeeSSN}`, 25, 99);
+      doc.text(`${t('payroll.reports.pdfAddress')}: ${w2Data.employeeAddress}`, 25, 106);
 
       const w2Boxes = [
-        ['Casilla 1 - Salarios', payrollReportGenerator.formatCurrency(w2Data.wages)],
-        ['Casilla 2 - Impuesto Federal a la Renta', payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)],
-        ['Casilla 3 - Salarios del Seguro Social', payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)],
-        ['Casilla 4 - Impuesto del Seguro Social', payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)],
-        ['Casilla 5 - Salarios de Medicare', payrollReportGenerator.formatCurrency(w2Data.medicareWages)],
-        ['Casilla 6 - Impuesto de Medicare', payrollReportGenerator.formatCurrency(w2Data.medicareTax)]
+        [t('payroll.reports.pdfBox1'), payrollReportGenerator.formatCurrency(w2Data.wages)],
+        [t('payroll.reports.pdfBox2'), payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)],
+        [t('payroll.reports.pdfBox3'), payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)],
+        [t('payroll.reports.pdfBox4'), payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)],
+        [t('payroll.reports.pdfBox5'), payrollReportGenerator.formatCurrency(w2Data.medicareWages)],
+        [t('payroll.reports.pdfBox6'), payrollReportGenerator.formatCurrency(w2Data.medicareTax)]
       ];
 
       (doc as any).autoTable({
         startY: 120,
-        head: [['Casilla', 'Monto']],
+        head: [[t('payroll.reports.pdfBoxCol'), t('payroll.reports.pdfAmountCol')]],
         body: w2Boxes,
         theme: 'grid',
         headStyles: { fillColor: [16, 185, 129] }
       });
       doc.save(`W2_${w2Data.year}_${w2Data.employeeName.replace(/\s+/g, '_')}.pdf`);
-      showSuccess('PDF exportado con éxito');
+      showSuccess(t('payroll.reports.pdfExported'));
     } catch (err) {
-      showError('Error al generar exportación PDF');
+      showError(t('payroll.reports.errorExportingPDF'));
     }
   };
 
@@ -215,9 +220,9 @@ export const PayrollReports: React.FC = () => {
       setError(null);
       const data = payrollReportGenerator.generateW3(yearW3, companyData);
       setW3Data(data);
-      showSuccess('W-3 consolidado exitosamente');
+      showSuccess(t('payroll.reports.w3Consolidated'));
     } catch (err) {
-      showError('Error al generar consolidación W-3');
+      showError(t('payroll.reports.errorGeneratingW3'));
     } finally {
       setLoading(false);
     }
@@ -228,76 +233,79 @@ export const PayrollReports: React.FC = () => {
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Formulario W-3', 105, 20, { align: 'center' });
+      doc.text(t('payroll.reports.pdfW3Title'), 105, 20, { align: 'center' });
       doc.setFontSize(12);
-      doc.text('Transmisión de Estados de Salarios e Impuestos', 105, 28, { align: 'center' });
-      doc.text(`Año Fiscal ${w3Data.year}`, 105, 35, { align: 'center' });
+      doc.text(t('payroll.reports.pdfW3Subtitle'), 105, 28, { align: 'center' });
+      doc.text(`${t('payroll.reports.pdfFiscalYear')} ${w3Data.year}`, 105, 35, { align: 'center' });
       doc.setFontSize(10);
-      doc.text('Información del Empleador:', 20, 50);
-      doc.text(`Nombre: ${w3Data.employerName}`, 25, 57);
-      doc.text(`NIF (EIN): ${w3Data.employerEIN}`, 25, 64);
-      doc.text(`Dirección: ${w3Data.employerAddress}`, 25, 71);
+      doc.text(t('payroll.reports.pdfEmployerInfo'), 20, 50);
+      doc.text(`${t('payroll.reports.pdfName')}: ${w3Data.employerName}`, 25, 57);
+      doc.text(`${t('payroll.reports.pdfEIN')}: ${w3Data.employerEIN}`, 25, 64);
+      doc.text(`${t('payroll.reports.pdfAddress')}: ${w3Data.employerAddress}`, 25, 71);
 
       const summaryData = [
-        ['Número de Formularios W-2', w3Data.numberOfW2Forms.toString()],
-        ['Salarios Totales', payrollReportGenerator.formatCurrency(w3Data.totalWages)],
-        ['Impuesto Federal Total a la Renta', payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)],
-        ['Salarios Totales del Seguro Social', payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityWages)],
-        ['Impuesto Total del Seguro Social', payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)],
-        ['Salarios Totales de Medicare', payrollReportGenerator.formatCurrency(w3Data.totalMedicareWages)],
-        ['Impuesto Total de Medicare', payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)]
+        [t('payroll.reports.pdfNumberW2Forms'), w3Data.numberOfW2Forms.toString()],
+        [t('payroll.reports.pdfTotalWages'), payrollReportGenerator.formatCurrency(w3Data.totalWages)],
+        [t('payroll.reports.pdfTotalFederalIncome'), payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)],
+        [t('payroll.reports.pdfTotalSSWages'), payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityWages)],
+        [t('payroll.reports.pdfTotalSSTax'), payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)],
+        [t('payroll.reports.pdfTotalMedicareWages'), payrollReportGenerator.formatCurrency(w3Data.totalMedicareWages)],
+        [t('payroll.reports.pdfTotalMedicareTax'), payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)]
       ];
 
       (doc as any).autoTable({
         startY: 85,
-        head: [['Description', 'Amount']],
+        head: [[t('payroll.reports.pdfDescriptionCol'), t('payroll.reports.pdfAmountCol')]],
         body: summaryData,
         theme: 'grid',
         headStyles: { fillColor: [16, 185, 129] }
       });
       doc.save(`W3_${w3Data.year}.pdf`);
-      showSuccess('PDF exportado con éxito');
+      showSuccess(t('payroll.reports.pdfExported'));
     } catch (err) {
-      showError('Error al generar exportación PDF');
+      showError(t('payroll.reports.errorExportingPDF'));
     }
   };
 
   return (
     <div className="space-y-12 animate-in fade-in duration-700 pb-24 px-4 overflow-x-hidden">
       {/* Header Hub */}
-      <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-        <div className="flex items-center gap-6">
-          <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-            <FileText className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+            <FileText className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Reportes de Nómina</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
-              <Shield className="w-3.5 h-3.5 text-emerald-500" /> Protocolos de Cumplimiento Tax v1.2
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {t('payrollReports.title')}
+            </h2>
+            <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollReports.subtitle')}
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
-          <TabButton
-            active={activeTab === 'form941'}
-            onClick={() => setActiveTab('form941')}
-            label="Form 941"
-            icon={Calendar}
-          />
-          <TabButton
-            active={activeTab === 'w2'}
-            onClick={() => setActiveTab('w2')}
-            label="Form W-2"
-            icon={Users}
-          />
-          <TabButton
-            active={activeTab === 'w3'}
-            onClick={() => setActiveTab('w3')}
-            label="Form W-3"
-            icon={DollarSign}
-          />
-        </div>
+      <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
+        <TabButton
+          active={activeTab === 'form941'}
+          onClick={() => setActiveTab('form941')}
+          label={t('payroll.form941')}
+          icon={Calendar}
+        />
+        <TabButton
+          active={activeTab === 'w2'}
+          onClick={() => setActiveTab('w2')}
+          label={t('payroll.formW2')}
+          icon={Users}
+        />
+        <TabButton
+          active={activeTab === 'w3'}
+          onClick={() => setActiveTab('w3')}
+          label={t('payroll.formW3')}
+          icon={DollarSign}
+        />
       </div>
 
       {/* State Indicators */}
@@ -324,13 +332,13 @@ export const PayrollReports: React.FC = () => {
 
             <div className="px-10 py-8 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
               <h3 className="text-xl font-black text-white uppercase tracking-tighter">
-                {activeTab === 'form941' ? 'Declaración Federal Trimestral (Form 941)' :
-                  activeTab === 'w2' ? 'Comprobante de Salarios e Impuestos (W-2)' :
-                    'Transmisión de Comprobantes (W-3)'}
+                {activeTab === 'form941' ? t('payroll.reports.form941Title') :
+                  activeTab === 'w2' ? t('payroll.reports.w2Title') :
+                    t('payroll.reports.w3Title')}
               </h3>
               <div className="flex items-center gap-3">
                 <Zap className="w-4 h-4 text-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">Consolidación Activa</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{t('payroll.reports.activeConsolidation')}</span>
               </div>
             </div>
 
@@ -343,31 +351,31 @@ export const PayrollReports: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5" /> Protocolo 941
+                        <Shield className="w-3.5 h-3.5" /> {t('payroll.reports.protocol941')}
                       </h4>
                       <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-tight">
-                        Reporte trimestral de retenciones federales de ingresos, seguro social y medicare. Requerido por el IRS al cierre de cada ciclo trimestral.
+                        {t('payroll.reports.protocol941Desc')}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-8">
                     <PremiumInputMini
-                      label="Selección de Quarter"
+                      label={t('payroll.reports.quarterSelection')}
                       type="select"
                       value={quarter}
                       onChange={(v: string) => setQuarter(Number(v))}
                       options={[
-                        { label: 'Q1: Enero - Marzo', value: 1 },
-                        { label: 'Q2: Abril - Junio', value: 2 },
-                        { label: 'Q3: Julio - Septiembre', value: 3 },
-                        { label: 'Q4: Octubre - Diciembre', value: 4 },
+                        { label: t('payroll.reports.q1'), value: 1 },
+                        { label: t('payroll.reports.q2'), value: 2 },
+                        { label: t('payroll.reports.q3'), value: 3 },
+                        { label: t('payroll.reports.q4'), value: 4 },
                       ]}
                       icon={Calendar}
                     />
 
                     <PremiumInputMini
-                      label="Ciclo Anual"
+                      label={t('payroll.reports.annualCycle')}
                       type="number"
                       value={year941}
                       onChange={(v: string) => setYear941(Number(v))}
@@ -378,7 +386,7 @@ export const PayrollReports: React.FC = () => {
                   <button
                     onClick={handleGenerateForm941}
                     disabled={loading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     {loading ? (
@@ -386,7 +394,7 @@ export const PayrollReports: React.FC = () => {
                     ) : (
                       <div className="flex items-center justify-center gap-4 text-sm tracking-widest uppercase">
                         <Zap className="w-5 h-5 fill-white" />
-                        <span>Ejecutar Consolidación 941</span>
+                        <span>{t('payroll.reports.execute941')}</span>
                       </div>
                     )}
                   </button>
@@ -394,17 +402,17 @@ export const PayrollReports: React.FC = () => {
                   {form941Data && (
                     <div className="bg-slate-950/50 rounded-[3rem] border border-slate-800 p-10 space-y-10 animate-in slide-in-from-bottom-8 duration-500">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-6">
-                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">Resumen de Protocolo</h3>
-                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest rounded-lg border border-emerald-500/20">Validado</span>
+                        <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">{t('payroll.reports.protocolSummary')}</h3>
+                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-widest rounded-lg border border-emerald-500/20">{t('payroll.reports.validated')}</span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-10">
                         <div>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Entidad Fiscal</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">{t('payroll.reports.taxEntity')}</p>
                           <p className="text-sm font-black text-white uppercase truncate">{form941Data.employerName}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Clave EIN</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">{t('payroll.reports.einKey')}</p>
                           <p className="text-sm font-black text-white font-mono">{form941Data.ein}</p>
                         </div>
                       </div>
@@ -412,12 +420,12 @@ export const PayrollReports: React.FC = () => {
                       <div className="border-t border-slate-800 pt-10">
                         <table className="w-full">
                           <tbody className="divide-y divide-slate-800/40 font-mono">
-                            <PreviewRow label="Salarios Totales" value={payrollReportGenerator.formatCurrency(form941Data.totalWages)} />
-                            <PreviewRow label="Impuesto Fed. Renta" value={payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)} />
-                            <PreviewRow label="Impuesto Seg. Social" value={payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)} />
-                            <PreviewRow label="Impuesto Medicare" value={payrollReportGenerator.formatCurrency(form941Data.medicareTax)} />
+                            <PreviewRow label={t('payroll.reports.totalWages')} value={payrollReportGenerator.formatCurrency(form941Data.totalWages)} />
+                            <PreviewRow label={t('payroll.reports.fedIncomeTax')} value={payrollReportGenerator.formatCurrency(form941Data.federalIncomeTax)} />
+                            <PreviewRow label={t('payroll.reports.socialSecTax')} value={payrollReportGenerator.formatCurrency(form941Data.socialSecurityTax)} />
+                            <PreviewRow label={t('payroll.reports.medicareTax')} value={payrollReportGenerator.formatCurrency(form941Data.medicareTax)} />
                             <PreviewRow
-                              label="Consolidado Total"
+                              label={t('payroll.reports.consolidatedTotal')}
                               value={payrollReportGenerator.formatCurrency(form941Data.totalTaxes)}
                               isHighlighted
                             />
@@ -426,11 +434,14 @@ export const PayrollReports: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={handleDownloadForm941PDF}
+                        onClick={() => toast.error(
+                          'Para generar formularios oficiales W-2, W-3 y 941, ' +
+                          'exporte los datos a CSV y consulte con su contador.'
+                        )}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-emerald-500 hover:text-white hover:bg-emerald-600 font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
                       >
                         <Download className="w-4 h-4" />
-                        Exportar Registro Forensic PDF
+                        {t('payroll.reports.exportForensicPDF')}
                       </button>
                     </div>
                   )}
@@ -445,22 +456,22 @@ export const PayrollReports: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5" /> Protocolo W-2
+                        <Shield className="w-3.5 h-3.5" /> {t('payroll.reports.protocolW2')}
                       </h4>
                       <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-tight">
-                        Declaración anual consolidada de compensaciones, propinas y retenciones para colaboradores bajo contrato federal.
+                        {t('payroll.reports.protocolW2Desc')}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-8">
                     <PremiumInputMini
-                      label="Selección de Colaborador"
+                      label={t('payroll.reports.selectEmployee')}
                       type="select"
                       value={selectedEmployeeId || ''}
                       onChange={(v: string) => setSelectedEmployeeId(Number(v))}
                       options={[
-                        { label: 'Elegir protocolo...', value: '' },
+                        { label: t('payroll.reports.chooseProtocol'), value: '' },
                         ...employees.map(emp => ({
                           label: `${emp.first_name} ${emp.last_name}`,
                           value: emp.id
@@ -470,7 +481,7 @@ export const PayrollReports: React.FC = () => {
                     />
 
                     <PremiumInputMini
-                      label="Ciclo Fiscal"
+                      label={t('payroll.reports.fiscalCycle')}
                       type="number"
                       value={yearW2}
                       onChange={(v: string) => setYearW2(Number(v))}
@@ -481,7 +492,7 @@ export const PayrollReports: React.FC = () => {
                   <button
                     onClick={handleGenerateW2}
                     disabled={loading || !selectedEmployeeId}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-blue-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-blue-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     {loading ? (
@@ -489,7 +500,7 @@ export const PayrollReports: React.FC = () => {
                     ) : (
                       <div className="flex items-center justify-center gap-4 text-sm tracking-widest uppercase">
                         <Zap className="w-5 h-5 fill-white" />
-                        <span>Generar Liquidación W-2</span>
+                        <span>{t('payroll.reports.generateW2')}</span>
                       </div>
                     )}
                   </button>
@@ -498,9 +509,9 @@ export const PayrollReports: React.FC = () => {
                     <div className="bg-slate-950/50 rounded-[3rem] border border-slate-800 p-10 space-y-10 animate-in slide-in-from-bottom-8 duration-500">
                       <div className="grid grid-cols-2 gap-8">
                         <div className="col-span-2 bg-slate-900/50 p-8 rounded-[2rem] border border-slate-800 shadow-inner">
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3">Sujeto del Reporte</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3">{t('payroll.reports.reportSubject')}</p>
                           <p className="text-lg font-black text-white uppercase tracking-tight">{w2Data.employeeName}</p>
-                          <p className="text-xs font-bold text-blue-500 font-mono mt-2 flex items-center gap-2">
+                          <p className="text-xs font-black text-blue-500 font-mono mt-2 flex items-center gap-2">
                             <Shield className="w-3 h-3" /> SSN: {w2Data.employeeSSN}
                           </p>
                         </div>
@@ -509,22 +520,25 @@ export const PayrollReports: React.FC = () => {
                       <div className="border-t border-slate-800 pt-10">
                         <table className="w-full">
                           <tbody className="divide-y divide-slate-800/40 font-mono">
-                            <PreviewRow label="Casilla 1 - Salarios Brutos" value={payrollReportGenerator.formatCurrency(w2Data.wages)} />
-                            <PreviewRow label="Casilla 2 - Impuesto Fed. Renta" value={payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)} />
-                            <PreviewRow label="Casilla 3 - Salarios Seg. Soc." value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)} />
-                            <PreviewRow label="Casilla 4 - Impuesto Seg. Soc." value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)} />
-                            <PreviewRow label="Casilla 5 - Salarios Medicare" value={payrollReportGenerator.formatCurrency(w2Data.medicareWages)} />
-                            <PreviewRow label="Casilla 6 - Impuesto Medicare" value={payrollReportGenerator.formatCurrency(w2Data.medicareTax)} />
+                            <PreviewRow label={t('payroll.reports.box1Wages')} value={payrollReportGenerator.formatCurrency(w2Data.wages)} />
+                            <PreviewRow label={t('payroll.reports.box2FedTax')} value={payrollReportGenerator.formatCurrency(w2Data.federalIncomeTax)} />
+                            <PreviewRow label={t('payroll.reports.box3SSTax')} value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityWages)} />
+                            <PreviewRow label={t('payroll.reports.box4SSWages')} value={payrollReportGenerator.formatCurrency(w2Data.socialSecurityTax)} />
+                            <PreviewRow label={t('payroll.reports.box5MedicareWages')} value={payrollReportGenerator.formatCurrency(w2Data.medicareWages)} />
+                            <PreviewRow label={t('payroll.reports.box6MedicareTax')} value={payrollReportGenerator.formatCurrency(w2Data.medicareTax)} />
                           </tbody>
                         </table>
                       </div>
 
                       <button
-                        onClick={handleDownloadW2PDF}
+                        onClick={() => toast.error(
+                          'Para generar formularios oficiales W-2, W-3 y 941, ' +
+                          'exporte los datos a CSV y consulte con su contador.'
+                        )}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-blue-500/50 text-blue-500 hover:text-white hover:bg-blue-600 font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
                       >
                         <Download className="w-4 h-4" />
-                        Exportar Registro W-2 PDF
+                        {t('payroll.reports.exportW2PDF')}
                       </button>
                     </div>
                   )}
@@ -539,16 +553,16 @@ export const PayrollReports: React.FC = () => {
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5" /> Transmisión W-3
+                        <Shield className="w-3.5 h-3.5" /> {t('payroll.reports.w3Transmission')}
                       </h4>
                       <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-tight">
-                        Resumen maestro para la transmisión masiva de declaraciones W-2 al Social Security Administration. Consolidado total del ciclo fiscal.
+                        {t('payroll.reports.w3Desc')}
                       </p>
                     </div>
                   </div>
 
                   <PremiumInputMini
-                    label="Ciclo Fiscal Maestro"
+                    label={t('payroll.reports.masterFiscalCycle')}
                     type="number"
                     value={yearW3}
                     onChange={(v: string) => setYearW3(Number(v))}
@@ -558,7 +572,7 @@ export const PayrollReports: React.FC = () => {
                   <button
                     onClick={handleGenerateW3}
                     disabled={loading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-7 rounded-2.5xl shadow-3xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-emerald-900/40 relative overflow-hidden group transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     {loading ? (
@@ -566,7 +580,7 @@ export const PayrollReports: React.FC = () => {
                     ) : (
                       <div className="flex items-center justify-center gap-4 text-sm tracking-widest uppercase">
                         <Zap className="w-5 h-5 fill-white" />
-                        <span>Ejecutar Consolidado W-3</span>
+                        <span>{t('payroll.reports.executeW3')}</span>
                       </div>
                     )}
                   </button>
@@ -575,40 +589,43 @@ export const PayrollReports: React.FC = () => {
                     <div className="bg-slate-950/50 rounded-[3rem] border border-slate-800 p-10 space-y-10 animate-in slide-in-from-bottom-8 duration-500">
                       <div className="grid grid-cols-2 gap-10">
                         <div>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Entidad Maestra</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">{t('payroll.reports.masterEntity')}</p>
                           <p className="text-sm font-black text-white uppercase truncate">{w3Data.employerName}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">EIN Consolidado</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">{t('payroll.reports.consolidatedEIN')}</p>
                           <p className="text-sm font-black text-white font-mono">{w3Data.employerEIN}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Año Fiscal</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">{t('payroll.reports.fiscalYear')}</p>
                           <p className="text-sm font-black text-white">{w3Data.year}</p>
                         </div>
                         <div>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Total W-2s Transmitidas</p>
-                          <p className="text-sm font-black text-white uppercase">{w3Data.numberOfW2Forms} Archivos</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">{t('payroll.reports.totalW2sTransmitted')}</p>
+                          <p className="text-sm font-black text-white uppercase">{w3Data.numberOfW2Forms} {t('payroll.reports.files')}</p>
                         </div>
                       </div>
 
                       <div className="border-t border-slate-800 pt-10">
                         <table className="w-full">
                           <tbody className="divide-y divide-slate-800/40 font-mono">
-                            <PreviewRow label="Salarios Totales Agregados" value={payrollReportGenerator.formatCurrency(w3Data.totalWages)} />
-                            <PreviewRow label="Impuesto Federal Agregado" value={payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)} />
-                            <PreviewRow label="Impuesto Seg. Soc. Agregado" value={payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)} />
-                            <PreviewRow label="Impuesto Medicare Agregado" value={payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)} />
+                            <PreviewRow label={t('payroll.reports.totalAggregatedWages')} value={payrollReportGenerator.formatCurrency(w3Data.totalWages)} />
+                            <PreviewRow label={t('payroll.reports.aggregatedFedTax')} value={payrollReportGenerator.formatCurrency(w3Data.totalFederalIncomeTax)} />
+                            <PreviewRow label={t('payroll.reports.aggregatedSSTax')} value={payrollReportGenerator.formatCurrency(w3Data.totalSocialSecurityTax)} />
+                            <PreviewRow label={t('payroll.reports.aggregatedMedicareTax')} value={payrollReportGenerator.formatCurrency(w3Data.totalMedicareTax)} />
                           </tbody>
                         </table>
                       </div>
 
                       <button
-                        onClick={handleDownloadW3PDF}
+                        onClick={() => toast.error(
+                          'Para generar formularios oficiales W-2, W-3 y 941, ' +
+                          'exporte los datos a CSV y consulte con su contador.'
+                        )}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-emerald-500 hover:text-white hover:bg-emerald-600 font-black py-5 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
                       >
                         <Download className="w-4 h-4" />
-                        Exportar Archivo Transmisión PDF
+                        {t('payroll.reports.exportTransmissionPDF')}
                       </button>
                     </div>
                   )}
@@ -623,26 +640,26 @@ export const PayrollReports: React.FC = () => {
           <div className="bg-slate-900 border border-slate-800 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-colors"></div>
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
-              <Activity className="w-3 h-3 text-emerald-500" /> Compliance Monitor
+              <Activity className="w-3 h-3 text-emerald-500" /> {t('payroll.reports.complianceMonitor')}
             </h3>
 
             <div className="space-y-6">
-              <SupportCard title="Status Federal" content="AccountExpress est├í operando bajo protocolos IRS 2024. Sincronización activa con bases del Social Security Administration." icon={Shield} color="text-emerald-500" />
-              <SupportCard title="Verificación Forensic" content="Cada reporte generado incluye una huella digital criptográfica inmutable en los metadatos del PDF para auditoría." icon={Zap} color="text-blue-500" />
+              <SupportCard title={t('payroll.reports.federalStatus')} content={t('payroll.reports.federalStatusDesc')} icon={Shield} color="text-emerald-500" />
+              <SupportCard title={t('payroll.reports.forensicVerification')} content={t('payroll.reports.forensicVerificationDesc')} icon={Zap} color="text-blue-500" />
             </div>
           </div>
 
           <div className="bg-emerald-600 border border-emerald-500 rounded-[3rem] p-10 shadow-2xl shadow-emerald-950/40 relative overflow-hidden group cursor-pointer active:scale-95 transition-all">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] -mr-32 -mt-32 group-hover:bg-white/20 transition-all duration-700"></div>
             <Activity className="w-12 h-12 text-white mb-6 group-hover:scale-110 transition-transform duration-500" />
-            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">Industrial Vault</h3>
+            <h3 className="text-xl font-black text-white uppercase tracking-tighter mb-2">{t('payroll.reports.industrialVault')}</h3>
             <p className="text-emerald-100/70 text-[10px] font-black uppercase tracking-widest leading-relaxed">
-              Todos los históricos de nómina están protegidos con encripción de grado militar AES-256 en la base de datos local SQLite.
+              {t('payroll.reports.industrialVaultDesc')}
             </p>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

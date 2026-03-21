@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 // Encryption Worker
 // Handles cryptographic operations in a separate thread
 import sjcl from 'sjcl';
@@ -24,7 +25,7 @@ self.onmessage = async (e: MessageEvent) => {
                     try {
                         result = await encryptWebCrypto(payload.data);
                     } catch (err) {
-                        console.warn('Web Crypto encryption failed, falling back to SJCL if available', err);
+                        logger.warn('encryption.worker', 'warn', 'Web Crypto encryption failed, falling back to SJCL if available', err);
                         if (sjclPassword) {
                             result = await encryptSJCL(payload.data);
                         } else {
@@ -44,7 +45,7 @@ self.onmessage = async (e: MessageEvent) => {
                 break;
 
             default:
-                console.warn('Unknown message type', type);
+                logger.warn('encryption.worker', 'warn', 'Unknown message type', type);
         }
     } catch (error: any) {
         self.postMessage({ type: 'ERROR', id, error: error.message });
@@ -88,7 +89,7 @@ async function initializeKey(payload: { password: string, salt: Uint8Array, conf
             ['encrypt', 'decrypt']
         );
     } catch (e) {
-        console.warn('Web Crypto initialization failed, will use SJCL only.', e);
+        logger.warn('encryption.worker', 'warn', 'Web Crypto initialization failed, will use SJCL only.', e);
         key = null;
     }
 }

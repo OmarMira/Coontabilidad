@@ -1,4 +1,5 @@
-// IntelligentCache.ts - Sistema de caché inteligente con invalidación automática
+﻿import { logger } from '../../core/logging/SystemLogger';
+// IntelligentCache.ts - Sistema de cachÃ© inteligente con invalidaciÃ³n automÃ¡tica
 
 export interface CacheOptions {
   ttl?: number; // Time to live in milliseconds
@@ -175,7 +176,7 @@ export class IntelligentCache {
 
     keysToDelete.forEach(key => this.cache.delete(key));
 
-    console.log(`[Cache] Cleaned up ${keysToDelete.length} expired entries`);
+    logger.info('IntelligentCache', 'info', `[Cache] Cleaned up ${keysToDelete.length} expired entries`);
   }
 
   /**
@@ -202,7 +203,7 @@ export class IntelligentCache {
 
     if (keyToEvict) {
       this.cache.delete(keyToEvict);
-      console.log(`[Cache] Evicted entry: ${keyToEvict} (score: ${lowestScore.toFixed(2)})`);
+      logger.info('IntelligentCache', 'info', `[Cache] Evicted entry: ${keyToEvict} (score: ${lowestScore.toFixed(2)})`);
     }
   }
 

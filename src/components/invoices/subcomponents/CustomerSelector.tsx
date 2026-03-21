@@ -13,10 +13,14 @@ const MOCK_CUSTOMERS: Customer[] = [
     { id: '2', name: 'Cliente Broward Inc.', county: 'Broward', taxId: '987654321' }
 ];
 
+import { useLocale } from '@/i18n/useLocale';
+
 export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
     selectedCustomer,
     onSelect
 }) => {
+    const { t } = useLocale();
+
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const cust = MOCK_CUSTOMERS.find(c => c.id === e.target.value);
         if (cust) onSelect(cust);
@@ -29,7 +33,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                 value={selectedCustomer?.id || ''}
                 onChange={handleChange}
             >
-                <option value="" style={{ color: 'black' }}>Seleccionar Cliente...</option>
+                <option value="" style={{ color: 'black' }}>{t('invoices.selectCustomer')}</option>
                 {MOCK_CUSTOMERS.map(c => (
                     <option key={c.id} value={c.id} style={{ color: 'black' }}>{c.name}</option>
                 ))}

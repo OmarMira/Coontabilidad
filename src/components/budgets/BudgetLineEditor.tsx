@@ -3,7 +3,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, DollarSign } from 'lucide-react';
-import { getChartOfAccounts, type BudgetLine } from '@/database/simple-db';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
+import type { BudgetLine } from '@/database/modules/db-budgets';
+import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetLineEditorProps {
   lines: Partial<BudgetLine>[];
@@ -16,6 +18,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
   onChange,
   totalAmount
 }) => {
+  const { t, formatCurrency } = useLocale();
   const [accounts, setAccounts] = useState<Array<{ code: string; name: string; type: string }>>([]);
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
     <Card className="bg-slate-900 border-slate-800 text-white">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Líneas de Presupuesto</CardTitle>
+          <CardTitle>{t('budgets.lines')}</CardTitle>
           <Button
             type="button"
             size="sm"
@@ -75,7 +78,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-4 w-4" />
-            Agregar Línea
+            {t('budgets.addLine')}
           </Button>
         </div>
       </CardHeader>
@@ -83,19 +86,19 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
         {lines.length === 0 ? (
           <div className="text-center py-8 text-slate-500 border border-slate-800 rounded-lg bg-slate-900/50">
             <DollarSign className="h-12 w-12 mx-auto mb-3 text-slate-600" />
-            <p>No hay líneas de presupuesto</p>
-            <p className="text-sm mt-1">Haz clic en "Agregar Línea" para comenzar</p>
+            <p>{t('budgets.noLines')}</p>
+            <p className="text-sm mt-1">{t('budgets.clickAddLine')}</p>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Table Header */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 pb-2 border-b border-slate-700 font-semibold text-sm text-slate-400">
-              <div className="col-span-3">Cuenta</div>
-              <div className="col-span-3">Nombre de Cuenta</div>
-              <div className="col-span-2">Monto Anual</div>
-              <div className="col-span-2">Distribución</div>
-              <div className="col-span-1">Notas</div>
-              <div className="col-span-1 text-center">Acción</div>
+              <div className="col-span-3">{t('budgets.account')}</div>
+              <div className="col-span-3">{t('budgets.account')}</div>
+              <div className="col-span-2">{t('budgets.annualAmount')}</div>
+              <div className="col-span-2">{t('budgets.distribution')}</div>
+              <div className="col-span-1">{t('common.notes')}</div>
+              <div className="col-span-1 text-center">{t('common.actions')}</div>
             </div>
 
             {/* Lines */}
@@ -107,7 +110,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                 {/* Account Selector */}
                 <div className="md:col-span-3">
                   <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
-                    Cuenta
+                    {t('budgets.account')}
                   </label>
                   <select
                     value={line.account_number || ''}
@@ -115,7 +118,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   >
-                    <option value="">Seleccionar cuenta...</option>
+                    <option value="">{t('budgets.selectAccount')}</option>
                     {accounts.map((account) => (
                       <option key={account.code} value={account.code}>
                         {account.code} - {account.name}
@@ -127,21 +130,21 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                 {/* Account Name (auto-filled) */}
                 <div className="md:col-span-3">
                   <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
-                    Nombre
+                    {t('budgets.account')}
                   </label>
                   <Input
                     type="text"
                     value={getAccountName(line.account_number || 0)}
                     readOnly
                     className="bg-slate-950 border-slate-700 text-slate-400 cursor-not-allowed"
-                    placeholder="Nombre de cuenta"
+                    placeholder={t('budgets.account')}
                   />
                 </div>
 
                 {/* Annual Amount */}
                 <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
-                    Monto Anual
+                    {t('budgets.annualAmount')}
                   </label>
                   <Input
                     type="number"
@@ -158,29 +161,29 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                 {/* Distribution Type */}
                 <div className="md:col-span-2">
                   <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
-                    Distribución
+                    {t('budgets.distribution')}
                   </label>
                   <select
                     value={line.distribution_type || 'EQUAL'}
                     onChange={(e) => handleLineChange(index, 'distribution_type', e.target.value)}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="EQUAL">Equitativa</option>
-                    <option value="CUSTOM">Personalizada</option>
-                    <option value="ZERO">Sin distribución</option>
+                    <option value="EQUAL">{t('budgets.distributionType.equal')}</option>
+                    <option value="CUSTOM">{t('budgets.distributionType.custom')}</option>
+                    <option value="ZERO">{t('budgets.distributionType.zero')}</option>
                   </select>
                 </div>
 
                 {/* Notes */}
                 <div className="md:col-span-1">
                   <label className="block md:hidden text-sm font-medium text-slate-300 mb-1">
-                    Notas
+                    {t('common.notes')}
                   </label>
                   <Input
                     type="text"
                     value={line.notes || ''}
                     onChange={(e) => handleLineChange(index, 'notes', e.target.value)}
-                    placeholder="Notas"
+                    placeholder={t('common.notes')}
                     className="bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:ring-blue-500"
                   />
                 </div>
@@ -193,6 +196,7 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
                     variant="ghost"
                     onClick={() => handleRemoveLine(index)}
                     className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                    title={t('common.delete')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -202,19 +206,19 @@ export const BudgetLineEditor: React.FC<BudgetLineEditorProps> = ({
 
             {/* Total */}
             <div className="flex justify-end items-center gap-4 pt-4 border-t border-slate-700">
-              <span className="text-lg font-semibold text-slate-300">Total Presupuestado:</span>
+              <span className="text-lg font-semibold text-slate-300">{t('budgets.totalBudgeted')}:</span>
               <span className="text-2xl font-black tracking-tight text-blue-400">
-                ${(totalAmount / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {formatCurrency(totalAmount / 100)}
               </span>
             </div>
 
             {/* Distribution Info */}
             <div className="bg-blue-900/20 border border-blue-900/50 rounded-lg p-4">
               <p className="text-sm text-blue-300">
-                <strong>Distribución Equitativa:</strong> El monto anual se divide en 12 períodos mensuales iguales.
+                <strong>{t('budgets.distributionType.equal')}:</strong> {t('budgets.distributionHelp.equal')}
               </p>
               <p className="text-sm text-blue-300 mt-1">
-                <strong>Personalizada:</strong> Podrás ajustar los montos por período después de crear el presupuesto.
+                <strong>{t('budgets.distributionType.custom')}:</strong> {t('budgets.distributionHelp.custom')}
               </p>
             </div>
           </div>

@@ -22,12 +22,12 @@ describe('IA Response Accuracy - 100% Improvement', () => {
     });
 
     it('Pregunta específica de clientes debe mapear a v_customers_summary', async () => {
-        const intent = NaturalLanguageQueryProcessor.analyzeIntent('¿Cuántos clientes tengo registrados?');
+        const intent = NaturalLanguageQueryProcessor.analyzeIntent('¿cuantos clientes tengo registrados?');
         expect(intent.type).toBe('CUSTOMER_COUNT');
     });
 
     it('Pregunta de proveedores debe mapear a v_suppliers_summary', async () => {
-        const intent = NaturalLanguageQueryProcessor.analyzeIntent('¿Cuál es mi mayor proveedor en Florida?');
+        const intent = NaturalLanguageQueryProcessor.analyzeIntent('¿cual es mi mayor proveedor en Florida?');
         expect(intent.type).toBe('TOP_SUPPLIER');
     });
 

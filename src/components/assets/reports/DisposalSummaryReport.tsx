@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Download, TrendingUp, TrendingDown, X, Calendar } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -5,6 +6,7 @@ import { Card, CardContent } from '../../ui/card';
 import { getFixedAssetsController } from '../../../controllers/FixedAssetsController';
 import { SQLiteEngine } from '../../../core/database/SQLiteEngine';
 import type { AssetDisposal } from '../../../services/accounting/AssetDisposalService';
+import { useLocale } from '../../../i18n/useLocale';
 
 interface DisposalSummaryReportProps {
     db: SQLiteEngine;
@@ -12,6 +14,7 @@ interface DisposalSummaryReportProps {
 }
 
 export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db, onClose }) => {
+    const { t } = useLocale();
     const [disposals, setDisposals] = useState<AssetDisposal[]>([]);
     const [loading, setLoading] = useState(true);
     const [year, setYear] = useState(new Date().getFullYear());
@@ -35,7 +38,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
 
             setDisposals(yearDisposals);
         } catch (err) {
-            console.error('Error loading disposal summary:', err);
+            logger.error('DisposalSummaryReport', 'error', 'Error loading disposal summary:', err);
         } finally {
             setLoading(false);
         }
@@ -43,20 +46,20 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
 
     const exportToCSV = () => {
         const headers = [
-            'Asset ID',
-            'Disposal Date',
-            'Method',
-            'Original Cost',
-            'Accumulated Depreciation',
-            'Net Book Value',
-            'Proceeds',
-            'Gain/Loss'
+            t('assets.reports_ui.csv.assetId'),
+            t('assets.reports_ui.csv.disposalDate'),
+            t('assets.reports_ui.csv.method'),
+            t('assets.reports_ui.csv.cost'),
+            t('assets.reports_ui.csv.accDep'),
+            t('assets.reports_ui.csv.nbv'),
+            t('assets.reports_ui.csv.proceeds'),
+            t('assets.reports_ui.csv.gainLoss')
         ];
 
         const rows = disposals.map(disposal => [
             disposal.asset_id,
             disposal.disposal_date,
-            disposal.disposal_method,
+            t(`assets.disposalForm.methods.${disposal.disposal_method.toLowerCase()}`),
             (disposal.original_cost / 100).toFixed(2),
             (disposal.accumulated_depreciation / 100).toFixed(2),
             (disposal.net_book_value / 100).toFixed(2),
@@ -109,7 +112,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
             <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                    <p className="text-slate-400">Loading disposal summary...</p>
+                    <p className="text-slate-400">{t('assets.reports_ui.loadingDisposal')}</p>
                 </div>
             </div>
         );
@@ -120,9 +123,9 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-black text-white">Disposal Summary Report</h2>
+                    <h2 className="text-2xl font-black text-white">{t('assets.reports.disposal')}</h2>
                     <p className="text-slate-500 text-sm mt-1">
-                        Asset disposals and gains/losses for {year}
+                        {t('assets.reports_ui.subtitleDisposal', { year })}
                     </p>
                 </div>
                 <div className="flex gap-3">
@@ -132,7 +135,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                         disabled={disposals.length === 0}
                     >
                         <Download className="w-4 h-4 mr-2" />
-                        Export CSV
+                        {t('assets.reports_ui.export')}
                     </Button>
                     <button
                         onClick={onClose}
@@ -148,7 +151,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                 <CardContent className="p-4">
                     <div className="flex items-center gap-4">
                         <Calendar className="w-5 h-5 text-slate-400" />
-                        <label className="text-sm text-slate-400 font-bold">Year:</label>
+                        <label className="text-sm text-slate-400 font-bold">{t('common.year')}:</label>
                         <select
                             value={year}
                             onChange={(e) => setYear(parseInt(e.target.value))}
@@ -159,7 +162,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                             ))}
                         </select>
                         <span className="text-sm text-slate-400">
-                            {disposals.length} disposal{disposals.length !== 1 ? 's' : ''}
+                            {t('assets.reports_ui.disposalCount', { count: disposals.length })}
                         </span>
                     </div>
                 </CardContent>
@@ -169,7 +172,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="bg-slate-900 border-slate-800">
                     <CardContent className="p-6">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Total Proceeds</p>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.reports_ui.totalProceeds')}</p>
                         <p className="text-2xl font-black text-white font-mono">
                             ${(summary.totalProceeds / 100).toFixed(2)}
                         </p>
@@ -179,7 +182,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                     <CardContent className="p-6">
                         <div className="flex items-center gap-2 mb-1">
                             <TrendingUp className="w-4 h-4 text-emerald-400" />
-                            <p className="text-xs text-slate-400 uppercase tracking-wider">Total Gains</p>
+                            <p className="text-xs text-slate-400 uppercase tracking-wider">{t('assets.reports_ui.totalGains')}</p>
                         </div>
                         <p className="text-2xl font-black text-emerald-400 font-mono">
                             ${(summary.totalGains / 100).toFixed(2)}
@@ -190,7 +193,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                     <CardContent className="p-6">
                         <div className="flex items-center gap-2 mb-1">
                             <TrendingDown className="w-4 h-4 text-rose-400" />
-                            <p className="text-xs text-slate-400 uppercase tracking-wider">Total Losses</p>
+                            <p className="text-xs text-slate-400 uppercase tracking-wider">{t('assets.reports_ui.totalLosses')}</p>
                         </div>
                         <p className="text-2xl font-black text-rose-400 font-mono">
                             ${(summary.totalLosses / 100).toFixed(2)}
@@ -200,7 +203,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                 <Card className={`bg-slate-900 border-slate-800 border-t-4 ${summary.netGainLoss >= 0 ? 'border-emerald-500' : 'border-rose-500'
                     }`}>
                     <CardContent className="p-6">
-                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Net Gain/Loss</p>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{t('assets.reports_ui.netGainLoss')}</p>
                         <p className={`text-2xl font-black font-mono ${summary.netGainLoss >= 0 ? 'text-emerald-400' : 'text-rose-400'
                             }`}>
                             {summary.netGainLoss >= 0 ? '+' : ''}${(summary.netGainLoss / 100).toFixed(2)}
@@ -212,11 +215,13 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
             {/* By Method Summary */}
             <Card className="bg-slate-900 border-slate-800">
                 <CardContent className="p-6">
-                    <h3 className="text-lg font-black text-white mb-4">Disposals by Method</h3>
+                    <h3 className="text-lg font-black text-white mb-4">{t('assets.reports_ui.byMethod')}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {Object.entries(summary.byMethod).map(([method, count]) => (
                             <div key={method} className="p-4 bg-slate-950 rounded-lg border border-slate-800">
-                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">{method.replace('_', ' ')}</p>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">
+                                    {t(`assets.disposalForm.methods.${method.toLowerCase()}`)}
+                                </p>
                                 <p className="text-2xl font-black text-white">{count}</p>
                             </div>
                         ))}
@@ -232,20 +237,22 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-slate-800 bg-slate-950">
-                                        <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">Date</th>
-                                        <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">Method</th>
-                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Original Cost</th>
-                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Acc. Dep.</th>
-                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">NBV</th>
-                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Proceeds</th>
-                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Gain/Loss</th>
+                                        <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('common.date')}</th>
+                                        <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.method')}</th>
+                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.cost')}</th>
+                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.accDep')}</th>
+                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.nbv')}</th>
+                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.proceeds')}</th>
+                                        <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.gainLoss')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {disposals.map((disposal) => (
                                         <tr key={disposal.id} className="border-b border-slate-800 hover:bg-slate-800/30">
                                             <td className="py-3 px-4 text-sm text-white">{disposal.disposal_date}</td>
-                                            <td className="py-3 px-4 text-sm text-slate-400">{disposal.disposal_method}</td>
+                                            <td className="py-3 px-4 text-sm text-slate-400">
+                                                {t(`assets.disposalForm.methods.${disposal.disposal_method.toLowerCase()}`)}
+                                            </td>
                                             <td className="py-3 px-4 text-sm text-right font-mono">
                                                 ${(disposal.original_cost / 100).toFixed(2)}
                                             </td>
@@ -268,7 +275,7 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                                 <tfoot>
                                     <tr className="border-t-2 border-slate-700 bg-slate-950">
                                         <td colSpan={5} className="py-4 px-4 text-sm font-black text-white">
-                                            TOTAL ({disposals.length} disposals)
+                                            {t('common.total')} ({t('assets.reports_ui.disposalCount', { count: disposals.length })})
                                         </td>
                                         <td className="py-4 px-4 text-sm text-right font-mono font-black text-white">
                                             ${(summary.totalProceeds / 100).toFixed(2)}
@@ -287,8 +294,8 @@ export const DisposalSummaryReport: React.FC<DisposalSummaryReportProps> = ({ db
                 <Card className="bg-slate-900 border-slate-800">
                     <CardContent className="p-12 text-center">
                         <TrendingDown className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                        <p className="text-slate-400 font-bold">No disposals recorded for {year}</p>
-                        <p className="text-xs text-slate-500 mt-2">Assets will appear here when disposed</p>
+                        <p className="text-slate-400 font-bold">{t('assets.reports_ui.noDisposals', { year })}</p>
+                        <p className="text-xs text-slate-500 mt-2">{t('assets.reports_ui.noDisposalsHint')}</p>
                     </CardContent>
                 </Card>
             )}

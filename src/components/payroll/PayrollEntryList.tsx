@@ -1,285 +1,197 @@
 import React, { useState, useEffect } from 'react';
 import {
     ArrowLeft,
-    User,
     DollarSign,
-    Download,
+    TrendingUp,
+    TrendingDown,
+    Users,
+    FileText,
     Eye,
-    Calculator,
-    FileText
+    Download,
+    Activity
 } from 'lucide-react';
-import {
-    getPayrollEntries,
-    getPayrollLineItems,
-    PayrollEntry,
-    PayrollLineItem
-} from '../../database/simple-db';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
+import type { PayrollEntry, PayrollLineItem, PayrollPeriod } from '@/database/modules/db-types';
+import { getPayrollEntries, getPayrollLineItems } from '@/database/modules/db-payroll';
+import { useLocale } from '@/i18n/useLocale';
 
 interface PayrollEntryListProps {
-    periodId: number;
+    period: PayrollPeriod;
     onBack: () => void;
+    onViewSlip?: (entry: PayrollEntry) => void;
 }
 
-export const PayrollEntryList: React.FC<PayrollEntryListProps> = ({ periodId, onBack }) => {
-    const [entries, setEntries] = useState<(PayrollEntry & { employee_name: string })[]>([]);
-    const [selectedEntry, setSelectedEntry] = useState<number | null>(null);
+export const PayrollEntryList: React.FC<PayrollEntryListProps> = ({ period, onBack, onViewSlip }) => {
+    const { t } = useLocale();
+    const [entries, setEntries] = useState<(PayrollEntry & { employee_name?: string })[]>([]);
+    const [selectedEntry, setSelectedEntry] = useState<PayrollEntry | null>(null);
     const [lineItems, setLineItems] = useState<PayrollLineItem[]>([]);
 
     useEffect(() => {
-        const data = getPayrollEntries(periodId);
-        setEntries(data);
-    }, [periodId]);
+        if (period?.id) {
+            const data = getPayrollEntries(period.id);
+            setEntries(data);
+        }
+    }, [period]);
 
-    const handleViewDetails = (entryId: number) => {
-        const items = getPayrollLineItems(entryId);
-        setLineItems(items);
-        setSelectedEntry(entryId);
+    const handleViewDetails = (entry: PayrollEntry) => {
+        setSelectedEntry(entry);
+        if (entry.id) {
+            setLineItems(getPayrollLineItems(entry.id));
+        }
     };
 
-    const totalGross = entries.reduce((sum, entry) => sum + entry.gross_amount, 0);
-    const totalDeductions = entries.reduce((sum, entry) => sum + entry.deductions_amount, 0);
-    const totalNet = entries.reduce((sum, entry) => sum + entry.net_amount, 0);
+    const formatCurrency = (value: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
-    if (selectedEntry) {
-        const entry = entries.find(e => e.id === selectedEntry);
-        if (!entry) return null;
-
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Button
-                        onClick={() => setSelectedEntry(null)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-slate-400 hover:text-white"
-                    >
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Lista
-                    </Button>
-                    <div>
-                        <h3 className="text-xl font-black text-white">Detalle de Nómina</h3>
-                        <p className="text-slate-500 text-sm">{entry.employee_name}</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="bg-slate-900 border-slate-800">
-                        <CardContent className="p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-emerald-500/10 rounded-xl">
-                                    <DollarSign className="w-5 h-5 text-emerald-400" />
-                                </div>
-                                <span className="text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full border border-emerald-400/20 uppercase">
-                                    Bruto
-                                </span>
-                            </div>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total Devengado</p>
-                            <h3 className="text-2xl font-black text-white tabular-nums">${entry.gross_amount.toLocaleString()}</h3>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-slate-900 border-slate-800">
-                        <CardContent className="p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-rose-500/10 rounded-xl">
-                                    <Calculator className="w-5 h-5 text-rose-400" />
-                                </div>
-                                <span className="text-[10px] font-black text-rose-400 bg-rose-400/10 px-2 py-1 rounded-full border border-rose-400/20 uppercase">
-                                    Deducciones
-                                </span>
-                            </div>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Impuestos y Retenciones</p>
-                            <h3 className="text-2xl font-black text-white tabular-nums">${entry.deductions_amount.toLocaleString()}</h3>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-slate-900 border-slate-800">
-                        <CardContent className="p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-2 bg-blue-500/10 rounded-xl">
-                                    <User className="w-5 h-5 text-blue-400" />
-                                </div>
-                                <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full border border-blue-400/20 uppercase">
-                                    Neto
-                                </span>
-                            </div>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">A Pagar</p>
-                            <h3 className="text-2xl font-black text-white tabular-nums">${entry.net_amount.toLocaleString()}</h3>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardHeader className="border-b border-slate-800">
-                        <CardTitle className="text-white text-lg font-bold">Desglose de Conceptos</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-950 text-slate-500 font-black uppercase tracking-widest text-[10px]">
-                                <tr>
-                                    <th className="px-6 py-4">Tipo</th>
-                                    <th className="px-6 py-4">Categoría</th>
-                                    <th className="px-6 py-4">Descripción</th>
-                                    <th className="px-6 py-4 text-right">Monto</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-800">
-                                {lineItems.map(item => (
-                                    <tr key={item.id} className="hover:bg-white/[0.02]">
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${item.type === 'earning' 
-                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                                                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                                            }`}>
-                                                {item.type === 'earning' ? 'Ingreso' : 'Deducción'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 font-semibold text-slate-400 capitalize">{item.category}</td>
-                                        <td className="px-6 py-4 text-white">{item.description}</td>
-                                        <td className="px-6 py-4 text-right font-mono font-bold text-white">
-                                            {item.type === 'earning' ? '+' : '-'}${item.amount.toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {lineItems.length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="px-6 py-8 text-center text-slate-600 italic">No hay conceptos registrados</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
+    const totalGross = entries.reduce((sum, e) => sum + e.gross_amount, 0);
+    const totalDeductions = entries.reduce((sum, e) => sum + e.deductions_amount, 0);
+    const totalNet = entries.reduce((sum, e) => sum + e.net_amount, 0);
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <Button
+        <div className="space-y-12 animate-in fade-in duration-700 pb-24 px-4 overflow-x-hidden">
+            {/* Header */}
+            <div className="flex items-center gap-4 border-b border-slate-800 pb-10">
+                <button
                     onClick={onBack}
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-400 hover:text-white"
+                    className="p-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-all active:scale-95"
                 >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Periodos
-                </Button>
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
                 <div>
-                    <h3 className="text-xl font-black text-white">Entradas de Nómina</h3>
-                    <p className="text-slate-500 text-sm">{entries.length} empleados procesados</p>
+                    <h1 className="text-3xl font-black text-white tracking-tighter uppercase">{t('payroll.entryList.payrollDetail')}</h1>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">
+                        {period.name} • {entries.length} {t('payroll.entryList.employeesProcessed')}
+                    </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-2 bg-emerald-500/10 rounded-xl">
-                                <DollarSign className="w-5 h-5 text-emerald-400" />
-                            </div>
-                            <span className="text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full border border-emerald-400/20 uppercase">
-                                Total Bruto
-                            </span>
-                        </div>
-                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Suma de Devengos</p>
-                        <h3 className="text-2xl font-black text-white tabular-nums">${totalGross.toLocaleString()}</h3>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-2 bg-rose-500/10 rounded-xl">
-                                <Calculator className="w-5 h-5 text-rose-400" />
-                            </div>
-                            <span className="text-[10px] font-black text-rose-400 bg-rose-400/10 px-2 py-1 rounded-full border border-rose-400/20 uppercase">
-                                Deducciones
-                            </span>
-                        </div>
-                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total Retenciones</p>
-                        <h3 className="text-2xl font-black text-white tabular-nums">${totalDeductions.toLocaleString()}</h3>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-slate-900 border-slate-800">
-                    <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-2 bg-blue-500/10 rounded-xl">
-                                <User className="w-5 h-5 text-blue-400" />
-                            </div>
-                            <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full border border-blue-400/20 uppercase">
-                                Total Neto
-                            </span>
-                        </div>
-                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">A Liquidar</p>
-                        <h3 className="text-2xl font-black text-white tabular-nums">${totalNet.toLocaleString()}</h3>
-                    </CardContent>
-                </Card>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px]"></div>
+                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full border border-emerald-400/20 uppercase">{t('payroll.entryList.totalEarned')}</span>
+                    <h3 className="text-3xl font-black text-white mt-4 tracking-tighter">{formatCurrency(totalGross)}</h3>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">{t('payroll.entryList.sumOfEarnings')}</p>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 blur-[50px]"></div>
+                    <span className="text-[10px] font-black text-rose-400 bg-rose-400/10 px-2 py-1 rounded-full border border-rose-400/20 uppercase">{t('payroll.entryList.taxesAndWithholdings')}</span>
+                    <h3 className="text-3xl font-black text-white mt-4 tracking-tighter">-{formatCurrency(totalDeductions)}</h3>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">{t('payroll.entryList.totalWithholdings')}</p>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[50px]"></div>
+                    <span className="text-[10px] font-black text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full border border-blue-400/20 uppercase">{t('payroll.entryList.toPay')}</span>
+                    <h3 className="text-3xl font-black text-white mt-4 tracking-tighter">{formatCurrency(totalNet)}</h3>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">{t('payroll.entryList.toSettle')}</p>
+                </div>
             </div>
 
-            <Card className="bg-slate-900 border-slate-800">
-                <CardHeader className="border-b border-slate-800">
-                    <CardTitle className="text-white text-lg font-bold">Lista de Empleados Procesados</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-slate-950 text-slate-500 font-black uppercase tracking-widest text-[10px]">
+            {/* Detail Panel */}
+            {selectedEntry && (
+                <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden animate-in slide-in-from-top-4 duration-300">
+                    <div className="px-10 py-6 border-b border-slate-800 flex items-center justify-between">
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('payroll.entryList.conceptBreakdown')}</h3>
+                        <div className="flex gap-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            <span>{t('payroll.entryList.totalGross')}: <span className="text-emerald-400">{formatCurrency(selectedEntry.gross_amount)}</span></span>
+                            <span>{t('payroll.entryList.totalNet')}: <span className="text-blue-400">{formatCurrency(selectedEntry.net_amount)}</span></span>
+                        </div>
+                    </div>
+                    <table className="w-full">
+                        <thead className="bg-slate-950">
                             <tr>
-                                <th className="px-6 py-4">Empleado</th>
-                                <th className="px-6 py-4 text-right">Bruto</th>
-                                <th className="px-6 py-4 text-right">Deducciones</th>
-                                <th className="px-6 py-4 text-right">Neto</th>
-                                <th className="px-6 py-4 text-center">Estado</th>
-                                <th className="px-6 py-4 text-center">Acciones</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.typeTh')}</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.category')}</th>
+                                <th className="px-6 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.description')}</th>
+                                <th className="px-6 py-3 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.amount')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800">
-                            {entries.map(entry => (
-                                <tr key={entry.id} className="hover:bg-white/[0.02]">
-                                    <td className="px-6 py-4">
-                                        <div className="font-bold text-white">{entry.employee_name}</div>
-                                        <div className="text-[10px] text-slate-500 uppercase">ID: {entry.employee_id}</div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-mono text-slate-300">${entry.gross_amount.toLocaleString()}</td>
-                                    <td className="px-6 py-4 text-right font-mono text-rose-400">-${entry.deductions_amount.toLocaleString()}</td>
-                                    <td className="px-6 py-4 text-right font-mono font-black text-emerald-400">${entry.net_amount.toLocaleString()}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${entry.status === 'paid' 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                                            : entry.status === 'verified'
-                                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                                        }`}>
-                                            {entry.status}
+                        <tbody className="divide-y divide-slate-800/40">
+                            {lineItems.map(item => (
+                                <tr key={item.id} className="hover:bg-white/[0.02]">
+                                    <td className="px-6 py-3">
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full border ${item.type === 'earning' ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' : 'text-rose-400 bg-rose-400/10 border-rose-400/20'}`}>
+                                            {item.type === 'earning' ? t('payroll.entryList.earning') : t('payroll.entryList.deduction')}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <div className="flex gap-2 justify-center">
-                                            <button
-                                                onClick={() => handleViewDetails(entry.id)}
-                                                className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
-                                                title="Ver Detalles"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </button>
-                                            <button className="p-2 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors" title="Descargar Comprobante">
-                                                <Download className="w-4 h-4" />
-                                            </button>
-                                        </div>
+                                    <td className="px-6 py-3 text-xs font-black text-slate-400">{item.category}</td>
+                                    <td className="px-6 py-3 text-sm font-black text-white">{item.description}</td>
+                                    <td className={`px-6 py-3 text-sm font-black text-right ${item.type === 'earning' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                        {item.type === 'deduction' ? '-' : ''}{formatCurrency(item.amount)}
                                     </td>
                                 </tr>
                             ))}
-                            {entries.length === 0 && (
+                            {lineItems.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-slate-600 italic">No hay entradas de nómina para este período</td>
+                                    <td colSpan={4} className="px-6 py-8 text-center text-slate-600 text-xs font-black uppercase tracking-widest">
+                                        {t('payroll.entryList.noConceptsRegistered')}
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
-                </CardContent>
-            </Card>
+                </div>
+            )}
+
+            {/* Entries Table */}
+            <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden">
+                <div className="px-10 py-6 border-b border-slate-800">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">{t('payroll.entryList.processedEmployeesList')}</h3>
+                </div>
+                <table className="w-full">
+                    <thead className="bg-slate-950 border-b border-slate-800">
+                        <tr>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.employeeTh')}</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.grossTh')}</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.deductionsTh')}</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.netTh')}</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.statusTh')}</th>
+                            <th className="px-6 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.entryList.actionsTh')}</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                        {entries.map(entry => (
+                            <tr key={entry.id} className="hover:bg-white/[0.02] transition-colors">
+                                <td className="px-6 py-4 text-sm font-black text-white">{entry.employee_name || `#${entry.employee_id}`}</td>
+                                <td className="px-6 py-4 text-sm font-black text-white text-right">{formatCurrency(entry.gross_amount)}</td>
+                                <td className="px-6 py-4 text-sm font-black text-rose-400 text-right">-{formatCurrency(entry.deductions_amount)}</td>
+                                <td className="px-6 py-4 text-sm font-black text-emerald-400 text-right">{formatCurrency(entry.net_amount)}</td>
+                                <td className="px-6 py-4 text-center">
+                                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full border border-emerald-400/20 uppercase">
+                                        {entry.status}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <button
+                                            onClick={() => handleViewDetails(entry)}
+                                            className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
+                                            title={t('payroll.entryList.viewDetails')}
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            className="p-2 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors"
+                                            title={t('payroll.entryList.downloadPaystub')}
+                                        >
+                                            <Download className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {entries.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-16 text-center text-slate-600 text-xs font-black uppercase tracking-widest">
+                                    {t('payroll.entryList.noEntriesForPeriod')}
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
+
+export default PayrollEntryList;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Zap, BarChart3, Star, Info, AlertTriangle, TrendingUp, Gem } from 'lucide-react';
-import { getARDCustomerSummary } from '../../database/simple-db';
+import { getARDCustomerSummary } from '@/database/modules/db-company';
 import { calculateCustomerQuality, QualityScore } from '../../modules/ard/ARDQualityScorer';
 import { ARDCustomerSummary } from '../../modules/ard/ARD.types';
 

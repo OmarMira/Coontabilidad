@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Tag, Percent, FileText } from 'lucide-react';
-import { ProductCategory, getProductCategories } from '../database/simple-db';
+import { XCircle, Tag, Percent, FileText, ShieldCheck, Sparkles, Cpu } from 'lucide-react';
+import type { ProductCategory } from '@/database/modules/db-types';
+import { getProductCategories } from '@/database/modules/db-products';
 
 interface ProductCategoryFormProps {
   onSubmit: (categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>) => void;
@@ -30,7 +31,7 @@ export const ProductCategoryForm: React.FC<ProductCategoryFormProps> = ({
     // Cargar categorías existentes para el selector de categoría padre
     const allCategories = getProductCategories();
     // Filtrar la categoría actual si estamos editando para evitar referencias circulares
-    const availableCategories = isEditing 
+    const availableCategories = isEditing
       ? allCategories.filter(cat => cat.id !== initialData?.id)
       : allCategories;
     setCategories(availableCategories);
@@ -53,7 +54,7 @@ export const ProductCategoryForm: React.FC<ProductCategoryFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -63,7 +64,7 @@ export const ProductCategoryForm: React.FC<ProductCategoryFormProps> = ({
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -75,7 +76,7 @@ export const ProductCategoryForm: React.FC<ProductCategoryFormProps> = ({
     const buildHierarchy = (parentId: number | undefined = undefined, level: number = 0): any[] => {
       const children = categories.filter(cat => cat.parent_id === parentId);
       const result: any[] = [];
-      
+
       children.forEach(cat => {
         result.push({
           ...cat,
@@ -84,7 +85,7 @@ export const ProductCategoryForm: React.FC<ProductCategoryFormProps> = ({
         });
         result.push(...buildHierarchy(cat.id, level + 1));
       });
-      
+
       return result;
     };
 
@@ -94,162 +95,134 @@ export const ProductCategoryForm: React.FC<ProductCategoryFormProps> = ({
   const hierarchicalCategories = getHierarchicalCategories();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white/10 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <div>
-            <h2 className="text-xl font-semibold text-white">
-              {isEditing ? 'Editar Categoría' : 'Nueva Categoría'}
-            </h2>
-            <p className="text-slate-500 text-sm">
-              {isEditing ? 'Modifica la información de la categoría' : 'Agrega una nueva categoría de productos'}
-            </p>
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-6 overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col relative animate-in zoom-in duration-300">
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 blur-[120px] pointer-events-none"></div>
+
+        <header className="flex items-center justify-between p-10 border-b border-slate-800/50 flex-shrink-0 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="text-blue-500">
+              {isEditing ? <Cpu className="w-8 h-8" /> : <Sparkles className="w-8 h-8" />}
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">
+                {isEditing ? 'Editar Categoría' : 'Nueva Categoría'}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Clasificación de Activos v1.0
+              </p>
+            </div>
           </div>
-          <button
-            onClick={onCancel}
-            className="text-slate-500 hover:text-white transition-colors"
-          >
-            <X className="w-6 h-6" />
+          <button onClick={onCancel} className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95">
+            <XCircle className="w-6 h-6" />
           </button>
-        </div>
+        </header>
 
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-6">
-              {/* Nombre */}
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Nombre de la Categoría *
-                </label>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2 bg-white/5 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.name ? 'border-red-500' : 'border-white/10'
-                    }`}
-                    placeholder="Ej: Electrónicos, Servicios de Consultoría"
-                  />
-                </div>
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-                )}
-              </div>
-
-              {/* Categoría Padre */}
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Categoría Padre (opcional)
-                </label>
-                <select
-                  value={formData.parent_id || ''}
-                  onChange={(e) => handleInputChange('parent_id', e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Sin categoría padre (categoría principal)</option>
-                  {hierarchicalCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.displayName}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-slate-500">
-                  Selecciona una categoría padre para crear una subcategoría
-                </p>
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Descripción
-                </label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-3 text-slate-500 w-4 h-4" />
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    rows={3}
-                    className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Descripción detallada de la categoría"
-                  />
-                </div>
-              </div>
-
-              {/* Tasa de Impuesto por Defecto */}
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">
-                  Tasa de Impuesto por Defecto (%)
-                </label>
-                <div className="relative">
-                  <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 w-4 h-4" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formData.tax_rate}
-                    onChange={(e) => handleInputChange('tax_rate', parseFloat(e.target.value) || 0)}
-                    className={`w-full pl-10 pr-4 py-2 bg-white/5 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.tax_rate ? 'border-red-500' : 'border-white/10'
-                    }`}
-                    placeholder="0.00"
-                  />
-                </div>
-                {errors.tax_rate && (
-                  <p className="mt-1 text-sm text-red-400">{errors.tax_rate}</p>
-                )}
-                <p className="mt-1 text-xs text-slate-500">
-                  Tasa de impuesto que se aplicará por defecto a los productos de esta categoría. 
-                  Dejar en 0 para usar la tasa estándar de Florida.
-                </p>
-              </div>
-
-              {/* Estado activo */}
-              <div className="flex items-center">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+            {/* Nombre */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                <Tag className={`w-3.5 h-3.5 ${errors.name ? 'text-rose-500' : 'text-blue-500'}`} /> Nombre de la Categoría *
+              </label>
+              <div className="relative group/input">
                 <input
-                  type="checkbox"
-                  id="active"
-                  checked={formData.active}
-                  onChange={(e) => handleInputChange('active', e.target.checked)}
-                  className="mr-2"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className={`w-full bg-slate-950/50 text-white px-8 py-6 rounded-[2.5rem] border transition-all font-bold uppercase tracking-widest text-[9px] placeholder:text-slate-800 focus:outline-none ${errors.name ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800/50 focus:border-blue-500/50 focus:shadow-[0_0_25px_rgba(59,130,246,0.1)] group-hover/input:border-slate-700'
+                    }`}
+                  placeholder="Ej: Electrónicos, Servicios de Consultoría"
                 />
-                <label htmlFor="active" className="text-white">
-                  Categoría activa (visible en el sistema)
-                </label>
+                {errors.name && <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-3 ml-2 animate-bounce">{errors.name}</p>}
               </div>
+            </div>
 
-              {/* Información adicional */}
-              <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                <h4 className="text-blue-300 font-medium mb-2">💡 Consejos para Categorías</h4>
-                <ul className="text-blue-200 text-sm space-y-1">
-                  <li>• Usa nombres descriptivos y específicos</li>
-                  <li>• Las subcategorías heredan propiedades de la categoría padre</li>
-                  <li>• La tasa de impuesto se puede sobrescribir a nivel de producto</li>
-                  <li>• Las categorías inactivas no aparecen en los formularios de productos</li>
-                </ul>
+            {/* Categoría Padre */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                Categoría Padre (opcional)
+              </label>
+              <select
+                value={formData.parent_id || ''}
+                onChange={(e) => handleInputChange('parent_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                className="w-full bg-slate-950/50 text-white px-6 py-4 rounded-2xl border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-bold uppercase tracking-widest text-[9px] h-[58px]"
+              >
+                <option value="">Sin categoría padre (categoría principal)</option>
+                {hierarchicalCategories.map((category) => (
+                  <option key={category.id} value={category.id} style={{ color: 'black' }}>
+                    {category.displayName.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Descripción */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                <FileText className="w-3.5 h-3.5 text-blue-500" /> Descripción
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                rows={3}
+                className="w-full bg-slate-950/50 text-white px-8 py-6 rounded-[2rem] border border-slate-800/50 focus:border-blue-500/50 focus:outline-none font-medium text-sm placeholder:text-slate-800"
+                placeholder="Descripción detallada de la categoría"
+              />
+            </div>
+
+            {/* Tasa de Impuesto */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 px-1">
+                <Percent className={`w-3.5 h-3.5 ${errors.tax_rate ? 'text-rose-500' : 'text-blue-500'}`} /> Tasa de Impuesto por Defecto (%)
+              </label>
+              <div className="relative group/input">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={formData.tax_rate}
+                  onChange={(e) => handleInputChange('tax_rate', parseFloat(e.target.value) || 0)}
+                  className={`w-full bg-slate-950/50 text-white px-8 py-6 rounded-[2.5rem] border transition-all font-bold uppercase tracking-widest text-[10px] placeholder:text-slate-800 focus:outline-none ${errors.tax_rate ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.1)]' : 'border-slate-800/50 focus:border-blue-500/50 focus:shadow-[0_0_25px_rgba(59,130,246,0.1)] group-hover/input:border-slate-700'
+                    }`}
+                  placeholder="0.00"
+                />
+                {errors.tax_rate && <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-3 ml-2 animate-bounce">{errors.tax_rate}</p>}
               </div>
+            </div>
+
+            {/* Estado activo */}
+            <div className="flex items-center gap-4 p-8 bg-slate-950 border border-slate-800 rounded-3xl">
+              <input
+                type="checkbox"
+                id="active"
+                checked={formData.active}
+                onChange={(e) => handleInputChange('active', e.target.checked)}
+                className="w-5 h-5 rounded border-slate-800 bg-slate-900 text-blue-600 focus:ring-blue-500/20"
+              />
+              <label htmlFor="active" className="text-xs font-black text-white uppercase tracking-widest cursor-pointer">
+                Categoría activa (visible en el sistema)
+              </label>
             </div>
           </div>
 
-          {/* Footer con botones */}
-          <div className="flex items-center justify-end space-x-4 p-6 border-t border-white/10">
+          <footer className="p-10 border-t border-slate-800 bg-slate-950/50 relative z-10 flex items-center justify-between transition-all">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 text-slate-500 hover:text-white transition-colors"
+              className="px-8 py-4 text-slate-500 hover:text-white transition-colors font-bold uppercase tracking-widest text-[10px] hover:bg-slate-900 rounded-2xl"
             >
-              Cancelar
+              Protocolo :: Abortar
             </button>
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-12 py-5 rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-blue-900/40 hover:-translate-y-1 active:scale-95"
             >
-              {isEditing ? 'Actualizar Categoría' : 'Crear Categoría'}
+              {isEditing ? <Cpu className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+              {isEditing ? 'Confirmar Sincronización' : 'Ejecutar Alta'}
             </button>
-          </div>
+          </footer>
         </form>
       </div>
     </div>

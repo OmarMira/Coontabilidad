@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import {
   Shield,
@@ -19,10 +20,11 @@ import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useLocale } from '../i18n/useLocale';
 
-import { AuditService } from '../services/AuditService';
+import { AuditChainService as AuditService } from '../core/audit/AuditChainService';
 import { TaxService } from '../services/TaxService';
-import { DatabaseService } from '../database/DatabaseService';
-import { getMonthlyFinancialSummary, MonthlySummary } from '../database/simple-db';
+import { DatabaseService } from '@/database/DatabaseService';
+import type { MonthlySummary } from '@/database/modules/db-types';
+import { getMonthlyFinancialSummary } from '@/database/modules/db-payroll';
 import { DraftProposalService } from '../services/DraftProposalService';
 
 import { ComplianceHistory } from './reports/ComplianceHistory';
@@ -88,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         const summary = await TaxService.getTaxLiabilitySummary();
         setRealTaxLiability(summary.totalAccrued);
         setPendingTaxCount(summary.pendingCount);
-      } catch (e) { console.error(e); }
+      } catch (e) { logger.error('Dashboard', 'error', 'operation_failed', e); }
     };
     fetchTax();
 
@@ -102,7 +104,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
         const proposals = await DraftProposalService.getPendingProposals();
         setAiProposalCount(proposals.length);
       } catch (e) {
-        console.error('Error fetching AI proposals:', e);
+        logger.error('Dashboard', 'error', 'Error fetching AI proposals:', e);
       }
     };
     fetchAIProposals();
@@ -350,11 +352,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, onNavigate, invoice
               <button
                 key={action.id}
                 onClick={() => onNavigate(action.id)}
-                className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2.5xl hover:bg-white/10 hover:border-white/10 transition-all duration-300 group"
+                className="w-full flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-white/10 transition-all duration-300 group active:scale-[0.98]"
               >
                 <div className="flex items-center gap-5">
-                  <div className={`p-3 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:bg-${action.color}-500/10`}>
-                    <action.icon className={`w-5 h-5 text-gray-400 group-hover:text-${action.color}-400 transition-colors`} />
+                  <div className={`p-3 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:bg-white/5`}>
+                    <action.icon className={`w-5 h-5 text-gray-400 group-hover:text-white transition-colors`} />
                   </div>
                   <span className="text-sm font-bold text-gray-200 tracking-tight group-hover:text-white transition-colors">{action.label}</span>
                 </div>

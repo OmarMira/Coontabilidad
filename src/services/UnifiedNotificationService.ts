@@ -1,5 +1,6 @@
-// UnifiedNotificationService.ts - Sistema de notificaciones cruzadas entre módulos
-import { db } from '../database/simple-db';
+﻿import { logger } from '../core/logging/SystemLogger';
+// UnifiedNotificationService.ts - Sistema de notificaciones cruzadas entre mÃ³dulos
+import { db } from '@/database/modules/db-core';
 
 export interface SystemNotification {
   id: string;
@@ -28,7 +29,7 @@ export class UnifiedNotificationService {
   }
 
   /**
-   * Obtiene todas las notificaciones críticas del sistema
+   * Obtiene todas las notificaciones crÃ­ticas del sistema
    */
   async getAllNotifications(): Promise<SystemNotification[]> {
     this.notifications = [];
@@ -83,7 +84,7 @@ export class UnifiedNotificationService {
         });
       }
 
-      // Productos sin movimiento en 30 días
+      // Productos sin movimiento en 30 dÃ­as
       const staleProductsRes = db.exec(`
         SELECT p.name, MAX(im.movement_date) as last_movement
         FROM products p
@@ -99,25 +100,25 @@ export class UnifiedNotificationService {
           type: 'info',
           module: 'inventory',
           title: `Productos sin Movimiento`,
-          message: `${staleProductsRes[0].values.length} productos sin actividad en 30+ días`,
+          message: `${staleProductsRes[0].values.length} productos sin actividad en 30+ dÃ­as`,
           action: '/inventory-reports',
           actionLabel: 'Ver Reporte',
           priority: 2
         });
       }
     } catch (error) {
-      console.error('Error checking inventory alerts:', error);
+      logger.error('UnifiedNotificationService', 'check_inventory_alerts', 'Error checking inventory alerts', error);
     }
   }
 
   /**
-   * Recordatorios de NÓMINA
+   * Recordatorios de NÃ“MINA
    */
   private async checkPayrollDueDates(): Promise<void> {
     if (!db) return;
 
     try {
-      // Períodos de nómina pendientes
+      // PerÃ­odos de nÃ³mina pendientes
       const duePeriods = db.exec(`
         SELECT name, pay_date, status
         FROM payroll_periods
@@ -133,16 +134,16 @@ export class UnifiedNotificationService {
           this.addNotification({
             type: daysLeft <= 1 ? 'urgent' : 'warning',
             module: 'payroll',
-            title: `Nómina Pendiente: ${row[0]}`,
-            message: `Vence en ${daysLeft} día${daysLeft !== 1 ? 's' : ''} - ${row[1]}`,
+            title: `NÃ³mina Pendiente: ${row[0]}`,
+            message: `Vence en ${daysLeft} dÃ­a${daysLeft !== 1 ? 's' : ''} - ${row[1]}`,
             action: '/payroll-process',
-            actionLabel: 'Procesar Nómina',
+            actionLabel: 'Procesar NÃ³mina',
             priority: daysLeft <= 1 ? 5 : 4
           });
         });
       }
 
-      // Empleados sin nómina procesada en el mes actual
+      // Empleados sin nÃ³mina procesada en el mes actual
       const unpaidEmployees = db.exec(`
         SELECT COUNT(DISTINCT e.id) as count
         FROM employees e
@@ -160,7 +161,7 @@ export class UnifiedNotificationService {
         this.addNotification({
           type: 'warning',
           module: 'payroll',
-          title: `Empleados sin Nómina`,
+          title: `Empleados sin NÃ³mina`,
           message: `${count} empleado${count !== 1 ? 's' : ''} sin pago este mes`,
           action: '/employee-mgr',
           actionLabel: 'Ver Empleados',
@@ -168,7 +169,7 @@ export class UnifiedNotificationService {
         });
       }
     } catch (error) {
-      console.error('Error checking payroll alerts:', error);
+      logger.error('UnifiedNotificationService', 'check_payroll_alerts', 'Error checking payroll alerts', error);
     }
   }
 
@@ -179,7 +180,7 @@ export class UnifiedNotificationService {
     if (!db) return;
 
     try {
-      // Cuentas sin conciliar en 30+ días
+      // Cuentas sin conciliar en 30+ dÃ­as
       const overdueAccounts = db.exec(`
         SELECT ba.account_name, ba.account_number, MAX(rs.statement_date) as last_reconciliation
         FROM bank_accounts ba
@@ -196,8 +197,8 @@ export class UnifiedNotificationService {
           this.addNotification({
             type: 'warning',
             module: 'banking',
-            title: `Conciliación Atrasada: ${row[0]}`,
-            message: `Última conciliación: ${lastDate}`,
+            title: `ConciliaciÃ³n Atrasada: ${row[0]}`,
+            message: `Ãšltima conciliaciÃ³n: ${lastDate}`,
             action: '/bank-reconciliation',
             actionLabel: 'Conciliar Ahora',
             priority: 3
@@ -219,25 +220,25 @@ export class UnifiedNotificationService {
           type: 'info',
           module: 'banking',
           title: `Transacciones sin Conciliar`,
-          message: `${count} transacción${count !== 1 ? 'es' : ''} pendiente${count !== 1 ? 's' : ''} de conciliación`,
+          message: `${count} transacciÃ³n${count !== 1 ? 'es' : ''} pendiente${count !== 1 ? 's' : ''} de conciliaciÃ³n`,
           action: '/bank-reconciliation',
           actionLabel: 'Ver Transacciones',
           priority: 2
         });
       }
     } catch (error) {
-      console.error('Error checking reconciliation alerts:', error);
+      logger.error('UnifiedNotificationService', 'check_reconciliation_alerts', 'Error checking reconciliation alerts', error);
     }
   }
 
   /**
-   * Fechas límite de impuestos
+   * Fechas lÃ­mite de impuestos
    */
   private async checkTaxFilingDeadlines(): Promise<void> {
     const today = new Date();
     const currentYear = today.getFullYear();
 
-    // DR-15 mensual (día 20 de cada mes)
+    // DR-15 mensual (dÃ­a 20 de cada mes)
     const dr15Deadline = new Date(currentYear, today.getMonth(), 20);
     if (today > dr15Deadline) {
       dr15Deadline.setMonth(dr15Deadline.getMonth() + 1);
@@ -249,7 +250,7 @@ export class UnifiedNotificationService {
         type: daysUntilDR15 <= 2 ? 'urgent' : 'warning',
         module: 'tax',
         title: `Vencimiento DR-15`,
-        message: `Declaración de impuestos vence en ${daysUntilDR15} día${daysUntilDR15 !== 1 ? 's' : ''}`,
+        message: `DeclaraciÃ³n de impuestos vence en ${daysUntilDR15} dÃ­a${daysUntilDR15 !== 1 ? 's' : ''}`,
         action: '/florida-dr15',
         actionLabel: 'Preparar DR-15',
         priority: daysUntilDR15 <= 2 ? 5 : 4
@@ -268,9 +269,9 @@ export class UnifiedNotificationService {
         type: daysUntilSunbiz <= 7 ? 'urgent' : 'warning',
         module: 'tax',
         title: `Reporte Anual Sunbiz`,
-        message: `Vence en ${daysUntilSunbiz} días - 1 de Mayo`,
+        message: `Vence en ${daysUntilSunbiz} dÃ­as - 1 de Mayo`,
         action: '/tax-config',
-        actionLabel: 'Ver Configuración',
+        actionLabel: 'Ver ConfiguraciÃ³n',
         priority: daysUntilSunbiz <= 7 ? 5 : 3
       });
     }
@@ -295,14 +296,14 @@ export class UnifiedNotificationService {
           type: 'urgent',
           module: 'system',
           title: `Problema de Integridad`,
-          message: `Algunas tablas del sistema no están disponibles`,
+          message: `Algunas tablas del sistema no estÃ¡n disponibles`,
           action: '/system-logs',
           actionLabel: 'Ver Logs',
           priority: 5
         });
       }
 
-      // Verificar tamaño de base de datos
+      // Verificar tamaÃ±o de base de datos
       const dbSize = db.exec(`SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()`);
       if (dbSize.length > 0) {
         const sizeInMB = dbSize[0].values[0][0] / (1024 * 1024);
@@ -311,7 +312,7 @@ export class UnifiedNotificationService {
             type: 'info',
             module: 'system',
             title: `Base de Datos Grande`,
-            message: `Tamaño actual: ${sizeInMB.toFixed(2)}MB - Considere optimización`,
+            message: `TamaÃ±o actual: ${sizeInMB.toFixed(2)}MB - Considere optimizaciÃ³n`,
             action: '/backups',
             actionLabel: 'Gestionar Backups',
             priority: 2
@@ -319,12 +320,12 @@ export class UnifiedNotificationService {
         }
       }
     } catch (error) {
-      console.error('Error checking system health:', error);
+      logger.error('UnifiedNotificationService', 'check_system_health', 'Error checking system health', error);
     }
   }
 
   /**
-   * Agregar notificación a la lista
+   * Agregar notificaciÃ³n a la lista
    */
   private addNotification(notification: Omit<SystemNotification, 'id' | 'timestamp'>): void {
     this.notifications.push({
@@ -335,7 +336,7 @@ export class UnifiedNotificationService {
   }
 
   /**
-   * Obtener notificaciones por módulo
+   * Obtener notificaciones por mÃ³dulo
    */
   async getNotificationsByModule(module: SystemNotification['module']): Promise<SystemNotification[]> {
     const all = await this.getAllNotifications();
@@ -351,7 +352,7 @@ export class UnifiedNotificationService {
   }
 
   /**
-   * Marcar notificación como leída
+   * Marcar notificaciÃ³n como leÃ­da
    */
   dismissNotification(id: string): void {
     const notification = this.notifications.find(n => n.id === id);
@@ -386,3 +387,4 @@ export class UnifiedNotificationService {
 
 // Exportar instancia singleton
 export const notificationService = UnifiedNotificationService.getInstance();
+

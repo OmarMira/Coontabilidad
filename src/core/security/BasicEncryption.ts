@@ -1,10 +1,11 @@
-// Cifrado básico con Web Crypto API
+﻿import { logger } from '../../core/logging/SystemLogger';
+// Cifrado bÃ¡sico con Web Crypto API
 export class BasicEncryption {
   private static readonly ALGORITHM = 'AES-GCM';
   private static readonly KEY_LENGTH = 256;
   private static readonly IV_LENGTH = 12;
 
-  // Generar clave de cifrado desde contraseña
+  // Generar clave de cifrado desde contraseÃ±a
   static async deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
     const encoder = new TextEncoder();
     const keyMaterial = await crypto.subtle.importKey(
@@ -88,7 +89,7 @@ export class BasicEncryption {
         iv
       };
     } catch (error) {
-      console.error('Encryption failed:', error);
+      logger.error('BasicEncryption', 'error', 'Encryption failed:', error);
       throw new Error('Failed to encrypt data');
     }
   }
@@ -131,12 +132,12 @@ export class BasicEncryption {
 
       return new Uint8Array(decrypted);
     } catch (error) {
-      console.error('Decryption failed:', error);
+      logger.error('BasicEncryption', 'error', 'Decryption failed:', error);
       throw new Error('Failed to decrypt data - invalid password or corrupted data');
     }
   }
 
-  // Verificar si Web Crypto API está disponible
+  // Verificar si Web Crypto API estÃ¡ disponible
   static isSupported(): boolean {
     return !!(
       typeof window !== 'undefined' &&
@@ -146,7 +147,7 @@ export class BasicEncryption {
     );
   }
 
-  // Generar hash para verificación de integridad
+  // Generar hash para verificaciÃ³n de integridad
   static async hash(data: Uint8Array): Promise<string> {
     if (!this.isSupported()) {
       throw new Error('Web Crypto API not supported');
@@ -167,7 +168,7 @@ export class BasicEncryption {
   // Comprimir datos para localStorage
   static async compressData(data: Uint8Array): Promise<string> {
     try {
-      // Usar CompressionStream si está disponible
+      // Usar CompressionStream si estÃ¡ disponible
       if (typeof window !== 'undefined' && 'CompressionStream' in window) {
         const stream = new CompressionStream('gzip');
         const writer = stream.writable.getWriter();
@@ -207,7 +208,7 @@ export class BasicEncryption {
         return btoa(Array.from(compressed).map(byte => String.fromCharCode(byte)).join(''));
       }
     } catch (error) {
-      console.warn('Compression failed, using base64:', error);
+      logger.warn('BasicEncryption', 'warn', 'Compression failed, using base64:', error);
     }
 
     // Fallback: solo base64
@@ -240,7 +241,7 @@ export class BasicEncryption {
     return { salt, iv, encrypted };
   }
 
-  // Descifrar datos combinados (convenio para backups sin contraseña de usuario)
+  // Descifrar datos combinados (convenio para backups sin contraseÃ±a de usuario)
   static async decryptCombined(
     combined: Uint8Array,
     password: string = ''

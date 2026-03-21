@@ -48,7 +48,7 @@ export const HealthCheckPage: React.FC = () => {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
                 <div className="max-w-md bg-white rounded-lg shadow-lg p-6">
                     <XCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-                    <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">{t('common.error')}</h1>
+                    <h1 className="text-2xl font-black text-white text-center mb-2 tracking-tighter uppercase">{t('common.error')}</h1>
                     <p className="text-gray-600 text-center">{error}</p>
                 </div>
             </div>
@@ -83,7 +83,7 @@ export const HealthCheckPage: React.FC = () => {
                     <div className="flex items-center gap-4">
                         {getStatusIcon(health.status)}
                         <div className="flex-1">
-                            <h1 className="text-3xl font-bold capitalize">{t(`systemStatus.status.${health.status}`)}</h1>
+                            <h1 className="text-3xl font-black capitalize tracking-tighter uppercase text-white">{t(`systemStatus.status.${health.status}`)}</h1>
                             <p className="text-sm opacity-80 mt-1">
                                 Iron Core v{health.version}
                             </p>
@@ -101,26 +101,26 @@ export const HealthCheckPage: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white rounded-lg p-4 shadow">
                         <p className="text-sm text-gray-600">{t('systemStatus.totalChecksLabel')}</p>
-                        <p className="text-2xl font-bold text-gray-900">{health.summary.total}</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">{health.summary.total}</p>
                     </div>
-                    <div className="bg-white rounded-lg p-4 shadow">
-                        <p className="text-sm text-gray-600">{t('systemStatus.passed')}</p>
-                        <p className="text-2xl font-bold text-green-600">{health.summary.passed}</p>
+                    <div className="bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10">
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('systemStatus.passed')}</p>
+                        <p className="text-2xl font-black text-emerald-600 tracking-tighter">{health.summary.passed}</p>
                     </div>
-                    <div className="bg-white rounded-lg p-4 shadow">
-                        <p className="text-sm text-gray-600">{t('systemStatus.failed')}</p>
-                        <p className="text-2xl font-bold text-red-600">{health.summary.failed}</p>
+                    <div className="bg-red-500/5 p-4 rounded-2xl border border-red-500/10">
+                        <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">{t('systemStatus.failed')}</p>
+                        <p className="text-2xl font-black text-red-600 tracking-tighter">{health.summary.failed}</p>
                     </div>
-                    <div className="bg-white rounded-lg p-4 shadow">
-                        <p className="text-sm text-gray-600">{t('systemStatus.warnings')}</p>
-                        <p className="text-2xl font-bold text-yellow-600">{health.summary.warnings}</p>
+                    <div className="bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10">
+                        <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">{t('systemStatus.warnings')}</p>
+                        <p className="text-2xl font-black text-yellow-600 tracking-tighter">{health.summary.warnings}</p>
                     </div>
                 </div>
 
                 {/* Checks Detail */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-900">{t('systemStatus.verificationDetails')}</h2>
+                        <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tighter uppercase">{t('systemStatus.verificationDetails')}</h2>
                     </div>
                     <div className="divide-y divide-gray-200">
                         {health.checks.map((check) => (

@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -6,15 +7,16 @@ import {
   ScanSearch, HardDrive, UserCheck, User as UserIcon, Lock, Bot, Activity,
   HelpCircle, ChevronDown, ChevronRight, Database, CreditCard, Shield,
   History, PieChart, ShieldCheck, Clock, DollarSign, Zap, Cpu, Scan, Landmark,
-  CheckCircle
 } from 'lucide-react';
-import { LanguageSwitcher } from './LanguageSwitcher';
-import { saveDatabase } from '../database/simple-db';
+// import { LanguageSwitcher } from './LanguageSwitcher';
+import { db } from '@/database/modules/db-core';
+import { SQLiteEngine } from '../core/database/SQLiteEngine';
+import { useEffect } from 'react';
 
-import toast from 'react-hot-toast';
 
 
 import { useLocale } from '../i18n/useLocale';
+import { NAVIGATION_CONFIG } from '../config/NavigationConfig';
 
 interface SidebarProps {
   currentSection: string;
@@ -23,8 +25,8 @@ interface SidebarProps {
 
 interface MenuItem {
   id: string;
-  label: string;
-  icon: React.ComponentType<any>;
+  labelKey: string;
+  icon: any;
   children?: MenuItem[];
   badge?: string;
   isNew?: boolean;
@@ -35,136 +37,42 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
   const { t } = useLocale();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [quarantineCount, setQuarantineCount] = useState<number>(0);
 
-  const menuItems: MenuItem[] = [
-    {
-      id: 'dashboard',
-      label: t('navigation.dashboard'),
-      icon: Home
-    },
-    {
-      id: 'archivo',
-      label: t('navigation.archive'),
-      icon: FileText,
-      children: [
-        { id: 'company-data', label: t('navigation.companyData'), icon: Building2 },
-        { id: 'admin-users', label: t('navigation.usersSecurity'), icon: UserCheck },
-        { id: 'role-manager', label: t('navigation.roleManager'), icon: Shield },
-        { id: 'audit-trail', label: t('navigation.auditTrail'), icon: History },
-        { id: 'banks', label: t('navigation.bankAccounts'), icon: Building2 },
-        { id: 'payment-methods', label: t('navigation.paymentMethods'), icon: CreditCard }
-      ]
-    },
-    {
-      id: 'cuentas-pagar',
-      label: t('navigation.accountsPayable'),
-      icon: Receipt,
-      children: [
-        { id: 'dashboard-suppliers', label: t('navigation.suppliersDashboard'), icon: Building2 },
-        { id: 'suppliers', label: t('navigation.suppliers'), icon: Building2 },
-        { id: 'bills', label: t('navigation.purchaseInvoices'), icon: FileText },
-        { id: 'supplier-payments', label: t('navigation.supplierPayments'), icon: CreditCard },
-        { id: 'purchase-orders', label: t('navigation.purchaseOrders'), icon: ShoppingCart },
-        { id: 'payable-reports', label: t('navigation.supplierReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'cuentas-cobrar',
-      label: t('navigation.accountsReceivable'),
-      icon: TrendingUp,
-      children: [
-        { id: 'dashboard-customers', label: t('navigation.customersDashboard'), icon: Users },
-        { id: 'ard-module', label: t('navigation.ardAnalysis'), icon: ScanSearch },
-        { id: 'customers', label: t('navigation.customers'), icon: Users },
-        { id: 'invoices', label: t('navigation.salesInvoices'), icon: FileText },
-        { id: 'customer-payments', label: t('navigation.customerPayments'), icon: CreditCard },
-        { id: 'quotes', label: t('navigation.quotes'), icon: FileText },
-        { id: 'receivable-reports', label: t('navigation.customerReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'libro-mayor',
-      label: t('navigation.accounting'),
-      icon: Calculator,
-      children: [
-        { id: 'dashboard-financial', label: t('navigation.financialDashboard'), icon: TrendingUp },
-        { id: 'reports-dashboard', label: t('navigation.reportsDashboard'), icon: BarChart3 },
-        { id: 'accounting-periods', label: t('navigation.closuresPeriods'), icon: Lock },
-        { id: 'ledger-hub', label: t('navigation.ledgerAuxiliaries'), icon: Database },
-        { id: 'chart-accounts', label: t('navigation.chartOfAccounts'), icon: FileText },
-        { id: 'journal-entries', label: t('navigation.journalEntries'), icon: FileText },
-        { id: 'bank-reconciliation', label: t('navigation.bankReconciliation'), icon: FileText },
-        { id: 'discrepancy-analysis', label: t('navigation.discrepancyAnalysis'), icon: BarChart3 },
-        { id: 'bank-smart-import', label: t('navigation.iaBankImport'), icon: Bot },
-        { id: 'general-ledger', label: t('navigation.generalLedger'), icon: FileText },
-        { id: 'trial-balance', label: t('navigation.trialBalance'), icon: BarChart3 },
-        { id: 'account-ledger', label: t('navigation.accountAuxiliaries'), icon: PieChart },
-        { id: 'balance-sheet', label: t('navigation.balanceSheet'), icon: ShieldCheck },
-        { id: 'income-statement', label: t('navigation.incomeStatement'), icon: TrendingUp },
-        { id: 'cash-flow', label: t('navigation.cashFlow'), icon: DollarSign },
-        { id: 'aging-report', label: t('navigation.agingReport'), icon: Clock },
-        { id: 'fixed-assets', label: t('navigation.assetManagement'), icon: Package },
-        { id: 'budgets', label: t('navigation.budgets'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'payroll',
-      label: t('navigation.payroll'),
-      icon: Users,
-      children: [
-        { id: 'dashboard-payroll', label: t('navigation.payrollDashboard'), icon: PieChart },
-        { id: 'employee-mgr', label: t('navigation.employeeManagement'), icon: UserCheck },
-        { id: 'payroll-process', label: t('navigation.processPayroll'), icon: Calculator },
-        { id: 'payroll-review', label: t('navigation.reviewPayroll'), icon: ShieldCheck },
-        { id: 'payroll-reports', label: t('navigation.payrollReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'inventario',
-      label: t('navigation.inventory'),
-      icon: Package,
-      children: [
-        { id: 'dashboard-inventory', label: t('navigation.inventoryDashboard'), icon: PieChart },
-        { id: 'products', label: t('navigation.productsServices'), icon: Package },
-        { id: 'inventory-movements', label: t('navigation.movements'), icon: TrendingUp },
-        { id: 'inventory-adjustments', label: t('navigation.inventoryAdjustments'), icon: Settings },
-        { id: 'inventory-reports', label: t('navigation.inventoryReports'), icon: BarChart3 },
-        { id: 'product-categories', label: t('navigation.categories'), icon: Package2 },
-        { id: 'locations', label: t('navigation.locations'), icon: MapPin }
-      ]
-    },
-    {
-      id: 'impuestos',
-      label: t('navigation.taxes'),
-      icon: Receipt,
-      children: [
-        { id: 'tax-config', label: t('navigation.taxConfig'), icon: Settings },
-        { id: 'florida-dr15', label: t('navigation.dr15Report'), icon: FileText },
-        { id: 'tax-calendar', label: t('navigation.taxCalendar'), icon: FileText },
-        { id: 'tax-rates', label: t('navigation.countyRates'), icon: MapPin },
-        { id: 'tax-reports', label: t('navigation.taxReports'), icon: BarChart3 }
-      ]
-    },
-    {
-      id: 'herramientas',
-      label: t('navigation.tools'),
-      icon: HelpCircle,
-      children: [
-        { id: 'accounting-diagnosis', label: t('navigation.accountingDiagnosis'), icon: Activity },
-        { id: 'journal-entry-test', label: t('navigation.journalEntryTest'), icon: FileText },
-        { id: 'backups', label: t('navigation.backupsRestoration'), icon: HardDrive },
-        { id: 'system-logs', label: t('navigation.systemLogs'), icon: Activity },
-        { id: 'auditoria', label: t('navigation.transactionAudit'), icon: Search },
-        { id: 'verify', label: t('navigation.ironCoreVerify'), icon: Shield },
-        { id: 'help', label: t('navigation.helpCenter'), icon: HelpCircle }
-      ]
-    },
-    {
-      id: 'ai-assistant',
-      label: t('navigation.aiAssistant'),
-      icon: Bot
+  useEffect(() => {
+    const loadQuarantineCount = async () => {
+      try {
+        const { db } = await import('../database/modules/db-core');
+        if (!db) return;
+        const result = db.exec(
+          "SELECT COUNT(*) as count FROM transaction_states WHERE current_state IN ('HIGH_RISK_PERSONAL', 'PENDING_SUPERVISOR') AND is_verified = 0"
+        );
+        if (result?.[0]?.values?.[0]) {
+          setQuarantineCount(result[0].values[0][0] as number);
+        }
+      } catch {
+        // tabla no lista aÃºn â€” silencioso
+      }
+    };
+    loadQuarantineCount();
+    const interval = setInterval(loadQuarantineCount, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const menuItems: MenuItem[] = NAVIGATION_CONFIG.map(item => {
+    if (item.id === 'herramientas' && item.children) {
+      return {
+        ...item,
+        children: item.children.map(child =>
+          child.id === 'quarantine-panel'
+            ? { ...child, badge: quarantineCount > 0 ? String(quarantineCount) : undefined }
+            : child
+        )
+      };
     }
-  ];
+    return item;
+  });
+
 
   // Definir acceso por rol
   const hasAccess = (itemId: string): boolean => {
@@ -190,6 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       case 'libro-mayor':
       case 'impuestos':
       case 'bank-smart-import':
+      case 'classification-rules':
         return ['contador', 'auditor'].includes(role);
 
       case 'inventario':
@@ -197,8 +106,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       case 'fixed-assets-section':
         return ['contador', 'vendedor', 'comprador', 'auditor'].includes(role);
 
+      case 'system-audit':
+      case 'audit':
+        return role === 'admin';
+
+      case 'quarantine-panel':
+        return ['contador', 'auditor', 'admin'].includes(role);
+
       case 'herramientas':
-        return role === 'auditor';
+        return ['auditor', 'admin', 'contador'].includes(role);
 
       default:
         return false;
@@ -245,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
                 ? 'text-slate-500 hover:text-white mt-0 border-t border-slate-900/10 pt-1 font-bold'
                 : 'text-slate-400 hover:text-white hover:bg-slate-900/50'
             }
-            ${level > 0 ? 'text-lg font-bold' : 'text-lg font-black uppercase tracking-wider'}
+            ${level > 0 ? 'text-xs font-bold tracking-tight' : 'text-sm font-bold uppercase tracking-wider'}
           `}
         >
           {isActive && !hasChildren && (
@@ -260,12 +176,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
 
           {!isCollapsed && (
             <>
-              <span className={`flex-1 ${level === 0 ? 'text-lg font-black' : 'text-lg font-semibold'}`}>
-                {item.label}
+              <span className={`flex-1 ${level === 0 ? 'text-sm font-bold' : 'text-xs font-bold'}`}>
+                {t(item.labelKey)}
               </span>
 
               {item.badge && (
-                <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                <span className={`
+                  px-1.5 py-0.5 text-[8px] font-bold uppercase rounded-md border
+                  ${item.id === 'quarantine-panel'
+                    ? 'bg-red-500/20 text-red-400 border-red-500/40 animate-pulse'
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  }
+                `}>
                   {item.badge}
                 </span>
               )}
@@ -302,9 +224,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
           </div>
           {!isCollapsed && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-              <h1 className="text-white font-black text-xl tracking-tighter leading-none">AccountExpress</h1>
-              <p className="text-blue-500/70 text-[10px] uppercase font-black tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
-                <div className="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+              <h1 className="text-white font-bold text-xl tracking-tight leading-none">AccountExpress</h1>
+              <p className="text-blue-500/70 text-[10px] uppercase font-bold tracking-wider mt-1.5 flex items-center gap-1.5">
+                <span className="w-1 h-1 bg-blue-500 rounded-full animate-pulse inline-block"></span>
                 {t('common.systemVersion')}
               </p>
             </div>
@@ -319,54 +241,42 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
       </nav>
 
       <div className="p-4 border-t border-slate-900/50 mt-auto space-y-2">
-        {/* Manual Save Button - Iron Clad Persistence */}
-        <button
-          onClick={async () => {
-            const loadingToast = toast.loading(t('common.savingChanges'));
-            try {
-              await saveDatabase();
-              toast.success(t('common.dataSaved'), { id: loadingToast });
-            } catch (error) {
-              toast.error(t('common.saveError'), { id: loadingToast });
-            }
-          }}
-
-          className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
-            bg-slate-900/50 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 border-slate-800 hover:border-blue-500/30 shadow-inner`}
-          title={t('sidebar.forceSaveTooltip')}
-        >
-          <HardDrive className="w-4 h-4 group-hover:scale-110 transition-transform" />
-          {!isCollapsed && <span>{t('sidebar.saveLocal')}</span>}
-        </button>
-
-        {user && (
-
-          <button
-            onClick={() => onNavigate('my-profile')}
-            className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-bold transition-all border group uppercase text-xs
-              ${currentSection === 'my-profile'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/40'
-                : 'bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-white border-slate-800'
-              }`}
-          >
-            {user.picture ? (
-              <img src={user.picture} alt="Profile" className="w-5 h-5 rounded-full object-cover border border-white/20 group-hover:scale-110 transition-transform" />
-            ) : (
-              <UserIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            )}
-            {!isCollapsed && <span>{t('navigation.myProfile')}</span>}
-          </button>
+        {!isCollapsed && (
+          <div className="flex flex-col gap-2.5 pt-2 pb-4 border-b border-slate-900/30 mb-2 px-1">
+            <button
+              onClick={() => onNavigate('terms')}
+              className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'terms' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              TÃ©rminos
+            </button>
+            <button
+              onClick={() => onNavigate('privacy')}
+              className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'privacy' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Privacidad
+            </button>
+            <button
+              onClick={() => onNavigate('help')}
+              className={`text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2.5 ${currentSection === 'help' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Soporte
+            </button>
+          </div>
         )}
 
-        {/* Language Switcher */}
-        {!isCollapsed && <LanguageSwitcher variant="sidebar" />}
+        {/* Language Switcher deshabilitado por simplificaciÃ³n i18n */}
+        {/* {!isCollapsed && <LanguageSwitcher variant="sidebar" />} */}
+
 
         <button
           onClick={() => {
-            console.log('🚪 Logout initiated by user');
+            logger.info('Sidebar', 'info', 'ðŸšª Logout initiated by user');
             logout();
           }}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl font-bold transition-all border border-red-600/20 group uppercase text-xs tracking-widest"
         >
           <Lock className="w-4 h-4 group-hover:rotate-12 transition-transform" />
           {!isCollapsed && <span>{t('navigation.logout')}</span>}
@@ -386,3 +296,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentSection, onNavigate }) 
     </div>
   );
 };
+

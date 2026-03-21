@@ -87,6 +87,8 @@ opfs-cache/
 temp/
 tmp/
 .tmp/
+src/.translation_backups/
+src/.migration_backups/
 
 # ============================================
 # 💻 EDITORES E IDEs
@@ -321,3 +323,7 @@ sessions/
 #
 # Es mejor pecar de cauteloso que exponer datos sensibles
 # ============================================
+# Phase 8: Legacy and log directories
+.migration-logs/
+.logs/
+docs/legacy/

@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { glob } from 'fast-glob';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -128,7 +129,7 @@ export async function discoverModules(): Promise<DiscoveredItem[]> {
         setCache(cacheKey, modules);
         return modules;
     } catch (error) {
-        console.error('Error discovering modules:', error);
+        logger.error('discovery', 'discover_modules', 'Error discovering modules', error);
         return [];
     }
 }
@@ -167,7 +168,7 @@ export async function discoverComponents(): Promise<DiscoveredItem[]> {
         setCache(cacheKey, components);
         return components;
     } catch (error) {
-        console.error('Error discovering components:', error);
+        logger.error('discovery', 'discover_components', 'Error discovering components', error);
         return [];
     }
 }
@@ -206,7 +207,7 @@ export async function discoverServices(): Promise<DiscoveredItem[]> {
         setCache(cacheKey, services);
         return services;
     } catch (error) {
-        console.error('Error discovering services:', error);
+        logger.error('discovery', 'discover_services', 'Error discovering services', error);
         return [];
     }
 }
@@ -245,7 +246,7 @@ export async function discoverTypes(): Promise<DiscoveredItem[]> {
         setCache(cacheKey, types);
         return types;
     } catch (error) {
-        console.error('Error discovering types:', error);
+        logger.error('discovery', 'discover_types', 'Error discovering types', error);
         return [];
     }
 }
@@ -290,15 +291,15 @@ export async function getDatabaseSchema(): Promise<any> {
         // Add known tables from Account Express
         const knownTables = [
             'journal_entries',
-            'ledger_lines',
+            'journal_details',
             'chart_of_accounts',
             'invoices',
-            'invoice_items',
+            'invoice_lines',
             'customers',
-            'vendors',
+            'suppliers',
             'products',
-            'audit_events',
-            'system_config',
+            'audit_chain',
+            'company_data',
         ];
 
         for (const table of knownTables) {
@@ -310,7 +311,8 @@ export async function getDatabaseSchema(): Promise<any> {
         setCache(cacheKey, schema);
         return schema;
     } catch (error) {
-        console.error('Error getting database schema:', error);
+        logger.error('discovery', 'get_database_schema', 'Error getting database schema', error);
         return { tables: [], schemaFiles: [] };
     }
 }
+

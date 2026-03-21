@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Shield, CheckCircle, XCircle } from 'lucide-react';
 import UserService from '../../services/UserService';
@@ -26,7 +27,7 @@ export const UserList: React.FC = () => {
             const allUsers = UserService.getUsers();
             setUsers(allUsers);
         } catch (error) {
-            console.error('Error loading users:', error);
+            logger.error('UserList', 'error', 'Error loading users:', error);
         } finally {
             setLoading(false);
         }
@@ -80,7 +81,7 @@ export const UserList: React.FC = () => {
                         setEditingUser(null);
                         setShowForm(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg shadow-blue-900/50 hover:scale-105"
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/40 active:scale-95 flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
                     {t('userList.newUser')}
@@ -179,7 +180,7 @@ export const UserList: React.FC = () => {
                                                     setEditingUser(user);
                                                     setShowForm(true);
                                                 }}
-                                                className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"
+                                                className="p-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-xl transition-all active:scale-95"
                                                 title={t('userList.editUser')}
                                             >
                                                 <Edit className="w-4 h-4" />
@@ -187,7 +188,7 @@ export const UserList: React.FC = () => {
                                             {user.id !== currentUser?.id && user.is_active && (
                                                 <button
                                                     onClick={() => handleDeactivate(user.id)}
-                                                    className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
+                                                    className="p-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-xl transition-all active:scale-95"
                                                     title={t('userList.deactivateUser')}
                                                 >
                                                     <Trash2 className="w-4 h-4" />

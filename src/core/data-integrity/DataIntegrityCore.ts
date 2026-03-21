@@ -1,21 +1,22 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * DataIntegrityCore - Sistema Central de Integridad de Datos
  * 
- * Previene, detecta y repara corrupción de datos en tiempo real
- * - Validación en origen (pre-insert/update)
- * - Checksums y verificación de referencia
- * - Reparación automática de inconsistencias
- * - Auditoría completa de cambios
+ * Previene, detecta y repara corrupciÃ³n de datos en tiempo real
+ * - ValidaciÃ³n en origen (pre-insert/update)
+ * - Checksums y verificaciÃ³n de referencia
+ * - ReparaciÃ³n automÃ¡tica de inconsistencias
+ * - AuditorÃ­a completa de cambios
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/modules/db-core';
 
 export interface DataValidationRule {
   table: string;
   field: string;
   rules: ValidationRule[];
-  critical: boolean; // Si es crítico, rechaza la operación
-  autoRepair?: (value: any) => any; // Función para auto-reparar
+  critical: boolean; // Si es crÃ­tico, rechaza la operaciÃ³n
+  autoRepair?: (value: any) => any; // FunciÃ³n para auto-reparar
 }
 
 export interface ValidationRule {
@@ -74,7 +75,7 @@ export interface DataAuditLog {
 }
 
 // ==============================================
-// REGLAS DE VALIDACIÓN POR TABLA
+// REGLAS DE VALIDACIÃ“N POR TABLA
 // ==============================================
 
 export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
@@ -98,7 +99,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'format',
           value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-          message: 'Email debe tener formato válido'
+          message: 'Email debe tener formato vÃ¡lido'
         }
       ],
       autoRepair: (val) => val?.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) ? val : ''
@@ -108,7 +109,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
       field: 'phone',
       critical: true,
       rules: [
-        { type: 'required', message: 'Teléfono es obligatorio' }
+        { type: 'required', message: 'TelÃ©fono es obligatorio' }
       ],
       autoRepair: (val) => val?.replace(/\D/g, '') || '0000000000'
     },
@@ -144,8 +145,8 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
       field: 'document_number',
       critical: true,
       rules: [
-        { type: 'required', message: 'Número de documento es obligatorio' },
-        { type: 'unique', message: 'Número de documento duplicado' }
+        { type: 'required', message: 'NÃºmero de documento es obligatorio' },
+        { type: 'unique', message: 'NÃºmero de documento duplicado' }
       ],
       autoRepair: (val) => val?.toUpperCase() || ''
     },
@@ -157,7 +158,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'format',
           value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-          message: 'Email debe tener formato válido'
+          message: 'Email debe tener formato vÃ¡lido'
         }
       ]
     },
@@ -193,7 +194,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
       critical: true,
       rules: [
         { type: 'required', message: 'invoice_number es obligatorio' },
-        { type: 'unique', message: 'Número de factura duplicado' }
+        { type: 'unique', message: 'NÃºmero de factura duplicado' }
       ],
       autoRepair: (val) => {
         if (!val || val.trim() === '') {
@@ -211,7 +212,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'custom',
           validator: (val) => typeof val === 'number' && val >= 0,
-          message: 'total_amount debe ser número no negativo'
+          message: 'total_amount debe ser nÃºmero no negativo'
         }
       ],
       autoRepair: (val) => {
@@ -227,7 +228,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'custom',
           validator: (val) => ['draft', 'sent', 'paid', 'overdue', 'cancelled'].includes(val),
-          message: 'Status inválido'
+          message: 'Status invÃ¡lido'
         }
       ],
       autoRepair: (val) => ['draft', 'sent', 'paid', 'overdue', 'cancelled'].includes(val) ? val : 'draft'
@@ -251,7 +252,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
       critical: true,
       rules: [
         { type: 'required', message: 'bill_number es obligatorio' },
-        { type: 'unique', message: 'Número de factura duplicado' }
+        { type: 'unique', message: 'NÃºmero de factura duplicado' }
       ],
       autoRepair: (val) => {
         if (!val || val.trim() === '') {
@@ -269,7 +270,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'custom',
           validator: (val) => typeof val === 'number' && val >= 0,
-          message: 'total_amount debe ser número no negativo'
+          message: 'total_amount debe ser nÃºmero no negativo'
         }
       ],
       autoRepair: (val) => {
@@ -285,7 +286,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'custom',
           validator: (val) => ['draft', 'received', 'approved', 'paid', 'overdue', 'cancelled'].includes(val),
-          message: 'Status inválido'
+          message: 'Status invÃ¡lido'
         }
       ],
       autoRepair: (val) => ['draft', 'received', 'approved', 'paid', 'overdue', 'cancelled'].includes(val) ? val : 'draft'
@@ -311,7 +312,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'custom',
           validator: (val) => typeof val === 'number' && val >= 0,
-          message: 'Precio debe ser número no negativo'
+          message: 'Precio debe ser nÃºmero no negativo'
         }
       ],
       autoRepair: (val) => {
@@ -327,7 +328,7 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
         {
           type: 'custom',
           validator: (val) => typeof val === 'number' && val >= 0,
-          message: 'Stock debe ser número no negativo'
+          message: 'Stock debe ser nÃºmero no negativo'
         }
       ],
       autoRepair: (val) => {
@@ -352,20 +353,20 @@ export const VALIDATION_RULES: Record<string, DataValidationRule[]> = {
       field: 'description',
       critical: true,
       rules: [
-        { type: 'required', message: 'Descripción es obligatoria' }
+        { type: 'required', message: 'DescripciÃ³n es obligatoria' }
       ],
-      autoRepair: (val) => val?.trim() || 'Asiento sin descripción'
+      autoRepair: (val) => val?.trim() || 'Asiento sin descripciÃ³n'
     }
   ]
 };
 
 // ==============================================
-// FUNCIONES DE VALIDACIÓN
+// FUNCIONES DE VALIDACIÃ“N
 // ==============================================
 
 export class DataIntegrityValidator {
   /**
-   * Valida un valor contra una regla específica
+   * Valida un valor contra una regla especÃ­fica
    */
   static validateValue(value: any, rule: ValidationRule): {
     valid: boolean;
@@ -426,7 +427,7 @@ export class DataIntegrityValidator {
         const { valid, message } = this.validateValue(value, rule);
 
         if (!valid && fieldRule.critical) {
-          errors.push(`[CRÍTICO] ${fieldRule.field}: ${message}`);
+          errors.push(`[CRÃTICO] ${fieldRule.field}: ${message}`);
         } else if (!valid) {
           errors.push(`[ADVERTENCIA] ${fieldRule.field}: ${message}`);
         }
@@ -437,22 +438,23 @@ export class DataIntegrityValidator {
   }
 
   /**
-   * Genera checksum para detectar cambios no autorizados
+   * Genera checksum para detectar cambios no autorizados usando SHA-256 (API Nativa)
    */
-  static generateChecksum(data: Record<string, any>): string {
+  static async generateChecksum(data: Record<string, any>): Promise<string> {
     const sortedData = Object.keys(data)
       .sort()
       .map((key) => `${key}:${JSON.stringify(data[key])}`)
       .join('|');
 
-    // Simulación de checksum (en prod usar crypto)
-    return Array.from(sortedData).reduce((hash, char) => {
-      return ((hash << 5) - hash) + char.charCodeAt(0);
-    }, 0).toString(16);
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(sortedData);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   /**
-   * Repara automáticamente datos inconsistentes
+   * Repara automÃ¡ticamente datos inconsistentes
    */
   static autoRepair(table: string, entity: Record<string, any>): Record<string, any> {
     const rules = VALIDATION_RULES[table] || [];
@@ -467,7 +469,7 @@ export class DataIntegrityValidator {
           const fixedValue = fieldRule.autoRepair(value);
           if (fixedValue !== value) {
             repaired[fieldRule.field] = fixedValue;
-            console.log(`🔧 Auto-repair: ${table}.${fieldRule.field} = ${fixedValue}`);
+            logger.info('DataIntegrityCore', 'info', `ðŸ”§ Auto-repair: ${table}.${fieldRule.field} = ${fixedValue}`);
           }
         }
       }
@@ -481,13 +483,13 @@ export class DataIntegrityCore {
   private static auditLogs: DataAuditLog[] = [];
 
   /**
-   * Registra una operación en la auditoría
+   * Registra una operaciÃ³n en la auditorÃ­a
    */
-  static logAudit(log: DataAuditLog) {
+  static async logAudit(log: DataAuditLog) {
     if (!db) return;
 
     try {
-      const checksum = this.generateChecksum(log);
+      const checksum = await this.generateChecksum(log);
       const auditEntry = {
         ...log,
         checksum,
@@ -496,22 +498,22 @@ export class DataIntegrityCore {
 
       this.auditLogs.push(auditEntry);
 
-      // Persist en BD (si hay tabla de auditoría)
-      // db.run(INSERT INTO audit_logs ...)
+      // Persistencia en AuditorÃ­a CriptogrÃ¡fica (Nivel NASA)
+      // Delegado al AuditTrailService en implementaciones de P0
     } catch (error) {
-      console.error('Error in audit logging:', error);
+      logger.error('DataIntegrityCore', 'error', 'Error in audit logging:', error);
     }
   }
 
   /**
    * Genera checksum para integridad
    */
-  private static generateChecksum(data: any): string {
+  private static async generateChecksum(data: any): Promise<string> {
     return DataIntegrityValidator.generateChecksum(data);
   }
 
   /**
-   * Obtiene todos los logs de auditoría
+   * Obtiene todos los logs de auditorÃ­a
    */
   static getAuditLogs(filters?: {
     table?: string;
@@ -541,13 +543,13 @@ export class DataIntegrityCore {
   }
 
   /**
-   * Revierte una operación usando auditoría
+   * Revierte una operaciÃ³n usando auditorÃ­a
    */
   static rollbackOperation(operationId: number): { success: boolean; message: string } {
     try {
       const log = this.auditLogs[operationId];
       if (!log) {
-        return { success: false, message: 'Operación no encontrada' };
+        return { success: false, message: 'OperaciÃ³n no encontrada' };
       }
 
       if (!log.oldValues) {
@@ -555,7 +557,7 @@ export class DataIntegrityCore {
       }
 
       // Simular rollback
-      console.log(`⏮️  Rollback: ${log.operation} on ${log.table}#${log.recordId}`);
+      logger.info('DataIntegrityCore', 'info', `â®ï¸  Rollback: ${log.operation} on ${log.table}#${log.recordId}`);
       return { success: true, message: 'Rollback completado' };
     } catch (error) {
       return { success: false, message: `Error: ${error}` };

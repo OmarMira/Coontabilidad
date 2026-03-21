@@ -1,9 +1,132 @@
-import React, { useState } from 'react';
-import { BackupService } from '../services/BackupService';
+﻿import { logger } from '../core/logging/SystemLogger';
+import React, { useState, useEffect } from 'react';
+import { BackupService } from '../services/backup/BackupService';
 import { BackupLocationSelector } from './backup/BackupLocationSelector';
 import { BackupLocation } from '../services/BackupLocationService';
-import { Download, Upload, Shield, Loader2, AlertTriangle, FileJson, CheckCircle, FolderOpen } from 'lucide-react';
+import { PersistentStorageService } from '../services/PersistentStorageService';
+import { Download, Upload, Server, Search, AlertTriangle, RefreshCw, X, ShieldAlert, Shield, Loader2, FolderOpen, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useLocale } from '../i18n/useLocale';
+import { BankImportService } from '../services/banking/BankImportService';
+import { DatabaseService } from '../database/DatabaseService'; // Added this import
+
+export const TestingTools = () => {
+    const [stats, setStats] = useState({ total: 0, duplicates: 0 });
+    const [loading, setLoading] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const importService = new BankImportService();
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const loadStats = async () => {
+        try {
+            const currentStats = await importService.getHistoryStats();
+            setStats(currentStats);
+        } catch (error) {
+            logger.error('BackupPanel', 'error', 'Error loading stats:', error);
+        }
+    };
+
+    const checkDuplicates = async () => {
+        setLoading(true);
+        try {
+            const currentStats = await importService.getHistoryStats();
+            setStats(currentStats);
+            if (currentStats.duplicates > 0) {
+                toast.error(`ATENCIÃ“N: Se han detectado ${currentStats.duplicates} grupos de registros duplicados.`);
+            } else {
+                toast.success("CONTROL EXITOSO: No se detectaron transacciones duplicadas.");
+            }
+        } catch (error) {
+            toast.error("Error al controlar duplicados.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmClear = async () => {
+        setShowConfirmModal(false);
+        setLoading(true);
+        try {
+            await importService.clearImportHistory();
+            await loadStats();
+            toast.success("Historial de transacciones eliminado exitosamente.");
+        } catch (error) {
+            toast.error("Error al eliminar el historial.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="bg-slate-950 border border-slate-800 rounded-2.5xl p-6 mt-8">
+                <div className="flex items-center gap-3 mb-6">
+                    <ShieldAlert className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-white font-black uppercase text-xs tracking-widest">Herramientas de Control Bancario</h3>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                    <button
+                        onClick={checkDuplicates}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-blue-500/50 text-blue-400 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+                    >
+                        {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                        Controlar Duplicados
+                    </button>
+
+                    <button
+                        onClick={() => setShowConfirmModal(true)}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-6 py-3 bg-rose-500/5 border border-rose-500/20 hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-400 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+                    >
+                        <AlertTriangle className="w-4 h-4" />
+                        Limpiar Historial de Transacciones ({stats.total})
+                    </button>
+                </div>
+            </div>
+
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center z-[100] p-6">
+                    <div className="bg-slate-900 border-2 border-rose-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95">
+                        <button
+                            onClick={() => setShowConfirmModal(false)}
+                            className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <AlertTriangle className="w-8 h-8 text-rose-500" />
+                        </div>
+                        <h3 className="text-white text-xl font-black text-center mb-4 uppercase tracking-tighter">
+                            Aviso CrÃ­tico
+                        </h3>
+                        <p className="text-slate-400 text-sm text-center mb-8 leading-relaxed">
+                            Vas a eliminar de forma permanente TODOS los registros importados ({stats.total} transacciones). Esta acciÃ³n no se puede deshacer. Â¿Proceder con purga?
+                        </p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1 py-3 px-4 bg-slate-800 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-700"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmClear}
+                                className="flex-1 py-3 px-4 bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-rose-500"
+                            >
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
 
 export const BackupPanel: React.FC = () => {
     const { t } = useLocale();
@@ -12,6 +135,7 @@ export const BackupPanel: React.FC = () => {
     const [error, setError] = useState('');
     const [showLocationSelector, setShowLocationSelector] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<BackupLocation>('downloads');
+    const [autoBackupEnabled, setAutoBackupEnabled] = useState(localStorage.getItem('auto_backup_enabled') === 'true');
 
     const handleBackup = async () => {
         setShowLocationSelector(true);
@@ -25,11 +149,11 @@ export const BackupPanel: React.FC = () => {
 
         try {
             // Delay visual para UX
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => window.setTimeout(r, 800));
 
             setStatus(`${t('backupPanel.savingBackupAt')} ${customPath || location}...`);
 
-            // Usar el nuevo sistema de selección de ubicación
+            // Usar el nuevo sistema de selecciÃ³n de ubicaciÃ³n
             const success = await BackupService.createBackupWithLocationChoice();
 
             if (success) {
@@ -47,8 +171,9 @@ export const BackupPanel: React.FC = () => {
 
     const handleRestore = async () => {
         setError('');
+        setStatus('');
 
-        if (!window.confirm(t('backupPanel.criticalSecurityWarning'))) {
+        if (!window.confirm('âš ï¸ ADVERTENCIA: Esta operaciÃ³n reemplazarÃ¡ TODOS los datos actuales con el contenido del archivo de respaldo seleccionado. Esta acciÃ³n no se puede deshacer. Â¿Desea continuar?')) {
             return;
         }
 
@@ -58,21 +183,22 @@ export const BackupPanel: React.FC = () => {
         try {
             setStatus(t('backupPanel.verifyingSignature'));
 
-            // Usar el nuevo sistema de selección de archivo
             const success = await BackupService.restoreBackupWithFileChoice();
 
             if (success) {
                 setStatus(t('backupPanel.restoreComplete'));
-                setTimeout(() => window.location.reload(), 2000);
+                window.setTimeout(() => window.location.reload(), 2000);
             } else {
-                setError(t('backupPanel.userCancelledOrError'));
-                setLoading(false);
+                // null retornado = usuario cancelÃ³ el picker, no es un error real
+                setError('');
+                setStatus('');
             }
-
         } catch (e: any) {
-            setError(t('backupPanel.criticalRestoreFailure') + e.message);
-            setLoading(false);
+            setError(t('backupPanel.criticalRestoreFailure') + (e?.message ?? 'Error desconocido'));
             setStatus('');
+        } finally {
+            // SIEMPRE liberar el loading, sin importar quÃ© pasÃ³
+            setLoading(false);
         }
     };
 
@@ -89,7 +215,80 @@ export const BackupPanel: React.FC = () => {
                 </div>
             </div>
 
-            {/* Selector de Ubicación Modal */}
+            {/* Persistent Storage Request Button - Added Phase 2 */}
+            <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400">
+                        <Shield className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-white font-bold text-sm">Almacenamiento Permanente</h3>
+                        <p className="text-xs text-slate-500">Garantiza que el navegador no borre tus datos locales.</p>
+                    </div>
+                </div>
+                <button
+                    onClick={async () => {
+                        const granted = await PersistentStorageService.requestPersistence();
+                        if (granted) {
+                            alert("âœ… Persistencia concedida. Tus datos estÃ¡n protegidos.");
+                        } else {
+                            alert("âŒ Persistencia denegada â€” ve a chrome://settings/content y permite para localhost:3000");
+                        }
+                    }}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-blue-900/20"
+                >
+                    Activar Almacenamiento Persistente
+                </button>
+            </div>
+
+            {/* Automatic Backups Config - Added Sanitation Step 4 */}
+            <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-400">
+                            <RefreshCw className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-white font-bold text-sm">Respaldo AutomÃ¡tico Local</h3>
+                            <p className="text-xs text-slate-500">Descarga una copia .sqlite cada 5 minutos.</p>
+                        </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={autoBackupEnabled}
+                            onChange={(e) => {
+                                const enabled = e.target.checked;
+                                setAutoBackupEnabled(enabled);
+                                if (enabled) {
+                                    localStorage.setItem('auto_backup_enabled', 'true');
+                                    toast.success("Backups automÃ¡ticos activados");
+                                } else {
+                                    localStorage.removeItem('auto_backup_enabled');
+                                    toast.success("Backups automÃ¡ticos desactivados");
+                                }
+                            }}
+                        />
+                        <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex justify-end">
+                    <button
+                        onClick={async () => {
+                            await DatabaseService.backupDB(true);
+                            toast.success("Backup manual iniciado");
+                        }}
+                        className="flex items-center gap-2 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all border border-slate-700"
+                    >
+                        <Download className="w-4 h-4" />
+                        Backup Manual Ahora
+                    </button>
+                </div>
+            </div>
+
+            {/* Selector de UbicaciÃ³n Modal */}
             {showLocationSelector && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-slate-900 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-800 shadow-2xl">
@@ -177,7 +376,35 @@ export const BackupPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="text-center">
+            {/* Temporary Testing Tools */}
+            <TestingTools />
+
+            {/* Danger Zone - Reset Nuclear */}
+            <div className="bg-rose-500/5 border border-rose-500/20 rounded-3xl p-8 mt-12">
+                <div className="flex items-center gap-3 mb-4">
+                    <ShieldAlert className="w-6 h-6 text-rose-500" />
+                    <h3 className="text-rose-500 font-black uppercase text-sm tracking-widest">Zona de Peligro</h3>
+                </div>
+                <p className="text-slate-400 text-sm mb-6">Esta secciÃ³n contiene herramientas altamente destructivas. Ãšsalas solo bajo supervisiÃ³n tÃ©cnica o en situaciones de emergencia total.</p>
+                
+                <button
+                    onClick={async () => {
+                        const c1 = window.confirm('Â¿Seguro? PERDERÃS TODOS LOS DATOS.');
+                        if (!c1) return;
+                        const c2 = window.confirm('Esta acciÃ³n NO se puede deshacer. Â¿Continuar?');
+                        if (!c2) return;
+                        const typed = window.prompt('Escribe BORRAR para confirmar:');
+                        if (typed !== 'BORRAR') return;
+                        window.location.href = '/?nuclear=confirm';
+                    }}
+                    className="flex items-center gap-2 px-8 py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-rose-900/20"
+                >
+                    <ShieldAlert className="w-5 h-5" />
+                    Reiniciar Sistema (Nuclear Reset)
+                </button>
+            </div>
+
+            <div className="text-center pt-8">
                 <p className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">
                     {t('backupPanelStrings.securityFooter')}
                 </p>

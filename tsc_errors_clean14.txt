@@ -1,0 +1,7 @@
+﻿src/components/banking/QuarantinePanel.tsx(147,10): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/banking/QuarantinePanel.tsx(297,30): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/banking/QuarantinePanel.tsx(299,21): error TS1005: ')' expected.
+src/components/banking/QuarantinePanel.tsx(301,14): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/banking/QuarantinePanel.tsx(303,14): error TS1005: '}' expected.
+src/components/banking/QuarantinePanel.tsx(304,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/banking/QuarantinePanel.tsx(305,1): error TS1005: '</' expected.

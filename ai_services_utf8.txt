@@ -1,0 +1,206 @@
+﻿
+src\services\ai\__tests__\Modern
+SemanticAssistant.test.ts:3:impo
+rt { SemanticQueryAnalyzer } 
+from '../SemanticQueryAnalyzer';
+src\services\ai\AIFactory.ts:1:i
+mport { SemanticQueryAnalyzer } 
+from './SemanticQueryAnalyzer';
+src\services\ai\AIFactory.ts:14:
+ * - DataDrivenAIService: 
+Procesamiento validado de datos.
+src\services\ai\AIFactory.ts:59:
+            const analyzer = 
+await SemanticQueryAnalyzer.getI
+nstance();
+src\services\ai\ChainOfThoughtPr
+ocessor.ts:5:export class 
+ChainOfThoughtProcessor {
+src\services\ai\DataDrivenAIServ
+ice.ts:4: * DataDrivenAIService 
+(PROXY)
+src\services\ai\DataDrivenAIServ
+ice.ts:8:export class 
+DataDrivenAIService {
+src\services\ai\EmbeddingsServic
+e.ts:4: * EmbeddingsService - 
+Generate embeddings for RAG 
+(Retrieval Augmented Generation)
+src\services\ai\EmbeddingsServic
+e.ts:8:export class 
+EmbeddingsService {
+src\services\ai\FullDatabaseInde
+xer.ts:1:import { 
+EmbeddingsService } from '@/serv
+ices/ai/EmbeddingsService';
+src\services\ai\FullDatabaseInde
+xer.ts:7: * FullDatabaseIndexer 
+- Indexa TODOS los datos del 
+sistema en RAG
+src\services\ai\FullDatabaseInde
+xer.ts:14:export class 
+FullDatabaseIndexer {
+src\services\ai\FullDatabaseInde
+xer.ts:16:    private 
+embeddings: EmbeddingsService;
+src\services\ai\FullDatabaseInde
+xer.ts:21:        
+this.embeddings = new 
+EmbeddingsService();
+src\services\ai\FullDatabaseInde
+xer.ts:28:        ProductionLogg
+er.info('FullDatabaseIndexer', 
+'Starting full database 
+indexing...');
+src\services\ai\FullDatabaseInde
+xer.ts:44:        ProductionLogg
+er.info('FullDatabaseIndexer', 
+`✅ Indexed ${this.index.size} 
+records`);
+src\services\ai\FullDatabaseInde
+xer.ts:183:            Productio
+nLogger.warn('FullDatabaseIndexe
+r', 'fixed_assets table not 
+found');
+src\services\ai\FullDatabaseInde
+xer.ts:197:            Productio
+nLogger.warn('FullDatabaseIndexe
+r', 'employees table not 
+found');
+src\services\ai\FullDatabaseInde
+xer.ts:249:        ProductionLog
+ger.info('FullDatabaseIndexer', 
+`Re-indexed ${tableName}`);
+src\services\ai\IntelligentSQLGe
+nerator.ts:2:import { 
+QueryAnalysis } from 
+'./SemanticQueryAnalyzer';
+src\services\ai\LocalAIService.t
+s:17:export class 
+LocalAIService implements 
+IAnalysisService {
+src\services\ai\ModernConversati
+onalAssistant.ts:2:import { 
+SemanticQueryAnalyzer, 
+QueryAnalysis } from 
+'./SemanticQueryAnalyzer';
+src\services\ai\ModernConversati
+onalAssistant.ts:6:import { 
+LocalAIService } from 
+'./LocalAIService';
+src\services\ai\ModernConversati
+onalAssistant.ts:28:    private 
+analyzer: SemanticQueryAnalyzer 
+| null = null;
+src\services\ai\ModernConversati
+onalAssistant.ts:32:    private 
+localAI: LocalAIService;
+src\services\ai\ModernConversati
+onalAssistant.ts:38:        
+this.localAI = new 
+LocalAIService();
+src\services\ai\ModernConversati
+onalAssistant.ts:44:            
+this.analyzer = await SemanticQu
+eryAnalyzer.getInstance();
+src\services\ai\ModernConversati
+onalAssistant.ts:59:            
+const analyzer = this.analyzer 
+|| await SemanticQueryAnalyzer.g
+etInstance();
+src\services\ai\RAGSearchEngine.
+ts:1:import { EmbeddingsService 
+} from '@/services/ai/Embeddings
+Service';
+src\services\ai\RAGSearchEngine.
+ts:2:import { 
+FullDatabaseIndexer } from '@/se
+rvices/ai/FullDatabaseIndexer';
+src\services\ai\RAGSearchEngine.
+ts:8: * RAGSearchEngine - 
+Retrieval Augmented Generation
+src\services\ai\RAGSearchEngine.
+ts:14:export class 
+RAGSearchEngine {
+src\services\ai\RAGSearchEngine.
+ts:15:    private embeddings: 
+EmbeddingsService;
+src\services\ai\RAGSearchEngine.
+ts:17:    private dbIndexer: 
+FullDatabaseIndexer | null = 
+null;
+src\services\ai\RAGSearchEngine.
+ts:21:        this.embeddings = 
+new EmbeddingsService();
+src\services\ai\RAGSearchEngine.
+ts:23:            
+this.dbIndexer = new 
+FullDatabaseIndexer(db);
+src\services\ai\RAGSearchEngine.
+ts:33:        ProductionLogger.i
+nfo('RAGSearchEngine', 
+'Initializing RAG system...');
+src\services\ai\RAGSearchEngine.
+ts:45:            ProductionLogg
+er.info('RAGSearchEngine', 
+`Indexed ${stats.totalRecords} 
+database records`);
+src\services\ai\RAGSearchEngine.
+ts:49:        ProductionLogger.i
+nfo('RAGSearchEngine', '✅ RAG 
+system ready');
+src\services\ai\RAGSearchEngine.
+ts:113:        ProductionLogger.
+info('RAGSearchEngine', `Loaded 
+${this.knowledgeBase.length} 
+static knowledge entries`);
+src\services\ai\RAGSearchEngine.
+ts:200:            ProductionLog
+ger.info('RAGSearchEngine', 
+'Database re-indexed');
+src\services\ai\SemanticQueryAna
+lyzer.ts:33:export class 
+SemanticQueryAnalyzer {
+src\services\ai\SemanticQueryAna
+lyzer.ts:34:    private static 
+instance: SemanticQueryAnalyzer;
+src\services\ai\SemanticQueryAna
+lyzer.ts:76:    static async 
+getInstance(): 
+Promise<SemanticQueryAnalyzer> {
+src\services\ai\SemanticQueryAna
+lyzer.ts:78:            
+this.instance = new 
+SemanticQueryAnalyzer();
+src\services\ai\TransformersAIPr
+ovider.ts:4: * 
+TransformersAIProvider - 
+Browser-based AI using 
+Transformers.js
+src\services\ai\TransformersAIPr
+ovider.ts:12:export class 
+TransformersAIProvider {
+src\services\ConversationalIASer
+vice.ts:19:export class 
+ConversationalIAService {
+src\services\ConversationalIASer
+vice.ts:20:    private static 
+instance: 
+ConversationalIAService;
+src\services\ConversationalIASer
+vice.ts:27:    static 
+getInstance(): 
+ConversationalIAService {
+src\services\ConversationalIASer
+vice.ts:29:            
+this.instance = new 
+ConversationalIAService();
+src\services\ConversationalIASer
+vice.ts:50:export default class 
+ConversationalIAServiceStatic {
+src\services\ConversationalIASer
+vice.ts:52:        const 
+service = ConversationalIAServic
+e.getInstance();
+
+

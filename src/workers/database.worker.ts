@@ -1,7 +1,9 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import initSqlJs from 'sql.js';
 
 // Import worker utilities
-import { encryptData, decryptData, exportDatabaseToSQL } from '../services/backup/BackupServiceWorker';
+import { BackupService as BackupServiceWorker } from '../services/backup/BackupService';
+const { encryptData, decryptData, exportDatabaseToSQL } = BackupServiceWorker;
 
 // Initialize SQL.js
 let SQL: any;
@@ -28,7 +30,7 @@ self.onmessage = async (event: MessageEvent) => {
                 break;
 
             default:
-                console.warn(`Unknown message type: ${type}`);
+                logger.warn('database.worker', 'warn', `Unknown message type: ${type}`);
         }
     } catch (error: any) {
         self.postMessage({
@@ -209,7 +211,7 @@ async function importSQL(payload: any): Promise<any> {
 
 // Handle errors gracefully
 self.onerror = (error) => {
-    console.error('Database worker error:', error);
+    logger.error('database.worker', 'error', 'Database worker error:', error);
     self.postMessage({
         type: 'ERROR',
         error: 'Worker error occurred'

@@ -57,11 +57,12 @@
  * ```
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { payrollTaxCalculator, TaxCalculationInput, TaxCalculationResult } from './PayrollTaxCalculator';
 import { payrollJournalService, PayrollJournalInput } from './PayrollJournalService';
-import { isDateLocked } from '../../database/simple-db';
-import type { Employee, Payroll } from '../../database/simple-db';
+import { isDateLocked } from '@/database/modules/db-journal';
+import type { Employee } from '@/database/modules/db-types';
+import type { PayrollRecord as Payroll } from '@/database/modules/db-types';
 
 // ==========================================
 // TYPES & INTERFACES
@@ -89,6 +90,8 @@ export interface PayrollResult {
   journalEntryId?: number;
   message?: string;
   error?: string;
+  bonuses?: number;
+  commissions?: number;
 }
 
 export interface ValidationResult {
@@ -112,7 +115,7 @@ export interface ValidationResult {
  * @singleton Exportado como instancia única `payrollProcessor`
  */
 export class PayrollProcessor {
-  
+
   /**
    * Procesa nómina completa para un empleado
    * 
@@ -186,6 +189,75 @@ export class PayrollProcessor {
    * @see {@link PayrollTaxCalculator} Para cálculo de impuestos
    * @see {@link PayrollJournalService} Para generación de asientos contables
    */
+  /**
+   * Calcula una vista previa de la nómina sin guardarla
+   * 
+   * @param input - Datos de entrada
+   * @returns Resultado del cálculo
+   */
+  async calculatePreview(input: PayrollInput): Promise<PayrollResult> {
+    try {
+      // 1. Validar input
+      const validation = this.validatePayrollInput(input);
+      if (!validation.valid) {
+        return {
+          success: false,
+          grossPay: 0,
+          netPay: 0,
+          error: validation.errors.join(', ')
+        };
+      }
+
+      // 2. Obtener datos del empleado
+      const employee = this.getEmployee(input.employeeId);
+      if (!employee) {
+        return {
+          success: false,
+          grossPay: 0,
+          netPay: 0,
+          error: 'Employee not found'
+        };
+      }
+
+      // 3. Validar datos
+      const employeeValidation = this.validateEmployeeData(employee);
+      if (!employeeValidation.valid) {
+        return {
+          success: false,
+          grossPay: 0,
+          netPay: 0,
+          error: `Employee data incomplete: ${employeeValidation.errors.join(', ')}`
+        };
+      }
+
+      // 4. Calcular montos
+      const grossPay = this.calculateGrossPay(input, employee);
+      const taxes = this.calculateTaxes(grossPay, employee);
+      const netPay = this.calculateNetPay(grossPay, taxes, input.otherDeductions);
+
+      return {
+        success: true,
+        grossPay,
+        netPay,
+        taxes,
+        bonuses: input.bonuses,
+        commissions: input.commissions,
+        message: 'Preview calculated successfully'
+      };
+    } catch (error) {
+      console.error('Error calculating preview:', error);
+      return {
+        success: false,
+        grossPay: 0,
+        netPay: 0,
+        error: error instanceof Error ? error.message : 'Unknown error calculating preview'
+      };
+    }
+  }
+
+  /**
+   * Procesa nómina completa para un empleado
+   */
   async processPayroll(input: PayrollInput): Promise<PayrollResult> {
     try {
       // 1. Validar input
@@ -198,7 +270,7 @@ export class PayrollProcessor {
           error: validation.errors.join(', ')
         };
       }
-      
+
       // 2. Validar que el período contable esté abierto
       if (isDateLocked(input.payDate)) {
         return {
@@ -208,7 +280,7 @@ export class PayrollProcessor {
           error: 'ERROR CONTABLE: El periodo para esta fecha está cerrado o bloqueado.'
         };
       }
-      
+
       // 3. Obtener datos del empleado
       const employee = this.getEmployee(input.employeeId);
       if (!employee) {
@@ -219,7 +291,7 @@ export class PayrollProcessor {
           error: 'Employee not found'
         };
       }
-      
+
       // 4. Validar que el empleado tenga datos completos
       const employeeValidation = this.validateEmployeeData(employee);
       if (!employeeValidation.valid) {
@@ -230,7 +302,7 @@ export class PayrollProcessor {
           error: `Employee data incomplete: ${employeeValidation.errors.join(', ')}`
         };
       }
-      
+
       // 5. Verificar que no exista ya un payroll para este período
       if (this.payrollExists(input.employeeId, input.payPeriodStart, input.payPeriodEnd)) {
         return {
@@ -240,19 +312,19 @@ export class PayrollProcessor {
           error: 'Payroll already processed for this employee and period'
         };
       }
-      
+
       // 6. Calcular gross pay
       const grossPay = this.calculateGrossPay(input, employee);
-      
+
       // 7. Calcular taxes
       const taxes = this.calculateTaxes(grossPay, employee);
-      
+
       // 8. Calcular net pay
       const netPay = this.calculateNetPay(grossPay, taxes, input.otherDeductions);
-      
+
       // 9. Guardar en base de datos
       const payrollId = this.savePayroll(input, employee, grossPay, taxes, netPay);
-      
+
       // 10. Generar asiento contable
       let journalEntryId: number | undefined;
       try {
@@ -273,10 +345,10 @@ export class PayrollProcessor {
         console.error('Error generating journal entry:', error);
         // No fallar el proceso si el journal entry falla
       }
-      
+
       // 11. Actualizar YTD totals del empleado
       this.updateEmployeeYTD(employee.id, grossPay, taxes);
-      
+
       return {
         success: true,
         payrollId,
@@ -286,7 +358,7 @@ export class PayrollProcessor {
         journalEntryId,
         message: 'Payroll processed successfully'
       };
-      
+
     } catch (error) {
       console.error('Error processing payroll:', error);
       return {
@@ -297,7 +369,7 @@ export class PayrollProcessor {
       };
     }
   }
-  
+
   /**
    * Valida los inputs de nómina
    * 
@@ -306,48 +378,48 @@ export class PayrollProcessor {
    */
   validatePayrollInput(input: PayrollInput): ValidationResult {
     const errors: string[] = [];
-    
+
     // Validar hours
     if (input.regularHours < 0 || input.regularHours > 168) {
       errors.push('Regular hours must be between 0 and 168');
     }
-    
+
     if (input.overtimeHours < 0 || input.overtimeHours > 168) {
       errors.push('Overtime hours must be between 0 and 168');
     }
-    
+
     // Validar fechas
     const startDate = new Date(input.payPeriodStart);
     const endDate = new Date(input.payPeriodEnd);
     const payDate = new Date(input.payDate);
-    
+
     if (endDate <= startDate) {
       errors.push('Pay period end date must be after start date');
     }
-    
+
     if (payDate < endDate) {
       errors.push('Pay date must be on or after pay period end date');
     }
-    
+
     // Validar montos no negativos
     if (input.bonuses < 0) {
       errors.push('Bonuses cannot be negative');
     }
-    
+
     if (input.commissions < 0) {
       errors.push('Commissions cannot be negative');
     }
-    
+
     if (input.otherDeductions < 0) {
       errors.push('Other deductions cannot be negative');
     }
-    
+
     return {
       valid: errors.length === 0,
       errors
     };
   }
-  
+
   /**
    * Valida que el empleado tenga todos los datos necesarios
    * 
@@ -356,37 +428,37 @@ export class PayrollProcessor {
    */
   validateEmployeeData(employee: Employee): ValidationResult {
     const errors: string[] = [];
-    
+
     // Validar rate/salary
     if (employee.pay_type === 'hourly' && (!employee.hourly_rate || employee.hourly_rate < 7.25)) {
       errors.push('Hourly rate must be at least $7.25 (federal minimum wage)');
     }
-    
+
     if (employee.pay_type === 'salaried' && (!employee.salary || employee.salary <= 0)) {
       errors.push('Salary must be greater than 0');
     }
-    
+
     // Validar filing status
     if (!employee.filing_status) {
       errors.push('Filing status is required');
     }
-    
+
     const validStatuses = ['single', 'married', 'married_separate', 'head_of_household'];
     if (employee.filing_status && !validStatuses.includes(employee.filing_status)) {
       errors.push('Invalid filing status');
     }
-    
+
     // Validar SSN (opcional pero recomendado)
     if (employee.ssn && !this.isValidSSN(employee.ssn)) {
       errors.push('SSN must be in format XXX-XX-XXXX');
     }
-    
+
     return {
       valid: errors.length === 0,
       errors
     };
   }
-  
+
   /**
    * Valida formato de SSN
    * 
@@ -397,7 +469,7 @@ export class PayrollProcessor {
     const ssnRegex = /^\d{3}-\d{2}-\d{4}$/;
     return ssnRegex.test(ssn);
   }
-  
+
   /**
    * Obtiene datos del empleado
    * 
@@ -410,26 +482,26 @@ export class PayrollProcessor {
         'SELECT * FROM employees WHERE id = ? AND status = ?',
         [employeeId, 'active']
       );
-      
+
       if (!result.length || !result[0].values.length) {
         return null;
       }
-      
+
       const row = result[0].values[0];
       const columns = result[0].columns;
-      
+
       const employee: any = {};
       columns.forEach((col: string, idx: number) => {
         employee[col] = row[idx];
       });
-      
+
       return employee as Employee;
     } catch (error) {
       console.error('Error getting employee:', error);
       return null;
     }
   }
-  
+
   /**
    * Verifica si ya existe un payroll para este empleado y período
    * 
@@ -444,11 +516,11 @@ export class PayrollProcessor {
         'SELECT COUNT(*) as count FROM payroll WHERE employee_id = ? AND pay_period_start = ? AND pay_period_end = ? AND status != ?',
         [employeeId, startDate, endDate, 'voided']
       );
-      
+
       if (!result.length || !result[0].values.length) {
         return false;
       }
-      
+
       const count = result[0].values[0][0] as number;
       return count > 0;
     } catch (error) {
@@ -456,7 +528,7 @@ export class PayrollProcessor {
       return false;
     }
   }
-  
+
   /**
    * Calcula gross pay (salario bruto)
    * 
@@ -466,33 +538,33 @@ export class PayrollProcessor {
    */
   calculateGrossPay(input: PayrollInput, employee: Employee): number {
     let grossPay = 0;
-    
+
     if (employee.pay_type === 'hourly') {
       // Hourly employee
       const rate = employee.hourly_rate || 0;
-      
+
       // Regular pay
       const regularPay = input.regularHours * rate;
-      
+
       // Overtime pay (1.5x rate for hours > 40)
       const overtimePay = input.overtimeHours * rate * 1.5;
-      
+
       grossPay = regularPay + overtimePay;
-      
+
     } else if (employee.pay_type === 'salaried') {
       // Salaried employee
       // Asumimos pay period semimonthly (24 períodos al año)
       const annualSalary = employee.salary || 0;
       grossPay = annualSalary / 24;
     }
-    
+
     // Agregar bonuses y commissions
     grossPay += input.bonuses + input.commissions;
-    
+
     // Redondear a centavo más cercano
     return Math.round(grossPay * 100) / 100;
   }
-  
+
   /**
    * Calcula todos los impuestos
    * 
@@ -509,10 +581,10 @@ export class PayrollProcessor {
       additionalWithholding: employee.additional_withholding || 0,
       payPeriod: 'semimonthly' // Default, podría ser configurable
     };
-    
+
     return payrollTaxCalculator.calculateAllTaxes(taxInput);
   }
-  
+
   /**
    * Calcula net pay (salario neto)
    * 
@@ -523,11 +595,11 @@ export class PayrollProcessor {
    */
   calculateNetPay(grossPay: number, taxes: TaxCalculationResult, otherDeductions: number): number {
     const netPay = grossPay - taxes.totalTaxes - otherDeductions;
-    
+
     // Net pay no puede ser negativo
     return Math.max(0, Math.round(netPay * 100) / 100);
   }
-  
+
   /**
    * Guarda el payroll en la base de datos
    * 
@@ -546,15 +618,15 @@ export class PayrollProcessor {
     netPay: number
   ): number {
     const rate = employee.pay_type === 'hourly' ? employee.hourly_rate : null;
-    const regularPay = employee.pay_type === 'hourly' 
+    const regularPay = employee.pay_type === 'hourly'
       ? input.regularHours * (employee.hourly_rate || 0)
       : grossPay - input.bonuses - input.commissions;
     const overtimePay = employee.pay_type === 'hourly'
       ? input.overtimeHours * (employee.hourly_rate || 0) * 1.5
       : 0;
-    
+
     const totalDeductions = taxes.totalTaxes + input.otherDeductions;
-    
+
     db.run(`
       INSERT INTO payroll (
         employee_id, pay_period_start, pay_period_end, pay_date,
@@ -572,12 +644,12 @@ export class PayrollProcessor {
       input.otherDeductions, totalDeductions, netPay,
       'draft', input.processedBy
     ]);
-    
+
     // Obtener el ID del payroll recién creado
     const result = db.exec('SELECT last_insert_rowid() as id');
     return result[0].values[0][0] as number;
   }
-  
+
   /**
    * Actualiza los totales YTD del empleado
    * 
@@ -603,7 +675,7 @@ export class PayrollProcessor {
       employeeId
     ]);
   }
-  
+
   /**
    * Aprueba un payroll (cambia status de draft a approved)
    * 
@@ -618,14 +690,14 @@ export class PayrollProcessor {
         SET status = 'approved', approved_by = ?, approved_at = CURRENT_TIMESTAMP
         WHERE id = ? AND status = 'draft'
       `, [approvedBy, payrollId]);
-      
+
       return true;
     } catch (error) {
       console.error('Error approving payroll:', error);
       return false;
     }
   }
-  
+
   /**
    * Anula un payroll (cambia status a voided)
    * 
@@ -639,14 +711,14 @@ export class PayrollProcessor {
       if (!result.length || !result[0].values.length) {
         return false;
       }
-      
+
       const row = result[0].values[0];
       const columns = result[0].columns;
       const payroll: any = {};
       columns.forEach((col: string, idx: number) => {
         payroll[col] = row[idx];
       });
-      
+
       // Revertir YTD totals del empleado
       db.run(`
         UPDATE employees
@@ -664,21 +736,21 @@ export class PayrollProcessor {
         payroll.medicare_tax + payroll.medicare_additional_tax,
         payroll.employee_id
       ]);
-      
+
       // Marcar payroll como voided
       db.run(`
         UPDATE payroll
         SET status = 'voided', updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `, [payrollId]);
-      
+
       return true;
     } catch (error) {
       console.error('Error voiding payroll:', error);
       return false;
     }
   }
-  
+
   /**
    * Obtiene un payroll por ID
    * 
@@ -688,26 +760,26 @@ export class PayrollProcessor {
   getPayroll(payrollId: number): Payroll | null {
     try {
       const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
-      
+
       if (!result.length || !result[0].values.length) {
         return null;
       }
-      
+
       const row = result[0].values[0];
       const columns = result[0].columns;
-      
+
       const payroll: any = {};
       columns.forEach((col: string, idx: number) => {
         payroll[col] = row[idx];
       });
-      
+
       return payroll as Payroll;
     } catch (error) {
       console.error('Error getting payroll:', error);
       return null;
     }
   }
-  
+
   /**
    * Obtiene todos los payrolls de un empleado
    * 
@@ -719,20 +791,20 @@ export class PayrollProcessor {
     try {
       let query = 'SELECT * FROM payroll WHERE employee_id = ?';
       const params: any[] = [employeeId];
-      
+
       if (year) {
         query += ' AND strftime("%Y", pay_date) = ?';
         params.push(year.toString());
       }
-      
+
       query += ' ORDER BY pay_date DESC';
-      
+
       const result = db.exec(query, params);
-      
+
       if (!result.length || !result[0].values.length) {
         return [];
       }
-      
+
       const columns = result[0].columns;
       return result[0].values.map((row: any) => {
         const payroll: any = {};

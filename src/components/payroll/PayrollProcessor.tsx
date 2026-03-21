@@ -25,19 +25,9 @@ import {
     FileSearch,
     BrainCircuit
 } from 'lucide-react';
-import {
-    getEmployees,
-    getPayrollPeriods,
-    getPayrollSettings,
-    getTaxBrackets,
-    createPayrollPeriod,
-    createPayrollEntry,
-    createJournalEntry,
-    Employee,
-    PayrollPeriod,
-    PayrollSetting,
-    TaxBracket
-} from '../../database/simple-db';
+import type { Employee, PayrollPeriod, PayrollSetting, TaxBracket } from '@/database/modules/db-types';
+import { getEmployees, getPayrollPeriods, getPayrollSettings, getTaxBrackets, createPayrollPeriod, createPayrollEntry } from '@/database/modules/db-payroll';
+import { createJournalEntry } from '@/database/modules/db-journal';
 import { calculateEmployeePayroll, CalculationResult } from '../../utils/payroll-tax-calculator';
 import { toast } from 'react-hot-toast';
 import { Button } from '../ui/button';
@@ -171,25 +161,33 @@ export const PayrollProcessor: React.FC = () => {
 
     return (
         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            <div className='bg-yellow-50 border border-yellow-400 p-3 rounded mb-4'>
+                <p className='text-sm font-bold text-yellow-800'>
+                    ⚠️ Los cálculos de nómina son estimaciones basadas en proyecciones IRS.
+                    Valide todos los montos con un CPA certificado antes de presentar
+                    declaraciones al IRS. Account Express no garantiza exactitud fiscal.
+                </p>
+            </div>
             {/* Header Hub */}
-            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
-                <div className="flex items-center gap-6">
-                    <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
-                        <Calculator className="w-10 h-10 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
+            <div className="mb-8 border-b border-slate-800 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <Calculator className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('payrollProcessor.title')}</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-white tracking-tight">
+                            {t('payrollProcessor.title')}
+                        </h2>
+                        <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
                             <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollProcessor.subtitle')}
                         </p>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
-                    <TabButton active={activeTab === 'periods'} onClick={() => { setActiveTab('periods'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.history')} icon={History} />
-                    <TabButton active={activeTab === 'process'} onClick={() => { setActiveTab('process'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.process')} icon={Play} />
-                    <TabButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.settings')} icon={Settings} />
-                </div>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2.2xl border border-slate-800 shadow-xl overflow-hidden">
+                <TabButton active={activeTab === 'periods'} onClick={() => { setActiveTab('periods'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.history')} icon={History} />
+                <TabButton active={activeTab === 'process'} onClick={() => { setActiveTab('process'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.process')} icon={Play} />
+                <TabButton active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setSelectedPeriodId(null); }} label={t('payrollProcessor.tabs.settings')} icon={Settings} />
             </div>
 
             {activeTab === 'settings' ? (
@@ -206,8 +204,11 @@ export const PayrollProcessor: React.FC = () => {
                             </button>
                         </div>
 
-                        {selectedPeriodId ? (
-                            <PayrollEntryList periodId={selectedPeriodId} onBack={() => setSelectedPeriodId(null)} />
+                        {selectedPeriodId && periods.find(p => p.id === selectedPeriodId) ? (
+                            <PayrollEntryList
+                                period={periods.find(p => p.id === selectedPeriodId)!}
+                                onBack={() => setSelectedPeriodId(null)}
+                            />
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
@@ -235,7 +236,7 @@ export const PayrollProcessor: React.FC = () => {
                                                         <span className="text-sm font-black text-white uppercase tracking-tighter group-hover/row:text-emerald-400 transition-colors">{period.name}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 font-mono">
+                                                        <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 font-mono">
                                                             <span>{period.start_date}</span>
                                                             <ChevronRight className="w-3 h-3 text-slate-700" />
                                                             <span>{period.end_date}</span>
@@ -301,8 +302,8 @@ export const PayrollProcessor: React.FC = () => {
                                                         <div className="font-black text-white uppercase tracking-tighter text-sm mb-1 group-hover/row:text-emerald-400 transition-colors">{emp.first_name} {emp.last_name}</div>
                                                         <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">{emp.position}</div>
                                                     </td>
-                                                    <td className="px-8 py-6 text-right font-mono font-bold text-slate-400 text-sm">${calc.grossAmount.toLocaleString()}</td>
-                                                    <td className="px-8 py-6 text-right font-mono font-bold text-rose-500 text-sm">-${calc.deductionsAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                                    <td className="px-8 py-6 text-right font-mono font-black text-slate-400 text-sm">${calc.grossAmount.toLocaleString()}</td>
+                                                    <td className="px-8 py-6 text-right font-mono font-black text-rose-500 text-sm">-${calc.deductionsAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-8 py-6 text-right font-mono font-black text-emerald-400 text-base tracking-tighter">${calc.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                                     <td className="px-8 py-6 text-center">
                                                         <label className="relative inline-flex items-center cursor-pointer group/toggle mx-auto">
@@ -344,11 +345,11 @@ export const PayrollProcessor: React.FC = () => {
                             </div>
 
                             <CardContent className="p-8 space-y-8 relative z-10">
-                                <PremiumInputMini label={t('payrollProcessor.form.descriptor')} value={periodMeta.name} onChange={(v) => setPeriodMeta(p => ({ ...p, name: v }))} icon={FileText} />
+                                <PremiumInputMini label={t('payrollProcessor.form.descriptor')} value={periodMeta.name} onChange={(v: any) => setPeriodMeta(p => ({ ...p, name: v }))} icon={FileText} />
 
                                 <div className="grid grid-cols-2 gap-6">
-                                    <PremiumInputMini label={t('payrollProcessor.form.payDate')} value={periodMeta.pay_date} onChange={(v) => setPeriodMeta(p => ({ ...p, pay_date: v }))} icon={Calendar} type="date" />
-                                    <PremiumInputMini label={t('payrollProcessor.form.reference')} value={periodMeta.reference} onChange={(v) => setPeriodMeta(p => ({ ...p, reference: v }))} icon={ShieldCheck} />
+                                    <PremiumInputMini label={t('payrollProcessor.form.payDate')} value={periodMeta.pay_date} onChange={(v: any) => setPeriodMeta(p => ({ ...p, pay_date: v }))} icon={Calendar} type="date" />
+                                    <PremiumInputMini label={t('payrollProcessor.form.reference')} value={periodMeta.reference} onChange={(v: any) => setPeriodMeta(p => ({ ...p, reference: v }))} icon={ShieldCheck} />
                                 </div>
 
                                 <div className="p-8 bg-slate-950/50 rounded-[3rem] border border-slate-800 space-y-6 shadow-inner relative overflow-hidden">

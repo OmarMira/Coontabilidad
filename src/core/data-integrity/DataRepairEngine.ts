@@ -1,16 +1,18 @@
-/**
- * DataRepairEngine - Motor de Reparación de Datos Corrupted
+﻿/**
+ * DataRepairEngine - Motor de ReparaciÃ³n de Datos Corrupted
  * 
- * Repara automáticamente:
+ * Repara automÃ¡ticamente:
  * - Referencias rotas
  * - Duplicados
- * - Inconsistencias numéricas
+ * - Inconsistencias numÃ©ricas
  * - Datos faltantes
  * - Estados inconsistentes
  */
 
-import { db } from '../../database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { RepairOperation } from './DataIntegrityCore';
+import { logger } from '../../core/logging/SystemLogger';
+import { BasicEncryption } from '../security/BasicEncryption';
 
 export interface RepairPlan {
   name: string;
@@ -24,7 +26,7 @@ export class DataRepairEngine {
   private static repairHistory: RepairOperation[] = [];
 
   /**
-   * Genera un plan de reparación basado en errores detectados
+   * Genera un plan de reparaciÃ³n basado en errores detectados
    */
   static generateRepairPlan(errors: any[]): RepairPlan {
     const operations: RepairOperation[] = [];
@@ -55,15 +57,16 @@ export class DataRepairEngine {
   }
 
   /**
-   * Ejecuta un plan de reparación
+   * Ejecuta un plan de reparaciÃ³n
    */
   static async executeRepairPlan(plan: RepairPlan): Promise<RepairOperation[]> {
     if (!db) {
       return [];
     }
 
+    logger.info('DataRepairEngine', 'repair_start', `Ejecutando plan de reparaciÃ³n: ${plan.name}`);
     const results: RepairOperation[] = [];
-    const originalData = this.createBackup();
+    const originalData = await this.createBackup();
 
     try {
       for (const operation of plan.operations) {
@@ -71,28 +74,28 @@ export class DataRepairEngine {
         results.push(result);
 
         if (result.status === 'failed') {
-          console.error(`❌ Repair failed: ${operation.reason}`);
-          // Rollback si falla operación crítica
+          logger.error('DataRepairEngine', 'operation_failed', `Fallo en reparaciÃ³n: ${operation.reason}`);
+          // Rollback si falla operaciÃ³n crÃ­tica
           if (plan.riskLevel === 'high') {
-            this.restoreBackup(originalData);
+            await this.restoreBackup(originalData);
             throw new Error(`Critical repair failed: ${operation.reason}`);
           }
         } else {
-          console.log(`✅ Repair success: ${operation.table}#${operation.recordId}`);
+          logger.info('DataRepairEngine', 'info', `âœ… Repair success: ${operation.table}#${operation.recordId}`);
         }
       }
 
       this.repairHistory.push(...results);
       return results;
     } catch (error) {
-      console.error('Repair execution failed:', error);
+      logger.error('DataRepairEngine', 'error', 'Repair execution failed:', error);
       this.restoreBackup(originalData);
       throw error;
     }
   }
 
   /**
-   * Reparación: Eliminar registros huérfanos
+   * ReparaciÃ³n: Eliminar registros huÃ©rfanos
    */
   private static generateOrphanRepairs(orphanRecords: any[]): RepairOperation[] {
     return orphanRecords.map((record) => ({
@@ -101,13 +104,13 @@ export class DataRepairEngine {
       field: record.field,
       oldValue: record.value,
       newValue: 'DELETED',
-      reason: `Eliminando registro huérfano (referencia ${record.field} no existe)`,
+      reason: `Eliminando registro huÃ©rfano (referencia ${record.field} no existe)`,
       status: 'success'
     }));
   }
 
   /**
-   * Reparación: Consolidar duplicados
+   * ReparaciÃ³n: Consolidar duplicados
    */
   private static generateDuplicateRepairs(duplicateRecords: any[]): RepairOperation[] {
     const operations: RepairOperation[] = [];
@@ -133,7 +136,7 @@ export class DataRepairEngine {
   }
 
   /**
-   * Reparación: Corregir inconsistencias
+   * ReparaciÃ³n: Corregir inconsistencias
    */
   private static generateConsistencyRepairs(inconsistentRecords: any[]): RepairOperation[] {
     return inconsistentRecords.map((record) => ({
@@ -142,13 +145,13 @@ export class DataRepairEngine {
       field: 'total_amount',
       oldValue: record.oldTotal,
       newValue: record.calculatedTotal,
-      reason: `Recalculando total: ${record.oldTotal} → ${record.calculatedTotal}`,
+      reason: `Recalculando total: ${record.oldTotal} â†’ ${record.calculatedTotal}`,
       status: 'success'
     }));
   }
 
   /**
-   * Ejecuta una operación individual de reparación
+   * Ejecuta una operaciÃ³n individual de reparaciÃ³n
    */
   private static async executeRepairOperation(operation: RepairOperation): Promise<RepairOperation> {
     if (!db) {
@@ -156,11 +159,11 @@ export class DataRepairEngine {
     }
 
     try {
-      switch (operation.reason.includes('huérfan') ? 'orphan' : 
-              operation.reason.includes('duplicado') ? 'duplicate' :
-              operation.reason.includes('Recalculando') ? 'consistency' :
-              'other') {
-        
+      switch (operation.reason.includes('huÃ©rfan') ? 'orphan' :
+        operation.reason.includes('duplicado') ? 'duplicate' :
+          operation.reason.includes('Recalculando') ? 'consistency' :
+            'other') {
+
         case 'orphan':
           return this.repairOrphan(operation);
 
@@ -179,13 +182,13 @@ export class DataRepairEngine {
   }
 
   /**
-   * Reparación específica: Registros huérfanos
+   * ReparaciÃ³n especÃ­fica: Registros huÃ©rfanos
    */
   private static repairOrphan(operation: RepairOperation): RepairOperation {
     if (!db) return { ...operation, status: 'failed' };
 
     try {
-      // Eliminar registro huérfano de manera segura
+      // Eliminar registro huÃ©rfano de manera segura
       db.run(`DELETE FROM ${operation.table} WHERE id = ?`, [operation.recordId]);
 
       return {
@@ -199,7 +202,7 @@ export class DataRepairEngine {
   }
 
   /**
-   * Reparación específica: Duplicados
+   * ReparaciÃ³n especÃ­fica: Duplicados
    */
   private static repairDuplicate(operation: RepairOperation): RepairOperation {
     if (!db || !operation.field) return { ...operation, status: 'failed' };
@@ -243,7 +246,7 @@ export class DataRepairEngine {
   }
 
   /**
-   * Reparación específica: Inconsistencias numéricas
+   * ReparaciÃ³n especÃ­fica: Inconsistencias numÃ©ricas
    */
   private static repairConsistency(operation: RepairOperation): RepairOperation {
     if (!db) return { ...operation, status: 'failed' };
@@ -252,7 +255,7 @@ export class DataRepairEngine {
       const { table, recordId, newValue } = operation;
 
       if (table === 'invoices' || table === 'bills') {
-        // Recalcular el total basado en líneas
+        // Recalcular el total basado en lÃ­neas
         const lineTable = table === 'invoices' ? 'invoice_lines' : 'bill_lines';
         const fkField = table === 'invoices' ? 'invoice_id' : 'bill_id';
 
@@ -301,10 +304,10 @@ export class DataRepairEngine {
     inconsistentRecords: any[];
   } {
     return {
-      orphans: errors.filter((e) => e.message.includes('huérfan')).length,
+      orphans: errors.filter((e) => e.message.includes('huÃ©rfan')).length,
       duplicates: errors.filter((e) => e.message.includes('duplicado')).length,
       inconsistent: errors.filter((e) => e.message.includes('inconsistente')).length,
-      orphanRecords: errors.filter((e) => e.message.includes('huérfan')),
+      orphanRecords: errors.filter((e) => e.message.includes('huÃ©rfan')),
       duplicateRecords: errors.filter((e) => e.message.includes('duplicado')),
       inconsistentRecords: errors.filter((e) => e.message.includes('inconsistente'))
     };
@@ -319,17 +322,46 @@ export class DataRepairEngine {
     return 'low';
   }
 
-  private static createBackup(): string {
-    // Simulación de backup (en producción, hacer dump de BD)
-    return JSON.stringify({
-      timestamp: new Date().toISOString(),
-      checksums: {}
-    });
+  /**
+   * Genera un dump real de la base de datos (SQLite/OPFS)
+   */
+  private static async createBackup(): Promise<Uint8Array | null> {
+    if (!db) return null;
+    try {
+      logger.info('DataRepairEngine', 'backup_snapshot', 'Creando snapshot volÃ¡til de seguridad antes de reparaciÃ³n...');
+      const dump = db.export();
+
+      // Generar hash de integridad para el backup (Nivel NASA)
+      const hash = await BasicEncryption.hash(dump);
+      logger.info('DataRepairEngine', 'backup_ready', `Snapshot creado. SHA-256: ${hash.substring(0, 16)}...`);
+
+      return dump;
+    } catch (e) {
+      logger.error('DataRepairEngine', 'backup_error', 'Fallo al exportar DB para backup preventivo', null, e as Error);
+      return null;
+    }
   }
 
-  private static restoreBackup(backup: string) {
-    // Simulación de restauración
-    console.log(`🔄 Rollback: Restaurando backup`);
+  /**
+   * Restaura fÃ­sicamente la base de datos desde un snapshot
+   */
+  private static async restoreBackup(backup: Uint8Array | null) {
+    if (!backup) {
+      logger.warn('DataRepairEngine', 'restore_skip', 'No hay backup vÃ¡lido para restaurar');
+      return;
+    }
+
+    try {
+      logger.warn('DataRepairEngine', 'rollback_init', 'ðŸ”„ INICIANDO RESTAURACIÃ“N DE EMERGENCIA (Rollback)...');
+
+      // Import dinÃ¡mico para evitar posibles ciclos
+      const { restoreDatabaseFromBackup } = await import('../../database/modules/db-bank-transactions');
+      await restoreDatabaseFromBackup(backup);
+
+      logger.info('DataRepairEngine', 'rollback_success', 'Base de datos restaurada al estado previo a la reparaciÃ³n.');
+    } catch (e) {
+      logger.error('DataRepairEngine', 'rollback_failed', 'FALLO CRÃTICO EN RESTAURACIÃ“N! Integridad en riesgo.', null, e as Error);
+    }
   }
 
   /**

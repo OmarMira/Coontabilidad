@@ -1,7 +1,10 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { db, BankAccount, insertBankTransactions, BankTransaction } from '@/database/simple-db';
+import type { BankAccount, BankTransaction } from '@/database/modules/db-types';
+import { db } from '@/database/modules/db-core';
+import { insertBankTransactions } from '@/database/modules/db-bank-transactions';
 import { parseOFX } from '@/lib/ofx-parser';
 import { OFXStatement } from '@/types/ofx';
 import { Upload, FileCode, Check, ArrowRight, RefreshCw, AlertTriangle } from 'lucide-react';
@@ -35,26 +38,38 @@ export const OFXImporter: React.FC = () => {
                 if (loadedAccounts.length > 0) setSelectedAccountId(loadedAccounts[0].id);
             }
         } catch (e) {
-            console.error("Error loading accounts", e);
+            logger.error('OFXImporter', 'error', 'operation_failed', "Error loading accounts", e);
         }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const selectedFile = e.target.files[0];
-            setFile(selectedFile);
+        const selectedFiles = Array.from(e.target.files || []);
+        if (selectedFiles.length > 0) {
             setSuccessMsg(null);
             setErrorMsg(null);
             setParsedData(null);
             setLoading(true);
 
             try {
-                const text = await selectedFile.text();
-                const statement = await parseOFX(text);
-                setParsedData(statement);
+                let mergedStatement: OFXStatement | null = null;
+                for (const file of selectedFiles) {
+                    const text = await file.text();
+                    const statement = await parseOFX(text);
+                    if (!mergedStatement) {
+                        mergedStatement = statement;
+                    } else {
+                        // Merge transactions
+                        mergedStatement.transactions.push(...statement.transactions);
+                        // Optionally update end time or balances if they are sequential
+                        if (new Date(statement.endTime) > new Date(mergedStatement.endTime)) {
+                            mergedStatement.endTime = statement.endTime;
+                            mergedStatement.ledgerBalance = statement.ledgerBalance;
+                        }
+                    }
+                }
+                setParsedData(mergedStatement);
             } catch (error) {
-                setErrorMsg(`Error al analizar archivo OFX/QFX: ${(error as Error).message}`);
-                setFile(null);
+                setErrorMsg(`Error al analizar archivos OFX/QFX: ${(error as Error).message}`);
             } finally {
                 setLoading(false);
             }
@@ -89,7 +104,7 @@ export const OFXImporter: React.FC = () => {
                     });
                 } else {
                     invalidCount++;
-                    console.warn("OFX Transaction failed normalization", t, normalized.error);
+                    logger.warn('OFXImporter', 'warn', 'OFX Transaction failed normalization', t);
                 }
             });
 
@@ -97,20 +112,20 @@ export const OFXImporter: React.FC = () => {
                 const result = insertBankTransactions(transactions);
 
                 if (result.success) {
-                    setSuccessMsg(`Importación completada: ${result.importedCount} transacciones de OFX.`);
-                    if (invalidCount > 0) setErrorMsg(`Atención: ${invalidCount} transacciones ignoradas por datos inválidos.`);
+                    setSuccessMsg(`ImportaciÃ³n completada: ${result.importedCount} transacciones de OFX.`);
+                    if (invalidCount > 0) setErrorMsg(`AtenciÃ³n: ${invalidCount} transacciones ignoradas por datos invÃ¡lidos.`);
                     setFile(null);
                     setParsedData(null);
                 } else {
                     setErrorMsg(result.message);
                 }
             } else {
-                setErrorMsg("No se encontraron transacciones válidas.");
+                setErrorMsg("No se encontraron transacciones vÃ¡lidas.");
             }
 
         } catch (err) {
-            setErrorMsg("Error crítico al importar datos.");
-            console.error(err);
+            setErrorMsg("Error crÃ­tico al importar datos.");
+            logger.error('OFXImporter', 'error', 'operation_failed', err);
         } finally {
             setLoading(false);
         }
@@ -123,7 +138,7 @@ export const OFXImporter: React.FC = () => {
                     <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                         Importador OFX/QFX
                     </h2>
-                    <p className="text-slate-400">Importación directa de formatos bancarios estándar Open Financial Exchange.</p>
+                    <p className="text-slate-400">ImportaciÃ³n directa de formatos bancarios estÃ¡ndar Open Financial Exchange.</p>
                 </div>
             </div>
 
@@ -155,6 +170,7 @@ export const OFXImporter: React.FC = () => {
                                 <input
                                     type="file"
                                     accept=".ofx,.qfx"
+                                    multiple
                                     onChange={handleFileChange}
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />
@@ -217,7 +233,7 @@ export const OFXImporter: React.FC = () => {
                                     <thead className="text-xs uppercase bg-slate-950 text-slate-300 sticky top-0">
                                         <tr>
                                             <th className="px-4 py-3">Fecha</th>
-                                            <th className="px-4 py-3">Descripción</th>
+                                            <th className="px-4 py-3">DescripciÃ³n</th>
                                             <th className="px-4 py-3 text-right">Monto</th>
                                         </tr>
                                     </thead>

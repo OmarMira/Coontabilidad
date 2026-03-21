@@ -1,9 +1,9 @@
-/**
+﻿/**
  * PANEL DE DASHBOARD FINANCIERO - SISTEMA DUAL
  * 
  * Panel de resumen financiero en tiempo real que mantiene:
  * - Todos los datos financieros importantes
- * - Actualización automática cada 2 minutos
+ * - ActualizaciÃ³n automÃ¡tica cada 2 minutos
  * - Resumen ejecutivo del estado del sistema
  * - Visibilidad permanente en dashboard
  */
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { iaService } from '../services/IAService';
 import { logger } from '../core/logging/SystemLogger';
+import { useLocale } from '../i18n/useLocale';
 
 interface DashboardData {
   totalBalance: number;
@@ -52,6 +53,7 @@ interface FinancialDashboardPanelProps {
 }
 
 export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = ({ onOpenAssistant }) => {
+  const { t } = useLocale();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +79,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     try {
       logger.info('FinancialDashboard', 'load_data', 'Cargando datos del dashboard financiero');
 
-      // Obtener análisis completo del sistema restaurado
+      // Obtener anÃ¡lisis completo del sistema restaurado
       const analysis = await iaService.analyzeFinancialHealth();
 
       // Convertir a formato de dashboard
@@ -108,7 +110,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     }
   };
 
-  // Funciones auxiliares para calcular métricas
+  // Funciones auxiliares para calcular mÃ©tricas
   const calculateTotalBalance = (data: any): number => {
     if (!data.financial) return 0;
     return data.financial.reduce((sum: number, item: any) => sum + (item.cantidad_cuentas || 0), 0) * 1000;
@@ -120,9 +122,18 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
     return currentMonth?.monto_total || 0;
   };
 
-  const calculateCriticalStock = (data: any): number => {
-    // Simular productos con stock crítico
-    return Math.floor(Math.random() * 5) + 1;
+  const calculateCriticalStock = (_data: any): number => {
+    try {
+      const { dbExec } = require('../database/modules/db-core');
+      const res = dbExec(
+        `SELECT COUNT(*) as cnt FROM products
+         WHERE active = 1
+           AND (stock_quantity <= reorder_point OR stock_quantity <= min_stock_level)`
+      );
+      return res?.[0]?.values?.[0]?.[0] ?? 0;
+    } catch {
+      return 0;
+    }
   };
 
   const calculatePendingCollections = (data: any): number => {
@@ -140,14 +151,14 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
   const convertAlertsToFormat = (alerts: string[]): DashboardData['alerts'] => {
     return alerts.map((alert, index) => ({
       id: `alert-${index}`,
-      type: alert.includes('CRÍTICO') ? 'error' : alert.includes('ALERTA') ? 'warning' : 'info',
+      type: alert.includes('CRÃTICO') ? 'error' : alert.includes('ALERTA') ? 'warning' : 'info',
       message: alert,
-      priority: alert.includes('CRÍTICO') ? 'high' : alert.includes('ALERTA') ? 'medium' : 'low'
+      priority: alert.includes('CRÃTICO') ? 'high' : alert.includes('ALERTA') ? 'medium' : 'low'
     }));
   };
 
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('es-ES', {
+    return date.toLocaleTimeString(undefined, {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -231,11 +242,11 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
         <div className="header-left flex items-center space-x-4">
           <BarChart3 className="w-8 h-8 text-blue-400" />
           <div>
-            <h3 className="text-xl font-semibold text-slate-100">Dashboard Financiero</h3>
+            <h3 className="text-xl font-semibold text-slate-100">{t('financialDashboard.title')}</h3>
             <div className="flex items-center space-x-2 mt-1">
               <RefreshCw className={`w-3 h-3 text-slate-400 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="text-xs text-slate-400">
-                Actualizado: {formatTime(lastUpdate)}
+                {t('reportsdashboard.compliance.statusgenerated')}: {formatTime(lastUpdate)}
               </span>
             </div>
           </div>
@@ -245,7 +256,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
         >
           <MessageSquare className="w-4 h-4" />
-          <span>Preguntar al Asistente</span>
+          <span>{t('financialDashboard.askAssistant')}</span>
         </button>
       </div>
 
@@ -260,41 +271,41 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
       {isLoading && (
         <div className="flex items-center justify-center p-8">
           <RefreshCw className="w-6 h-6 animate-spin text-blue-400 mr-2" />
-          <span className="text-slate-300">Cargando datos financieros...</span>
+          <span className="text-slate-300">{t('common.loading')}</span>
         </div>
       )}
 
       {/* CONTENIDO DEL DASHBOARD */}
       {dashboardData && !isLoading && (
         <div className="space-y-6">
-          {/* RESUMEN RÁPIDO EN GRID */}
+          {/* RESUMEN RÃPIDO EN GRID */}
           <div className="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <DashboardCard
-              title="Saldos Totales"
+              title={t('financialDashboard.totalBalances')}
               icon={DollarSign}
               value={`$${dashboardData.totalBalance.toLocaleString()}`}
               trend={dashboardData.balanceTrend}
               color="green"
             />
             <DashboardCard
-              title="Facturación Mensual"
+              title={t('financialDashboard.monthlyInvoicing')}
               icon={FileText}
               value={`$${dashboardData.monthlyInvoicing.toLocaleString()}`}
               trend={dashboardData.invoicingTrend}
               color="blue"
             />
             <DashboardCard
-              title="Stock Crítico"
+              title={t('financialDashboard.criticalStock')}
               icon={Package}
               value={dashboardData.criticalStockCount}
-              subtitle="productos"
+              subtitle={t('financialDashboard.products')}
               color="orange"
             />
             <DashboardCard
-              title="Por Cobrar"
+              title={t('financialDashboard.accountsReceivable')}
               icon={CreditCard}
               value={`$${dashboardData.pendingCollections.toLocaleString()}`}
-              subtitle={`${dashboardData.overdueInvoices} vencidas`}
+              subtitle={`${dashboardData.overdueInvoices} ${t('financialDashboard.overdue')}`}
               color="red"
             />
           </div>
@@ -302,7 +313,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           {/* SECCIONES DETALLADAS */}
           <div className="dashboard-sections space-y-4">
             {/* ALERTAS */}
-            <DashboardSection title="⚠️ ALERTAS ACTIVAS" icon={AlertTriangle} type="alert">
+            <DashboardSection title={`âš ï¸ ${t('financialDashboard.activeAlerts')}`} icon={AlertTriangle} type="alert">
               <div className="space-y-2">
                 {dashboardData.alerts.map(alert => (
                   <div key={alert.id} className="flex items-center space-x-2 text-sm">
@@ -316,7 +327,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* DATOS FINANCIEROS */}
-            <DashboardSection title="📊 ESTRUCTURA CONTABLE" icon={PieChart} type="data">
+            <DashboardSection title={`ðŸ“Š ${t('financialDashboard.accountingStructure')}`} icon={PieChart} type="data">
               <div className="grid grid-cols-2 gap-2">
                 {dashboardData.accountingStructure.map((item: any, index: number) => (
                   <div key={index} className="bg-slate-800 p-3 rounded">
@@ -328,7 +339,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
             </DashboardSection>
 
             {/* ACCIONES RECOMENDADAS */}
-            <DashboardSection title="👉 ACCIONES PRIORITARIAS" icon={Target} type="action">
+            <DashboardSection title={`ðŸ‘‰ ${t('financialDashboard.priorityActions')}`} icon={Target} type="action">
               <div className="space-y-1">
                 {dashboardData.recommendedActions.map((action, index) => (
                   <p key={index} className="text-sm text-green-200">{action}</p>
@@ -336,8 +347,8 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
               </div>
             </DashboardSection>
 
-            {/* ANÁLISIS DEL PERÍODO */}
-            <DashboardSection title="🔍 ANÁLISIS DEL PERÍODO" icon={TrendingUp} type="analysis">
+            {/* ANÃLISIS DEL PERÃODO */}
+            <DashboardSection title={`ðŸ” ${t('financialDashboard.periodAnalysis')}`} icon={TrendingUp} type="analysis">
               <div className="text-sm text-purple-200 whitespace-pre-line">
                 {dashboardData.periodAnalysis}
               </div>
@@ -347,7 +358,7 @@ export const FinancialDashboardPanel: React.FC<FinancialDashboardPanelProps> = (
           {/* DISCLAIMER */}
           <div className="text-xs text-slate-500 text-center bg-slate-800 p-3 rounded flex items-center justify-center space-x-2">
             <Shield className="w-3 h-3" />
-            <span>Dashboard de solo-lectura • Datos actualizados automáticamente</span>
+            <span>{t('financialDashboard.readOnlyDisclaimer')}</span>
           </div>
         </div>
       )}

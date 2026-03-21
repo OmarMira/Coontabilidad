@@ -119,12 +119,10 @@ export class FinancialReportingService {
                 ll.journal_entry_id,
                 je.entry_date,
                 je.description,
-                je.reference_type,
-                je.reference_id,
-                ll.debit,
-                ll.credit,
-                ll.logic_clock
-            FROM ledger_lines ll
+                je.reference,
+                ll.debit_amount as debit,
+                ll.credit_amount as credit
+            FROM journal_details ll
             JOIN journal_entries je ON ll.journal_entry_id = je.id
             WHERE ll.account_code = ?
             AND je.status = 'POSTED'
@@ -190,29 +188,35 @@ export class FinancialReportingService {
      */
     private async getAccountsByType(type: string, asOfDate: string): Promise<AccountBalance[]> {
         const accounts = await this.db.select(`
-            SELECT code, name, subtype
-            FROM chart_of_accounts
-            WHERE type = ? AND is_active = 1
-            ORDER BY code
-        `, [type]);
+            SELECT a.code, a.name, a.subtype,
+                COALESCE(SUM(ll.debit_amount), 0) as total_debits,
+                COALESCE(SUM(ll.credit_amount), 0) as total_credits,
+                a.normal_balance
+            FROM chart_of_accounts a
+            LEFT JOIN journal_details ll ON a.account_code = ll.account_code
+            LEFT JOIN journal_entries je ON ll.journal_entry_id = je.id AND je.status = 'POSTED' AND je.entry_date <= ?
+            WHERE a.type = ? AND a.is_active = 1
+            GROUP BY a.code, a.name, a.subtype, a.normal_balance
+            ORDER BY a.code
+        `, [asOfDate, type]);
 
-        const balances: AccountBalance[] = [];
+        return accounts.map((account: any) => {
+            const total_debits = account.total_debits || 0;
+            const total_credits = account.total_credits || 0;
+            const normalBalance = account.normal_balance;
 
-        for (const accountData of accounts) {
-            const account = accountData as any;
-            const balance = await this.accountingService.getAccountBalance(account.code);
+            // Balance according to normal balance convention
+            const balance = normalBalance === 'DEBIT'
+                ? total_debits - total_credits
+                : total_credits - total_debits;
 
-            if (balance !== 0) {
-                balances.push({
-                    code: account.code,
-                    name: account.name,
-                    subtype: account.subtype,
-                    balance
-                });
-            }
-        }
-
-        return balances;
+            return {
+                code: account.code,
+                name: account.name,
+                subtype: account.subtype,
+                balance
+            };
+        });
     }
 
     /**
@@ -225,49 +229,33 @@ export class FinancialReportingService {
         endDate: string
     ): Promise<AccountBalance[]> {
         const accounts = await this.db.select(`
-            SELECT code, name, subtype
-            FROM chart_of_accounts
-            WHERE type = ? AND is_active = 1
-            ORDER BY code
-        `, [type]);
+            SELECT a.code, a.name, a.subtype,
+                COALESCE(SUM(ll.debit_amount), 0) as total_debits,
+                COALESCE(SUM(ll.credit_amount), 0) as total_credits
+            FROM chart_of_accounts a
+            LEFT JOIN journal_details ll ON a.account_code = ll.account_code
+            LEFT JOIN journal_entries je ON ll.journal_entry_id = je.id AND je.status = 'POSTED' AND je.entry_date BETWEEN ? AND ?
+            WHERE a.type = ? AND a.is_active = 1
+            GROUP BY a.code, a.name, a.subtype
+            ORDER BY a.code
+        `, [startDate, endDate, type]);
 
-        const balances: AccountBalance[] = [];
+        return accounts.map((account: any) => {
+            const total_debits = account.total_debits || 0;
+            const total_credits = account.total_credits || 0;
 
-        for (const accountData of accounts) {
-            const account = accountData as any;
-            // Get balance for period
-            const result = await this.db.select(`
-                SELECT 
-                    COALESCE(SUM(ll.debit), 0) as total_debits,
-                    COALESCE(SUM(ll.credit), 0) as total_credits
-                FROM ledger_lines ll
-                JOIN journal_entries je ON ll.journal_entry_id = je.id
-                WHERE ll.account_code = ?
-                AND je.status = 'POSTED'
-                AND je.entry_date >= ?
-                AND je.entry_date <= ?
-            `, [account.code, startDate, endDate]);
+            // For revenue/expense, balance is credits - debits (normal balance is credit for revenue, debit for expense)
+            const balance = type === 'REVENUE'
+                ? total_credits - total_debits
+                : total_debits - total_credits;
 
-            if (result.length > 0) {
-                const { total_debits, total_credits } = result[0];
-
-                // For revenue/expense, balance is credits - debits (normal balance is credit for revenue, debit for expense)
-                const balance = type === 'REVENUE'
-                    ? total_credits - total_debits
-                    : total_debits - total_credits;
-
-                if (balance !== 0) {
-                    balances.push({
-                        code: account.code,
-                        name: account.name,
-                        subtype: account.subtype,
-                        balance
-                    });
-                }
-            }
-        }
-
-        return balances;
+            return {
+                code: account.code,
+                name: account.name,
+                subtype: account.subtype,
+                balance
+            };
+        });
     }
 
     /**

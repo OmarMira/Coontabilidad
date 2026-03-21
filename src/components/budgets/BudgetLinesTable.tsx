@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ChevronDown, ChevronRight, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
@@ -6,13 +7,15 @@ import {
   getBudgetVarianceAnalysis,
   type BudgetLine,
   type BudgetVarianceAnalysis
-} from '@/database/simple-db';
+} from '@/database/modules/db-budgets';
+import { useLocale } from '@/i18n/useLocale';
 
 interface BudgetLinesTableProps {
   budgetId: number;
 }
 
 export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) => {
+  const { t } = useLocale();
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [varianceData, setVarianceData] = useState<BudgetVarianceAnalysis[]>([]);
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
@@ -30,7 +33,7 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
       setLines(linesData);
       setVarianceData(varianceAnalysis);
     } catch (error) {
-      console.error('Error loading budget lines:', error);
+      logger.error('BudgetLinesTable', 'error', 'Error loading budget lines:', error);
     } finally {
       setLoading(false);
     }
@@ -62,7 +65,7 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
         <CardContent className="py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-slate-400">Cargando líneas...</p>
+            <p className="mt-4 text-slate-400">{t('common.loading')}</p>
           </div>
         </CardContent>
       </Card>
@@ -72,12 +75,12 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
   return (
     <Card className="bg-slate-900 border-slate-800 text-white">
       <CardHeader>
-        <CardTitle>Líneas de Presupuesto con Análisis de Varianza</CardTitle>
+        <CardTitle>{t('budgets.linesWithVariance')}</CardTitle>
       </CardHeader>
       <CardContent>
         {lines.length === 0 ? (
           <div className="text-center py-8 text-slate-500">
-            <p>No hay líneas de presupuesto</p>
+            <p>{t('budgets.noLines')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-slate-800">
@@ -85,13 +88,13 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
               <thead className="bg-slate-950">
                 <tr>
                   <th className="text-left py-3 px-4 font-semibold text-slate-400 w-8"></th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Cuenta</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-400">Nombre</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Presupuestado (YTD)</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Real (YTD)</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Varianza</th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-400">Varianza %</th>
-                  <th className="text-center py-3 px-4 font-semibold text-slate-400">Estado</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">{t('budgets.account')}</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-400">{t('budgets.account')}</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.budgetedYTD')}</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.actualYTD')}</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.variance')}</th>
+                  <th className="text-right py-3 px-4 font-semibold text-slate-400">{t('budgets.variancePercent')}</th>
+                  <th className="text-center py-3 px-4 font-semibold text-slate-400">{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -155,12 +158,12 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                           {hasAlert && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-yellow-900/40 text-yellow-300 border border-yellow-800">
                               <AlertTriangle className="h-3 w-3" />
-                              Alerta
+                              {t('budgets.alert')}
                             </span>
                           )}
                           {variance && !hasAlert && Math.abs(variance.ytd_variance_percent) < 5 && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-green-900/40 text-green-300 border border-green-800">
-                              En curso
+                              {t('budgets.onTrack')}
                             </span>
                           )}
                         </td>
@@ -171,17 +174,17 @@ export const BudgetLinesTable: React.FC<BudgetLinesTableProps> = ({ budgetId }) 
                         <tr>
                           <td colSpan={8} className="py-4 px-8 bg-slate-950">
                             <div className="space-y-2">
-                              <h4 className="font-semibold text-slate-300 mb-3">Desglose por Período</h4>
+                              <h4 className="font-semibold text-slate-300 mb-3">{t('budgets.periodBreakdown')}</h4>
                               <div className="overflow-x-auto border border-slate-800 rounded">
                                 <table className="w-full text-sm">
                                   <thead>
                                     <tr className="border-b border-slate-800 bg-slate-900">
-                                      <th className="text-left py-2 px-3 font-medium text-slate-400">Período</th>
-                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Presupuestado</th>
-                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Real</th>
-                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Varianza</th>
-                                      <th className="text-right py-2 px-3 font-medium text-slate-400">Varianza %</th>
-                                      <th className="text-center py-2 px-3 font-medium text-slate-400">Estado</th>
+                                      <th className="text-left py-2 px-3 font-medium text-slate-400">{t('budgets.period')}</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">{t('budgets.budgeted')}</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">{t('budgets.actual')}</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">{t('budgets.variance')}</th>
+                                      <th className="text-right py-2 px-3 font-medium text-slate-400">{t('budgets.variancePercent')}</th>
+                                      <th className="text-center py-2 px-3 font-medium text-slate-400">{t('common.status')}</th>
                                     </tr>
                                   </thead>
                                   <tbody>

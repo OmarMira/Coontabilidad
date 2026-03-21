@@ -1,14 +1,18 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { BankImportWizard } from './BankImportWizard';
 import { BankTransactionMatcher } from './BankTransactionMatcher';
 import { Button } from '@/components/ui/button';
-import { getBankTransactions, BankTransaction, BankAccount, db } from '@/database/simple-db';
-import { Upload, Scale, Building2 } from 'lucide-react';
+import type { BankTransaction, BankAccount } from '@/database/modules/db-types';
+import { getBankTransactions } from '@/database/modules/db-bank-transactions';
+import { db } from '@/database/modules/db-core';
+import { Upload, Scale, Building2, ListChecks } from 'lucide-react';
 import { useLocale } from '@/i18n/useLocale';
+import { TransactionClassifier } from './TransactionClassifier';
 
 export const BankingModule: React.FC = () => {
     const { t } = useLocale();
-    const [activeTab, setActiveTab] = useState<'import' | 'match'>('import');
+    const [activeTab, setActiveTab] = useState<'import' | 'classify' | 'match'>('import');
     const [accounts, setAccounts] = useState<BankAccount[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
@@ -32,7 +36,7 @@ export const BankingModule: React.FC = () => {
                 }
             }
         } catch (e: any) {
-            console.error("Error loading accounts", e);
+            logger.error('BankingModule', 'error', 'operation_failed', "Error loading accounts", e);
         }
     }, []);
 
@@ -66,7 +70,7 @@ export const BankingModule: React.FC = () => {
             const resJe = db.exec("SELECT MAX(id) FROM journal_entries");
             const jeId = resJe[0].values[0][0];
 
-            // 3. Crear Transacción Bancaria ($500) coincidente
+            // 3. Crear TransacciÃ³n Bancaria ($500) coincidente
             db.run(`INSERT INTO bank_transactions (bank_account_id, transaction_date, description, amount, status)
                 VALUES (${accId}, '${today}', 'Deposito Venta XYZ', 500.00, 'pending')`);
 
@@ -75,14 +79,14 @@ export const BankingModule: React.FC = () => {
             db.run(`INSERT INTO journal_entries (entry_date, description, total_debit, total_credit)
                 VALUES ('${prevDay}', 'Compra Papeleria', 120.50, 120.50)`);
 
-            // 5. Crear Transacción Bancaria ($120.50) hoy (Fuzzy date match)
+            // 5. Crear TransacciÃ³n Bancaria ($120.50) hoy (Fuzzy date match)
             db.run(`INSERT INTO bank_transactions (bank_account_id, transaction_date, description, amount, status)
                 VALUES (${accId}, '${today}', 'Cobro Papeleria', -120.50, 'pending')`);
 
             alert("Datos Demo generados: Cuenta creada, Asientos creados, Transacciones importadas.");
             window.location.reload(); // Recarga brutal para asegurar todo
         } catch (e: any) {
-            console.error(e);
+            logger.error('BankingModule', 'error', 'operation_failed', e);
             alert("Error generando demo data");
         }
     };
@@ -100,7 +104,7 @@ export const BankingModule: React.FC = () => {
 
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" onClick={handleCreateDemoData} className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10">
-                        ⚡ Demo Data
+                        âš¡ Demo Data
                     </Button>
                     <div className="flex items-center gap-2 bg-slate-950 px-3 py-2 rounded-lg border border-slate-800">
                         <Building2 className="w-4 h-4 text-slate-500" />
@@ -128,6 +132,13 @@ export const BankingModule: React.FC = () => {
                     <Upload className="w-4 h-4 mr-2" /> {t('bankAccounts.table.actions')}
                 </Button>
                 <Button
+                    variant={activeTab === 'classify' ? 'default' : 'ghost'}
+                    className={activeTab === 'classify' ? 'bg-emerald-600 hover:bg-emerald-500' : 'text-slate-400'}
+                    onClick={() => setActiveTab('classify')}
+                >
+                    <ListChecks className="w-4 h-4 mr-2" /> Clasificar
+                </Button>
+                <Button
                     variant={activeTab === 'match' ? 'default' : 'ghost'}
                     className={activeTab === 'match' ? 'bg-purple-600 hover:bg-purple-500' : 'text-slate-400'}
                     onClick={() => setActiveTab('match')}
@@ -142,11 +153,24 @@ export const BankingModule: React.FC = () => {
                     <div className="h-full overflow-y-auto p-4 scale-in-center">
                         <BankImportWizard
                             accounts={accounts}
+                            selectedAccountId={selectedAccountId ?? accounts[0]?.id ?? 0}
                             onComplete={() => {
                                 handleRefresh();
-                                setActiveTab('match');
+                                setActiveTab('classify');
                             }}
                         />
+                    </div>
+                )}
+
+                {activeTab === 'classify' && (
+                    <div className="h-full overflow-y-auto p-4 scale-in-center">
+                        {selectedAccountId ? (
+                            <TransactionClassifier accountId={selectedAccountId} />
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-slate-500">
+                                SeleccionÃ¡ una cuenta bancaria primero
+                            </div>
+                        )}
                     </div>
                 )}
 

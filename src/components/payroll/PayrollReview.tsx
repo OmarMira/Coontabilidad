@@ -1,308 +1,239 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, XCircle, Filter, Calendar, DollarSign, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import {
+  DollarSign,
+  Search,
+  Filter,
+  Eye,
+  XCircle,
+  Calendar,
+  Users,
+  FileText,
+  Shield,
+  Zap,
+  Activity
+} from 'lucide-react';
+import type { PayrollRecord as Payroll, Employee } from '@/database/modules/db-types';
+import { getPayrolls, getEmployees } from '@/database/modules/db-payroll';
 import { payrollProcessor } from '../../services/payroll/PayrollProcessor';
-import { getEmployees } from '../../database/simple-db';
-import type { Payroll, Employee } from '../../database/simple-db';
+import { toast } from 'react-hot-toast';
+import { useLocale } from '@/i18n/useLocale';
 
 interface PayrollReviewProps {
   onViewPaystub?: (payrollId: number) => void;
 }
 
-export default function PayrollReview({ onViewPaystub }: PayrollReviewProps) {
-  const { user } = useAuth();
+export const PayrollReview: React.FC<PayrollReviewProps> = ({ onViewPaystub }) => {
+  const { t } = useLocale();
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filter, setFilter] = useState({
-    employeeId: '',
-    status: '',
-    year: new Date().getFullYear().toString()
-  });
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [filterEmployee, setFilterEmployee] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string>('');
 
   useEffect(() => {
-    loadEmployees();
-    loadPayrolls();
-  }, [filter, employees.length]); // Re-load when employees change or filter changes
+    loadData();
+  }, []);
 
-  const loadEmployees = () => {
+  const loadData = () => {
     try {
-      const allEmployees = getEmployees();
-      setEmployees(allEmployees);
+      setEmployees(getEmployees());
+      loadPayrolls();
     } catch (error) {
-      console.error('Error loading employees:', error);
+      toast.error(t('payroll.review.errorLoading'));
     }
   };
 
   const loadPayrolls = () => {
     try {
-      // Get all payrolls from all employees
-      const allPayrolls: Payroll[] = [];
-
-      const targetEmployees = filter.employeeId
-        ? employees.filter(e => e.id === parseInt(filter.employeeId))
-        : employees;
-
-      targetEmployees.forEach(emp => {
-        if (emp.id) {
-          const empPayrolls = payrollProcessor.getEmployeePayrolls(
-            emp.id,
-            filter.year ? parseInt(filter.year) : undefined
-          );
-          allPayrolls.push(...empPayrolls);
-        }
-      });
-
-      // Apply status filter
-      let filtered = allPayrolls;
-      if (filter.status) {
-        filtered = filtered.filter(p => p.status === filter.status);
-      }
-
-      // Sort by pay date descending
-      filtered.sort((a, b) => new Date(b.pay_date).getTime() - new Date(a.pay_date).getTime());
-
-      setPayrolls(filtered);
+      const filters: any = {};
+      if (filterEmployee) filters.employee_id = Number(filterEmployee);
+      if (filterStatus) filters.status = filterStatus;
+      if (filterYear) filters.year = Number(filterYear);
+      setPayrolls(getPayrolls(filters));
     } catch (error) {
-      console.error('Error loading payrolls:', error);
-      setMessage({ type: 'error', text: 'Error loading payrolls' });
+      toast.error(t('payroll.review.errorLoading'));
     }
   };
 
-  const handleVoidPayroll = (payrollId: number) => {
-    if (!confirm('Are you sure you want to void this payroll? This will reverse all YTD totals.')) {
-      return;
-    }
-
+  const handleVoid = (payrollId: number) => {
+    if (!confirm(t('payroll.review.confirmVoid'))) return;
     try {
-      const success = payrollProcessor.voidPayroll(payrollId);
-
-      if (success) {
-        setMessage({ type: 'success', text: 'Payroll voided successfully' });
-        loadPayrolls();
-      } else {
-        setMessage({ type: 'error', text: 'Error voiding payroll' });
-      }
+      payrollProcessor.voidPayroll(payrollId);
+      toast.success(t('payroll.review.voidedSuccess'));
+      loadPayrolls();
     } catch (error) {
-      console.error('Error voiding payroll:', error);
-      setMessage({ type: 'error', text: 'Error voiding payroll' });
+      toast.error(t('payroll.review.errorVoiding'));
     }
   };
 
-  const getEmployeeName = (employeeId: number): string => {
-    const employee = employees.find(e => e.id === employeeId);
-    return employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown';
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+      case 'paid': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+      case 'voided': return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
+      default: return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
+    }
   };
 
-  const getStatusBadge = (status: string) => {
-    const colors = {
-      draft: 'bg-slate-800 text-slate-400 border border-slate-700',
-      approved: 'bg-emerald-900/30 text-emerald-400 border border-emerald-800/50',
-      paid: 'bg-blue-900/30 text-blue-400 border border-blue-800/50',
-      voided: 'bg-red-900/30 text-red-400 border border-red-800/50'
-    };
-
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${colors[status as keyof typeof colors] || colors.draft}`}>
-        {status}
-      </span>
-    );
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'draft': return t('payroll.review.draft');
+      case 'approved': return t('payroll.review.approved');
+      case 'paid': return t('payroll.review.paid');
+      case 'voided': return t('payroll.review.voided');
+      default: return status;
+    }
   };
+
+  const getEmployeeName = (id: number) => {
+    const emp = employees.find(e => e.id === id);
+    return emp ? `${emp.first_name} ${emp.last_name}` : `#${id}`;
+  };
+
+  const years = Array.from(new Set(payrolls.map(p => new Date(p.pay_date).getFullYear()))).sort((a, b) => b - a);
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/10 rounded-lg">
-            <DollarSign className="w-8 h-8 text-emerald-500" />
+    <div className="space-y-12 animate-in fade-in duration-700 pb-24 px-4 overflow-x-hidden">
+      <div className="mb-8 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+            <Activity className="w-7 h-7 text-emerald-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
-          Revisar Nómina
-        </h1>
-        <p className="text-slate-400 mt-1 text-sm font-bold">Ver y gestionar nóminas procesadas</p>
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {t('payrollReview.title')}
+            </h2>
+            <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
+              <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> {t('payrollReview.subtitle')}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {message && (
-        <div className={`${message.type === 'success'
-            ? 'bg-emerald-900/20 border-l-4 border-emerald-500 text-emerald-400'
-            : 'bg-red-900/20 border-l-4 border-red-500 text-red-400'
-          } p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4`}>
-          {message.type === 'success' ? (
-            <CheckCircle2 className="w-5 h-5" />
-          ) : (
-            <AlertCircle className="w-5 h-5" />
-          )}
-          <span className="text-sm font-bold">{message.text}</span>
-          <button
-            onClick={() => setMessage(null)}
-            className="ml-auto hover:opacity-70 transition-opacity"
-          >
-            <XCircle className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       {/* Filters */}
-      <div className="bg-slate-900/50 rounded-xl shadow-xl p-6 border border-slate-800">
-        <div className="flex items-center gap-2 mb-6">
-          <Filter className="w-5 h-5 text-blue-500" />
-          <h2 className="text-lg font-black text-white tracking-tight">Filtros de Búsqueda</h2>
-        </div>
+      <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-xl">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+          <Search className="w-3.5 h-3.5 text-emerald-500" /> {t('payroll.review.searchFilters')}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-              Empleado
-            </label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('payroll.employee')}</label>
             <select
-              value={filter.employeeId}
-              onChange={(e) => setFilter({ ...filter, employeeId: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+              value={filterEmployee}
+              onChange={e => setFilterEmployee(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black uppercase tracking-widest text-[10px] outline-none focus:border-emerald-500"
             >
-              <option value="">Todos los Empleados</option>
+              <option value="">{t('payroll.review.allEmployees')}</option>
               {employees.map(emp => (
-                <option key={emp.id} value={emp.id} className="bg-slate-950">
-                  {emp.first_name} {emp.last_name}
-                </option>
+                <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>
               ))}
             </select>
           </div>
-
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-              Estado
-            </label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('payroll.review.status')}</label>
             <select
-              value={filter.status}
-              onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black uppercase tracking-widest text-[10px] outline-none focus:border-emerald-500"
             >
-              <option value="">Todos los Estados</option>
-              <option value="draft" className="bg-slate-950">Borrador</option>
-              <option value="approved" className="bg-slate-950">Aprobado</option>
-              <option value="paid" className="bg-slate-950">Pagado</option>
-              <option value="voided" className="bg-slate-950">Anulado</option>
+              <option value="">{t('payroll.review.allStatuses')}</option>
+              <option value="draft">{t('payroll.review.draft')}</option>
+              <option value="approved">{t('payroll.review.approved')}</option>
+              <option value="paid">{t('payroll.review.paid')}</option>
+              <option value="voided">{t('payroll.review.voided')}</option>
             </select>
           </div>
-
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
-              Año
-            </label>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t('payroll.review.year')}</label>
             <select
-              value={filter.year}
-              onChange={(e) => setFilter({ ...filter, year: e.target.value })}
-              className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-bold focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+              value={filterYear}
+              onChange={e => setFilterYear(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-black uppercase tracking-widest text-[10px] outline-none focus:border-emerald-500"
             >
-              <option value="" className="bg-slate-950">Todos los Años</option>
-              <option value="2026" className="bg-slate-950">2026</option>
-              <option value="2025" className="bg-slate-950">2025</option>
-              <option value="2024" className="bg-slate-950">2024</option>
+              <option value="">{t('payroll.review.allYears')}</option>
+              {years.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
             </select>
           </div>
-
           <div className="flex items-end">
             <button
               onClick={loadPayrolls}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-2.5 px-4 rounded-lg transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black px-8 py-4 rounded-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-900/40 hover:-translate-y-1"
             >
-              <Filter className="w-4 h-4" />
-              Aplicar Filtros
+              <Filter className="w-4 h-4 fill-white" />
+              {t('payroll.review.applyFilters')}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Payroll List */}
-      <div className="bg-slate-900/50 rounded-xl shadow-xl overflow-hidden border border-slate-800">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-800">
-            <thead className="bg-slate-950/50">
-              <tr>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Empleado
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Periodo de Pago
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Fecha Pago
-                </th>
-                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Salario Bruto
-                </th>
-                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Salario Neto
-                </th>
-                <th className="px-6 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Estado
-                </th>
-                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Acciones
-                </th>
+      {/* Table */}
+      <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-slate-950 border-b border-slate-800">
+            <tr>
+              <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.employee')}</th>
+              <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.review.payPeriodCol')}</th>
+              <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.review.payDateCol')}</th>
+              <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.review.grossPayCol')}</th>
+              <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.review.netPayCol')}</th>
+              <th className="px-6 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.review.statusCol')}</th>
+              <th className="px-6 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('payroll.review.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/40">
+            {payrolls.map(p => (
+              <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                <td className="px-6 py-4 text-sm font-black text-white">{getEmployeeName(p.employee_id)}</td>
+                <td className="px-6 py-4 text-xs font-black text-slate-400">{p.pay_period_start} - {p.pay_period_end}</td>
+                <td className="px-6 py-4 text-xs font-black text-slate-400">{p.pay_date}</td>
+                <td className="px-6 py-4 text-sm font-black text-white text-right">{formatCurrency(p.gross_pay)}</td>
+                <td className="px-6 py-4 text-sm font-black text-emerald-400 text-right">{formatCurrency(p.net_pay)}</td>
+                <td className="px-6 py-4 text-center">
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${getStatusColor(p.status)}`}>
+                    {getStatusLabel(p.status)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    {onViewPaystub && (
+                      <button
+                        onClick={() => onViewPaystub(p.id!)}
+                        className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
+                        title={t('payroll.review.viewPaystub')}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
+                    {p.status !== 'voided' && (
+                      <button
+                        onClick={() => handleVoid(p.id!)}
+                        className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors"
+                        title={t('payroll.review.voidPayroll')}
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-slate-900/30 divide-y divide-slate-800">
-              {payrolls.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-bold italic">
-                    No se encontraron nóminas procesadas
-                  </td>
-                </tr>
-              ) : (
-                payrolls.map(payroll => (
-                  <tr key={payroll.id} className="hover:bg-slate-800/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-black text-white group-hover:text-blue-400 transition-colors">
-                        {getEmployeeName(payroll.employee_id)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-400">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3 h-3 text-slate-500" />
-                        {new Date(payroll.pay_period_start).toLocaleDateString()} - {new Date(payroll.pay_period_end).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-slate-400">
-                      {new Date(payroll.pay_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-slate-300">
-                      ${payroll.gross_pay.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-black text-emerald-400">
-                      ${payroll.net_pay.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {getStatusBadge(payroll.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button
-                          onClick={() => onViewPaystub && payroll.id && onViewPaystub(payroll.id)}
-                          className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white rounded-lg transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest"
-                          title="Ver Comprobante"
-                        >
-                          <Eye className="w-4 h-4" />
-                          Ver
-                        </button>
-                        {payroll.status === 'draft' && (
-                          <button
-                            onClick={() => payroll.id && handleVoidPayroll(payroll.id)}
-                            className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest"
-                            title="Anular Nómina"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            Anular
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+            {payrolls.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-6 py-16 text-center text-slate-600 text-xs font-black uppercase tracking-widest">
+                  {t('payroll.review.noPayrollsFound')}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
-}
+};
+
+export default PayrollReview;

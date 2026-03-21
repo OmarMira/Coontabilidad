@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Search, Loader2, Check } from 'lucide-react';
 import { useLocale } from '../i18n/useLocale';
@@ -48,19 +49,19 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     debounceRef.current = setTimeout(async () => {
       setIsLoading(true);
       try {
-        console.log('🔍 Starting address search for:', query);
+        logger.info('AddressAutocomplete', 'search_start', 'Starting address search');
         const results = await addressService.searchAddresses(query);
-        console.log('📍 Search results:', results.length, results);
+        logger.info('AddressAutocomplete', 'search_results', 'Search results received');
 
         setSuggestions(results);
         setIsOpen(results.length > 0);
         setSelectedIndex(-1);
 
         if (results.length === 0) {
-          console.log('⚠️ No results found for query:', query);
+          logger.info('AddressAutocomplete', 'no_results', 'No results found for query');
         }
       } catch (error) {
-        console.error('❌ Error searching addresses:', error);
+        logger.error('AddressAutocomplete', 'search_error', 'Error searching addresses', error);
         setSuggestions([]);
         setIsOpen(false);
       } finally {
@@ -109,7 +110,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
       onAddressSelect(details);
     } catch (error) {
-      console.error('Error selecting address:', error);
+      logger.error('AddressAutocomplete', 'select_error', 'Error selecting address', error);
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +151,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   const formatSuggestionText = (suggestion: AddressSuggestion) => {
     return {
-      street: '', // No tenemos calle en las sugerencias, el usuario la completará
+      street: '', // No tenemos calle en las sugerencias, el usuario la completarÃ¡
       location: `${suggestion.city}, ${suggestion.stateCode} ${suggestion.zipCode}`
     };
   };
@@ -211,7 +212,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                       {suggestion.city}, {suggestion.stateCode}
                     </div>
                     <div className="text-sm text-slate-500 truncate">
-                      {suggestion.zipCode} • {suggestion.county} County
+                      {suggestion.zipCode} â€¢ {suggestion.county}
                     </div>
                   </div>
                 </div>
@@ -229,9 +230,9 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             <p>{t('addressAutocomplete.noResults')} "{query}"</p>
             <p className="text-sm mt-1">{t('addressAutocomplete.tryWith')}</p>
             <ul className="text-xs mt-2 space-y-1">
-              <li>• {t('addressAutocomplete.tipCity')}</li>
-              <li>• {t('addressAutocomplete.tipState')}</li>
-              <li>• {t('addressAutocomplete.tipZip')}</li>
+              <li>â€¢ {t('addressAutocomplete.tipCity')}</li>
+              <li>â€¢ {t('addressAutocomplete.tipState')}</li>
+              <li>â€¢ {t('addressAutocomplete.tipZip')}</li>
             </ul>
           </div>
         </div>

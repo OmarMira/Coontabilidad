@@ -1,8 +1,10 @@
 import { SemanticQueryAnalyzer } from './SemanticQueryAnalyzer';
 import { IntelligentSQLGenerator } from './IntelligentSQLGenerator';
 import { logger } from '../../core/logging/SystemLogger';
-import { db } from '../../database/simple-db';
+import { db } from '@/database/modules/db-core';
 import { translationEngine } from '@/features/i18n/TranslationEngine';
+import { EngineBridge } from '../../core/database/EngineBridge';
+import { SYSTEM_GUIDES } from '../../knowledge/SystemKnowledge';
 
 /**
  * AI FACTORY (FACADE PATTERN)
@@ -12,6 +14,8 @@ import { translationEngine } from '@/features/i18n/TranslationEngine';
  * - DataDrivenAIService: Procesamiento validado de datos.
  * - IntelligentSQLGenerator: Generación de consultas semánticas.
  */
+
+import { SchemaCrawler } from './SchemaCrawler';
 
 export interface AIResponse {
     content: string;
@@ -23,6 +27,17 @@ export interface AIResponse {
 }
 
 export class AIFactory {
+
+    /**
+     * Sincroniza el contexto semántico con la base de datos real.
+     * Llamar después de cambios importantes en el esquema o al inicio.
+     */
+    static async sync(): Promise<void> {
+        const crawler = new SchemaCrawler(EngineBridge.getEngine());
+        const context = await crawler.crawl();
+        await crawler.persistContext(context);
+        logger.info('AIFactory', 'sync_completed', 'Contexto semántico actualizado exitosamente');
+    }
 
     private static readonly ALLOWED_VIEWS = [
         'financial_summary',
@@ -46,6 +61,36 @@ export class AIFactory {
 
             // 1. Manejo de consultas de conocimiento (Estructura Procedural)
             if (analysis.intent.key === 'EXPLAIN' || analysis.intent.key === 'HOW_TO') {
+                const entityKey = analysis.entity.key.toLowerCase();
+
+                // Buscar guía exacta o parcial
+                const guideKey = Object.keys(SYSTEM_GUIDES).find(key =>
+                    key.toLowerCase() === entityKey ||
+                    SYSTEM_GUIDES[key].title.toLowerCase().includes(query.toLowerCase())
+                );
+
+                if (guideKey) {
+                    const guide = SYSTEM_GUIDES[guideKey];
+                    let content = lang === 'es' ? `📖 **${guide.title}**\n\n` : `📖 **${guide.title}**\n\n`;
+                    content += lang === 'es' ? `**Pasos a seguir:**\n` : `**Steps to follow:**\n`;
+                    guide.steps.forEach((step, idx) => content += `${idx + 1}. ${step}\n`);
+
+                    if (guide.tips) {
+                        content += lang === 'es' ? `\n💡 **Pro-Tips:**\n` : `\n💡 **Pro-Tips:**\n`;
+                        guide.tips.forEach(tip => content += `• ${tip}\n`);
+                    }
+
+                    if (guide.relatedMenu) {
+                        content += `\n📍 **Ubicación:** \`${guide.relatedMenu}\``;
+                    }
+
+                    return {
+                        content,
+                        source: 'knowledge_base',
+                        confidence: 1.0
+                    };
+                }
+
                 const message = lang === 'es'
                     ? `He detectado que buscas información sobre "${analysis.entity.key}". Mi base de conocimientos procedural indica que debes seguir los estándares de AccountExpress para este proceso.`
                     : `I've detected that you're looking for information about "${analysis.entity.key}". My procedural knowledge base indicates you should follow AccountExpress standards for this process.`;
@@ -63,8 +108,8 @@ export class AIFactory {
             }
 
             // 3. Manejo de consultas de datos dinámicas
-            const sqlGenerator = new IntelligentSQLGenerator();
-            const { sql } = sqlGenerator.generateSQL(analysis);
+            const sqlGenerator = new IntelligentSQLGenerator(EngineBridge.getEngine());
+            const { sql } = await sqlGenerator.generateSQL(analysis);
 
             // Verificación estricta de seguridad
             this.validateSecurity(sql);
@@ -156,7 +201,7 @@ export class AIFactory {
     }
 
     private static buildDataContent(analysis: any, data: any[], lang: string): string {
-        const entity = translationEngine.t(analysis.entity.key.toLowerCase());
+        const entity = translationEngine.t(`common.${analysis.entity.key.toLowerCase()}s`) || translationEngine.t(`common.${analysis.entity.key.toLowerCase()}`);
         if (analysis.intent.key === 'COUNT') {
             const val = data[0].count || data[0].total || data.length;
             return lang === 'es'

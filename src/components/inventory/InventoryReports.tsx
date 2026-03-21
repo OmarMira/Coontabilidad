@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +16,12 @@ import {
     AlertTriangle,
     CheckCircle2,
     Calendar,
-    Download
+    Download,
+    Zap
 } from 'lucide-react';
 import { InventoryKardexViewer } from './InventoryKardexViewer';
-import { db } from '../../database/simple-db';
+import { db } from '@/database/modules/db-core';
+import { useLocale } from '@/i18n/useLocale';
 
 interface ProductData {
     id: number;
@@ -40,12 +43,12 @@ interface BatchData {
     days_left: number;
 }
 
-const PrintHeader = ({ title, subtitle }: { title: string, subtitle?: string }) => (
+const PrintHeader = ({ title, subtitle, t }: { title: string, subtitle?: string, t: (key: string) => string }) => (
     <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-start">
             <div>
                 <h1 className="text-2xl font-black uppercase tracking-tighter">AccountExpress Enterprise</h1>
-                <p className="text-xs font-bold text-slate-500">REPORTE OFICIAL DE SISTEMA</p>
+                <p className="text-xs font-bold text-slate-500">{t('inv.reports.officialSystemReport')}</p>
             </div>
             <div className="text-right">
                 <p className="text-sm font-black">{title}</p>
@@ -57,6 +60,7 @@ const PrintHeader = ({ title, subtitle }: { title: string, subtitle?: string }) 
 );
 
 export const InventoryReports: React.FC = () => {
+    const { t } = useLocale();
     const [selectedReport, setSelectedReport] = useState<string | null>(null);
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -93,7 +97,6 @@ export const InventoryReports: React.FC = () => {
                     setData(items);
                 }
             } else if (selectedReport === 'EXPIRING') {
-                // Fetch from product_batches joins if exists, else mock for demo if table empty
                 const result = db?.exec(`
                     SELECT p.sku, p.name, b.batch_number, b.expiry_date, b.quantity 
                     FROM product_batches b 
@@ -119,11 +122,10 @@ export const InventoryReports: React.FC = () => {
                     setData([
                         { sku: 'PHARM-001', name: 'Amoxicilina 500mg', batch_number: 'LOT-2023-A9', expiry_date: '2024-02-15', quantity: 450, days_left: 45 },
                         { sku: 'PHARM-012', name: 'Paracetamol 1g', batch_number: 'LOT-2023-B2', expiry_date: '2024-03-10', quantity: 1200, days_left: 70 },
-                        { sku: 'CHEM-99', name: 'Alcohol Isopropílico', batch_number: 'LOT-XP-14', expiry_date: '2024-01-20', quantity: 55, days_left: 21 },
+                        { sku: 'CHEM-99', name: 'Alcohol IsopropÃ­lico', batch_number: 'LOT-XP-14', expiry_date: '2024-01-20', quantity: 55, days_left: 21 },
                     ]);
                 }
             } else if (selectedReport === 'TURNOVER') {
-                // Análisis ABC de rotación de inventario
                 const result = db?.exec(`
                     SELECT 
                         p.id,
@@ -146,18 +148,16 @@ export const InventoryReports: React.FC = () => {
                     const items = result[0].values.map((row: any[]) => {
                         const obj: any = {};
                         columns.forEach((col: string, i: number) => obj[col] = row[i]);
-                        
-                        // Calcular clasificación ABC
+
                         const totalSold = obj.total_sold || 0;
                         if (totalSold > 50) obj.classification = 'A';
                         else if (totalSold > 20) obj.classification = 'B';
                         else obj.classification = 'C';
-                        
-                        // Calcular tasa de rotación (ventas / stock)
-                        obj.turnover_rate = obj.stock_quantity > 0 
+
+                        obj.turnover_rate = obj.stock_quantity > 0
                             ? (totalSold / obj.stock_quantity).toFixed(2)
                             : '0.00';
-                        
+
                         return obj;
                     });
                     setData(items);
@@ -166,7 +166,7 @@ export const InventoryReports: React.FC = () => {
                 }
             }
         } catch (e) {
-            console.error(e);
+            logger.error('InventoryReports', 'error', 'operation_failed', e);
         } finally {
             setLoading(false);
         }
@@ -176,23 +176,25 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button
-                        variant="ghost"
+                    <button
                         onClick={() => setSelectedReport(null)}
-                        className="text-slate-400 hover:text-white hover:bg-slate-900"
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
                     >
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver a Reportes
-                    </Button>
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.backToReports')}
+                    </button>
                     <div className="flex gap-3">
-                        <Button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 shadow-lg">
-                            <Printer className="w-4 h-4 mr-2" /> Imprimir
-                        </Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg border-0">
-                            <Download className="w-4 h-4 mr-2" /> Exportar CSV
-                        </Button>
+                        <button
+                            onClick={handlePrint}
+                            className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-2.5 rounded-xl border border-slate-700 shadow-lg transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            <Printer className="w-4 h-4" /> {t('inv.reports.print')}
+                        </button>
+                        <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg border-0 transition-all active:scale-95 flex items-center gap-2">
+                            <Download className="w-4 h-4" /> {t('inv.reports.exportCsv')}
+                        </button>
                     </div>
                 </div>
-                <PrintHeader title="Historial de Movimientos de Inventario" subtitle="Detalle cronológico de entradas y salidas de almacén" />
+                <PrintHeader title={t('inv.reports.movementsHistoryTitle')} subtitle={t('inv.reports.movementsHistorySubtitle')} t={t} />
                 <InventoryKardexViewer />
             </div>
         );
@@ -203,31 +205,37 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg px-6">
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir Reporte
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printReport')}
+                    </button>
                 </div>
 
-                <PrintHeader title="Reporte de Valoración de Inventario" subtitle="Cálculo basado en stock físico y costo unitario promedio" />
+                <PrintHeader title={t('inv.reports.valuationReportTitle')} subtitle={t('inv.reports.valuationReportSubtitle')} t={t} />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 no-print">
-                    <StatCard title="Valor Total (Costo)" value={`$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`} icon={TrendingUp} color="blue" />
-                    <StatCard title="Productos en Stock" value={data.length} icon={Package} color="emerald" />
-                    <StatCard title="Unidades Totales" value={data.reduce((acc, item) => acc + item.stock_quantity, 0)} icon={FileBarChart} color="purple" />
+                    <StatCard title={t('inv.reports.totalValueCost')} value={`$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`} icon={TrendingUp} color="blue" />
+                    <StatCard title={t('inv.reports.productsInStock')} value={data.length} icon={Package} color="emerald" />
+                    <StatCard title={t('inv.reports.totalUnits')} value={data.reduce((acc, item) => acc + item.stock_quantity, 0)} icon={FileBarChart} color="purple" />
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
                             <tr>
-                                <th className="px-6 py-5">SKU / Producto</th>
-                                <th className="px-6 py-5 text-right">Existencia</th>
-                                <th className="px-6 py-5 text-right">Costo Unit.</th>
-                                <th className="px-6 py-5 text-right">Valor Total</th>
-                                <th className="px-6 py-5 text-center">Estatus</th>
+                                <th className="px-6 py-5">{t('inv.reports.skuProduct')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.existence')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.unitCost')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.totalValue')}</th>
+                                <th className="px-6 py-5 text-center">{t('inv.reports.status')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/50">
@@ -244,7 +252,7 @@ export const InventoryReports: React.FC = () => {
                                     <td className="px-6 py-4 text-right font-mono text-white font-black">${(item.stock_quantity * (item.cost || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                     <td className="px-6 py-4 text-center">
                                         <span className={`inline-flex px-2 py-1 rounded-md text-[9px] font-black uppercase ${item.stock_quantity > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
-                                            {item.stock_quantity > 0 ? 'En Stock' : 'Agotado'}
+                                            {item.stock_quantity > 0 ? t('inv.reports.inStock') : t('inv.reports.soldOut')}
                                         </span>
                                     </td>
                                 </tr>
@@ -260,21 +268,27 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir Críticos
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 border-0 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printCritical')}
+                    </button>
                 </div>
 
-                <PrintHeader title="Reporte de Agotamiento y Punto de Reorden" subtitle="Productos con existencias por debajo del límite mínimo establecido" />
+                <PrintHeader title={t('inv.reports.lowStockReportTitle')} subtitle={t('inv.reports.lowStockReportSubtitle')} t={t} />
 
                 <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 flex items-start gap-4 mb-6 no-print">
                     <AlertTriangle className="w-6 h-6 text-rose-500 flex-shrink-0 mt-1" />
                     <div>
-                        <h3 className="text-rose-400 font-black uppercase text-sm tracking-wider">Acción Requerida</h3>
-                        <p className="text-rose-300/70 text-sm mt-1">Se han detectado {data.length} ítems en estado crítico. Genere órdenes de compra para evitar quiebres de stock.</p>
+                        <h3 className="text-rose-400 font-black uppercase text-sm tracking-wider">{t('inv.reports.actionRequired')}</h3>
+                        <p className="text-rose-300/70 text-sm mt-1">{t('inv.reports.actionRequiredMsg', { count: data.length })}</p>
                     </div>
                 </div>
 
@@ -282,11 +296,11 @@ export const InventoryReports: React.FC = () => {
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
                             <tr>
-                                <th className="px-6 py-5">SKU / Producto</th>
-                                <th className="px-6 py-5 text-right">Stock Actual</th>
-                                <th className="px-6 py-5 text-right">Punto Reorden</th>
-                                <th className="px-6 py-5 text-right">Déficit</th>
-                                <th className="px-6 py-5 text-center">Nivel</th>
+                                <th className="px-6 py-5">{t('inv.reports.skuProduct')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.currentStock')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.reorderPoint')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.deficit')}</th>
+                                <th className="px-6 py-5 text-center">{t('inv.reports.level')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/50">
@@ -322,35 +336,41 @@ export const InventoryReports: React.FC = () => {
         const classA = data.filter(item => item.classification === 'A');
         const classB = data.filter(item => item.classification === 'B');
         const classC = data.filter(item => item.classification === 'C');
-        
+
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir Análisis
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 border-0 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printAnalysis')}
+                    </button>
                 </div>
 
-                <PrintHeader title="Análisis de Rotación de Inventario (ABC)" subtitle="Clasificación de productos por velocidad de movimiento y valor estratégico" />
+                <PrintHeader title={t('inv.reports.turnoverReportTitle')} subtitle={t('inv.reports.turnoverReportSubtitle')} t={t} />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 no-print">
-                    <StatCard title="Clase A (Estrella)" value={classA.length} icon={TrendingUp} color="emerald" />
-                    <StatCard title="Clase B (Medio)" value={classB.length} icon={TrendingDown} color="blue" />
-                    <StatCard title="Clase C (Lento)" value={classC.length} icon={AlertTriangle} color="rose" />
+                    <StatCard title={t('inv.reports.classStar')} value={classA.length} icon={TrendingUp} color="emerald" />
+                    <StatCard title={t('inv.reports.classMedium')} value={classB.length} icon={TrendingDown} color="blue" />
+                    <StatCard title={t('inv.reports.classSlow')} value={classC.length} icon={AlertTriangle} color="rose" />
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
                             <tr>
-                                <th className="px-6 py-5">SKU / Producto</th>
+                                <th className="px-6 py-5">{t('inv.reports.skuProduct')}</th>
                                 <th className="px-6 py-5 text-right">Stock</th>
-                                <th className="px-6 py-5 text-right">Vendido</th>
-                                <th className="px-6 py-5 text-right">Tasa Rotación</th>
-                                <th className="px-6 py-5 text-center">Clasificación</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.sold')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.turnoverRate')}</th>
+                                <th className="px-6 py-5 text-center">{t('inv.reports.classification')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/50">
@@ -366,12 +386,11 @@ export const InventoryReports: React.FC = () => {
                                     <td className="px-6 py-4 text-right font-mono text-emerald-400 font-bold">{item.total_sold}</td>
                                     <td className="px-6 py-4 text-right font-mono text-white font-black">{item.turnover_rate}x</td>
                                     <td className="px-6 py-4 text-center">
-                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${
-                                            item.classification === 'A' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${item.classification === 'A' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                                             item.classification === 'B' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
-                                            'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                        }`}>
-                                            Clase {item.classification}
+                                                'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                                            }`}>
+                                            {t('inv.reports.class')} {item.classification}
                                         </span>
                                     </td>
                                 </tr>
@@ -379,16 +398,16 @@ export const InventoryReports: React.FC = () => {
                         </tbody>
                     </table>
                 </div>
-                
+
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 no-print">
                     <h3 className="text-white font-bold mb-3 flex items-center gap-2">
                         <FileBarChart className="w-5 h-5 text-emerald-400" />
-                        Interpretación del Análisis ABC
+                        {t('inv.reports.abcInterpretation')}
                     </h3>
                     <div className="space-y-2 text-sm text-slate-400">
-                        <p><span className="text-emerald-400 font-bold">Clase A:</span> Productos estrella con alta rotación (&gt;50 ventas). Requieren reposición frecuente.</p>
-                        <p><span className="text-blue-400 font-bold">Clase B:</span> Productos de rotación media (20-50 ventas). Monitoreo regular.</p>
-                        <p><span className="text-rose-400 font-bold">Clase C:</span> Productos de baja rotación (&lt;20 ventas). Evaluar descontinuación o promoción.</p>
+                        <p><span className="text-emerald-400 font-bold">{t('inv.reports.classStar')}:</span> {t('inv.reports.classADesc')}</p>
+                        <p><span className="text-blue-400 font-bold">{t('inv.reports.classMedium')}:</span> {t('inv.reports.classBDesc')}</p>
+                        <p><span className="text-rose-400 font-bold">{t('inv.reports.classSlow')}:</span> {t('inv.reports.classCDesc')}</p>
                     </div>
                 </div>
             </div>
@@ -399,25 +418,31 @@ export const InventoryReports: React.FC = () => {
         return (
             <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="flex items-center justify-between no-print">
-                    <Button variant="ghost" onClick={() => setSelectedReport(null)} className="text-slate-400 hover:text-white hover:bg-slate-900">
-                        <ArrowLeft className="w-4 h-4 mr-2" /> Volver
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-lg px-6 border-0">
-                        <Printer className="w-4 h-4 mr-2" /> Imprimir Alertas
-                    </Button>
+                    <button
+                        onClick={() => setSelectedReport(null)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-slate-400 hover:text-white transition-all font-bold active:scale-95"
+                    >
+                        <ArrowLeft className="w-4 h-4" /> {t('inv.reports.back')}
+                    </button>
+                    <button
+                        onClick={handlePrint}
+                        className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg px-6 py-2.5 border-0 transition-all active:scale-95"
+                    >
+                        <Printer className="w-4 h-4" /> {t('inv.reports.printAlerts')}
+                    </button>
                 </div>
 
-                <PrintHeader title="Reporte de Lotes Próximos a Vencer" subtitle="Control de caducidad para productos con trazabilidad por lote" />
+                <PrintHeader title={t('inv.reports.expiringReportTitle')} subtitle={t('inv.reports.expiringReportSubtitle')} t={t} />
 
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-950/50 text-slate-500 font-black uppercase text-[10px] tracking-widest border-b border-slate-800">
                             <tr>
-                                <th className="px-6 py-5">Producto</th>
-                                <th className="px-6 py-5">Lote #</th>
-                                <th className="px-6 py-5 text-center">Vencimiento</th>
-                                <th className="px-6 py-5 text-right">Cantidad</th>
-                                <th className="px-6 py-5 text-right">Días Restantes</th>
+                                <th className="px-6 py-5">{t('inv.kardex.product')}</th>
+                                <th className="px-6 py-5">{t('inv.reports.lotNumber')}</th>
+                                <th className="px-6 py-5 text-center">{t('inv.reports.expiryDate')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.movements.quantity')}</th>
+                                <th className="px-6 py-5 text-right">{t('inv.reports.daysRemaining')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-800/50">
@@ -442,7 +467,7 @@ export const InventoryReports: React.FC = () => {
                                             item.days_left < 90 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                                                 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                             }`}>
-                                            {item.days_left} días
+                                            {item.days_left} {t('inv.reports.days')}
                                         </span>
                                     </td>
                                 </tr>
@@ -455,52 +480,62 @@ export const InventoryReports: React.FC = () => {
     }
 
     return (
-        <div className="animate-in fade-in duration-700">
-            <div className="mb-8">
-                <h1 className="text-section-title flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40">
-                        <TrendingUp className="w-6 h-6 text-white" />
+        <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+            {/* Header Hub */}
+            <div className="mb-8 border-b border-slate-800 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <TrendingUp className="w-7 h-7 text-blue-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
-                    Centro de Reportes de Inventario
-                </h1>
-                <p className="text-standard-body opacity-80 mt-2 ml-16">Analítica avanzada y control de existencias en tiempo real</p>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('inv.reports.centerTitle')}</h1>
+                        <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
+                            <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse" /> {t('inv.reports.centerSubtitle')}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <ReportCard
-                    title="Valoración de Inventario"
-                    description="Resumen financiero detallado del valor monetario de toda la mercancía en stock basada en costo unitario."
+                    title={t('inv.reports.valuationTitle')}
+                    description={t('inv.reports.valuationDesc')}
                     icon={PieChart}
                     color="blue"
                     onClick={() => setSelectedReport('VALUATION')}
+                    t={t}
                 />
                 <ReportCard
-                    title="Movimientos por Producto"
-                    description="Kardex detallado de entradas, salidas y ajustes por producto con trazabilidad completa."
+                    title={t('inv.reports.movementsByProduct')}
+                    description={t('inv.reports.movementsDesc')}
                     icon={FileBarChart}
                     color="purple"
                     onClick={() => setSelectedReport('MOVEMENTS')}
+                    t={t}
                 />
                 <ReportCard
-                    title="Lotes por Vencer"
-                    description="Alerta temprana de caducidad para control de merma y gestión eficiente de la cadena de suministro."
+                    title={t('inv.reports.expiringBatches')}
+                    description={t('inv.reports.expiringDesc')}
                     icon={Clock}
                     color="amber"
                     onClick={() => setSelectedReport('EXPIRING')}
+                    t={t}
                 />
                 <ReportCard
-                    title="Stock Bajo / Reorden"
-                    description="Listado automático de reposición basado en niveles mínimos de seguridad y puntos de reorden."
+                    title={t('inv.reports.lowStockReorder')}
+                    description={t('inv.reports.lowStockDesc')}
                     icon={ShieldAlert}
                     color="rose"
                     onClick={() => setSelectedReport('LOW_STOCK')}
+                    t={t}
                 />
                 <ReportCard
-                    title="Rotación de Inventario"
-                    description="Análisis de velocidad de movimiento (ABC) para identificar productos estrella y capital estancado."
+                    title={t('inv.reports.turnoverTitle')}
+                    description={t('inv.reports.turnoverDesc')}
                     icon={TrendingDown}
                     color="emerald"
                     onClick={() => setSelectedReport('TURNOVER')}
+                    t={t}
                 />
             </div>
         </div>
@@ -526,7 +561,7 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => {
     );
 };
 
-const ReportCard = ({ title, description, icon: Icon, color, onClick, badge }: any) => {
+const ReportCard = ({ title, description, icon: Icon, color, onClick, badge, t }: any) => {
     const colorSchemes: any = {
         blue: 'hover:border-blue-500/50 group-hover:bg-blue-600 group-hover:shadow-blue-900/40',
         purple: 'hover:border-purple-500/50 group-hover:bg-purple-600 group-hover:shadow-purple-900/40',
@@ -564,7 +599,7 @@ const ReportCard = ({ title, description, icon: Icon, color, onClick, badge }: a
                     {description}
                 </p>
                 <div className="mt-8 flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] tracking-widest group-hover:text-white transition-colors">
-                    <span>Generar Reporte</span>
+                    <span>{t('inv.reports.generateReport')}</span>
                     <TrendingUp className="w-3 h-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </div>
             </CardContent>

@@ -1,8 +1,12 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, Plus, ShoppingCart, RefreshCw, Truck, FileText } from 'lucide-react';
-import { PurchaseOrder, getPurchaseOrders, getSuppliers, getProducts } from '@/database/simple-db';
+import { getPurchaseOrders } from '@/database/modules/db-purchase-orders';
+import type { PurchaseOrder } from '@/database/modules/db-types';
+import { getSuppliers } from '@/database/modules/db-suppliers';
+import { getProducts } from '@/database/modules/db-products';
 import { PurchaseOrderReceiving } from './PurchaseOrderReceiving';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
@@ -17,7 +21,7 @@ export const PurchaseOrdersList: React.FC<{ onCreateNew: () => void, onNavigateT
             const data = getPurchaseOrders();
             setOrders(data);
         } catch (error) {
-            console.error(error);
+            logger.error('PurchaseOrdersList', 'error', 'operation_failed', error);
         }
     };
 

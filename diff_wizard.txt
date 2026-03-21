@@ -1,0 +1,957 @@
+﻿commit d2e59b13e16ad2ed51d2ccfb7ecc2fcdf11fec14
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Tue Mar 3 12:47:19 2026 -0500
+
+    fix: resolve all TypeScript errors - banking module verification
+
+diff --git a/src/services/banking/ClassificationMemoryService.ts b/src/services/banking/ClassificationMemoryService.ts
+index 597f1f9..f22e775 100644
+--- a/src/services/banking/ClassificationMemoryService.ts
++++ b/src/services/banking/ClassificationMemoryService.ts
+@@ -1,5 +1,5 @@
+ import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+-import { db } from '../../database/simple-db';
++import { getDBEngine } from '../../database/simple-db';
+ 
+ export interface MemorySuggestion {
+     accountCode: string;
+@@ -15,14 +15,9 @@ export interface AccountSuggestion {
+ }
+ 
+ export class ClassificationMemoryService {
+-    private static engine: SQLiteEngine;
+-
+-    private static getEngine() {
+-        if (!this.engine) {
+-            this.engine = new SQLiteEngine();
+-            this.engine.setDB(db);
+-        }
+-        return this.engine;
++    // getEngine is now internal to each call to ensure we get the latest instance
++    private static getEngine(): SQLiteEngine {
++        return getDBEngine();
+     }
+ 
+     /**
+diff --git a/src/services/banking/ClassificationRulesService.ts b/src/services/banking/ClassificationRulesService.ts
+index d721ddc..c18cd8a 100644
+--- a/src/services/banking/ClassificationRulesService.ts
++++ b/src/services/banking/ClassificationRulesService.ts
+@@ -1,5 +1,4 @@
+-import { db, ChartOfAccount, getChartOfAccounts } from '../../database/simple-db';
+-import { SQLiteEngine } from '../../core/database/SQLiteEngine';
++import { getDBEngine, ChartOfAccount, getChartOfAccounts } from '../../database/simple-db';
+ 
+ export interface ClassificationRule {
+     id: number;
+@@ -19,8 +18,7 @@ export class ClassificationRulesService {
+      */
+     static async getRules(): Promise<ClassificationRule[]> {
+         try {
+-            const engine = new SQLiteEngine();
+-            engine.setDB(db);
++            const engine = getDBEngine();
+             const res = await engine.select(`
+                 SELECT * FROM classification_rules 
+                 WHERE is_active = 1 
+@@ -71,8 +69,9 @@ export class ClassificationRulesService {
+                     account_code: rule.account_code,
+                     account_name: rule.account_name,
+                     account_type: rule.account_type || 'Expense',
++                    normal_balance: realAcc.normal_balance,
+                     is_active: 1
+-                } as ChartOfAccount;
++                } as unknown as ChartOfAccount;
+             }
+         }
+ 
+@@ -84,8 +83,7 @@ export class ClassificationRulesService {
+      */
+     static async saveRule(rule: Omit<ClassificationRule, 'id'>, userId: number): Promise<boolean> {
+         try {
+-            const engine = new SQLiteEngine();
+-            engine.setDB(db);
++            const engine = getDBEngine();
+             await engine.run(`
+                 INSERT INTO classification_rules (
+                     pattern, match_type, account_code, account_name, account_type, priority, is_active, created_by
+@@ -112,8 +110,7 @@ export class ClassificationRulesService {
+      */
+     static async deleteRule(id: number): Promise<boolean> {
+         try {
+-            const engine = new SQLiteEngine();
+-            engine.setDB(db);
++            const engine = getDBEngine();
+             await engine.run(`DELETE FROM classification_rules WHERE id = ?`, [id]);
+             return true;
+         } catch (e) {
+@@ -126,8 +123,7 @@ export class ClassificationRulesService {
+      */
+     static async toggleRule(id: number, active: boolean): Promise<boolean> {
+         try {
+-            const engine = new SQLiteEngine();
+-            engine.setDB(db);
++            const engine = getDBEngine();
+             await engine.run(`UPDATE classification_rules SET is_active = ? WHERE id = ?`, [active ? 1 : 0, id]);
+             return true;
+         } catch (e) {
+diff --git a/src/services/banking/TransactionParser.ts b/src/services/banking/TransactionParser.ts
+index 0712045..8d5ba5f 100644
+--- a/src/services/banking/TransactionParser.ts
++++ b/src/services/banking/TransactionParser.ts
+@@ -324,7 +324,7 @@ export class TransactionParser {
+                 result.state,
+                 keywordId,
+                 result.confidence_score,
+-                isVerified
++                result.auto_classified ? 1 : 0
+             ]);
+ 
+             // Log en quarantine_audit_log para HIGH_RISK
+
+commit 03bd55269218c22a91e36317db6bc3f3dce4aaa0
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Mon Mar 2 17:43:30 2026 -0500
+
+    FEAT: Banking states refactor and SQL parameterization.
+    
+    - Replaced hardcoded transaction states with TRANSACTION_STATES constants.
+    - Parameterized SQL queries in banking services and components to prevent injection.
+    - Resolved hardcoded account_type: 'Expense' and id: 0 in classification rules.
+    - Added migration for account_type in classification_rules.
+
+diff --git a/src/components/banking/BankImportWizard.tsx b/src/components/banking/BankImportWizard.tsx
+index a3d4da6..41ce876 100644
+--- a/src/components/banking/BankImportWizard.tsx
++++ b/src/components/banking/BankImportWizard.tsx
+@@ -22,11 +22,12 @@ interface BankImportWizardProps {
+   onClose?: () => void;
+   onComplete: () => void;
+   accounts?: BankAccount[];
++  selectedAccountId?: number;
+ }
+ 
+ type Step = 'upload' | 'preview' | 'edit' | 'confirm';
+ 
+-export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => {}, onComplete, accounts }) => {
++export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => { }, onComplete, accounts, selectedAccountId }) => {
+   const [step, setStep] = useState<Step>('upload');
+   const [file, setFile] = useState<File | null>(null);
+   const [batchId, setBatchId] = useState<number | null>(null);
+@@ -88,8 +89,14 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
+     setError(null);
+ 
+     try {
+-      await importService.finalizeImport(batchId, 1);
+-      toast.success('Inyecci├│n de datos certificada correctamente');
++      const result = await importService.finalizeImport(batchId, 1, selectedAccountId ?? 0);
++
++      if (result.skipped > 0) {
++        toast.success(`${result.imported} transacciones importadas, ${result.skipped} duplicadas salteadas`);
++      } else {
++        toast.success(`${result.imported} transacciones importadas correctamente`);
++      }
++
+       onComplete();
+     } catch (err) {
+       setError((err as Error).message);
+@@ -298,8 +305,8 @@ export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = ()
+ const StepIndicator = ({ active, completed, step, label, icon: Icon }: any) => (
+   <div className={`flex items-center gap-4 transition-all duration-500 ${active ? 'scale-110' : completed ? 'opacity-80' : 'opacity-40'}`}>
+     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 shadow-xl ${active ? 'bg-blue-600 border-blue-400 text-white shadow-blue-900/40' :
+-        completed ? 'bg-emerald-600/10 border-emerald-500/40 text-emerald-500' :
+-          'bg-slate-950 border-slate-800 text-slate-600'
++      completed ? 'bg-emerald-600/10 border-emerald-500/40 text-emerald-500' :
++        'bg-slate-950 border-slate-800 text-slate-600'
+       }`}>
+       {completed ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+     </div>
+diff --git a/src/services/banking/BankImportService.ts b/src/services/banking/BankImportService.ts
+index 40b28b5..ba16b0d 100644
+--- a/src/services/banking/BankImportService.ts
++++ b/src/services/banking/BankImportService.ts
+@@ -18,6 +18,9 @@ import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
+ import { AICategorizerService, TrainingExample } from './AICategorizerService';
+ import { TransactionMatcher, Invoice, Bill } from './TransactionMatcher';
+ import { DatabaseService } from '../../database/DatabaseService';
++import { generateTransactionHash } from './BankingUtils';
++import { ClassificationRulesService } from './ClassificationRulesService';
++import { TRANSACTION_STATES } from '../../constants/bankingStates';
+ 
+ export interface ImportBatch {
+   id: number;
+@@ -52,12 +55,12 @@ export interface ImportTransaction {
+ 
+ export class BankImportService {
+   private categorizer: AICategorizerService;
+-  
++
+   constructor() {
+     this.categorizer = new AICategorizerService();
+     this.loadTrainingData();
+   }
+-  
++
+   /**
+    * Carga datos de entrenamiento desde la base de datos
+    */
+@@ -69,7 +72,7 @@ export class BankImportService {
+         ORDER BY created_at DESC
+         LIMIT 1000
+       `);
+-      
++
+       if (trainingData.length > 0 && trainingData[0].values.length > 0) {
+         const examples: TrainingExample[] = trainingData[0].values.map((row: any) => ({
+           description: row[0],
+@@ -77,14 +80,14 @@ export class BankImportService {
+           amount: row[2],
+           transactionType: row[3]
+         }));
+-        
++
+         this.categorizer.train(examples);
+       }
+     } catch (error) {
+       console.error('Error loading training data:', error);
+     }
+   }
+-  
++
+   /**
+    * Crea un nuevo batch de importaci├│n y genera preview
+    */
+@@ -93,21 +96,21 @@ export class BankImportService {
+     bankAccountId: number,
+     userId: number
+   ): Promise<{ batchId: number; transactions: ImportTransaction[] }> {
+-    
++
+     // 1. Parse file
+     const parseResult = await FileParserService.parseFile(file);
+-    
++
+     if (parseResult.errors.length > 0) {
+       throw new Error(`Errores al parsear archivo: ${parseResult.errors.join(', ')}`);
+     }
+-    
++
+     if (parseResult.transactions.length === 0) {
+       throw new Error('No se encontraron transacciones en el archivo');
+     }
+-    
++
+     // 2. Create batch
+     const batchNumber = `IMP-${Date.now()}`;
+-    
++
+     db.run(`
+       INSERT INTO import_batches (
+         batch_number, file_name, file_format, bank_account_id,
+@@ -121,34 +124,34 @@ export class BankImportService {
+       parseResult.transactions.length,
+       userId
+     ]);
+-    
++
+     const batchIdResult = db.exec('SELECT last_insert_rowid() as id');
+     const batchId = batchIdResult[0].values[0][0] as number;
+-    
++
+     // 3. Get existing transactions for duplicate detection
+     const existingTxns = await this.getExistingTransactions();
+-    
++
+     // 4. Get unpaid invoices and bills for matching
+     const unpaidInvoices = await this.getUnpaidInvoices();
+     const unpaidBills = await this.getUnpaidBills();
+-    
++
+     // 5. Process each transaction
+     const importTransactions: ImportTransaction[] = [];
+-    
++
+     for (const txn of parseResult.transactions) {
+       // Detect duplicates
+       const duplicateResult = await DuplicateDetector.detectDuplicate(txn, existingTxns);
+-      
++
+       // Categorize with AI
+       const categorizationResult = this.categorizer.categorize(txn);
+-      
++
+       // Match with invoices/bills
+       const matchResult = await TransactionMatcher.matchTransaction(
+         txn,
+         unpaidInvoices,
+         unpaidBills
+       );
+-      
++
+       // Insert into temp table
+       db.run(`
+         INSERT INTO import_transactions_temp (
+@@ -171,10 +174,10 @@ export class BankImportService {
+         matchResult.matchType === 'bill' ? matchResult.matchedId : null,
+         matchResult.confidence || null
+       ]);
+-      
++
+       const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
+       const txnId = txnIdResult[0].values[0][0] as number;
+-      
++
+       importTransactions.push({
+         id: txnId,
+         batchId,
+@@ -192,10 +195,10 @@ export class BankImportService {
+         excluded: false
+       });
+     }
+-    
++
+     return { batchId, transactions: importTransactions };
+   }
+-  
++
+   /**
+    * Actualiza una transacci├│n en el preview
+    */
+@@ -209,50 +212,51 @@ export class BankImportService {
+   ): Promise<void> {
+     const setClauses: string[] = [];
+     const values: any[] = [];
+-    
++
+     if (updates.userCategory !== undefined) {
+       setClauses.push('user_category = ?');
+       values.push(updates.userCategory);
+     }
+-    
++
+     if (updates.userDescription !== undefined) {
+       setClauses.push('user_description = ?');
+       values.push(updates.userDescription);
+     }
+-    
++
+     if (updates.excluded !== undefined) {
+       setClauses.push('excluded = ?');
+       values.push(updates.excluded ? 1 : 0);
+     }
+-    
++
+     if (setClauses.length === 0) return;
+-    
++
+     values.push(transactionId);
+-    
++
+     db.run(`
+       UPDATE import_transactions_temp
+       SET ${setClauses.join(', ')}
+       WHERE id = ?
+     `, values);
+   }
+-  
++
+   /**
+    * Importa las transacciones finales
++   * Retorna { imported: number, skipped: number }
+    */
+-  async finalizeImport(batchId: number, userId: number): Promise<void> {
++  async finalizeImport(batchId: number, userId: number, bankAccountId: number): Promise<{ imported: number, skipped: number }> {
+     try {
+       db.run('BEGIN TRANSACTION');
+-      
++
+       // Get transactions to import (not excluded, not duplicates)
+       const txnsResult = db.exec(`
+         SELECT * FROM import_transactions_temp
+-        WHERE batch_id = ? AND excluded = 0 AND is_duplicate = 0
++        WHERE batch_id = ? AND excluded = 0
+       `, [batchId]);
+-      
++
+       if (txnsResult.length === 0 || txnsResult[0].values.length === 0) {
+         throw new Error('No hay transacciones para importar');
+       }
+-      
++
+       const columns = txnsResult[0].columns;
+       const transactions = txnsResult[0].values.map((row: any) => {
+         const obj: any = {};
+@@ -261,22 +265,76 @@ export class BankImportService {
+         });
+         return obj;
+       });
+-      
++
+       let importedCount = 0;
+-      
++      let skippedCount = 0;
++
+       for (const txn of transactions) {
+-        // Determine final category (user override or suggested)
+-        const finalCategory = txn.user_category || txn.suggested_category;
++        // Generar hash ├║nico para deduplicaci├│n
++        const hash = await generateTransactionHash(
++          txn.transaction_date,
++          txn.amount,
++          txn.description,
++          bankAccountId
++        );
++
++        // Intentar insertar la transacci├│n bancaria. INSERT OR IGNORE evita duplicados por UNIQUE(import_hash)
++        db.run(`
++          INSERT OR IGNORE INTO bank_transactions (
++            bank_account_id, transaction_date, description, amount, status, import_hash
++          ) VALUES (?, ?, ?, ?, ?, ?)
++        `, [
++          bankAccountId,
++          txn.transaction_date,
++          txn.description,
++          txn.amount,
++          TRANSACTION_STATES.IMPORTED,
++          hash
++        ]);
++
++        // Verificar si se insert├│ realmente
++        const rowsAffected = db.exec('SELECT changes() as changes')[0].values[0][0] as number;
++
++        if (rowsAffected === 0) {
++          skippedCount++;
++          continue;
++        }
++
++        // Obtener ID de la transacci├│n reci├⌐n insertada
++        const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
++        const bankTxnId = txnIdResult[0].values[0][0] as number;
++
++        // EVALUAR REGLAS DE CLASIFICACI├ôN (Automatizaci├│n Inteligente)
++        const autoAccount = await ClassificationRulesService.evaluateTransaction(txn.description);
++
++        // Determine final category (rule match > user override > suggested)
++        const finalCategory = autoAccount ? autoAccount.account_code : (txn.user_category || txn.suggested_category);
+         const finalDescription = txn.user_description || txn.description;
+-        
+-        // Create bank transaction (assuming there's a bank_transactions table)
+-        // Note: This would need to be adapted to your actual schema
+-        
++        const isAutoClassified = !!autoAccount;
++
++        // Insertar en transaction_states
++        db.run(`
++          INSERT INTO transaction_states (
++            transaction_id, current_state, is_verified, 
++            auto_classified, assigned_account_code, assigned_account_name,
++            verified_at, verified_by
++          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
++        `, [
++          bankTxnId,
++          isAutoClassified ? TRANSACTION_STATES.VERIFIED : TRANSACTION_STATES.IMPORTED,
++          isAutoClassified ? 1 : 0,
++          isAutoClassified ? 1 : 0,
++          autoAccount ? autoAccount.account_code : null,
++          autoAccount ? autoAccount.account_name : null,
++          isAutoClassified ? new Date().toISOString() : null,
++          isAutoClassified ? userId : null
++        ]);
++
+         // Generate journal entry
+         const debitAccount = txn.amount < 0 ? finalCategory : 'Bank Account';
+         const creditAccount = txn.amount < 0 ? 'Bank Account' : finalCategory;
+         const absAmount = Math.abs(txn.amount);
+-        
++
+         await DatabaseService.insertJournalEntry({
+           description: `Bank Import: ${finalDescription}`,
+           date: txn.transaction_date,
+@@ -296,7 +354,7 @@ export class BankImportService {
+           ],
+           userId
+         });
+-        
++
+         // Save as training data if user corrected the category
+         if (txn.user_category && txn.user_category !== txn.suggested_category) {
+           db.run(`
+@@ -308,7 +366,7 @@ export class BankImportService {
+             txn.amount,
+             txn.amount < 0 ? 'debit' : 'credit'
+           ]);
+-          
++
+           // Add to categorizer for immediate learning
+           this.categorizer.addTrainingExample({
+             description: txn.description,
+@@ -317,56 +375,57 @@ export class BankImportService {
+             transactionType: txn.amount < 0 ? 'debit' : 'credit'
+           });
+         }
+-        
++
+         importedCount++;
+       }
+-      
++
+       // Update batch status
+       db.run(`
+         UPDATE import_batches
+         SET status = 'completed', imported_count = ?, imported_at = datetime('now')
+         WHERE id = ?
+       `, [importedCount, batchId]);
+-      
++
+       // Clean up temp transactions
+       db.run('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
+-      
++
+       db.run('COMMIT');
+-      
++      return { imported: importedCount, skipped: skippedCount };
++
+     } catch (error) {
+       db.run('ROLLBACK');
+       throw error;
+     }
+   }
+-  
++
+   /**
+    * Rollback de una importaci├│n
+    */
+   async rollbackImport(batchId: number): Promise<void> {
+     try {
+       db.run('BEGIN TRANSACTION');
+-      
++
+       // Check if period is open
+       // (This would need to check against accounting_periods table)
+-      
++
+       // Delete journal entries created by this batch
+       // Note: This would need to track which journal entries belong to which batch
+       // For now, we'll just mark the batch as rolled back
+-      
++
+       db.run(`
+         UPDATE import_batches
+         SET status = 'rolled_back', rolled_back_at = datetime('now')
+         WHERE id = ?
+       `, [batchId]);
+-      
++
+       db.run('COMMIT');
+-      
++
+     } catch (error) {
+       db.run('ROLLBACK');
+       throw error;
+     }
+   }
+-  
++
+   /**
+    * Obtiene transacciones existentes para detecci├│n de duplicados
+    */
+@@ -380,7 +439,7 @@ export class BankImportService {
+       return [];
+     }
+   }
+-  
++
+   /**
+    * Obtiene facturas no pagadas
+    */
+@@ -393,11 +452,11 @@ export class BankImportService {
+         ORDER BY date DESC
+         LIMIT 100
+       `);
+-      
++
+       if (result.length === 0 || result[0].values.length === 0) {
+         return [];
+       }
+-      
++
+       return result[0].values.map((row: any) => ({
+         id: row[0],
+         invoice_number: row[1],
+@@ -410,7 +469,7 @@ export class BankImportService {
+       return [];
+     }
+   }
+-  
++
+   /**
+    * Obtiene gastos no pagados
+    */
+@@ -424,7 +483,7 @@ export class BankImportService {
+       return [];
+     }
+   }
+-  
++
+   /**
+    * Obtiene el historial de importaciones
+    */
+@@ -438,11 +497,11 @@ export class BankImportService {
+         ORDER BY created_at DESC
+         LIMIT 50
+       `);
+-      
++
+       if (result.length === 0 || result[0].values.length === 0) {
+         return [];
+       }
+-      
++
+       return result[0].values.map((row: any) => ({
+         id: row[0],
+         batchNumber: row[1],
+diff --git a/src/services/banking/BankingUtils.ts b/src/services/banking/BankingUtils.ts
+new file mode 100644
+index 0000000..c58586b
+--- /dev/null
++++ b/src/services/banking/BankingUtils.ts
+@@ -0,0 +1,24 @@
++import { crypto } from '../../core/security/CryptoPolyfill';
++
++/**
++ * Genera un hash ├║nico para una transacci├│n bancaria para evitar duplicados.
++ * Combina fecha, monto (en centavos para evitar precisi├│n flotante), descripci├│n y ID de cuenta.
++ */
++export async function generateTransactionHash(
++    date: string,
++    amount: number,
++    description: string,
++    bankAccountId: number
++): Promise<string> {
++    // Normalizamos el monto a centavos para consistencia de hash
++    const amountInCents = Math.round(amount * 100);
++    const rawData = `${date}|${amountInCents}|${description.trim().toUpperCase()}|${bankAccountId}`;
++
++    // Usamos SHA-256
++    const msgUint8 = new TextEncoder().encode(rawData);
++    const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgUint8);
++    const hashArray = Array.from(new Uint8Array(hashBuffer));
++    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
++
++    return hashHex;
++}
+diff --git a/src/services/banking/ClassificationRulesService.ts b/src/services/banking/ClassificationRulesService.ts
+new file mode 100644
+index 0000000..d721ddc
+--- /dev/null
++++ b/src/services/banking/ClassificationRulesService.ts
+@@ -0,0 +1,137 @@
++import { db, ChartOfAccount, getChartOfAccounts } from '../../database/simple-db';
++import { SQLiteEngine } from '../../core/database/SQLiteEngine';
++
++export interface ClassificationRule {
++    id: number;
++    pattern: string;
++    match_type: 'CONTAINS' | 'STARTS_WITH' | 'EXACT';
++    account_code: string;
++    account_name: string;
++    account_type: string;
++    priority: number;
++    is_active: boolean;
++}
++
++export class ClassificationRulesService {
++
++    /**
++     * Obtiene todas las reglas activas ordenadas por prioridad
++     */
++    static async getRules(): Promise<ClassificationRule[]> {
++        try {
++            const engine = new SQLiteEngine();
++            engine.setDB(db);
++            const res = await engine.select(`
++                SELECT * FROM classification_rules 
++                WHERE is_active = 1 
++                ORDER BY priority DESC, id ASC
++            `);
++            return res.map((row: any) => ({
++                ...row,
++                is_active: row.is_active === 1
++            })) as ClassificationRule[];
++        } catch (e) {
++            console.error('Error fetching classification rules:', e);
++            return [];
++        }
++    }
++
++    /**
++     * Eval├║a una descripci├│n contra las reglas
++     */
++    static async evaluateTransaction(description: string): Promise<ChartOfAccount | null> {
++        const rules = await this.getRules();
++        const descNormalize = description.trim().toUpperCase();
++        const allAccounts = getChartOfAccounts();
++
++        for (const rule of rules) {
++            const pattern = rule.pattern.trim().toUpperCase();
++            let matched = false;
++
++            switch (rule.match_type) {
++                case 'EXACT':
++                    matched = descNormalize === pattern;
++                    break;
++                case 'STARTS_WITH':
++                    matched = descNormalize.startsWith(pattern);
++                    break;
++                case 'CONTAINS':
++                    matched = descNormalize.includes(pattern);
++                    break;
++            }
++
++            if (matched) {
++                // Buscamos el ID real en el chart of accounts
++                const realAcc = allAccounts.find(a => a.account_code === rule.account_code);
++
++                if (!realAcc) return null; // Si no existe la cuenta en el chart, ignoramos
++
++                return {
++                    id: realAcc.id,
++                    account_code: rule.account_code,
++                    account_name: rule.account_name,
++                    account_type: rule.account_type || 'Expense',
++                    is_active: 1
++                } as ChartOfAccount;
++            }
++        }
++
++        return null;
++    }
++
++    /**
++     * Guarda una nueva regla
++     */
++    static async saveRule(rule: Omit<ClassificationRule, 'id'>, userId: number): Promise<boolean> {
++        try {
++            const engine = new SQLiteEngine();
++            engine.setDB(db);
++            await engine.run(`
++                INSERT INTO classification_rules (
++                    pattern, match_type, account_code, account_name, account_type, priority, is_active, created_by
++                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
++            `, [
++                rule.pattern,
++                rule.match_type,
++                rule.account_code,
++                rule.account_name,
++                rule.account_type || 'Expense',
++                rule.priority,
++                rule.is_active ? 1 : 0,
++                userId
++            ]);
++            return true;
++        } catch (e) {
++            console.error('Error saving rule:', e);
++            return false;
++        }
++    }
++
++    /**
++     * Elimina una regla
++     */
++    static async deleteRule(id: number): Promise<boolean> {
++        try {
++            const engine = new SQLiteEngine();
++            engine.setDB(db);
++            await engine.run(`DELETE FROM classification_rules WHERE id = ?`, [id]);
++            return true;
++        } catch (e) {
++            return false;
++        }
++    }
++
++    /**
++     * Activa/Desactiva una regla
++     */
++    static async toggleRule(id: number, active: boolean): Promise<boolean> {
++        try {
++            const engine = new SQLiteEngine();
++            engine.setDB(db);
++            await engine.run(`UPDATE classification_rules SET is_active = ? WHERE id = ?`, [active ? 1 : 0, id]);
++            return true;
++        } catch (e) {
++            return false;
++        }
++    }
++}
+diff --git a/src/services/banking/TransactionParser.ts b/src/services/banking/TransactionParser.ts
+index 6e6d70d..0712045 100644
+--- a/src/services/banking/TransactionParser.ts
++++ b/src/services/banking/TransactionParser.ts
+@@ -9,12 +9,7 @@ interface IDbEngine {
+ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ // TIPOS ΓÇö alineados exactamente con migration 016 constraints
+ // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+-export type TransactionState =
+-    | 'IMPORTED'
+-    | 'HIGH_RISK_PERSONAL'
+-    | 'PENDING_SUPERVISOR'
+-    | 'DISPUTED'
+-    | 'VERIFIED';
++import { TRANSACTION_STATES, TransactionState } from '../../constants/bankingStates';
+ 
+ export type SuggestedCategory =
+     | 'PERSONAL_EXPENSE'
+@@ -211,7 +206,7 @@ export class TransactionParser {
+             return {
+                 transaction_id,
+                 description,
+-                state: 'VERIFIED',
++                state: TRANSACTION_STATES.VERIFIED,
+                 matched_keyword_id: layer1Match.keyword.id,
+                 suggested_category: layer1Match.keyword.suggested_category,
+                 confidence_score: 1.0,
+@@ -224,8 +219,8 @@ export class TransactionParser {
+         if (layer1Match && !layer1Match.keyword.auto_classify) {
+             const state: TransactionState =
+                 layer1Match.keyword.risk_level === 'HIGH'
+-                    ? 'HIGH_RISK_PERSONAL'
+-                    : 'IMPORTED';
++                    ? TRANSACTION_STATES.HIGH_RISK_PERSONAL
++                    : TRANSACTION_STATES.IMPORTED;
+             return {
+                 transaction_id,
+                 description,
+@@ -261,7 +256,7 @@ export class TransactionParser {
+             return {
+                 transaction_id,
+                 description,
+-                state: 'IMPORTED', // Fuzzy nunca auto-clasifica ΓÇö siempre requiere revisi├│n
++                state: TRANSACTION_STATES.IMPORTED, // Fuzzy nunca auto-clasifica ΓÇö siempre requiere revisi├│n
+                 matched_keyword_id: bestKeyword.id,
+                 suggested_category: bestKeyword.suggested_category,
+                 confidence_score: bestScore,
+@@ -275,7 +270,7 @@ export class TransactionParser {
+         return {
+             transaction_id,
+             description,
+-            state: 'IMPORTED',
++            state: TRANSACTION_STATES.IMPORTED,
+             matched_keyword_id: null,
+             suggested_category: null,
+             confidence_score: 0,
+@@ -303,32 +298,19 @@ export class TransactionParser {
+             const result = await this.parse(tx.id, tx.description);
+             results.push(result);
+ 
+-            const keywordIdSQL = result.matched_keyword_id !== null
+-                ? String(result.matched_keyword_id)
+-                : 'NULL';
+-            const quarantineStart = result.state === 'HIGH_RISK_PERSONAL'
+-                ? `datetime('now')`
+-                : 'NULL';
+-            const slaDeadline = result.state === 'HIGH_RISK_PERSONAL'
+-                ? `datetime('now', '+72 hours')`
+-                : 'NULL';
+-            const isVerified = result.state === 'VERIFIED' ? 1 : 0;
++            const keywordId = result.matched_keyword_id;
++            const isHighRisk = result.state === TRANSACTION_STATES.HIGH_RISK_PERSONAL;
+ 
+             // Insertar o actualizar estado en transaction_states
+-            // ON CONFLICT requires SQLite 3.24+ (available in all modern browsers)
+-            await this.db.exec(`
++            await this.db.run(`
+                 INSERT INTO transaction_states (
+                     transaction_id, current_state, risk_keyword_id,
+                     risk_score, is_verified,
+                     quarantine_started_at, sla_deadline
+                 ) VALUES (
+-                    ${tx.id},
+-                    '${result.state}',
+-                    ${keywordIdSQL},
+-                    ${result.confidence_score},
+-                    ${isVerified},
+-                    ${quarantineStart},
+-                    ${slaDeadline}
++                    ?, ?, ?, ?, ?, 
++                    ${isHighRisk ? "datetime('now')" : "NULL"}, 
++                    ${isHighRisk ? "datetime('now', '+72 hours')" : "NULL"}
+                 )
+                 ON CONFLICT(transaction_id) DO UPDATE SET
+                     current_state         = excluded.current_state,
+@@ -337,24 +319,34 @@ export class TransactionParser {
+                     is_verified           = excluded.is_verified,
+                     quarantine_started_at = excluded.quarantine_started_at,
+                     sla_deadline          = excluded.sla_deadline
+-            `);
++            `, [
++                tx.id,
++                result.state,
++                keywordId,
++                result.confidence_score,
++                isVerified
++            ]);
+ 
+             // Log en quarantine_audit_log para HIGH_RISK
+-            if (result.state === 'HIGH_RISK_PERSONAL') {
++            if (result.state === TRANSACTION_STATES.HIGH_RISK_PERSONAL) {
+                 const stateRows = await this.db.select(
+-                    `SELECT id FROM transaction_states WHERE transaction_id = ${tx.id} LIMIT 1`
++                    `SELECT id FROM transaction_states WHERE transaction_id = ? LIMIT 1`,
++                    [tx.id]
+                 );
+                 if (stateRows.length > 0) {
+                     const stateId = stateRows[0]['id'] as number;
+-                    await this.db.exec(`
++                    await this.db.run(`
+                         INSERT INTO quarantine_audit_log (
+                             transaction_id, state_id, action_type,
+                             performed_by, previous_state, new_state
+-                        ) VALUES (
+-                            ${tx.id}, ${stateId}, 'RISK_DETECTED',
+-                            NULL, 'IMPORTED', 'HIGH_RISK_PERSONAL'
+-                        )
+-                    `);
++                        ) VALUES (?, ?, ?, NULL, ?, ?)
++                    `, [
++                        tx.id,
++                        stateId,
++                        TRANSACTION_STATES.RISK_DETECTED,
++                        TRANSACTION_STATES.IMPORTED,
++                        TRANSACTION_STATES.HIGH_RISK_PERSONAL
++                    ]);
+                 }
+             }
+         }
+@@ -377,8 +369,8 @@ export class TransactionParser {
+         if (count > 0) {
+             await this.db.exec(`
+                 UPDATE transaction_states
+-                SET    current_state = 'PENDING_SUPERVISOR'
+-                WHERE  current_state = 'HIGH_RISK_PERSONAL'
++                SET    current_state = '${TRANSACTION_STATES.PENDING_SUPERVISOR}'
++                WHERE  current_state = '${TRANSACTION_STATES.HIGH_RISK_PERSONAL}'
+                   AND  sla_deadline  < datetime('now')
+                   AND  is_verified   = 0
+             `);
+
+commit 9904a812a2c6b1e33cfc8e6a0f2e7863cc1d6c2b
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Sat Feb 28 15:33:15 2026 -0500
+
+    feat: calibrate transaction parser fuzzy threshold to 0.85
+
+diff --git a/src/services/banking/TransactionParser.ts b/src/services/banking/TransactionParser.ts
+index 39cbb6c..6e6d70d 100644
+--- a/src/services/banking/TransactionParser.ts
++++ b/src/services/banking/TransactionParser.ts
+@@ -240,8 +240,8 @@ export class TransactionParser {
+         }
+ 
+         // CAPA 2: Fuzzy para P2P sin match determin├¡stico
+-        // NOTA: El umbral FΓéÇ.ΓéçΓéà se calibr├│ con datos reales de BofA.
+-        const FUZZY_THRESHOLD = 0.75;
++        // NOTA: El umbral FΓéÇ.ΓéêΓéà se calibr├│ con datos reales de BofA.
++        const FUZZY_THRESHOLD = 0.85;
+ 
+         let bestScore = 0;
+         let bestKeyword: RiskKeyword | null = null;

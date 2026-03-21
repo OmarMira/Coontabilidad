@@ -1,5 +1,5 @@
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
-import { saveDatabase, forceSaveDB } from '../../database/simple-db';
+import { saveDatabase, forceSaveDB } from '@/database/modules/db-persistence';
 
 
 

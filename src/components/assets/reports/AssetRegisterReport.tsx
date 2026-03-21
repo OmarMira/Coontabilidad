@@ -1,3 +1,4 @@
+﻿import { logger } from '../../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Download, Printer, Filter, X } from 'lucide-react';
 import { Button } from '../../ui/button';
@@ -5,6 +6,7 @@ import { Card, CardContent } from '../../ui/card';
 import { getFixedAssetsController } from '../../../controllers/FixedAssetsController';
 import { SQLiteEngine } from '../../../core/database/SQLiteEngine';
 import type { FixedAsset, AssetCategory } from '../../../services/accounting/fixed-assets';
+import { useLocale } from '../../../i18n/useLocale';
 
 interface AssetRegisterReportProps {
     db: SQLiteEngine;
@@ -12,6 +14,7 @@ interface AssetRegisterReportProps {
 }
 
 export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, onClose }) => {
+    const { t } = useLocale();
     const [assets, setAssets] = useState<FixedAsset[]>([]);
     const [categories, setCategories] = useState<AssetCategory[]>([]);
     const [loading, setLoading] = useState(true);
@@ -48,7 +51,7 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
             setAssets(filtered);
             setCategories(categoriesData);
         } catch (err) {
-            console.error('Error loading asset register:', err);
+            logger.error('AssetRegisterReport', 'error', 'Error loading asset register:', err);
         } finally {
             setLoading(false);
         }
@@ -56,14 +59,14 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
 
     const exportToCSV = () => {
         const headers = [
-            'Asset Tag',
-            'Name',
-            'Category',
-            'Purchase Date',
-            'Original Cost',
-            'Accumulated Depreciation',
-            'Net Book Value',
-            'Status'
+            t('assets.reports_ui.csv.tag'),
+            t('assets.reports_ui.csv.name'),
+            t('assets.reports_ui.csv.category'),
+            t('assets.reports_ui.csv.date'),
+            t('assets.reports_ui.csv.cost'),
+            t('assets.reports_ui.csv.accDep'),
+            t('assets.reports_ui.csv.nbv'),
+            t('assets.reports_ui.csv.status')
         ];
 
         const rows = assets.map(asset => {
@@ -76,7 +79,7 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                 (asset.purchase_cost / 100).toFixed(2),
                 (asset.total_accumulated_depreciation / 100).toFixed(2),
                 ((asset.net_book_value || 0) / 100).toFixed(2),
-                asset.status
+                t(`assets.status.${asset.status.toLowerCase()}`)
             ];
         });
 
@@ -113,7 +116,7 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
             <div className="flex items-center justify-center h-96">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
-                    <p className="text-slate-400">Loading asset register...</p>
+                    <p className="text-slate-400">{t('assets.reports_ui.loading')}</p>
                 </div>
             </div>
         );
@@ -124,9 +127,9 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
             {/* Header */}
             <div className="flex items-center justify-between print:hidden">
                 <div>
-                    <h2 className="text-2xl font-black text-white">Asset Register</h2>
+                    <h2 className="text-2xl font-black text-white">{t('assets.reports.register')}</h2>
                     <p className="text-slate-500 text-sm mt-1">
-                        Complete list of all fixed assets as of {new Date().toLocaleDateString()}
+                        {t('assets.reports_ui.subtitleRegister', { date: new Date().toLocaleDateString() })}
                     </p>
                 </div>
                 <div className="flex gap-3">
@@ -135,14 +138,14 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     >
                         <Download className="w-4 h-4 mr-2" />
-                        Export CSV
+                        {t('assets.reports_ui.export')}
                     </Button>
                     <Button
                         onClick={handlePrint}
                         className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                         <Printer className="w-4 h-4 mr-2" />
-                        Print
+                        {t('assets.reports_ui.print')}
                     </Button>
                     <button
                         onClick={onClose}
@@ -164,7 +167,7 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                                 onChange={(e) => setFilters({ ...filters, category_id: parseInt(e.target.value) })}
                                 className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white text-sm"
                             >
-                                <option value={0}>All Categories</option>
+                                <option value={0}>{t('assets.reports_ui.allCategories')}</option>
                                 {categories.map(cat => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
@@ -175,15 +178,15 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                                 onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
                                 className="bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white text-sm"
                             >
-                                <option value="ALL">All Status</option>
-                                <option value="ACTIVE">Active</option>
-                                <option value="PENDING">Pending</option>
-                                <option value="FULLY_DEPRECIATED">Fully Depreciated</option>
-                                <option value="DISPOSED">Disposed</option>
+                                <option value="ALL">{t('assets.reports_ui.allStatus')}</option>
+                                <option value="ACTIVE">{t('assets.status.active')}</option>
+                                <option value="PENDING">{t('assets.status.pending')}</option>
+                                <option value="FULLY_DEPRECIATED">{t('assets.status.fully_depreciated')}</option>
+                                <option value="DISPOSED">{t('assets.status.disposed')}</option>
                             </select>
                         </div>
                         <div className="text-sm text-slate-400">
-                            {assets.length} asset{assets.length !== 1 ? 's' : ''}
+                            {t('assets.reports_ui.assetCount', { count: assets.length })}
                         </div>
                     </div>
                 </CardContent>
@@ -196,14 +199,14 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-slate-800 bg-slate-950">
-                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">Tag</th>
-                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">Asset Name</th>
-                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">Category</th>
-                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">Purchase Date</th>
-                                    <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Original Cost</th>
-                                    <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Accumulated Dep.</th>
-                                    <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">Net Book Value</th>
-                                    <th className="text-center py-3 px-4 text-xs font-black text-slate-400 uppercase print:hidden">Status</th>
+                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.tag')}</th>
+                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.name')}</th>
+                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.form.category')}</th>
+                                    <th className="text-left py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.form.purchaseDate')}</th>
+                                    <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.cost')}</th>
+                                    <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.accDep')}</th>
+                                    <th className="text-right py-3 px-4 text-xs font-black text-slate-400 uppercase">{t('assets.reports_ui.nbv')}</th>
+                                    <th className="text-center py-3 px-4 text-xs font-black text-slate-400 uppercase print:hidden">{t('assets.details.status')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -226,11 +229,11 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                                             </td>
                                             <td className="py-3 px-4 text-center print:hidden">
                                                 <span className={`px-2 py-1 rounded-lg text-xs font-medium ${asset.status === 'ACTIVE' ? 'bg-emerald-900/30 text-emerald-400' :
-                                                        asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
-                                                            asset.status === 'DISPOSED' ? 'bg-rose-900/30 text-rose-400' :
-                                                                'bg-slate-700 text-slate-400'
+                                                    asset.status === 'FULLY_DEPRECIATED' ? 'bg-blue-900/30 text-blue-400' :
+                                                        asset.status === 'DISPOSED' ? 'bg-rose-900/30 text-rose-400' :
+                                                            'bg-slate-700 text-slate-400'
                                                     }`}>
-                                                    {asset.status}
+                                                    {t(`assets.status.${asset.status.toLowerCase()}`)}
                                                 </span>
                                             </td>
                                         </tr>
@@ -240,7 +243,7 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
                             <tfoot>
                                 <tr className="border-t-2 border-slate-700 bg-slate-950">
                                     <td colSpan={4} className="py-4 px-4 text-sm font-black text-white">
-                                        TOTAL ({assets.length} assets)
+                                        {t('common.total')} ({t('assets.reports_ui.assetCount', { count: assets.length })})
                                     </td>
                                     <td className="py-4 px-4 text-sm text-right font-mono font-black text-white">
                                         ${(totals.cost / 100).toFixed(2)}
@@ -261,8 +264,8 @@ export const AssetRegisterReport: React.FC<AssetRegisterReportProps> = ({ db, on
 
             {/* Print Header (only visible when printing) */}
             <div className="hidden print:block text-center mb-4">
-                <h1 className="text-2xl font-black tracking-tight">Asset Register Report</h1>
-                <p className="text-sm text-slate-700">Generated on {new Date().toLocaleString()}</p>
+                <h1 className="text-2xl font-black tracking-tight">{t('assets.reports.register')}</h1>
+                <p className="text-sm text-slate-700">{t('common.generatedOn')} {new Date().toLocaleString()}</p>
             </div>
         </div>
     );

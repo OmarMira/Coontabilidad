@@ -48,14 +48,14 @@ export class ForensicAuditService {
                     }
                     const record = records[0];
 
-                    // Reconstrucción del Data Hash verificable (Task 6.1.1)
-                    const lines = await DatabaseService.executeQuery(`SELECT account_code, debit, credit FROM journal_entry_lines WHERE journal_entry_id = ? ORDER BY id ASC`, [record.id]);
+                    // Reconstrucción del Data Hash verificable (Sincronizado con journal_details)
+                    const lines = await DatabaseService.executeQuery(`SELECT account_code, debit_amount, credit_amount FROM journal_details WHERE journal_entry_id = ? ORDER BY id ASC`, [record.id]);
 
                     if (lines.length > 0) {
                         const itemsPayload = lines.map((l: any) => ({
                             code: l.account_code,
-                            debit: l.debit,
-                            credit: l.credit
+                            debit: l.debit_amount,
+                            credit: l.credit_amount
                         }));
 
                         const payloadObj = {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Calendar, RefreshCw, AlertCircle, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-import { getCashFlowStatement } from '../../database/simple-db';
+import { getCashFlowStatement } from '@/database/modules/db-reports-financial';
 import { ReportExporter } from './ReportExporter';
 import { logger } from '../../core/logging/SystemLogger';
 import { useLocale } from '../../i18n/useLocale';

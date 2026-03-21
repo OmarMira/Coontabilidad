@@ -1,17 +1,177 @@
 
 /** @vitest-environment jsdom */
-import { describe, it, expect, beforeAll } from 'vitest';
-import {
-    initDB,
-    db,
-    getCustomers,
-    addCustomer,
-    getInvoices,
-    createInvoice,
-    createPayment,
-    createUser,
-    getUsers
-} from '../../src/database/simple-db';
+import { vi } from 'vitest';
+import { db } from '../../src/database/modules/db-core';
+import { getCustomers, addCustomer } from '../../src/database/modules/db-customers';
+import { getInvoices, createInvoice } from '../../src/database/modules/db-invoices';
+import { createPayment } from '../../src/database/modules/db-payments';
+import { createUser, getUsers } from '../../src/database/modules/db-users';
+
+const { mockExec, mockPrepare, mockDbState } = vi.hoisted(() => {
+  const dbState = {
+    users: [], roles: [], customers: [], invoices: [], payments: [], audit_log: [], lastId: 10
+  };
+
+  const mockExec = vi.fn().mockImplementation((sql: string, params: any[] = []) => {
+      const s = sql.toUpperCase();
+      if (s.includes('LAST_INSERT_ROWID')) return [{ columns: ['id'], values: [[dbState.lastId]] }];
+      if (s.includes('CHANGES()')) return [{ columns: ['changes'], values: [[1]] }];
+      
+      if (s.includes('SELECT ID FROM USER_ROLES WHERE NAME')) {
+          return [{ columns: ['id'], values: [[30]] }]; // Mock sales role ID
+      }
+      if (s.includes('INSERT INTO USER_ROLES')) {
+          dbState.lastId++; return [];
+      }
+      
+      if (s.includes('SELECT ID FROM USERS WHERE USERNAME')) {
+          return [{ columns: ['id'], values: [[2]] }]; // Mock sales user ID
+      }
+      if (s.includes('INSERT OR IGNORE INTO USERS')) {
+          dbState.lastId++; return [];
+      }
+      if (s.includes('SELECT * FROM USERS')) {
+          return [{ columns: ['id', 'username'], values: [[1, 'admin'], [2, 'vendedor1']] }];
+      }
+      
+      if (s.includes('INSERT INTO CUSTOMERS')) {
+          dbState.lastId++;
+          const createdBy = params[params.length - 1] || params[params.length - 2] || 1;
+          let name = params[0];
+          if (!name) {
+              const match = sql.match(/VALUES\s*\(\s*'([^']+)'/i);
+              if (match) name = match[1];
+          }
+          dbState.customers.push({ id: dbState.lastId, name, created_by: createdBy });
+          return [];
+      }
+      if (s.includes('SELECT CREATED_BY FROM CUSTOMERS WHERE NAME')) {
+          const c = dbState.customers.find((c: any) => c.name === 'Orphan Client');
+          return c ? [{ columns: ['created_by'], values: [[c.created_by]] }] : [{ columns: ['created_by'], values: [[1]] }];
+      }
+      if (s.includes('SELECT CREATED_BY FROM CUSTOMERS WHERE ID')) {
+          const idMatch = s.match(/ID = ([0-9]+)/);
+          const id = idMatch ? parseInt(idMatch[1]) : 0;
+          const c = dbState.customers.find((c: any) => c.id === id);
+          return c ? [{ columns: ['created_by'], values: [[c.created_by]] }] : [];
+      }
+      if (s.includes('FROM CUSTOMERS')) {
+          if (s.includes('CREATED_BY = ?') || s.includes('CREATED_BY =')) {
+              const cBy = params[0]; 
+              const filters = dbState.customers.filter((c: any) => String(c.created_by) === String(cBy));
+              return [{ columns: ['id', 'name', 'created_by'], values: filters.map((c: any) => [c.id, c.name, c.created_by]) }];
+          } else {
+              return [{ columns: ['id', 'name', 'created_by'], values: dbState.customers.map((c: any) => [c.id, c.name, c.created_by]) }];
+          }
+      }
+
+      if (s.includes('INSERT INTO INVOICES')) {
+          dbState.lastId++;
+          const createdBy = params[params.length - 1] || params[params.length - 2] || 1;
+          dbState.invoices.push({ id: dbState.lastId, customer_id: params[0], created_by: createdBy, status: params[4] || 'draft' });
+          return [];
+      }
+      if (s.includes('SELECT CREATED_BY FROM INVOICES WHERE ID')) {
+          const idMatch = s.match(/ID = ([0-9]+)/);
+          const id = idMatch ? parseInt(idMatch[1]) : 0;
+          const i = dbState.invoices.find((c: any) => c.id === id);
+          return i ? [{ columns: ['created_by'], values: [[i.created_by]] }] : [];
+      }
+      if (s.includes('FROM INVOICES')) {
+          if (s.includes('CREATED_BY = ?') || s.includes('CREATED_BY =')) {
+              const cBy = params[0]; 
+              const filters = dbState.invoices.filter((c: any) => String(c.created_by) === String(cBy));
+              return [{ columns: ['id', 'customer_id', 'created_by'], values: filters.map((c: any) => [c.id, c.customer_id, c.created_by]) }];
+          } else {
+              return [{ columns: ['id', 'customer_id', 'created_by'], values: dbState.invoices.map((c: any) => [c.id, c.customer_id, c.created_by]) }];
+          }
+      }
+      
+      if (s.includes('INSERT INTO INVOICE_ITEMS')) {
+          return [];
+      }
+      
+      if (s.includes('INSERT INTO PAYMENTS')) {
+          dbState.lastId++;
+          const createdBy = params[params.length - 1] || params[params.length - 2] || 1;
+          dbState.payments.push({ id: dbState.lastId, invoice_id: params[1], created_by: createdBy });
+          dbState.audit_log.push({ table_name: 'payments', record_id: dbState.lastId, user_id: createdBy, action: 'CREATE' });
+          return [];
+      }
+      if (s.includes('UPDATE INVOICES SET')) {
+          return [];
+      }
+      
+      if (s.includes('SELECT USER_ID FROM AUDIT_LOG WHERE TABLE_NAME')) {
+          const matchParams = s.match(/TABLE_NAME = '([^']+)' AND RECORD_ID = ([0-9]+)/);
+          if (matchParams) {
+              const table = matchParams[1].toLowerCase();
+              const id = parseInt(matchParams[2]);
+              const log = dbState.audit_log.find((l: any) => l.table_name === table && l.record_id === id);
+              if (log) return [{ columns: ['user_id'], values: [[log.user_id]] }];
+          }
+      }
+      if (s.includes('SELECT USER_ID, ACTION FROM AUDIT_TRAIL')) {
+          const matchParams = s.match(/ENTITY_TYPE = '([^']+)' AND ENTITY_ID = (?:'([^']+)'|([0-9]+))/);
+          if (matchParams) {
+              const table = matchParams[1].toLowerCase();
+              const id = parseInt(matchParams[2] || matchParams[3]);
+              const log = dbState.audit_log.find((l: any) => l.table_name === table && l.record_id === id);
+              if (log) return [{ columns: ['user_id', 'action'], values: [[log.user_id, 'CREATE']] }];
+          }
+      }
+
+      return [];
+  });
+
+  const mockPrepare = vi.fn().mockImplementation((sql) => {
+    let rows: any[] = [];
+    let idx = -1;
+    return {
+      bind: (params: any[] = []) => {
+         const res = mockExec(sql, params);
+         if (res && res.length > 0 && res[0].values) {
+            const cols = res[0].columns;
+            rows = res[0].values.map((v: any[]) => Object.fromEntries(cols.map((c: string, i: number) => [c, v[i]])));
+         } else { rows = []; }
+      },
+      run: (params: any[] = []) => mockExec(sql, params),
+      step: () => {
+         if (idx === -1 && rows.length === 0) {
+            const res = mockExec(sql, []);
+            if (res && res.length > 0 && res[0].values) {
+               const cols = res[0].columns;
+               rows = res[0].values.map((v: any[]) => Object.fromEntries(cols.map((c: string, i: number) => [c, v[i]])));
+            }
+         }
+         idx++;
+         return idx < rows.length;
+      },
+      getAsObject: () => rows[idx] || {},
+      free: vi.fn()
+    };
+  });
+
+  return { mockExec, mockPrepare, mockDbState: dbState };
+});
+
+vi.mock('../../src/database/modules/db-core', () => ({
+  db: {
+    exec: mockExec,
+    run: (sql: string, params: any[]) => mockExec(sql, params),
+    prepare: mockPrepare
+  },
+  rowToEntity: (_cols: any, _row: any) => Object.fromEntries(_cols.map((c: any, i: any) => [c, _row[i]])),
+  PRIVILEGED_ROLES: ['admin', 'contador'],
+  logAuditEvent: async (table: string, id: number, action: string, oldData: any, newData: any, userId: number) => {
+    mockDbState.audit_log.push({ table_name: table, record_id: id, user_id: userId, action });
+  },
+  getDB: () => ({
+    exec: mockExec,
+    run: (sql: string, params: any[]) => mockExec(sql, params),
+    prepare: mockPrepare
+  })
+}));
 
 // Mock crypto if needed for JSDOM environment in some runners
 if (!globalThis.crypto) {
@@ -33,7 +193,7 @@ describe('Multi-User System Flow & Isolation', () => {
     beforeAll(async () => {
         console.log('--- TEST SETUP START ---');
         try {
-            await initDB();
+            
             // This runs migrations and seeds. 'admin' should exist.
 
             // Check Admin
@@ -120,7 +280,7 @@ describe('Multi-User System Flow & Isolation', () => {
         const ownVisible = salesView.find(c => c.name === 'Client of Vendedor1');
 
         expect(orphanVisible).toBeUndefined(); // Should NOT see Admin's client
-        expect(ownVisible).toBeDefined();      // Should see OWN client
+        expect(ownVisible).toBeDefined();
 
         // 2. Check what Admin sees
         const adminView = getCustomers({ userId: adminId, role: 'admin' });

@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -5,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
  * AccountingService - Double-Entry Bookkeeping Engine
  * 
  * Implements US GAAP double-entry accounting with:
- * - Accounting equation validation: Σ Debits = Σ Credits
+ * - Accounting equation validation: Î£ Debits = Î£ Credits
  * - Immutability enforcement (once posted, cannot modify)
  * - Logic clock integration for audit trail
  * - Automatic journal entry creation from business events
  * 
  * HARD CONSTRAINTS:
- * - REJECT any transaction where debits ≠ credits
+ * - REJECT any transaction where debits â‰  credits
  * - PROHIBIT deletion/modification of posted entries
  * - REQUIRE reversal entries for corrections (Storno method)
  * - ALL amounts must be INTEGER cents
@@ -24,7 +25,7 @@ export class AccountingService {
      * 
      * @param entry - Journal entry data
      * @returns Journal entry ID (UUID)
-     * @throws Error if debits ≠ credits or validation fails
+     * @throws Error if debits â‰  credits or validation fails
      */
     public async createJournalEntry(entry: CreateJournalEntryDTO): Promise<string> {
         return this.db.executeTransaction(async () => {
@@ -34,7 +35,7 @@ export class AccountingService {
 
             if (totalDebits !== totalCredits) {
                 throw new Error(
-                    `Accounting equation violated: Debits (${totalDebits}) ≠ Credits (${totalCredits}). ` +
+                    `Accounting equation violated: Debits (${totalDebits}) â‰  Credits (${totalCredits}). ` +
                     `Difference: ${Math.abs(totalDebits - totalCredits)} cents`
                 );
             }
@@ -88,8 +89,8 @@ export class AccountingService {
             // 6. Insert ledger lines
             for (const line of entry.lines) {
                 await this.db.run(`
-                    INSERT INTO ledger_lines (
-                        journal_entry_id, account_code, debit, credit, description, logic_clock
+                    INSERT INTO journal_details (
+                        journal_entry_id, account_code, debit_amount, credit_amount, description, logic_clock
                     ) VALUES (?, ?, ?, ?, ?, ?)
                 `, [
                     entryId,
@@ -173,15 +174,15 @@ export class AccountingService {
 
         // Get original lines
         const originalLines = await this.db.select(
-            'SELECT * FROM ledger_lines WHERE journal_entry_id = ?',
+            'SELECT * FROM journal_details WHERE journal_entry_id = ?',
             [originalEntryId]
         ) as unknown as any[];
 
         // Create reversal with swapped debits/credits
         const reversalLines: JournalLine[] = originalLines.map((line: any) => ({
             accountCode: line.account_code,
-            debit: line.credit,  // Swap
-            credit: line.debit,  // Swap
+            debit: line.credit_amount,  // Swap
+            credit: line.debit_amount,  // Swap
             description: `REVERSAL: ${line.description}`
         }));
 
@@ -274,9 +275,9 @@ export class AccountingService {
     public async getAccountBalance(accountCode: string): Promise<number> {
         const result = await this.db.select(`
             SELECT 
-                COALESCE(SUM(debit), 0) as total_debits,
-                COALESCE(SUM(credit), 0) as total_credits
-            FROM ledger_lines
+                COALESCE(SUM(debit_amount), 0) as total_debits,
+                COALESCE(SUM(credit_amount), 0) as total_credits
+            FROM journal_details
             WHERE account_code = ?
             AND journal_entry_id IN (SELECT id FROM journal_entries WHERE status = 'POSTED')
         `, [accountCode]) as unknown as any[];
@@ -332,7 +333,7 @@ export class AccountingService {
             if (balance !== 0) {
                 let debitAmount = 0;
                 let creditAmount = 0;
-                
+
                 // Si el balance es positivo, va en el lado normal
                 // Si es negativo, va en el lado opuesto
                 if (account.normal_balance === 'DEBIT') {
@@ -348,7 +349,7 @@ export class AccountingService {
                         debitAmount = Math.abs(balance);
                     }
                 }
-                
+
                 const entry: TrialBalanceEntry = {
                     accountCode: account.code,
                     accountName: account.name,
@@ -365,7 +366,7 @@ export class AccountingService {
 
         // Verify trial balance
         if (totalDebits !== totalCredits) {
-            console.error(`⚠️ TRIAL BALANCE OUT OF BALANCE: Debits=${totalDebits}, Credits=${totalCredits}`);
+            logger.error('AccountingService', 'error', `âš ï¸ TRIAL BALANCE OUT OF BALANCE: Debits=${totalDebits}, Credits=${totalCredits}`);
         }
 
         return trialBalance;

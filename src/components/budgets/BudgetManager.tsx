@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import {
   getBudgetSummary,
   getBudgetExecutionStatus,
   type Budget
-} from '@/database/simple-db';
+} from '@/database/modules/db-budgets';
 import { useAuth } from '@/contexts/AuthContext';
 import { BudgetList } from './BudgetList';
 import { BudgetForm } from './BudgetForm';
@@ -113,7 +114,7 @@ export const BudgetManager: React.FC = () => {
       });
 
     } catch (err) {
-      console.error('Error loading budgets:', err);
+      logger.error('BudgetManager', 'error', 'Error loading budgets:', err);
       setError(err instanceof Error ? err.message : t('budgets.loading'));
     } finally {
       setLoading(false);
@@ -122,7 +123,7 @@ export const BudgetManager: React.FC = () => {
 
   const handleCreateBudget = () => {
     if (!canCreate) {
-      setError('No tienes permisos para crear presupuestos');
+      setError(t('budgets.noPermissionCreate'));
       return;
     }
     setEditingBudget(null);
@@ -131,7 +132,7 @@ export const BudgetManager: React.FC = () => {
 
   const handleEditBudget = (budget: Budget) => {
     if (!canEdit) {
-      setError('No tienes permisos para editar presupuestos');
+      setError(t('budgets.noPermissionEdit'));
       return;
     }
     setEditingBudget(budget);
@@ -185,7 +186,7 @@ export const BudgetManager: React.FC = () => {
         {activeView === 'list' && canCreate && (
           <Button onClick={handleCreateBudget} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            {t('budgets.new')}
+            {t('budgets.newBudget')}
           </Button>
         )}
         {activeView !== 'list' && (
@@ -218,7 +219,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">{t('budgets.total')}</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.totalBudgets')}</p>
                   <p className="text-2xl font-black tracking-tight text-white">{stats.total_budgets}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500" />
@@ -230,7 +231,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">{t('budgets.active')}</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.activeBudgets')}</p>
                   <p className="text-2xl font-black tracking-tight text-green-400">{stats.active_budgets}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-green-500" />
@@ -256,7 +257,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">{t('budgets.executed')}</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.totalExecuted')}</p>
                   <p className="text-2xl font-black tracking-tight text-white">
                     ${(stats.total_actual / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
@@ -270,7 +271,7 @@ export const BudgetManager: React.FC = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">{t('budgets.atRisk')}</p>
+                  <p className="text-sm font-medium text-slate-400">{t('budgets.budgetsAtRisk')}</p>
                   <p className="text-2xl font-black tracking-tight text-red-400">{stats.budgets_at_risk}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-500" />

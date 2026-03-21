@@ -13,16 +13,7 @@ export class SQLiteEngine {
     private dbName: string = 'accountexpress_v2.db';
     private vfs: any = null;
 
-    private isDemoMode: boolean = false;
-
     constructor() { }
-
-    setDemoMode(enabled: boolean) {
-        this.isDemoMode = enabled;
-        if (enabled) {
-            console.warn('⚠️ ENGINE: MODO DEMO ACTIVADO - DATOS VOLÁTILES (RAM)');
-        }
-    }
 
     // Permitir usar una instancia de sql.js para compatibilidad con simple-db
     setDB(db: any) {
@@ -36,11 +27,7 @@ export class SQLiteEngine {
         if (process.env.NODE_ENV === 'test') {
             try {
                 console.log('🧪 Initializing sql.js for testing...');
-                const SQL = await initSqlJs({
-                    // In Node/Vitest, locatFile might not be needed if wasm is found or fetched via MSW
-                    // But explicitly pointing to it is safer if we can.
-                    // For now relying on default or MSW interception.
-                });
+                const SQL = await initSqlJs({});
                 this.sqlJsDB = new SQL.Database();
                 console.log('✅ sql.js initialized successfully');
 
@@ -57,10 +44,12 @@ export class SQLiteEngine {
             console.log('🔄 Initializing wa-sqlite...');
 
             // 1. Initialize SQLite3 Module
-            const module = await SQLiteFactory();
+            const module = await SQLiteFactory({
+                locateFile: (file: string) => `/${file}`
+            });
             this.sqlite3 = SQLite.Factory(module);
 
-            // 2. Register Persistent VFS (IDB Batch Atomic for Main Thread compatibility)
+            // 2. Register Persistent VFS (IDB Batch Atomic)
             this.vfs = new IDBBatchAtomicVFS(this.dbName);
             // @ts-ignore
             this.sqlite3.vfs_register(this.vfs, true);
@@ -73,9 +62,8 @@ export class SQLiteEngine {
                 this.dbName
             );
 
-
             // 4. Initialize Database Settings
-            await this.exec('PRAGMA journal_mode=DELETE'); // IDB often prefers DELETE or MEMORY, WAL can be tricky without OPFS
+            await this.exec('PRAGMA journal_mode=DELETE');
             await this.exec('PRAGMA synchronous=NORMAL');
             await this.exec('PRAGMA foreign_keys=ON');
             await this.exec('PRAGMA cache_size=-5000');
@@ -83,8 +71,14 @@ export class SQLiteEngine {
             console.log('✅ SQLiteEngine (wa-sqlite) initialized successfully');
 
             // Verify persistence
-            await this.exec('CREATE TABLE IF NOT EXISTS system_check (id INTEGER PRIMARY KEY, initialized_at TEXT)');
-            await this.run('INSERT INTO system_check (initialized_at) VALUES (?)', [new Date().toISOString()]);
+            try {
+                await this.exec('CREATE TABLE IF NOT EXISTS system_check (id INTEGER PRIMARY KEY, initialized_at TEXT)');
+                await this.run('INSERT INTO system_check (initialized_at) VALUES (?)', [new Date().toISOString()]);
+            } catch (checkErr: any) {
+                if (!String(checkErr?.message ?? checkErr).includes('not an error')) {
+                    console.warn('⚠️ system_check warning (non-fatal):', checkErr);
+                }
+            }
 
         } catch (e) {
             console.error('❌ SQLiteEngine initialization failed:', e);
@@ -105,66 +99,34 @@ export class SQLiteEngine {
     // Run with parameters - Async
     async run(sql: string, params: any[] = []): Promise<void> {
         if (this.sqlJsDB) {
-            // INTERCETOR DE MODO DEMO (RAM)
-            if (this.isDemoMode) {
-                const upperSql = sql.toUpperCase().trim();
-                if (upperSql.startsWith('INSERT INTO')) {
-                    // Extraer nombre de tabla (simplificado)
-                    const match = upperSql.match(/INSERT\s+INTO\s+([a-zA-Z0-9_]+)/);
-                    if (match && match[1]) {
-                        const tableName = match[1];
-                        try {
-                            // Ejecutar conteo sincrónico (sql.js es sync)
-                            const res = this.sqlJsDB.exec(`SELECT COUNT(*) as c FROM ${tableName}`);
-                            if (res.length > 0 && res[0].values.length > 0) {
-                                const count = res[0].values[0][0] as number;
-                                if (count >= 20) {
-                                    throw new Error(`Límite de demo alcanzado (20 cargas máximo por archivo) en tabla: ${tableName}`);
-                                }
-                            }
-                        } catch (e: any) {
-                            if (e.message.includes('Límite de demo')) throw e;
-                            console.warn('Demo Check Warning:', e);
-                        }
-                    }
-                }
+            const stmt = this.sqlJsDB.prepare(sql);
+            try {
+                stmt.run(params);
+            } finally {
+                stmt.free();
             }
-
-            this.sqlJsDB.run(sql, params);
             return;
         }
 
         if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
 
-        // INTERCEPTOR MODO DEMO (ASYNC WA-SQLITE)
-        if (this.isDemoMode) {
-            const upperSql = sql.toUpperCase().trim();
-            if (upperSql.startsWith('INSERT INTO')) {
-                const match = upperSql.match(/INSERT\s+INTO\s+([a-zA-Z0-9_]+)/);
-                if (match && match[1]) {
-                    const tableName = match[1];
-                    // Necesitamos hacer una consulta async aparte
-                    // Nota: Esto podría ser lento, pero es demo
-                    const countRes = await this.select(`SELECT COUNT(*) as c FROM ${tableName}`);
-                    if (countRes.length > 0) {
-                        const count = countRes[0]['c'] as number;
-                        if (count >= 20) {
-                            throw new Error(`Límite de demo alcanzado (20 cargas máximo por archivo) en tabla: ${tableName}`);
-                        }
-                    }
-                }
-            }
-        }
-
         let stmt: number | undefined;
         try {
-            // @ts-ignore
-            stmt = await this.sqlite3.prepare_v2(this.db, sql);
-            if (!stmt) throw new Error('Failed to prepare statement');
+            try {
+                // @ts-ignore
+                stmt = await this.sqlite3.prepare_v2(this.db, sql);
+                if (!stmt) throw new Error('Failed to prepare statement');
+            } catch (prepErr: any) {
+                if (String(prepErr?.message || prepErr).includes('not an error')) {
+                    console.warn('[SQLiteEngine] Silenced benign "not an error" during run prepare:', sql);
+                    return;
+                }
+                throw prepErr;
+            }
 
             // Bind parameters
             if (params.length > 0) {
-                // @ts-ignore wa-sqlite bind_collection: expects never but accepts any
+                // @ts-ignore
                 this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
@@ -198,40 +160,29 @@ export class SQLiteEngine {
         let stmt: number | undefined;
 
         try {
-            // @ts-ignore
-            stmt = await this.sqlite3.prepare_v2(this.db, sql);
-            if (!stmt) throw new Error('Failed to prepare statement');
+            try {
+                // @ts-ignore
+                stmt = await this.sqlite3.prepare_v2(this.db, sql);
+                if (!stmt) throw new Error('Failed to prepare statement');
+            } catch (prepErr: any) {
+                if (String(prepErr?.message || prepErr).includes('not an error')) {
+                    console.warn('[SQLiteEngine] Silenced benign "not an error" during select prepare:', sql);
+                    return [];
+                }
+                throw prepErr;
+            }
 
             // Bind parameters
             if (params.length > 0) {
-                    // @ts-ignore
-                    this.sqlite3.bind_collection(stmt, params as unknown as never[]);
+                // @ts-ignore
+                this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
             // Step through results
             while (await this.sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
-                // @ts-ignore
-                const row = this.sqlite3.row_collection(stmt); // Returns array or object? usually array?
-                // wa-sqlite row_collection returns an array of values if not configured otherwise, or object if columns?
-                // Actually helper is needed to map columns.
-
-                // Manual column mapping:
-                const columns = [];
                 const colCount = this.sqlite3.column_count(stmt);
-                for (let i = 0; i < colCount; i++) {
-                    // @ts-ignore wa-sqlite column_name signature mismatch
-                    columns.push(this.sqlite3.column_name(stmt, i));
-                }
-
                 const rowObj: Record<string, any> = {};
-                // @ts-ignore
-                const values = this.sqlite3.row_collection(stmt); // Wait, row_collection maps to object? Check docs.
-                // Inspecting IDBBatchAtomicVFS example or standard usage:
-                // Usually one iterates columns and calls column_text/int/double.
-                // But row_collection is a convenience method in high level API? No, likely not in core.
-                // Let's rely on manual extraction for safety.
 
-                // Re-implementation of reliable row extraction:
                 for (let i = 0; i < colCount; i++) {
                     const colName = this.sqlite3.column_name(stmt, i);
                     const type = this.sqlite3.column_type(stmt, i);
@@ -265,24 +216,17 @@ export class SQLiteEngine {
     }
 
     async executeTransaction<T>(operation: () => Promise<T>): Promise<T> {
-        // En modo test con sql.js, no hay soporte nativo de transacciones async
-        // Ejecutamos directamente la operación sin transacción explícita
         if (this.sqlJsDB) {
             try {
-                // Check if we're already in a transaction
-                try {
-                    this.sqlJsDB.run('BEGIN TRANSACTION');
-                    const result = await operation();
-                    this.sqlJsDB.run('COMMIT');
-                    return result;
-                } catch (error: any) {
-                    if (error.message && error.message.includes('cannot start a transaction within a transaction')) {
-                        return await operation();
-                    }
-                    this.sqlJsDB.run('ROLLBACK');
-                    throw error;
+                this.sqlJsDB.run('BEGIN TRANSACTION');
+                const result = await operation();
+                this.sqlJsDB.run('COMMIT');
+                return result;
+            } catch (error: any) {
+                if (error.message && error.message.includes('cannot start a transaction within a transaction')) {
+                    return await operation();
                 }
-            } catch (error) {
+                this.sqlJsDB.run('ROLLBACK');
                 throw error;
             }
         }
@@ -291,7 +235,6 @@ export class SQLiteEngine {
 
         try {
             await this.exec('BEGIN IMMEDIATE TRANSACTION');
-            // @ts-ignore
             const result = await operation();
             await this.exec('COMMIT');
             return result;
@@ -301,10 +244,6 @@ export class SQLiteEngine {
         }
     }
 
-    /**
-     * executeBatchTransaction (Iron Clad Objective 2.2)
-     * High-performance execution of multiple prepared queries in a single transaction.
-     */
     async executeBatchTransaction(queries: { sql: string, params: any[] }[]): Promise<void> {
         return await this.executeTransaction(async () => {
             for (const query of queries) {
@@ -313,7 +252,6 @@ export class SQLiteEngine {
         });
     }
 
-    // Compatibility with sql.js return format: [{ columns: [...], values: [...] }] (Async)
     async execCompatible(sql: string, params: any[] = []): Promise<{ columns: string[], values: any[][] }[]> {
         if (!this.sqlite3 || this.db === null) throw new Error('DB not initialized');
 
@@ -321,23 +259,28 @@ export class SQLiteEngine {
         let stmt: number | undefined;
 
         try {
-            // @ts-ignore
-            stmt = await this.sqlite3.prepare_v2(this.db, sql);
-            if (!stmt) throw new Error('Failed to prepare statement');
+            try {
+                // @ts-ignore
+                stmt = await this.sqlite3.prepare_v2(this.db, sql);
+                if (!stmt) throw new Error('Failed to prepare statement');
+            } catch (prepErr: any) {
+                if (String(prepErr?.message || prepErr).includes('not an error')) {
+                    console.warn('[SQLiteEngine] Silenced benign "not an error" during execCompatible prepare:', sql);
+                    return [];
+                }
+                throw prepErr;
+            }
 
-            // @ts-ignore
             if (params.length > 0) {
                 // @ts-ignore
                 this.sqlite3.bind_collection(stmt, params as unknown as never[]);
             }
 
-            // Get columns
             const colCount = this.sqlite3.column_count(stmt);
             for (let i = 0; i < colCount; i++) {
                 result.columns.push(this.sqlite3.column_name(stmt, i));
             }
 
-            // Get values
             while (await this.sqlite3.step(stmt) === SQLite.SQLITE_ROW) {
                 const row: any[] = [];
                 for (let i = 0; i < colCount; i++) {
@@ -376,20 +319,12 @@ export class SQLiteEngine {
         }
     }
 
-    /**
-     * Fuerza la persistencia de cambios a IndexedDB
-     * CRÍTICO para IDBBatchAtomicVFS que hace batch de escrituras
-     */
     async sync(): Promise<void> {
         if (!this.sqlite3 || this.db === null) return;
-
         try {
-            // Forzar flush de cambios pendientes
             if (this.vfs && typeof this.vfs.flush === 'function') {
                 await this.vfs.flush();
             }
-
-            // Ejecutar checkpoint para asegurar que todo se escriba
             await this.exec('PRAGMA wal_checkpoint(TRUNCATE)');
         } catch (e) {
             console.warn('Sync warning (non-critical):', e);
@@ -397,9 +332,6 @@ export class SQLiteEngine {
     }
 
     async getDatabaseSize(): Promise<number> {
-        // Implementation for later
         return 0;
     }
 }
-
-

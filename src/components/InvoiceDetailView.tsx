@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Edit, FileText, Calendar, DollarSign, User, MapPin, Phone, Mail } from 'lucide-react';
-import { Invoice } from '../database/simple-db';
+import type { Invoice } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface InvoiceDetailViewProps {
@@ -153,7 +153,7 @@ export const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
 
             <div>
               <p className="text-slate-500 text-sm">{t('invoiceList.created')}</p>
-              <p className="text-white">{new Date(invoice.created_at).toLocaleString()}</p>
+              <p className="text-white">{new Date(invoice.created_at ?? Date.now()).toLocaleString()}</p>
             </div>
 
             {invoice.notes && (

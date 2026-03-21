@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import Big from 'big.js';
 
@@ -74,7 +75,7 @@ export class JournalManager {
             ]);
         }
 
-        console.log(`[Journal] Posted JE #${jeId}: ${entry.description}`);
+        logger.info('JournalManager', 'info', `[Journal] Posted JE #${jeId}: ${entry.description}`);
     }
 
     private validateBalance(details: JournalEntryDetail[]) {

@@ -1,17 +1,52 @@
 import { extractTextFromPDF } from './pdf-extractor';
 import { normalizeTransaction, NormalizationResult } from '@/components/banking/importers/TransactionNormalizer';
 
-export const parseBankPDF = async (file: File): Promise<NormalizationResult[]> => {
+export interface BankStatementResults {
+    transactions?: NormalizationResult[];
+    data?: NormalizationResult[];
+    openingBalance?: number;
+    endingBalance?: number;
+    accountNumber?: string;
+    bankName?: string;
+    routingNumber?: string;
+}
+
+export const parseBankPDF = async (file: File): Promise<BankStatementResults> => {
 
     // 1. Text Extraction
     const lines = await extractTextFromPDF(file);
     const results: NormalizationResult[] = [];
+    let openingBalance: number | undefined;
+    let endingBalance: number | undefined;
+    let accountNumber: string | undefined;
+    let bankName: string | undefined;
+    let routingNumber: string | undefined;
 
     // 2. Year Context Detection
     const fullText = lines.join('\n');
     const yearMatches = fullText.match(/\b20[2-3]\d\b/g);
     const detectedYears = yearMatches ? [...new Set(yearMatches)].sort().map(Number) : [new Date().getFullYear()];
     const primaryYear = detectedYears[detectedYears.length - 1];
+
+    // 2.1 Bank Name Detection
+    const knownBanks = [
+        { name: 'CHASE', pattern: /CHASE|JPMORGAN/i },
+        { name: 'BANK OF AMERICA', pattern: /BANK OF AMERICA|BOFA/i },
+        { name: 'WELLS FARGO', pattern: /WELLS FARGO/i },
+        { name: 'CITIBANK', pattern: /CITIBANK|CITI\s?BANK/i },
+        { name: 'AMEX', pattern: /AMERICAN EXPRESS|AMEX/i },
+        { name: 'TD BANK', pattern: /TD BANK/i },
+        { name: 'SUNTRUST', pattern: /SUNTRUST/i },
+        { name: 'TRUIST', pattern: /TRUIST/i },
+        { name: 'REGIONS', pattern: /REGIONS BANK/i }
+    ];
+
+    for (const bank of knownBanks) {
+        if (fullText.match(bank.pattern)) {
+            bankName = bank.name;
+            break;
+        }
+    }
 
     // 3. Regex Definitions
     const months = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Ene|Abr|Ago|Dic|Set";
@@ -34,7 +69,38 @@ export const parseBankPDF = async (file: File): Promise<NormalizationResult[]> =
         const cleanLine = line.trim();
         if (!cleanLine) return;
 
-        // A. DETECT SECTIONS (Context Switch)
+        // A. DETECT ACCOUNT NUMBER
+        if (!accountNumber) {
+            const accMatch = cleanLine.match(/(?:Account Number|Número de cuenta|Acc #|Account #)[:\s]+(\d+[\d\s-]*\d+)/i);
+            if (accMatch) {
+                accountNumber = accMatch[1].replace(/\s/g, '');
+            }
+        }
+
+        if (!routingNumber) {
+            const routeMatch = cleanLine.match(/(?:Routing|Ruta|RTN|ABA)[:\s]+(\d{9})/i);
+            if (routeMatch) {
+                routingNumber = routeMatch[1];
+            }
+        }
+
+        // B. DETECT BALANCES (Summary detection)
+        if (cleanLine.match(/(Opening balance|Beginning balance|Saldo inicial|Balance inicial)/i)) {
+            const amounts = cleanLine.match(amountRegex);
+            if (amounts) {
+                const res = normalizeTransaction('2024-01-01', 'BALANCE', amounts[0], undefined);
+                if (res.success && res.data) openingBalance = res.data.amount;
+            }
+        }
+        if (cleanLine.match(/(Ending balance|Final balance|Saldo final|Balance final|Closing balance)/i)) {
+            const amounts = cleanLine.match(amountRegex);
+            if (amounts) {
+                const res = normalizeTransaction('2024-01-01', 'BALANCE', amounts[0], undefined);
+                if (res.success && res.data) endingBalance = res.data.amount;
+            }
+        }
+
+        // B. DETECT SECTIONS (Context Switch)
         // Transitions that ENABLE parsing
         if (cleanLine.match(/^(Deposits|Credits|Additions|Depositos|Abonos)/i) && cleanLine.length < 50) {
             currentSign = 1;
@@ -48,16 +114,16 @@ export const parseBankPDF = async (file: File): Promise<NormalizationResult[]> =
         }
 
         // Transitions that DISABLE parsing (Summaries, Daily Balances)
-        if (cleanLine.match(/^(Summary|Daily ledger balances|Account summary|Opening balance|Ending balance|Daily balance)/i)) {
+        if (cleanLine.match(/^(Summary|Daily ledger balances|Account summary|Daily balance)/i)) {
             ignoreSection = true;
             return;
         }
 
-        // B. FILTER NOISE & IGNORED SECTIONS
+        // C. FILTER NOISE & IGNORED SECTIONS
         if (ignoreSection) return;
         if (cleanLine.match(/Page \d|Balance|Saldo|Continued|Statement|Period|Beginning|Ending|Summary|Total/i)) return; // Line-level noise
 
-        // C. PARSE TRANSACTION
+        // D. PARSE TRANSACTION
         const dateMatch = cleanLine.match(dateRegex);
         const amounts = cleanLine.match(amountRegex);
 
@@ -67,16 +133,12 @@ export const parseBankPDF = async (file: File): Promise<NormalizationResult[]> =
             let probableBalance: string | undefined = undefined;
 
             // Balance Extraction Heuristic
-            // If we have > 1 number, and the last one is clearly separate...
             if (amounts.length > 1) {
-                // Usually: Amount is first, Balance is last.
-                // UNLESS distinct Debit/Credit columns exist.
-                // Assuming standard single-column amount list or Amount+Balance.
                 rawAmount = amounts[0];
                 probableBalance = amounts[amounts.length - 1];
             }
 
-            // D. SMART YEAR LOGIC
+            // E. SMART YEAR LOGIC
             if (rawDate.match(/^\d{1,2}[/-]\d{1,2}$/)) {
                 const parts = rawDate.split(/[/-]/);
                 const month = parseInt(parts[0]);
@@ -93,28 +155,42 @@ export const parseBankPDF = async (file: File): Promise<NormalizationResult[]> =
             const rawDesc = cleanLine
                 .replace(dateMatch[0], '')
                 .replace(rawAmount, '')
-                .replace(probableBalance || '', '') // Remove balance from desc too
+                .replace(probableBalance || '', '')
                 .replace(/\s+/g, ' ')
                 .trim();
 
             const result = normalizeTransaction(rawDate, rawDesc, rawAmount, undefined);
 
             if (result.success && result.data) {
-                // E. APPLY SECTION SIGN
+                // F. APPLY SECTION SIGN
                 if (currentSign !== 0) {
                     const absAmount = Math.abs(result.data.amount);
                     result.data.amount = absAmount * currentSign;
                 }
 
-                // F. SAVE BALANCE IN METADATA
+                // G. SAVE BALANCE IN METADATA
                 if (probableBalance) {
                     result.data.metadata = { ...result.data.metadata, extracted_balance: probableBalance };
                 }
 
                 results.push(result);
             }
+        } else if (results.length > 0 && !ignoreSection && !cleanLine.match(/Page \d|Balance|Saldo|Continued|Statement|Period|Beginning|Ending|Summary|Total|Account/i)) {
+            // Append continuation lines to the previous transaction's description
+            // Very common in Bank of America and Chase PDFs where details span 2-3 lines
+            const lastRes = results[results.length - 1];
+            if (lastRes && lastRes.data && cleanLine.length < 150) {
+                lastRes.data.description += " " + cleanLine.replace(/\s+/g, ' ').trim();
+            }
         }
     });
 
-    return results;
+    return {
+        data: results,
+        openingBalance,
+        endingBalance,
+        accountNumber,
+        bankName,
+        routingNumber
+    };
 };

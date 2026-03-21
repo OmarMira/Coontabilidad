@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   Plus, Edit2, Eye, Search,
   Building, TrendingUp, DollarSign, CreditCard,
-  ChevronRight, ChevronDown, AlertCircle, CheckCircle
+  ChevronRight, ChevronDown, AlertCircle, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
 import { logger } from '../core/logging/SystemLogger';
-import { getChartOfAccounts, ChartOfAccount, createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '../database/simple-db';
+import type { ChartOfAccount } from '@/database/modules/db-types';
+import { getChartOfAccounts } from '@/database/modules/db-journal';
+import { createChartOfAccount, updateChartOfAccount, deleteChartOfAccount } from '@/database/modules/db-chart-of-accounts';
 import { useLocale } from '../i18n/useLocale';
+import { suggestAccountNumber, validateAccountNumber } from '../utils/accountingUtils';
+import { DoubleEntryValidator } from '../services/accounting/DoubleEntryValidator';
 
-// Extender la interfaz para incluir propiedades de jerarquía
+// Extender la interfaz para incluir propiedades de jerarquÃ­a
 interface ChartOfAccountWithHierarchy extends ChartOfAccount {
   children?: ChartOfAccountWithHierarchy[];
   level?: number;
@@ -27,14 +31,40 @@ export function ChartOfAccounts() {
   // Estados para CRUD
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<ChartOfAccount | null>(null);
+  // detail_type options grouped by account_type
+  const DETAIL_TYPE_OPTIONS: Record<string, string[]> = {
+    asset: ['Cash', 'Checking Account', 'Accounts Receivable', 'Inventory'],
+    liability: ['Accounts Payable', 'Credit Card Payable', 'Sales Tax Payable (DR-15)', 'Reemployment Tax Payable (RT-6)'],
+    equity: ["Owner's Equity", 'Retained Earnings'],
+    revenue: ['Sales', 'Service Income'],
+    expense: ['Cost of Goods Sold', 'Direct Labor', 'Office Supplies', 'Utilities', 'Rent', 'Advertising', 'Payroll Expenses', 'Bank Fees']
+  };
+
   const [formData, setFormData] = useState<Partial<ChartOfAccount>>({
     account_code: '',
+    number: '',
     account_name: '',
     account_type: 'asset',
     normal_balance: 'debit',
     parent_account: '',
-    is_active: true
+    is_active: true,
+    detail_type: ''
   });
+  const [numberWarning, setNumberWarning] = useState<string | null>(null);
+  // Warning de clasificaciÃ³n preventiva (Fase 4)
+  const [classificationAlert, setClassificationAlert] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'create' | 'update' | null>(null);
+
+  useEffect(() => {
+    if (showForm && !editingAccount && !formData.number && formData.account_type) {
+      setFormData(prev => ({ ...prev, number: suggestAccountNumber(prev.account_type || 'asset') }));
+    }
+  }, [showForm, editingAccount, formData.account_type]);
+
+  useEffect(() => {
+    const warning = validateAccountNumber(formData.number || '', formData.account_type || 'asset');
+    setNumberWarning(warning);
+  }, [formData.number, formData.account_type]);
 
   useEffect(() => {
     loadChartOfAccounts();
@@ -45,7 +75,7 @@ export function ChartOfAccounts() {
       setLoading(true);
       logger.info('ChartOfAccounts', 'load_start', 'Iniciando carga del plan de cuentas');
 
-      // Usar función real de la base de datos
+      // Usar funciÃ³n real de la base de datos
       const flatAccounts = getChartOfAccounts();
       const hierarchicalAccounts = buildAccountHierarchy(flatAccounts);
       setAccounts(hierarchicalAccounts);
@@ -59,24 +89,42 @@ export function ChartOfAccounts() {
     }
   };
 
-  const handleCreateAccount = async () => {
+  const handleCreateAccount = async (force = false) => {
+    // ValidaciÃ³n preventiva de clasificaciÃ³n
+    if (!force && formData.detail_type) {
+      const warn = DoubleEntryValidator.validateAccountDefinition(
+        formData.account_type || 'asset',
+        formData.detail_type
+      );
+      if (warn) {
+        setClassificationAlert(warn.reason);
+        setPendingAction('create');
+        return;
+      }
+    }
+    setClassificationAlert(null);
+    setPendingAction(null);
+
     try {
-      logger.info('ChartOfAccounts', 'create_start', 'Iniciando creación de nueva cuenta', { accountCode: formData.account_code });
+      logger.info('ChartOfAccounts', 'create_start', 'Iniciando creaciÃ³n de nueva cuenta', { accountCode: formData.account_code });
+      logger.info('ChartOfAccounts', 'info', `[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
 
       const result = await createChartOfAccount(formData);
 
       if (result.success) {
-        logger.info('ChartOfAccounts', 'create_success', 'Account created successfully', { accountCode: formData.account_code });
+        logger.info('ChartOfAccounts', 'create_success', 'Account created successfully', { accountCode: formData.account_code, detailType: formData.detail_type || null });
         setShowForm(false);
         setFormData({
           account_code: '',
+          number: '',
           account_name: '',
           account_type: 'asset',
           normal_balance: 'debit',
           parent_account: '',
-          is_active: true
+          is_active: true,
+          detail_type: ''
         });
-        await loadChartOfAccounts(); // Recargar datos
+        await loadChartOfAccounts();
       } else {
         logger.error('ChartOfAccounts', 'create_failed', 'Error al crear cuenta', { error: result.message });
         setError(result.message);
@@ -88,40 +136,60 @@ export function ChartOfAccounts() {
   };
 
   const handleEditAccount = (account: ChartOfAccount) => {
-    logger.info('ChartOfAccounts', 'edit_start', 'Iniciando edición de cuenta', { accountCode: account.account_code });
+    logger.info('ChartOfAccounts', 'edit_start', 'Iniciando ediciÃ³n de cuenta', { accountCode: account.account_code });
     setEditingAccount(account);
     setFormData({
       account_code: account.account_code,
+      number: account.number || '',
       account_name: account.account_name,
       account_type: account.account_type,
       normal_balance: account.normal_balance,
       parent_account: account.parent_account || '',
-      is_active: account.is_active
+      is_active: account.is_active,
+      detail_type: account.detail_type || ''
     });
     setShowForm(true);
   };
 
-  const handleUpdateAccount = async () => {
+  const handleUpdateAccount = async (force = false) => {
     if (!editingAccount) return;
 
+    // ValidaciÃ³n preventiva de clasificaciÃ³n
+    if (!force && formData.detail_type) {
+      const warn = DoubleEntryValidator.validateAccountDefinition(
+        formData.account_type || 'asset',
+        formData.detail_type
+      );
+      if (warn) {
+        setClassificationAlert(warn.reason);
+        setPendingAction('update');
+        return;
+      }
+    }
+    setClassificationAlert(null);
+    setPendingAction(null);
+
     try {
-      logger.info('ChartOfAccounts', 'update_start', 'Iniciando actualización de cuenta', { accountCode: editingAccount.account_code });
+      logger.info('ChartOfAccounts', 'update_start', 'Iniciando actualizaciÃ³n de cuenta', { accountCode: editingAccount.account_code });
+      logger.info('ChartOfAccounts', 'info', `[INFO] Cuenta guardada con detail_type: ${formData.detail_type || null}`);
 
       const result = await updateChartOfAccount(editingAccount.account_code, formData);
 
       if (result.success) {
-        logger.info('ChartOfAccounts', 'update_success', 'Account updated successfully', { accountCode: editingAccount.account_code });
+        logger.info('ChartOfAccounts', 'update_success', 'Account updated successfully', { accountCode: editingAccount.account_code, detailType: formData.detail_type || null });
         setShowForm(false);
         setEditingAccount(null);
         setFormData({
           account_code: '',
+          number: '',
           account_name: '',
           account_type: 'asset',
           normal_balance: 'debit',
           parent_account: '',
-          is_active: true
+          is_active: true,
+          detail_type: ''
         });
-        await loadChartOfAccounts(); // Recargar datos
+        await loadChartOfAccounts();
       } else {
         logger.error('ChartOfAccounts', 'update_failed', 'Error al actualizar cuenta', { error: result.message });
         setError(result.message);
@@ -138,7 +206,7 @@ export function ChartOfAccounts() {
     }
 
     try {
-      logger.info('ChartOfAccounts', 'delete_start', 'Iniciando eliminación de cuenta', { accountCode: account.account_code });
+      logger.info('ChartOfAccounts', 'delete_start', 'Iniciando eliminaciÃ³n de cuenta', { accountCode: account.account_code });
 
       const result = await deleteChartOfAccount(account.account_code);
 
@@ -169,11 +237,13 @@ export function ChartOfAccounts() {
     setEditingAccount(null);
     setFormData({
       account_code: '',
+      number: '',
       account_name: '',
       account_type: 'asset',
       normal_balance: 'debit',
       parent_account: '',
-      is_active: true
+      is_active: true,
+      detail_type: ''
     });
   };
 
@@ -186,7 +256,7 @@ export function ChartOfAccounts() {
       accountMap.set(account.account_code, { ...account, children: [], level: 0 });
     });
 
-    // Construir jerarquía
+    // Construir jerarquÃ­a
     flatAccounts.forEach(account => {
       const accountNode = accountMap.get(account.account_code)!;
 
@@ -273,24 +343,25 @@ export function ChartOfAccounts() {
             {getAccountTypeIcon(account.account_type)}
           </div>
 
-          {/* Código de cuenta */}
-          <div className="w-20 text-sm font-mono text-slate-400">
-            {account.account_code}
+          {/* CÃ³digo de cuenta */}
+          <div className="w-20 font-mono text-slate-400 flex flex-col justify-center leading-tight">
+            <span className="text-sm font-bold text-blue-400">{account.number || 'N/A'}</span>
+            <span className="text-[10px] opacity-70">{account.account_code}</span>
           </div>
 
           {/* Nombre de cuenta */}
-          <div className="flex-1 text-white font-medium">
+          <div className={`flex-1 text-white font-black uppercase tracking-tight ${level === 0 ? 'text-sm' : 'text-xs opacity-90 font-bold'}`}>
             {account.account_name}
           </div>
 
           {/* Tipo de cuenta */}
           <div className={`text-xs px-2 py-1 rounded ${getAccountTypeColor(account.account_type)} bg-white/5`}>
-            {account.account_type.toUpperCase()}
+            {t(`chartOfAccounts.type${account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}`)}
           </div>
 
           {/* Balance normal */}
-          <div className="w-16 text-xs text-center text-slate-500">
-            {account.normal_balance.toUpperCase()}
+          <div className="w-20 text-[10px] font-black uppercase text-center text-slate-600">
+            {t(`chartOfAccounts.${account.normal_balance}`)}
           </div>
 
           {/* Estado */}
@@ -351,7 +422,7 @@ export function ChartOfAccounts() {
           <p className="text-red-200">{error}</p>
           <button
             onClick={loadChartOfAccounts}
-            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl transition-all font-bold shadow-lg shadow-red-900/40 active:scale-95"
           >
             {t('chartOfAccounts.retry')}
           </button>
@@ -363,32 +434,36 @@ export function ChartOfAccounts() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">{t('chartOfAccounts.title')}</h1>
-          <p className="text-slate-500">{t('chartOfAccounts.subtitle')}</p>
+          <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
+            <Building className="w-8 h-8 text-blue-500" />
+            {t('chartOfAccounts.title')}
+          </h2>
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">
+            {t('chartOfAccounts.subtitle')}
+          </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-blue-900/40 active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span>{t('chartOfAccounts.newAccount')}</span>
         </button>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <div className="bg-white/10 rounded-lg p-4">
+      <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-4 mb-6">
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-64">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 h-3.5 w-3.5" />
               <input
                 type="text"
                 placeholder={t('chartOfAccounts.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full bg-slate-950/50 border border-slate-800/50 text-white pl-10 pr-4 py-2 rounded-xl text-xs focus:outline-none focus:border-blue-500/50"
               />
             </div>
           </div>
@@ -397,43 +472,42 @@ export function ChartOfAccounts() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
-              className="bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+              className="bg-slate-950/50 border border-slate-800/50 text-slate-300 px-3 py-2 rounded-xl text-xs focus:outline-none focus:border-blue-500/50"
             >
-              <option value="ALL">{t('chartOfAccounts.filterAll')}</option>
-              <option value="asset">{t('chartOfAccounts.typeAsset')}</option>
-              <option value="liability">{t('chartOfAccounts.typeLiability')}</option>
-              <option value="equity">{t('chartOfAccounts.typeEquity')}</option>
-              <option value="revenue">{t('chartOfAccounts.typeRevenue')}</option>
-              <option value="expense">{t('chartOfAccounts.typeExpense')}</option>
+              <option value="ALL" className="bg-slate-900">{t('chartOfAccounts.filterAll')}</option>
+              <option value="asset" className="bg-slate-900">{t('chartOfAccounts.typeAsset')}</option>
+              <option value="liability" className="bg-slate-900">{t('chartOfAccounts.typeLiability')}</option>
+              <option value="equity" className="bg-slate-900">{t('chartOfAccounts.typeEquity')}</option>
+              <option value="revenue" className="bg-slate-900">{t('chartOfAccounts.typeRevenue')}</option>
+              <option value="expense" className="bg-slate-900">{t('chartOfAccounts.typeExpense')}</option>
             </select>
           </div>
 
-          <label className="flex items-center space-x-2 text-slate-400">
+          <label className="flex items-center space-x-2 text-slate-500 cursor-pointer">
             <input
               type="checkbox"
               checked={showInactive}
               onChange={(e) => setShowInactive(e.target.checked)}
-              className="rounded"
+              className="rounded border-slate-800 bg-slate-950 text-blue-600"
             />
-            <span className="text-sm">{t('chartOfAccounts.showInactive')}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">{t('chartOfAccounts.showInactive')}</span>
           </label>
         </div>
       </div>
 
-      {/* Tabla de cuentas */}
-      <div className="bg-white/10 rounded-lg overflow-hidden">
-        <div className="bg-white/5 px-4 py-3 border-b border-white/10">
-          <div className="flex items-center text-sm font-medium text-slate-400" style={{ paddingLeft: '40px' }}>
-            <div className="w-20">{t('chartOfAccounts.colCode')}</div>
+      <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="bg-slate-950/30 px-4 py-3 border-b border-slate-800/50">
+          <div className="flex items-center text-[10px] font-black text-slate-500 uppercase tracking-widest" style={{ paddingLeft: '40px' }}>
+            <div className="w-20 pl-2">{t('chartOfAccounts.colCode')}</div>
             <div className="flex-1 ml-3">{t('chartOfAccounts.colName')}</div>
-            <div className="w-20 text-center">{t('chartOfAccounts.colType')}</div>
-            <div className="w-16 text-center">{t('chartOfAccounts.colBalance')}</div>
+            <div className="w-24 text-center">{t('chartOfAccounts.colType')}</div>
+            <div className="w-20 text-center">{t('chartOfAccounts.colBalance')}</div>
             <div className="w-16 text-center">{t('chartOfAccounts.colStatus')}</div>
             <div className="w-20 text-center">{t('chartOfAccounts.colActions')}</div>
           </div>
         </div>
 
-        <div className="max-h-[600px] overflow-y-auto">
+        <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
           {accounts.length === 0 ? (
             <div className="text-center py-12 text-slate-600">
               <AlertCircle className="h-12 w-12 mx-auto mb-4" />
@@ -476,112 +550,209 @@ export function ChartOfAccounts() {
 
       {/* Modal de formulario */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white/10 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              {editingAccount ? t('chartOfAccounts.editAccount') : t('chartOfAccounts.newAccount')}
-            </h3>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-10 w-full max-w-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in zoom-in duration-300 relative group">
+            <div className="flex items-start justify-between mb-10">
+              <h3 className="text-2xl font-black text-white tracking-tighter uppercase">
+                {editingAccount ? t('chartOfAccounts.editAccount') : t('chartOfAccounts.newAccount')}
+              </h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
 
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formCode')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.account_code}
-                  onChange={(e) => setFormData({ ...formData, account_code: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder="1000"
-                  required
-                  disabled={!!editingAccount} // No permitir cambiar código al editar
-                />
+            <form onSubmit={handleFormSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                      {t('chartOfAccounts.formCode')}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.account_code}
+                      onChange={(e) => setFormData({ ...formData, account_code: e.target.value })}
+                      className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono text-sm"
+                      placeholder="e.g. 1000"
+                      required
+                      disabled={!!editingAccount}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                      NÃšMERO GAAP
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={5}
+                      value={formData.number || ''}
+                      onChange={(e) => setFormData({ ...formData, number: e.target.value.replace(/\D/g, '') })}
+                      className={`w-full bg-slate-950/50 border text-white px-4 py-3 rounded-2xl focus:outline-none transition-all font-mono text-sm ${numberWarning ? 'border-orange-500/50 focus:border-orange-500/50' : 'border-slate-800/50 focus:border-blue-500/50'}`}
+                      placeholder="e.g. 10100"
+                    />
+                    {numberWarning && (
+                      <div className="flex items-center gap-1 mt-2 text-orange-400">
+                        <AlertCircle className="w-3 h-3" />
+                        <span className="text-[9px] font-medium">{numberWarning}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formName')}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.account_name}
+                    onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all uppercase font-bold text-xs"
+                    placeholder={t('chartOfAccounts.formName')}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formType')}
+                  </label>
+                  <select
+                    value={formData.account_type}
+                    onChange={(e) => setFormData({ ...formData, account_type: e.target.value as any })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all"
+                    required
+                  >
+                    <option value="asset" className="bg-slate-900">{t('chartOfAccounts.activo')}</option>
+                    <option value="liability" className="bg-slate-900">{t('chartOfAccounts.pasivo')}</option>
+                    <option value="equity" className="bg-slate-900">{t('chartOfAccounts.patrimonio')}</option>
+                    <option value="revenue" className="bg-slate-900">{t('chartOfAccounts.ingreso')}</option>
+                    <option value="expense" className="bg-slate-900">{t('chartOfAccounts.gasto')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                    {t('chartOfAccounts.formBalance')}
+                  </label>
+                  <select
+                    value={formData.normal_balance}
+                    onChange={(e) => setFormData({ ...formData, normal_balance: e.target.value as any })}
+                    className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all"
+                    required
+                  >
+                    <option value="debit" className="bg-slate-900">{t('chartOfAccounts.debito')}</option>
+                    <option value="credit" className="bg-slate-900">{t('chartOfAccounts.credito')}</option>
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formName')}
-                </label>
-                <input
-                  type="text"
-                  value={formData.account_name}
-                  onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  placeholder={t('chartOfAccounts.formName')}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formType')}
-                </label>
-                <select
-                  value={formData.account_type}
-                  onChange={(e) => setFormData({ ...formData, account_type: e.target.value as any })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  <option value="asset">{t('chartOfAccounts.activo')}</option>
-                  <option value="liability">{t('chartOfAccounts.pasivo')}</option>
-                  <option value="equity">{t('chartOfAccounts.patrimonio')}</option>
-                  <option value="revenue">{t('chartOfAccounts.ingreso')}</option>
-                  <option value="expense">{t('chartOfAccounts.gasto')}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
-                  {t('chartOfAccounts.formBalance')}
-                </label>
-                <select
-                  value={formData.normal_balance}
-                  onChange={(e) => setFormData({ ...formData, normal_balance: e.target.value as any })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
-                  required
-                >
-                  <option value="debit">{t('chartOfAccounts.debito')}</option>
-                  <option value="credit">{t('chartOfAccounts.credito')}</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
                   {t('chartOfAccounts.formParent')}
                 </label>
                 <input
                   type="text"
                   value={formData.parent_account}
                   onChange={(e) => setFormData({ ...formData, parent_account: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono"
                   placeholder="1000"
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
+              {/* Detail Type â€” filtrado dinÃ¡micamente por account_type */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 px-1">
+                  DETAIL TYPE
+                  <span className="ml-2 text-slate-600 normal-case font-normal">(opcional)</span>
+                </label>
+                <select
+                  id="detail_type"
+                  value={formData.detail_type || ''}
+                  onChange={(e) => setFormData({ ...formData, detail_type: e.target.value })}
+                  className="w-full bg-slate-950/50 border border-slate-800/50 text-white px-4 py-3 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all text-sm"
+                >
+                  <option value="" className="bg-slate-900 text-slate-400">â€” Sin clasificar â€”</option>
+                  {(DETAIL_TYPE_OPTIONS[formData.account_type || 'asset'] || []).map((opt) => (
+                    <option key={opt} value={opt} className="bg-slate-900">
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+                {formData.detail_type && (
+                  <p className="mt-1.5 text-[10px] text-blue-400 px-1">
+                    âœ“ Detail type: <span className="font-bold">{formData.detail_type}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 px-1">
                 <input
                   type="checkbox"
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="rounded"
+                  className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-blue-600 focus:ring-0 focus:ring-offset-0"
                 />
-                <label htmlFor="is_active" className="text-sm text-slate-400">
+                <label htmlFor="is_active" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer">
                   {t('chartOfAccounts.formActive')}
                 </label>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              {/* â”€â”€ ALERTA DE CLASIFICACIÃ“N PREVENTIVA (Fase 4) â”€â”€ */}
+              {classificationAlert && (
+                <div className="bg-orange-900/20 border border-orange-500/40 rounded-2xl p-4 animate-in slide-in-from-top duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="p-1.5 bg-orange-500/10 rounded-lg shrink-0">
+                      <AlertTriangle className="w-4 h-4 text-orange-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-1.5">
+                        Alerta de ClasificaciÃ³n
+                      </p>
+                      <p className="text-xs text-orange-200 font-bold leading-relaxed italic">
+                        {classificationAlert}
+                      </p>
+                      <div className="flex gap-3 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => setClassificationAlert(null)}
+                          className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+                        >
+                          Corregir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (pendingAction === 'create') handleCreateAccount(true);
+                            if (pendingAction === 'update') handleUpdateAccount(true);
+                          }}
+                          className="text-[9px] font-black uppercase tracking-widest text-orange-400 hover:text-orange-300 transition-colors"
+                        >
+                          Continuar de todas formas
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-4 pt-6">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3.5 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-900/40 active:scale-95"
                 >
                   {editingAccount ? t('chartOfAccounts.update') : t('chartOfAccounts.create')}
                 </button>
                 <button
                   type="button"
-                  onClick={handleCancelForm}
-                  className="flex-1 bg-gray-600 hover:bg-white/5 text-white py-2 px-4 rounded-lg transition-colors"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3.5 px-6 rounded-xl font-bold uppercase tracking-widest text-xs transition-all active:scale-95"
                 >
                   {t('chartOfAccounts.cancel')}
                 </button>

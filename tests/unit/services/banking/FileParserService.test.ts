@@ -8,7 +8,17 @@
  * @date 2026-02-08
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@/lib/pdf-extractor', () => ({
+  extractTextFromPDF: vi.fn().mockResolvedValue('mocked pdf text')
+}));
+
+vi.mock('pdfjs-dist', () => ({
+  default: { getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve({ numPages: 1, getPage: vi.fn().mockResolvedValue({ getTextContent: vi.fn().mockResolvedValue({ items: [] }) }) }) }) },
+  GlobalWorkerOptions: { workerSrc: '' }
+}));
+
 import { FileParserService } from '@/services/banking/FileParserService';
 
 describe('FileParserService', () => {

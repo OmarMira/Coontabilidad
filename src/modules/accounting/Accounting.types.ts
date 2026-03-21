@@ -51,6 +51,7 @@ export type AccountingPeriod = z.infer<typeof AccountingPeriodSchema>;
 // --- Reports ---
 export interface TrialBalanceRow {
     account_code: string;
+    number?: string;
     account_name: string;
     account_type: string;
     normal_balance: 'debit' | 'credit';

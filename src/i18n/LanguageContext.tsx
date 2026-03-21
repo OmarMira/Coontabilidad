@@ -1,9 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { translationEngine, Language, TranslationKey } from '@/features/i18n/TranslationEngine';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { translationEngine } from '../features/i18n/TranslationEngine';
 
 interface LanguageContextType {
-    language: Language;
-    setLanguage: (lang: Language) => void;
+    language: 'es';
     t: (key: string) => string;
 }
 
@@ -13,27 +12,18 @@ interface LanguageProviderProps {
     children: ReactNode;
 }
 
+/**
+ * LanguageProvider simplificado para soporte UNICAMENTE de español.
+ */
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-    const [language, setLanguageState] = useState<Language>(() => translationEngine.getLanguage());
+    // Forzamos el idioma a español fijo
+    const [language] = useState<'es'>('es');
 
-    const setLanguage = (lang: Language) => {
-        translationEngine.setLanguage(lang);
-        setLanguageState(lang);
-    };
-
-    // Escuchar cambios externos del engine (ej. desde fuera de React)
-    useEffect(() => {
-        const handleLanguageChange = (e: any) => {
-            setLanguageState(e.detail.language);
-        };
-        window.addEventListener('languageChange', handleLanguageChange);
-        return () => window.removeEventListener('languageChange', handleLanguageChange);
-    }, []);
-
+    // Función de traducción directa desde el engine
     const t = (key: string): string => translationEngine.t(key);
 
     return (
-        <LanguageContext.Provider value={{ language, setLanguage, t }}>
+        <LanguageContext.Provider value={{ language, t }}>
             {children}
         </LanguageContext.Provider>
     );

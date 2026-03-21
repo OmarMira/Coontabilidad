@@ -90,3 +90,20 @@ coverage/
 # Misc
 .eslintcache
 .stylelintcache
+
+# Antigravity specific large data and logs
+.logs/
+.migration-logs/
+archive/
+temp_archive/
+backups/
+tmp/
+estado_sistema/
+*.txt
+!CMakeLists.txt
+estructura*.txt
+omarmira-coontabilidad*.txt
+archivos_para_ia.txt
+test_output*.txt
+vite_build_error*.txt
+browser_logs*.txt

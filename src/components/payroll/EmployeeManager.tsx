@@ -22,7 +22,8 @@ import {
     Layers,
     Info
 } from 'lucide-react';
-import { getEmployees, createEmployee, updateEmployee, Employee } from '../../database/simple-db';
+import { getEmployees, createEmployee, updateEmployee } from '@/database/modules/db-employees';
+import type { Employee } from '@/database/modules/db-types';
 import { toast } from 'react-hot-toast';
 import { useLocale } from '../../i18n/useLocale';
 
@@ -83,7 +84,7 @@ export const EmployeeManager: React.FC = () => {
                 toast.error(result.message);
             }
         } catch (error) {
-            toast.error('Error al procesar empleado');
+            toast.error(t('employeeManager.errorProcessing'));
         } finally {
             setIsLoading(false);
         }
@@ -106,7 +107,7 @@ export const EmployeeManager: React.FC = () => {
 
     const filteredEmployees = employees.filter(emp =>
         `${emp.first_name} ${emp.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employee_number.toLowerCase().includes(searchTerm.toLowerCase())
+        emp.employee_number?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getStatusConfig = (status: string) => {
@@ -123,12 +124,14 @@ export const EmployeeManager: React.FC = () => {
             {/* Header Hub */}
             <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
                 <div className="flex items-center gap-6">
-                    <div className="p-4 bg-indigo-600/10 rounded-2.5xl border border-indigo-500/20 shadow-indigo-900/10 shadow-lg group">
-                        <Users className="w-10 h-10 text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
+                    <div className="p-3.5 bg-slate-900/50 rounded-xl border border-white/5 shadow-2xl backdrop-blur-xl group">
+                        <Users className="w-7 h-7 text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('employeeManager.title')}</h1>
-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-white tracking-tight">
+                            {t('employeeManager.title')}
+                        </h2>
+                        <p className="text-slate-500 text-[13px] flex items-center gap-2 mt-1">
                             <Zap className="w-3.5 h-3.5 text-indigo-500 animate-pulse" /> {t('employeeManager.subtitle')}
                         </p>
                     </div>
@@ -142,12 +145,12 @@ export const EmployeeManager: React.FC = () => {
                             placeholder={t('employeeManager.searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all"
+                            className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-indigo-500 focus:outline-none w-72 font-semibold tracking-widest text-[10px] transition-all"
                         />
                     </div>
                     <button
                         onClick={() => { setShowForm(true); setEditingEmployee(null); resetForm(); }}
-                        className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-indigo-900/40 hover:-translate-y-1"
+                        className="flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-semibold tracking-widest text-[10px] transition-all shadow-xl shadow-indigo-900/40 hover:-translate-y-1"
                     >
                         <UserPlus className="w-4 h-4" />
                         {t('employeeManager.recruitActive')}
@@ -293,7 +296,7 @@ export const EmployeeManager: React.FC = () => {
                                                 <Mail className="w-3.5 h-3.5" />
                                                 <span className="text-[10px] font-black uppercase tracking-wider">{t('employeeManager.card.contact')}</span>
                                             </div>
-                                            <span className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">{emp.email || 'N/A'}</span>
+                                            <span className="text-[10px] font-black text-slate-400 truncate max-w-[150px]">{emp.email || 'N/A'}</span>
                                         </div>
                                     </div>
 
@@ -314,7 +317,7 @@ export const EmployeeManager: React.FC = () => {
                     })
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

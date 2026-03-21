@@ -15,7 +15,7 @@ export const FinancialStatements: React.FC = () => {
             <div className="flex gap-4 p-1.5 bg-slate-950 border border-slate-800 rounded-[2rem] w-fit shadow-2xl no-print mx-auto lg:mx-0">
                 <button
                     onClick={() => setView('balance')}
-                    className={`flex items-center gap-3 px-8 py-4 rounded-[1.6rem] font-black uppercase tracking-widest text-[10px] transition-all duration-300 ${view === 'balance'
+                    className={`flex items-center gap-3 px-8 py-4 rounded-[1.6rem] font-bold text-xs transition-all duration-300 ${view === 'balance'
                         ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40 ring-1 ring-blue-500/50'
                         : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'
                         }`}
@@ -25,7 +25,7 @@ export const FinancialStatements: React.FC = () => {
                 </button>
                 <button
                     onClick={() => setView('income')}
-                    className={`flex items-center gap-3 px-8 py-4 rounded-[1.6rem] font-black uppercase tracking-widest text-[10px] transition-all duration-300 ${view === 'income'
+                    className={`flex items-center gap-3 px-8 py-4 rounded-[1.6rem] font-bold text-xs transition-all duration-300 ${view === 'income'
                         ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-900/40 ring-1 ring-emerald-500/50'
                         : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'
                         }`}
@@ -38,11 +38,11 @@ export const FinancialStatements: React.FC = () => {
             {/* Dynamic View Panel with Breadcrumb-like indicator */}
             <div className="relative">
                 <div className="absolute -top-6 left-8 flex items-center gap-2 no-print">
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{t('navigation.accounting')}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t('navigation.accounting')}</span>
                     <ChevronRight className="w-2.5 h-2.5 text-slate-800" />
-                    <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{t('navigation.reportsDashboard')}</span>
+                    <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">{t('navigation.reportsDashboard')}</span>
                     <ChevronRight className="w-2.5 h-2.5 text-slate-800" />
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         {view === 'balance' ? t('navigation.balanceSheet') : t('navigation.incomeStatement')}
                     </span>
                 </div>

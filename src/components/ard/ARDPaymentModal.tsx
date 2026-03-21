@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, User, FileCheck, ArrowRight, Wallet } from 'lucide-react';
-import { getCustomers, getInvoices, createPayment, updateARDDocumentStatus, Customer, Invoice } from '../../database/simple-db';
+import type { Customer, Invoice } from '@/database/modules/db-types';
+import { getCustomers } from '@/database/modules/db-customers';
+import { getInvoices } from '@/database/modules/db-invoices';
+import { createPayment } from '@/database/modules/db-payments';
+import { updateARDDocumentStatus } from '@/database/modules/db-company';
 import { logger } from '../../core/logging/SystemLogger';
 
 import { ARDDocument } from '../../modules/ard/ARD.types';

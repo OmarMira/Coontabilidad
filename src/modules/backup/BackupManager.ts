@@ -1,4 +1,5 @@
-﻿import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+﻿import { logger } from '../../core/logging/SystemLogger';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
 import { BasicEncryption } from '../../core/security/BasicEncryption';
 import { BackupCompressor } from './compression/BackupCompressor';
 import { BackupMetadataSchema, type BackupOptions, type BackupFileContainer } from './BackupMetadata.types';
@@ -61,7 +62,7 @@ export class BackupManager {
                 dbDump[table] = rows;
                 totalRecords += rows.length;
             } catch (e) {
-                console.warn(`Skipping table ${table} - might not exist`, e);
+                logger.warn('BackupManager', 'warn', `Skipping table ${table} - might not exist`, e);
                 dbDump[table] = [];
             }
         }
@@ -159,7 +160,7 @@ export class BackupManager {
                         }
                     }
                 } catch (e) {
-                    console.error(`Error restoring table ${table}`, e);
+                    logger.error('BackupManager', 'error', `Error restoring table ${table}`, e);
                     throw e; // Trigger Rollback
                 }
             }

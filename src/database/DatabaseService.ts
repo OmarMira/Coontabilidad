@@ -1,4 +1,4 @@
-// import { db } from './simple-db'; // Removed to avoid circular dependency
+﻿// import { db } from './simple-db'; // Removed to avoid circular dependency
 import { logger } from '../core/logging/SystemLogger';
 import { CurrencyUtils } from '../lib/currency';
 import { BasicEncryption } from '../core/security/BasicEncryption';
@@ -9,8 +9,14 @@ export class DatabaseService {
 
     private static dbInstance: any = null;
 
-    static setDB(db: any) {
+    static async setDB(db: any) {
         this.dbInstance = db;
+        // Ensure core tables exist as soon as the DB is set
+        try {
+            await this.initializeForensicLayer();
+        } catch (e) {
+            logger.error('DatabaseService', 'init_forensic_layer', 'Error initializing forensic layer after setDB', e);
+        }
     }
 
     /**
@@ -22,12 +28,12 @@ export class DatabaseService {
         }
 
         try {
-            logger.info('DatabaseService', 'forensic_init', 'Iniciando verificación de núcleo forense...');
+            logger.info('DatabaseService', 'forensic_init', 'Iniciando verificaciÃ³n de nÃºcleo forense...');
 
             // 1. Asegurar tablas forenses
             await this.ensureForensicTables();
 
-            // 2. Migración de Esquema (Asegurar compatibilidad Prompt V3)
+            // 2. MigraciÃ³n de Esquema (Asegurar compatibilidad Prompt V3)
             await this.ensureSchemaCompatibility();
 
             // 3. Poblar Datos Fiscales (Florida 67 Counties)
@@ -41,7 +47,7 @@ export class DatabaseService {
             // 5. Inicializar Tablas Fiscales
             await this.ensureFiscalTables();
 
-            // 6. Verificar Integridad de Datos (Corrección de Líneas)
+            // 6. Verificar Integridad de Datos (CorrecciÃ³n de LÃ­neas)
             await this.ensureDataIntegrity();
 
             // 7. Inicializar Sistema de Integridad de Datos Completo
@@ -49,13 +55,13 @@ export class DatabaseService {
                 initializeDataIntegrity();
                 logger.info('DatabaseService', 'integrity_system_ready', 'Sistema de integridad de datos inicializado con monitoreo continuo');
             } catch (error) {
-                logger.warn('DatabaseService', 'integrity_init_warn', 'Advertencia al inicializar sistema de integridad (no crítico)', null, error as Error);
+                logger.warn('DatabaseService', 'integrity_init_warn', 'Advertencia al inicializar sistema de integridad (no crÃ­tico)', null, error as Error);
             }
 
-            logger.info('DatabaseService', 'forensic_ready', 'Núcleo forense verificado y listo.');
+            logger.info('DatabaseService', 'forensic_ready', 'NÃºcleo forense verificado y listo.');
 
         } catch (error) {
-            logger.error('DatabaseService', 'init_failed', 'Fallo crítico al iniciar capa forense', null, error as Error);
+            logger.error('DatabaseService', 'init_failed', 'Fallo crÃ­tico al iniciar capa forense', null, error as Error);
             throw error;
         }
     }
@@ -78,12 +84,12 @@ export class DatabaseService {
                     const credit = row[2] as number;
                     const desc = row[3] as string;
 
-                    // Crear líneas de corrección (Dummy)
+                    // Crear lÃ­neas de correcciÃ³n (Dummy)
                     DatabaseService.dbInstance.run(`INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, '9999', ?, 0, ?)`, [id, debit, desc + ' (Auto-Fix)']);
                     DatabaseService.dbInstance.run(`INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, '9999', 0, ?, ?)`, [id, credit, desc + ' (Auto-Fix)']);
 
-                    // Nota: No actualizamos el hash aquí para no romper la cadena precipitadamente. 
-                    // La Migración 008 se encargará de re-hash y reparación completa de la cadena.
+                    // Nota: No actualizamos el hash aquÃ­ para no romper la cadena precipitadamente. 
+                    // La MigraciÃ³n 008 se encargarÃ¡ de re-hash y reparaciÃ³n completa de la cadena.
                 }
             }
         } catch (e) {
@@ -160,6 +166,18 @@ export class DatabaseService {
       );
     `);
 
+        // 4b. Tabla: BACKUPS LOG (Sanitation Step 4)
+        DatabaseService.dbInstance.run(`
+      CREATE TABLE IF NOT EXISTS backups_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now')),
+        filename TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        type TEXT NOT NULL,            -- 'manual', 'auto'
+        success BOOLEAN DEFAULT 1
+      );
+    `);
+
         // 5. Tabla: DRAFT TRANSACTIONS (Iron Clad Objective 4.1)
         DatabaseService.dbInstance.run(`
       CREATE TABLE IF NOT EXISTS draft_transactions (
@@ -175,7 +193,7 @@ export class DatabaseService {
     `);
 
         // 6. Assegurar Tablas Fiscales (Llamado interno)
-        // await this.ensureFiscalTables(); // Movido a método separado para claridad
+        // await this.ensureFiscalTables(); // Movido a mÃ©todo separado para claridad
     }
 
     private static async ensureFiscalTables() {
@@ -185,8 +203,8 @@ export class DatabaseService {
         id INTEGER PRIMARY KEY,
         asset_number TEXT UNIQUE NOT NULL,      -- 'FA-2026-001'
         description TEXT NOT NULL,
-        acquisition_date TEXT NOT NULL,         -- ISO-8601
-        acquisition_cost INTEGER NOT NULL,      -- En centavos
+        purchase_date TEXT NOT NULL,         -- ISO-8601
+        purchase_cost INTEGER NOT NULL,      -- En centavos
         depreciation_method TEXT NOT NULL,      -- 'MACRS-5', 'SL-7'
         useful_life_years INTEGER NOT NULL,
         federal_depreciation_schedule TEXT,     -- JSON con anual
@@ -291,7 +309,7 @@ export class DatabaseService {
     }
 
     private static async ensureSchemaCompatibility() {
-        // Verificar y Añadir columnas faltantes en journal_entries (según Prompt V3)
+        // Verificar y AÃ±adir columnas faltantes en journal_entries (segÃºn Prompt V3)
         try {
             // Necesitamos 'entry_number'
             DatabaseService.dbInstance.run("ALTER TABLE journal_entries ADD COLUMN entry_number TEXT");
@@ -309,6 +327,23 @@ export class DatabaseService {
                 // ignore
             }
         }
+
+        // --- ARREGLO DE ESQUEMA PARA VERIFICACION ---
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE products ADD COLUMN description TEXT");
+        } catch (e) { }
+
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE user_roles ADD COLUMN is_active BOOLEAN DEFAULT 1");
+        } catch (e) { }
+
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE user_roles ADD COLUMN is_system_role BOOLEAN DEFAULT 0");
+        } catch (e) { }
+
+        try {
+            DatabaseService.dbInstance.run("ALTER TABLE chart_of_accounts ADD COLUMN parent_code TEXT");
+        } catch (e) { }
     }
 
     public static async createForensicTriggers(): Promise<void> {
@@ -338,7 +373,7 @@ export class DatabaseService {
            AND (p.status IN ('closed', 'locked') OR f.status IN ('closed', 'locked'))
        ))
        BEGIN
-           SELECT RAISE(ABORT, 'ACCOUNTING ALERT: El periodo contable está cerrado o bloqueado.');
+           SELECT RAISE(ABORT, 'ACCOUNTING ALERT: El periodo contable estÃ¡ cerrado o bloqueado.');
        END;`
         ];
 
@@ -380,7 +415,7 @@ export class DatabaseService {
     }
 
     /**
-     * Método Forense para insertar Asientos Contables.
+     * MÃ©todo Forense para insertar Asientos Contables.
      */
     static async insertJournalEntry(entry: {
         description: string;
@@ -390,12 +425,12 @@ export class DatabaseService {
     }): Promise<string> {
         if (!DatabaseService.dbInstance) throw new Error('DB not initialized');
 
-        // 1. Validación de Partida Doble
+        // 1. ValidaciÃ³n de Partida Doble
         const totalDebitV = entry.items.reduce((sum, item) => sum + item.debit, 0);
         const totalCreditV = entry.items.reduce((sum, item) => sum + item.credit, 0);
 
         if (Math.abs(totalDebitV - totalCreditV) > 0.01) {
-            throw new Error(`Desbalance detectado: Débito ${totalDebitV} vs Crédito ${totalCreditV}`);
+            throw new Error(`Desbalance detectado: DÃ©bito ${totalDebitV} vs CrÃ©dito ${totalCreditV}`);
         }
 
         const totalDebitCents = CurrencyUtils.toCents(totalDebitV);
@@ -437,7 +472,7 @@ export class DatabaseService {
             const legacyDebit = totalDebitV;
             const legacyCredit = totalCreditV;
 
-            // Usamos el esquema híbrido (Legacy + Forensic Columns)
+            // Usamos el esquema hÃ­brido (Legacy + Forensic Columns)
             DatabaseService.dbInstance.run(`INSERT INTO journal_entries 
               (entry_number, description, transaction_date, entry_date, reference, total_debit, total_credit, created_by) 
               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -448,8 +483,8 @@ export class DatabaseService {
 
 
 
-            // Insert Lines (Task 6.1.1)
-            const lineStmt = DatabaseService.dbInstance.prepare("INSERT INTO journal_entry_lines (journal_entry_id, account_code, debit, credit, description) VALUES (?, ?, ?, ?, ?)");
+            // Insert Lines (Task 6.1.1 â€” Corrected to journal_details)
+            const lineStmt = DatabaseService.dbInstance.prepare("INSERT INTO journal_details (journal_entry_id, account_code, debit_amount, credit_amount, description) VALUES (?, ?, ?, ?, ?)");
             for (const item of entry.items) {
                 lineStmt.run([
                     jeId,
@@ -468,7 +503,7 @@ export class DatabaseService {
                 [previousHash, currentHash, 'journal_entries', jeId, 'INSERT', dataHash, entry.userId, logicClock]);
 
             DatabaseService.dbInstance.run('COMMIT');
-            logger.info('DatabaseService', 'entry_sealed', `Asiento ${entryNumber} sellado criptográficamente.`);
+            logger.info('DatabaseService', 'entry_sealed', `Asiento ${entryNumber} sellado criptogrÃ¡ficamente.`);
 
             return entryNumber;
 
@@ -519,10 +554,10 @@ export class DatabaseService {
                 if (hashService === storedHash) {
                     hashMatches = true;
                 } else {
-                    console.error('Hash Mismatch (Standard):');
-                    console.error('Expected (Stored):', storedHash);
-                    console.error('Calculated:', hashService);
-                    console.error('Payload:', payloadService);
+                    logger.error('DatabaseService', 'hash_mismatch', 'Hash Mismatch (Standard)');
+                    logger.error('DatabaseService', 'hash_mismatch_stored', 'Expected (Stored)', storedHash);
+                    logger.error('DatabaseService', 'hash_mismatch_calculated', 'Calculated', hashService);
+                    logger.error('DatabaseService', 'hash_mismatch_payload', 'Payload', payloadService);
                 }
             }
 
@@ -710,4 +745,69 @@ export class DatabaseService {
             return v.toString(16);
         });
     }
+
+    /**
+     * Ejecuta la descarga de un respaldo local en formato .sqlite
+     * Sanitation Step 4.2
+     */
+    static async backupDB(manual: boolean = false): Promise<void> {
+        if (!DatabaseService.dbInstance) return;
+
+        const isAutoEnabled = localStorage.getItem('auto_backup_enabled') === 'true';
+        if (!manual && !isAutoEnabled) return;
+
+        try {
+            const dbData = DatabaseService.dbInstance.export();
+            const blob = new Blob([dbData], { type: 'application/x-sqlite3' });
+            const url = URL.createObjectURL(blob);
+
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+            const filename = `account-express-backup-${dateStr}-${timeStr}.sqlite`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            const type = manual ? 'manual' : 'auto';
+            const logMsg = manual ? `Backup manual creado: ${filename}` : `Backup automÃ¡tico creado: ${filename}`;
+
+            logger.info('BackupService', 'backup_success', logMsg, { filename, size: dbData.byteLength });
+
+            // Registrar en la tabla de logs (Sanitation Step 4.2)
+            try {
+                const ts = new Date().toISOString();
+                const size = dbData.byteLength;
+                DatabaseService.dbInstance.run(
+                    `INSERT INTO backups_log (timestamp, filename, size, type, success) VALUES (?, ?, ?, ?, 1)`,
+                    [ts, filename, size, type]
+                );
+            } catch (dbError) {
+                logger.error('DatabaseService', 'log_backup_to_db', 'Error logging backup to DB', dbError);
+                logger.error('DatabaseService', 'backup_log_failed', 'Resumen: No se pudo registrar en la tabla logs', { error: String(dbError) });
+            }
+
+        } catch (error) {
+            logger.error('BackupService', 'backup_error', 'Fallo crÃ­tico al crear backup', null, error as Error);
+        }
+    }
+
+    /**
+     * Inicia el timer de backups automÃ¡ticos (cada 5 min)
+     * Sanitation Step 4.1
+     */
+    static startAutoBackupTimer(): void {
+        logger.info('DatabaseService', 'auto_timer_init', 'Iniciando temporizador de backups automÃ¡ticos (5 min)');
+
+        // Ejecutar cada 5 minutos (300,000 ms)
+        setInterval(() => {
+            DatabaseService.backupDB(false);
+        }, 300000);
+    }
 }
+

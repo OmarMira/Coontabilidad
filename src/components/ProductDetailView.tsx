@@ -15,7 +15,7 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
-import { Product } from '../database/simple-db';
+import type { Product } from '@/database/modules/db-types';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -353,12 +353,12 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-1">Creado</label>
-                <p className="text-white text-sm">{formatDate(product.created_at)}</p>
+                <p className="text-white text-sm">{formatDate(product.created_at ?? '')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-500 mb-1">Última Actualización</label>
-                <p className="text-white text-sm">{formatDate(product.updated_at)}</p>
+                <p className="text-white text-sm">{formatDate(product.updated_at ?? '')}</p>
               </div>
 
               <div>

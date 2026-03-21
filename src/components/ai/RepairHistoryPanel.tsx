@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RepairHistoryEntry, RepairStats } from '../../types/ai-repair';
 import { AIRepairService } from '../../services/ai/AIRepairService';
 import { ProductionLogger } from '../../core/logging/ProductionLogger';
+import { useLocale } from '../../i18n/useLocale';
 
 interface RepairHistoryPanelProps {
     repairService: AIRepairService;
@@ -11,6 +12,7 @@ interface RepairHistoryPanelProps {
  * Panel de historial de reparaciones ejecutadas
  */
 export function RepairHistoryPanel({ repairService }: RepairHistoryPanelProps) {
+    const { t } = useLocale();
     const [history, setHistory] = useState<RepairHistoryEntry[]>([]);
     const [stats, setStats] = useState<RepairStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +41,13 @@ export function RepairHistoryPanel({ repairService }: RepairHistoryPanelProps) {
     };
 
     const handleRollback = async (repairId: string) => {
-        if (!confirm('¿Estás seguro de revertir esta reparación?')) {
+        if (!confirm(t('aiAssistant.history.rollbackConfirm'))) {
             return;
         }
 
         try {
             // await repairService.rollbackToBackupPoint(repairId);
-            alert('Rollback no implementado aún');
+            alert(t('aiAssistant.history.rollbackNotImplemented'));
             await loadHistory();
         } catch (error) {
             ProductionLogger.error('RepairHistoryPanel', 'Rollback failed', error as Error);
@@ -56,7 +58,7 @@ export function RepairHistoryPanel({ repairService }: RepairHistoryPanelProps) {
     if (isLoading) {
         return (
             <div className="p-4 text-center text-slate-600">
-                Cargando historial...
+                {t('aiAssistant.history.loading')}
             </div>
         );
     }
@@ -67,24 +69,24 @@ export function RepairHistoryPanel({ repairService }: RepairHistoryPanelProps) {
             {stats && (
                 <div className="grid grid-cols-4 gap-4 mb-6">
                     <StatCard
-                        label="Total Propuestas"
+                        label={t('aiAssistant.history.totalProposals')}
                         value={stats.totalProposals}
                         icon="📊"
                     />
                     <StatCard
-                        label="Ejecutadas"
+                        label={t('aiAssistant.history.executed')}
                         value={stats.executed}
                         icon="✅"
                         color="green"
                     />
                     <StatCard
-                        label="Rechazadas"
+                        label={t('aiAssistant.history.rejected')}
                         value={stats.rejected}
                         icon="❌"
                         color="red"
                     />
                     <StatCard
-                        label="Tasa de Éxito"
+                        label={t('aiAssistant.history.successRate')}
                         value={`${(stats.successRate * 100).toFixed(1)}%`}
                         icon="🎯"
                         color="blue"
@@ -94,11 +96,11 @@ export function RepairHistoryPanel({ repairService }: RepairHistoryPanelProps) {
 
             {/* History List */}
             <div className="space-y-2">
-                <h3 className="font-bold text-lg mb-3">Historial de Reparaciones</h3>
+                <h3 className="font-bold text-lg mb-3">{t('aiAssistant.history.title')}</h3>
 
                 {history.length === 0 ? (
                     <div className="text-center text-slate-600 py-8">
-                        No hay reparaciones en el historial
+                        {t('aiAssistant.history.empty')}
                     </div>
                 ) : (
                     history.map((entry) => (
@@ -148,6 +150,7 @@ function HistoryEntry({
     entry: RepairHistoryEntry;
     onRollback: (id: string) => void;
 }) {
+    const { t } = useLocale();
     const statusColors = {
         pending: 'bg-gray-100',
         approved: 'bg-blue-100',
@@ -192,7 +195,7 @@ function HistoryEntry({
                             onClick={() => onRollback(entry.id)}
                             className="text-xs px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded"
                         >
-                            Revertir
+                            {t('aiAssistant.history.rollback')}
                         </button>
                     )}
                 </div>

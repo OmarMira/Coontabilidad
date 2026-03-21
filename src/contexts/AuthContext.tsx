@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { translationEngine } from '@/features/i18n/TranslationEngine';
+import { useLanguage } from '@/i18n/LanguageContext';
 import UserService from '../services/UserService';
-import { createUser, getUserByUsername, hasUsers } from '../database/simple-db';
+import { createUser, getUserByUsername, hasUsers } from '@/database/modules/db-users';
 import type { User as DBUser } from '../types/user.types';
 
 interface User {
@@ -29,12 +30,12 @@ interface AuthContextType {
     user: User | null;
     login: (username: string, password: string) => Promise<boolean>;
     loginWithGoogle: (googleUser: GoogleUserInfo) => Promise<boolean>;
-    loginAsGuest: () => Promise<boolean>;
     logout: () => void;
     isAuthenticated: boolean;
     refreshUser: () => Promise<void>;
     hasPermission: (module: string, action: string) => boolean;
     checkSystemHasUsers: () => boolean;
+    forceAdminBypass: () => void;
 }
 
 
@@ -206,12 +207,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         expiresAt: Date.now() + 8 * 60 * 60 * 1000
                     }));
 
-                    // Sync Language Preference for New Users
-                    const browserLang = navigator.language.split('-')[0]; // 'es-ES' -> 'es'
-                    if (browserLang === 'es' || browserLang === 'en') {
-                        translationEngine.setLanguage(browserLang as 'es' | 'en');
-                        console.log(`🌍 Idioma sincronizado con navegador: ${browserLang}`);
-                    }
+                    // Sync Language Preference for New Users - Forzado a ES
+                    translationEngine.setLanguage('es');
+                    console.log(`🌍 Idioma sincronizado: es`);
 
                     console.log(`✅ Usuario de Google creado exitosamente con rol: ${assignedRole.name}`, userData);
                     return true;
@@ -235,66 +233,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return hasUsers();
     };
 
-    const loginAsGuest = async (): Promise<boolean> => {
-        try {
-            console.log('🔄 Switching to Volatile Demo Mode...');
-
-            // 1. Reset current DB connection to switch modes
-            const { resetDB, initDB, createUser } = await import('../database/simple-db');
-            await resetDB();
-
-            // 2. Initialize in RAM-ONLY Mode (Volatile)
-            // This creates a fresh new SQL.Database() instance
-            await initDB(undefined, true);
-
-            // 3. Create Demo User in the Volatile DB
-            // We need a user in the DB so relational queries (invoice.userId) work
-            const roles = UserService.getRoles();
-            const adminRole = roles.find(r => r.name === 'admin') || roles[0];
-
-            if (!adminRole) throw new Error('System roles not initialized in Demo Mode');
-
-            const demoUserFn = {
-                username: 'demo.admin',
-                email: 'demo@volatile.local',
-                full_name: 'Modo Demo Volátil',
-                display_name: 'Demo Admin',
-                password: 'demo_access_grant',
-                role_id: adminRole.id
-            };
-
-            const createRes = await createUser(demoUserFn);
-
-            if (createRes.success && createRes.userId) {
-                const userData: User = {
-                    id: createRes.userId,
-                    username: demoUserFn.username,
-                    email: demoUserFn.email,
-                    full_name: demoUserFn.full_name,
-                    display_name: demoUserFn.display_name,
-                    role: adminRole.name,
-                    role_id: adminRole.id,
-                    role_level: adminRole.level,
-                    permissions: adminRole.permissions_json ? JSON.parse(adminRole.permissions_json) : {}
-                };
-
-                setUser(userData);
-
-                // NOTA CRÍTICA: NO guardamos en localStorage.
-                // "Al cerrar la pestaña o refrescar, los datos deben desaparecer por completo".
-                // Esto incluye la sesión. Si refrescan, vuelven al login y la DB persistente.
-
-                console.log('✅ Volatile Demo Mode Activated (RAM Only)');
-                return true;
-            }
-
-            return false;
-
-        } catch (e) {
-            console.error('Guest login failed', e);
-            return false;
-        }
+    const forceAdminBypass = () => {
+        const userData: User = {
+            id: 1,
+            username: 'admin',
+            email: 'admin@dev.local',
+            full_name: 'Super Administrador (Bypass)',
+            display_name: 'Admin Global',
+            role: 'admin',
+            role_id: 1,
+            role_level: 100,
+            permissions: {}
+        };
+        setUser(userData);
+        localStorage.setItem('accountexpress_user', JSON.stringify({
+            user: userData,
+            expiresAt: Date.now() + 8 * 60 * 60 * 1000
+        }));
+        console.warn('⚠️ DEV BYPASS ACTIVATED - Logged in as Admin');
     };
+
+
+
 
     const logout = () => {
         try {
@@ -305,6 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Clear everything else
             localStorage.clear();
             sessionStorage.clear();
+            sessionStorage.setItem('user_logged_out', 'true');
 
             console.log('Sesión cerrada correctamente');
         } catch (error) {
@@ -361,12 +322,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             user,
             login,
             loginWithGoogle,
-            loginAsGuest,
             checkSystemHasUsers,
             logout,
             isAuthenticated: !!user,
             refreshUser,
-            hasPermission
+            hasPermission,
+            forceAdminBypass
         }}>
             {children}
         </AuthContext.Provider>

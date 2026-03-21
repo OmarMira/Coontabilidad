@@ -18,7 +18,7 @@ export const SystemSchemaMigration: Migration = {
 
         // 2. Company Info (Singleton usually, or support multi-entity with row 1)
         await db.exec(`
-            CREATE TABLE IF NOT EXISTS company_info (
+            CREATE TABLE IF NOT EXISTS company_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 tax_id TEXT,
@@ -41,8 +41,11 @@ export const SystemSchemaMigration: Migration = {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE, -- e.g. 'admin', 'accountant', 'viewer'
                 description TEXT,
+                level INTEGER DEFAULT 0,
                 permissions TEXT, -- JSON array of permission strings
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                is_active BOOLEAN DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
@@ -76,8 +79,8 @@ export const SystemSchemaMigration: Migration = {
     down: async (db: SQLiteEngine) => {
         await db.exec("DROP TABLE IF EXISTS system_audit_log");
         await db.exec("DROP TABLE IF EXISTS fiscal_settings");
-        await db.exec("DROP TABLE IF EXISTS user_roles");
-        await db.exec("DROP TABLE IF EXISTS company_info");
+        // user_roles is PROTECTED
+        await db.exec("DROP TABLE IF EXISTS company_data");
         await db.exec("DROP TABLE IF EXISTS system_config");
     }
 };

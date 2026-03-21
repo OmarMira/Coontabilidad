@@ -62,8 +62,11 @@ export class AssetDisposalService {
     async disposeAsset(
         assetId: number,
         disposalData: DisposalData,
-        userId: number = 1
+        userId: number | null
     ): Promise<number> {
+        if (userId === null || userId === undefined) {
+            throw new Error('[AssetDisposalService] userId requerido. Operación abortada.');
+        }
         const asset = await this.assetService.getAssetById(assetId);
         if (!asset) {
             throw new Error(`Asset ${assetId} not found`);

@@ -1,0 +1,781 @@
+﻿Listado de rutas de carpetas para el volumen Windows
+El n·mero de serie del volumen es 8A28-3B9A
+C:\ACCOUNT EXPRESS\SRC
+|   App.tsx
+|   auto-diagnosis.ts
+|   index.css
+|   main.tsx
+|   migration_report.json
+|   
++---api
+|       health.ts
+|       
++---assets
++---components
+|   |   AccountingDiagnosis.tsx
+|   |   AddressAutocomplete.tsx
+|   |   AppRouter.tsx
+|   |   BackupPanel.tsx
+|   |   BalanceSheet.tsx
+|   |   BankAccountForm.tsx
+|   |   BankAccountList.tsx
+|   |   BankStatementImporter.tsx
+|   |   BillDetailView.tsx
+|   |   BillForm.tsx
+|   |   BillList.tsx
+|   |   ChartOfAccounts.tsx
+|   |   CompanyDataForm.tsx
+|   |   CustomerDetailView.tsx
+|   |   CustomerForm.tsx
+|   |   CustomerFormAdvanced.tsx
+|   |   CustomerList.tsx
+|   |   Dashboard.tsx
+|   |   FinancialDashboardPanel.tsx
+|   |   FloridaTaxReport.tsx
+|   |   GeneralLedger.tsx
+|   |   Header.tsx
+|   |   HelpCenter.tsx
+|   |   InvoiceDetailView.tsx
+|   |   InvoiceForm.tsx
+|   |   InvoiceList.tsx
+|   |   JournalEntryTest.tsx
+|   |   LanguageSelector.tsx
+|   |   LanguageSwitcher.tsx
+|   |   LoadingSpinner.tsx
+|   |   LogoUploader.tsx
+|   |   ManualJournalEntries.tsx
+|   |   ModulePlaceholder.tsx
+|   |   PaymentMethods.tsx
+|   |   ProductCategoryForm.tsx
+|   |   ProductCategoryList.tsx
+|   |   ProductDetailView.tsx
+|   |   ProductForm.tsx
+|   |   ProductList.tsx
+|   |   Sidebar.tsx
+|   |   SupplierDetailView.tsx
+|   |   SupplierForm.tsx
+|   |   SupplierList.tsx
+|   |   SupplierPayments.tsx
+|   |   SystemLogs.tsx
+|   |   TaxRates.tsx
+|   |   TransactionAudit.tsx
+|   |   VerifyIronCore.tsx
+|   |   
+|   +---accounting
+|   |   |   ClosureChecklist.tsx
+|   |   |   ClosureReport.tsx
+|   |   |   FinancialStatements.tsx
+|   |   |   IncomeStatement.tsx
+|   |   |   JournalEntryForm.tsx
+|   |   |   LedgerHub.tsx
+|   |   |   PeriodClosingWizard.tsx
+|   |   |   PeriodClosureWizard.tsx
+|   |   |   PeriodManager.tsx
+|   |   |   TrialBalanceReport.tsx
+|   |   |   
+|   |   \---wizard-steps
+|   |           AdjustmentsStep.tsx
+|   |           BankReconciliationStep.tsx
+|   |           ConfirmationStep.tsx
+|   |           PayrollValidationStep.tsx
+|   |           TransactionValidationStep.tsx
+|   |           TrialBalanceStep.tsx
+|   |           
+|   +---admin
+|   |       SystemAudit.tsx
+|   |       
+|   +---ai
+|   |       AIProposalPanel.tsx
+|   |       RepairHistoryPanel.tsx
+|   |       RepairProposalCard.tsx
+|   |       UnifiedAssistant.tsx
+|   |       
+|   +---ard
+|   |       ARDAssignCustomerModal.tsx
+|   |       ARDCollectionManager.tsx
+|   |       ARDCustomerPanel.tsx
+|   |       ARDDocumentList.tsx
+|   |       ARDInventorySync.tsx
+|   |       ARDModule.tsx
+|   |       ARDPaymentModal.tsx
+|   |       ARDPDFReport.tsx
+|   |       ARDPreviewModal.tsx
+|   |       ARDQualityPanel.tsx
+|   |       ARDRoadmap.tsx
+|   |       ARDSaleConversionModal.tsx
+|   |       ARDScanner.tsx
+|   |       
+|   +---assets
+|   |   |   AssetDetailView.tsx
+|   |   |   AssetDisposalForm.tsx
+|   |   |   AssetForm.tsx
+|   |   |   FixedAssetsManager.tsx
+|   |   |   FixedAssetsManagerReports.txt
+|   |   |   
+|   |   \---reports
+|   |           AssetRegisterReport.tsx
+|   |           DepreciationScheduleReport.tsx
+|   |           DisposalSummaryReport.tsx
+|   |           
+|   +---audit
+|   |       AuditTrailMonitor.test.tsx
+|   |       AuditTrailMonitor.tsx
+|   |       AuditTrailTable.tsx
+|   |       
+|   +---auth
+|   |       GoogleLoginButton.tsx
+|   |       LoginForm.tsx
+|   |       ProtectedRoute.tsx
+|   |       RoleManager.tsx
+|   |       RolesDiagnostic.tsx
+|   |       UserForm.tsx
+|   |       UserList.tsx
+|   |       
+|   +---backup
+|   |       BackupLocationSelector.tsx
+|   |       BackupRestoreModal.tsx
+|   |       BackupRestoreWizard.tsx
+|   |       
+|   +---banking
+|   |   |   BankImport.tsx
+|   |   |   BankImportWizard.tsx
+|   |   |   BankingModule.tsx
+|   |   |   BankReconciliation.tsx
+|   |   |   BankReconciliationImporter.tsx
+|   |   |   BankTransactionMatcher.tsx
+|   |   |   DiscrepancyAnalysis.tsx
+|   |   |   ImportHistory.tsx
+|   |   |   QuarantinePanel.tsx
+|   |   |   ReconciliationMatcher.tsx
+|   |   |   results.txt
+|   |   |   
+|   |   \---importers
+|   |       |   FormatDetector.ts
+|   |       |   OFXImporter.tsx
+|   |       |   TransactionNormalizer.ts
+|   |       |   TransactionPreview.tsx
+|   |       |   
+|   |       \---__tests__
+|   |               FormatDetector.test.ts
+|   |               TransactionNormalizer.test.ts
+|   |               
+|   +---budgets
+|   |   |   BudgetDetailView.tsx
+|   |   |   BudgetForm.tsx
+|   |   |   BudgetLineEditor.tsx
+|   |   |   BudgetLinesTable.tsx
+|   |   |   BudgetList.tsx
+|   |   |   BudgetManager.tsx
+|   |   |   
+|   |   \---reports
+|   |           BudgetPerformanceChart.tsx
+|   |           BudgetVarianceReport.tsx
+|   |           
+|   +---common
+|   |       OnlineStatus.tsx
+|   |       WorkerProgress.tsx
+|   |       
+|   +---dashboard
+|   |       TaxComplianceWidget.test.tsx
+|   |       TaxComplianceWidget.tsx
+|   |       
+|   +---dashboards
+|   |       CustomerDashboard.tsx
+|   |       FinancialDashboard.tsx
+|   |       InventoryDashboard.tsx
+|   |       PayrollDashboard.tsx
+|   |       SupplierDashboard.tsx
+|   |       
+|   +---dr15
+|   |       CountyBreakdownTable.tsx
+|   |       DORComplianceChecklist.tsx
+|   |       DR15PreparationWizard.test.tsx
+|   |       DR15PreparationWizard.tsx
+|   |       TaxComponents.tsx
+|   |       
+|   +---elite
+|   |       EliteBadge.tsx
+|   |       ElitePageHeader.tsx
+|   |       EliteSearchBar.tsx
+|   |       EliteStatsCard.tsx
+|   |       EliteTable.tsx
+|   |       index.ts
+|   |       
+|   +---emergency
+|   |       EmergencyScreen.tsx
+|   |       
+|   +---error
+|   |       DynamicErrorBoundary.tsx
+|   |       
+|   +---forensic
+|   |       ForensicSentinelDashboard.tsx
+|   |       
+|   +---inventory
+|   |       InventoryAdjustments.tsx
+|   |       InventoryDashboard.tsx
+|   |       InventoryKardexViewer.tsx
+|   |       InventoryMovements.tsx
+|   |       InventoryReports.tsx
+|   |       LocationsManager.tsx
+|   |       ProductKardexReport.tsx
+|   |       
+|   +---invoices
+|   |   |   ARComponents.tsx
+|   |   |   InvoiceForm.test.tsx
+|   |   |   InvoiceForm.test.tsx.backup-fase2
+|   |   |   InvoiceForm.tsx
+|   |   |   InvoiceSchemas.ts
+|   |   |   useInvoiceForm.ts
+|   |   |   
+|   |   \---subcomponents
+|   |           CustomerSelector.tsx
+|   |           InvoiceLinesEditor.tsx
+|   |           TaxSummary.tsx
+|   |           
+|   +---legacy
+|   |       BackupRestore.tsx
+|   |       
+|   +---maintenance
+|   |       DatabaseMaintenance.tsx
+|   |       RepairCompleteModal.tsx
+|   |       
+|   +---monitoring
+|   |       WorkerPoolMetrics.tsx
+|   |       
+|   +---payroll
+|   |       EmployeeManager.tsx
+|   |       EmployeePaystub.tsx
+|   |       PayrollEntryList.tsx
+|   |       PayrollProcessor.tsx
+|   |       PayrollProcessorUI.tsx
+|   |       PayrollReports.tsx
+|   |       PayrollReportsPanel.tsx
+|   |       PayrollReview.tsx
+|   |       PayrollSettings.tsx
+|   |       PayrollSlip.tsx
+|   |       
+|   +---purchasing
+|   |       PayableReports.tsx
+|   |       PurchaseOrderForm.tsx
+|   |       PurchaseOrderManager.tsx
+|   |       PurchaseOrderReceiving.tsx
+|   |       PurchaseOrdersList.tsx
+|   |       SuppliersList.tsx
+|   |       
+|   +---reports
+|   |   |   AccountLedger.tsx
+|   |   |   AgingReport.tsx
+|   |   |   CashFlowStatement.tsx
+|   |   |   ComplianceHistory.tsx
+|   |   |   DR15Template.tsx
+|   |   |   ReportExporter.tsx
+|   |   |   ReportsDashboard.tsx
+|   |   |   
+|   |   \---pdf
+|   |           DR15PDF.tsx
+|   |           
+|   +---security
+|   |   |   SystemIntegrityGate.tsx
+|   |   |   SystemRepairPanel.tsx
+|   |   |   SystemWarningBanner.tsx
+|   |   |   
+|   |   \---checks
+|   |           SchemaIntegrityCheck.ts
+|   |           TaxDataIntegrityCheck.ts
+|   |           UserIntegrityCheck.ts
+|   |           
+|   +---settings
+|   |       BackupRecoveryPanel.tsx
+|   |       CloudBackupSettings.tsx
+|   |       
+|   +---setup
+|   |   |   InitialSetupWizard.tsx
+|   |   |   OnboardingWizard.tsx
+|   |   |   
+|   |   \---steps
+|   |           AdminStep.tsx
+|   |           CompanyStep.tsx
+|   |           ConfirmationStep.tsx
+|   |           SecurityStep.tsx
+|   |           WelcomeStep.tsx
+|   |           
+|   +---system
+|   |       CompanyInfoForm.tsx
+|   |       DataHealthPanel.tsx
+|   |       FiscalSettingsForm.tsx
+|   |       SecuritySettings.tsx
+|   |       UserRoleManager.tsx
+|   |       
+|   \---ui
+|           AddressAutocomplete.tsx
+|           alert.tsx
+|           badge.tsx
+|           button.tsx
+|           card.tsx
+|           input.tsx
+|           label.tsx
+|           
++---config
+|       ai-security.ts
+|       NavigationConfig.ts
+|       ollama.ts
+|       
++---contexts
+|       AuthContext.tsx
+|       I18nContext.tsx
+|       
++---controllers
+|       FixedAssetsController.ts
+|       
++---core
+|   |   DashboardRestorer.ts
+|   |   DatabaseHealthChecker.ts
+|   |   NuclearCleanExecution.ts
+|   |   UISyncManager.ts
+|   |   
+|   +---architecture
+|   |       ResilientStorage.ts
+|   |       
+|   +---audit
+|   |       AuditChainService.ts
+|   |       BatchAuditSystem.test.ts
+|   |       BatchAuditSystem.ts
+|   |       
+|   +---cache
+|   |       IntelligentCache.ts
+|   |       
+|   +---data-integrity
+|   |       DataHealthCheckService.ts
+|   |       DataIntegrityChecker.ts
+|   |       DataIntegrityCore.ts
+|   |       DataRepairEngine.ts
+|   |       index.ts
+|   |       
+|   +---database
+|   |       EngineBridge.ts
+|   |       SQLiteEngine.ts
+|   |       TransactionManager.ts
+|   |       
+|   +---logging
+|   |       ProductionLogger.ts
+|   |       SystemLogger.ts
+|   |       
+|   +---migrations
+|   |   |   MigrationEngine.ts
+|   |   |   
+|   |   \---list
+|   |           001_initial_schema.ts
+|   |           002_ai_views.ts
+|   |           003_inventory_schema.ts
+|   |           004_purchasing_schema.ts
+|   |           005_accounting_schema.ts
+|   |           006_system_schema.ts
+|   |           007_currency_fix_and_fiscal.ts
+|   |           008_historical_data_fix.ts
+|   |           008_logic_clock_init.ts
+|   |           009_performance_indices.ts
+|   |           010_multi_user_schema.ts
+|   |           011_fixed_assets_schema.ts
+|   |           012_budgets_schema.ts
+|   |           013_tax_transactions.ts
+|   |           015_add_account_alias.ts
+|   |           016_remediation_schema.ts
+|   |           
+|   +---monitoring
+|   |       IntelligentPerformanceMonitor.js
+|   |       MetricsCollector.ts
+|   |       
+|   +---performance
+|   |       WALManager.ts
+|   |       
+|   +---resilience
+|   |       ExponentialBackoff.ts
+|   |       
+|   +---security
+|   |       BasicEncryption.ts
+|   |       EncryptionVault.ts
+|   |       HybridEncryptionSystem.ts
+|   |       
+|   +---setup
+|   |       FirstRunSetup.ts
+|   |       
+|   +---timestamping
+|   |       TimestampService.ts
+|   |       
+|   \---workers
+|           WorkerOrchestrator.test.ts
+|           WorkerOrchestrator.ts
+|           WorkerPoolManager.ts
+|           
++---data
+|       floridaCities.ts
+|       floridaCounties.ts
+|       zipCodes.ts
+|       
++---database
+|   |   accounting-queries.ts
+|   |   DatabaseInitializer.ts
+|   |   DatabaseReconstructor.ts
+|   |   DatabaseService.ts
+|   |   EmergencyInitializer.ts
+|   |   ForensicDiagnostic.ts
+|   |   PersistenceLayer.ts
+|   |   SchemaRepairService.ts
+|   |   simple-db.ts
+|   |   simple-db.ts_append
+|   |   
+|   +---models
+|   |       ChartOfAccounts.ts
+|   |       FloridaTaxConfig.ts
+|   |       
+|   +---seeding
+|   |       FloridaTaxSeeder.ts
+|   |       
+|   +---test-data
+|   |       dr15-sample-data.sql
+|   |       insert-dr15-data.ts
+|   |       
+|   \---views
+|           complete-ai-views.sql
+|           readonly-views.sql
+|           real-data-views.sql
+|           ViewManager.test.ts
+|           ViewManager.ts
+|           
++---debug
+|       DiagnosticPanel.tsx
+|       
++---examples
+|       AIRepairIntegrationExample.tsx
+|       
++---features
+|   +---i18n
+|   |       TranslationEngine.ts
+|   |       
+|   +---quotes
+|   |   \---components
+|   |           QuoteDetailView.tsx
+|   |           QuoteForm.tsx
+|   |           QuoteList.tsx
+|   |           
+|   +---receivables
+|   |   \---components
+|   |           CustomerPayments.tsx
+|   |           ReceivableReports.tsx
+|   |           
+|   \---sales
+|       \---components
+|               SalesInvoiceForm.tsx
+|               
++---i18n
+|       LanguageContext.tsx
+|       useLocale.ts
+|       
++---knowledge
+|       florida-tax-rates.json
+|       SystemKnowledge.ts
+|       
++---lib
+|   |   currency.ts
+|   |   ofx-parser.ts
+|   |   pdf-extractor.ts
+|   |   pdf-parser.ts
+|   |   
+|   \---__tests__
+|           pdf-parser.test.ts
+|           
++---locales
+|       DELETED_EN_JSON_MARKER
+|       en.json
+|       en.json.backup
+|       es.json
+|       
++---mcp
+|       discovery.ts
+|       
++---mocks
+|       handlers.ts
+|       server.ts
+|       
++---modules
+|   +---accounting
+|   |       Accounting.types.ts
+|   |       AccountingEngine.ts
+|   |       GeneralLedgerService.test.ts
+|   |       GeneralLedgerService.ts
+|   |       PeriodClosingService.ts
+|   |       TrialBalanceService.test.ts
+|   |       TrialBalanceService.ts
+|   |       
+|   +---ai
+|   |       ExplanationEngine.test.ts
+|   |       ExplanationEngine.ts
+|   |       
+|   +---ard
+|   |       ARD.types.ts
+|   |       ARDQualityScorer.ts
+|   |       
+|   +---audit
+|   |       AuditChain.test.ts
+|   |       AuditChain.ts
+|   |       AuditChainVerifier.test.ts
+|   |       AuditChainVerifier.ts
+|   |       AuditEvent.types.ts
+|   |       
+|   +---backup
+|   |   |   BackupManager.test.ts
+|   |   |   BackupManager.ts
+|   |   |   BackupMetadata.types.ts
+|   |   |   
+|   |   \---compression
+|   |           BackupCompressor.ts
+|   |           
+|   +---billing
+|   |       FloridaTaxCalculator.test.ts
+|   |       FloridaTaxCalculator.ts
+|   |       InvoiceComplianceValidator.test.ts
+|   |       InvoiceComplianceValidator.ts
+|   |       TaxCalculation.types.ts
+|   |       
+|   +---dr15
+|   |       DR15Generator.test.ts
+|   |       DR15Generator.ts
+|   |       DR15PDFGenerator.ts
+|   |       DR15Report.types.ts
+|   |       
+|   +---inventory
+|   |       BatchControlService.ts
+|   |       Inventory.types.ts
+|   |       InventoryManager.test.ts
+|   |       InventoryManager.ts
+|   |       StockMovementTracker.ts
+|   |       
+|   +---purchasing
+|   |       GoodsReceiptService.test.ts
+|   |       GoodsReceiptService.ts
+|   |       PurchaseOrderManager.ts
+|   |       Purchasing.types.ts
+|   |       SupplierManagement.ts
+|   |       
+|   +---system
+|   |       CompanyService.test.ts
+|   |       CompanyService.ts
+|   |       System.types.ts
+|   |       SystemService.ts
+|   |       
+|   \---tax
+|           FloridaTaxCalculator.ts
+|           
++---monitoring
+|       IntegrityMonitor.ts
+|       
++---pages
+|       HealthCheckPage.tsx
+|       LiveVerification.tsx
+|       SystemStatusDashboard.tsx
+|       
++---scripts
+|       verify-multi-user-migration.ts
+|       
++---services
+|   |   addressService.ts
+|   |   AssetDepreciationService.ts
+|   |   AuthService.ts
+|   |   BackupLocationService.ts
+|   |   DraftProposalService.ts
+|   |   ExternalTimestampService.ts
+|   |   ForensicAuditService.ts
+|   |   ForensicExporter.ts
+|   |   ForensicSentinel.ts
+|   |   GDriveSyncService.ts
+|   |   GoogleAuthService.ts
+|   |   IAService.ts
+|   |   IntegrationService.ts
+|   |   LogicClockService.ts
+|   |   NotificationService.ts
+|   |   PersistentStorageService.ts
+|   |   ProactiveMonitoringService.ts
+|   |   RecoveryService.ts
+|   |   TaxReportingService.ts
+|   |   TaxService.ts
+|   |   UnifiedNotificationService.ts
+|   |   UserService.ts
+|   |   XMLGeneratorService.ts
+|   |   
+|   +---accounting
+|   |       AccountingPeriodService.ts
+|   |       AccountingService.test.ts
+|   |       AccountingService.ts
+|   |       AssetCategoryService.ts
+|   |       AssetDisposalService.ts
+|   |       DepreciationCalculator.ts
+|   |       DepreciationService.ts
+|   |       DoubleEntryValidator.ts
+|   |       FinancialReportingService.ts
+|   |       fixed-assets.ts
+|   |       FixedAssetService.ts
+|   |       FloridaTaxEngine.test.ts
+|   |       FloridaTaxEngine.ts
+|   |       JournalManager.ts
+|   |       TaxEngine.ts
+|   |       
+|   +---ai
+|   |   |   AccountingKnowledgeBase.ts
+|   |   |   AIAssistantService.ts
+|   |   |   AIFactory.ts
+|   |   |   AIRepairService.ts
+|   |   |   AIResponseFixer.ts
+|   |   |   AnomalyDetector.ts
+|   |   |   ContextBuilder.ts
+|   |   |   ContextManager.ts
+|   |   |   EmbeddingsService.ts
+|   |   |   FullDatabaseIndexer.ts
+|   |   |   IntelligentSQLGenerator.ts
+|   |   |   LocalAIService.ts
+|   |   |   ModernConversationalAssistant.ts
+|   |   |   QueryProcessor.ts
+|   |   |   QuerySecurityMonitor.ts
+|   |   |   ResponseValidator.ts
+|   |   |   SchemaCrawler.ts
+|   |   |   SecurityValidator.ts
+|   |   |   SemanticQueryAnalyzer.ts
+|   |   |   SemanticQueryResolver.ts
+|   |   |   SmartAIProvider.ts
+|   |   |   types.ts
+|   |   |   
+|   |   \---__tests__
+|   |           ModernSemanticAssistant.test.ts
+|   |           
+|   +---audit
+|   |       AuditChainService.test.ts
+|   |       AuditChainService.ts
+|   |       
+|   +---backup
+|   |       BackupService.ts
+|   |       
+|   +---banking
+|   |       AICategorizerService.ts
+|   |       BankImportService.ts
+|   |       BankReconciliationService.ts
+|   |       ClassificationMemoryService.ts
+|   |       DuplicateDetectionService.ts
+|   |       DuplicateDetector.ts
+|   |       FileParserService.ts
+|   |       StatementSmartParser.ts
+|   |       TransactionMatcher.ts
+|   |       TransactionParser.ts
+|   |       
+|   +---cloud
+|   |       CloudStorageProvider.ts
+|   |       S3Provider.ts
+|   |       
+|   +---csv
+|   |       AsyncCSVService.ts
+|   |       
+|   +---database
+|   |       DatabaseService.ts
+|   |       
+|   +---integrity
+|   |       IntegrityService.ts
+|   |       
+|   +---inventory
+|   |       InventoryService.ts
+|   |       
+|   +---invoicing
+|   |       InvoiceService.ts
+|   |       
+|   +---payroll
+|   |       PayrollJournalService.ts
+|   |       PayrollProcessor.ts
+|   |       PayrollReportGenerator.ts
+|   |       PayrollTaxCalculator.ts
+|   |       TaxBrackets2026.ts
+|   |       
+|   +---pdf
+|   |       AsyncPDFService.ts
+|   |       
+|   +---reports
+|   |       DR15ReportGenerator.ts
+|   |       
+|   +---tax
+|   |       TaxRulesCache.ts
+|   |       
+|   +---transactions
+|   |       TransactionManager.ts
+|   |       
+|   \---__tests__
+|           TaxService.test.ts
+|           
++---styles
+|       backup-progress.css
+|       elite-styles.css
+|       emergency.css
+|       error-recovery.css
+|       
++---tests
+|   |   regulatory-flow.test.ts
+|   |   setup.ts
+|   |   verify_ai_sql.ts
+|   |   
+|   +---e2e
+|   |       hybrid-persistence.e2e.test.ts
+|   |       
+|   +---integration
+|   |       ai-proposal-panel.test.tsx
+|   |       backup-recovery.test.ts
+|   |       BackupLocationService.test.ts
+|   |       GDriveSyncService.test.ts
+|   |       GoogleAuthService.test.ts
+|   |       regulatory-flow.integration.test.ts
+|   |       worker-pool.test.ts
+|   |       
+|   +---performance
+|   |       ui-responsiveness.test.ts
+|   |       
+|   \---unit
+|           anomaly-detector.test.ts
+|           csv-worker.test.ts
+|           pdf-worker.test.ts
+|           
++---types
+|       ai-context.ts
+|       ai-repair.ts
+|       custom.d.ts
+|       global.d.ts
+|       integrity.types.ts
+|       lz4js.d.ts
+|       ofx.ts
+|       user.types.ts
+|       wa-sqlite-fix.d.ts
+|       
++---utils
+|       forceInitDB.ts
+|       I18nHelper.ts
+|       logger.ts
+|       logoUtils.ts
+|       offline-manager.ts
+|       payroll-tax-calculator.ts
+|       pdfGenerator.ts
+|       reportUtils.ts
+|       systemAudit.ts
+|       validators.ts
+|       verifyRoles.ts
+|       
++---validators
+|       FloridaComplianceValidator.test.ts
+|       FloridaComplianceValidator.ts
+|       
+\---workers
+        accounting.worker.ts
+        csv.worker.ts
+        database.worker.ts
+        encryption.worker.ts
+        inventory-analysis.worker.ts
+        payroll.worker.ts
+        pdf.worker.ts
+        quotes.worker.ts
+        reconciliation.worker.ts
+        reports.worker.ts
+        SyncWorker.ts
+        WorkerPoolManager.ts
+        

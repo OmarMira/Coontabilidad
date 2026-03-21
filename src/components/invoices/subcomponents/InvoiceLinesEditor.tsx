@@ -1,5 +1,5 @@
 import React from 'react';
-import { Product } from '@/database/simple-db';
+import type { Product } from '@/database/modules/db-types';
 import { Plus, X } from 'lucide-react';
 import { InvoiceLine } from '../InvoiceSchemas';
 
@@ -12,6 +12,8 @@ interface InvoiceLinesEditorProps {
     errors?: Record<string, string>;
 }
 
+import { useLocale } from '@/i18n/useLocale';
+
 export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
     lines,
     products,
@@ -20,6 +22,8 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
     onUpdateLine,
     errors
 }) => {
+    const { t } = useLocale();
+
     const handleProductSelect = (index: number, productId: number) => {
         onUpdateLine(index, 'productId', productId);
         const product = products.find(p => p.id === productId);
@@ -37,9 +41,9 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Items</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('invoices.lines')}</label>
                 <button type="button" onClick={onAddLine} className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
-                    <Plus className="w-3 h-3" /> Add Item
+                    <Plus className="w-3 h-3" /> {t('invoices.addItem')}
                 </button>
             </div>
 
@@ -52,7 +56,7 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
                                 onChange={(e) => handleProductSelect(index, Number(e.target.value))}
                                 className="w-full bg-white/10 text-sm text-white border border-white/10 rounded px-2 py-1 mb-1"
                             >
-                                <option value={0} style={{ color: 'black' }}>Select Product...</option>
+                                <option value={0} style={{ color: 'black' }}>{t('invoices.selectProduct')}</option>
                                 {products.map(p => (
                                     <option key={p.id} value={p.id} style={{ color: 'black' }}>{p.name}</option>
                                 ))}
@@ -61,7 +65,7 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
                                 type="text"
                                 value={line.description}
                                 onChange={(e) => onUpdateLine(index, 'description', e.target.value)}
-                                placeholder="Description"
+                                placeholder={t('common.description')}
                                 className="w-full bg-transparent text-xs text-slate-500 border-b border-white/10 focus:border-blue-500 focus:outline-none"
                             />
                             {errors?.[`lines.${index}.description`] && <span className="text-red-500 text-xs">{errors[`lines.${index}.description`]}</span>}
@@ -73,7 +77,7 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
                                 value={line.quantity}
                                 onChange={(e) => onUpdateLine(index, 'quantity', Number(e.target.value))}
                                 className="w-full bg-white/10 text-sm text-white border border-white/10 rounded px-2 py-1 text-right"
-                                placeholder="Qty"
+                                placeholder={t('invoices.quantity')}
                                 step="any"
                             />
                             {errors?.[`lines.${index}.quantity`] && <span className="text-red-500 text-xs">{errors[`lines.${index}.quantity`]}</span>}
@@ -85,7 +89,7 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
                                 value={line.unitPrice}
                                 onChange={(e) => onUpdateLine(index, 'unitPrice', Number(e.target.value))}
                                 className="w-full bg-white/10 text-sm text-white border border-white/10 rounded px-2 py-1 text-right"
-                                placeholder="Price"
+                                placeholder={t('common.unitPrice')}
                                 step="any"
                             />
                         </div>
@@ -95,7 +99,7 @@ export const InvoiceLinesEditor: React.FC<InvoiceLinesEditorProps> = ({
                                 type="checkbox"
                                 checked={!line.taxExempt}
                                 onChange={(e) => onUpdateLine(index, 'taxExempt', !e.target.checked)}
-                                title="Taxable"
+                                title={t('invoices.taxable')}
                             />
                         </div>
 

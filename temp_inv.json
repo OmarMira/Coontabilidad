@@ -1,0 +1,42 @@
+{
+  "adjustments": {
+    "adjustmentReason": "Motivo del Ajuste",
+    "cancel": "Cancelar",
+    "cyclicCount": "Conteo Cíclico",
+    "damagedGoods": "Mercancía Dañada",
+    "difference": "Diferencia",
+    "differenceHelp": "Ayuda con Diferencias",
+    "expiredProduct": "Producto Caducado",
+    "saveAdjustment": "Save Adjustment",
+    "searchProduct": "Search Product",
+    "selectOption": "Select Option",
+    "skuProduct": "Sku Product",
+    "theftLoss": "Theft Loss",
+    "title": "Title",
+    "warningMessage": "Warning Message"
+  },
+  "kardex": {
+    "adjustmentsFilter": "Ajustes",
+    "all": "Todos",
+    "allProducts": "Todos los Productos",
+    "balanceCol": "Saldo",
+    "date": "Fecha",
+    "entry": "Entrada",
+    "errorLoading": "Error Loading",
+    "exit": "Salida",
+    "movementTypeFilter": "Filtrar Tipo Movimiento",
+    "noMovementsFound": "No se encontraron movimientos",
+    "product": "Producto",
+    "productFilter": "Filtrar Producto",
+    "purchase": "Compra",
+    "purchases": "Purchases",
+    "ref": "Ref",
+    "refresh": "Refresh",
+    "returns": "Returns",
+    "sale": "Venta",
+    "sales": "Sales",
+    "title": "Kardex de Inventario",
+    "type": "Tipo",
+    "user": "Usuario"
+  }
+}

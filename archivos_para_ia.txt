@@ -1,0 +1,1189 @@
+﻿Aquí tienes los tres archivos completos relacionados con el motor bancario:
+
+### 1. src/components/banking/BankImportWizard.tsx
+"\""`	sx
+import React, { useState, useCallback } from 'react';
+import {
+  Upload,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  X,
+  Zap,
+  ShieldCheck,
+  Cpu,
+  Layers,
+  Target,
+  ArrowRight,
+  AlertTriangle,
+  Check
+} from 'lucide-react';
+import { BankImportService, ImportTransaction } from '../../services/banking/BankImportService';
+import { BankAccount } from '../../database/simple-db';
+import { toast } from 'react-hot-toast';
+
+interface BankImportWizardProps {
+  onClose?: () => void;
+  onComplete: () => void;
+  accounts?: BankAccount[];
+}
+
+type Step = 'upload' | 'preview' | 'edit' | 'confirm';
+
+export const BankImportWizard: React.FC<BankImportWizardProps> = ({ onClose = () => {}, onComplete, accounts }) => {
+  const [step, setStep] = useState<Step>('upload');
+  const [file, setFile] = useState<File | null>(null);
+  const [batchId, setBatchId] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<ImportTransaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  const importService = new BankImportService();
+
+  const handleFileSelect = (selectedFile: File) => {
+    setFile(selectedFile);
+    setError(null);
+  };
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  }, []);
+
+  const handleProcessFile = async () => {
+    if (!file) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await importService.createImportBatch(file, 1, 1);
+      setBatchId(result.batchId);
+      setTransactions(result.transactions);
+      setStep('preview');
+      toast.success('Heurística de archivo analizada correctamente');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinalizeImport = async () => {
+    if (!batchId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await importService.finalizeImport(batchId, 1);
+      toast.success('Inyección de datos certificada correctamente');
+      onComplete();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center z-[60] p-6 overflow-y-auto">
+      <div className="bg-slate-900 border-2 border-slate-800 rounded-[4rem] shadow-4xl w-full max-w-6xl my-auto overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-700">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] pointer-events-none"></div>
+
+        <header className="flex items-center justify-between p-12 border-b border-slate-800 relative z-10 bg-slate-900/50">
+          <div className="flex items-center gap-8">
+            <div className="p-5 bg-blue-600/10 rounded-2.5xl border border-blue-500/20 text-blue-500 shadow-xl group">
+              <Cpu className="w-8 h-8 group-hover:scale-110 transition-transform duration-500" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Protocolo de Importación</h2>
+              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" /> Neural Ledger Interface v2.4
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg hover:border-slate-700">
+            <X className="w-6 h-6" />
+          </button>
+        </header>
+
+        <div className="px-12 py-8 border-b border-slate-800 flex items-center justify-center bg-slate-950/30">
+          <div className="flex items-center gap-10">
+            <StepIndicator active={step === 'upload'} completed={step !== 'upload'} step="01" label="CARGA" icon={Upload} />
+            <div className={`w-32 h-px ${step !== 'upload' ? 'bg-blue-600 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-800'}`}></div>
+            <StepIndicator active={step !== 'upload'} completed={false} step="02" label="VERIFICACIÓN" icon={Target} />
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto p-12 relative z-10">
+          {step === 'upload' ? (
+            <div className="space-y-10 animate-in slide-in-from-bottom-6 duration-700">
+              <div
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                className={`border-4 border-dashed rounded-[3rem] p-24 text-center transition-all duration-500 group relative overflow-hidden ${dragActive ? 'border-blue-500 bg-blue-500/5 scale-[0.99]' : 'border-slate-800 bg-slate-950/50 hover:border-slate-700'
+                  }`}
+              >
+                <div className={`absolute inset-0 bg-blue-500/5 transition-opacity duration-700 ${dragActive ? 'opacity-100 animate-pulse' : 'opacity-0'}`}></div>
+                <div className="relative z-10">
+                  <div className={`w-24 h-24 bg-slate-950 rounded-2.5xl border border-slate-800 flex items-center justify-center mx-auto mb-8 shadow-2xl transition-all duration-500 ${dragActive ? 'scale-110 border-blue-500/50' : 'group-hover:scale-105'}`}>
+                    <Upload className={`w-10 h-10 ${dragActive ? 'text-blue-500 animate-bounce' : 'text-slate-600'}`} />
+                  </div>
+                  <h3 className="text-2xl font-black text-white tracking-tighter uppercase mb-4">Inyección de Archivo Fuente</h3>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm mx-auto mb-10">
+                    ARRASTRA TU BASE DE DATOS AQUÍ O HAZ CLIC PARA SELECCIONAR. SOPORTA CSV / OFX / QFX. HASTA 10MB POR CICLO.
+                  </p>
+
+                  <input
+                    type="file"
+                    accept=".csv,.ofx,.qfx"
+                    onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="inline-flex px-12 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] cursor-pointer transition-all shadow-3xl shadow-blue-900/50 hover:-translate-y-1"
+                  >
+                    Localizar Archivo
+                  </label>
+                </div>
+              </div>
+
+              {file && (
+                <div className="bg-slate-950 border-2 border-slate-800 rounded-[2rem] p-8 flex items-center justify-between shadow-2xl animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-6">
+                    <div className="w-14 h-14 bg-blue-600/10 rounded-2xl border border-blue-500/20 flex items-center justify-center">
+                      <FileText className="w-7 h-7 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-white uppercase tracking-tighter">{file.name}</p>
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">
+                        Capacidad: {(file.size / 1024 / 1024).toFixed(2)} MB / Protocolo: {file.name.split('.').pop()?.toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setFile(null)}
+                    className="p-3 bg-slate-900 border border-slate-800 text-slate-600 hover:text-rose-500 hover:border-rose-500/50 rounded-xl transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              {error && (
+                <div className="bg-rose-500/5 border border-rose-500/20 rounded-[2rem] p-8 flex items-center gap-6 animate-in shake duration-500">
+                  <div className="w-12 h-12 bg-rose-500/10 rounded-2xl border border-rose-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-6 h-6 text-rose-500" />
+                  </div>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-loose">{error}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-6 pt-10 border-t border-slate-800">
+                <button onClick={onClose} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all hover:bg-slate-800">
+                  Abortar Misión
+                </button>
+                <button
+                  onClick={handleProcessFile}
+                  disabled={!file || loading}
+                  className="px-14 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/50 hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4"
+                >
+                  {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Zap className="w-4 h-4 fill-current" />}
+                  {loading ? 'CALIBRANDO...' : 'INICIAR PROCESAMIENTO'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-10 animate-in slide-in-from-bottom-6 duration-700">
+              <div className="grid grid-cols-3 gap-8">
+                <StatHighlight title="Registro Total" value={transactions.length.toString()} icon={Layers} color="blue" />
+                <StatHighlight title="Alertas de Duplicidad" value={transactions.filter(t => t.isDuplicate).length.toString()} icon={AlertTriangle} color="rose" />
+                <StatHighlight title="Nivel de Confianza" value={`${(transactions.reduce((acc, t) => acc + t.confidenceScore, 0) / transactions.length || 0).toFixed(0)}%`} icon={Target} color="emerald" />
+              </div>
+
+              <div className="bg-slate-950 border-2 border-slate-800 rounded-[3rem] overflow-hidden shadow-3xl group">
+                <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-900/50 sticky top-0 z-20">
+                      <tr className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-800">
+                        <th className="px-8 py-6">Timestamp</th>
+                        <th className="px-8 py-6">Descriptor</th>
+                        <th className="px-8 py-6 text-right">Monto</th>
+                        <th className="px-8 py-6">Categoría IA</th>
+                        <th className="px-8 py-6 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      {transactions.map((txn) => (
+                        <tr
+                          key={txn.id}
+                          className={`hover:bg-white/[0.02] transition-colors group/row ${txn.isDuplicate ? 'bg-rose-500/[0.02]' : ''}`}
+                        >
+                          <td className="px-8 py-6 text-[10px] font-black text-slate-400 font-mono tracking-tighter">{txn.transactionDate}</td>
+                          <td className="px-8 py-6 text-[11px] font-black text-white uppercase tracking-tighter leading-none">{txn.description}</td>
+                          <td className={`px-8 py-6 text-right font-mono font-black text-sm tracking-tighter ${txn.amount < 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                            ${Math.abs(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{txn.suggestedCategory}</span>
+                              {txn.confidenceScore < 85 && (
+                                <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[8px] font-black border border-amber-500/20">
+                                  {txn.confidenceScore}% ACC
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-center">
+                            {txn.isDuplicate ? (
+                              <span className="inline-flex px-3 py-1 rounded-lg bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase border border-rose-500/20 tracking-widest">
+                                Duplicado
+                              </span>
+                            ) : (
+                              <div className="w-8 h-8 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center mx-auto">
+                                <Check className="w-4 h-4 text-emerald-500" />
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-6 pt-10 border-t border-slate-800">
+                <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all hover:bg-slate-800 flex items-center gap-3">
+                  <ArrowRight className="w-4 h-4 rotate-180" /> Recalibrar
+                </button>
+                <div className="flex gap-6">
+                  <button onClick={onClose} className="px-10 py-5 bg-slate-950 border border-slate-800 text-slate-500 rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all hover:bg-slate-800">
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleFinalizeImport}
+                    disabled={loading || transactions.filter(t => !t.isDuplicate).length === 0}
+                    className="px-14 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[10px] transition-all shadow-3xl shadow-blue-900/50 hover:-translate-y-1 active:scale-95 disabled:opacity-50 flex items-center gap-4"
+                  >
+                    {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <ShieldCheck className="w-4 h-4" />}
+                    {loading ? 'CERTIFICANDO...' : 'INYECTAR EN LIBRO MAYOR'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+const StepIndicator = ({ active, completed, step, label, icon: Icon }: any) => (
+  <div className={`flex items-center gap-4 transition-all duration-500 ${active ? 'scale-110' : completed ? 'opacity-80' : 'opacity-40'}`}>
+    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 shadow-xl ${active ? 'bg-blue-600 border-blue-400 text-white shadow-blue-900/40' :
+        completed ? 'bg-emerald-600/10 border-emerald-500/40 text-emerald-500' :
+          'bg-slate-950 border-slate-800 text-slate-600'
+      }`}>
+      {completed ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+    </div>
+    <div className="text-left">
+      <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] block mb-0.5">{step}</span>
+      <span className={`text-[11px] font-black uppercase tracking-widest ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+    </div>
+  </div>
+);
+
+const StatHighlight = ({ title, value, icon: Icon, color }: any) => {
+  const themes: any = {
+    blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20 shadow-blue-950/20',
+    rose: 'text-rose-500 bg-rose-500/10 border-rose-500/20 shadow-rose-950/20',
+    emerald: 'text-emerald-500 bg-emerald-600/10 border-emerald-500/20 shadow-emerald-950/20'
+  };
+
+  return (
+    <div className="bg-slate-950 border-2 border-slate-800 p-8 rounded-[2.5rem] flex items-center gap-6 group hover:border-slate-700 transition-all shadow-xl">
+      <div className={`w-16 h-16 rounded-2.2xl flex items-center justify-center border transition-all duration-500 group-hover:scale-110 shadow-lg ${themes[color]}`}>
+        <Icon className="w-8 h-8" />
+      </div>
+      <div>
+        <div className="text-2xl font-black text-white font-mono tracking-tighter leading-none mb-1.5">{value}</div>
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{title}</div>
+      </div>
+    </div>
+  );
+};
+"\""`
+
+### 2. src/components/banking/QuarantinePanel.tsx
+"\""`	sx
+import React, { useState, useEffect } from 'react';
+import {
+    ShieldAlert, Clock, ArrowRight, CheckCircle2, AlertCircle,
+    Search, Filter, ChevronRight, Calculator, MoreHorizontal, Activity
+} from 'lucide-react';
+import { db, getChartOfAccounts, ChartOfAccount } from '../../database/simple-db';
+import { SQLiteEngine } from '../../core/database/SQLiteEngine';
+import toast from 'react-hot-toast';
+import { useLocale } from '../../i18n/useLocale';
+import { useAuth } from '../../contexts/AuthContext';
+import { ClassificationMemoryService, MemorySuggestion } from '../../services/banking/ClassificationMemoryService';
+
+interface QuarantinedTransaction {
+    id: number;
+    transaction_id: number;
+    date: string;
+    description: string;
+    amount: number;
+    current_state: string;
+    risk_score: number;
+    suggested_category: string;
+    quarantine_started_at: string;
+    sla_deadline: string;
+    merchant_pattern?: string;
+}
+
+export const QuarantinePanel: React.FC = () => {
+    const { t } = useLocale();
+    const { user } = useAuth();
+    const [transactions, setTransactions] = useState<QuarantinedTransaction[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedTx, setSelectedTx] = useState<QuarantinedTransaction | null>(null);
+    const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
+
+    // Modal states
+    const [memorySuggestions, setMemorySuggestions] = useState<MemorySuggestion[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredAccounts, setFilteredAccounts] = useState<ChartOfAccount[]>([]);
+    const [selectedAccount, setSelectedAccount] = useState<ChartOfAccount | null>(null);
+    const [notes, setNotes] = useState('');
+
+    useEffect(() => {
+        loadQuarantineData();
+        setChartOfAccounts(getChartOfAccounts());
+    }, []);
+
+    useEffect(() => {
+        if (selectedTx) {
+            loadSuggestions(selectedTx.description);
+            setSearchQuery('');
+            setSelectedAccount(null);
+            setNotes('');
+        }
+    }, [selectedTx]);
+
+    const loadSuggestions = async (description: string) => {
+        const memory = await ClassificationMemoryService.getSuggestions(description);
+        setMemorySuggestions(memory);
+    };
+
+    const handleSearchChange = (query: string) => {
+        setSearchQuery(query);
+        if (query.length > 1) {
+            const filtered = chartOfAccounts.filter(a =>
+                a.account_name.toLowerCase().includes(query.toLowerCase()) ||
+                a.account_code.includes(query)
+            ).slice(0, 5);
+            setFilteredAccounts(filtered);
+        } else {
+            setFilteredAccounts([]);
+        }
+    };
+
+    const loadQuarantineData = async () => {
+        setLoading(true);
+        try {
+            const engine = new SQLiteEngine();
+            engine.setDB(db);
+
+            const rows = await engine.select(`
+        SELECT 
+          ts.id,
+          ts.transaction_id,
+          bt.transaction_date as date,
+          bt.description,
+          bt.amount,
+          ts.current_state,
+          ts.risk_score,
+          rk.suggested_category,
+          rk.merchant_name as merchant_pattern,
+          ts.quarantine_started_at,
+          ts.sla_deadline
+        FROM transaction_states ts
+        JOIN bank_transactions bt ON ts.transaction_id = bt.id
+        LEFT JOIN risk_keywords rk ON ts.risk_keyword_id = rk.id
+        WHERE ts.current_state IN ('HIGH_RISK_PERSONAL', 'PENDING_SUPERVISOR')
+          AND ts.is_verified = 0
+        ORDER BY ts.sla_deadline ASC
+      `);
+
+            setTransactions(rows as any);
+        } catch (error) {
+            console.error('Error loading quarantine data:', error);
+            toast.error('Error al cargar zona de cuarentena');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const calculateSLAPercentage = (start: string, deadline: string) => {
+        const startTime = new Date(start).getTime();
+        const endTime = new Date(deadline).getTime();
+        const now = new Date().getTime();
+
+        if (!start || !deadline) return 0;
+
+        const total = endTime - startTime;
+        const elapsed = now - startTime;
+
+        const percentage = Math.min(100, Math.max(0, (elapsed / total) * 100));
+        return percentage;
+    };
+
+    const getSLABarColor = (percentage: number) => {
+        if (percentage < 50) return 'bg-emerald-500';
+        if (percentage < 80) return 'bg-amber-500';
+        return 'bg-red-500';
+    };
+
+    const extractReference = (description: string) => {
+        const match = description.match(/CONF#\s*(\S+)/i);
+        return match ? match[1] : '—';
+    };
+
+    const handleReclassify = async () => {
+        if (!selectedTx || !selectedAccount || !user) return;
+
+        const loadingToast = toast.loading('Procesando reclasificación...');
+        try {
+            const engine = new SQLiteEngine();
+            engine.setDB(db);
+
+            // 1. Guardar en memoria de aprendizaje
+            await ClassificationMemoryService.saveConfirmation(
+                selectedTx.description,
+                selectedAccount.account_code,
+                selectedAccount.account_name,
+                user.id
+            );
+
+            // 2. Marcar como verificado y cambiar estado
+            await engine.run(`
+                UPDATE transaction_states 
+                SET current_state = 'VERIFIED', 
+                    is_verified = 1,
+                    verified_at = CURRENT_TIMESTAMP,
+                    verified_by = ?
+                WHERE id = ?
+            `, [user.id, selectedTx.id]);
+
+            // 3. Registrar en log de auditoría
+            await engine.run(`
+                INSERT INTO quarantine_audit_log (
+                    transaction_id, state_id, action_type, performed_by, 
+                    previous_state, new_state, new_category, justification
+                ) VALUES (?, ?, 'RECLASSIFIED', ?, ?, 'VERIFIED', ?, ?)
+            `, [
+                selectedTx.transaction_id,
+                selectedTx.id,
+                user.id,
+                selectedTx.current_state,
+                selectedAccount.account_code,
+                notes || 'Manual reclassification'
+            ]);
+
+            toast.success('Transacción reclasificada con éxito', { id: loadingToast });
+            setSelectedTx(null);
+            loadQuarantineData();
+
+            // Actualizar badge del sidebar
+            window.dispatchEvent(new CustomEvent('quarantine-updated'));
+
+        } catch (error) {
+            console.error('Error in reclassification:', error);
+            toast.error('Error al reclasificar', { id: loadingToast });
+        }
+    };
+
+    const getSuggestedAccounts = (category: string) => {
+        if (category === 'PERSONAL_EXPENSE' || category === 'OWNERS_DRAW') {
+            return chartOfAccounts.filter(a => a.account_code.startsWith('3') || a.account_name.toLowerCase().includes('draw') || a.account_name.toLowerCase().includes('personal'));
+        }
+        if (category === 'TRANSPORT_INCOME') {
+            return chartOfAccounts.filter(a => a.account_code.startsWith('4') && (a.account_name.toLowerCase().includes('uber') || a.account_name.toLowerCase().includes('servicios')));
+        }
+        return chartOfAccounts.slice(0, 5);
+    };
+
+    return (
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 p-6 rounded-3xl border border-slate-800 backdrop-blur-md">
+                <div className="flex items-center gap-4">
+                    <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20">
+                        <ShieldAlert className="w-8 h-8 text-red-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Zona de Cuarentena</h1>
+                        <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-500" />
+                            Auditoría Forense: {transactions.length} transacciones bajo revisión de 72h SLA
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="px-4 py-2 bg-slate-800 rounded-xl border border-slate-700 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Motor v2.0 Activo</span>
+                    </div>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex items-center justify-center p-20">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                </div>
+            ) : transactions.length === 0 ? (
+                <div className="bg-slate-900/30 border-2 border-dashed border-slate-800 rounded-3xl p-20 text-center">
+                    <CheckCircle2 className="w-16 h-16 text-emerald-500/30 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-slate-400">Todo en orden</h3>
+                    <p className="text-slate-500">No hay transacciones interceptadas en las últimas 72 horas.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div className="xl:col-span-2 space-y-4">
+                        {transactions.map(tx => {
+                            const slaPercent = calculateSLAPercentage(tx.quarantine_started_at, tx.sla_deadline);
+                            const isSelected = selectedTx?.id === tx.id;
+
+                            return (
+                                <div
+                                    key={tx.id}
+                                    onClick={() => setSelectedTx(tx)}
+                                    className={`
+                    group relative overflow-hidden bg-slate-900 rounded-2xl border transition-all duration-300 cursor-pointer
+                    ${isSelected ? 'border-blue-500 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500/50' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'}
+                  `}
+                                >
+                                    <div className="p-5 flex flex-col md:flex-row gap-6 items-center">
+                                        <div className="flex-shrink-0 text-center md:text-left md:w-32">
+                                            <div className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">{tx.date}</div>
+                                            <div className={`text-xl font-black ${tx.amount < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                ${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors uppercase">
+                                                {tx.description}
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                                <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded-md text-[10px] font-black uppercase tracking-tighter flex items-center gap-1">
+                                                    <Search className="w-2.5 h-2.5" />
+                                                    Pattern: {tx.merchant_pattern || 'No Match'}
+                                                </span>
+                                                <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-md text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 italic">
+                                                    Ref: {extractReference(tx.description)}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="w-full md:w-48 space-y-2">
+                                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                                <span>SLA Time</span>
+                                                <span>{slaPercent.toFixed(0)}%</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-1000 ${getSLABarColor(slaPercent)}`}
+                                                    style={{ width: `${slaPercent}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col items-center gap-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedTx(tx);
+                                                }}
+                                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg
+                                                    ${isSelected ? 'bg-blue-600 text-white' : 'bg-amber-500/10 border border-amber-500/20 text-amber-500 group-hover:bg-amber-500 group-hover:text-black'}
+                                                `}
+                                            >
+                                                Clasificar
+                                            </button>
+                                            <ChevronRight className={`w-4 h-4 transition-all ${isSelected ? 'text-blue-500 translate-x-1' : 'text-slate-700'}`} />
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="xl:col-span-1">
+                        <div className="sticky top-6 bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                            {!selectedTx ? (
+                                <div className="p-10 text-center space-y-4">
+                                    <div className="w-16 h-16 bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto border border-slate-700">
+                                        <AlertCircle className="w-8 h-8 text-slate-600" />
+                                    </div>
+                                    <div className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                                        Selecciona una transacción para auditar
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="animate-in slide-in-from-right-4 duration-300">
+                                    <div className="p-6 border-b border-slate-800 bg-gradient-to-br from-blue-600/5 to-transparent">
+                                        <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                                            <Calculator className="w-5 h-5 text-blue-500" />
+                                            Resolución de Auditoría
+                                        </h3>
+                                    </div>
+
+                                    <div className="p-6 space-y-6">
+                                        {/* Sección 1 — Descriptor bancario */}
+                                        <div className="p-4 bg-slate-800/30 rounded-2xl border border-slate-800">
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Descriptor Original</div>
+                                            <div className="text-xs font-mono text-slate-300 break-words leading-relaxed">
+                                                {selectedTx.description}
+                                            </div>
+                                        </div>
+
+                                        {/* Sección 2 — Sugerencias */}
+                                        <div className="space-y-3">
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Sugerencias Disponibles</div>
+                                            <div className="space-y-2">
+                                                {/* Coincidencias de Memoria */}
+                                                {memorySuggestions.map((s, idx) => (
+                                                    <button
+                                                        key={`mem-${idx}`}
+                                                        onClick={() => {
+                                                            setSelectedAccount(chartOfAccounts.find(a => a.account_code === s.accountCode) || null);
+                                                            setSearchQuery(s.accountName);
+                                                        }}
+                                                        className="w-full flex items-center justify-between p-3 bg-emerald-500/10 hover:bg-emerald-600/20 rounded-xl border border-emerald-500/20 text-emerald-400 transition-all text-xs"
+                                                    >
+                                                        <div className="text-left">
+                                                            <div className="font-black">{s.accountName} ({s.accountCode})</div>
+                                                            <div className="text-[8px] uppercase opacity-70">Usado antes ({s.useCount} veces)</div>
+                                                        </div>
+                                                        <CheckCircle2 size={14} />
+                                                    </button>
+                                                ))}
+
+                                                {/* Sugerencias de Motor IA */}
+                                                {getSuggestedAccounts(selectedTx.suggested_category).map((a, idx) => (
+                                                    <button
+                                                        key={`ia-${idx}`}
+                                                        onClick={() => {
+                                                            setSelectedAccount(a);
+                                                            setSearchQuery(a.account_name);
+                                                        }}
+                                                        className="w-full flex items-center justify-between p-3 bg-blue-500/10 hover:bg-blue-600/20 rounded-xl border border-blue-500/20 text-blue-400 transition-all text-xs"
+                                                    >
+                                                        <div className="text-left">
+                                                            <div className="font-black">{a.account_name} ({a.account_code})</div>
+                                                            <div className="text-[8px] uppercase opacity-70">Sugerido por IA</div>
+                                                        </div>
+                                                        <Activity size={12} className="animate-pulse" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Sección 3 — Buscador Libre */}
+                                        <div className="space-y-3">
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Codificación Contable</div>
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                    <Search size={14} className="text-slate-500" />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={searchQuery}
+                                                    onChange={(e) => handleSearchChange(e.target.value)}
+                                                    placeholder="Buscar cuenta o código..."
+                                                    className="w-full bg-slate-950 text-white pl-10 pr-4 py-4 rounded-xl border border-slate-800 text-xs font-bold focus:outline-none focus:border-blue-500 transition-all"
+                                                />
+                                                {filteredAccounts.length > 0 && (
+                                                    <div className="absolute z-20 w-full mt-2 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
+                                                        {filteredAccounts.map(account => (
+                                                            <button
+                                                                key={account.id}
+                                                                onClick={() => {
+                                                                    setSelectedAccount(account);
+                                                                    setSearchQuery(account.account_name);
+                                                                    setFilteredAccounts([]);
+                                                                }}
+                                                                className="w-full text-left p-3 hover:bg-slate-800 text-xs text-slate-300 hover:text-white border-b border-slate-800 last:border-0"
+                                                            >
+                                                                <span className="font-black">{account.account_code}</span> — {account.account_name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {selectedAccount && (
+                                                <div className="flex items-center gap-2 px-3 py-2 bg-blue-600/20 rounded-lg border border-blue-500/30">
+                                                    <CheckCircle2 size={12} className="text-blue-400" />
+                                                    <span className="text-[10px] font-black text-blue-400 uppercase">Seleccionado: {selectedAccount.account_code}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Sección 4 — Nota */}
+                                        <div className="space-y-2">
+                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Justificación (Opcional)</div>
+                                            <textarea
+                                                value={notes}
+                                                onChange={(e) => setNotes(e.target.value)}
+                                                rows={2}
+                                                className="w-full bg-slate-950 text-slate-300 p-4 rounded-xl border border-slate-800 text-xs font-medium focus:outline-none focus:border-blue-500 transition-all resize-none"
+                                                placeholder="Agregar nota sobre esta reclasificación..."
+                                            />
+                                        </div>
+
+                                        <div className="pt-4">
+                                            <button
+                                                disabled={!selectedAccount}
+                                                onClick={handleReclassify}
+                                                className={`
+                                                    w-full py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all
+                                                    ${selectedAccount
+                                                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xl shadow-blue-900/40 hover:-translate-y-1'
+                                                        : 'bg-slate-800 text-slate-600 cursor-not-allowed'}
+                                                `}
+                                            >
+                                                Certificar y Clasificar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+"\""`
+
+### 3. src/services/banking/TransactionParser.ts
+"\""`	s
+// SQLiteEngine interface — mirrors the public API of SQLiteEngine.ts.
+// Defined locally to avoid TS2709 namespace collision caused by `declare module '*'` in custom.d.ts.
+interface IDbEngine {
+    exec(sql: string): Promise<void>;
+    run(sql: string, params?: any[]): Promise<void>;
+    select(sql: string, params?: any[]): Promise<Record<string, any>[]>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// TIPOS — alineados exactamente con migration 016 constraints
+// ─────────────────────────────────────────────────────────────
+export type TransactionState =
+    | 'IMPORTED'
+    | 'HIGH_RISK_PERSONAL'
+    | 'PENDING_SUPERVISOR'
+    | 'DISPUTED'
+    | 'VERIFIED';
+
+export type SuggestedCategory =
+    | 'PERSONAL_EXPENSE'
+    | 'OWNERS_DRAW'
+    | 'PENDING_REVIEW'
+    | 'TRANSPORT_INCOME'
+    | 'CONTRACTOR_PAYMENT';
+
+export interface RiskKeyword {
+    id: number;
+    merchant_name: string;
+    pattern: string;
+    pattern_type: 'REGEX' | 'LIKE' | 'EXACT';
+    risk_level: 'HIGH' | 'MEDIUM' | 'LOW';
+    suggested_category: SuggestedCategory;
+    auto_classify: number; // SQLite stores boolean as 0|1
+}
+
+export interface ParseResult {
+    transaction_id: number;
+    description: string;
+    state: TransactionState;
+    matched_keyword_id: number | null;
+    suggested_category: SuggestedCategory | null;
+    confidence_score: number;
+    auto_classified: boolean;
+    // Para Zelle/P2P: nombre extraído de la nota
+    extracted_reference: string | null;
+    // Para Invoice: número de factura extraído
+    extracted_invoice_number: number | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// MOTOR DE DOS CAPAS
+// ─────────────────────────────────────────────────────────────
+export class TransactionParser {
+    private db: IDbEngine;
+    private keywordCache: RiskKeyword[] = [];
+    private cacheLoadedAt: number = 0;
+    private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+
+    constructor(db: IDbEngine) {
+        this.db = db;
+    }
+
+    // ── Carga de reglas desde DB ──────────────────────────────
+    // NOTE: SQLiteEngine.select() returns Promise<Record<string, any>[]> — no generics.
+    // We cast the rows to RiskKeyword after retrieval.
+    private async loadKeywords(): Promise<void> {
+        const now = Date.now();
+        if (this.keywordCache.length > 0 && (now - this.cacheLoadedAt) < this.CACHE_TTL_MS) {
+            return;
+        }
+        const rows = await this.db.select(
+            `SELECT id, merchant_name, pattern, pattern_type,
+                    risk_level, suggested_category,
+                    auto_classify
+             FROM   risk_keywords
+             WHERE  is_active = 1
+             ORDER  BY risk_level DESC, id ASC`
+        );
+        this.keywordCache = rows as unknown as RiskKeyword[];
+        this.cacheLoadedAt = now;
+    }
+
+    // ── CAPA 1: Regex determinístico ─────────────────────────
+    private matchLayer1(description: string): { keyword: RiskKeyword; score: number } | null {
+        const descUpper = description.toUpperCase();
+
+        for (const kw of this.keywordCache) {
+            let matched = false;
+
+            if (kw.pattern_type === 'REGEX') {
+                try {
+                    // El patrón en DB incluye flags: /pattern/flags
+                    const flagMatch = kw.pattern.match(/^\/(.+)\/([gimsuy]*)$/);
+                    if (flagMatch) {
+                        const regex = new RegExp(flagMatch[1], flagMatch[2]);
+                        matched = regex.test(description);
+                    }
+                } catch {
+                    console.warn(`[TransactionParser] Regex inválido en keyword ${kw.id}: ${kw.pattern}`);
+                }
+            } else if (kw.pattern_type === 'LIKE') {
+                // Convertir SQL LIKE a match simple: % = wildcard, _ = un carácter
+                const likePattern = kw.pattern
+                    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escapar regex especiales
+                    .replace(/%/g, '.*')
+                    .replace(/_/g, '.');
+                matched = new RegExp(`^${likePattern}$`, 'i').test(descUpper);
+            } else if (kw.pattern_type === 'EXACT') {
+                matched = descUpper === kw.pattern.toUpperCase();
+            }
+
+            if (matched) {
+                // auto_classify viene como 0|1 desde SQLite
+                return { keyword: kw, score: kw.auto_classify ? 1.0 : 0.9 };
+            }
+        }
+        return null;
+    }
+
+    // ── CAPA 2: Fuzzy scoring Jaro-Winkler ───────────────────
+    // Usado para Zelle P2P donde el nombre del beneficiario
+    // es inconsistente. Umbral calibrado empíricamente.
+    private jaroWinkler(s1: string, s2: string): number {
+        if (s1 === s2) return 1.0;
+        const len1 = s1.length;
+        const len2 = s2.length;
+        if (len1 === 0 || len2 === 0) return 0.0;
+
+        const matchDist = Math.max(0, Math.floor(Math.max(len1, len2) / 2) - 1);
+        const s1Matches = new Array(len1).fill(false);
+        const s2Matches = new Array(len2).fill(false);
+
+        let matches = 0;
+        let transpositions = 0;
+
+        for (let i = 0; i < len1; i++) {
+            const start = Math.max(0, i - matchDist);
+            const end = Math.min(i + matchDist + 1, len2);
+            for (let j = start; j < end; j++) {
+                if (s2Matches[j] || s1[i] !== s2[j]) continue;
+                s1Matches[i] = true;
+                s2Matches[j] = true;
+                matches++;
+                break;
+            }
+        }
+
+        if (matches === 0) return 0.0;
+
+        let k = 0;
+        for (let i = 0; i < len1; i++) {
+            if (!s1Matches[i]) continue;
+            while (!s2Matches[k]) k++;
+            if (s1[i] !== s2[k]) transpositions++;
+            k++;
+        }
+
+        const jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3;
+
+        // Winkler prefix bonus (hasta 4 caracteres)
+        let prefix = 0;
+        for (let i = 0; i < Math.min(4, Math.min(len1, len2)); i++) {
+            if (s1[i] === s2[i]) prefix++;
+            else break;
+        }
+
+        return jaro + prefix * 0.1 * (1 - jaro);
+    }
+
+    // ── Limpieza de tokens ruidosos de BofA ───────────────────
+    private cleanDescription(description: string): string {
+        return description
+            .replace(/CONF#\s*[A-Z0-9]+/gi, '')
+            .replace(/ID:\s*[A-Z0-9]+/gi, '')
+            .replace(/CO ID:\s*[A-Z0-9]+/gi, '')
+            .replace(/INDN:\s*[\w\s]+/gi, '')
+            .replace(/DES:\s*[\w\s]+/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // ── Extracción de referencias de notas Zelle/Invoice ─────
+    private extractReferences(description: string): {
+        extracted_reference: string | null;
+        extracted_invoice_number: number | null;
+    } {
+        // Extraer número de factura: "Invoice 334", "invoice #334", "INV-334"
+        const invoiceMatch = description.match(/invoice\s*#?\s*(\d+)|INV[-\s](\d+)/i);
+        const extracted_invoice_number = invoiceMatch
+            ? parseInt(invoiceMatch[1] ?? invoiceMatch[2], 10)
+            : null;
+
+        // Extraer nombre de Zelle: "Zelle - Omar M", "ZELLE PAYMENT FROM JOHN"
+        const zelleMatch = description.match(/Zelle\s*[-–]\s*(.+?)(?:\s+\d|$)/i);
+        const extracted_reference = zelleMatch ? zelleMatch[1].trim() : null;
+
+        return { extracted_reference, extracted_invoice_number };
+    }
+
+    // ── MÉTODO PRINCIPAL ──────────────────────────────────────
+    async parse(transaction_id: number, description: string): Promise<ParseResult> {
+        await this.loadKeywords();
+
+        const cleanedDesc = this.cleanDescription(description);
+        const { extracted_reference, extracted_invoice_number } = this.extractReferences(description);
+
+        // CAPA 1
+        const layer1Match = this.matchLayer1(description);
+
+        if (layer1Match && layer1Match.keyword.auto_classify) {
+            return {
+                transaction_id,
+                description,
+                state: 'VERIFIED',
+                matched_keyword_id: layer1Match.keyword.id,
+                suggested_category: layer1Match.keyword.suggested_category,
+                confidence_score: 1.0,
+                auto_classified: true,
+                extracted_reference,
+                extracted_invoice_number,
+            };
+        }
+
+        if (layer1Match && !layer1Match.keyword.auto_classify) {
+            const state: TransactionState =
+                layer1Match.keyword.risk_level === 'HIGH'
+                    ? 'HIGH_RISK_PERSONAL'
+                    : 'IMPORTED';
+            return {
+                transaction_id,
+                description,
+                state,
+                matched_keyword_id: layer1Match.keyword.id,
+                suggested_category: layer1Match.keyword.suggested_category,
+                confidence_score: layer1Match.score,
+                auto_classified: false,
+                extracted_reference,
+                extracted_invoice_number,
+            };
+        }
+
+        // CAPA 2: Fuzzy para P2P sin match determinístico
+        // NOTA: El umbral F₀.₈₅ se calibró con datos reales de BofA.
+        const FUZZY_THRESHOLD = 0.85;
+
+        let bestScore = 0;
+        let bestKeyword: RiskKeyword | null = null;
+
+        for (const kw of this.keywordCache) {
+            const score = this.jaroWinkler(
+                cleanedDesc.toLowerCase(),
+                kw.merchant_name.toLowerCase()
+            );
+            if (score > bestScore) {
+                bestScore = score;
+                bestKeyword = kw;
+            }
+        }
+
+        if (bestScore >= FUZZY_THRESHOLD && bestKeyword !== null) {
+            return {
+                transaction_id,
+                description,
+                state: 'IMPORTED', // Fuzzy nunca auto-clasifica — siempre requiere revisión
+                matched_keyword_id: bestKeyword.id,
+                suggested_category: bestKeyword.suggested_category,
+                confidence_score: bestScore,
+                auto_classified: false,
+                extracted_reference,
+                extracted_invoice_number,
+            };
+        }
+
+        // Sin match en ninguna capa
+        return {
+            transaction_id,
+            description,
+            state: 'IMPORTED',
+            matched_keyword_id: null,
+            suggested_category: null,
+            confidence_score: 0,
+            auto_classified: false,
+            extracted_reference,
+            extracted_invoice_number,
+        };
+    }
+
+    // ── Procesar lote e insertar estados en DB ────────────────
+    // NOTE: SQLiteEngine.exec() returns Promise<void> — no .changes property.
+    // For UPSERT, exec() is sufficient as it runs DDL/DML without parameterized binding.
+    // For parameterized INSERTs, run() is used.
+    async processBatch(
+        transactions: Array<{ id: number; description: string }>,
+        userId: number | null
+    ): Promise<ParseResult[]> {
+        if (userId === null || userId === undefined) {
+            throw new Error('[TransactionParser] userId requerido. Operación abortada.');
+        }
+
+        const results: ParseResult[] = [];
+
+        for (const tx of transactions) {
+            const result = await this.parse(tx.id, tx.description);
+            results.push(result);
+
+            const keywordIdSQL = result.matched_keyword_id !== null
+                ? String(result.matched_keyword_id)
+                : 'NULL';
+            const quarantineStart = result.state === 'HIGH_RISK_PERSONAL'
+                ? `datetime('now')`
+                : 'NULL';
+            const slaDeadline = result.state === 'HIGH_RISK_PERSONAL'
+                ? `datetime('now', '+72 hours')`
+                : 'NULL';
+            const isVerified = result.state === 'VERIFIED' ? 1 : 0;
+
+            // Insertar o actualizar estado en transaction_states
+            // ON CONFLICT requires SQLite 3.24+ (available in all modern browsers)
+            await this.db.exec(`
+                INSERT INTO transaction_states (
+                    transaction_id, current_state, risk_keyword_id,
+                    risk_score, is_verified,
+                    quarantine_started_at, sla_deadline
+                ) VALUES (
+                    ${tx.id},
+                    '${result.state}',
+                    ${keywordIdSQL},
+                    ${result.confidence_score},
+                    ${isVerified},
+                    ${quarantineStart},
+                    ${slaDeadline}
+                )
+                ON CONFLICT(transaction_id) DO UPDATE SET
+                    current_state         = excluded.current_state,
+                    risk_keyword_id       = excluded.risk_keyword_id,
+                    risk_score            = excluded.risk_score,
+                    is_verified           = excluded.is_verified,
+                    quarantine_started_at = excluded.quarantine_started_at,
+                    sla_deadline          = excluded.sla_deadline
+            `);
+
+            // Log en quarantine_audit_log para HIGH_RISK
+            if (result.state === 'HIGH_RISK_PERSONAL') {
+                const stateRows = await this.db.select(
+                    `SELECT id FROM transaction_states WHERE transaction_id = ${tx.id} LIMIT 1`
+                );
+                if (stateRows.length > 0) {
+                    const stateId = stateRows[0]['id'] as number;
+                    await this.db.exec(`
+                        INSERT INTO quarantine_audit_log (
+                            transaction_id, state_id, action_type,
+                            performed_by, previous_state, new_state
+                        ) VALUES (
+                            ${tx.id}, ${stateId}, 'RISK_DETECTED',
+                            NULL, 'IMPORTED', 'HIGH_RISK_PERSONAL'
+                        )
+                    `);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    // ── Escalación SLA (llamar desde job periódico) ───────────
+    // NOTE: exec() returns void. To get affected rows, we query count before/after.
+    async escalateExpiredQuarantine(): Promise<number> {
+        // Count before
+        const before = await this.db.select(
+            `SELECT COUNT(*) as cnt FROM transaction_states
+             WHERE current_state = 'HIGH_RISK_PERSONAL'
+               AND sla_deadline  < datetime('now')
+               AND is_verified   = 0`
+        );
+        const count = (before[0]?.['cnt'] as number) ?? 0;
+
+        if (count > 0) {
+            await this.db.exec(`
+                UPDATE transaction_states
+                SET    current_state = 'PENDING_SUPERVISOR'
+                WHERE  current_state = 'HIGH_RISK_PERSONAL'
+                  AND  sla_deadline  < datetime('now')
+                  AND  is_verified   = 0
+            `);
+        }
+
+        return count;
+    }
+
+    // ── Invalidar caché (llamar cuando se modifiquen risk_keywords) ──
+    invalidateCache(): void {
+        this.keywordCache = [];
+        this.cacheLoadedAt = 0;
+    }
+}

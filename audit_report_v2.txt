@@ -1,0 +1,28 @@
+
+📊 RESUMEN DE AUDITORÍA:
+✅ Claves usadas en código: 3353
+❌ Claves faltantes en es.json: 19
+
+⚠️  CLAVES FALTANTES:
+
+   -  
+   - -
+   - ../../services/GoogleAuthService
+   - ../core/workers/WorkerOrchestrator
+   - County: Miami-Dade
+   - EXPIRING
+   - Error generando demo data
+   - Facturación Forense Florida
+   - Guardar con Auditoría
+   - LOW_STOCK
+   - MOVEMENTS
+   - Subtotal: 100
+   - T
+   - TURNOVER
+   - VALUATION
+   - ✅ CSV exported successfully!
+   - ✅ Form 941 generated successfully!
+   - ✅ PDF generated successfully!
+   - ✅ UI is responsive!
+
+💡 ACCIÓN REQUERIDA: Agregar estas claves a es.json

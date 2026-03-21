@@ -1,6 +1,7 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 // payroll.worker.ts - Heavy payroll calculations worker
 import { calculateEmployeePayroll, CalculationResult } from '../utils/payroll-tax-calculator';
-import { Employee, PayrollSetting, TaxBracket } from '../database/simple-db';
+import type { Employee, PayrollSetting, TaxBracket } from '@/database/modules/db-types';
 
 export interface PayrollCalculationTask {
   type: 'CALCULATE_PAYROLL' | 'BULK_CALCULATE' | 'TAX_CALCULATION' | 'GENERATE_PAYSLIPS';
@@ -69,13 +70,13 @@ self.onmessage = async (event: MessageEvent) => {
     });
 
   } catch (error) {
-    console.error('Error in payroll worker:', error);
+    logger.error('payroll.worker', 'error', 'Error in payroll worker:', error);
     
     // Send error response
     self.postMessage({
       taskId,
       type: 'TASK_ERROR',
-      error: error instanceof Error ? error.message : 'Error desconocido en worker de nómina'
+      error: error instanceof Error ? error.message : 'Error desconocido en worker de nÃ³mina'
     });
   }
 };

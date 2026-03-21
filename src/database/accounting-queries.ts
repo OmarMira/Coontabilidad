@@ -1,4 +1,4 @@
-import { db } from './simple-db';
+import { db } from './modules/db-core';
 import initSqlJs from 'sql.js';
 
 export interface AccountBalance {

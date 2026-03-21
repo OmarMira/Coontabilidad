@@ -48,7 +48,7 @@
 ### 📝 Traducciones Incompletas (i18n)
 
 - **Prompt**: Traducción total al Español.
-- **Realidad**: Se detectaron múltiples claves "espejo" en `src/assets/locales/es.json` (el valor es igual a la clave).
+- **Realidad**: Se detectaron múltiples claves "espejo" en `src/locales/es.json` (el valor es igual a la clave).
   - Ejemplo: `"accountingDiagnosis.complete": "accountingDiagnosis.complete"`
   - Ejemplo: `"adjustments.bestPractices": "adjustments.bestPractices"`
 - **Impacto**: El usuario verá claves técnicas en la UI en lugar de textos legibles en ciertas secciones avanzadas.

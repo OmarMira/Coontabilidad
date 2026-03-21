@@ -1,76 +1,109 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
-import { InitialSetupWizard } from './setup/InitialSetupWizard';
 import LoginForm from './auth/LoginForm';
+import OnboardingWizard from './auth/OnboardingWizard';
 import { useAuth } from '../contexts/AuthContext';
-import { hasUsers, isDatabaseReady } from '../database/simple-db';
+import { isDatabaseReady } from '@/database/modules/db-persistence';
+import { hasUsers } from '@/database/modules/db-users';
+
 
 interface AppRouterProps {
   children: React.ReactNode;
 }
 
 export const AppRouter: React.FC<AppRouterProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const { isAuthenticated, forceAdminBypass } = useAuth();
   const [isChecking, setIsChecking] = useState(true);
+  const [initTimeout, setInitTimeout] = useState(false);
+  const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
-    const checkSetupStatus = () => {
-      try {
-        // Check if setup was completed
-        const setupCompleted = localStorage.getItem('initial_setup_completed') === 'true';
-        
-        if (setupCompleted) {
-          setShowSetupWizard(false);
-          setIsChecking(false);
-          return;
-        }
+    let attempts = 0;
+    const MAX_ATTEMPTS = 120; // 60 segundos
 
-        // Check if database is ready
-        if (!isDatabaseReady()) {
-          // Wait for database to be ready
-          setTimeout(checkSetupStatus, 500);
-          return;
-        }
+    const waitForDB = () => {
+      attempts++;
 
-        // Check if there are users in the database
-        const usersExist = hasUsers();
-        
-        if (!usersExist) {
-          setShowSetupWizard(true);
-        }
-        
+      if (isDatabaseReady()) {
+        setNeedsSetup(!hasUsers());
         setIsChecking(false);
-      } catch (error) {
-        console.error('Error checking setup status:', error);
-        setIsChecking(false);
+        return;
       }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        logger.error('AppRouter', 'error', '[AppRouter] Timeout esperando DB.');
+        setIsChecking(false);
+        setInitTimeout(true);
+        return;
+      }
+
+      setTimeout(waitForDB, 500);
     };
 
-    checkSetupStatus();
+    waitForDB();
   }, []);
 
-  // Show loading while checking
+  // Pantalla de carga mientras inicia la DB
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
         <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Verificando configuración...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-slate-400 font-medium">Iniciando AccountExpress...</p>
         </div>
       </div>
     );
   }
 
-  // Show setup wizard if no users exist
-  if (showSetupWizard) {
-    return <InitialSetupWizard />;
+  // Pantalla de error si la DB tardÃ³ mÃ¡s de 60 segundos
+  if (initTimeout) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-8 flex flex-col items-center text-center max-w-md">
+          <div className="w-16 h-16 rounded-full bg-rose-500/20 flex items-center justify-center mb-4">
+            <span className="text-2xl">âš ï¸</span>
+          </div>
+          <h3 className="text-xl font-black text-rose-300 mb-2">Error CrÃ­tico del Sistema</h3>
+          <p className="text-rose-200/70 font-medium mb-6">
+            La base de datos no pudo inicializarse despuÃ©s de 60 segundos.
+            Recarga la pÃ¡gina o limpia el almacenamiento del navegador.
+          </p>
+          <div className="flex gap-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-white font-bold transition-all shadow-lg"
+            >
+              Reintentar
+            </button>
+            {import.meta.env.DEV && (
+              <button
+                onClick={forceAdminBypass}
+                className="px-6 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-slate-300 font-bold transition-all"
+              >
+                Bypass (Dev)
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Show login if not authenticated
+  const isPublicPath = ['/terms', '/privacy', '/help'].includes(window.location.pathname);
+
+  // Si es una ruta pÃºblica, renderizar children directamente (el layout de App debe manejar el estado limpio)
+  if (isPublicPath) {
+    return <>{children}</>;
+  }
+
+  if (needsSetup) {
+    return <OnboardingWizard />;
+  }
+
   if (!isAuthenticated) {
     return <LoginForm />;
   }
 
-  // Show main app
+  // Autenticado â†’ App principal
   return <>{children}</>;
 };

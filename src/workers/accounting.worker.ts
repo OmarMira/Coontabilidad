@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 /**
  * Accounting Worker
  * 
@@ -50,7 +51,7 @@ self.onmessage = async (event: MessageEvent) => {
                 break;
 
             default:
-                console.warn(`Unknown message type: ${type}`);
+                logger.warn('accounting.worker', 'warn', `Unknown message type: ${type}`);
         }
     } catch (error: any) {
         self.postMessage({
@@ -79,6 +80,14 @@ async function handleTask(taskId: string, payload: any) {
             result = await generateDepreciationSchedule(payload);
             break;
 
+        case 'MACRS_CALCULATION':
+            result = calculateMACRS(payload);
+            break;
+
+        case 'PROCESS_TAX_REPORT':
+            result = await processTaxReport(payload);
+            break;
+
         default:
             throw new Error(`Unknown operation: ${operation}`);
     }
@@ -89,6 +98,55 @@ async function handleTask(taskId: string, payload: any) {
         type: 'RESULT',
         payload: result
     });
+}
+
+/**
+ * Heavy tax report processing (totals + hashing)
+ */
+async function processTaxReport(payload: any) {
+    const { countySummary, periodStr } = payload;
+
+    // Totals
+    const totalSales = countySummary.reduce((sum: any, c: any) => sum + c.sales, 0);
+    const totalTax = countySummary.reduce((sum: any, c: any) => sum + c.tax, 0);
+
+    // Verification Hashing (CPU Intensive for large datasets)
+    const reportPayload = JSON.stringify({
+        period: periodStr,
+        totals: { sales: totalSales, tax: totalTax },
+        details: countySummary
+    });
+
+    // Since we are in an ES module worker, we can import crypto utilities if needed
+    // or use self.crypto.subtle
+    const encoder = new TextEncoder();
+    const data = encoder.encode(reportPayload);
+    const hashBuffer = await self.crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const checksum = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return {
+        totalSales,
+        totalTax,
+        checksum,
+        generatedAt: new Date().toISOString()
+    };
+}
+
+// MACRS GDS percentages (Half-Year Convention)
+const MACRS_RATES: Record<number, number[]> = {
+    3: [0.3333, 0.4445, 0.1481, 0.0741],
+    5: [0.2000, 0.3200, 0.1920, 0.1152, 0.1152, 0.0576],
+    7: [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446],
+    10: [0.1000, 0.1800, 0.1440, 0.1152, 0.0922, 0.0737, 0.0655, 0.0655, 0.0656, 0.0655, 0.0328],
+    15: [0.0500, 0.0950, 0.0855, 0.0770, 0.0693, 0.0623, 0.0590, 0.0590, 0.0591, 0.0590, 0.0591, 0.0590, 0.0591, 0.0590, 0.0591, 0.0295]
+};
+
+function calculateMACRS(payload: any) {
+    const { costInCents, lifeYears, yearOfLife } = payload;
+    const rates = MACRS_RATES[lifeYears];
+    if (!rates || yearOfLife < 1 || yearOfLife > rates.length) return 0;
+    return Math.round(costInCents * rates[yearOfLife - 1]);
 }
 
 /**
@@ -251,13 +309,13 @@ function calculateDepreciation(method: DepreciationMethod, params: DepreciationP
     switch (method) {
         case 'STRAIGHT_LINE':
             return calculateStraightLine(params);
-        
+
         case 'DECLINING_BALANCE':
             return calculateDecliningBalance(params);
-        
+
         case 'SUM_OF_YEARS_DIGITS':
             return calculateSumOfYearsDigits(params);
-        
+
         default:
             return calculateStraightLine(params); // Default to straight line
     }
@@ -307,12 +365,12 @@ function calculateDecliningBalance(params: DepreciationParams): { depreciationAm
 function calculateSumOfYearsDigits(params: DepreciationParams): { depreciationAmount: number } {
     const depreciableAmount = params.cost - params.salvageValue;
     const sumOfYears = (params.usefulLifeMonths * (params.usefulLifeMonths + 1)) / 2;
-    
+
     // Calculate which month we're in
     const depreciatedAmount = params.cost - params.currentBookValue;
     const monthsDepreciated = Math.round((depreciatedAmount / depreciableAmount) * params.usefulLifeMonths);
     const remainingMonths = params.usefulLifeMonths - monthsDepreciated;
-    
+
     let monthlyDepreciation = (depreciableAmount * remainingMonths) / sumOfYears;
 
     // Adjust for partial month
@@ -348,7 +406,7 @@ function isFirstMonthPartial(purchaseDate: Date, periodDate: Date): boolean {
 // Handle errors gracefully
 self.onerror = (event: string | Event) => {
     const error = typeof event === 'string' ? event : (event as ErrorEvent).message || 'Unknown worker error';
-    console.error('Accounting worker error:', error);
+    logger.error('accounting.worker', 'error', 'Accounting worker error:', error);
     self.postMessage({
         type: 'ERROR',
         error

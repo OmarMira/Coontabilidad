@@ -1,8 +1,10 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 import React, { useState, useCallback } from 'react';
 import { Upload, File, X, Sparkles, Loader2 } from 'lucide-react';
-import { saveARDDocument, updateARDDocumentStatus } from '../../database/simple-db';
+import { saveARDDocument, updateARDDocumentStatus } from '@/database/modules/db-company';
 import { ARDDocument } from '../../modules/ard/ARD.types';
 import { useLocale } from '../../i18n/useLocale';
+import Tesseract from 'tesseract.js';
 
 interface ARDScannerProps {
     onDocumentProcessed: () => void;
@@ -13,50 +15,69 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
     const [isDragging, setIsDragging] = useState(false);
     const [uploading, setUploading] = useState(false);
 
-    const processFile = async (file: File) => {
+    const processFiles = async (files: FileList | File[]) => {
         setUploading(true);
-        const id = `ARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        try {
+            for (const file of Array.from(files)) {
+                const id = `ARD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-        // 1. Registro Inicial
-        const newDoc: ARDDocument = {
-            id,
-            name: file.name,
-            type: file.type.includes('pdf') ? 'invoice_in' : 'receipt',
-            status: 'analyzing',
-            fileSize: file.size,
-            uploadDate: new Date().toISOString()
-        };
+                try {
+                    const { data: { text } } = await Tesseract.recognize(file, 'spa', {
+                        logger: (info) => logger.info('ARDScanner', 'info', 'operation_failed', info),
+                    });
 
-        saveARDDocument({
-            ...newDoc,
-            detectedAmount: 0,
-            detectedTax: 0,
-            detectedDate: new Date().toISOString().split('T')[0],
-            rawAnalysis: '{}'
-        });
-
-        onDocumentProcessed();
-
-        // 2. Simulación de Análisis Inteligente (OCR/IA)
-        setTimeout(() => {
-            const mockResult = {
-                amount: Math.floor(Math.random() * 5000) + 100,
-                tax: Math.floor(Math.random() * 300) + 10,
-                vendor: "Suministros Industriales S.A.",
-                date: new Date().toISOString().split('T')[0]
-            };
-
-            updateARDDocumentStatus(id, 'processed', mockResult);
+                    const parsedResult = parseOCRText(text);
+                    updateARDDocumentStatus(id, 'processed', parsedResult);
+                } catch (error) {
+                    logger.error('ARDScanner', 'error', 'Error al procesar OCR:', error);
+                    updateARDDocumentStatus(id, 'error', { error: error instanceof Error ? error.message : 'Error desconocido' });
+                }
+            }
             onDocumentProcessed();
+        } finally {
             setUploading(false);
-        }, 3000);
+        }
+    };
+
+    const parseOCRText = (text: string): { amount: number; tax: number; vendor: string; date: string } => {
+        // Implementar lÃ³gica para extraer datos como monto, impuesto, proveedor y fecha del texto reconocido
+        const amount = extractAmount(text);
+        const tax = extractTax(text);
+        const vendor = extractVendor(text);
+        const date = extractDate(text);
+
+        return { amount, tax, vendor, date };
+    };
+
+    const extractAmount = (text: string): number => {
+        // LÃ³gica para extraer el monto del texto
+        const match = text.match(/\b\d+(\.\d{1,2})?\b/);
+        return match ? parseFloat(match[0]) : 0;
+    };
+
+    const extractTax = (text: string): number => {
+        // LÃ³gica para extraer el impuesto del texto (en inglÃ©s y espaÃ±ol)
+        const match = text.match(/(?:impuesto|tax|sales tax):\s*(\d+(\.\d{1,2})?)/i);
+        return match ? parseFloat(match[1]) : 0;
+    };
+
+    const extractVendor = (text: string): string => {
+        // LÃ³gica para extraer el nombre del proveedor del texto (en inglÃ©s y espaÃ±ol)
+        const match = text.match(/(?:proveedor|vendor|from|bill to):\s*(.+)/i);
+        return match ? match[1].trim() : 'Desconocido';
+    };
+
+    const extractDate = (text: string): string => {
+        // LÃ³gica para extraer la fecha del texto
+        const match = text.match(/\b\d{4}-\d{2}-\d{2}\b/);
+        return match ? match[0] : new Date().toISOString().split('T')[0];
     };
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) processFile(files[0]);
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) processFiles(files);
     };
 
     return (
@@ -99,7 +120,7 @@ export const ARDScanner: React.FC<ARDScannerProps> = ({ onDocumentProcessed }) =
             {!uploading && (
                 <label className="mt-8 px-8 py-3 bg-white text-black font-black text-xs rounded-2xl cursor-pointer hover:bg-slate-200 transition-colors uppercase tracking-widest">
                     {t('ard.selectFile')}
-                    <input type="file" className="hidden" onChange={(e) => e.target.files && processFile(e.target.files[0])} />
+                    <input type="file" className="hidden" multiple onChange={(e) => e.target.files && processFiles(e.target.files)} />
                 </label>
             )}
 

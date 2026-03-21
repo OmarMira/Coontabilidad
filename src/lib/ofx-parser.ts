@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { OFXStatement, OFXTransaction } from '@/types/ofx';
 
 /**
@@ -88,7 +89,7 @@ export const parseOFX = async (content: string): Promise<OFXStatement> => {
         };
 
     } catch (error) {
-        console.error('OFX Parser Error:', error);
+        logger.error('ofx-parser', 'error', 'OFX Parser Error:', error);
         throw new Error(`Failed to parse OFX/QBO file: ${(error as Error).message}`);
     }
 };

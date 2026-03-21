@@ -3,7 +3,7 @@ import {
   Truck, Edit, Trash2, MapPin, Mail, Phone, Search, Eye, Plus,
   Zap, Activity, ShieldCheck, Target, Building2
 } from 'lucide-react';
-import { Supplier } from '../database/simple-db';
+import type { Supplier } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface SupplierListProps {
@@ -27,8 +27,8 @@ export const SupplierList: React.FC<SupplierListProps> = ({
 
   const filteredSuppliers = suppliers.filter(supplier => {
     const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.phone.includes(searchTerm);
+      (supplier.email ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (supplier.phone ?? '').includes(searchTerm);
     const matchesCounty = selectedCounty === '' || supplier.florida_county === selectedCounty;
     return matchesSearch && matchesCounty;
   });
@@ -62,8 +62,8 @@ export const SupplierList: React.FC<SupplierListProps> = ({
             <Building2 className="w-10 h-10 text-orange-500 group-hover:scale-110 transition-transform duration-500" />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">{t('supplierList.title')}</h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none">{t('supplierList.title')}</h1>
+            <p className="text-slate-500 font-medium text-sm mt-2 flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-orange-500 animate-pulse" /> {t('supplierList.subtitle')}
             </p>
           </div>
@@ -77,14 +77,14 @@ export const SupplierList: React.FC<SupplierListProps> = ({
               placeholder={t('supplierList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none w-72 font-black uppercase tracking-widest text-[10px] transition-all focus:shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+              className="pl-12 pr-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none w-72 font-medium text-sm transition-all focus:shadow-[0_0_20px_rgba(245,158,11,0.1)]"
             />
           </div>
 
           <select
             value={selectedCounty}
             onChange={(e) => setSelectedCounty(e.target.value)}
-            className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-black uppercase tracking-widest text-[10px] appearance-none cursor-pointer"
+            className="px-6 py-4 bg-slate-950 text-white rounded-2xl border border-slate-800 focus:border-orange-500 focus:outline-none font-medium text-sm appearance-none cursor-pointer"
           >
             <option value="">{t('supplierList.filter.allZones')}</option>
             {uniqueCounties.map(county => (
@@ -94,7 +94,7 @@ export const SupplierList: React.FC<SupplierListProps> = ({
 
           <button
             onClick={onAddSupplier}
-            className="flex items-center gap-3 px-8 py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all shadow-xl shadow-orange-900/40 hover:-translate-y-1"
+            className="flex items-center gap-2 px-6 py-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-orange-900/40 active:scale-95"
           >
             <Plus className="w-4 h-4" />
             {t('supplierList.button.register')}

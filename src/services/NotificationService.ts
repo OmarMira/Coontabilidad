@@ -1,3 +1,4 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import { TaxReportingService } from './TaxReportingService';
 
 export class NotificationService {
@@ -36,7 +37,7 @@ export class NotificationService {
 
         // Notify top alert
         const topAlert = important[0];
-        const title = topAlert.severity === 'critical' ? '⚠️ CRITICAL TAX ALERT' : '⚠️ Tax Deadline Warning';
+        const title = topAlert.severity === 'critical' ? 'âš ï¸ CRITICAL TAX ALERT' : 'âš ï¸ Tax Deadline Warning';
         const body = `${topAlert.title} is due in ${topAlert.daysRemaining} days. Check Dashboard for details.`;
 
         // Browser Notification
@@ -47,10 +48,10 @@ export class NotificationService {
                 tag: 'tax-alert',
                 requireInteraction: true
             });
-            console.log("Notification sent:", title);
+            logger.info('NotificationService', 'info', 'operation_failed', "Notification sent:", title);
             localStorage.setItem('last_tax_notification', today);
         } catch (e) {
-            console.error("Notification failed", e);
+            logger.error('NotificationService', 'error', 'operation_failed', "Notification failed", e);
         }
     }
 

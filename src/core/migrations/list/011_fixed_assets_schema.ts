@@ -189,10 +189,29 @@ export const FixedAssetsSchema: Migration = {
             `);
         }
 
+        // ── Iron Core: Anti-Tamper Triggers ───────────────────────────────────
+        // fixed_assets and asset_depreciation are guaranteed to exist at this point.
+        await db.exec(`
+            CREATE TRIGGER IF NOT EXISTS protect_asset_financials
+            BEFORE UPDATE OF purchase_cost, purchase_date, depreciation_method ON fixed_assets
+            BEGIN
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Fixed Asset financial data is immutable.');
+            END;
+        `);
+
+        await db.exec(`
+            CREATE TRIGGER IF NOT EXISTS prevent_depreciation_tamper
+            BEFORE UPDATE ON asset_depreciation
+            BEGIN
+                SELECT RAISE(ABORT, 'FORENSIC ALERT: Depreciation records are immutable.');
+            END;
+        `);
+
         console.log('✅ Migration 011: Fixed Assets schema created successfully');
         console.log('   - Created 4 tables: asset_categories, fixed_assets, asset_depreciation, asset_disposals');
         console.log('   - Added 6 indexes for query optimization');
         console.log('   - Seeded 6 default asset categories');
+        console.log('   - Iron Core: protect_asset_financials trigger active');
     },
 
     down: async (db: SQLiteEngine) => {

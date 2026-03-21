@@ -1,3 +1,4 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * Data Integrity Module - Central Export
  * 
@@ -34,7 +35,7 @@ export type {
 } from './DataHealthCheckService';
 
 // ====================================
-// INICIALIZACIÓN AUTOMÁTICA
+// INICIALIZACIÃ“N AUTOMÃTICA
 // ====================================
 
 import { DataHealthCheckService } from './DataHealthCheckService';
@@ -43,35 +44,35 @@ import { DataHealthCheckService } from './DataHealthCheckService';
  * Iniciar todos los servicios de integridad
  */
 export function initializeDataIntegrity() {
-  console.log('🔐 Inicializando sistema de integridad de datos...');
+  logger.info('DataIntegrity', 'init_start', 'Inicializando sistema de integridad de datos');
 
   // Iniciar monitoreo de salud con:
   // - Check cada 5 minutos
   // - Auto-repair habilitado
-  // - 3 intentos de reparación máximo
+  // - 3 intentos de reparaciÃ³n mÃ¡ximo
   DataHealthCheckService.startHealthMonitoring(
     5 * 60 * 1000, // 5 minutos
     true // Auto-repair
   );
 
-  console.log('✅ Sistema de integridad de datos inicializado');
+  logger.info('DataIntegrity', 'init_complete', 'Sistema de integridad de datos inicializado');
 }
 
 /**
  * Detener servicios de integridad
  */
 export function shutdownDataIntegrity() {
-  console.log('🛑 Apagando sistema de integridad de datos...');
+  logger.info('DataIntegrity', 'shutdown', 'Apagando sistema de integridad de datos');
   DataHealthCheckService.stopHealthMonitoring();
 }
 
 /**
- * Ejecutar verificación manual de integridad
+ * Ejecutar verificaciÃ³n manual de integridad
  */
 export async function runManualIntegrityCheck() {
-  console.log('🔍 Ejecutando verificación manual de integridad...');
+  logger.info('DataIntegrity', 'manual_check', 'Ejecutando verificacion manual de integridad');
   const report = await DataHealthCheckService.performHealthCheck();
-  console.log(DataHealthCheckService.generateDetailedReport());
+  logger.info('DataIntegrity', 'report', DataHealthCheckService.generateDetailedReport());
   return report;
 }
 
@@ -85,3 +86,4 @@ export function getIntegrityStatus() {
     history: DataHealthCheckService.getReportHistory(5)
   };
 }
+

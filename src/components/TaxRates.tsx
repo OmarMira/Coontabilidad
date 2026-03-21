@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Save, Plus, Trash2, AlertCircle } from 'lucide-react';
-import { getAllFloridaTaxRates, updateFloridaTaxRate } from '../database/simple-db';
+import { getAllFloridaTaxRates, updateFloridaTaxRate } from '@/database/modules/db-florida-tax';
 import { useLocale } from '../i18n/useLocale';
 import toast from 'react-hot-toast';
 
@@ -83,7 +83,7 @@ export const TaxRates: React.FC = () => {
                     </div>
                     <button
                         onClick={handleSaveAll}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+                        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center gap-2 transition-all font-bold shadow-lg shadow-blue-900/30 active:scale-95"
                     >
                         <Save className="w-4 h-4" />
                         {t('taxRates.saveChanges')}

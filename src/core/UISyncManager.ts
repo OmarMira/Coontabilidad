@@ -1,4 +1,4 @@
-import { logger } from '../utils/logger';
+﻿import { logger } from '../utils/logger';
 import { DatabaseHealthChecker } from './DatabaseHealthChecker';
 
 export class UISyncManager {
@@ -7,11 +7,11 @@ export class UISyncManager {
     private static isRecovering = false;
 
     /**
-     * Intercepta errores de inicialización y ejecuta recuperación automática
+     * Intercepta errores de inicializaciÃ³n y ejecuta recuperaciÃ³n automÃ¡tica
      */
     static async interceptAndRecover(error: Error): Promise<boolean> {
         if (this.isRecovering) {
-            logger.warn('Recuperación ya en progreso', undefined, 'UISync');
+            logger.warn('RecuperaciÃ³n ya en progreso', undefined, 'UISync');
             return false;
         }
 
@@ -22,11 +22,11 @@ export class UISyncManager {
             return false;
         }
 
-        logger.emergency('🚨 INTERCEPTANDO ERROR FK PERSISTENTE EN UI', { error: error.message }, undefined, 'UISync');
+        logger.emergency('ðŸš¨ INTERCEPTANDO ERROR FK PERSISTENTE EN UI', { error: error.message }, undefined, 'UISync');
         this.isRecovering = true;
 
         try {
-            // PASO 1: Mostrar estado de recuperación en UI (gestionado por el Error Boundary)
+            // PASO 1: Mostrar estado de recuperaciÃ³n en UI (gestionado por el Error Boundary)
             // notify event if someone is listening
             window.dispatchEvent(new CustomEvent('sync-recovery-start'));
 
@@ -34,7 +34,7 @@ export class UISyncManager {
             const dbStatus = await DatabaseHealthChecker.checkHealth();
 
             if (dbStatus.healthy) {
-                // La DB está sana, es solo la UI desincronizada
+                // La DB estÃ¡ sana, es solo la UI desincronizada
                 await this.syncUIWithHealthyDB();
                 return true;
             } else {
@@ -44,9 +44,9 @@ export class UISyncManager {
             }
 
         } catch (recoveryError: any) {
-            logger.critical('Fallo en recuperación automática:', { error: recoveryError.message }, undefined, 'UISync');
+            logger.critical('Fallo en recuperaciÃ³n automÃ¡tica:', { error: recoveryError.message }, undefined, 'UISync');
 
-            // Último recurso: Forzar recarga completa
+            // Ãšltimo recurso: Forzar recarga completa
             await this.forceCompleteReload();
             return false;
 
@@ -64,49 +64,49 @@ export class UISyncManager {
         // 1. Limpiar cache de errores del navegador
         await this.clearBrowserErrorCache();
 
-        // 2. Forzar re-render de componentes críticos
+        // 2. Forzar re-render de componentes crÃ­ticos
         await this.forceComponentRefresh();
 
-        // 3. Actualizar estado global de la aplicación
+        // 3. Actualizar estado global de la aplicaciÃ³n
         await this.updateGlobalAppState();
 
-        // 4. Ocultar mensaje de error si está visible
+        // 4. Ocultar mensaje de error si estÃ¡ visible
         await this.hideErrorDisplay();
 
-        // 5. Mostrar notificación de éxito
+        // 5. Mostrar notificaciÃ³n de Ã©xito
         await this.showSyncSuccessNotification();
 
-        logger.success('✅ UI sincronizada con DB correctamente', undefined, 'UISync');
+        logger.success('âœ… UI sincronizada con DB correctamente', undefined, 'UISync');
     }
 
     /**
-     * Ejecuta recuperación desde el lado de la UI
+     * Ejecuta recuperaciÃ³n desde el lado de la UI
      */
     private static async executeUISideRecovery(): Promise<void> {
-        logger.info('Ejecutando recuperación desde UI...', undefined, 'UISync');
+        logger.info('Ejecutando recuperaciÃ³n desde UI...', undefined, 'UISync');
         const repaired = await DatabaseHealthChecker.attemptAutoRepair();
         if (repaired) {
             await this.syncUIWithHealthyDB();
         } else {
-            throw new Error('No se pudo reparar la base de datos automáticamente');
+            throw new Error('No se pudo reparar la base de datos automÃ¡ticamente');
         }
     }
 
     /**
-     * Forzar recarga completa con validación
+     * Forzar recarga completa con validaciÃ³n
      */
     static async forceCompleteReload(): Promise<void> {
-        // Guardar estado de recuperación en localStorage
+        // Guardar estado de recuperaciÃ³n en localStorage
         localStorage.setItem('recovery_attempt', Date.now().toString());
         localStorage.setItem('recovery_reason', 'fk_persistent_error');
 
-        // Mostrar mensaje al usuario (vía log)
-        logger.info('Forzando recarga de la aplicación...', undefined, 'UISync');
+        // Mostrar mensaje al usuario (vÃ­a log)
+        logger.info('Forzando recarga de la aplicaciÃ³n...', undefined, 'UISync');
 
         // Esperar para que el usuario vea el mensaje o se procesen logs
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // Recargar con parámetros para bypass de cache
+        // Recargar con parÃ¡metros para bypass de cache
         window.location.href = `${window.location.pathname}?recovery=${Date.now()}&nocache=1`;
     }
 
@@ -120,7 +120,7 @@ export class UISyncManager {
     }
 
     private static async updateGlobalAppState(): Promise<void> {
-        // Aquí se podrían limpiar estados de Redux/Zustand si existieran
+        // AquÃ­ se podrÃ­an limpiar estados de Redux/Zustand si existieran
         sessionStorage.setItem('last_sync', Date.now().toString());
     }
 
@@ -130,6 +130,6 @@ export class UISyncManager {
 
     private static async showSyncSuccessNotification(): Promise<void> {
         // Notificar al sistema de notificaciones si existe
-        console.log('✅ Sincronización exitosa');
+        logger.info('UISyncManager', 'info', 'âœ… SincronizaciÃ³n exitosa');
     }
 }

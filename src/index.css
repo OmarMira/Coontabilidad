@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -63,25 +63,25 @@
 
   /* Premium Buttons */
   .btn-elite-primary {
-    @apply relative overflow-hidden px-6 py-3 rounded-2xl bg-emerald-600 font-semibold;
+    @apply relative overflow-hidden px-6 py-2.5 rounded-xl bg-emerald-600 font-bold tracking-tighter uppercase;
     transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
   }
 
   .btn-elite-primary:hover {
-    @apply -translate-y-0.5;
+    @apply -translate-y-0.5 bg-emerald-500;
     box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
   }
 
   .btn-elite-secondary {
-    @apply px-6 py-3 rounded-2xl bg-gray-800/50 border border-gray-700 font-semibold;
+    @apply px-6 py-2.5 rounded-xl bg-gray-800/50 border border-gray-700 font-bold tracking-tighter uppercase;
     transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
     @apply hover:bg-gray-700/50 hover:border-gray-600;
   }
 
   /* Status Badges */
   .badge-elite {
-    @apply px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase;
+    @apply px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase;
   }
 
   /* Custom Scrollbar */
@@ -186,19 +186,19 @@
 
 /* --- Global Standardized Typography --- */
 .text-section-title {
-  @apply text-3xl font-black text-white tracking-tight;
+  @apply text-3xl font-black text-white tracking-tighter uppercase;
 }
 
 .text-item-title {
-  @apply text-xl font-bold text-white tracking-tight;
+  @apply text-xl font-black text-white tracking-tighter uppercase;
 }
 
 .text-standard-body {
-  @apply text-base text-slate-300 font-medium leading-relaxed;
+  @apply text-base text-slate-300 font-black leading-relaxed tracking-tight;
 }
 
 .text-table-header {
-  @apply text-[10px] font-black uppercase tracking-widest text-slate-500;
+  @apply text-[10px] font-black uppercase tracking-[0.2em] text-slate-500;
 }
 
 .text-form-label {
@@ -206,7 +206,7 @@
 }
 
 .text-input-field {
-  @apply text-base bg-slate-800 border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 transition-all p-3;
+  @apply text-base bg-slate-800 border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 transition-all p-3 font-black tracking-tight;
 }
 
 /* Print Styles */

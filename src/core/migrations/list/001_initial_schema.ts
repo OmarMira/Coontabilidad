@@ -267,11 +267,21 @@ export const InitialSchemaMigration: Migration = {
         `);
     },
     down: async (db: SQLiteEngine) => {
-        // Dangerous, but defined for completeness
-        // In production, we might disable this or be very careful.
+        // --- Core Views ---
         await db.exec("DROP VIEW IF EXISTS audit_integrity_view");
         await db.exec("DROP VIEW IF EXISTS tax_compliance_view");
         await db.exec("DROP VIEW IF EXISTS financial_summary_view");
-        // Drop tables... (omitted for safety in this snippet, usually we don't drop data in down unless dev)
+
+        // --- Core Tables ---
+        // Note: Protected tables (users, user_roles, payment_methods, chart_of_accounts, florida_tax_rates) are NOT dropped.
+        await db.exec("DROP TABLE IF EXISTS audit_chain");
+        await db.exec("DROP TABLE IF EXISTS journal_details");
+        await db.exec("DROP TABLE IF EXISTS journal_entries");
+        await db.exec("DROP TABLE IF EXISTS invoice_lines");
+        await db.exec("DROP TABLE IF EXISTS invoices");
+        await db.exec("DROP TABLE IF EXISTS products");
+        await db.exec("DROP TABLE IF EXISTS suppliers");
+        await db.exec("DROP TABLE IF EXISTS product_categories");
+        await db.exec("DROP TABLE IF EXISTS customers");
     }
 };

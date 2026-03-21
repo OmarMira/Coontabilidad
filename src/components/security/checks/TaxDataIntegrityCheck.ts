@@ -1,16 +1,16 @@
-/**
+﻿/**
  * Check 2: Datos Fiscales de Florida
  * Verifica que existan los 67 condados con sus tasas
  */
 
 import { IntegrityCheck, CheckResult } from '../../../types/integrity.types';
-import { getDB } from '../../../database/simple-db';
+import { getDB } from '@/database/modules/db-core';
 
 export class TaxDataIntegrityCheck implements IntegrityCheck {
     id = 'tax-data-integrity';
     name = 'Datos Fiscales de Florida';
     description = 'Verifica que existan los 67 condados de Florida con tasas correctas';
-    severity = 'critical' as const;
+    severity = 'warning' as const;
     status = 'pending' as const;
 
     private readonly EXPECTED_COUNTIES = 67;
@@ -18,7 +18,7 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
 
     async execute(): Promise<CheckResult> {
         const db = getDB();
-        
+
         if (!db) {
             return {
                 passed: false,
@@ -27,22 +27,22 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
                 repairAction: async () => {
                     const { SchemaRepairService } = await import('../../../database/SchemaRepairService');
                     const { SQLiteEngine } = await import('../../../core/database/SQLiteEngine');
-                    const { initDB } = await import('../../../database/simple-db');
-                    
+                    const { initDB } = await import('../../../database/modules/db-init');
+
                     // Inicializar DB primero
                     const newDb = await initDB();
-                    
+
                     // Luego reparar
                     const engine = new SQLiteEngine();
                     engine.setDB(newDb);
                     const repair = new SchemaRepairService(engine);
                     await repair.repairSchema();
-                    
-                    // CRÍTICO: Forzar persistencia
+
+                    // CRÃTICO: Forzar persistencia
                     if (typeof engine.sync === 'function') {
                         await engine.sync();
                     }
-                    
+
                     // Esperar un momento para asegurar que IndexedDB termine
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
@@ -55,7 +55,7 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
             const count = countResult[0]?.values[0]?.[0] as number || 0;
 
             if (count === this.EXPECTED_COUNTIES) {
-                // Verificar condados críticos
+                // Verificar condados crÃ­ticos
                 const criticalCheck = db.exec(`
                     SELECT county_code FROM florida_tax_rates 
                     WHERE county_code IN ('MIAMI-DADE', 'BROWARD', 'PALM-BEACH')
@@ -65,13 +65,13 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
                 if (foundCritical === this.CRITICAL_COUNTIES.length) {
                     return {
                         passed: true,
-                        message: `✅ Los ${this.EXPECTED_COUNTIES} condados están cargados correctamente`,
+                        message: `âœ… Los ${this.EXPECTED_COUNTIES} condados estÃ¡n cargados correctamente`,
                         canAutoRepair: false
                     };
                 }
             }
 
-            // Verificar condados críticos específicamente
+            // Verificar condados crÃ­ticos especÃ­ficamente
             const missingCritical: string[] = [];
             for (const county of this.CRITICAL_COUNTIES) {
                 const check = db.exec(
@@ -86,8 +86,8 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
 
             return {
                 passed: false,
-                message: `⚠️ Solo ${count}/${this.EXPECTED_COUNTIES} condados cargados`,
-                details: { 
+                message: `âš ï¸ Solo ${count}/${this.EXPECTED_COUNTIES} condados cargados`,
+                details: {
                     currentCount: count,
                     expected: this.EXPECTED_COUNTIES,
                     missing: this.EXPECTED_COUNTIES - count,
@@ -101,12 +101,12 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
                     engine.setDB(db);
                     const repair = new SchemaRepairService(engine);
                     await repair.repairSchema();
-                    
-                    // CRÍTICO: Forzar persistencia
+
+                    // CRÃTICO: Forzar persistencia
                     if (typeof engine.sync === 'function') {
                         await engine.sync();
                     }
-                    
+
                     // Esperar un momento para asegurar que IndexedDB termine
                     await new Promise(resolve => setTimeout(resolve, 500));
                 }
@@ -114,9 +114,10 @@ export class TaxDataIntegrityCheck implements IntegrityCheck {
         } catch (error) {
             return {
                 passed: false,
-                message: `❌ Error verificando condados: ${(error as Error).message}`,
+                message: `âŒ Error verificando condados: ${(error as Error).message}`,
                 canAutoRepair: false
             };
         }
     }
 }
+

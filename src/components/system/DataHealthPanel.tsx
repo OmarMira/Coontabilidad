@@ -1,11 +1,12 @@
+﻿import { logger } from '../../core/logging/SystemLogger';
 /**
  * DataHealthPanel - Panel de Monitoreo de Integridad de Datos
  * 
  * Muestra:
  * - Estado de salud de la BD
- * - Últimas reparaciones
+ * - Ãšltimas reparaciones
  * - Historial de checks
- * - Opciones de reparación manual
+ * - Opciones de reparaciÃ³n manual
  */
 
 import React, { useState, useEffect } from 'react';
@@ -59,7 +60,7 @@ export const DataHealthPanel: React.FC = () => {
       setStatus(newReport.status);
       loadHealthStatus();
     } catch (error) {
-      console.error('Error executing health check:', error);
+      logger.error('DataHealthPanel', 'error', 'Error executing health check:', error);
     } finally {
       setIsChecking(false);
     }
@@ -164,7 +165,7 @@ export const DataHealthPanel: React.FC = () => {
           <ul className="space-y-2">
             {report.recommendations.map((rec, idx) => (
               <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
-                <span className="text-yellow-500 font-black">•</span>
+                <span className="text-yellow-500 font-black">â€¢</span>
                 {rec}
               </li>
             ))}
@@ -183,7 +184,7 @@ export const DataHealthPanel: React.FC = () => {
               <AlertCircle className="w-6 h-6 text-rose-500" />
               <h2 className="text-xl font-black text-white">{t('dataHealth.errorDetails')}</h2>
             </div>
-            <span className="text-slate-500">{showDetails ? '▼' : '▶'}</span>
+            <span className="text-slate-500">{showDetails ? 'â–¼' : 'â–¶'}</span>
           </button>
 
           {showDetails && (
@@ -201,7 +202,7 @@ export const DataHealthPanel: React.FC = () => {
                   </div>
                   <p className="text-sm text-white font-medium">{error.message}</p>
                   {error.suggestion && (
-                    <p className="text-xs text-slate-400 mt-2">💡 {error.suggestion}</p>
+                    <p className="text-xs text-slate-400 mt-2">ðŸ’¡ {error.suggestion}</p>
                   )}
                 </div>
               ))}
@@ -252,16 +253,16 @@ export const DataHealthPanel: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black text-sm transition">
-            🔧 {t('dataHealth.repairReferences')}
+            ðŸ”§ {t('dataHealth.repairReferences')}
           </button>
           <button className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black text-sm transition">
-            🔗 {t('dataHealth.consolidateDuplicates')}
+            ðŸ”— {t('dataHealth.consolidateDuplicates')}
           </button>
           <button className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black text-sm transition">
-            🧮 {t('dataHealth.recalculateTotals')}
+            ðŸ§® {t('dataHealth.recalculateTotals')}
           </button>
           <button className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black text-sm transition">
-            📋 {t('dataHealth.fullReport')}
+            ðŸ“‹ {t('dataHealth.fullReport')}
           </button>
         </div>
       </div>

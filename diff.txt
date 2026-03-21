@@ -1,0 +1,1077 @@
+﻿commit 03bd55269218c22a91e36317db6bc3f3dce4aaa0
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Mon Mar 2 17:43:30 2026 -0500
+
+    FEAT: Banking states refactor and SQL parameterization.
+    
+    - Replaced hardcoded transaction states with TRANSACTION_STATES constants.
+    - Parameterized SQL queries in banking services and components to prevent injection.
+    - Resolved hardcoded account_type: 'Expense' and id: 0 in classification rules.
+    - Added migration for account_type in classification_rules.
+
+diff --git a/src/components/BankStatementImporter.tsx b/src/components/BankStatementImporter.tsx
+index f5ac97b..42205b7 100644
+--- a/src/components/BankStatementImporter.tsx
++++ b/src/components/BankStatementImporter.tsx
+@@ -183,31 +183,29 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
+     return (
+         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+             {/* Header Hub */}
+-            <div className="flex flex-col xl:flex-row items-center justify-between gap-8 border-b border-slate-800 pb-10">
+-                <div className="flex items-center gap-6">
+-                    <div className="p-4 bg-emerald-600/10 rounded-2.5xl border border-emerald-500/20 shadow-emerald-900/10 shadow-lg group">
+-                        <Sparkles className="w-10 h-10 text-emerald-500 group-hover:rotate-12 transition-transform duration-500" />
+-                    </div>
+-                    <div>
+-                        <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">Importador Neural</h1>
+-                        <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-[10px] mt-2 flex items-center gap-2">
+-                            <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> AI Bank Smart Bridge v6.2
+-                        </p>
+-                    </div>
++            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
++                <div>
++                    <h1 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
++                        <Cpu className="w-8 h-8 text-emerald-500" />
++                        Importador Neural
++                    </h1>
++                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
++                        <Zap className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> AI Bank Smart Bridge v6.2
++                    </p>
+                 </div>
+ 
+                 <div className="flex flex-wrap items-center gap-4 justify-center">
+-                    <div className={`px-10 py-6 bg-slate-950 border rounded-[2.5rem] flex items-center gap-8 shadow-2xl transition-all duration-700 ${accountStatus === 'valid' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-900/10' : 'border-rose-500/40 bg-rose-500/5 shadow-rose-900/10'}`}>
+-                        <div className={`p-4 rounded-2xl ${accountStatus === 'valid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+-                            <Box className="w-8 h-8 animate-pulse" />
++                    <div className={`px-6 py-4 bg-slate-950 border rounded-2xl flex items-center gap-6 shadow-xl transition-all duration-700 ${accountStatus === 'valid' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-900/10' : 'border-rose-500/40 bg-rose-500/5 shadow-rose-900/10'}`}>
++                        <div className={`p-3 rounded-xl ${accountStatus === 'valid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
++                            <Box className="w-6 h-6 animate-pulse" />
+                         </div>
+                         <div className="flex flex-col">
+                             <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2">Entidad Detectada</span>
+-                            <div className="flex items-baseline gap-4">
+-                                <span className={`text-4xl font-black tracking-tighter uppercase leading-none transition-colors ${accountStatus === 'valid' ? 'text-white' : 'text-rose-500'}`}>
++                            <div className="flex items-baseline gap-3">
++                                <span className={`text-lg font-bold tracking-tight transition-colors ${accountStatus === 'valid' ? 'text-white' : 'text-rose-500'}`}>
+                                     {bankName || 'Buscando...'}
+                                 </span>
+-                                <span className={`text-xl font-mono font-bold tracking-tighter ${accountStatus === 'valid' ? 'text-emerald-500/70' : 'text-rose-400/50 italic'}`}>
++                                <span className={`text-sm font-mono font-medium tracking-tight ${accountStatus === 'valid' ? 'text-emerald-500/70' : 'text-rose-400/50 italic'}`}>
+                                     #{accountNumber?.slice(-4) || '----'}
+                                 </span>
+                             </div>
+@@ -246,10 +244,10 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
+                     <div className="p-8 bg-emerald-600/10 rounded-full mb-8 border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 shadow-xl">
+                         <Upload className="w-14 h-14 text-emerald-500" />
+                     </div>
+-                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Inyectar Resumen Bancario (PDF/CSV)</h3>
+-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-10">Compatibilidad: CHASE, BOFA, WELLS FARGO, AMEX, STRIPE</p>
++                    <h3 className="text-xl font-bold text-white tracking-tight mb-2">Inyectar Resumen Bancario (PDF/CSV)</h3>
++                    <p className="text-slate-500 text-xs font-medium uppercase tracking-widest mb-10">Compatibilidad: Chase, BofA, Wells Fargo, Amex, Stripe</p>
+ 
+-                    <label className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-2xl shadow-emerald-900/40 cursor-pointer flex items-center gap-3 hover:-translate-y-1">
++                    <label className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm transition-all shadow-xl shadow-emerald-900/20 cursor-pointer flex items-center gap-3 hover:-translate-y-0.5">
+                         Seleccionar Archivos
+                         <input type="file" className="hidden" accept=".pdf,.csv" multiple onChange={handleFileUpload} />
+                     </label>
+@@ -263,8 +261,8 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
+                         <div className="w-32 h-32 rounded-full border-4 border-emerald-500/10 border-t-emerald-500 animate-spin"></div>
+                         <Cpu className="w-10 h-10 text-emerald-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                     </div>
+-                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ejecutando Heur├¡stica Neural...</h3>
+-                    <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">Mapeando descripciones a c├│digos contables US GAAP y detectando anomal├¡as en tiempo real.</p>
++                    <h3 className="text-xl font-bold text-white tracking-tight mb-4">Ejecutando Heur├¡stica Neural...</h3>
++                    <p className="text-slate-500 text-xs font-medium max-w-sm mx-auto">Mapeando descripciones a c├│digos contables US GAAP y detectando anomal├¡as en tiempo real.</p>
+ 
+                     <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
+                         <div
+diff --git a/src/services/banking/BankImportService.ts b/src/services/banking/BankImportService.ts
+index 40b28b5..ba16b0d 100644
+--- a/src/services/banking/BankImportService.ts
++++ b/src/services/banking/BankImportService.ts
+@@ -18,6 +18,9 @@ import { DuplicateDetector, ExistingTransaction } from './DuplicateDetector';
+ import { AICategorizerService, TrainingExample } from './AICategorizerService';
+ import { TransactionMatcher, Invoice, Bill } from './TransactionMatcher';
+ import { DatabaseService } from '../../database/DatabaseService';
++import { generateTransactionHash } from './BankingUtils';
++import { ClassificationRulesService } from './ClassificationRulesService';
++import { TRANSACTION_STATES } from '../../constants/bankingStates';
+ 
+ export interface ImportBatch {
+   id: number;
+@@ -52,12 +55,12 @@ export interface ImportTransaction {
+ 
+ export class BankImportService {
+   private categorizer: AICategorizerService;
+-  
++
+   constructor() {
+     this.categorizer = new AICategorizerService();
+     this.loadTrainingData();
+   }
+-  
++
+   /**
+    * Carga datos de entrenamiento desde la base de datos
+    */
+@@ -69,7 +72,7 @@ export class BankImportService {
+         ORDER BY created_at DESC
+         LIMIT 1000
+       `);
+-      
++
+       if (trainingData.length > 0 && trainingData[0].values.length > 0) {
+         const examples: TrainingExample[] = trainingData[0].values.map((row: any) => ({
+           description: row[0],
+@@ -77,14 +80,14 @@ export class BankImportService {
+           amount: row[2],
+           transactionType: row[3]
+         }));
+-        
++
+         this.categorizer.train(examples);
+       }
+     } catch (error) {
+       console.error('Error loading training data:', error);
+     }
+   }
+-  
++
+   /**
+    * Crea un nuevo batch de importaci├│n y genera preview
+    */
+@@ -93,21 +96,21 @@ export class BankImportService {
+     bankAccountId: number,
+     userId: number
+   ): Promise<{ batchId: number; transactions: ImportTransaction[] }> {
+-    
++
+     // 1. Parse file
+     const parseResult = await FileParserService.parseFile(file);
+-    
++
+     if (parseResult.errors.length > 0) {
+       throw new Error(`Errores al parsear archivo: ${parseResult.errors.join(', ')}`);
+     }
+-    
++
+     if (parseResult.transactions.length === 0) {
+       throw new Error('No se encontraron transacciones en el archivo');
+     }
+-    
++
+     // 2. Create batch
+     const batchNumber = `IMP-${Date.now()}`;
+-    
++
+     db.run(`
+       INSERT INTO import_batches (
+         batch_number, file_name, file_format, bank_account_id,
+@@ -121,34 +124,34 @@ export class BankImportService {
+       parseResult.transactions.length,
+       userId
+     ]);
+-    
++
+     const batchIdResult = db.exec('SELECT last_insert_rowid() as id');
+     const batchId = batchIdResult[0].values[0][0] as number;
+-    
++
+     // 3. Get existing transactions for duplicate detection
+     const existingTxns = await this.getExistingTransactions();
+-    
++
+     // 4. Get unpaid invoices and bills for matching
+     const unpaidInvoices = await this.getUnpaidInvoices();
+     const unpaidBills = await this.getUnpaidBills();
+-    
++
+     // 5. Process each transaction
+     const importTransactions: ImportTransaction[] = [];
+-    
++
+     for (const txn of parseResult.transactions) {
+       // Detect duplicates
+       const duplicateResult = await DuplicateDetector.detectDuplicate(txn, existingTxns);
+-      
++
+       // Categorize with AI
+       const categorizationResult = this.categorizer.categorize(txn);
+-      
++
+       // Match with invoices/bills
+       const matchResult = await TransactionMatcher.matchTransaction(
+         txn,
+         unpaidInvoices,
+         unpaidBills
+       );
+-      
++
+       // Insert into temp table
+       db.run(`
+         INSERT INTO import_transactions_temp (
+@@ -171,10 +174,10 @@ export class BankImportService {
+         matchResult.matchType === 'bill' ? matchResult.matchedId : null,
+         matchResult.confidence || null
+       ]);
+-      
++
+       const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
+       const txnId = txnIdResult[0].values[0][0] as number;
+-      
++
+       importTransactions.push({
+         id: txnId,
+         batchId,
+@@ -192,10 +195,10 @@ export class BankImportService {
+         excluded: false
+       });
+     }
+-    
++
+     return { batchId, transactions: importTransactions };
+   }
+-  
++
+   /**
+    * Actualiza una transacci├│n en el preview
+    */
+@@ -209,50 +212,51 @@ export class BankImportService {
+   ): Promise<void> {
+     const setClauses: string[] = [];
+     const values: any[] = [];
+-    
++
+     if (updates.userCategory !== undefined) {
+       setClauses.push('user_category = ?');
+       values.push(updates.userCategory);
+     }
+-    
++
+     if (updates.userDescription !== undefined) {
+       setClauses.push('user_description = ?');
+       values.push(updates.userDescription);
+     }
+-    
++
+     if (updates.excluded !== undefined) {
+       setClauses.push('excluded = ?');
+       values.push(updates.excluded ? 1 : 0);
+     }
+-    
++
+     if (setClauses.length === 0) return;
+-    
++
+     values.push(transactionId);
+-    
++
+     db.run(`
+       UPDATE import_transactions_temp
+       SET ${setClauses.join(', ')}
+       WHERE id = ?
+     `, values);
+   }
+-  
++
+   /**
+    * Importa las transacciones finales
++   * Retorna { imported: number, skipped: number }
+    */
+-  async finalizeImport(batchId: number, userId: number): Promise<void> {
++  async finalizeImport(batchId: number, userId: number, bankAccountId: number): Promise<{ imported: number, skipped: number }> {
+     try {
+       db.run('BEGIN TRANSACTION');
+-      
++
+       // Get transactions to import (not excluded, not duplicates)
+       const txnsResult = db.exec(`
+         SELECT * FROM import_transactions_temp
+-        WHERE batch_id = ? AND excluded = 0 AND is_duplicate = 0
++        WHERE batch_id = ? AND excluded = 0
+       `, [batchId]);
+-      
++
+       if (txnsResult.length === 0 || txnsResult[0].values.length === 0) {
+         throw new Error('No hay transacciones para importar');
+       }
+-      
++
+       const columns = txnsResult[0].columns;
+       const transactions = txnsResult[0].values.map((row: any) => {
+         const obj: any = {};
+@@ -261,22 +265,76 @@ export class BankImportService {
+         });
+         return obj;
+       });
+-      
++
+       let importedCount = 0;
+-      
++      let skippedCount = 0;
++
+       for (const txn of transactions) {
+-        // Determine final category (user override or suggested)
+-        const finalCategory = txn.user_category || txn.suggested_category;
++        // Generar hash ├║nico para deduplicaci├│n
++        const hash = await generateTransactionHash(
++          txn.transaction_date,
++          txn.amount,
++          txn.description,
++          bankAccountId
++        );
++
++        // Intentar insertar la transacci├│n bancaria. INSERT OR IGNORE evita duplicados por UNIQUE(import_hash)
++        db.run(`
++          INSERT OR IGNORE INTO bank_transactions (
++            bank_account_id, transaction_date, description, amount, status, import_hash
++          ) VALUES (?, ?, ?, ?, ?, ?)
++        `, [
++          bankAccountId,
++          txn.transaction_date,
++          txn.description,
++          txn.amount,
++          TRANSACTION_STATES.IMPORTED,
++          hash
++        ]);
++
++        // Verificar si se insert├│ realmente
++        const rowsAffected = db.exec('SELECT changes() as changes')[0].values[0][0] as number;
++
++        if (rowsAffected === 0) {
++          skippedCount++;
++          continue;
++        }
++
++        // Obtener ID de la transacci├│n reci├⌐n insertada
++        const txnIdResult = db.exec('SELECT last_insert_rowid() as id');
++        const bankTxnId = txnIdResult[0].values[0][0] as number;
++
++        // EVALUAR REGLAS DE CLASIFICACI├ôN (Automatizaci├│n Inteligente)
++        const autoAccount = await ClassificationRulesService.evaluateTransaction(txn.description);
++
++        // Determine final category (rule match > user override > suggested)
++        const finalCategory = autoAccount ? autoAccount.account_code : (txn.user_category || txn.suggested_category);
+         const finalDescription = txn.user_description || txn.description;
+-        
+-        // Create bank transaction (assuming there's a bank_transactions table)
+-        // Note: This would need to be adapted to your actual schema
+-        
++        const isAutoClassified = !!autoAccount;
++
++        // Insertar en transaction_states
++        db.run(`
++          INSERT INTO transaction_states (
++            transaction_id, current_state, is_verified, 
++            auto_classified, assigned_account_code, assigned_account_name,
++            verified_at, verified_by
++          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
++        `, [
++          bankTxnId,
++          isAutoClassified ? TRANSACTION_STATES.VERIFIED : TRANSACTION_STATES.IMPORTED,
++          isAutoClassified ? 1 : 0,
++          isAutoClassified ? 1 : 0,
++          autoAccount ? autoAccount.account_code : null,
++          autoAccount ? autoAccount.account_name : null,
++          isAutoClassified ? new Date().toISOString() : null,
++          isAutoClassified ? userId : null
++        ]);
++
+         // Generate journal entry
+         const debitAccount = txn.amount < 0 ? finalCategory : 'Bank Account';
+         const creditAccount = txn.amount < 0 ? 'Bank Account' : finalCategory;
+         const absAmount = Math.abs(txn.amount);
+-        
++
+         await DatabaseService.insertJournalEntry({
+           description: `Bank Import: ${finalDescription}`,
+           date: txn.transaction_date,
+@@ -296,7 +354,7 @@ export class BankImportService {
+           ],
+           userId
+         });
+-        
++
+         // Save as training data if user corrected the category
+         if (txn.user_category && txn.user_category !== txn.suggested_category) {
+           db.run(`
+@@ -308,7 +366,7 @@ export class BankImportService {
+             txn.amount,
+             txn.amount < 0 ? 'debit' : 'credit'
+           ]);
+-          
++
+           // Add to categorizer for immediate learning
+           this.categorizer.addTrainingExample({
+             description: txn.description,
+@@ -317,56 +375,57 @@ export class BankImportService {
+             transactionType: txn.amount < 0 ? 'debit' : 'credit'
+           });
+         }
+-        
++
+         importedCount++;
+       }
+-      
++
+       // Update batch status
+       db.run(`
+         UPDATE import_batches
+         SET status = 'completed', imported_count = ?, imported_at = datetime('now')
+         WHERE id = ?
+       `, [importedCount, batchId]);
+-      
++
+       // Clean up temp transactions
+       db.run('DELETE FROM import_transactions_temp WHERE batch_id = ?', [batchId]);
+-      
++
+       db.run('COMMIT');
+-      
++      return { imported: importedCount, skipped: skippedCount };
++
+     } catch (error) {
+       db.run('ROLLBACK');
+       throw error;
+     }
+   }
+-  
++
+   /**
+    * Rollback de una importaci├│n
+    */
+   async rollbackImport(batchId: number): Promise<void> {
+     try {
+       db.run('BEGIN TRANSACTION');
+-      
++
+       // Check if period is open
+       // (This would need to check against accounting_periods table)
+-      
++
+       // Delete journal entries created by this batch
+       // Note: This would need to track which journal entries belong to which batch
+       // For now, we'll just mark the batch as rolled back
+-      
++
+       db.run(`
+         UPDATE import_batches
+         SET status = 'rolled_back', rolled_back_at = datetime('now')
+         WHERE id = ?
+       `, [batchId]);
+-      
++
+       db.run('COMMIT');
+-      
++
+     } catch (error) {
+       db.run('ROLLBACK');
+       throw error;
+     }
+   }
+-  
++
+   /**
+    * Obtiene transacciones existentes para detecci├│n de duplicados
+    */
+@@ -380,7 +439,7 @@ export class BankImportService {
+       return [];
+     }
+   }
+-  
++
+   /**
+    * Obtiene facturas no pagadas
+    */
+@@ -393,11 +452,11 @@ export class BankImportService {
+         ORDER BY date DESC
+         LIMIT 100
+       `);
+-      
++
+       if (result.length === 0 || result[0].values.length === 0) {
+         return [];
+       }
+-      
++
+       return result[0].values.map((row: any) => ({
+         id: row[0],
+         invoice_number: row[1],
+@@ -410,7 +469,7 @@ export class BankImportService {
+       return [];
+     }
+   }
+-  
++
+   /**
+    * Obtiene gastos no pagados
+    */
+@@ -424,7 +483,7 @@ export class BankImportService {
+       return [];
+     }
+   }
+-  
++
+   /**
+    * Obtiene el historial de importaciones
+    */
+@@ -438,11 +497,11 @@ export class BankImportService {
+         ORDER BY created_at DESC
+         LIMIT 50
+       `);
+-      
++
+       if (result.length === 0 || result[0].values.length === 0) {
+         return [];
+       }
+-      
++
+       return result[0].values.map((row: any) => ({
+         id: row[0],
+         batchNumber: row[1],
+
+commit 63f6daef3ae69dbe46ea63c54aeb9afac1831aa7
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Fri Feb 27 15:33:47 2026 -0500
+
+    feat(banking): enhance Quarantine Panel, Bank Reconciliation and Discrepancy Analysis UX
+
+diff --git a/src/components/BankStatementImporter.tsx b/src/components/BankStatementImporter.tsx
+index 628c8cc..f5ac97b 100644
+--- a/src/components/BankStatementImporter.tsx
++++ b/src/components/BankStatementImporter.tsx
+@@ -66,9 +66,9 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
+                 const file = selectedFiles[i];
+                 const results = await parseBankPDF(file);
+ 
+-                const mappedTransactions = results.transactions
+-                    .filter(r => r.success && r.data)
+-                    .map((r, txIdx) => ({
++                const mappedTransactions = ((results as any).transactions || (results as any).data || [])
++                    .filter((r: any) => r.success && r.data)
++                    .map((r: any, txIdx: number) => ({
+                         id: `${i}-${txIdx}`,
+                         date: r.data!.transaction_date,
+                         description: r.data!.description,
+
+commit 2f2fb32ca8a8341d0208f24a40c38077c3c7e608
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Thu Feb 26 18:40:21 2026 -0500
+
+    Sprint 1A & 2: Database stabilization, Migration Engine fix, and TransactionParser implementation. Includes tsc_baseline.txt and security triggers.
+
+diff --git a/src/components/BankStatementImporter.tsx b/src/components/BankStatementImporter.tsx
+index e88e013..628c8cc 100644
+--- a/src/components/BankStatementImporter.tsx
++++ b/src/components/BankStatementImporter.tsx
+@@ -162,7 +162,7 @@ export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ on
+                 bank_account_id: matched.id,
+                 transaction_date: tx.date,
+                 description: tx.description,
+-                amount: Math.round(tx.amount * 100), // store as cents
++                amount: tx.amount, // Ya est├í en d├│lares desde el preview
+                 reference_number: tx.id,
+             }));
+             const result = insertBankTransactions(toInsert);
+
+commit 39c3e7d21756239c83fd81540c87d57ae4acde89
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Wed Feb 25 19:20:04 2026 -0500
+
+    feat: implement smart bank account deletion logic, fix Neural Importer consolidation, and ensure UI data consistency
+
+diff --git a/src/components/BankStatementImporter.tsx b/src/components/BankStatementImporter.tsx
+index 838c4cb..e88e013 100644
+--- a/src/components/BankStatementImporter.tsx
++++ b/src/components/BankStatementImporter.tsx
+@@ -4,7 +4,7 @@ import {
+     Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X, Building2
+ } from 'lucide-react';
+ import { parseBankPDF } from '../lib/pdf-parser';
+-import { getBankAccounts, createBankAccount, BankAccount } from '../database/simple-db';
++import { getBankAccounts, createBankAccount, insertBankTransactions, forceSaveDB, BankAccount } from '../database/simple-db';
+ import { BankAccountForm } from './BankAccountForm';
+ 
+ interface BankTransaction {
+@@ -17,7 +17,11 @@ interface BankTransaction {
+     mappedAccount: string;
+ }
+ 
+-export const BankStatementImporter: React.FC = () => {
++interface BankStatementImporterProps {
++    onImportComplete?: (count: number) => void;
++}
++
++export const BankStatementImporter: React.FC<BankStatementImporterProps> = ({ onImportComplete }) => {
+     const [isDragging, setIsDragging] = useState(false);
+     const [files, setFiles] = useState<File[]>([]);
+     const [step, setStep] = useState<'upload' | 'analysis' | 'review'>('upload');
+@@ -33,6 +37,8 @@ export const BankStatementImporter: React.FC = () => {
+     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+     const [showAccountForm, setShowAccountForm] = useState(false);
+     const [processingProgress, setProcessingProgress] = useState(0);
++    const [isProcessing, setIsProcessing] = useState(false);
++    const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
+ 
+     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+         if (e.target.files && e.target.files.length > 0) {
+@@ -117,7 +123,11 @@ export const BankStatementImporter: React.FC = () => {
+             setBankAccounts(activeAccounts);
+ 
+             if (detectedAcc) {
+-                const found = activeAccounts.find(a => a.account_number === detectedAcc);
++                const found = activeAccounts.find(a =>
++                    a.account_number === detectedAcc ||
++                    a.account_number.endsWith(detectedAcc) ||
++                    detectedAcc.endsWith(a.account_number)
++                );
+                 if (!found) {
+                     setAccountStatus('missing');
+                 } else if (!found.is_active) {
+@@ -136,6 +146,40 @@ export const BankStatementImporter: React.FC = () => {
+ 
+     const formatCurrency = (val: number) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+ 
++    const handleConsolidate = async () => {
++        if (accountStatus !== 'valid' || transactions.length === 0) return;
++        setIsProcessing(true);
++        setImportResult(null);
++        try {
++            // Resolve bank account ID from account number
++            const matched = bankAccounts.find(a => a.account_number === accountNumber);
++            if (!matched) {
++                setImportResult({ success: false, message: 'Cuenta bancaria no encontrada. Complete la documentaci├│n primero.' });
++                return;
++            }
++            // Map parsed transactions to DB format
++            const toInsert = transactions.map(tx => ({
++                bank_account_id: matched.id,
++                transaction_date: tx.date,
++                description: tx.description,
++                amount: Math.round(tx.amount * 100), // store as cents
++                reference_number: tx.id,
++            }));
++            const result = insertBankTransactions(toInsert);
++            if (result.success) {
++                await forceSaveDB();
++                setImportResult({ success: true, message: `Γ£ô ${result.importedCount} transacciones consolidadas exitosamente.` });
++                onImportComplete?.(result.importedCount);
++            } else {
++                setImportResult({ success: false, message: result.message });
++            }
++        } catch (e) {
++            setImportResult({ success: false, message: `Error inesperado: ${e instanceof Error ? e.message : 'Unknown'}` });
++        } finally {
++            setIsProcessing(false);
++        }
++    };
++
+     return (
+         <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+             {/* Header Hub */}
+@@ -177,12 +221,13 @@ export const BankStatementImporter: React.FC = () => {
+                                     <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-tight">Cuenta<br />Verificada</span>
+                                 </>
+                             ) : (
+-                                <>
+-                                    <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 animate-bounce">
+-                                        <AlertCircle className="w-6 h-6" />
+-                                    </div>
+-                                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-tight">Registro<br />Pendiente</span>
+-                                </>
++                                <button
++                                    onClick={() => setShowAccountForm(true)}
++                                    className="flex items-center gap-3 px-6 py-3 bg-[#f43f5e] hover:bg-[#e11d48] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all hover:-translate-y-0.5 active:scale-95 shadow-lg shadow-rose-900/40 animate-pulse hover:animate-none"
++                                >
++                                    <Building2 className="w-4 h-4 shrink-0" />
++                                    Completar<br />Documentaci├│n
++                                </button>
+                             )}
+                         </div>
+                     </div>
+@@ -330,13 +375,25 @@ export const BankStatementImporter: React.FC = () => {
+                             </div>
+                         )}
+ 
++                        {importResult && (
++                            <div className={`px-6 py-4 rounded-2xl text-sm font-bold ${importResult.success
++                                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
++                                : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
++                                }`}>
++                                {importResult.message}
++                            </div>
++                        )}
+                         <div className="flex justify-end gap-6 flex-wrap">
+                             <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
+                                 Abortar Sincronizaci├│n
+                             </button>
+-                            <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
+-                                Consolidar {transactions.length} Transacciones
+-                                <Zap className="w-5 h-5 text-emerald-200" />
++                            <button
++                                onClick={handleConsolidate}
++                                disabled={isProcessing || accountStatus !== 'valid' || transactions.length === 0}
++                                className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1 active:scale-95"
++                            >
++                                {isProcessing ? 'Procesando...' : `Consolidar ${transactions.length} Transacciones`}
++                                <Zap className={`w-5 h-5 ${isProcessing ? 'animate-spin' : 'text-emerald-200'}`} />
+                             </button>
+                         </div>
+                     </div>
+@@ -358,7 +415,7 @@ export const BankStatementImporter: React.FC = () => {
+                     } : undefined}
+                     onCancel={() => setShowAccountForm(false)}
+                     onSubmit={async (data) => {
+-                        const res = createBankAccount(data);
++                        const res = await createBankAccount(data);
+                         if (res.success) {
+                             setAccountStatus('valid');
+                             setShowAccountForm(false);
+
+commit 2b4a0eba0e7cf4322b23d17c22bc5d5520e6af92
+Author: OmarMira <55993765+OmarMira@users.noreply.github.com>
+Date:   Wed Feb 25 17:06:17 2026 -0500
+
+    chore: save all pending changes including UI refactor and database services
+
+diff --git a/src/components/BankStatementImporter.tsx b/src/components/BankStatementImporter.tsx
+index f0bf981..838c4cb 100644
+--- a/src/components/BankStatementImporter.tsx
++++ b/src/components/BankStatementImporter.tsx
+@@ -1,9 +1,11 @@
+ import React, { useState } from 'react';
+ import {
+     Upload, FileText, Check, AlertCircle, Sparkles, ArrowRight, Table,
+-    Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X
++    Database, Zap, ShieldCheck, Activity, Cpu, Box, Search, Layers, Clock, X, Building2
+ } from 'lucide-react';
+ import { parseBankPDF } from '../lib/pdf-parser';
++import { getBankAccounts, createBankAccount, BankAccount } from '../database/simple-db';
++import { BankAccountForm } from './BankAccountForm';
+ 
+ interface BankTransaction {
+     id: string;
+@@ -17,41 +19,118 @@ interface BankTransaction {
+ 
+ export const BankStatementImporter: React.FC = () => {
+     const [isDragging, setIsDragging] = useState(false);
+-    const [file, setFile] = useState<File | null>(null);
++    const [files, setFiles] = useState<File[]>([]);
+     const [step, setStep] = useState<'upload' | 'analysis' | 'review'>('upload');
+     const [transactions, setTransactions] = useState<BankTransaction[]>([]);
++    const [openingBalance, setOpeningBalance] = useState<number | null>(null);
++    const [openingDate, setOpeningDate] = useState<string | null>(null);
++    const [endingBalance, setEndingBalance] = useState<number | null>(null);
++    const [endingDate, setEndingDate] = useState<string | null>(null);
++    const [accountNumber, setAccountNumber] = useState<string | null>(null);
++    const [bankName, setBankName] = useState<string | null>(null);
++    const [routingNumber, setRoutingNumber] = useState<string | null>(null);
++    const [accountStatus, setAccountStatus] = useState<'valid' | 'missing' | 'inactive'>('valid');
++    const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
++    const [showAccountForm, setShowAccountForm] = useState(false);
++    const [processingProgress, setProcessingProgress] = useState(0);
+ 
+     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+-        if (e.target.files && e.target.files[0]) {
+-            processFile(e.target.files[0]);
++        if (e.target.files && e.target.files.length > 0) {
++            processFiles(Array.from(e.target.files));
+         }
+     };
+ 
+-    const processFile = async (file: File) => {
+-        setFile(file);
++    const processFiles = async (selectedFiles: File[]) => {
++        setFiles(selectedFiles);
+         setStep('analysis');
++        setProcessingProgress(0);
+ 
+         try {
+-            // Γ£à BUG #1 FIXED: Ahora llama al parser real en lugar de usar mockData
+-            const results = await parseBankPDF(file);
+-            const mappedTransactions = results
+-                .filter(r => r.success && r.data)
+-                .map((r, i) => ({
+-                    id: String(i),
+-                    date: r.data!.date,
+-                    description: r.data!.description,
+-                    amount: r.data!.amount,
+-                    category: 'Uncategorized',
+-                    confidence: r.data!.confidence ?? 0.9,
+-                    mappedAccount: '',
+-                }));
+-
+-            setTransactions(mappedTransactions);
++            const allTransactions: BankTransaction[] = [];
++            let globalOpening: number | null = null;
++            let globalEnding: number | null = null;
++            let detectedAcc: string | null = null;
++            let detectedBank: string | null = null;
++            let detectedRouting: string | null = null;
++
++            // Collect results with date context for sorting
++            const resultsWithContext: any[] = [];
++
++            for (let i = 0; i < selectedFiles.length; i++) {
++                const file = selectedFiles[i];
++                const results = await parseBankPDF(file);
++
++                const mappedTransactions = results.transactions
++                    .filter(r => r.success && r.data)
++                    .map((r, txIdx) => ({
++                        id: `${i}-${txIdx}`,
++                        date: r.data!.transaction_date,
++                        description: r.data!.description,
++                        amount: r.data!.amount / 100,
++                        category: 'Uncategorized',
++                        confidence: r.data!.confidence ?? 0.95,
++                        mappedAccount: '',
++                    }));
++
++                allTransactions.push(...mappedTransactions);
++
++                resultsWithContext.push({
++                    opening: results.openingBalance,
++                    ending: results.endingBalance,
++                    firstDate: mappedTransactions[0]?.date || '9999-12-31',
++                    lastDate: mappedTransactions[mappedTransactions.length - 1]?.date || '0000-01-01'
++                });
++
++                if (results.accountNumber && !detectedAcc) {
++                    detectedAcc = results.accountNumber;
++                }
++                if (results.bankName && !detectedBank) {
++                    detectedBank = results.bankName;
++                }
++                if (results.routingNumber && !detectedRouting) {
++                    detectedRouting = results.routingNumber;
++                }
++
++                setProcessingProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
++            }
++
++            // Sort results by date to find the true opening and ending balances
++            resultsWithContext.sort((a, b) => a.firstDate.localeCompare(b.firstDate));
++            if (resultsWithContext.length > 0) {
++                const firstResult = resultsWithContext[0];
++                const lastResult = resultsWithContext[resultsWithContext.length - 1];
++
++                setOpeningBalance(firstResult.opening ? firstResult.opening / 100 : null);
++                setOpeningDate(firstResult.firstDate);
++
++                setEndingBalance(lastResult.ending ? lastResult.ending / 100 : null);
++                setEndingDate(lastResult.lastDate);
++            }
++
++            setTransactions(allTransactions.sort((a, b) => b.date.localeCompare(a.date)));
++            setAccountNumber(detectedAcc);
++            setBankName(detectedBank);
++            setRoutingNumber(detectedRouting);
++
++            // Verify account status in database
++            const activeAccounts = getBankAccounts();
++            setBankAccounts(activeAccounts);
++
++            if (detectedAcc) {
++                const found = activeAccounts.find(a => a.account_number === detectedAcc);
++                if (!found) {
++                    setAccountStatus('missing');
++                } else if (!found.is_active) {
++                    setAccountStatus('inactive');
++                } else {
++                    setAccountStatus('valid');
++                }
++            }
++
+             setStep('review');
+         } catch (e) {
+-            console.error('Error parsing PDF', e);
++            console.error('Error parsing PDFs', e);
+             setStep('upload');
+-            // Aqu├¡ se podr├¡a a├▒adir un toast de error
+         }
+     };
+ 
+@@ -74,13 +153,38 @@ export const BankStatementImporter: React.FC = () => {
+                 </div>
+ 
+                 <div className="flex flex-wrap items-center gap-4 justify-center">
+-                    <div className="px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3 shadow-lg">
+-                        <Database className="w-4 h-4 text-emerald-500" />
+-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan de Cuentas v2.8</span>
+-                    </div>
+-                    <div className="px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3 shadow-lg">
+-                        <ShieldCheck className="w-4 h-4 text-blue-500" />
+-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Encryption: IronCore</span>
++                    <div className={`px-10 py-6 bg-slate-950 border rounded-[2.5rem] flex items-center gap-8 shadow-2xl transition-all duration-700 ${accountStatus === 'valid' ? 'border-emerald-500/40 bg-emerald-500/5 shadow-emerald-900/10' : 'border-rose-500/40 bg-rose-500/5 shadow-rose-900/10'}`}>
++                        <div className={`p-4 rounded-2xl ${accountStatus === 'valid' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
++                            <Box className="w-8 h-8 animate-pulse" />
++                        </div>
++                        <div className="flex flex-col">
++                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-2">Entidad Detectada</span>
++                            <div className="flex items-baseline gap-4">
++                                <span className={`text-4xl font-black tracking-tighter uppercase leading-none transition-colors ${accountStatus === 'valid' ? 'text-white' : 'text-rose-500'}`}>
++                                    {bankName || 'Buscando...'}
++                                </span>
++                                <span className={`text-xl font-mono font-bold tracking-tighter ${accountStatus === 'valid' ? 'text-emerald-500/70' : 'text-rose-400/50 italic'}`}>
++                                    #{accountNumber?.slice(-4) || '----'}
++                                </span>
++                            </div>
++                        </div>
++                        <div className="flex items-center gap-3 pl-6 border-l border-slate-800">
++                            {accountStatus === 'valid' ? (
++                                <>
++                                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
++                                        <Check className="w-6 h-6" />
++                                    </div>
++                                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-tight">Cuenta<br />Verificada</span>
++                                </>
++                            ) : (
++                                <>
++                                    <div className="w-10 h-10 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-500 animate-bounce">
++                                        <AlertCircle className="w-6 h-6" />
++                                    </div>
++                                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-tight">Registro<br />Pendiente</span>
++                                </>
++                            )}
++                        </div>
+                     </div>
+                 </div>
+             </div>
+@@ -90,7 +194,7 @@ export const BankStatementImporter: React.FC = () => {
+                     className={`h-[450px] bg-slate-900 border-2 rounded-[3.5rem] border-dashed flex flex-col items-center justify-center transition-all duration-500 group relative overflow-hidden ${isDragging ? 'border-emerald-500 bg-emerald-500/5 shadow-2xl shadow-emerald-900/20' : 'border-slate-800 hover:border-slate-700'}`}
+                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                     onDragLeave={() => setIsDragging(false)}
+-                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }}
++                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length > 0) processFiles(Array.from(e.dataTransfer.files)); }}
+                 >
+                     <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 blur-[120px] pointer-events-none group-hover:bg-emerald-500/10 transition-all"></div>
+ 
+@@ -101,9 +205,8 @@ export const BankStatementImporter: React.FC = () => {
+                     <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-10">Compatibilidad: CHASE, BOFA, WELLS FARGO, AMEX, STRIPE</p>
+ 
+                     <label className="px-10 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all shadow-2xl shadow-emerald-900/40 cursor-pointer flex items-center gap-3 hover:-translate-y-1">
+-                        Seleccionar Archivo
+-                        {/* Γ£à BUG #2 FIXED: Ahora acepta PDFs */}
+-                        <input type="file" className="hidden" accept=".pdf,.csv" onChange={handleFileUpload} />
++                        Seleccionar Archivos
++                        <input type="file" className="hidden" accept=".pdf,.csv" multiple onChange={handleFileUpload} />
+                     </label>
+                 </div>
+             )}
+@@ -118,18 +221,34 @@ export const BankStatementImporter: React.FC = () => {
+                     <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Ejecutando Heur├¡stica Neural...</h3>
+                     <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] max-w-sm mx-auto">Mapeando descripciones a c├│digos contables US GAAP y detectando anomal├¡as en tiempo real.</p>
+ 
+-                    <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner">
+-                        <div className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-[loading_2.5s_ease-in-out_infinite]"></div>
++                    <div className="mt-12 w-80 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
++                        <div
++                            className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-300"
++                            style={{ width: `${processingProgress}%` }}
++                        ></div>
+                     </div>
++                    <div className="mt-4 text-[10px] font-black text-emerald-500 uppercase tracking-widest">{processingProgress}% Completado</div>
+                 </div>
+             )}
+ 
+             {step === 'review' && (
+                 <div className="space-y-10 animate-in slide-in-from-bottom-6 duration-700">
+-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+-                        <StatusCard label="Transacciones" value={`${transactions.length} ITEMS`} icon={Layers} color="blue" />
+-                        <StatusCard label="Confianza IA" value="Confidencial (98.4%)" icon={ShieldCheck} color="emerald" />
+-                        <StatusCard label="Eficiencia" value="+45 MIN SALVADOS" icon={Clock} color="amber" />
++
++                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
++                        <StatusCard label="Archivos Seleccionados" value={`${files.length} PDF/CSV`} icon={FileText} color="blue" />
++                        <StatusCard label="Total Transacciones" value={`${transactions.length} ITEMS`} icon={Layers} color="blue" />
++                        <StatusCard
++                            label={`Saldo Inicial (${openingDate || '...'})`}
++                            value={openingBalance !== null ? formatCurrency(openingBalance) : "NO DETECTADO"}
++                            icon={ShieldCheck}
++                            color="emerald"
++                        />
++                        <StatusCard
++                            label={`Saldo Final (${endingDate || '...'})`}
++                            value={endingBalance !== null ? formatCurrency(endingBalance) : "NO DETECTADO"}
++                            icon={Activity}
++                            color="amber"
++                        />
+                     </div>
+ 
+                     <div className="bg-slate-900 border border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden relative group">
+@@ -189,17 +308,66 @@ export const BankStatementImporter: React.FC = () => {
+                         </table>
+                     </div>
+ 
+-                    <div className="flex justify-end gap-6 pt-10 border-t border-slate-800 flex-wrap">
+-                        <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
+-                            Abortar Sincronizaci├│n
+-                        </button>
+-                        <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
+-                            Consolidar {transactions.length} Transacciones
+-                            <Zap className="w-5 h-5 text-emerald-200" />
+-                        </button>
++                    <div className="flex flex-col gap-8 pt-10 border-t border-slate-800">
++                        {accountStatus !== 'valid' && accountNumber && (
++                            <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] animate-in fade-in slide-in-from-right-4 duration-500">
++                                <div className="flex items-center gap-4 mb-4 md:mb-0">
++                                    <div className="p-3 bg-rose-500/20 rounded-xl">
++                                        <AlertCircle className="w-6 h-6 text-rose-500" />
++                                    </div>
++                                    <div>
++                                        <p className="text-[11px] font-black text-white uppercase tracking-widest">Atenci├│n: Documentaci├│n Incompleta</p>
++                                        <p className="text-[10px] font-black text-rose-400/70 uppercase tracking-[0.2em] mt-1">La documentaci├│n de esta cuenta no est├í cargada en el sistema.</p>
++                                    </div>
++                                </div>
++                                <button
++                                    onClick={() => setShowAccountForm(true)}
++                                    className="px-10 py-5 bg-[#f43f5e] hover:bg-[#e11d48] text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center gap-3 shadow-2xl shadow-rose-900/40 hover:-translate-y-1 active:scale-95"
++                                >
++                                    <Building2 className="w-5 h-5" />
++                                    COMPLETAR DOCUMENTACI├ôN
++                                </button>
++                            </div>
++                        )}
++
++                        <div className="flex justify-end gap-6 flex-wrap">
++                            <button onClick={() => setStep('upload')} className="px-10 py-5 bg-slate-900 border border-slate-800 text-slate-400 rounded-2.5xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-lg">
++                                Abortar Sincronizaci├│n
++                            </button>
++                            <button className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2.5xl font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-4 shadow-3xl shadow-emerald-900/40 hover:-translate-y-1">
++                                Consolidar {transactions.length} Transacciones
++                                <Zap className="w-5 h-5 text-emerald-200" />
++                            </button>
++                        </div>
+                     </div>
+                 </div>
+             )}
++            {showAccountForm && (
++                <BankAccountForm
++                    initialData={accountNumber ? {
++                        id: 0,
++                        account_name: `${bankName || 'BANCO'} CORRIENTE *${accountNumber.slice(-4)}`.toUpperCase(),
++                        bank_name: bankName || 'BANCO POR DEFINIR',
++                        account_number: accountNumber,
++                        account_type: 'checking',
++                        routing_number: routingNumber || '',
++                        balance: openingBalance || 0,
++                        currency: 'USD',
++                        is_active: true,
++                        created_at: ''
++                    } : undefined}
++                    onCancel={() => setShowAccountForm(false)}
++                    onSubmit={async (data) => {
++                        const res = createBankAccount(data);
++                        if (res.success) {
++                            setAccountStatus('valid');
++                            setShowAccountForm(false);
++                            // Refresh accounts
++                            setBankAccounts(getBankAccounts());
++                        }
++                    }}
++                />
++            )}
+         </div>
+     );
+ };

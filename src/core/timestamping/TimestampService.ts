@@ -81,6 +81,19 @@ export class TimestampService {
      * @returns Timestamp response con token TSA
      */
     async getTimestamp(request: TimestampRequest): Promise<TimestampResponse> {
+        // En desarrollo, retornar mock para evitar errores de CORS y ruido en consola
+        if (import.meta.env.DEV) {
+            ProductionLogger.info('TimestampService', 'Using Mock TSA response (Development Mode)');
+            return {
+                token: 'MOCK_TSA_TOKEN_DEV',
+                timestamp: new Date(),
+                serialNumber: '0000-MOCK-DEV',
+                tsaName: 'Mock TSA (Development Mode)',
+                hashAlgorithm: request.hashAlgorithm || 'SHA-256',
+                hashedMessage: '0000000000000000000000000000000000000000000000000000000000000000'
+            };
+        }
+
         return await this.backoff.execute(async () => {
             ProductionLogger.info('TimestampService', 'Requesting RFC 3161 timestamp', {
                 tsaUrl: this.tsaUrl,
@@ -149,6 +162,17 @@ export class TimestampService {
         token: string,
         originalData: ArrayBuffer
     ): Promise<TimestampVerification> {
+        // En desarrollo, aceptar el token mock
+        if (import.meta.env.DEV && token === 'MOCK_TSA_TOKEN_DEV') {
+            return {
+                valid: true,
+                timestamp: new Date(),
+                serialNumber: '0000-MOCK-DEV',
+                tsaName: 'Mock TSA (Development Mode)',
+                errors: []
+            };
+        }
+
         return await this.backoff.execute(async () => {
             ProductionLogger.info('TimestampService', 'Verifying RFC 3161 timestamp');
 

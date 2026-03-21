@@ -1,4 +1,4 @@
-import { Quote } from '../../../database/simple-db';
+import type { Quote } from '@/database/modules/db-types';
 import { X, FileText, Calendar, User, DollarSign, ArrowRight, Download } from 'lucide-react';
 
 interface QuoteDetailViewProps {

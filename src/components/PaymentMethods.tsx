@@ -1,6 +1,8 @@
+﻿import { logger } from '../core/logging/SystemLogger';
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CreditCard, Check, X, AlertCircle } from 'lucide-react';
-import { PaymentMethod, getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '../database/simple-db';
+import { getAllPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod, canDeletePaymentMethod } from '@/database/modules/db-payment-methods';
+import type { PaymentMethod } from '@/database/modules/db-types';
 import { useLocale } from '../i18n/useLocale';
 
 interface PaymentMethodsProps {
@@ -18,7 +20,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
   const [formData, setFormData] = useState({
     method_name: '',
-    method_type: 'other' as 'cash' | 'check' | 'credit_card' | 'bank_transfer' | 'other',
+    method_type: 'other' as string,
     is_active: true,
     requires_reference: false
   });
@@ -32,7 +34,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       const methods = getAllPaymentMethods();
       setPaymentMethods(methods);
     } catch (error) {
-      console.error('Error loading payment methods:', error);
+      logger.error('PaymentMethods', 'error', 'Error loading payment methods:', error);
       setError(t('paymentMethods.error.load'));
     }
   };
@@ -59,7 +61,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       if (editingMethod) {
         result = updatePaymentMethod(editingMethod.id, formData);
       } else {
-        result = createPaymentMethod(formData);
+        result = await createPaymentMethod(formData);
       }
 
       if (result.success) {
@@ -73,7 +75,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         setError(result.message);
       }
     } catch (error) {
-      console.error('Error saving payment method:', error);
+      logger.error('PaymentMethods', 'error', 'Error saving payment method:', error);
       setError(t('paymentMethods.error.save'));
     } finally {
       setIsLoading(false);
@@ -116,7 +118,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         setError(result.message);
       }
     } catch (error) {
-      console.error('Error deleting payment method:', error);
+      logger.error('PaymentMethods', 'error', 'Error deleting payment method:', error);
       setError(t('paymentMethods.error.delete'));
     }
   };
@@ -148,11 +150,11 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-800 pb-6">
         <div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-3">
+          <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight">
             <CreditCard className="w-8 h-8 text-blue-500" />
             {t('paymentMethods.title')}
           </h2>
-          <p className="text-slate-400 text-sm">{t('paymentMethods.subtitle')}</p>
+          <p className="text-slate-500 font-medium text-sm mt-2">{t('paymentMethods.subtitle')}</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -188,10 +190,10 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
         </div>
       )}
 
-      {/* Lista de métodos de pago */}
+      {/* Lista de mÃ©todos de pago */}
       <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
         <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/50">
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
             {t('paymentMethods.activeConfigurations')}
           </h3>
@@ -209,13 +211,6 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
             <p className="mt-1 text-slate-400 font-medium">
               {t('paymentMethods.noMethodsDesc')}
             </p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-6 inline-flex items-center px-6 py-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 rounded-xl border border-blue-500/30 transition-all font-bold"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t('paymentMethods.addMethod')}
-            </button>
           </div>
         ) : (
           <ul className="divide-y divide-slate-800/50">
@@ -231,24 +226,24 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                         <p className="text-lg font-black text-white tracking-tight">
                           {method.method_name}
                         </p>
-                        <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded-lg border bg-slate-950/50 ${getMethodTypeColor(method.method_type)}`}>
+                        <span className={`px-3 py-1 text-xs font-bold rounded-lg border bg-slate-950/50 ${getMethodTypeColor(method.method_type)}`}>
                           {getMethodTypeLabel(method.method_type)}
                         </span>
                         {!method.is_active && (
-                          <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                          <span className="px-3 py-1 text-xs font-bold rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
                             {t('common.inactive')}
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      <div className="mt-2 flex items-center gap-4 text-xs font-bold text-slate-500">
                         {method.requires_reference && (
-                          <span className="flex items-center gap-1.5 text-blue-400/70 bg-blue-400/5 px-2 py-0.5 rounded-md border border-blue-400/10">
+                          <span className="flex items-center gap-1.5 text-blue-400/70 bg-blue-400/5 px-2 py-1 rounded-md border border-blue-400/10">
                             <AlertCircle className="w-3 h-3" />
                             {t('paymentMethods.requiresReference')}
                           </span>
                         )}
-                        <span className="opacity-60 text-[10px] uppercase font-bold tracking-widest">
-                          ID: {method.id} • {new Date(method.created_at).toLocaleDateString()}
+                        <span className="opacity-60 text-xs font-medium tracking-tight">
+                          ID: {method.id} Â· {new Date(method.created_at ?? Date.now()).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
@@ -298,7 +293,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  <label className="text-xs font-medium text-slate-500 ml-1">
                     {t('paymentMethods.form.name')}
                   </label>
                   <input
@@ -313,7 +308,7 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                  <label className="text-xs font-medium text-slate-500 ml-1">
                     {t('paymentMethods.form.type')}
                   </label>
                   <select
@@ -322,11 +317,11 @@ export const PaymentMethods: React.FC<PaymentMethodsProps> = ({ onPaymentMethods
                     className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium appearance-none cursor-pointer"
                     required
                   >
-                    <option value="cash">💵 Efectivo (Cash)</option>
-                    <option value="check">✍️ Cheque (Check)</option>
-                    <option value="credit_card">💳 Tarjeta (Card)</option>
-                    <option value="bank_transfer">🏦 Transferencia (ACH/Zelle)</option>
-                    <option value="other">⚙️ Otro (Other)</option>
+                    <option value="cash">ðŸ’µ Efectivo (Cash)</option>
+                    <option value="check">âœï¸ Cheque (Check)</option>
+                    <option value="credit_card">ðŸ’³ Tarjeta (Card)</option>
+                    <option value="bank_transfer">ðŸ¦ Transferencia (ACH/Zelle)</option>
+                    <option value="other">âš™ï¸ Otro (Other)</option>
                   </select>
                 </div>
 
