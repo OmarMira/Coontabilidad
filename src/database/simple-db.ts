@@ -13,6 +13,7 @@ import { generatePaymentReceivedJournalEntry as _generatePaymentReceivedJournalE
 import { getFloridaTaxRate as _getFloridaTaxRate, calculateTaxAmount as _calculateTaxAmount, validateFinancialCalculation as _validateFinancialCalculation, FLORIDA_COUNTIES as _FLORIDA_COUNTIES, getActiveProducts as _getActiveProducts, getStatsWithInvoices as _getStatsWithInvoices } from './modules/db-invoices';
 import { calculateFloridaDR15Report as _calculateFloridaDR15Report, saveDR15Report as _saveDR15Report, getDR15Reports as _getDR15Reports, getAllFloridaTaxRates as _getAllFloridaTaxRates, updateFloridaTaxRate as _updateFloridaTaxRate, markDR15ReportAsFiled as _markDR15ReportAsFiled, getAvailableDR15Periods as _getAvailableDR15Periods } from './modules/db-florida-tax';
 import { createInventoryMovement as _createInventoryMovement, getInventoryMovementsWithFilters as _getInventoryMovementsWithFilters, createLocation as _createLocation, getLocations as _getLocations, updateLocation as _updateLocation, deleteLocation as _deleteLocation, createInitialLocations as _createInitialLocations } from './modules/db-inventory';
+import { getPayroll as _getPayroll, getAllPayrolls as _getAllPayrolls, getQuarterlyPayrolls as _getQuarterlyPayrolls, getAnnualPayrolls as _getAnnualPayrolls, getPayrollSettings as _getPayrollSettings, updatePayrollSetting as _updatePayrollSetting, getPayrolls as _getPayrolls, createPayrollPeriod as _createPayrollPeriod, getPayrollEntries as _getPayrollEntries, createPayrollEntry as _createPayrollEntry, getPayrollLineItems as _getPayrollLineItems, getPayrollPeriods as _getPayrollPeriods, getEmployees as _getEmployees, createEmployee as _createEmployee, updateEmployee as _updateEmployee } from './modules/db-payroll';
 import { createInvoice as _createInvoice, updateInvoice as _updateInvoice, deleteInvoice as _deleteInvoice, getInvoices as _getInvoices, getInvoiceById as _getInvoiceById, generateInvoiceNumber as _generateInvoiceNumber } from './modules/db-invoices';
 import { addCustomer as _addCustomer, getCustomers as _getCustomers, getCustomerById as _getCustomerById, updateCustomer as _updateCustomer, canDeleteCustomer as _canDeleteCustomer, deleteCustomer as _deleteCustomer } from './modules/db-customers';
 import { isDateLocked as _isDateLocked } from './modules/db-journal';
@@ -351,16 +352,8 @@ export function getMonthlyFinancialSummary(): MonthlySummary[] {
 // EMPLOYEES & PAYROLL
 // ==========================================
 
-export function getEmployees(): Employee[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM employees ORDER BY last_name, first_name");
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<Employee>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) {
-    console.error('Error fetching employees:', e);
-    return [];
-  }
+export function getEmployees(): ReturnType<typeof _getEmployees> {
+  return _getEmployees();
 }
 
 export function getEmployeeById(id: number): Employee | null {
@@ -375,101 +368,24 @@ export function getEmployeeById(id: number): Employee | null {
   }
 }
 
-export function createEmployee(empData: Partial<Employee>): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO employees (
-        employee_number, first_name, last_name, email, phone, 
-        hire_date, department, position, salary_type, salary_rate, status, florida_county
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run([
-      (empData.employee_number || `EMP-${Date.now()}`) as string,
-      (empData.first_name || '') as string,
-      (empData.last_name || '') as string,
-      (empData.email || null) as string | null,
-      (empData.phone || null) as string | null,
-      (empData.hire_date || new Date().toISOString().split('T')[0]) as string,
-      (empData.department || null) as string | null,
-      (empData.position || null) as string | null,
-      (empData.salary_type || 'monthly') as string,
-      (empData.salary_rate || 0) as number,
-      (empData.status || 'active') as string,
-      (empData.florida_county || 'Miami-Dade') as string
-    ]);
-
-    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    stmt.free();
-
-    return { success: true, message: 'Empleado registrado con éxito', id };
-  } catch (e: any) {
-    console.error('Error creating employee:', e);
-    return { success: false, message: e.message };
-  }
+export function createEmployee(empData: Parameters<typeof _createEmployee>[0]): ReturnType<typeof _createEmployee> {
+  return _createEmployee(empData);
 }
 
-export function updateEmployee(id: number, empData: Partial<Employee>): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    db.run(`
-      UPDATE employees SET 
-        first_name = ?, last_name = ?, email = ?, phone = ?, 
-        department = ?, position = ?, salary_type = ?, salary_rate = ?, 
-        status = ?, florida_county = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `, [
-      (empData.first_name || '') as string,
-      (empData.last_name || '') as string,
-      (empData.email || null) as string | null,
-      (empData.phone || null) as string | null,
-      (empData.department || null) as string | null,
-      (empData.position || null) as string | null,
-      (empData.salary_type || 'monthly') as string,
-      (empData.salary_rate || 0) as number,
-      (empData.status || 'active') as string,
-      (empData.florida_county || 'Miami-Dade') as string,
-      id
-    ]);
-    return { success: true, message: 'Empleado actualizado con éxito' };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
+export function updateEmployee(id: Parameters<typeof _updateEmployee>[0], empData: Parameters<typeof _updateEmployee>[1]): ReturnType<typeof _updateEmployee> {
+  return _updateEmployee(id, empData);
 }
 
-export function getPayrollPeriods(): PayrollPeriod[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM payroll_periods ORDER BY start_date DESC");
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollPeriod>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) {
-    console.error('Error fetching payroll periods:', e);
-    return [];
-  }
+export function getPayrollPeriods(): ReturnType<typeof _getPayrollPeriods> {
+  return _getPayrollPeriods();
 }
 
-export function getPayrollSettings(): PayrollSetting[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM payroll_settings");
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollSetting>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) {
-    console.error('Error fetching payroll settings:', e);
-    return [];
-  }
+export function getPayrollSettings(): ReturnType<typeof _getPayrollSettings> {
+  return _getPayrollSettings();
 }
 
-export function updatePayrollSetting(key: string, value: string): { success: boolean; message: string } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    db.run("UPDATE payroll_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?", [value, key]);
-    return { success: true, message: 'Configuración actualizada' };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
+export function updatePayrollSetting(key: Parameters<typeof _updatePayrollSetting>[0], value: Parameters<typeof _updatePayrollSetting>[1]): ReturnType<typeof _updatePayrollSetting> {
+  return _updatePayrollSetting(key, value);
 }
 
 export function getTaxBrackets(): TaxBracket[] {
@@ -989,101 +905,20 @@ function getAssetCategoryById(id: number): AssetCategory | null {
   }
 }
 
-export function createPayrollPeriod(period: Partial<PayrollPeriod>): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO payroll_periods (name, start_date, end_date, pay_date, status, total_gross, total_net)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run([
-      (period.name || '') as string,
-      (period.start_date || '') as string,
-      (period.end_date || '') as string,
-      (period.pay_date || '') as string,
-      (period.status || 'open') as string,
-      (period.total_gross || 0) as number,
-      (period.total_net || 0) as number
-    ]);
-    const id = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    stmt.free();
-    return { success: true, message: 'Periodo creado con éxito', id };
-  } catch (e: any) {
-    return { success: false, message: e.message };
-  }
+export function createPayrollPeriod(period: Parameters<typeof _createPayrollPeriod>[0]): ReturnType<typeof _createPayrollPeriod> {
+  return _createPayrollPeriod(period);
 }
 
-export function getPayrollEntries(periodId: number): (PayrollEntry & { employee_name: string })[] {
-  if (!db) return [];
-  try {
-    const res = db.exec(`
-      SELECT pe.*, (e.first_name || ' ' || e.last_name) as employee_name 
-      FROM payroll_entries pe
-      JOIN employees e ON pe.employee_id = e.id
-      WHERE pe.period_id = ?
-    `, [periodId]);
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollEntry & { employee_name: string }>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) {
-    console.error('Error fetching payroll entries:', e);
-    return [];
-  }
+export function getPayrollEntries(periodId: Parameters<typeof _getPayrollEntries>[0]): ReturnType<typeof _getPayrollEntries> {
+  return _getPayrollEntries(periodId);
 }
 
-export function createPayrollEntry(entry: Partial<PayrollEntry>, items: Partial<PayrollLineItem>[]): { success: boolean; message: string; id?: number } {
-  if (!db) return { success: false, message: 'Database not initialized' };
-  try {
-    db.run("BEGIN TRANSACTION");
-
-    const stmt = db.prepare(`
-      INSERT INTO payroll_entries (employee_id, period_id, gross_amount, deductions_amount, net_amount, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run([
-      (entry.employee_id) as number,
-      (entry.period_id) as number,
-      (entry.gross_amount) as number,
-      (entry.deductions_amount || 0) as number,
-      (entry.net_amount) as number,
-      (entry.status || 'draft') as string,
-      (entry.notes || null) as string | null
-    ]);
-    const entryId = db.exec("SELECT last_insert_rowid()")[0].values[0][0] as number;
-    stmt.free();
-
-    const itemStmt = db.prepare(`
-      INSERT INTO payroll_line_items (payroll_entry_id, type, category, description, amount)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    for (const item of items) {
-      itemStmt.run([
-        entryId,
-        (item.type || 'earning') as string,
-        (item.category || '') as string,
-        (item.description || '') as string,
-        (item.amount || 0) as number
-      ]);
-    }
-    itemStmt.free();
-
-    db.run("COMMIT");
-    return { success: true, message: 'Nómina procesada para empleado', id: entryId };
-  } catch (e: any) {
-    db.run("ROLLBACK");
-    return { success: false, message: e.message };
-  }
+export function createPayrollEntry(entry: Parameters<typeof _createPayrollEntry>[0], items: Parameters<typeof _createPayrollEntry>[1]): ReturnType<typeof _createPayrollEntry> {
+  return _createPayrollEntry(entry, items);
 }
 
-export function getPayrollLineItems(entryId: number): PayrollLineItem[] {
-  if (!db) return [];
-  try {
-    const res = db.exec("SELECT * FROM payroll_line_items WHERE payroll_entry_id = ?", [entryId]);
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<PayrollLineItem>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) {
-    console.error('Error fetching payroll line items:', e);
-    return [];
-  }
+export function getPayrollLineItems(entryId: Parameters<typeof _getPayrollLineItems>[0]): ReturnType<typeof _getPayrollLineItems> {
+  return _getPayrollLineItems(entryId);
 }
 
 export interface PayrollFilter {
@@ -1092,36 +927,8 @@ export interface PayrollFilter {
   year?: number;
 }
 
-export function getPayrolls(filters: PayrollFilter = {}): Payroll[] {
-  if (!db) return [];
-  try {
-    let query = "SELECT * FROM payroll WHERE 1=1";
-    const params: any[] = [];
-
-    if (filters.employee_id) {
-      query += " AND employee_id = ?";
-      params.push(filters.employee_id);
-    }
-
-    if (filters.status) {
-      query += " AND status = ?";
-      params.push(filters.status);
-    }
-
-    if (filters.year) {
-      query += " AND strftime('%Y', pay_date) = ?";
-      params.push(filters.year.toString());
-    }
-
-    query += " ORDER BY pay_date DESC";
-
-    const res = db.exec(query, params);
-    if (res.length === 0) return [];
-    return res[0].values.map((row: any) => rowToEntity<Payroll>((res[0].columns || (res[0] as any).lc), row));
-  } catch (e) {
-    console.error('Error fetching payrolls:', e);
-    return [];
-  }
+export function getPayrolls(filters?: Parameters<typeof _getPayrolls>[0]): ReturnType<typeof _getPayrolls> {
+  return _getPayrolls(filters);
 }
 
 let isInitialized = false;
@@ -10694,18 +10501,8 @@ export async function createBudget(
 /**
  * Get payroll by ID
  */
-export function getPayroll(payrollId: number): Payroll | null {
-  if (!db) return null;
-
-  try {
-    const result = db.exec('SELECT * FROM payroll WHERE id = ?', [payrollId]);
-    if (result.length === 0 || result[0].values.length === 0) return null;
-
-    return rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), result[0].values[0]);
-  } catch (error) {
-    console.error('Error getting payroll:', error);
-    return null;
-  }
+export function getPayroll(payrollId: Parameters<typeof _getPayroll>[0]): ReturnType<typeof _getPayroll> {
+  return _getPayroll(payrollId);
 }
 
 /**
@@ -10738,110 +10535,22 @@ export function getEmployeePayrolls(employeeId: number, year?: number): Payroll[
 /**
  * Get all payrolls with filters
  */
-export function getAllPayrolls(filters?: {
-  employeeId?: number;
-  startDate?: string;
-  endDate?: string;
-  status?: 'draft' | 'approved' | 'voided';
-}): Payroll[] {
-  if (!db) return [];
-
-  try {
-    let query = 'SELECT * FROM payroll WHERE 1=1';
-    const params: any[] = [];
-
-    if (filters?.employeeId) {
-      query += ' AND employee_id = ?';
-      params.push(filters.employeeId);
-    }
-
-    if (filters?.startDate) {
-      query += ' AND pay_date >= ?';
-      params.push(filters.startDate);
-    }
-
-    if (filters?.endDate) {
-      query += ' AND pay_date <= ?';
-      params.push(filters.endDate);
-    }
-
-    if (filters?.status) {
-      query += ' AND status = ?';
-      params.push(filters.status);
-    }
-
-    query += ' ORDER BY pay_date DESC, created_at DESC';
-
-    const result = db.exec(query, params);
-    if (result.length === 0) return [];
-
-    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
-  } catch (error) {
-    console.error('Error getting all payrolls:', error);
-    return [];
-  }
+export function getAllPayrolls(filters?: Parameters<typeof _getAllPayrolls>[0]): ReturnType<typeof _getAllPayrolls> {
+  return _getAllPayrolls(filters);
 }
 
 /**
  * Get payrolls for a specific quarter (for Form 941)
  */
-export function getQuarterlyPayrolls(year: number, quarter: number): Payroll[] {
-  if (!db) return [];
-
-  try {
-    const quarterMonths = {
-      1: ['01', '02', '03'],
-      2: ['04', '05', '06'],
-      3: ['07', '08', '09'],
-      4: ['10', '11', '12']
-    };
-
-    const months = quarterMonths[quarter as keyof typeof quarterMonths];
-    if (!months) return [];
-
-    const startDate = `${year}-${months[0]}-01`;
-    const endDate = `${year}-${months[2]}-31`;
-
-    const query = `
-      SELECT * FROM payroll 
-      WHERE pay_date >= ? AND pay_date <= ?
-      AND status = 'approved'
-      ORDER BY pay_date
-    `;
-
-    const result = db.exec(query, [startDate, endDate]);
-    if (result.length === 0) return [];
-
-    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
-  } catch (error) {
-    console.error('Error getting quarterly payrolls:', error);
-    return [];
-  }
+export function getQuarterlyPayrolls(year: Parameters<typeof _getQuarterlyPayrolls>[0], quarter: Parameters<typeof _getQuarterlyPayrolls>[1]): ReturnType<typeof _getQuarterlyPayrolls> {
+  return _getQuarterlyPayrolls(year, quarter);
 }
 
 /**
  * Get annual payrolls for W-2 generation
  */
-export function getAnnualPayrolls(employeeId: number, year: number): Payroll[] {
-  if (!db) return [];
-
-  try {
-    const query = `
-      SELECT * FROM payroll 
-      WHERE employee_id = ?
-      AND strftime('%Y', pay_date) = ?
-      AND status = 'approved'
-      ORDER BY pay_date
-    `;
-
-    const result = db.exec(query, [employeeId, year.toString()]);
-    if (result.length === 0) return [];
-
-    return result[0].values.map((row: any) => rowToEntity<Payroll>((result[0].columns || (result[0] as any).lc), row));
-  } catch (error) {
-    console.error('Error getting annual payrolls:', error);
-    return [];
-  }
+export function getAnnualPayrolls(employeeId: Parameters<typeof _getAnnualPayrolls>[0], year: Parameters<typeof _getAnnualPayrolls>[1]): ReturnType<typeof _getAnnualPayrolls> {
+  return _getAnnualPayrolls(employeeId, year);
 }
 
 /**
