@@ -72,8 +72,8 @@
 - [x] ORDEN 29 - Verificacion final + commit + tag v71-payroll-wrapped
 
 ### FASE FINAL
-- [ ] ORDEN 30 - Verificacion integral del sistema completo
-- [ ] ORDEN 31 - Commit final + tag v72-arquitectura-limpia
+- [x] ORDEN 30 - Verificacion integral del sistema completo
+- [x] ORDEN 31 - Commit final + tag v72-arquitectura-limpia
 
 ---
 
@@ -150,6 +150,6 @@
 | v69 tax | 9,676 | -1,324 acum |
 | v70 inventory | 9,437 | -1,563 acum |
 | v71 payroll | 9,176 | -1,824 acum |
-| v72 final | - | - |
+| v72 final | 9,176 | -4,824 total |
 
 
